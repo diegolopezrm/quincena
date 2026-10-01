@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:genui/genui.dart';
 import 'package:genui_gen/genui_gen.dart';
 
-import '../data/category.dart';
 import '../data/clock.dart';
 import '../format/dates.dart';
 import '../format/money.dart';
 import '../theme/theme.dart';
 import '../theme/tokens.dart';
-import '../ui/kit.dart';
 
 part 'subscription_row.genui.dart';
 
@@ -50,16 +48,16 @@ class SubscriptionRow extends StatelessWidget {
     final DateTime? used = parseDay(lastUsed);
     final bool stale = used != null && appToday.difference(used).inDays > 30;
     final String usage = used == null
-        ? 'Sin datos de uso'
-        : 'Último uso ${ago(used)}';
+        ? 'sin datos de uso'
+        : 'usado ${ago(used)}';
 
     return MergeSemantics(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 9),
         child: Row(
+          // No category badge: every row in the list is a subscription, so
+          // the same icon on each one would only take room from the text.
           children: <Widget>[
-            const CategoryBadge(Category.subscriptions),
-            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -79,7 +77,7 @@ class SubscriptionRow extends StatelessWidget {
                       style: context.type.bodySmall,
                       children: <InlineSpan>[
                         TextSpan(
-                          text: '${pesos(price)} al mes',
+                          text: pesos(price),
                           style: TextStyle(
                             fontFeatures: tabular,
                             color: keep ? context.colors.inkSoft : null,
