@@ -66,6 +66,11 @@ set up the app, record a week of movements and see the right totals, offline.
 - Android: a notification listener, opt-in, limited to the apps the person
   picks.
 - Share a screenshot or a text to Quincena from any app, read on the device.
+- Where a payment happened, when the alert does not say: the phone's
+  location at that moment, kept on the device, and the shops within a few
+  metres of it from OpenStreetMap, so "Compra POS 4512" can become a
+  suggestion like "Éxito Laureles · Groceries". Off until the person turns
+  it on; the coordinates are the only thing that leaves the device.
 
 ### 7. Gemini for everyone
 
