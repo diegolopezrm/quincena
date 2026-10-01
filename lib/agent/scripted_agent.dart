@@ -457,7 +457,7 @@ class ScriptedAgent {
           'category': category.name,
           'spent': ledger.spentOn(category, _year, _month),
           'limit': ledger.spentOn(category, y, m),
-          'caption': 'lo de ${_monthName(y, m)}',
+          'caption': _capital(_monthName(y, m)),
         }),
         ..._suggestions(<String>[
           '¿Me alcanza para ir a Cartagena en diciembre?',
@@ -672,7 +672,7 @@ class ScriptedAgent {
             'category': top[i].$1.name,
             'spent': top[i].$2,
             'limit': top[i].$3,
-            'caption': 'lo de $previous',
+            'caption': _capital(previous),
           }),
         ..._suggestions(<String>['¿En qué se me fue la plata en septiembre?']),
       ],

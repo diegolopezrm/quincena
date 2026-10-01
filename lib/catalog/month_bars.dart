@@ -41,21 +41,26 @@ class MonthBars extends StatelessWidget {
   /// What the dashed line is, such as "Ingresos".
   final String? referenceLabel;
 
+  String _monthName(MonthTotal m) => switch (parseDay(m.month)) {
+    final DateTime d => monthYear(d).split(' ').first,
+    null => m.month,
+  };
+
   @override
   Widget build(BuildContext context) {
-    // Room above the tallest bar for its label.
+    // Room above the tallest bar.
     final double top =
         <double>[
           ...months.map((MonthTotal m) => m.amount),
           reference ?? 0,
         ].reduce((double a, double b) => a > b ? a : b) *
-        1.12;
+        1.08;
+    final MonthTotal? focus = months
+        .where((MonthTotal m) => m.highlight)
+        .firstOrNull;
 
     final String summary = months
-        .map((MonthTotal m) {
-          final DateTime? date = parseDay(m.month);
-          return '${date == null ? m.month : monthYear(date)} ${pesos(m.amount)}';
-        })
+        .map((MonthTotal m) => '${_monthName(m)} ${pesos(m.amount)}')
         .join(', ');
 
     return Block(
@@ -63,17 +68,37 @@ class MonthBars extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Row(
+          if (title case final String title)
+            Text(title, style: context.type.titleMedium),
+          // The highlighted month's amount and the reference are said in
+          // words above the chart, where they cannot collide with the bars.
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 16,
+            runSpacing: 6,
             children: <Widget>[
-              if (title case final String title)
-                Expanded(child: Text(title, style: context.type.titleMedium))
-              else
-                const Spacer(),
-              if (reference != null && referenceLabel != null)
-                _Key(label: referenceLabel!, amount: reference!),
+              if (focus != null)
+                _Legend(
+                  mark: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: context.colors.brand,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                  label: _monthName(focus),
+                  amount: focus.amount,
+                ),
+              if (reference != null)
+                _Legend(
+                  mark: const _Dashes(),
+                  label: referenceLabel ?? 'Referencia',
+                  amount: reference!,
+                ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 16),
           Semantics(
             label:
                 '${title ?? ''} $summary'
@@ -83,56 +108,27 @@ class MonthBars extends StatelessWidget {
             child: Column(
               children: <Widget>[
                 SizedBox(
-                  height: 170,
-                  child: Stack(
-                    children: <Widget>[
-                      Positioned.fill(
-                        child: DrawIn(
-                          builder: (BuildContext context, double progress) =>
-                              CustomPaint(
-                                painter: BarsPainter(
-                                  progress: progress,
-                                  max: top,
-                                  reference: reference,
-                                  lineColor: context.colors.inkFaint,
-                                  bars: <Bar>[
-                                    for (final MonthTotal m in months)
-                                      Bar(
-                                        value: m.amount,
-                                        color: m.highlight
-                                            ? context.colors.brand
-                                            : context.colors.sunken,
-                                      ),
-                                  ],
+                  height: 150,
+                  child: DrawIn(
+                    builder: (BuildContext context, double progress) =>
+                        CustomPaint(
+                          size: Size.infinite,
+                          painter: BarsPainter(
+                            progress: progress,
+                            max: top,
+                            reference: reference,
+                            lineColor: context.colors.inkFaint,
+                            bars: <Bar>[
+                              for (final MonthTotal m in months)
+                                Bar(
+                                  value: m.amount,
+                                  color: m.highlight
+                                      ? context.colors.brand
+                                      : context.colors.sunken,
                                 ),
-                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      Positioned.fill(
-                        child: Row(
-                          children: <Widget>[
-                            for (final MonthTotal m in months)
-                              Expanded(
-                                child: m.highlight
-                                    ? Align(
-                                        alignment: Alignment(
-                                          0,
-                                          1 - (m.amount / top) * 2 - 0.16,
-                                        ),
-                                        child: Figures(
-                                          pesosShort(m.amount),
-                                          style: context.type.labelMedium
-                                              ?.copyWith(
-                                                color: context.colors.ink,
-                                              ),
-                                        ),
-                                      )
-                                    : const SizedBox(),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -164,9 +160,14 @@ class MonthBars extends StatelessWidget {
   }
 }
 
-class _Key extends StatelessWidget {
-  const _Key({required this.label, required this.amount});
+class _Legend extends StatelessWidget {
+  const _Legend({
+    required this.mark,
+    required this.label,
+    required this.amount,
+  });
 
+  final Widget mark;
   final String label;
   final double amount;
 
@@ -174,20 +175,32 @@ class _Key extends StatelessWidget {
   Widget build(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
     children: <Widget>[
-      SizedBox(
-        width: 18,
-        child: Row(
-          children: <Widget>[
-            // Three dashes and the two gaps between them: 4 + 3 + 4 + 3 + 4.
-            for (var i = 0; i < 3; i++) ...<Widget>[
-              if (i > 0) const SizedBox(width: 3),
-              Container(width: 4, height: 1.6, color: context.colors.inkFaint),
-            ],
-          ],
-        ),
-      ),
+      mark,
+      const SizedBox(width: 8),
+      Text(label, style: context.type.bodySmall),
       const SizedBox(width: 6),
-      Text('$label ${pesosShort(amount)}', style: context.type.bodySmall),
+      Figures(
+        pesosShort(amount),
+        style: context.type.labelMedium?.copyWith(color: context.colors.ink),
+      ),
     ],
+  );
+}
+
+/// The reference line's key: three dashes and the two gaps between them.
+class _Dashes extends StatelessWidget {
+  const _Dashes();
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: 18,
+    child: Row(
+      children: <Widget>[
+        for (var i = 0; i < 3; i++) ...<Widget>[
+          if (i > 0) const SizedBox(width: 3),
+          Container(width: 4, height: 1.6, color: context.colors.inkFaint),
+        ],
+      ],
+    ),
   );
 }

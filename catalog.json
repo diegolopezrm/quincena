@@ -219,7 +219,7 @@
               "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicNumber"
             },
             "caption": {
-              "description": "What the limit is, such as \"lo de agosto\" or \"tu tope\".",
+              "description": "What the limit is, in a word or two, such as \"Agosto\" or \"Tu tope\".",
               "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicString"
             }
           },

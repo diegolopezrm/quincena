@@ -17,7 +17,8 @@ final CatalogItem budgetMeterCatalogItem = CatalogItem(
     description:
         'A bar showing how much of a limit one category has used, '
         'such as restaurants against what was spent last month. Turns '
-        'red past the limit. Use one per category being compared.',
+        'red past the limit. Use one per category being compared, '
+        'inside a Group.',
     properties: {
       'category': A2uiSchemas.stringReference(
         description: 'The category being measured.',
@@ -40,7 +41,9 @@ final CatalogItem budgetMeterCatalogItem = CatalogItem(
         description: 'The amount it is measured against.',
       ),
       'caption': A2uiSchemas.stringReference(
-        description: 'What the limit is, such as "lo de agosto" or "tu tope".',
+        description:
+            'What the limit is, in a word or two, such as "Agosto" or "Tu '
+            'tope".',
       ),
     },
     required: ['category', 'spent', 'limit'],
