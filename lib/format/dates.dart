@@ -1,25 +1,28 @@
 import 'package:intl/intl.dart';
 
 import '../data/clock.dart';
+import '../l10n/l10n.dart';
 
-final DateFormat _dayMonth = DateFormat("d 'de' MMMM", 'es');
-final DateFormat _dayShortMonth = DateFormat('d MMM', 'es');
-final DateFormat _monthYear = DateFormat("MMMM 'de' y", 'es');
-final DateFormat _monthShort = DateFormat('MMM', 'es');
+DateFormat _format(String es, String en) =>
+    englishFormatting ? DateFormat(en, 'en_US') : DateFormat(es, 'es');
 
-/// `15 de diciembre`.
-String dayMonth(DateTime date) => _dayMonth.format(date);
+/// `15 de diciembre` or `December 15`.
+String dayMonth(DateTime date) => _format("d 'de' MMMM", 'MMMM d').format(date);
 
-/// `19 sept`, without the trailing period `intl` puts on Spanish months.
+/// `19 sept` or `Sep 19`, without the period intl puts on Spanish months.
 String dayShortMonth(DateTime date) =>
-    _dayShortMonth.format(date).replaceAll('.', '');
+    _format('d MMM', 'MMM d').format(date).replaceAll('.', '');
 
-/// `mayo de 2027`.
-String monthYear(DateTime date) => _monthYear.format(date);
+/// `mayo de 2027` or `May 2027`.
+String monthYear(DateTime date) =>
+    _format("MMMM 'de' y", 'MMMM y').format(date);
 
-/// `sept`, for the axis of a chart.
+/// `septiembre` or `September`.
+String monthName(DateTime date) => _format('MMMM', 'MMMM').format(date);
+
+/// `sept` or `Sep`, for the axis of a chart.
 String monthShort(DateTime date) =>
-    _monthShort.format(date).replaceAll('.', '');
+    _format('MMM', 'MMM').format(date).replaceAll('.', '');
 
 /// Reads `2026-09-19` or `2026-09`, the forms the agent writes dates in.
 DateTime? parseDay(String? value) {
@@ -31,6 +34,15 @@ DateTime? parseDay(String? value) {
 /// How long ago [date] was, said the way a person would.
 String ago(DateTime date) {
   final int days = appToday.difference(date).inDays;
+  if (englishFormatting) {
+    if (days <= 0) return 'today';
+    if (days == 1) return 'yesterday';
+    if (days < 7) return '$days days ago';
+    if (days < 14) return 'a week ago';
+    if (days < 30) return '${days ~/ 7} weeks ago';
+    if (days < 60) return 'a month ago';
+    return '${days ~/ 30} months ago';
+  }
   if (days <= 0) return 'hoy';
   if (days == 1) return 'ayer';
   if (days < 7) return 'hace $days días';

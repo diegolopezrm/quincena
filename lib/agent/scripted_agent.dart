@@ -6,6 +6,7 @@ import '../data/clock.dart';
 import '../data/ledger.dart';
 import '../format/dates.dart';
 import '../format/money.dart';
+import '../l10n/l10n.dart';
 import 'understand.dart';
 
 /// One answer: the components of a surface and the data they bind to.
@@ -42,9 +43,18 @@ class AgentTurn {
 /// Every one comes from the [Ledger], so the answers agree with the statement
 /// and with each other, and recording a saved expense changes the next answer.
 class ScriptedAgent {
-  ScriptedAgent(this.ledger);
+  ScriptedAgent(this.ledger, {this.language = 'es'});
 
   final Ledger ledger;
+
+  /// The language the answers are written in: `es` or `en`.
+  final String language;
+
+  bool get _en => language == 'en';
+
+  /// The sentence in the agent's language, with both written side by side
+  /// wherever a sentence is composed, so neither drifts from the other.
+  String _t(String es, String en) => _en ? en : es;
 
   /// The questions the demo offers, in the order they tell the story.
   static const List<String> starters = <String>[
@@ -54,6 +64,21 @@ class ScriptedAgent {
     '¿Cómo voy contra agosto?',
     'Registra 45 mil en el mercado',
   ];
+
+  /// The same questions, in English.
+  static const List<String> startersEn = <String>[
+    'Where did my money go in September?',
+    'Can I afford Cartagena in December?',
+    'What subscriptions do I have?',
+    'How am I doing against August?',
+    'Log 45k at the grocery store',
+  ];
+
+  /// The questions in [language].
+  static List<String> startersFor(String language) =>
+      language == 'en' ? startersEn : starters;
+
+  List<String> get _questions => startersFor(language);
 
   /// Answers [prompt], or explains what the demo can answer.
   AgentTurn answer(String prompt) => switch (intentOf(prompt)) {
@@ -101,8 +126,12 @@ class ScriptedAgent {
     return m == 1 ? (y - 1, 12) : (y, m - 1);
   }
 
-  String _monthName(int year, int month) =>
-      monthYear(DateTime(year, month)).split(' ').first;
+  String _monthName(int year, int month) => monthName(DateTime(year, month));
+
+  String _label(Category c) => c.labelIn(language);
+
+  /// A category's name inside a sentence, where it is not capitalized.
+  String _inline(Category c) => _label(c).toLowerCase();
 
   AgentTurn _spending() {
     final (int y, int m) = _lastMonth;
@@ -179,69 +208,96 @@ class ScriptedAgent {
       _c('head', 'Headline', {
         'kicker': _capital(name),
         'title': tight
-            ? 'Gastaste casi todo lo que entró'
-            : 'Te sobraron ${pesos(income - spent)}',
-        'body':
-            'Salieron ${pesos(spent)} de los ${pesos(income)} que te pagaron'
-            '${savedForGoal > 0 ? ', y apartaste ${pesos(savedForGoal)} para Cartagena' : ''}.',
+            ? _t(
+                'Gastaste casi todo lo que entró',
+                'You spent almost everything that came in',
+              )
+            : _t(
+                'Te sobraron ${pesos(income - spent)}',
+                '${pesos(income - spent)} was left over',
+              ),
+        'body': _t(
+          'Salieron ${pesos(spent)} de los ${pesos(income)} que te pagaron'
+              '${savedForGoal > 0 ? ', y apartaste ${pesos(savedForGoal)} para Cartagena' : ''}.',
+          '${pesos(spent)} went out of the ${pesos(income)} you were paid'
+              '${savedForGoal > 0 ? ', and you put ${pesos(savedForGoal)} aside for Cartagena' : ''}.',
+        ),
       }),
       _c('tiles', 'Tiles', {
         'children': ['tile_spent', 'tile_change'],
       }),
       _c('tile_spent', 'StatTile', {
-        'label': 'Gastado en $name',
+        'label': _t('Gastado en $name', 'Spent in $name'),
         'value': _call('money', {'amount': _path('/spent')}),
-        'caption': 'de ${pesos(income)} que entraron',
+        'caption': _t(
+          'de ${pesos(income)} que entraron',
+          'of ${pesos(income)} that came in',
+        ),
         'tone': tight ? 'caution' : 'good',
       }),
       _c('tile_change', 'StatTile', {
-        'label': 'Contra $previous',
+        'label': _t('Contra $previous', 'Against $previous'),
         'value': _call('percentChange', {
           'current': _path('/spent'),
           'previous': _path('/previous'),
         }),
-        'caption': '${pesos(ledger.spentIn(py, pm))} en $previous',
+        'caption': _t(
+          '${pesos(ledger.spentIn(py, pm))} en $previous',
+          '${pesos(ledger.spentIn(py, pm))} in $previous',
+        ),
         'tone': spent > ledger.spentIn(py, pm) ? 'caution' : 'good',
       }),
       _c('donut', 'SpendingDonut', {
-        'title': 'Por categoría',
+        'title': _t('Por categoría', 'By category'),
         'slices': _path('/byCategory'),
         'centerLabel': name,
       }),
       if (up != null)
         _c('up', 'Insight', {
           'tone': up.value > 0.3 ? 'alert' : 'caution',
-          'title':
-              '${categoryLabel[up.key]} subió '
-              '${_change(ledger.spentOn(up.key, y, m), ledger.spentOn(up.key, py, pm))}',
+          'title': _t(
+            '${_label(up.key)} subió ${_change(ledger.spentOn(up.key, y, m), ledger.spentOn(up.key, py, pm))}',
+            '${_label(up.key)} went up ${_change(ledger.spentOn(up.key, y, m), ledger.spentOn(up.key, py, pm))}',
+          ),
           'body': up.key == Category.restaurants && biggestMeal != null
-              ? 'Fueron ${pesos(ledger.spentOn(up.key, y, m))} contra '
-                    '${pesos(ledger.spentOn(up.key, py, pm))} en $previous: la cena del '
-                    '${biggestMeal.date.day} en ${biggestMeal.merchant} y '
-                    '${lunches - lunchesBefore} almuerzos más que el mes pasado.'
-              : 'Fueron ${pesos(ledger.spentOn(up.key, y, m))} contra '
-                    '${pesos(ledger.spentOn(up.key, py, pm))} en $previous.',
-          'actionLabel': 'Ver esos pagos',
+              ? _t(
+                  'Fueron ${pesos(ledger.spentOn(up.key, y, m))} contra '
+                      '${pesos(ledger.spentOn(up.key, py, pm))} en $previous: la cena del '
+                      '${biggestMeal.date.day} en ${biggestMeal.merchant} y '
+                      '${lunches - lunchesBefore} almuerzos más que el mes pasado.',
+                  'It came to ${pesos(ledger.spentOn(up.key, y, m))} against '
+                      '${pesos(ledger.spentOn(up.key, py, pm))} in $previous: dinner on the '
+                      '${_ordinal(biggestMeal.date.day)} at ${biggestMeal.merchant} and '
+                      '${lunches - lunchesBefore} more lunches than the month before.',
+                )
+              : _t(
+                  'Fueron ${pesos(ledger.spentOn(up.key, y, m))} contra '
+                      '${pesos(ledger.spentOn(up.key, py, pm))} en $previous.',
+                  'It came to ${pesos(ledger.spentOn(up.key, y, m))} against '
+                      '${pesos(ledger.spentOn(up.key, py, pm))} in $previous.',
+                ),
+          'actionLabel': _t('Ver esos pagos', 'See those payments'),
           'onAction': _event('show_category', {'category': up.key.name}),
         }),
       if (down != null && down.value < 0)
         _c('down', 'Insight', {
           'tone': 'good',
-          'title':
-              '${categoryLabel[down.key]} bajó '
-              '${_change(ledger.spentOn(down.key, y, m), ledger.spentOn(down.key, py, pm))}',
-          'body':
-              'Gastaste ${pesos(ledger.spentOn(down.key, y, m))}, contra '
-              '${pesos(ledger.spentOn(down.key, py, pm))} en $previous.',
+          'title': _t(
+            '${_label(down.key)} bajó ${_change(ledger.spentOn(down.key, y, m), ledger.spentOn(down.key, py, pm))}',
+            '${_label(down.key)} went down ${_change(ledger.spentOn(down.key, y, m), ledger.spentOn(down.key, py, pm))}',
+          ),
+          'body': _t(
+            'Gastaste ${pesos(ledger.spentOn(down.key, y, m))}, contra '
+                '${pesos(ledger.spentOn(down.key, py, pm))} en $previous.',
+            'You spent ${pesos(ledger.spentOn(down.key, y, m))}, against '
+                '${pesos(ledger.spentOn(down.key, py, pm))} in $previous.',
+          ),
         }),
       _c('largest', 'MovementList', {
-        'title': 'Los cinco pagos más grandes',
+        'title': _t('Los cinco pagos más grandes', 'The five largest payments'),
         'items': _path('/largest'),
       }),
-      ..._suggestions(<String>[
-        '¿Me alcanza para ir a Cartagena en diciembre?',
-        '¿Cómo voy contra agosto?',
-      ]),
+      ..._suggestions(<String>[_questions[1], _questions[3]]),
     ];
 
     return AgentTurn(
@@ -272,7 +328,10 @@ class ScriptedAgent {
         ledger.spentOn(Category.restaurants, y, m) -
         ledger.spentOn(Category.restaurants, py, pm);
     final String deadline = _iso(goal.deadline);
-    final String deadlineLabel = 'el ${dayMonth(goal.deadline)}';
+    final String deadlineLabel = _t(
+      'el ${dayMonth(goal.deadline)}',
+      dayMonth(goal.deadline),
+    );
 
     Map<String, Object?> goalArgs([bool withDeadline = false]) => {
       'target': _path('/goal/target'),
@@ -287,12 +346,19 @@ class ScriptedAgent {
           'children': ['head', 'planner', 'tiles', 'room', 'save', 'next'],
         }),
         _c('head', 'Headline', {
-          'kicker': 'Tu meta',
-          'title': 'A este ritmo llegas después del viaje',
-          'body':
-              'Llevas ${pesos(goal.saved)} de ${pesos(goal.target)}. Con '
-              '${pesos(goal.monthly)} al mes no alcanzas para $deadlineLabel. '
-              'Mueve el control para ver cuánto necesitas.',
+          'kicker': _t('Tu meta', 'Your goal'),
+          'title': _t(
+            'A este ritmo llegas después del viaje',
+            'At this pace you get there after the trip',
+          ),
+          'body': _t(
+            'Llevas ${pesos(goal.saved)} de ${pesos(goal.target)}. Con '
+                '${pesos(goal.monthly)} al mes no alcanzas para $deadlineLabel. '
+                'Mueve el control para ver cuánto necesitas.',
+            'You have ${pesos(goal.saved)} of ${pesos(goal.target)}. At '
+                '${pesos(goal.monthly)} a month you will not make it by $deadlineLabel. '
+                'Move the slider to see what it takes.',
+          ),
         }),
         _c('planner', 'GoalPlanner', {
           'name': goal.name,
@@ -310,7 +376,7 @@ class ScriptedAgent {
           'children': ['need', 'free'],
         }),
         _c('need', 'StatTile', {
-          'label': 'Necesitas al mes',
+          'label': _t('Necesitas al mes', 'You need a month'),
           'value': _call('money', {
             'amount': _call('monthlyNeeded', {
               'target': _path('/goal/target'),
@@ -318,31 +384,47 @@ class ScriptedAgent {
               'deadline': _path('/goal/deadline'),
             }),
           }),
-          'caption': 'para llegar $deadlineLabel',
+          'caption': _t(
+            'para llegar $deadlineLabel',
+            'to get there by $deadlineLabel',
+          ),
         }),
         _c('free', 'StatTile', {
-          'label': 'Libre hasta el ${ledger.nextPayday.day}',
+          'label': _t(
+            'Libre hasta el ${ledger.nextPayday.day}',
+            'Free until the ${_ordinal(ledger.nextPayday.day)}',
+          ),
           'value': _call('money', {'amount': _path('/free')}),
-          'caption': 'después de arriendo y pagos fijos',
+          'caption': _t(
+            'después de arriendo y pagos fijos',
+            'after rent and fixed bills',
+          ),
         }),
         _c('room', 'Insight', {
           'tone': 'good',
-          'title': 'Hay de dónde sacar ${pesos(stale + restaurantsBack)}',
-          'body':
-              'Dos suscripciones llevan más de un mes sin uso '
-              '(${pesos(stale)}), y si restaurantes vuelve a lo de agosto son '
-              '${pesos(restaurantsBack)} más.',
-          'actionLabel': 'Revisar suscripciones',
-          'onAction': _event('ask', {'question': '¿Qué suscripciones tengo?'}),
+          'title': _t(
+            'Hay de dónde sacar ${pesos(stale + restaurantsBack)}',
+            'There is ${pesos(stale + restaurantsBack)} to find',
+          ),
+          'body': _t(
+            'Dos suscripciones llevan más de un mes sin uso '
+                '(${pesos(stale)}), y si restaurantes vuelve a lo de agosto son '
+                '${pesos(restaurantsBack)} más.',
+            'Two subscriptions have gone unused for over a month '
+                '(${pesos(stale)}), and eating out back at August\'s level is '
+                '${pesos(restaurantsBack)} more.',
+          ),
+          'actionLabel': _t('Revisar suscripciones', 'Review subscriptions'),
+          'onAction': _event('ask', {'question': _questions[2]}),
         }),
         _c('save', 'ActionButton', {
-          'label': 'Apartar esto cada mes',
+          'label': _t('Apartar esto cada mes', 'Set this aside every month'),
           'emphasis': 'primary',
           'onPressed': _event('save_goal_plan', {
             'monthly': _path('/goal/monthly'),
           }),
         }),
-        ..._suggestions(<String>['¿Qué suscripciones tengo?']),
+        ..._suggestions(<String>[_questions[2]]),
       ],
       data: {
         'goal': {
@@ -357,25 +439,37 @@ class ScriptedAgent {
   }
 
   AgentTurn _record(int amount, Category category) {
-    final String label = categoryLabel[category]!.toLowerCase();
+    final String label = _inline(category);
     return AgentTurn(
       components: <JsonMap>[
         _c('root', 'Answer', {
           'children': ['head', 'form'],
         }),
         _c('head', 'Headline', {
-          'kicker': 'Nuevo gasto',
+          'kicker': _t('Nuevo gasto', 'New expense'),
           'title': amount > 0
-              ? 'Anoto ${pesos(amount)} en $label'
-              : 'Anoto un gasto en $label',
-          'body': 'Corrige lo que haga falta antes de guardar.',
+              ? _t(
+                  'Anoto ${pesos(amount)} en $label',
+                  'Logging ${pesos(amount)} under $label',
+                )
+              : _t(
+                  'Anoto un gasto en $label',
+                  'Logging an expense under $label',
+                ),
+          'body': _t(
+            'Corrige lo que haga falta antes de guardar.',
+            'Fix anything that is off before saving.',
+          ),
         }),
         _c('form', 'Group', {
-          'title': 'Hoy, ${dayMonth(appToday)}',
+          'title': _t(
+            'Hoy, ${dayMonth(appToday)}',
+            'Today, ${dayMonth(appToday)}',
+          ),
           'children': ['amount', 'category', 'note', 'save'],
         }),
         _c('amount', 'MoneyField', {
-          'label': 'Monto',
+          'label': _t('Monto', 'Amount'),
           'value': _path('/draft/amount'),
           'checks': [
             {
@@ -383,28 +477,37 @@ class ScriptedAgent {
                 'value': _path('/draft/amount'),
                 'min': 1,
               }),
-              'message': 'Escribe un monto mayor que cero.',
+              'message': _t(
+                'Escribe un monto mayor que cero.',
+                'Enter an amount above zero.',
+              ),
             },
             {
               'condition': _call('numeric', {
                 'value': _path('/draft/amount'),
                 'max': ledger.balance,
               }),
-              'message': 'Es más de lo que hay en la cuenta.',
+              'message': _t(
+                'Es más de lo que hay en la cuenta.',
+                'That is more than the account holds.',
+              ),
             },
           ],
         }),
         _c('category', 'CategoryChoice', {
-          'label': 'Categoría',
+          'label': _t('Categoría', 'Category'),
           'value': _path('/draft/category'),
         }),
         _c('note', 'TextEntry', {
-          'label': 'Dónde',
+          'label': _t('Dónde', 'Where'),
           'value': _path('/draft/note'),
-          'hint': 'Opcional, como "Tienda Don Pacho"',
+          'hint': _t(
+            'Opcional, como "Tienda Don Pacho"',
+            'Optional, such as "Tienda Don Pacho"',
+          ),
         }),
         _c('save', 'ActionButton', {
-          'label': 'Guardar gasto',
+          'label': _t('Guardar gasto', 'Save expense'),
           'emphasis': 'primary',
           'onPressed': _event('save_expense', {
             'amount': _path('/draft/amount'),
@@ -433,7 +536,7 @@ class ScriptedAgent {
       Movement(
         id: 'manual-${ledger.movements.length}',
         date: appToday,
-        merchant: note.isEmpty ? categoryLabel[category]! : note,
+        merchant: note.isEmpty ? _label(category) : note,
         amount: amount.round(),
         category: category,
       ),
@@ -446,12 +549,17 @@ class ScriptedAgent {
           'children': ['head', 'meter', 'next'],
         }),
         _c('head', 'Headline', {
-          'kicker': 'Guardado',
-          'title':
-              'Listo: ${pesos(amount)} en ${categoryLabel[category]!.toLowerCase()}',
-          'body':
-              'Te quedan ${pesos(ledger.freeUntilPayday)} libres hasta el '
-              '${dayMonth(ledger.nextPayday)}.',
+          'kicker': _t('Guardado', 'Saved'),
+          'title': _t(
+            'Listo: ${pesos(amount)} en ${_inline(category)}',
+            'Done: ${pesos(amount)} under ${_inline(category)}',
+          ),
+          'body': _t(
+            'Te quedan ${pesos(ledger.freeUntilPayday)} libres hasta el '
+                '${dayMonth(ledger.nextPayday)}.',
+            'You have ${pesos(ledger.freeUntilPayday)} free until '
+                '${dayMonth(ledger.nextPayday)}.',
+          ),
         }),
         _c('meter', 'BudgetMeter', {
           'category': category.name,
@@ -459,9 +567,7 @@ class ScriptedAgent {
           'limit': ledger.spentOn(category, y, m),
           'caption': _capital(_monthName(y, m)),
         }),
-        ..._suggestions(<String>[
-          '¿Me alcanza para ir a Cartagena en diciembre?',
-        ]),
+        ..._suggestions(<String>[_questions[1]]),
       ],
     );
   }
@@ -477,13 +583,19 @@ class ScriptedAgent {
           'children': ['head', 'next'],
         }),
         _c('head', 'Headline', {
-          'kicker': 'Meta ${goal.name}',
-          'title': 'Cada día 16 aparto ${pesos(monthly)}',
-          'body':
-              'Empiezo el ${dayMonth(DateTime(_year, _month, 16))}. Si un mes '
-              'no alcanza, te aviso antes de mover la plata.',
+          'kicker': _t('Meta ${goal.name}', '${goal.name} goal'),
+          'title': _t(
+            'Cada día 16 aparto ${pesos(monthly)}',
+            'I will set aside ${pesos(monthly)} every 16th',
+          ),
+          'body': _t(
+            'Empiezo el ${dayMonth(DateTime(_year, _month, 16))}. Si un mes '
+                'no alcanza, te aviso antes de mover la plata.',
+            'Starting ${dayMonth(DateTime(_year, _month, 16))}. If a month '
+                'falls short, I will tell you before moving any money.',
+          ),
         }),
-        ..._suggestions(<String>['¿Qué suscripciones tengo?']),
+        ..._suggestions(<String>[_questions[2]]),
       ],
     );
   }
@@ -512,17 +624,24 @@ class ScriptedAgent {
           ],
         }),
         _c('head', 'Headline', {
-          'kicker': 'Suscripciones',
-          'title':
-              'Pagas ${pesos(ledger.subscriptionsMonthly)} al mes en suscripciones',
-          'body':
-              'Son ${_count(subs.length)}. ${_capital(_count(stale.length))} '
-              '${stale.length == 1 ? 'lleva' : 'llevan'} más de un mes sin '
-              'usarse; ${stale.length == 1 ? 'la dejé apagada' : 'las dejé apagadas'} '
-              'para que veas lo que ahorras.',
+          'kicker': _t('Suscripciones', 'Subscriptions'),
+          'title': _t(
+            'Pagas ${pesos(ledger.subscriptionsMonthly)} al mes en suscripciones',
+            'You pay ${pesos(ledger.subscriptionsMonthly)} a month in subscriptions',
+          ),
+          'body': _t(
+            'Son ${_count(subs.length)}. ${_capital(_count(stale.length))} '
+                '${stale.length == 1 ? 'lleva' : 'llevan'} más de un mes sin '
+                'usarse; ${stale.length == 1 ? 'la dejé apagada' : 'las dejé apagadas'} '
+                'para que veas lo que ahorras.',
+            'There are ${_count(subs.length)}. ${_capital(_count(stale.length))} '
+                '${stale.length == 1 ? 'has' : 'have'} gone unused for over a '
+                'month; I switched ${stale.length == 1 ? 'it' : 'them'} off so '
+                'you can see what you would save.',
+          ),
         }),
         _c('list', 'SubscriptionList', {
-          'title': 'Tus suscripciones',
+          'title': _t('Tus suscripciones', 'Your subscriptions'),
           'rows': {'componentId': 'row', 'path': '/subscriptions'},
           'savings': _call('money', {
             'amount': _call('savingsIfCancelled', {
@@ -539,22 +658,25 @@ class ScriptedAgent {
         if (newest != null)
           _c('newest', 'Insight', {
             'tone': 'caution',
-            'title':
-                '${newest.name} empezó en ${_monthName(newest.since.year, newest.since.month)}',
-            'body':
-                'Es tu segundo servicio de video, y a Cineplus le sacaste '
-                'más uso este mes.',
+            'title': _t(
+              '${newest.name} empezó en ${_monthName(newest.since.year, newest.since.month)}',
+              '${newest.name} started in ${_monthName(newest.since.year, newest.since.month)}',
+            ),
+            'body': _t(
+              'Es tu segundo servicio de video, y a Cineplus le sacaste '
+                  'más uso este mes.',
+              'It is your second video service, and you used Cineplus more '
+                  'this month.',
+            ),
           }),
         _c('cancel', 'ActionButton', {
-          'label': 'Cancelar las apagadas',
+          'label': _t('Cancelar las apagadas', 'Cancel the ones switched off'),
           'emphasis': 'secondary',
           'onPressed': _event('cancel_subscriptions', {
             'items': _path('/subscriptions'),
           }),
         }),
-        ..._suggestions(<String>[
-          '¿Me alcanza para ir a Cartagena en diciembre?',
-        ]),
+        ..._suggestions(<String>[_questions[1]]),
       ],
       data: {
         'subscriptions': [
@@ -593,18 +715,23 @@ class ScriptedAgent {
           'children': ['head', 'next'],
         }),
         _c('head', 'Headline', {
-          'kicker': 'Suscripciones',
+          'kicker': _t('Suscripciones', 'Subscriptions'),
           'title': names.isEmpty
-              ? 'No cancelé ninguna'
-              : 'Cancelo ${names.join(' y ')}',
+              ? _t('No cancelé ninguna', 'Nothing was cancelled')
+              : _t(
+                  'Cancelo ${names.join(' y ')}',
+                  'Cancelling ${names.join(' and ')}',
+                ),
           'body': names.isEmpty
-              ? 'Todas siguen activas.'
-              : 'Te ahorras ${pesos(saved)} al mes desde el próximo cobro. '
-                    'En la demo no se cancela nada de verdad.',
+              ? _t('Todas siguen activas.', 'All of them are still active.')
+              : _t(
+                  'Te ahorras ${pesos(saved)} al mes desde el próximo cobro. '
+                      'En la demo no se cancela nada de verdad.',
+                  'You save ${pesos(saved)} a month from the next charge. '
+                      'Nothing is really cancelled in the demo.',
+                ),
         }),
-        ..._suggestions(<String>[
-          '¿Me alcanza para ir a Cartagena en diciembre?',
-        ]),
+        ..._suggestions(<String>[_questions[1]]),
       ],
     );
   }
@@ -634,12 +761,23 @@ class ScriptedAgent {
           'children': ['head', 'tiles', 'bars', 'moved', 'next'],
         }),
         _c('head', 'Headline', {
-          'kicker': '${_capital(name)} contra $previous',
+          'kicker': _t(
+            '${_capital(name)} contra $previous',
+            '$name against $previous',
+          ),
           'title': spent > before
-              ? 'Gastaste ${pesos(spent - before)} más que en $previous'
-              : 'Gastaste ${pesos(before - spent)} menos que en $previous',
-          'body':
-              'El salto está en ${top.where((t) => t.$2 > t.$3).map((t) => categoryLabel[t.$1]!.toLowerCase()).join(' y ')}.',
+              ? _t(
+                  'Gastaste ${pesos(spent - before)} más que en $previous',
+                  'You spent ${pesos(spent - before)} more than in $previous',
+                )
+              : _t(
+                  'Gastaste ${pesos(before - spent)} menos que en $previous',
+                  'You spent ${pesos(before - spent)} less than in $previous',
+                ),
+          'body': _t(
+            'El salto está en ${top.where((t) => t.$2 > t.$3).map((t) => _inline(t.$1)).join(' y ')}.',
+            'The jump is in ${top.where((t) => t.$2 > t.$3).map((t) => _inline(t.$1)).join(' and ')}.',
+          ),
         }),
         _c('tiles', 'Tiles', {
           'children': ['now', 'then'],
@@ -658,13 +796,13 @@ class ScriptedAgent {
           'value': _call('money', {'amount': before}),
         }),
         _c('bars', 'MonthBars', {
-          'title': 'Últimos seis meses',
+          'title': _t('Últimos seis meses', 'The last six months'),
           'months': _path('/months'),
           'reference': ledger.incomeIn(y, m),
-          'referenceLabel': 'Ingresos',
+          'referenceLabel': _t('Ingresos', 'Income'),
         }),
         _c('moved', 'Group', {
-          'title': 'Lo que más cambió',
+          'title': _t('Lo que más cambió', 'What changed most'),
           'children': [for (var i = 0; i < top.length; i++) 'meter$i'],
         }),
         for (var i = 0; i < top.length; i++)
@@ -674,7 +812,7 @@ class ScriptedAgent {
             'limit': top[i].$3,
             'caption': _capital(previous),
           }),
-        ..._suggestions(<String>['¿En qué se me fue la plata en septiembre?']),
+        ..._suggestions(<String>[_questions[0]]),
       ],
       data: {
         'months': [
@@ -703,16 +841,22 @@ class ScriptedAgent {
           'children': ['head', 'list'],
         }),
         _c('head', 'Headline', {
-          'kicker': '${categoryLabel[category]} · ${_monthName(y, m)}',
-          'title':
-              '${all.length} pagos por ${pesos(ledger.spentOn(category, y, m))}',
+          'kicker': '${_label(category)} · ${_monthName(y, m)}',
+          'title': _t(
+            '${all.length} pagos por ${pesos(ledger.spentOn(category, y, m))}',
+            '${all.length} payments for ${pesos(ledger.spentOn(category, y, m))}',
+          ),
           'body': sorted.isEmpty
               ? null
-              : 'El más grande fue ${sorted.first.merchant}, el '
-                    '${dayMonth(sorted.first.date)}.',
+              : _t(
+                  'El más grande fue ${sorted.first.merchant}, el '
+                      '${dayMonth(sorted.first.date)}.',
+                  'The largest was ${sorted.first.merchant}, on '
+                      '${dayMonth(sorted.first.date)}.',
+                ),
         }),
         _c('list', 'MovementList', {
-          'title': 'Los diez más grandes',
+          'title': _t('Los diez más grandes', 'The ten largest'),
           'items': _path('/items'),
         }),
       ],
@@ -728,13 +872,19 @@ class ScriptedAgent {
         'children': ['head', 'next'],
       }),
       _c('head', 'Headline', {
-        'kicker': 'Modo demo',
-        'title': 'En la demo respondo estas preguntas',
-        'body':
-            'Con un modelo conectado puedes preguntar lo que quieras. Sin él, '
-            'prueba una de estas.',
+        'kicker': _t('Modo demo', 'Demo mode'),
+        'title': _t(
+          'En la demo respondo estas preguntas',
+          'In the demo I answer these questions',
+        ),
+        'body': _t(
+          'Con un modelo conectado puedes preguntar lo que quieras. Sin él, '
+              'prueba una de estas.',
+          'With a model connected you can ask anything. Without one, try '
+              'one of these.',
+        ),
       }),
-      ..._suggestions(starters),
+      ..._suggestions(_questions),
     ],
   );
 
@@ -782,11 +932,40 @@ String _iso(DateTime d) =>
 ///
 /// Always against the earlier month. A fall from 700 to 616 is 12 %, not the
 /// 14 % that dividing by the later month gives.
-String _change(int now, int before) =>
-    before <= 0 ? '' : '${((now - before).abs() / before * 100).round()} %';
+String _change(int now, int before) => before <= 0
+    ? ''
+    : '${((now - before).abs() / before * 100).round()}'
+          '${englishFormatting ? '' : '\u00a0'}%';
+
+/// The 1st, the 2nd, the 19th.
+String _ordinal(int n) {
+  if (n % 100 >= 11 && n % 100 <= 13) return '${n}th';
+  return switch (n % 10) {
+    1 => '${n}st',
+    2 => '${n}nd',
+    3 => '${n}rd',
+    _ => '${n}th',
+  };
+}
 
 /// Small counts in words, as they are written in a sentence.
-String _count(int n) => switch (n) {
+String _count(int n) => englishFormatting ? _countEn(n) : _countEs(n);
+
+String _countEn(int n) => switch (n) {
+  0 => 'none',
+  1 => 'one',
+  2 => 'two',
+  3 => 'three',
+  4 => 'four',
+  5 => 'five',
+  6 => 'six',
+  7 => 'seven',
+  8 => 'eight',
+  9 => 'nine',
+  _ => '$n',
+};
+
+String _countEs(int n) => switch (n) {
   0 => 'ninguna',
   1 => 'una',
   2 => 'dos',

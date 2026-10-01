@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'l10n/l10n.dart';
 import 'session/session.dart';
 import 'theme/theme.dart';
 import 'ui/home_page.dart';
@@ -11,6 +12,16 @@ class AppSettings extends ChangeNotifier {
   set themeMode(ThemeMode value) {
     if (value == _themeMode) return;
     _themeMode = value;
+    notifyListeners();
+  }
+
+  Locale? _locale;
+
+  /// The interface language the person chose, or null to follow the device.
+  Locale? get locale => _locale;
+  set locale(Locale? value) {
+    if (value == _locale) return;
+    _locale = value;
     notifyListeners();
   }
 
@@ -68,6 +79,17 @@ class _QuincenaAppState extends State<QuincenaApp> {
         theme: quincenaTheme(Brightness.light),
         darkTheme: quincenaTheme(Brightness.dark),
         themeMode: _settings.themeMode,
+        locale: _settings.locale,
+        supportedLocales: appLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        // Spanish when the device speaks neither language: the app is
+        // Colombian before it is anything else.
+        localeResolutionCallback:
+            (Locale? device, Iterable<Locale> supported) =>
+                supported.firstWhere(
+                  (Locale l) => l.languageCode == device?.languageCode,
+                  orElse: () => const Locale('es'),
+                ),
         home: HomePage(session: _session, settings: _settings),
       ),
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:genui_gen/tracing.dart';
 
 import '../agent/catalog.dart';
+import '../l10n/l10n.dart';
 import '../session/recordings.dart';
 import '../theme/theme.dart';
 import '../theme/tokens.dart';
@@ -20,7 +21,7 @@ class RecordedPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: context.colors.canvas,
         surfaceTintColor: Colors.transparent,
-        title: Text('Lo que respondió Gemini', style: context.type.titleLarge),
+        title: Text(context.l10n.recordedTitle, style: context.type.titleLarge),
       ),
       body: Center(
         child: ConstrainedBox(
@@ -28,13 +29,7 @@ class RecordedPage extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
             children: <Widget>[
-              Text(
-                'Estas sesiones no son del guion de la demo. Gemini recibió '
-                'cada pregunta, consultó la cuenta con herramientas y compuso '
-                'la pantalla con el catálogo de la app. genui_gen grabó todo '
-                'lo que mandó, y aquí se reproduce paso a paso, sin red.',
-                style: context.type.bodyMedium,
-              ),
+              Text(context.l10n.recordedIntro, style: context.type.bodyMedium),
               const SizedBox(height: 20),
               for (final Recording recording in recordings)
                 Padding(
@@ -81,7 +76,7 @@ class _Entry extends StatelessWidget {
                     Text(recording.question, style: context.type.titleSmall),
                     const SizedBox(height: 4),
                     Text(
-                      '${recording.model} · $steps pasos'
+                      '${context.l10n.recordedMeta(recording.model, steps)}'
                       '${recording.seconds == null ? '' : ' · ${recording.seconds!.toStringAsFixed(1)} s'}',
                       style: context.type.bodySmall,
                     ),
@@ -121,20 +116,21 @@ class _ReplayPageState extends State<ReplayPage> {
 
   /// What the step the replay stopped at was, in a few words.
   String _describe(int position) {
-    if (position == 0) return 'Antes de la respuesta';
+    final AppLocalizations t = context.l10n;
+    if (position == 0) return t.stepBefore;
     final GenUiTraceStep step = widget.recording.trace.steps[position - 1];
     return switch (step) {
       GenUiMessageStep(:final message) => switch (message.keys
           .where((String k) => k != 'version')
           .firstOrNull) {
-        'createSurface' => 'Crea la superficie',
-        'updateComponents' => 'Manda los componentes',
-        'updateDataModel' => 'Manda los datos',
+        'createSurface' => t.stepCreate,
+        'updateComponents' => t.stepComponents,
+        'updateDataModel' => t.stepData,
         final String other => other,
-        null => 'Mensaje',
+        null => t.stepMessage,
       },
-      GenUiDataStep() => 'Cambian los datos',
-      GenUiEventStep() => 'La app le responde al agente',
+      GenUiDataStep() => t.stepDataChanged,
+      GenUiEventStep() => t.stepEvent,
     };
   }
 
@@ -194,7 +190,7 @@ class _ReplayPageState extends State<ReplayPage> {
                           ),
                         ),
                         Text(
-                          '${_player.position} de $length',
+                          context.l10n.stepOf(_player.position, length),
                           style: context.type.bodySmall?.copyWith(
                             fontFeatures: tabular,
                           ),
@@ -207,7 +203,7 @@ class _ReplayPageState extends State<ReplayPage> {
                       divisions: length < 1 ? 1 : length,
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       semanticFormatterCallback: (double value) =>
-                          'Paso ${value.round()} de $length',
+                          context.l10n.stepSemantics(value.round(), length),
                       onChanged: (double value) =>
                           setState(() => _player.seek(value.round())),
                     ),

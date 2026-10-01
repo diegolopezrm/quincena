@@ -1,7 +1,9 @@
+import '../l10n/l10n.dart';
+
 /// Where a payment went.
 ///
 /// The names are what the model reads and writes, so they are English and
-/// stable; what the person sees comes from `categoryLabel`.
+/// stable; what the person sees comes from [CategoryName.label].
 enum Category {
   housing,
   groceries,
@@ -16,8 +18,7 @@ enum Category {
   other,
 }
 
-/// What a person calls each category, in Spanish.
-const Map<Category, String> categoryLabel = <Category, String>{
+const Map<Category, String> _spanish = <Category, String>{
   Category.housing: 'Arriendo',
   Category.groceries: 'Mercado',
   Category.restaurants: 'Restaurantes',
@@ -30,3 +31,26 @@ const Map<Category, String> categoryLabel = <Category, String>{
   Category.debt: 'Créditos',
   Category.other: 'Otros',
 };
+
+const Map<Category, String> _english = <Category, String>{
+  Category.housing: 'Rent',
+  Category.groceries: 'Groceries',
+  Category.restaurants: 'Eating out',
+  Category.transport: 'Transport',
+  Category.utilities: 'Bills',
+  Category.subscriptions: 'Subscriptions',
+  Category.health: 'Health',
+  Category.shopping: 'Shopping',
+  Category.leisure: 'Going out',
+  Category.debt: 'Loans',
+  Category.other: 'Other',
+};
+
+extension CategoryName on Category {
+  /// What a person calls the category, in the interface language.
+  String get label => labelIn(englishFormatting ? 'en' : 'es');
+
+  /// What a person calls the category in [languageCode].
+  String labelIn(String languageCode) =>
+      (languageCode == 'en' ? _english : _spanish)[this]!;
+}

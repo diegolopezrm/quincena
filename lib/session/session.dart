@@ -5,6 +5,7 @@ import 'package:a2ui_core/a2ui_core.dart' as core;
 import 'package:flutter/foundation.dart';
 import 'package:genui/genui.dart';
 import 'package:genui_gen/tracing.dart';
+import 'package:intl/intl.dart';
 
 import '../agent/catalog.dart';
 import '../agent/model_client.dart';
@@ -14,9 +15,16 @@ import '../agent/source.dart';
 import '../agent/tools.dart';
 import '../data/ledger.dart';
 import '../data/seed.dart';
+import '../l10n/l10n.dart';
 
 /// Who answers: the script the demo ships with, or a model.
 enum AgentMode { demo, live }
+
+/// What the person did on a surface, shown in place of a question.
+enum TurnNote { savedExpense, choseMonthly, askedCancel, askedPayments, other }
+
+/// Why an answer did not arrive.
+enum AnswerProblem { key, busy, other }
 
 /// One exchange: what the person asked, and what answered it.
 class Turn {
@@ -25,7 +33,7 @@ class Turn {
   /// What the person typed or picked. Null when the turn started from
   /// something they did on a surface, which [note] describes instead.
   final String? question;
-  final String? note;
+  final TurnNote? note;
 
   /// The surfaces the answer created, in order. A model may create more than
   /// one, and the first arrives before the answer is finished.
@@ -34,8 +42,8 @@ class Turn {
   /// What the agent wrote outside its surfaces.
   final StringBuffer text = StringBuffer();
 
-  /// Set when the answer failed, with what to tell the person.
-  String? error;
+  /// Set when the answer failed.
+  AnswerProblem? error;
 }
 
 /// A conversation with the agent about the demo account.
@@ -50,11 +58,29 @@ class Session extends ChangeNotifier {
     this.errorWindow = const Duration(milliseconds: 300),
     AgentMode mode = AgentMode.demo,
     String? apiKey,
+    String language = 'es',
     this.client,
   }) {
     _mode = mode;
     _apiKey = apiKey;
+    _language = language;
+    Intl.defaultLocale = intlLocaleFor(language);
     _start();
+  }
+
+  late String _language;
+
+  /// The language answers are written in: `es` or `en`.
+  String get language => _language;
+
+  /// Switches the language of the answers and of every amount and date
+  /// formatted after it, and starts over, since a conversation half in one
+  /// language and half in the other helps no one.
+  set language(String value) {
+    if (value == _language) return;
+    _language = value;
+    Intl.defaultLocale = intlLocaleFor(value);
+    restart();
   }
 
   /// How long the scripted agent takes to answer. A pause the length of a
@@ -111,7 +137,15 @@ class Session extends ChangeNotifier {
     recorder = GenUiTraceRecorder.attach(
       controller,
       catalogId: quincenaCatalog.catalogId,
-      notes: <String, Object?>{'app': 'quincena', 'agent': _mode.name},
+      // What the person types into a form never leaves in a copied session.
+      // The scripted agent keeps its form at /draft, and models have been
+      // seen to pick /form; both are covered.
+      redact: const <String>['/draft/note', '/form/note'],
+      notes: <String, Object?>{
+        'app': 'quincena',
+        'agent': _mode.name,
+        'language': _language,
+      },
     );
     final sink = AnswerSink(
       message: _onMessage,
@@ -122,13 +156,19 @@ class Session extends ChangeNotifier {
           controller.reportError(error, stack),
     );
     _source = switch (_mode) {
-      AgentMode.demo => ScriptedSource(ledger, sink: sink, thinking: thinking),
+      AgentMode.demo => ScriptedSource(
+        ledger,
+        sink: sink,
+        thinking: thinking,
+        language: _language,
+      ),
       AgentMode.live => ModelSource(
         client:
             client ??
             GeminiClient(apiKey: _apiKey!, tools: ledgerTools(ledger)),
         ledger: ledger,
         sink: sink,
+        language: _language,
       ),
     };
     _submissions = controller.onSubmit.listen(_onSubmit);
@@ -241,28 +281,27 @@ class Session extends ChangeNotifier {
     notifyListeners();
   }
 
-  static String _describe(String action) => switch (action) {
-    'save_expense' => 'Guardaste el gasto',
-    'save_goal_plan' => 'Elegiste cuánto apartar',
-    'cancel_subscriptions' => 'Pediste cancelar suscripciones',
-    'show_category' => 'Pediste ver los pagos',
-    _ => 'Tocaste una acción',
+  static TurnNote _describe(String action) => switch (action) {
+    'save_expense' => TurnNote.savedExpense,
+    'save_goal_plan' => TurnNote.choseMonthly,
+    'cancel_subscriptions' => TurnNote.askedCancel,
+    'show_category' => TurnNote.askedPayments,
+    _ => TurnNote.other,
   };
 
-  /// What to tell the person when the model could not answer.
-  static String _explain(Object error) {
+  /// Why the model could not answer, as far as the error says.
+  static AnswerProblem _explain(Object error) {
     final String text = '$error';
     if (text.contains('API key') ||
         text.contains('PERMISSION_DENIED') ||
         text.contains('401') ||
         text.contains('403')) {
-      return 'La key no funcionó. Revísala en Ajustes.';
+      return AnswerProblem.key;
     }
     if (text.contains('429') || text.contains('RESOURCE_EXHAUSTED')) {
-      return 'El modelo está recibiendo demasiadas preguntas. Prueba en un '
-          'minuto.';
+      return AnswerProblem.busy;
     }
-    return 'No pude responder esta vez. Prueba de nuevo.';
+    return AnswerProblem.other;
   }
 
   /// Switches who answers, and starts over with the untouched account.

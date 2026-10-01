@@ -6,6 +6,7 @@ import '../theme/theme.dart';
 import '../theme/tokens.dart';
 import '../ui/kit.dart';
 import '../ui/icons.dart';
+import '../l10n/l10n.dart';
 
 part 'subscription_list.genui.dart';
 
@@ -66,14 +67,14 @@ class SubscriptionList extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          'Si cancelas lo que apagaste, te ahorras',
+                          context.l10n.cancelSaves,
                           style: context.type.bodyMedium?.copyWith(
                             color: context.colors.ink,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '$savings al mes',
+                          context.l10n.perMonth(savings),
                           style: context.type.headlineSmall?.copyWith(
                             color: context.colors.brand,
                             fontFeatures: tabular,

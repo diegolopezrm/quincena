@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../agent/model_client.dart';
 import '../app.dart';
+import '../l10n/l10n.dart';
 import '../session/session.dart';
 import '../theme/tokens.dart';
 
-/// Who answers, appearance, the developer panel, and starting over.
+/// Who answers, language, appearance, the developer panel, starting over.
 Future<void> showSettings(
   BuildContext context, {
   required AppSettings settings,
@@ -58,8 +60,18 @@ class _SettingsState extends State<_Settings> {
     }
   }
 
+  Future<void> _copySession() async {
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final String copied = context.l10n.sessionCopied;
+    await Clipboard.setData(
+      ClipboardData(text: widget.session.recorder.build().encode()),
+    );
+    messenger.showSnackBar(SnackBar(content: Text(copied)));
+  }
+
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations t = context.l10n;
     final bool live = widget.session.mode == AgentMode.live;
     return ListenableBuilder(
       listenable: Listenable.merge(<Listenable>[
@@ -78,19 +90,19 @@ class _SettingsState extends State<_Settings> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              Text('Ajustes', style: context.type.headlineSmall),
+              Text(t.settings, style: context.type.headlineSmall),
               const SizedBox(height: 22),
-              Text('Quién responde', style: context.type.labelMedium),
+              Text(t.whoAnswers, style: context.type.labelMedium),
               const SizedBox(height: 10),
               SegmentedButton<AgentMode>(
-                segments: const <ButtonSegment<AgentMode>>[
+                segments: <ButtonSegment<AgentMode>>[
                   ButtonSegment<AgentMode>(
                     value: AgentMode.demo,
-                    label: Text('Demo'),
+                    label: Text(t.modeDemo),
                   ),
                   ButtonSegment<AgentMode>(
                     value: AgentMode.live,
-                    label: Text('Gemini en vivo'),
+                    label: Text(t.modeLive),
                   ),
                 ],
                 selected: <AgentMode>{_mode},
@@ -100,16 +112,11 @@ class _SettingsState extends State<_Settings> {
               ),
               const SizedBox(height: 10),
               Text(switch ((_mode, live)) {
-                (AgentMode.demo, _) =>
-                  'Las cinco preguntas del inicio, respondidas sin red con '
-                      'los mismos componentes que usa el modelo.',
-                (AgentMode.live, true) =>
-                  'Responde ${GeminiClient.defaultModel}. Pregunta lo que '
-                      'quieras sobre la cuenta.',
-                (AgentMode.live, false) =>
-                  'Con tu key de Gemini puedes preguntar lo que quieras. '
-                      'Se queda en esta pestaña: no se guarda, y solo viaja '
-                      'a Google.',
+                (AgentMode.demo, _) => t.demoExplain,
+                (AgentMode.live, true) => t.liveActive(
+                  GeminiClient.defaultModel,
+                ),
+                (AgentMode.live, false) => t.liveNeedsKey,
               }, style: context.type.bodySmall),
               if (_mode == AgentMode.live && !live) ...<Widget>[
                 const SizedBox(height: 12),
@@ -119,33 +126,59 @@ class _SettingsState extends State<_Settings> {
                   autocorrect: false,
                   enableSuggestions: false,
                   onSubmitted: (_) => _connect(),
-                  decoration: const InputDecoration(
-                    labelText: 'Key de Gemini',
-                    hintText: 'De aistudio.google.com',
+                  decoration: InputDecoration(
+                    labelText: t.keyLabel,
+                    hintText: t.keyHint,
                   ),
                 ),
                 const SizedBox(height: 10),
-                FilledButton(
-                  onPressed: _connect,
-                  child: const Text('Conectar'),
-                ),
+                FilledButton(onPressed: _connect, child: Text(t.connect)),
               ],
               const SizedBox(height: 26),
-              Text('Apariencia', style: context.type.labelMedium),
+              Text(t.language, style: context.type.labelMedium),
+              const SizedBox(height: 10),
+              SegmentedButton<String>(
+                segments: <ButtonSegment<String>>[
+                  ButtonSegment<String>(
+                    value: 'system',
+                    label: Text(t.languageSystem),
+                  ),
+                  // Each language named in itself, so a person who opened
+                  // the app in the wrong one can still find theirs.
+                  const ButtonSegment<String>(
+                    value: 'es',
+                    label: Text('Español'),
+                  ),
+                  const ButtonSegment<String>(
+                    value: 'en',
+                    label: Text('English'),
+                  ),
+                ],
+                selected: <String>{
+                  widget.settings.locale?.languageCode ?? 'system',
+                },
+                showSelectedIcon: false,
+                onSelectionChanged: (Set<String> value) =>
+                    widget.settings.locale = value.first == 'system'
+                    ? null
+                    : Locale(value.first),
+              ),
+              const SizedBox(height: 22),
+              Text(t.appearance, style: context.type.labelMedium),
               const SizedBox(height: 10),
               SegmentedButton<ThemeMode>(
-                segments: const <ButtonSegment<ThemeMode>>[
+                segments: <ButtonSegment<ThemeMode>>[
                   ButtonSegment<ThemeMode>(
                     value: ThemeMode.system,
-                    label: Text('Sistema'),
+                    label: Text(t.themeSystem),
                   ),
                   ButtonSegment<ThemeMode>(
                     value: ThemeMode.light,
-                    label: Text('Claro'),
+                    label: Text(t.themeLight),
                   ),
                   ButtonSegment<ThemeMode>(
                     value: ThemeMode.dark,
-                    label: Text('Oscuro'),
+                    label: Text(t.themeDark),
                   ),
                 ],
                 selected: <ThemeMode>{widget.settings.themeMode},
@@ -159,26 +192,41 @@ class _SettingsState extends State<_Settings> {
                   color: context.colors.sunken,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: SwitchListTile(
-                  value: widget.settings.developer,
-                  onChanged: (bool value) => widget.settings.developer = value,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  title: Text(
-                    'Modo desarrollador',
-                    style: context.type.titleSmall,
-                  ),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      'Muestra el inspector de genui_gen sobre la '
-                      'conversación: el árbol que armó el agente, el data '
-                      'model, lo que anuncia un lector de pantalla y los '
-                      'mensajes.',
-                      style: context.type.bodySmall,
+                child: Column(
+                  children: <Widget>[
+                    SwitchListTile(
+                      value: widget.settings.developer,
+                      onChanged: (bool value) =>
+                          widget.settings.developer = value,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      title: Text(
+                        t.developerMode,
+                        style: context.type.titleSmall,
+                      ),
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          t.developerExplain,
+                          style: context.type.bodySmall,
+                        ),
+                      ),
                     ),
-                  ),
+                    if (widget.settings.developer)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton(
+                            onPressed: widget.session.turns.isEmpty
+                                ? null
+                                : _copySession,
+                            child: Text(t.copySession),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
               const SizedBox(height: 22),
@@ -187,12 +235,11 @@ class _SettingsState extends State<_Settings> {
                   widget.session.restart();
                   Navigator.of(context).pop();
                 },
-                child: const Text('Empezar de nuevo'),
+                child: Text(t.startOver),
               ),
               const SizedBox(height: 18),
               Text(
-                'Quincena es una demo de genui y genui_gen. La cuenta, la '
-                'persona y los comercios son inventados.',
+                t.about,
                 style: context.type.bodySmall,
                 textAlign: TextAlign.center,
               ),

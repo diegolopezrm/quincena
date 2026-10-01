@@ -7,6 +7,7 @@ import '../theme/theme.dart';
 import '../theme/tokens.dart';
 import '../ui/kit.dart';
 import '../ui/icons.dart';
+import '../l10n/l10n.dart';
 
 part 'goal_planner.genui.dart';
 
@@ -111,14 +112,16 @@ class GoalPlanner extends StatelessWidget {
                   children: <Widget>[
                     Text(name, style: context.type.titleLarge),
                     Figures(
-                      '${pesos(saved)} de ${pesos(target)}',
+                      englishFormatting
+                          ? '${pesos(saved)} of ${pesos(target)}'
+                          : '${pesos(saved)} de ${pesos(target)}',
                       style: context.type.bodySmall,
                     ),
                   ],
                 ),
               ),
               Figures(
-                '${(progress * 100).round()} %',
+                _percent(progress),
                 style: context.type.titleMedium?.copyWith(
                   color: context.colors.brand,
                 ),
@@ -127,7 +130,7 @@ class GoalPlanner extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Semantics(
-            label: 'Llevas ${(progress * 100).round()} por ciento de la meta',
+            label: context.l10n.goalProgress((progress * 100).round()),
             excludeSemantics: true,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(99),
@@ -144,7 +147,10 @@ class GoalPlanner extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: <Widget>[
               Expanded(
-                child: Text('Apartar al mes', style: context.type.labelMedium),
+                child: Text(
+                  context.l10n.setAsideMonthly,
+                  style: context.type.labelMedium,
+                ),
               ),
               Figures(pesos(monthly), style: context.type.headlineSmall),
             ],
@@ -156,7 +162,7 @@ class GoalPlanner extends StatelessWidget {
           // separate parent is a node of its own that announces nothing.
           MergeSemantics(
             child: Semantics(
-              label: 'Apartar al mes para $name',
+              label: context.l10n.goalSlider(name),
               child: Slider(
                 value: monthly.clamp(lo, hi),
                 min: lo,
@@ -166,7 +172,7 @@ class GoalPlanner extends StatelessWidget {
                 // already shown large above, so no bubble repeats it.
                 padding: EdgeInsets.zero,
                 semanticFormatterCallback: (double value) =>
-                    '${pesos(value)} al mes',
+                    context.l10n.perMonth(pesos(value)),
                 onChanged: onMonthlyChanged == null
                     ? null
                     : (double value) =>
@@ -210,7 +216,7 @@ class GoalPlanner extends StatelessWidget {
                           color: context.colors.ink,
                         ),
                         children: <InlineSpan>[
-                          const TextSpan(text: 'Llegas en '),
+                          TextSpan(text: context.l10n.arrivesIn),
                           TextSpan(
                             text: arrival,
                             style: TextStyle(
@@ -224,8 +230,8 @@ class GoalPlanner extends StatelessWidget {
                           ),
                           TextSpan(
                             text: onTime
-                                ? ', antes del $deadlineLabel.'
-                                : ', después del $deadlineLabel.',
+                                ? context.l10n.beforeDeadline(deadlineLabel)
+                                : context.l10n.afterDeadline(deadlineLabel),
                           ),
                         ],
                       ),
@@ -240,3 +246,7 @@ class GoalPlanner extends StatelessWidget {
     );
   }
 }
+
+/// A share of the goal: `36 %` in Spanish, `36%` in English.
+String _percent(double share) =>
+    '${(share * 100).round()}${englishFormatting ? '' : '\u00a0'}%';

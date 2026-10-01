@@ -6,10 +6,12 @@ import 'package:intl/intl.dart';
 
 import '../theme/theme.dart';
 import '../theme/tokens.dart';
+import '../l10n/l10n.dart';
 
 part 'money_field.genui.dart';
 
-final NumberFormat _grouped = NumberFormat('#,##0', 'es_CO');
+NumberFormat get _grouped =>
+    NumberFormat('#,##0', englishFormatting ? 'en_US' : 'es_CO');
 
 /// An amount of pesos the person types.
 @GenUiWidget(
@@ -95,7 +97,7 @@ class _MoneyFieldState extends State<MoneyField> {
         onChanged: (String text) => widget.onChanged?.call(_parse(text)),
         decoration: InputDecoration(
           labelText: widget.label,
-          prefixText: r'$ ',
+          prefixText: englishFormatting ? r'$' : r'$ ',
           prefixStyle: context.type.headlineSmall?.copyWith(
             color: context.colors.inkFaint,
           ),

@@ -7,6 +7,7 @@ import '../format/money.dart';
 import '../theme/tokens.dart';
 import '../ui/charts.dart';
 import '../ui/kit.dart';
+import '../l10n/l10n.dart';
 import 'shapes.dart';
 
 part 'month_bars.genui.dart';
@@ -93,7 +94,7 @@ class MonthBars extends StatelessWidget {
               if (reference != null)
                 _Legend(
                   mark: const _Dashes(),
-                  label: referenceLabel ?? 'Referencia',
+                  label: referenceLabel ?? context.l10n.reference,
                   amount: reference!,
                 ),
             ],

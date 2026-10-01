@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../theme/tokens.dart';
 import 'icons.dart';
 
@@ -41,7 +42,7 @@ class _AskBarState extends State<AskBar> {
             onSubmitted: (_) => _send(),
             style: context.type.bodyLarge,
             decoration: InputDecoration(
-              hintText: 'Pregúntale algo a tu plata',
+              hintText: context.l10n.askHint,
               filled: true,
               fillColor: context.colors.surface,
               contentPadding: const EdgeInsets.symmetric(
@@ -66,7 +67,7 @@ class _AskBarState extends State<AskBar> {
         const SizedBox(width: 10),
         IconButton.filled(
           onPressed: widget.enabled ? _send : null,
-          tooltip: 'Preguntar',
+          tooltip: context.l10n.ask,
           style: IconButton.styleFrom(
             backgroundColor: context.colors.brand,
             foregroundColor: context.colors.onBrand,

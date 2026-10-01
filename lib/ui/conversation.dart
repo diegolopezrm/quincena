@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:genui/genui.dart';
 
 import '../session/session.dart';
+import '../l10n/l10n.dart';
 import '../theme/tokens.dart';
 import 'icons.dart';
 import 'mark.dart';
@@ -55,8 +56,14 @@ class _TurnView extends StatelessWidget {
         children: <Widget>[
           if (turn.question case final String question)
             _Question(question)
-          else if (turn.note case final String note)
-            _Note(note),
+          else if (turn.note case final TurnNote note)
+            _Note(switch (note) {
+              TurnNote.savedExpense => context.l10n.noteSavedExpense,
+              TurnNote.choseMonthly => context.l10n.noteChoseMonthly,
+              TurnNote.askedCancel => context.l10n.noteAskedCancel,
+              TurnNote.askedPayments => context.l10n.noteAskedPayments,
+              TurnNote.other => context.l10n.noteTappedAction,
+            }),
           const SizedBox(height: 14),
           const _Speaker(),
           const SizedBox(height: 10),
@@ -71,8 +78,12 @@ class _TurnView extends StatelessWidget {
             ),
             const SizedBox(height: 12),
           ],
-          if (turn.error case final String error)
-            _Problem(error)
+          if (turn.error case final AnswerProblem problem)
+            _Problem(switch (problem) {
+              AnswerProblem.key => context.l10n.problemKey,
+              AnswerProblem.busy => context.l10n.problemBusy,
+              AnswerProblem.other => context.l10n.problemOther,
+            })
           else if (waiting)
             const _Thinking(),
         ],
@@ -171,7 +182,7 @@ class _ThinkingState extends State<_Thinking>
   Widget build(BuildContext context) {
     return Semantics(
       liveRegion: true,
-      label: 'Revisando tus movimientos',
+      label: context.l10n.thinking,
       excludeSemantics: true,
       child: Align(
         alignment: Alignment.centerLeft,

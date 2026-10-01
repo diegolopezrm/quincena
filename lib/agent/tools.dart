@@ -251,7 +251,7 @@ List<Tool> ledgerTools(Ledger ledger) => <Tool>[
         Movement(
           id: 'manual-${ledger.movements.length}',
           date: appToday,
-          merchant: note.isEmpty ? categoryLabel[category]! : note,
+          merchant: note.isEmpty ? category.label : note,
           amount: amount.round(),
           category: category,
         ),

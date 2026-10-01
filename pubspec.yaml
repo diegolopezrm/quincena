@@ -30,11 +30,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   genui: ^0.10.4
   genui_gen: ^0.13.0
   a2ui_core: ^0.1.1
-  intl: ^0.20.3
+  intl: ^0.20.2
   dartantic_ai: ^3.4.2
 
 dev_dependencies:
@@ -56,6 +58,7 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
   uses-material-design: true
+  generate: true
 
   assets:
     # Real Gemini sessions, recorded with tool/record and replayed in the app.

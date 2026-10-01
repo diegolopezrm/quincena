@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:genui_gen/inspector.dart';
 
 import '../app.dart';
+import '../l10n/l10n.dart';
 import '../session/recordings.dart';
 import '../session/session.dart';
 import '../theme/tokens.dart';
@@ -42,6 +43,19 @@ class _HomePageState extends State<HomePage> {
     loadRecordings().then((List<Recording> found) {
       if (mounted && found.isNotEmpty) setState(() => _recordings = found);
     }, onError: (Object _) {});
+  }
+
+  /// Keeps the answers in the language the interface resolved to, whether
+  /// the person chose it or the device did.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final String language = Localizations.localeOf(context).languageCode;
+    if (_session.language != language) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _session.language = language;
+      });
+    }
   }
 
   @override
@@ -216,7 +230,9 @@ class _TopBar extends StatelessWidget {
                           borderRadius: BorderRadius.circular(99),
                         ),
                         child: Text(
-                          live ? 'EN VIVO' : 'DEMO',
+                          live
+                              ? context.l10n.badgeLive
+                              : context.l10n.badgeDemo,
                           style: context.type.labelSmall?.copyWith(
                             color: live ? context.colors.brand : null,
                           ),
@@ -230,12 +246,12 @@ class _TopBar extends StatelessWidget {
             if (onRestart != null)
               IconButton(
                 onPressed: onRestart,
-                tooltip: 'Nueva conversación',
+                tooltip: context.l10n.newConversation,
                 icon: const Icon(Glyph.arrowCounterClockwise),
               ),
             IconButton(
               onPressed: onSettings,
-              tooltip: 'Ajustes',
+              tooltip: context.l10n.settings,
               icon: const Icon(Glyph.gear),
             ),
           ],

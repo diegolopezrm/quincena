@@ -40,7 +40,14 @@ the field.
 **The tooling around it.** Turn on developer mode in settings and the
 genui_gen inspector sits over the conversation: the component tree the agent
 built, every data path with what reads it, what a screen reader announces,
-and the messages that got the screen there.
+and the messages that got the screen there. "Copiar la sesión" puts the
+whole session on the clipboard as a genui_gen trace, with what the person
+typed into a form redacted, ready to paste into an issue and replay.
+
+**Two languages.** The app speaks Spanish and English, following the device
+or the choice in settings. The scripted answers, the prompt Gemini gets,
+the catalog's own words and every amount and date switch together:
+`$ 4.719.400` and `19 sept` in Spanish, `$4,719,400` and `Sep 19` in English.
 
 ## Run it
 
@@ -104,7 +111,8 @@ dart run build_runner build --delete-conflicting-outputs
 flutter test
 ```
 
-Besides the answers themselves, the catalog is held to three things.
+Besides the answers themselves, in both languages and at twice the system
+text size, the catalog is held to three things.
 `genUiFuzz` renders everything the schema allows and fails on anything that
 breaks. `genUiSemanticsAudit` fails on a control a screen reader cannot name.
 And `catalog.json` has to match the Dart.

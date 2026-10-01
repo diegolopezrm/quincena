@@ -29,6 +29,9 @@ Future<Session> open(
   tester.view.devicePixelRatio = 2;
   tester.platformDispatcher.platformBrightnessTestValue = brightness;
   addTearDown(tester.view.reset);
+  // The test device speaks English unless told otherwise.
+  tester.platformDispatcher.localesTestValue = const <Locale>[Locale('es')];
+  addTearDown(tester.platformDispatcher.clearLocalesTestValue);
   addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
   final session = Session(thinking: Duration.zero);
   addTearDown(session.dispose);
@@ -70,4 +73,21 @@ void main() {
       }
     }
   }
+
+  testWidgets('answer 0 phone large text', (tester) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final Session session = await open(
+      tester,
+      sizes['phone']!,
+      Brightness.light,
+    );
+    final Future<void> answered = session.ask(ScriptedAgent.starters[0]);
+    await tester.pumpAndSettle();
+    await answered;
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('goldens/answer-0-phone-large-text.png'),
+    );
+  });
 }

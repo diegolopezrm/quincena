@@ -7,6 +7,7 @@ import '../format/dates.dart';
 import '../format/money.dart';
 import '../theme/theme.dart';
 import '../theme/tokens.dart';
+import '../l10n/l10n.dart';
 
 part 'subscription_row.genui.dart';
 
@@ -48,8 +49,8 @@ class SubscriptionRow extends StatelessWidget {
     final DateTime? used = parseDay(lastUsed);
     final bool stale = used != null && appToday.difference(used).inDays > 30;
     final String usage = used == null
-        ? 'sin datos de uso'
-        : 'usado ${ago(used)}';
+        ? context.l10n.noUsage
+        : context.l10n.used(ago(used));
 
     return MergeSemantics(
       child: Padding(

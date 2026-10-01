@@ -17,21 +17,26 @@ import '../data/ledger.dart';
 /// when it cannot run code, which in a finance app is the one thing it must
 /// not do: amounts come from the tools and anything derived from them on
 /// screen comes from the catalog's functions.
-String quincenaPrompt(Catalog catalog, Ledger ledger) => PromptBuilder.custom(
+String quincenaPrompt(
+  Catalog catalog,
+  Ledger ledger, {
+  String language = 'es',
+}) => PromptBuilder.custom(
   catalog: catalog,
   allowedOperations: SurfaceOperations.createOnly(dataModel: true),
   technicalPossibilities: const TechnicalPossibilities(
     codeExecution: true,
     functionCall: true,
   ),
-  systemPromptFragments: _fragments(ledger),
+  systemPromptFragments: _fragments(ledger, language),
 ).systemPromptJoined();
 
-Iterable<String> _fragments(Ledger ledger) => <String>[
+Iterable<String> _fragments(Ledger ledger, String language) => <String>[
   '''
 You are Quincena, the assistant inside a personal finance app in Colombia. You
-talk with ${ledger.owner}, who holds the account. Speak Spanish as it is spoken
-in Colombia, address her as "tú", and be brief and concrete.
+talk with ${ledger.owner}, who holds the account. ${language == 'en' ? 'Speak English, plainly' : 'Speak Spanish as it is spoken in Colombia, address her as "tú"'},
+and be brief and concrete. Every text the person reads, in components and
+outside them, is in that language.
 
 Today is ${appToday.toIso8601String().split('T').first}. Paydays are the 15th and the last day of each
 month. Amounts are Colombian pesos, always whole numbers.''',
@@ -110,6 +115,6 @@ typed.
 
 Category values in data and components are always one of:
 ${Category.values.map((Category c) => c.name).join(', ')}. In text the
-person reads, call them by their Spanish names:
-${Category.values.map((Category c) => '${c.name} = ${categoryLabel[c]}').join(', ')}.''',
+person reads, call them by these names:
+${Category.values.map((Category c) => '${c.name} = ${c.labelIn(language)}').join(', ')}.''',
 ];

@@ -3,6 +3,7 @@ import 'package:genui/genui.dart';
 import 'package:genui_gen/genui_gen.dart';
 
 import '../format/dates.dart';
+import '../data/category.dart';
 import '../format/money.dart';
 import '../theme/tokens.dart';
 import '../ui/kit.dart';

@@ -7,6 +7,7 @@ import '../format/money.dart';
 import '../theme/theme.dart';
 import '../theme/tokens.dart';
 import '../ui/kit.dart';
+import '../l10n/l10n.dart';
 
 part 'budget_meter.genui.dart';
 
@@ -43,10 +44,10 @@ class BudgetMeter extends StatelessWidget {
     final double share = limit <= 0 ? 1 : spent / limit;
     final bool over = spent > limit;
     final Color fill = over ? context.colors.negative : category.color(context);
-    final String limitName = caption ?? 'Límite';
+    final String limitName = caption ?? context.l10n.limit;
     final String difference = over
-        ? '${pesos(spent - limit)} más'
-        : '${pesos(limit - spent)} menos';
+        ? context.l10n.more(pesos(spent - limit))
+        : context.l10n.less(pesos(limit - spent));
 
     return Semantics(
       label:

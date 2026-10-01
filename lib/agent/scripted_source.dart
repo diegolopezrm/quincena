@@ -9,7 +9,8 @@ class ScriptedSource implements AnswerSource {
     Ledger ledger, {
     required this.sink,
     this.thinking = const Duration(milliseconds: 700),
-  }) : _agent = ScriptedAgent(ledger);
+    String language = 'es',
+  }) : _agent = ScriptedAgent(ledger, language: language);
 
   final ScriptedAgent _agent;
   final AnswerSink sink;

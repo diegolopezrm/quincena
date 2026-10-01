@@ -16,23 +16,36 @@ String plain(String text) {
   return buffer.toString().toLowerCase();
 }
 
-/// Which of the demo's questions [text] is closest to, if any.
+/// Which of the demo's questions [text] is closest to, if any, in Spanish
+/// or in English.
 Intent? intentOf(String text) {
   final String t = plain(text);
   bool any(List<String> words) => words.any(t.contains);
-  if (any(<String>['registra', 'anota', 'apunta', 'guarda un gasto'])) {
+  if (any(<String>[
+    'registra', 'anota', 'apunta', 'guarda un gasto', //
+    'log ', 'record', 'add an expense', 'i spent',
+  ])) {
     return Intent.record;
   }
-  if (any(<String>['suscrip', 'cancel', 'streaming'])) {
+  if (any(<String>['suscrip', 'cancel', 'streaming', 'subscription'])) {
     return Intent.subscriptions;
   }
-  if (any(<String>['cartagena', 'viaje', 'meta', 'me alcanza', 'ahorr'])) {
+  if (any(<String>[
+    'cartagena', 'viaje', 'meta', 'me alcanza', 'ahorr', //
+    'trip', 'afford', 'goal', 'saving',
+  ])) {
     return Intent.goal;
   }
-  if (any(<String>['contra', 'compar', 'como voy', 'mes pasado', 'agosto'])) {
+  if (any(<String>[
+    'contra', 'compar', 'como voy', 'mes pasado', 'agosto', //
+    'against', 'how am i doing', 'last month', 'august',
+  ])) {
     return Intent.compare;
   }
-  if (any(<String>['en que', 'se me fue', 'gaste', 'gasto', 'plata'])) {
+  if (any(<String>[
+    'en que', 'se me fue', 'gaste', 'gasto', 'plata', //
+    'where did', 'money go', 'spend', 'spent',
+  ])) {
     return Intent.spending;
   }
   return null;
@@ -59,7 +72,8 @@ int? amountIn(String text) {
   };
 }
 
-/// The category a sentence names, such as "en el mercado".
+/// The category a sentence names, such as "en el mercado" or "at the
+/// grocery store".
 Category? categoryIn(String text) {
   final String t = plain(text);
   const Map<String, Category> words = <String, Category>{
@@ -82,6 +96,15 @@ Category? categoryIn(String text) {
     'cine': Category.leisure,
     'bar': Category.leisure,
     'concierto': Category.leisure,
+    'grocer': Category.groceries,
+    'lunch': Category.restaurants,
+    'restaurant': Category.restaurants,
+    'coffee': Category.restaurants,
+    'cab': Category.transport,
+    'pharmacy': Category.health,
+    'clothes': Category.shopping,
+    'cinema': Category.leisure,
+    'movie': Category.leisure,
   };
   for (final MapEntry<String, Category> entry in words.entries) {
     if (t.contains(entry.key)) return entry.value;

@@ -111,6 +111,9 @@ Future<Session> open(WidgetTester tester, ModelClient model) async {
   tester.view.physicalSize = const Size(1170, 2532);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
+  // The test device speaks English unless told otherwise.
+  tester.platformDispatcher.localesTestValue = const <Locale>[Locale('es')];
+  addTearDown(tester.platformDispatcher.clearLocalesTestValue);
   final session = Session(mode: AgentMode.live, client: model);
   addTearDown(session.dispose);
   await tester.pumpWidget(QuincenaApp(session: session));

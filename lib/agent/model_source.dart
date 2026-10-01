@@ -24,8 +24,11 @@ class ModelSource implements AnswerSource {
     required this.client,
     required Ledger ledger,
     required this.sink,
+    String language = 'es',
   }) : _history = <ChatMessage>[
-         ChatMessage.system(quincenaPrompt(quincenaCatalog, ledger)),
+         ChatMessage.system(
+           quincenaPrompt(quincenaCatalog, ledger, language: language),
+         ),
        ] {
     _events = _chunks.stream
         .transform(const A2uiParserTransformer())

@@ -22,7 +22,6 @@ const Map<Category, IconData> categoryIcon = <Category, IconData>{
 };
 
 extension CategoryLook on Category {
-  String get label => categoryLabel[this]!;
   IconData get icon => categoryIcon[this]!;
   Color color(BuildContext context) => context.colors.category(name);
 }

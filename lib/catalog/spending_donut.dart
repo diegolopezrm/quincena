@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:genui/genui.dart';
 import 'package:genui_gen/genui_gen.dart';
 
+import '../data/category.dart';
 import '../format/money.dart';
 import '../theme/tokens.dart';
 import '../ui/charts.dart';
 import '../ui/kit.dart';
+import '../l10n/l10n.dart';
 import 'shapes.dart';
 
 part 'spending_donut.genui.dart';
@@ -63,7 +65,8 @@ class SpendingDonut extends StatelessWidget {
                 slices: slices,
                 total: total,
                 centerLabel: centerLabel,
-                semantics: '$centerLabel, ${pesos(total)} en total: $summary',
+                semantics:
+                    '$centerLabel, ${context.l10n.inTotal(pesos(total))}: $summary',
               );
               final Widget legend = _Legend(slices: slices, total: total);
               if (wide) {
@@ -99,7 +102,8 @@ class SpendingDonut extends StatelessWidget {
 }
 
 String _share(double amount, double total) =>
-    total <= 0 ? '0 %' : '${(amount / total * 100).round()} %';
+    '${total <= 0 ? 0 : (amount / total * 100).round()}'
+    '${englishFormatting ? '' : '\u00a0'}%';
 
 class _Ring extends StatelessWidget {
   const _Ring({

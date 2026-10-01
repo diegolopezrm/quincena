@@ -5,6 +5,7 @@ import '../data/clock.dart';
 import '../data/ledger.dart';
 import '../format/dates.dart';
 import '../format/money.dart';
+import '../l10n/l10n.dart';
 import '../theme/tokens.dart';
 import '../ui/kit.dart';
 import 'icons.dart';
@@ -35,6 +36,9 @@ class Welcome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final List<String> starters = ScriptedAgent.startersFor(
+      Localizations.localeOf(context).languageCode,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -42,7 +46,10 @@ class Welcome extends StatelessWidget {
         const SizedBox(height: 28),
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 12),
-          child: Text('PREGÚNTALE A TU PLATA', style: context.type.labelSmall),
+          child: Text(
+            context.l10n.askYourMoney,
+            style: context.type.labelSmall,
+          ),
         ),
         LayoutBuilder(
           builder: (BuildContext context, BoxConstraints box) {
@@ -55,13 +62,13 @@ class Welcome extends StatelessWidget {
               spacing: 12,
               runSpacing: 12,
               children: <Widget>[
-                for (var i = 0; i < ScriptedAgent.starters.length; i++)
+                for (var i = 0; i < starters.length; i++)
                   SizedBox(
                     width: !two || i == 0 ? box.maxWidth : half,
                     child: _Starter(
                       icon: _icons[i],
-                      text: ScriptedAgent.starters[i],
-                      onTap: () => onAsk(ScriptedAgent.starters[i]),
+                      text: starters[i],
+                      onTap: () => onAsk(starters[i]),
                     ),
                   ),
               ],
@@ -74,7 +81,7 @@ class Welcome extends StatelessWidget {
             child: TextButton.icon(
               onPressed: open,
               icon: const Icon(Glyph.sparkle, size: 18),
-              label: const Text('Mira lo que respondió Gemini de verdad'),
+              label: Text(context.l10n.seeRecorded),
             ),
           ),
         ],
@@ -99,9 +106,12 @@ class _Standing extends StatelessWidget {
 
     return Semantics(
       container: true,
-      label:
-          'Libre hasta el ${dayMonth(payday)}: ${pesos(free)}. Faltan $days '
-          'días. En la cuenta hay ${pesos(balance)}.',
+      label: context.l10n.standingSemantics(
+        dayMonth(payday),
+        pesos(free),
+        days,
+        pesos(balance),
+      ),
       excludeSemantics: true,
       child: Container(
         padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
@@ -114,14 +124,14 @@ class _Standing extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text(
-              'Hola, ${ledger.owner}',
+              context.l10n.greeting(ledger.owner),
               style: context.type.titleMedium?.copyWith(
                 color: context.colors.inkSoft,
               ),
             ),
             const SizedBox(height: 18),
             Text(
-              'Libre hasta el ${dayMonth(payday)}',
+              context.l10n.freeUntil(dayMonth(payday)),
               style: context.type.labelMedium,
             ),
             const SizedBox(height: 4),
@@ -132,8 +142,7 @@ class _Standing extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Faltan $days días. Ya separé ${pesos(committed)} para el '
-              'arriendo, el crédito y los pagos fijos.',
+              context.l10n.standingDetail(days, pesos(committed)),
               style: context.type.bodyMedium,
             ),
             const SizedBox(height: 18),
@@ -166,10 +175,13 @@ class _Standing extends StatelessWidget {
               spacing: 16,
               runSpacing: 6,
               children: <Widget>[
-                _Key(color: context.colors.brand, label: 'Libre'),
+                _Key(
+                  color: context.colors.brand,
+                  label: context.l10n.legendFree,
+                ),
                 _Key(
                   color: context.colors.inkFaint.withValues(alpha: 0.35),
-                  label: 'Comprometido',
+                  label: context.l10n.legendCommitted,
                 ),
               ],
             ),
@@ -179,7 +191,10 @@ class _Standing extends StatelessWidget {
             Row(
               children: <Widget>[
                 Expanded(
-                  child: Text('En la cuenta', style: context.type.bodySmall),
+                  child: Text(
+                    context.l10n.inTheAccount,
+                    style: context.type.bodySmall,
+                  ),
                 ),
                 Figures(
                   pesos(balance),
