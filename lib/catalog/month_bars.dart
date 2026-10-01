@@ -122,9 +122,13 @@ class MonthBars extends StatelessWidget {
                               for (final MonthTotal m in months)
                                 Bar(
                                   value: m.amount,
+                                  // Faint ink rather than the sunken fill,
+                                  // which all but vanishes on a dark card.
                                   color: m.highlight
                                       ? context.colors.brand
-                                      : context.colors.sunken,
+                                      : context.colors.inkFaint.withValues(
+                                          alpha: 0.28,
+                                        ),
                                 ),
                             ],
                           ),

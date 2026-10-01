@@ -39,14 +39,17 @@ class Welcome extends StatelessWidget {
         LayoutBuilder(
           builder: (BuildContext context, BoxConstraints box) {
             final bool two = box.maxWidth >= 560;
-            final double width = two ? (box.maxWidth - 12) / 2 : box.maxWidth;
+            final double half = (box.maxWidth - 12) / 2;
+            // On a wide screen the first question, the one the story starts
+            // with, takes the whole row, and the other four pair up below it
+            // instead of leaving the fifth alone in a row of its own.
             return Wrap(
               spacing: 12,
               runSpacing: 12,
               children: <Widget>[
                 for (var i = 0; i < ScriptedAgent.starters.length; i++)
                   SizedBox(
-                    width: width,
+                    width: !two || i == 0 ? box.maxWidth : half,
                     child: _Starter(
                       icon: _icons[i],
                       text: ScriptedAgent.starters[i],

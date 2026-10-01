@@ -43,3 +43,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Screens rendered for review; a few are copied into docs/ for the README.
+test_screens/goldens/

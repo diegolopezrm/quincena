@@ -71,8 +71,15 @@ class SpendingDonut extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: <Widget>[
                     SizedBox(width: 210, height: 210, child: ring),
-                    const SizedBox(width: 28),
-                    Expanded(child: legend),
+                    const SizedBox(width: 36),
+                    // A legend as wide as the card sends the eye a long way
+                    // from each name to its amount.
+                    Flexible(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 420),
+                        child: legend,
+                      ),
+                    ),
                   ],
                 );
               }
