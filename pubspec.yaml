@@ -35,6 +35,7 @@ dependencies:
   genui_gen: ^0.13.0
   a2ui_core: ^0.1.1
   intl: ^0.20.3
+  dartantic_ai: ^3.4.2
 
 dev_dependencies:
   flutter_test:

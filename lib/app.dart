@@ -37,7 +37,19 @@ class QuincenaApp extends StatefulWidget {
 
 class _QuincenaAppState extends State<QuincenaApp> {
   final AppSettings _settings = AppSettings();
-  late final Session _session = widget.session ?? Session();
+
+  /// A key passed at build time starts the app with Gemini answering.
+  ///
+  /// For running locally only: a web build made with the key defined carries
+  /// it in its JavaScript, so a build for publishing must never define it.
+  static const String _buildKey = String.fromEnvironment('GEMINI_API_KEY');
+
+  late final Session _session =
+      widget.session ??
+      Session(
+        mode: _buildKey.isEmpty ? AgentMode.demo : AgentMode.live,
+        apiKey: _buildKey.isEmpty ? null : _buildKey,
+      );
 
   @override
   void dispose() {

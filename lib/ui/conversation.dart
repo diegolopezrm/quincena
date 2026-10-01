@@ -3,6 +3,7 @@ import 'package:genui/genui.dart';
 
 import '../session/session.dart';
 import '../theme/tokens.dart';
+import 'icons.dart';
 import 'mark.dart';
 
 /// The exchange so far: each question and the surface that answered it.
@@ -59,11 +60,19 @@ class _TurnView extends StatelessWidget {
           const SizedBox(height: 14),
           const _Speaker(),
           const SizedBox(height: 10),
-          if (turn.surfaceId case final String id)
+          if (turn.text.isNotEmpty) ...<Widget>[
+            Text(turn.text.toString().trim(), style: context.type.bodyLarge),
+            const SizedBox(height: 12),
+          ],
+          for (final String id in turn.surfaceIds) ...<Widget>[
             _Arrive(
               key: ValueKey<String>(id),
               child: Surface(surfaceContext: session.controller.contextFor(id)),
-            )
+            ),
+            const SizedBox(height: 12),
+          ],
+          if (turn.error case final String error)
+            _Problem(error)
           else if (waiting)
             const _Thinking(),
         ],
@@ -259,4 +268,37 @@ class _ArriveState extends State<_Arrive> with SingleTickerProviderStateMixin {
       ),
     );
   }
+}
+
+/// Shown when the agent could not answer.
+class _Problem extends StatelessWidget {
+  const _Problem(this.message);
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    liveRegion: true,
+    child: Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: context.colors.negativeSoft,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: <Widget>[
+          Icon(Glyph.warningCircle, color: context.colors.negative, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: context.type.bodyMedium?.copyWith(
+                color: context.colors.ink,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }

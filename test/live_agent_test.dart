@@ -1,0 +1,269 @@
+import 'dart:convert';
+import 'dart:math' as math;
+
+import 'package:dartantic_ai/dartantic_ai.dart' as dartantic;
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:genui/genui.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
+import 'package:quincena/agent/catalog.dart';
+import 'package:quincena/agent/model_client.dart';
+import 'package:quincena/agent/prompt.dart';
+import 'package:quincena/agent/scripted_agent.dart';
+import 'package:quincena/agent/tools.dart';
+import 'package:quincena/app.dart';
+import 'package:quincena/data/seed.dart';
+import 'package:quincena/session/session.dart';
+
+import 'fonts.dart';
+
+/// A model that answers with what the scripted agent would compose, written
+/// out the way a model writes it: a sentence, then each A2UI message in its
+/// own ```json block, all of it streamed in small pieces.
+class ScriptedModel implements ModelClient {
+  ScriptedModel({this.fail = false});
+
+  final bool fail;
+  final List<String> prompts = <String>[];
+  final ScriptedAgent _script = ScriptedAgent(demoLedger());
+  int _serial = 0;
+
+  @override
+  Stream<String> send(
+    String prompt, {
+    required List<ChatMessage> history,
+  }) async* {
+    prompts.add(prompt);
+    if (fail) throw StateError('Gemini returned 503');
+    final AgentTurn? turn = prompt.startsWith('{')
+        ? _script.react(
+            ((jsonDecode(prompt) as Map)['action'] as Map)['name']! as String,
+            <String, Object?>{
+              ...(((jsonDecode(prompt) as Map)['action'] as Map)['context']
+                      as Map)
+                  .cast<String, Object?>(),
+            },
+          )
+        : _script.answer(prompt);
+    if (turn == null) return;
+    final reply = StringBuffer('Mira lo que encontré.\n');
+    for (final message in turn.messages(
+      'live-${++_serial}',
+      quincenaCatalog.catalogId!,
+    )) {
+      reply.write('```json\n${jsonEncode(message.toJson())}\n```\n');
+    }
+    final String text = reply.toString();
+    for (var i = 0; i < text.length; i += 40) {
+      yield text.substring(i, math.min(i + 40, text.length));
+    }
+  }
+}
+
+/// A model that gets its first surface wrong, and fixes it when told.
+class CorrectedModel implements ModelClient {
+  final List<String> prompts = <String>[];
+
+  @override
+  Stream<String> send(
+    String prompt, {
+    required List<ChatMessage> history,
+  }) async* {
+    prompts.add(prompt);
+    final String id = prompts.length == 1 ? 'wrong' : 'right';
+    final String root = prompts.length == 1
+        // A component the catalog does not have.
+        ? '{"id": "root", "component": "PieChart", "slices": []}'
+        : '{"id": "root", "component": "Answer", "children": ["head"]}, '
+              '{"id": "head", "component": "Headline", "title": "Ya quedó"}';
+    yield '```json\n{"version": "v0.9", "createSurface": '
+        '{"surfaceId": "$id", "catalogId": "dev.dlsoft.quincena"}}\n```\n';
+    yield '```json\n{"version": "v0.9", "updateComponents": '
+        '{"surfaceId": "$id", "components": [$root]}}\n```\n';
+  }
+}
+
+Future<Session> open(WidgetTester tester, ModelClient model) async {
+  tester.view.physicalSize = const Size(1170, 2532);
+  tester.view.devicePixelRatio = 3;
+  addTearDown(tester.view.reset);
+  final session = Session(mode: AgentMode.live, client: model);
+  addTearDown(session.dispose);
+  await tester.pumpWidget(QuincenaApp(session: session));
+  await tester.pumpAndSettle();
+  return session;
+}
+
+/// Asks, and moves the test's clock past the window in which genui reports
+/// what was wrong with an answer, and past any correction that follows.
+Future<void> ask(WidgetTester tester, Session session, String question) async {
+  final Future<void> answered = session.ask(question);
+  for (var i = 0; i < 20; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+  await tester.pumpAndSettle();
+  await answered;
+  await tester.pumpAndSettle();
+}
+
+String screen(WidgetTester tester) => tester
+    .widgetList<RichText>(find.byType(RichText))
+    .map((RichText t) => t.text.toPlainText())
+    .join('\n')
+    .replaceAll(' ', ' ');
+
+void main() {
+  setUpAll(() async {
+    await loadAppFonts();
+    Intl.defaultLocale = 'es_CO';
+    await initializeDateFormatting('es');
+  });
+
+  group('a model behind the conversation', () {
+    testWidgets('its JSON blocks become a surface, its words a line', (
+      tester,
+    ) async {
+      final Session session = await open(tester, ScriptedModel());
+      await ask(tester, session, ScriptedAgent.starters[0]);
+
+      expect(session.turns.single.surfaceIds, <String>['live-1']);
+      expect(screen(tester), contains('Mira lo que encontré.'));
+      expect(screen(tester), contains('Gastaste casi todo lo que entró'));
+      // Functions the model bound are evaluated on the device.
+      expect(screen(tester), contains('+11 %'));
+    });
+
+    testWidgets('what the person does goes back to the model as JSON', (
+      tester,
+    ) async {
+      final model = ScriptedModel();
+      final Session session = await open(tester, model);
+      await ask(tester, session, ScriptedAgent.starters[1]);
+
+      // The screen scrolls to each new answer with an animation; let it
+      // finish, or the tap lands where the button was.
+      await tester.ensureVisible(find.text('Apartar esto cada mes'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Apartar esto cada mes'));
+      for (var i = 0; i < 20; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      await tester.pumpAndSettle();
+
+      final Map<Object?, Object?> sent =
+          jsonDecode(model.prompts.last) as Map<Object?, Object?>;
+      final Map<Object?, Object?> action = sent['action']! as Map;
+      expect(action['name'], 'save_goal_plan');
+      // The context arrives resolved: the amount on the slider, not a path.
+      expect((action['context']! as Map)['monthly'], 250000);
+      expect(screen(tester), contains(r'Cada día 16 aparto $ 250.000'));
+    });
+
+    testWidgets('a surface the catalog rejects goes back to be fixed', (
+      tester,
+    ) async {
+      final model = CorrectedModel();
+      final Session session = await open(tester, model);
+      await ask(tester, session, '¿En qué gasté?');
+
+      // The model heard what was wrong, within the same turn.
+      expect(model.prompts, hasLength(2));
+      expect(model.prompts.last, contains('VALIDATION_FAILED'));
+      // And the person sees the fixed surface, not the broken one.
+      expect(session.turns, hasLength(1));
+      expect(session.turns.single.surfaceIds, <String>['right']);
+      expect(screen(tester), contains('Ya quedó'));
+    });
+
+    testWidgets('a model that fails says so instead of hanging', (
+      tester,
+    ) async {
+      final Session session = await open(tester, ScriptedModel(fail: true));
+      await ask(tester, session, ScriptedAgent.starters[0]);
+
+      expect(session.busy, isFalse);
+      expect(screen(tester), contains('No pude responder esta vez.'));
+    });
+  });
+
+  group('what the model is told', () {
+    final String prompt = quincenaPrompt(quincenaCatalog, demoLedger());
+
+    test('it may write the data model the catalog binds to', () {
+      expect(prompt, contains('updateDataModel'));
+    });
+
+    test('it is not told to do the arithmetic itself', () {
+      expect(prompt, isNot(contains('do them yourself')));
+      expect(prompt, contains('Never invent, estimate or'));
+    });
+
+    test('it knows the catalog, today and the person', () {
+      expect(prompt, contains('dev.dlsoft.quincena'));
+      expect(prompt, contains('GoalPlanner'));
+      expect(prompt, contains('savingsIfCancelled'));
+      expect(prompt, contains('Today is 2026-10-01'));
+      expect(prompt, contains('Valentina'));
+    });
+  });
+
+  group('the tools a model asks the account with', () {
+    Future<Map<String, Object?>> call(
+      String name, [
+      Map<String, dynamic>? args,
+    ]) async {
+      final dartantic.Tool tool = ledgerTools(
+        demoLedger(),
+      ).firstWhere((dartantic.Tool t) => t.name == name);
+      // How dartantic invokes a tool the model called.
+      return (await tool.call(args ?? <String, dynamic>{}))
+          as Map<String, Object?>;
+    }
+
+    test('month_spending agrees with the statement', () async {
+      final Map<String, Object?> sept = await call('month_spending', {
+        'month': '2026-09',
+      });
+      expect(sept['spent'], 4719400);
+      expect(sept['income'], 4800000);
+      expect(
+        ((sept['categories']! as Map)['restaurants']! as Map)['amount'],
+        596900,
+      );
+      expect((sept['previousMonth']! as Map)['spent'], 4238900);
+      expect((sept['largest']! as List).length, 5);
+    });
+
+    test('a malformed month is an error, not a guess', () async {
+      final Map<String, Object?> result = await call('month_spending', {
+        'month': 'septiembre',
+      });
+      expect(result['error'], isNotNull);
+    });
+
+    test('account_overview matches the home screen', () async {
+      final Map<String, Object?> overview = await call('account_overview');
+      expect(overview['freeUntilPayday'], 1369300);
+      expect(overview['nextPayday'], '2026-10-15');
+    });
+
+    test('record_expense records, and refuses nonsense', () async {
+      final dartantic.Tool record = ledgerTools(
+        demoLedger(),
+      ).firstWhere((dartantic.Tool t) => t.name == 'record_expense');
+      final done =
+          await record.call(<String, dynamic>{
+                'amount': 45000,
+                'category': 'groceries',
+              })
+              as Map<String, Object?>;
+      expect(done['freeUntilPayday'], 1369300 - 45000);
+
+      final refused =
+          await record.call(<String, dynamic>{'amount': -5, 'category': 'x'})
+              as Map<String, Object?>;
+      expect(refused['error'], isNotNull);
+    });
+  });
+}

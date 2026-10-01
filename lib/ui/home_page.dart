@@ -103,6 +103,7 @@ class _HomePageState extends State<HomePage> {
                     session: _session,
                   ),
                   onRestart: _session.turns.isEmpty ? null : _session.restart,
+                  live: _session.mode == AgentMode.live,
                 ),
                 Expanded(
                   // The panel reports on the conversation, so it covers the
@@ -157,10 +158,17 @@ class _Column extends StatelessWidget {
 }
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.onSettings, required this.onRestart});
+  const _TopBar({
+    required this.onSettings,
+    required this.onRestart,
+    required this.live,
+  });
 
   final VoidCallback onSettings;
   final VoidCallback? onRestart;
+
+  /// Whether a model is answering rather than the script.
+  final bool live;
 
   @override
   Widget build(BuildContext context) {
@@ -188,7 +196,12 @@ class _TopBar extends StatelessWidget {
                           color: context.colors.sunken,
                           borderRadius: BorderRadius.circular(99),
                         ),
-                        child: Text('DEMO', style: context.type.labelSmall),
+                        child: Text(
+                          live ? 'EN VIVO' : 'DEMO',
+                          style: context.type.labelSmall?.copyWith(
+                            color: live ? context.colors.brand : null,
+                          ),
+                        ),
                       ),
                     ],
                   ),
