@@ -38,4 +38,63 @@ abstract final class Glyph {
   static const IconData gear = IconData(0xe270, fontFamily: _family);
   static const IconData sparkle = IconData(0xe6a2, fontFamily: _family);
   static const IconData paperPlaneRight = IconData(0xe396, fontFamily: _family);
+
+  // For the screens around the conversation: accounts, movements, settings.
+  static const IconData briefcase = IconData(0xe0ee, fontFamily: _family);
+  static const IconData coins = IconData(0xe78e, fontFamily: _family);
+  static const IconData gift = IconData(0xe276, fontFamily: _family);
+  static const IconData percent = IconData(0xe3b6, fontFamily: _family);
+  static const IconData receipt = IconData(0xe3ec, fontFamily: _family);
+  static const IconData bank = IconData(0xe0b4, fontFamily: _family);
+  static const IconData creditCard = IconData(0xe1d2, fontFamily: _family);
+  static const IconData wallet = IconData(0xe68a, fontFamily: _family);
+  static const IconData money = IconData(0xe588, fontFamily: _family);
+  static const IconData currencyBtc = IconData(0xe618, fontFamily: _family);
+  static const IconData arrowsLeftRight = IconData(0xe0a0, fontFamily: _family);
+  static const IconData arrowDown = IconData(0xe03e, fontFamily: _family);
+  static const IconData arrowUp = IconData(0xe08e, fontFamily: _family);
+  static const IconData trendUp = IconData(0xe4ae, fontFamily: _family);
+  static const IconData trendDown = IconData(0xe4ac, fontFamily: _family);
+  static const IconData pencilSimple = IconData(0xe3b4, fontFamily: _family);
+  static const IconData trash = IconData(0xe4a6, fontFamily: _family);
+  static const IconData plus = IconData(0xe3d4, fontFamily: _family);
+  static const IconData list = IconData(0xe2f0, fontFamily: _family);
+  static const IconData magnifyingGlass = IconData(0xe30c, fontFamily: _family);
+  static const IconData calendar = IconData(0xe108, fontFamily: _family);
+  static const IconData user = IconData(0xe4c2, fontFamily: _family);
+  static const IconData x = IconData(0xe4f6, fontFamily: _family);
+  static const IconData check = IconData(0xe182, fontFamily: _family);
+  static const IconData caretRight = IconData(0xe13a, fontFamily: _family);
+  static const IconData caretDown = IconData(0xe136, fontFamily: _family);
+  static const IconData export = IconData(0xeaf0, fontFamily: _family);
+  static const IconData downloadSimple = IconData(0xe20c, fontFamily: _family);
+  static const IconData uploadSimple = IconData(0xe4c0, fontFamily: _family);
+  static const IconData warning = IconData(0xe4e0, fontFamily: _family);
+  static const IconData tray = IconData(0xe4aa, fontFamily: _family);
+  static const IconData handCoins = IconData(0xea8c, fontFamily: _family);
+  static const IconData vault = IconData(0xe76e, fontFamily: _family);
+  static const IconData chartLineUp = IconData(0xe156, fontFamily: _family);
+  static const IconData tag = IconData(0xe478, fontFamily: _family);
+  static const IconData coin = IconData(0xe60e, fontFamily: _family);
+  static const IconData squaresFour = IconData(0xe464, fontFamily: _family);
+  static const IconData listBullets = IconData(0xe2f2, fontFamily: _family);
+  static const IconData notePencil = IconData(0xe34c, fontFamily: _family);
+  static const IconData arrowLeft = IconData(0xe058, fontFamily: _family);
+  static const IconData dotsThreeVertical = IconData(
+    0xe208,
+    fontFamily: _family,
+  );
+  static const IconData lock = IconData(0xe2fa, fontFamily: _family);
+  static const IconData globe = IconData(0xe288, fontFamily: _family);
+  static const IconData deviceMobile = IconData(0xe1e0, fontFamily: _family);
+  static const IconData envelope = IconData(0xe214, fontFamily: _family);
+  static const IconData bell = IconData(0xe0ce, fontFamily: _family);
+  static const IconData camera = IconData(0xe10e, fontFamily: _family);
+  static const IconData fileText = IconData(0xe23a, fontFamily: _family);
+  static const IconData repeat = IconData(0xe3f6, fontFamily: _family);
+  static const IconData calendarCheck = IconData(0xe712, fontFamily: _family);
+  static const IconData signOut = IconData(0xe42a, fontFamily: _family);
+  static const IconData arrowsDownUp = IconData(0xe098, fontFamily: _family);
+  static const IconData scales = IconData(0xe750, fontFamily: _family);
+  static const IconData currencyEth = IconData(0xeada, fontFamily: _family);
 }

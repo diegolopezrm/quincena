@@ -1,0 +1,280 @@
+import 'package:decimal/decimal.dart';
+import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:quincena/domain/pay_schedule.dart';
+import 'package:quincena/domain/records.dart';
+import 'package:quincena/money/asset.dart';
+import 'package:quincena/money/money.dart';
+import 'package:quincena/money/rates.dart';
+import 'package:quincena/store/database.dart';
+import 'package:quincena/store/store.dart';
+
+Decimal d(String s) => Decimal.parse(s);
+
+void main() {
+  late QuincenaStore store;
+  final DateTime today = DateTime(2026, 10, 1, 9);
+
+  setUp(() async {
+    store = QuincenaStore(
+      QuincenaDatabase(NativeDatabase.memory()),
+      now: () => today,
+    );
+    await store.ensureCategories();
+  });
+
+  tearDown(() => store.close());
+
+  test('the profile is absent until saved, and comes back as saved', () async {
+    expect(await store.profile(), isNull);
+    expect(await store.snapshot(), isNull);
+    await store.saveProfile(
+      const Profile(name: 'Diego', base: Asset.cop, schedule: TwiceMonthly()),
+    );
+    final Profile? p = await store.profile();
+    expect(p!.name, 'Diego');
+    expect(p.base, Asset.cop);
+    expect(p.schedule, const TwiceMonthly());
+  });
+
+  test(
+    'built-in categories are added once, and the person can add more',
+    () async {
+      await store.ensureCategories();
+      final List<CategoryItem> all = await store.categories();
+      expect(all.where((CategoryItem c) => c.key == 'groceries'), hasLength(1));
+      expect(
+        all.firstWhere((CategoryItem c) => c.key == 'salary').income,
+        isTrue,
+      );
+      final CategoryItem pets = await store.addCategory('Mascotas');
+      expect(pets.custom, isTrue);
+      expect((await store.categories()).last.name, 'Mascotas');
+    },
+  );
+
+  group('accounts and movements', () {
+    test('a balance is the opening plus what moved up to today', () async {
+      final Account bank = await store.addAccount(
+        name: 'Bancolombia',
+        kind: AccountKind.bank,
+        asset: Asset.cop,
+        opening: d('1000000'),
+      );
+      await store.addEntry(
+        accountId: bank.id,
+        amount: d('45900'),
+        kind: EntryKind.expense,
+        date: DateTime(2026, 9, 30),
+        category: 'groceries',
+        payee: 'Éxito',
+      );
+      await store.addEntry(
+        accountId: bank.id,
+        amount: d('2400000'),
+        kind: EntryKind.income,
+        date: DateTime(2026, 9, 30),
+        category: 'salary',
+      );
+      // Scheduled for later: not in today's balance.
+      await store.addEntry(
+        accountId: bank.id,
+        amount: d('1650000'),
+        kind: EntryKind.expense,
+        date: DateTime(2026, 10, 5),
+        category: 'housing',
+      );
+      final Map<String, Money> balances = await store.watchBalances().first;
+      expect(balances[bank.id], Money(d('3354100'), Asset.cop));
+      final List<Entry> entries = await store.entries();
+      expect(entries.first.date, DateTime(2026, 10, 5));
+      expect(
+        entries.firstWhere((Entry e) => e.payee == 'Éxito').amount,
+        d('-45900'),
+      );
+    });
+
+    test('an exchange account is not money to spend by default', () async {
+      final Account binance = await store.addAccount(
+        name: 'Binance',
+        kind: AccountKind.exchange,
+        asset: Asset.usdt,
+        opening: d('1520.50'),
+      );
+      expect(binance.spendable, isFalse);
+      expect((await store.accounts()).single.opening, d('1520.50'));
+    });
+
+    test(
+      'a transfer between currencies keeps what was sent and what arrived',
+      () async {
+        final Account dollars = await store.addAccount(
+          name: 'Cuenta en dólares',
+          kind: AccountKind.bank,
+          asset: Asset.usd,
+          opening: d('500'),
+        );
+        final Account pesos = await store.addAccount(
+          name: 'Nequi',
+          kind: AccountKind.wallet,
+          asset: Asset.cop,
+        );
+        await store.addTransfer(
+          fromAccountId: dollars.id,
+          toAccountId: pesos.id,
+          sent: d('100'),
+          received: d('325000'),
+          date: DateTime(2026, 9, 28),
+        );
+        final Map<String, Money> balances = await store.watchBalances().first;
+        expect(balances[dollars.id], Money(d('400'), Asset.usd));
+        expect(balances[pesos.id], Money(d('325000'), Asset.cop));
+
+        // Deleting one leg deletes the transfer.
+        final Entry leg = (await store.entries(accountId: pesos.id)).single;
+        await store.deleteEntry(leg);
+        expect(await store.entries(), isEmpty);
+      },
+    );
+
+    test(
+      'deleting an account leaves the other leg of its transfers as a movement',
+      () async {
+        final Account a = await store.addAccount(
+          name: 'A',
+          kind: AccountKind.cash,
+          asset: Asset.cop,
+        );
+        final Account b = await store.addAccount(
+          name: 'B',
+          kind: AccountKind.cash,
+          asset: Asset.cop,
+        );
+        await store.addTransfer(
+          fromAccountId: a.id,
+          toAccountId: b.id,
+          sent: d('50000'),
+          date: DateTime(2026, 9, 20),
+        );
+        await store.deleteAccount(a.id);
+        final Entry left = (await store.entries()).single;
+        expect(left.accountId, b.id);
+        expect(left.kind, EntryKind.income);
+        expect(left.transferId, isNull);
+      },
+    );
+  });
+
+  group('rates', () {
+    final List<Rate> fetched = <Rate>[
+      Rate(
+        asset: 'USD',
+        quote: 'COP',
+        value: d('3312.84'),
+        asOf: DateTime(2026, 10, 1),
+        source: 'trm',
+      ),
+      Rate(
+        asset: 'BTC',
+        quote: 'USDT',
+        value: d('84616.92'),
+        asOf: DateTime(2026, 10, 1),
+        source: 'binance',
+      ),
+    ];
+
+    test('a fetched rate never replaces one the person typed', () async {
+      await store.setManualRate('USD', 'COP', d('3400'));
+      await store.saveRates(fetched);
+      final RateTable table = RateTable(await store.rates());
+      expect(table.rate(Asset.usd, Asset.cop), d('3400'));
+      expect(table.rate(Asset.btc, Asset.usdt), d('84616.92'));
+
+      await store.setManualRate('USD', 'COP', null);
+      await store.saveRates(fetched);
+      expect(
+        RateTable(await store.rates()).rate(Asset.usd, Asset.cop),
+        d('3312.84'),
+      );
+      expect(await store.ratesFetchedAt(), today);
+    });
+  });
+
+  group('export, import, delete', () {
+    Future<void> fill() async {
+      await store.saveProfile(
+        const Profile(name: 'Diego', base: Asset.cop, schedule: Monthly(30)),
+      );
+      final Account bank = await store.addAccount(
+        name: 'Bancolombia',
+        kind: AccountKind.bank,
+        asset: Asset.cop,
+        opening: d('800000'),
+      );
+      final Account btc = await store.addAccount(
+        name: 'Binance BTC',
+        kind: AccountKind.exchange,
+        asset: Asset.btc,
+        opening: d('0.00123456'),
+      );
+      await store.addEntry(
+        accountId: bank.id,
+        amount: d('120000'),
+        kind: EntryKind.expense,
+        date: DateTime(2026, 9, 15),
+        category: 'restaurants',
+      );
+      await store.addEntry(
+        accountId: btc.id,
+        amount: d('0.0001'),
+        kind: EntryKind.income,
+        date: DateTime(2026, 9, 16),
+        category: 'interest',
+      );
+      await store.addCategory('Mascotas');
+      await store.setManualRate('USD', 'COP', d('3400'));
+    }
+
+    test(
+      'what is exported comes back exactly, crypto decimals included',
+      () async {
+        await fill();
+        final Map<String, Object?> file = await store.exportJson();
+        final Map<String, Money> before = await store.watchBalances().first;
+
+        await store.wipe();
+        expect(await store.profile(), isNull);
+        expect(await store.accounts(), isEmpty);
+
+        await store.importJson(file);
+        expect((await store.profile())!.schedule, const Monthly(30));
+        expect(await store.watchBalances().first, before);
+        final Account btc = (await store.accounts()).firstWhere(
+          (Account a) => a.asset == Asset.btc,
+        );
+        expect(before[btc.id], Money(d('0.00133456'), Asset.btc));
+        expect(
+          (await store.categories())
+              .where((CategoryItem c) => c.custom)
+              .single
+              .name,
+          'Mascotas',
+        );
+        expect((await store.rates()).single.manual, isTrue);
+      },
+    );
+
+    test('a file from somewhere else is refused and nothing changes', () async {
+      await fill();
+      await expectLater(
+        store.importJson(<String, Object?>{'app': 'other', 'version': 1}),
+        throwsFormatException,
+      );
+      await expectLater(
+        store.importJson(<String, Object?>{'app': 'quincena', 'version': 99}),
+        throwsFormatException,
+      );
+      expect(await store.accounts(), hasLength(2));
+    });
+  });
+}

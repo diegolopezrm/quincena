@@ -320,7 +320,7 @@ class ScriptedAgent {
     final Goal goal = ledger.goal('cartagena');
     const int cut = 0;
     final int stale = ledger.subscriptions
-        .where((s) => appToday.difference(s.lastUsed).inDays > 30)
+        .where((s) => s.unusedAsOf(appToday))
         .fold(cut, (int sum, s) => sum + s.price);
     final (int y, int m) = _lastMonth;
     final (int py, int pm) = _monthBefore;
@@ -603,7 +603,7 @@ class ScriptedAgent {
   AgentTurn _subscriptions() {
     final List<Subscription> subs = ledger.subscriptions;
     final List<Subscription> stale = subs
-        .where((Subscription s) => appToday.difference(s.lastUsed).inDays > 30)
+        .where((Subscription s) => s.unusedAsOf(appToday))
         .toList();
     final Subscription? newest = subs.isEmpty
         ? null
@@ -684,7 +684,7 @@ class ScriptedAgent {
             {
               'name': s.name,
               'price': s.price,
-              'lastUsed': _iso(s.lastUsed),
+              if (s.lastUsed case final DateTime used) 'lastUsed': _iso(used),
               'keep': !stale.contains(s),
             },
         ],

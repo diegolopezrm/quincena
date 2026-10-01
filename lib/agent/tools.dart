@@ -169,9 +169,7 @@ List<Tool> ledgerTools(Ledger ledger) => <Tool>[
     onCall: (_) => <String, Object?>{
       'monthlyTotal': ledger.subscriptionsMonthly,
       'unusedMonthlyTotal': ledger.subscriptions
-          .where(
-            (Subscription s) => appToday.difference(s.lastUsed).inDays > 30,
-          )
+          .where((Subscription s) => s.unusedAsOf(appToday))
           .fold<int>(0, (int sum, Subscription s) => sum + s.price),
       'subscriptions': <Object?>[
         for (final Subscription s in ledger.subscriptions)
@@ -179,9 +177,9 @@ List<Tool> ledgerTools(Ledger ledger) => <Tool>[
             'name': s.name,
             'price': s.price,
             'since': _day(s.since),
-            'lastUsed': _day(s.lastUsed),
-            'daysSinceUsed': appToday.difference(s.lastUsed).inDays,
-            'unused': appToday.difference(s.lastUsed).inDays > 30,
+            'lastUsed': s.lastUsed == null ? null : _day(s.lastUsed!),
+            'daysSinceUsed': s.daysSinceUsed(appToday),
+            'unused': s.unusedAsOf(appToday),
           },
       ],
     },

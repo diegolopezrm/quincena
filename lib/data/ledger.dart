@@ -1,7 +1,21 @@
+import 'dart:math' as math;
+
+import '../domain/pay_schedule.dart';
+import '../money/asset.dart';
 import 'category.dart';
 
 /// Which way money moved.
-enum Flow { expense, income, saving }
+enum Flow {
+  expense,
+  income,
+
+  /// Put aside: out of the money to spend, but not spent.
+  saving,
+
+  /// Back from savings or an investment: into the money to spend, but not
+  /// earned.
+  transferIn,
+}
 
 /// One line of the account statement.
 class Movement {
@@ -18,7 +32,8 @@ class Movement {
   final DateTime date;
   final String merchant;
 
-  /// Always positive, in whole pesos. [flow] says which way it went.
+  /// Always positive, in the ledger's [Ledger.currency] and its smallest
+  /// unit: whole pesos, or cents. [flow] says which way it went.
   final int amount;
   final Category category;
   final Flow flow;
@@ -31,8 +46,8 @@ class Subscription {
     required this.name,
     required this.price,
     required this.chargeDay,
-    required this.lastUsed,
     required this.since,
+    this.lastUsed,
   });
 
   final String id;
@@ -40,9 +55,17 @@ class Subscription {
   final int price;
   final int chargeDay;
 
-  /// The last day the person actually used it, as far as the app can tell.
-  final DateTime lastUsed;
+  /// The last day the person actually used it, when the app can tell. A
+  /// charge read from a bank says nothing about use.
+  final DateTime? lastUsed;
   final DateTime since;
+
+  /// Days since it was last used, or null when that is not known.
+  int? daysSinceUsed(DateTime today) =>
+      lastUsed == null ? null : today.difference(lastUsed!).inDays;
+
+  /// Charged for over a month without being used, as far as is known.
+  bool unusedAsOf(DateTime today) => (daysSinceUsed(today) ?? 0) > 30;
 }
 
 /// Money being put aside for one thing.
@@ -81,8 +104,12 @@ class Ledger {
     required List<Movement> movements,
     required this.subscriptions,
     required this.goals,
+    this.schedule = const TwiceMonthly(first: 15, second: 31),
+    this.currency = Asset.cop,
+    List<Movement> upcoming = const <Movement>[],
   }) : movements = List<Movement>.of(movements)
-         ..sort((Movement a, Movement b) => a.date.compareTo(b.date));
+         ..sort((Movement a, Movement b) => a.date.compareTo(b.date)),
+       upcoming = List<Movement>.unmodifiable(upcoming);
 
   final String owner;
 
@@ -94,29 +121,42 @@ class Ledger {
   final List<Subscription> subscriptions;
   final List<Goal> goals;
 
+  /// How the person gets paid.
+  final PaySchedule schedule;
+
+  /// The currency every amount here is in, converted from each account's own.
+  final Asset currency;
+
+  /// Charges expected before payday that are not movements yet: the next
+  /// rent, a subscription about to renew.
+  final List<Movement> upcoming;
+
+  /// [amount] in whole units of [currency]: pesos stay as they are, cents
+  /// become dollars. What the agent's tools and the catalog read.
+  num major(int amount) => currency.decimals == 0
+      ? amount
+      : amount / math.pow(10, currency.decimals);
+
   int get balance {
     var total = openingBalance;
     for (final Movement m in movements) {
       if (m.date.isAfter(today)) continue;
-      total += m.flow == Flow.income ? m.amount : -m.amount;
+      total += m.flow == Flow.income || m.flow == Flow.transferIn
+          ? m.amount
+          : -m.amount;
     }
     return total;
   }
 
-  /// The next payday after [today]: the 15th, or the last day of the month.
-  DateTime get nextPayday {
-    if (today.day < 15) return DateTime(today.year, today.month, 15);
-    final DateTime last = DateTime(today.year, today.month + 1, 0);
-    if (today.day < last.day) return last;
-    return DateTime(today.year, today.month + 1, 15);
-  }
+  /// The next payday after [today].
+  DateTime get nextPayday => schedule.nextAfter(today);
 
   /// What is already committed between today and the next payday.
   int get committedUntilPayday {
     final DateTime payday = nextPayday;
     var total = 0;
-    for (final Movement m in movements) {
-      if (m.flow == Flow.income) continue;
+    for (final Movement m in <Movement>[...movements, ...upcoming]) {
+      if (m.flow == Flow.income || m.flow == Flow.transferIn) continue;
       if (!m.date.isAfter(today) || m.date.isAfter(payday)) continue;
       total += m.amount;
     }
