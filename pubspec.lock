@@ -361,10 +361,10 @@ packages:
     dependency: "direct main"
     description:
       name: genui_gen
-      sha256: "0b3a4624cd887da18aea623bdaad93c8822517c16afa5bb63b7f73226d089128"
+      sha256: a83acb346e65e8cd366d1a55b9b01c81c1c274df9be4c6399a54b3ddf48ee198
       url: "https://pub.dev"
     source: hosted
-    version: "0.13.0"
+    version: "0.13.1"
   genui_gen_builder:
     dependency: "direct dev"
     description:

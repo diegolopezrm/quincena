@@ -187,11 +187,14 @@ class _SettingsState extends State<_Settings> {
                     widget.settings.themeMode = value.first,
               ),
               const SizedBox(height: 22),
-              Container(
-                decoration: BoxDecoration(
-                  color: context.colors.sunken,
+              // A Material rather than a decorated box, so the switch's ink
+              // shows on the tinted background instead of under it.
+              Material(
+                color: context.colors.sunken,
+                shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
+                clipBehavior: Clip.antiAlias,
                 child: Column(
                   children: <Widget>[
                     SwitchListTile(
