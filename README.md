@@ -1,5 +1,7 @@
 # Quincena
 
+[![CI](https://github.com/diegolopezrm/quincena/actions/workflows/ci.yml/badge.svg)](https://github.com/diegolopezrm/quincena/actions/workflows/ci.yml)
+
 Personal finance where every answer is an interface.
 
 Ask where September's money went and you get a donut chart, the two things

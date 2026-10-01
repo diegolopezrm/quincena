@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.6
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Format
+        run: dart format --output=none --set-exit-if-changed lib test tool test_screens
+
+      - name: Analyze
+        run: flutter analyze --fatal-infos
+
+      # The catalog is generated from the widgets' constructors. If someone
+      # changes a widget and forgets to regenerate, the agent composes
+      # against a schema the widget no longer matches.
+      - name: Generated catalog is current
+        run: |
+          dart run build_runner build --delete-conflicting-outputs
+          git diff --exit-code
+
+      # Includes the catalog checks (fuzz, semantics audit, catalog.json)
+      # and the replay of every recorded Gemini session.
+      - name: Test
+        run: flutter test
+
+      # No key is passed: a published build must never carry one.
+      - name: Build web
+        run: flutter build web --release

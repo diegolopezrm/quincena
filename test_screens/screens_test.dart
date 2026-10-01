@@ -20,7 +20,11 @@ const Map<String, Size> sizes = <String, Size>{
   'desktop': Size(1280, 900),
 };
 
-Future<Session> open(WidgetTester tester, Size size, Brightness brightness) async {
+Future<Session> open(
+  WidgetTester tester,
+  Size size,
+  Brightness brightness,
+) async {
   tester.view.physicalSize = size * 2;
   tester.view.devicePixelRatio = 2;
   tester.platformDispatcher.platformBrightnessTestValue = brightness;
