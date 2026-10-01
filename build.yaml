@@ -1,0 +1,8 @@
+targets:
+  $default:
+    builders:
+      # The id every surface names when the agent creates it. Reverse-domain
+      # notation, as A2UI recommends.
+      genui_gen_builder:genui_catalog:
+        options:
+          catalog_id: dev.dlsoft.quincena
