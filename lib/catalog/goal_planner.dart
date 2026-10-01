@@ -149,21 +149,34 @@ class GoalPlanner extends StatelessWidget {
               Figures(pesos(monthly), style: context.type.headlineSmall),
             ],
           ),
-          Slider(
-            value: monthly.clamp(lo, hi),
-            min: lo,
-            max: hi,
-            divisions: divisions,
-            label: pesos(monthly),
-            semanticFormatterCallback: (double value) =>
-                '${pesos(value)} al mes',
-            onChanged: onMonthlyChanged == null
-                ? null
-                : (double value) =>
-                      onMonthlyChanged!((value / step).round() * step),
+          const SizedBox(height: 6),
+          // A slider announces its value on its own, and nothing else; the
+          // name is what tells a screen reader user what the value is of.
+          // Merged, so the name lands on the slider's own node; a label on a
+          // separate parent is a node of its own that announces nothing.
+          MergeSemantics(
+            child: Semantics(
+              label: 'Apartar al mes para $name',
+              child: Slider(
+                value: monthly.clamp(lo, hi),
+                min: lo,
+                max: hi,
+                divisions: divisions,
+                // The track lines up with the labels under it; the amount is
+                // already shown large above, so no bubble repeats it.
+                padding: EdgeInsets.zero,
+                semanticFormatterCallback: (double value) =>
+                    '${pesos(value)} al mes',
+                onChanged: onMonthlyChanged == null
+                    ? null
+                    : (double value) =>
+                          onMonthlyChanged!((value / step).round() * step),
+              ),
+            ),
           ),
+          const SizedBox(height: 10),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+            padding: EdgeInsets.zero,
             child: Row(
               children: <Widget>[
                 Figures(pesosShort(lo), style: context.type.bodySmall),

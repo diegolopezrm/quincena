@@ -6,6 +6,7 @@ import '../data/category.dart';
 import '../data/clock.dart';
 import '../format/dates.dart';
 import '../format/money.dart';
+import '../theme/theme.dart';
 import '../theme/tokens.dart';
 import '../ui/kit.dart';
 
@@ -54,7 +55,7 @@ class SubscriptionRow extends StatelessWidget {
 
     return MergeSemantics(
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 9),
         child: Row(
           children: <Widget>[
             const CategoryBadge(Category.subscriptions),
@@ -65,24 +66,36 @@ class SubscriptionRow extends StatelessWidget {
                 children: <Widget>[
                   Text(
                     name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: context.type.bodyLarge?.copyWith(
                       decoration: keep ? null : TextDecoration.lineThrough,
                       color: keep ? null : context.colors.inkFaint,
                     ),
                   ),
-                  Text(
-                    usage,
-                    style: context.type.bodySmall?.copyWith(
-                      color: stale ? context.colors.caution : null,
+                  const SizedBox(height: 2),
+                  Text.rich(
+                    TextSpan(
+                      style: context.type.bodySmall,
+                      children: <InlineSpan>[
+                        TextSpan(
+                          text: '${pesos(price)} al mes',
+                          style: TextStyle(
+                            fontFeatures: tabular,
+                            color: keep ? context.colors.inkSoft : null,
+                          ),
+                        ),
+                        const TextSpan(text: ' · '),
+                        TextSpan(
+                          text: usage,
+                          style: TextStyle(
+                            color: stale ? context.colors.caution : null,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
-              ),
-            ),
-            Figures(
-              pesos(price),
-              style: context.type.titleSmall?.copyWith(
-                color: keep ? null : context.colors.inkFaint,
               ),
             ),
             const SizedBox(width: 8),

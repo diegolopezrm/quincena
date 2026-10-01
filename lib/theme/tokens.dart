@@ -144,6 +144,20 @@ class QuincenaColors extends ThemeExtension<QuincenaColors> {
 
 /// Shorthand for the extension, which every widget in the catalog reads.
 extension QuincenaTheme on BuildContext {
-  QuincenaColors get colors => Theme.of(this).extension<QuincenaColors>()!;
+  /// The app's colors, or the matching built-in set when the widget is drawn
+  /// under someone else's theme.
+  ///
+  /// Catalog components are not only drawn inside this app: genui's debug
+  /// view, a test harness or another host can render them under a plain
+  /// Material theme, and a component that crashes there is a component the
+  /// agent can break by being shown somewhere new.
+  QuincenaColors get colors {
+    final ThemeData theme = Theme.of(this);
+    return theme.extension<QuincenaColors>() ??
+        (theme.brightness == Brightness.dark
+            ? QuincenaColors.dark
+            : QuincenaColors.light);
+  }
+
   TextTheme get type => Theme.of(this).textTheme;
 }

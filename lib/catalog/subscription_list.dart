@@ -57,23 +57,29 @@ class SubscriptionList extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Icon(Glyph.piggyBank, color: context.colors.brand, size: 22),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text(
-                      'Si cancelas lo que apagaste, te ahorras',
-                      style: context.type.bodyMedium?.copyWith(
-                        color: context.colors.ink,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '$savings/mes',
-                    style: context.type.titleMedium?.copyWith(
-                      color: context.colors.brand,
-                      fontFeatures: tabular,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          'Si cancelas lo que apagaste, te ahorras',
+                          style: context.type.bodyMedium?.copyWith(
+                            color: context.colors.ink,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '$savings al mes',
+                          style: context.type.headlineSmall?.copyWith(
+                            color: context.colors.brand,
+                            fontFeatures: tabular,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],

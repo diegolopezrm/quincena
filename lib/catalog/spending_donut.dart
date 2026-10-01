@@ -123,14 +123,31 @@ class _Ring extends StatelessWidget {
                 DonutSegment(s.amount, s.category.color(context)),
             ],
           ),
+          // The middle of the ring has a fixed size, and the label is the
+          // agent's to write: it gets two lines, and the total shrinks to fit.
           child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Figures(pesosShort(total), style: context.type.displaySmall),
-                const SizedBox(height: 2),
-                Text(centerLabel, style: context.type.bodySmall),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 36),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Figures(
+                      pesosShort(total),
+                      style: context.type.displaySmall,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    centerLabel,
+                    style: context.type.bodySmall,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
           ),
         ),

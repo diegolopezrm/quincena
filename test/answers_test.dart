@@ -119,7 +119,7 @@ void main() {
     await ask(tester, session, ScriptedAgent.starters[2]);
 
     // The two nobody has used in a month start switched off.
-    expect(screen(tester), contains(r'$ 153.900/mes'));
+    expect(screen(tester), contains(r'$ 153.900 al mes'));
 
     // Switch off one more: the row after the two stale ones is Cineplus,
     // which costs $ 38.900.
@@ -130,7 +130,7 @@ void main() {
     await tester.tap(on.first);
     await settle(tester);
 
-    expect(screen(tester), contains(r'$ 192.800/mes'));
+    expect(screen(tester), contains(r'$ 192.800 al mes'));
   });
 
   testWidgets('the expense form checks the amount before saving', (

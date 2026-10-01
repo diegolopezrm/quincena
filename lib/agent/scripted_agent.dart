@@ -516,9 +516,10 @@ class ScriptedAgent {
           'title':
               'Pagas ${pesos(ledger.subscriptionsMonthly)} al mes en suscripciones',
           'body':
-              'Son ${subs.length}. ${stale.length == 2 ? 'Dos' : stale.length} '
-              'llevan más de un mes sin usarse; las dejé apagadas para que '
-              'veas lo que ahorras.',
+              'Son ${_count(subs.length)}. ${_capital(_count(stale.length))} '
+              '${stale.length == 1 ? 'lleva' : 'llevan'} más de un mes sin '
+              'usarse; ${stale.length == 1 ? 'la dejé apagada' : 'las dejé apagadas'} '
+              'para que veas lo que ahorras.',
         }),
         _c('list', 'SubscriptionList', {
           'title': 'Tus suscripciones',
@@ -783,6 +784,21 @@ String _iso(DateTime d) =>
 /// 14 % that dividing by the later month gives.
 String _change(int now, int before) =>
     before <= 0 ? '' : '${((now - before).abs() / before * 100).round()} %';
+
+/// Small counts in words, as they are written in a sentence.
+String _count(int n) => switch (n) {
+  0 => 'ninguna',
+  1 => 'una',
+  2 => 'dos',
+  3 => 'tres',
+  4 => 'cuatro',
+  5 => 'cinco',
+  6 => 'seis',
+  7 => 'siete',
+  8 => 'ocho',
+  9 => 'nueve',
+  _ => '$n',
+};
 
 String _capital(String s) =>
     s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
