@@ -51,3 +51,20 @@ String ago(DateTime date) {
   if (days < 60) return 'hace un mes';
   return 'hace ${days ~/ 30} meses';
 }
+
+/// `lunes 29 de septiembre` or `Monday, September 29`: a heading over the
+/// movements of one day.
+String weekdayDayMonth(DateTime date) =>
+    _format("EEEE d 'de' MMMM", 'EEEE, MMMM d').format(date);
+
+/// `29 sept 2026` or `Sep 29, 2026`.
+String shortDate(DateTime date) =>
+    _format('d MMM y', 'MMM d, y').format(date).replaceAll('.', '');
+
+/// `viernes` or `Friday`, for [weekday] from 1 (Monday) to 7 (Sunday).
+String weekdayName(int weekday) =>
+    _format('EEEE', 'EEEE').format(DateTime(2026, 9, 28 + weekday - 1));
+
+/// `1 oct, 9:30` or `Oct 1, 9:30 AM`: when something was last done.
+String dayAndTime(DateTime moment) =>
+    _format('d MMM, H:mm', 'MMM d, h:mm a').format(moment).replaceAll('.', '');

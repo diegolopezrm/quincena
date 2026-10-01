@@ -535,6 +535,852 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{amount} en total'**
   String inTotal(String amount);
+
+  /// No description provided for @startTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cómo quieres empezar?'**
+  String get startTitle;
+
+  /// No description provided for @startOwnTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Con mis cuentas'**
+  String get startOwnTitle;
+
+  /// No description provided for @startOwnBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Agrega tus cuentas en pesos, dólares o cripto y registra lo que entra y lo que sale.'**
+  String get startOwnBody;
+
+  /// No description provided for @startDemoTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Con datos de ejemplo'**
+  String get startDemoTitle;
+
+  /// No description provided for @startDemoBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Mira cómo funciona con la cuenta de Valentina, una diseñadora en Medellín. Puedes pasar a tus cuentas cuando quieras.'**
+  String get startDemoBody;
+
+  /// No description provided for @privacyNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus cuentas y movimientos se guardan solo en este dispositivo.'**
+  String get privacyNote;
+
+  /// No description provided for @onboardingStep.
+  ///
+  /// In es, this message translates to:
+  /// **'Paso {step} de {total}'**
+  String onboardingStep(int step, int total);
+
+  /// No description provided for @onboardingNameTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cómo te llamas?'**
+  String get onboardingNameTitle;
+
+  /// No description provided for @onboardingNameHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu nombre'**
+  String get onboardingNameHint;
+
+  /// No description provided for @onboardingBaseTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿En qué moneda quieres ver tus totales?'**
+  String get onboardingBaseTitle;
+
+  /// No description provided for @onboardingBaseBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada cuenta conserva su propia moneda; los totales se convierten a esta.'**
+  String get onboardingBaseBody;
+
+  /// No description provided for @onboardingPayTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cómo te pagan?'**
+  String get onboardingPayTitle;
+
+  /// No description provided for @onboardingPayBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Con esto Quincena calcula cuánto tienes libre hasta el próximo pago.'**
+  String get onboardingPayBody;
+
+  /// No description provided for @onboardingAccountsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Agrega tus cuentas'**
+  String get onboardingAccountsTitle;
+
+  /// No description provided for @onboardingAccountsBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Bancos, billeteras, efectivo, tarjetas o cripto. Puedes agregar más después.'**
+  String get onboardingAccountsBody;
+
+  /// No description provided for @onboardingSuggestions.
+  ///
+  /// In es, this message translates to:
+  /// **'Para empezar rápido'**
+  String get onboardingSuggestions;
+
+  /// No description provided for @onboardingNeedAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Agrega al menos una cuenta para empezar.'**
+  String get onboardingNeedAccount;
+
+  /// No description provided for @next.
+  ///
+  /// In es, this message translates to:
+  /// **'Siguiente'**
+  String get next;
+
+  /// No description provided for @back.
+  ///
+  /// In es, this message translates to:
+  /// **'Atrás'**
+  String get back;
+
+  /// No description provided for @finish.
+  ///
+  /// In es, this message translates to:
+  /// **'Empezar'**
+  String get finish;
+
+  /// No description provided for @payTwiceMonthly.
+  ///
+  /// In es, this message translates to:
+  /// **'Quincenal'**
+  String get payTwiceMonthly;
+
+  /// No description provided for @payTwiceMonthlyDetail.
+  ///
+  /// In es, this message translates to:
+  /// **'Los días {first} y {second} de cada mes'**
+  String payTwiceMonthlyDetail(int first, int second);
+
+  /// No description provided for @payMonthly.
+  ///
+  /// In es, this message translates to:
+  /// **'Mensual'**
+  String get payMonthly;
+
+  /// No description provided for @payMonthlyDetail.
+  ///
+  /// In es, this message translates to:
+  /// **'El día {day} de cada mes'**
+  String payMonthlyDetail(int day);
+
+  /// No description provided for @payBiweekly.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada dos semanas'**
+  String get payBiweekly;
+
+  /// No description provided for @payBiweeklyDetail.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada 14 días, contando desde el {date}'**
+  String payBiweeklyDetail(String date);
+
+  /// No description provided for @payWeekly.
+  ///
+  /// In es, this message translates to:
+  /// **'Semanal'**
+  String get payWeekly;
+
+  /// No description provided for @payWeeklyDetail.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada {weekday}'**
+  String payWeeklyDetail(String weekday);
+
+  /// No description provided for @payFirstDay.
+  ///
+  /// In es, this message translates to:
+  /// **'Primer pago'**
+  String get payFirstDay;
+
+  /// No description provided for @paySecondDay.
+  ///
+  /// In es, this message translates to:
+  /// **'Segundo pago'**
+  String get paySecondDay;
+
+  /// No description provided for @payDay.
+  ///
+  /// In es, this message translates to:
+  /// **'Día de pago'**
+  String get payDay;
+
+  /// No description provided for @payLastPayday.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu último pago'**
+  String get payLastPayday;
+
+  /// No description provided for @payWeekday.
+  ///
+  /// In es, this message translates to:
+  /// **'Día de la semana'**
+  String get payWeekday;
+
+  /// No description provided for @payDayOption.
+  ///
+  /// In es, this message translates to:
+  /// **'Día {day}'**
+  String payDayOption(int day);
+
+  /// No description provided for @tabHome.
+  ///
+  /// In es, this message translates to:
+  /// **'Inicio'**
+  String get tabHome;
+
+  /// No description provided for @tabMovements.
+  ///
+  /// In es, this message translates to:
+  /// **'Movimientos'**
+  String get tabMovements;
+
+  /// No description provided for @tabAccounts.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuentas'**
+  String get tabAccounts;
+
+  /// No description provided for @addAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar cuenta'**
+  String get addAccount;
+
+  /// No description provided for @editAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar cuenta'**
+  String get editAccount;
+
+  /// No description provided for @accountName.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre'**
+  String get accountName;
+
+  /// No description provided for @accountNameHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Por ejemplo, Bancolombia ahorros'**
+  String get accountNameHint;
+
+  /// No description provided for @accountKind.
+  ///
+  /// In es, this message translates to:
+  /// **'Tipo'**
+  String get accountKind;
+
+  /// No description provided for @kindBank.
+  ///
+  /// In es, this message translates to:
+  /// **'Banco'**
+  String get kindBank;
+
+  /// No description provided for @kindCard.
+  ///
+  /// In es, this message translates to:
+  /// **'Tarjeta de crédito'**
+  String get kindCard;
+
+  /// No description provided for @kindCash.
+  ///
+  /// In es, this message translates to:
+  /// **'Efectivo'**
+  String get kindCash;
+
+  /// No description provided for @kindWallet.
+  ///
+  /// In es, this message translates to:
+  /// **'Billetera digital'**
+  String get kindWallet;
+
+  /// No description provided for @kindExchange.
+  ///
+  /// In es, this message translates to:
+  /// **'Exchange de cripto'**
+  String get kindExchange;
+
+  /// No description provided for @kindInvestment.
+  ///
+  /// In es, this message translates to:
+  /// **'Ahorro o inversión'**
+  String get kindInvestment;
+
+  /// No description provided for @kindOther.
+  ///
+  /// In es, this message translates to:
+  /// **'Otra'**
+  String get kindOther;
+
+  /// No description provided for @accountAsset.
+  ///
+  /// In es, this message translates to:
+  /// **'Moneda'**
+  String get accountAsset;
+
+  /// No description provided for @assetFiat.
+  ///
+  /// In es, this message translates to:
+  /// **'Monedas'**
+  String get assetFiat;
+
+  /// No description provided for @assetCrypto.
+  ///
+  /// In es, this message translates to:
+  /// **'Cripto'**
+  String get assetCrypto;
+
+  /// No description provided for @assetOther.
+  ///
+  /// In es, this message translates to:
+  /// **'Otra cripto'**
+  String get assetOther;
+
+  /// No description provided for @assetOtherHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Símbolo, por ejemplo ADA'**
+  String get assetOtherHint;
+
+  /// No description provided for @accountInstitution.
+  ///
+  /// In es, this message translates to:
+  /// **'Entidad (opcional)'**
+  String get accountInstitution;
+
+  /// No description provided for @accountBalanceNow.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto tiene hoy?'**
+  String get accountBalanceNow;
+
+  /// No description provided for @accountDebtNow.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto debes hoy?'**
+  String get accountDebtNow;
+
+  /// No description provided for @accountSpendable.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta para gastar'**
+  String get accountSpendable;
+
+  /// No description provided for @accountSpendableHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Su saldo cuenta en lo que tienes libre hasta el próximo pago. Apágalo para ahorros, inversiones y cripto.'**
+  String get accountSpendableHelp;
+
+  /// No description provided for @accountAssetLocked.
+  ///
+  /// In es, this message translates to:
+  /// **'La moneda no se puede cambiar: los movimientos de la cuenta están en ella.'**
+  String get accountAssetLocked;
+
+  /// No description provided for @save.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar'**
+  String get save;
+
+  /// No description provided for @delete.
+  ///
+  /// In es, this message translates to:
+  /// **'Eliminar'**
+  String get delete;
+
+  /// No description provided for @cancel.
+  ///
+  /// In es, this message translates to:
+  /// **'Cancelar'**
+  String get cancel;
+
+  /// No description provided for @deleteAccountTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Eliminar {name}?'**
+  String deleteAccountTitle(String name);
+
+  /// No description provided for @deleteAccountBody.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{No tiene movimientos.} =1{Se borra también su movimiento. No se puede deshacer.} other{Se borran también sus {count} movimientos. No se puede deshacer.}}'**
+  String deleteAccountBody(int count);
+
+  /// No description provided for @groupSpendable.
+  ///
+  /// In es, this message translates to:
+  /// **'Para gastar'**
+  String get groupSpendable;
+
+  /// No description provided for @groupSaved.
+  ///
+  /// In es, this message translates to:
+  /// **'Ahorros, inversiones y cripto'**
+  String get groupSaved;
+
+  /// No description provided for @netWorth.
+  ///
+  /// In es, this message translates to:
+  /// **'Todo lo que tienes'**
+  String get netWorth;
+
+  /// No description provided for @noAccounts.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no tienes cuentas.'**
+  String get noAccounts;
+
+  /// No description provided for @yourAccounts.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus cuentas'**
+  String get yourAccounts;
+
+  /// No description provided for @accountMovements.
+  ///
+  /// In es, this message translates to:
+  /// **'Movimientos de la cuenta'**
+  String get accountMovements;
+
+  /// No description provided for @balanceToday.
+  ///
+  /// In es, this message translates to:
+  /// **'Saldo hoy'**
+  String get balanceToday;
+
+  /// No description provided for @ratesTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tasas'**
+  String get ratesTitle;
+
+  /// No description provided for @ratesUpdated.
+  ///
+  /// In es, this message translates to:
+  /// **'Actualizadas {when}'**
+  String ratesUpdated(String when);
+
+  /// No description provided for @ratesNever.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún sin tasas: se buscan al conectarse.'**
+  String get ratesNever;
+
+  /// No description provided for @ratesRefresh.
+  ///
+  /// In es, this message translates to:
+  /// **'Actualizar tasas'**
+  String get ratesRefresh;
+
+  /// No description provided for @ratesFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudieron actualizar. Se usan las últimas guardadas.'**
+  String get ratesFailed;
+
+  /// No description provided for @ratesMissing.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin tasa para {assets}: cuenta como cero en los totales.'**
+  String ratesMissing(String assets);
+
+  /// No description provided for @rateManual.
+  ///
+  /// In es, this message translates to:
+  /// **'Escrita a mano'**
+  String get rateManual;
+
+  /// No description provided for @rateSourceTrm.
+  ///
+  /// In es, this message translates to:
+  /// **'TRM oficial'**
+  String get rateSourceTrm;
+
+  /// No description provided for @rateSourceBinance.
+  ///
+  /// In es, this message translates to:
+  /// **'Binance'**
+  String get rateSourceBinance;
+
+  /// No description provided for @rateSourceEcb.
+  ///
+  /// In es, this message translates to:
+  /// **'Banco Central Europeo'**
+  String get rateSourceEcb;
+
+  /// No description provided for @rateEdit.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribir una tasa'**
+  String get rateEdit;
+
+  /// No description provided for @rateEditBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuánto vale 1 {asset} en {quote}. Una tasa escrita a mano no se reemplaza al actualizar.'**
+  String rateEditBody(String asset, String quote);
+
+  /// No description provided for @rateUseFetched.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver a la tasa automática'**
+  String get rateUseFetched;
+
+  /// No description provided for @stablecoinPeg.
+  ///
+  /// In es, this message translates to:
+  /// **'{asset} se cuenta como un dólar.'**
+  String stablecoinPeg(String asset);
+
+  /// No description provided for @addMovement.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar movimiento'**
+  String get addMovement;
+
+  /// No description provided for @editMovement.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar movimiento'**
+  String get editMovement;
+
+  /// No description provided for @kindExpense.
+  ///
+  /// In es, this message translates to:
+  /// **'Gasto'**
+  String get kindExpense;
+
+  /// No description provided for @kindIncome.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingreso'**
+  String get kindIncome;
+
+  /// No description provided for @kindTransfer.
+  ///
+  /// In es, this message translates to:
+  /// **'Transferencia'**
+  String get kindTransfer;
+
+  /// No description provided for @amount.
+  ///
+  /// In es, this message translates to:
+  /// **'Monto'**
+  String get amount;
+
+  /// No description provided for @account.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta'**
+  String get account;
+
+  /// No description provided for @fromAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde'**
+  String get fromAccount;
+
+  /// No description provided for @toAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Hacia'**
+  String get toAccount;
+
+  /// No description provided for @received.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegó'**
+  String get received;
+
+  /// No description provided for @receivedHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que llegó a la otra cuenta, en su moneda.'**
+  String get receivedHelp;
+
+  /// No description provided for @category.
+  ///
+  /// In es, this message translates to:
+  /// **'Categoría'**
+  String get category;
+
+  /// No description provided for @newCategory.
+  ///
+  /// In es, this message translates to:
+  /// **'Nueva categoría'**
+  String get newCategory;
+
+  /// No description provided for @payee.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Dónde o a quién?'**
+  String get payee;
+
+  /// No description provided for @payeeIncome.
+  ///
+  /// In es, this message translates to:
+  /// **'¿De dónde?'**
+  String get payeeIncome;
+
+  /// No description provided for @date.
+  ///
+  /// In es, this message translates to:
+  /// **'Fecha'**
+  String get date;
+
+  /// No description provided for @note.
+  ///
+  /// In es, this message translates to:
+  /// **'Nota (opcional)'**
+  String get note;
+
+  /// No description provided for @today.
+  ///
+  /// In es, this message translates to:
+  /// **'Hoy'**
+  String get today;
+
+  /// No description provided for @yesterday.
+  ///
+  /// In es, this message translates to:
+  /// **'Ayer'**
+  String get yesterday;
+
+  /// No description provided for @searchMovements.
+  ///
+  /// In es, this message translates to:
+  /// **'Buscar movimientos'**
+  String get searchMovements;
+
+  /// No description provided for @noMovements.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no hay movimientos.'**
+  String get noMovements;
+
+  /// No description provided for @noMovementsBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Registra un gasto, un ingreso o una transferencia con el botón +.'**
+  String get noMovementsBody;
+
+  /// No description provided for @noResults.
+  ///
+  /// In es, this message translates to:
+  /// **'Nada coincide con la búsqueda.'**
+  String get noResults;
+
+  /// No description provided for @deleteMovementTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Eliminar este movimiento?'**
+  String get deleteMovementTitle;
+
+  /// No description provided for @deleteTransferBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Se eliminan las dos partes de la transferencia.'**
+  String get deleteTransferBody;
+
+  /// No description provided for @invalidAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe un monto'**
+  String get invalidAmount;
+
+  /// No description provided for @sameAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige dos cuentas distintas'**
+  String get sameAccount;
+
+  /// No description provided for @needAccountFirst.
+  ///
+  /// In es, this message translates to:
+  /// **'Primero agrega una cuenta.'**
+  String get needAccountFirst;
+
+  /// No description provided for @recentMovements.
+  ///
+  /// In es, this message translates to:
+  /// **'Últimos movimientos'**
+  String get recentMovements;
+
+  /// No description provided for @seeAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver todos'**
+  String get seeAll;
+
+  /// No description provided for @scheduled.
+  ///
+  /// In es, this message translates to:
+  /// **'Programado'**
+  String get scheduled;
+
+  /// No description provided for @settingsProfile.
+  ///
+  /// In es, this message translates to:
+  /// **'Perfil'**
+  String get settingsProfile;
+
+  /// No description provided for @settingsName.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre'**
+  String get settingsName;
+
+  /// No description provided for @settingsBase.
+  ///
+  /// In es, this message translates to:
+  /// **'Moneda de los totales'**
+  String get settingsBase;
+
+  /// No description provided for @settingsPay.
+  ///
+  /// In es, this message translates to:
+  /// **'Cómo te pagan'**
+  String get settingsPay;
+
+  /// No description provided for @settingsData.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus datos'**
+  String get settingsData;
+
+  /// No description provided for @exportData.
+  ///
+  /// In es, this message translates to:
+  /// **'Exportar mis datos'**
+  String get exportData;
+
+  /// No description provided for @exportDone.
+  ///
+  /// In es, this message translates to:
+  /// **'Archivo guardado.'**
+  String get exportDone;
+
+  /// No description provided for @importData.
+  ///
+  /// In es, this message translates to:
+  /// **'Importar un archivo'**
+  String get importData;
+
+  /// No description provided for @importConfirmTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Reemplazar todo con este archivo?'**
+  String get importConfirmTitle;
+
+  /// No description provided for @importConfirmBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que tienes ahora en Quincena se borra y queda lo del archivo.'**
+  String get importConfirmBody;
+
+  /// No description provided for @importConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'Reemplazar'**
+  String get importConfirm;
+
+  /// No description provided for @importDone.
+  ///
+  /// In es, this message translates to:
+  /// **'Datos importados.'**
+  String get importDone;
+
+  /// No description provided for @importFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese archivo no se pudo leer: {reason}'**
+  String importFailed(String reason);
+
+  /// No description provided for @deleteAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrar todo'**
+  String get deleteAll;
+
+  /// No description provided for @deleteAllTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Borrar todos tus datos?'**
+  String get deleteAllTitle;
+
+  /// No description provided for @deleteAllBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuentas, movimientos y ajustes se borran de este dispositivo. No se puede deshacer; exporta primero si quieres conservarlos.'**
+  String get deleteAllBody;
+
+  /// No description provided for @useDemo.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver los datos de ejemplo'**
+  String get useDemo;
+
+  /// No description provided for @useOwn.
+  ///
+  /// In es, this message translates to:
+  /// **'Usar con mis cuentas'**
+  String get useOwn;
+
+  /// No description provided for @backToOwn.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver a mis cuentas'**
+  String get backToOwn;
+
+  /// No description provided for @privacyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Privacidad'**
+  String get privacyTitle;
+
+  /// No description provided for @privacyBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus cuentas y movimientos se guardan solo en este dispositivo. Para las tasas, Quincena consulta fuentes públicas (la TRM, Binance y el Banco Central Europeo) sin enviar nada tuyo.'**
+  String get privacyBody;
+
+  /// No description provided for @settingsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Ajustes'**
+  String get settingsTitle;
+
+  /// No description provided for @standingDaysLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'{days, plural, =0{Hoy es día de pago.} =1{Falta un día para el próximo pago.} other{Faltan {days} días para el próximo pago.}}'**
+  String standingDaysLeft(int days);
+
+  /// No description provided for @standingCommittedOwn.
+  ///
+  /// In es, this message translates to:
+  /// **'{committed} ya están comprometidos en pagos programados.'**
+  String standingCommittedOwn(String committed);
 }
 
 class _AppLocalizationsDelegate

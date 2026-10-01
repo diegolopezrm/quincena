@@ -74,6 +74,7 @@ String formatAmount(
   Asset asset, {
   Asset? base,
   bool signed = false,
+  int? decimals,
 }) {
   final bool en = englishFormatting;
   final String sign = amount < Decimal.zero
@@ -81,8 +82,8 @@ String formatAmount(
       : (signed && amount > Decimal.zero ? '+' : '');
   final String digits = formatDecimal(
     amount.abs(),
-    decimals: asset.decimals,
-    trim: asset.isCrypto,
+    decimals: decimals ?? asset.decimals,
+    trim: asset.isCrypto || decimals != null,
   );
   if (asset.isCrypto) return '$sign$digits$_nbsp${asset.code}';
   final String symbol =

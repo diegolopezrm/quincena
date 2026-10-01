@@ -12,21 +12,39 @@ Future<void> showSettings(
   BuildContext context, {
   required AppSettings settings,
   required Session session,
+  VoidCallback? onUseOwn,
+  bool hasOwn = false,
 }) => showModalBottomSheet<void>(
   context: context,
   showDragHandle: true,
   isScrollControlled: true,
   backgroundColor: context.colors.surface,
   constraints: const BoxConstraints(maxWidth: 560),
-  builder: (BuildContext context) =>
-      _Settings(settings: settings, session: session),
+  builder: (BuildContext context) => _Settings(
+    settings: settings,
+    session: session,
+    onUseOwn: onUseOwn,
+    hasOwn: hasOwn,
+  ),
 );
 
 class _Settings extends StatefulWidget {
-  const _Settings({required this.settings, required this.session});
+  const _Settings({
+    required this.settings,
+    required this.session,
+    this.onUseOwn,
+    this.hasOwn = false,
+  });
 
   final AppSettings settings;
   final Session session;
+
+  /// Leaves the sample for the person's own accounts; null where this build
+  /// cannot keep them.
+  final VoidCallback? onUseOwn;
+
+  /// Whether there are own accounts to go back to.
+  final bool hasOwn;
 
   @override
   State<_Settings> createState() => _SettingsState();
@@ -233,6 +251,16 @@ class _SettingsState extends State<_Settings> {
                 ),
               ),
               const SizedBox(height: 22),
+              if (widget.onUseOwn case final VoidCallback useOwn) ...<Widget>[
+                FilledButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    useOwn();
+                  },
+                  child: Text(widget.hasOwn ? t.backToOwn : t.useOwn),
+                ),
+                const SizedBox(height: 10),
+              ],
               OutlinedButton(
                 onPressed: () {
                   widget.session.restart();

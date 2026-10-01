@@ -23,9 +23,19 @@ class RateFetcher {
   final http.Client _client;
   final Duration timeout;
 
-  static final Uri _trm = Uri.parse(
-    r'https://www.datos.gov.co/resource/32sa-8pi3.json?$limit=1&$order=vigenciadesde%20DESC',
-  );
+  /// The TRM in force on [day]. Banco de la República publishes tomorrow's
+  /// the afternoon before; banks quote the one in force today.
+  static Uri _trm(
+    DateTime day,
+  ) => Uri.https('www.datos.gov.co', '/resource/32sa-8pi3.json', <
+    String,
+    String
+  >{
+    r'$limit': '1',
+    r'$order': 'vigenciadesde DESC',
+    r'$where':
+        "vigenciadesde <= '${day.toIso8601String().substring(0, 10)}T23:59:59'",
+  });
 
   /// Rates that let every asset in [assets] be converted to [base].
   Future<List<Rate>> fetch(Iterable<Asset> assets, Asset base) async {
@@ -52,7 +62,7 @@ class RateFetcher {
 
   /// USD/COP from the TRM in force today.
   Future<List<Rate>> trm() async {
-    final List<Object?> rows = await _getList(_trm);
+    final List<Object?> rows = await _getList(_trm(DateTime.now()));
     if (rows.isEmpty) return const <Rate>[];
     final Map<String, Object?> row = rows.first! as Map<String, Object?>;
     final Decimal? value = Decimal.tryParse('${row['valor']}');

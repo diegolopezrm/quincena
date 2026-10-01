@@ -1,9 +1,18 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'app_mode.dart';
 import 'l10n/l10n.dart';
+import 'money/rate_sources.dart';
 import 'session/session.dart';
+import 'store/open.dart';
+import 'store/store.dart';
 import 'theme/theme.dart';
+import 'theme/tokens.dart';
 import 'ui/home_page.dart';
+import 'ui/own/onboarding_page.dart';
+import 'ui/own/own_shell.dart';
+import 'ui/own/start_page.dart';
 
 /// What the person chose in settings.
 class AppSettings extends ChangeNotifier {
@@ -37,10 +46,32 @@ class AppSettings extends ChangeNotifier {
 }
 
 class QuincenaApp extends StatefulWidget {
-  const QuincenaApp({super.key, this.session});
+  const QuincenaApp({
+    super.key,
+    this.session,
+    this.store,
+    this.startInDemo = kIsWeb,
+    this.fetcher,
+    this.now,
+  });
 
-  /// The conversation to show. Tests pass one with no thinking pause.
+  /// The conversation to show. Tests pass one with no thinking pause, and
+  /// get the sample account and nothing else.
   final Session? session;
+
+  /// Where the person's own accounts are kept. Tests pass one in memory;
+  /// otherwise the app opens its own where the build can keep one.
+  final QuincenaStore? store;
+
+  /// Open on the sample unless the person already chose their own
+  /// accounts, as the published web demo does.
+  final bool startInDemo;
+
+  /// Where rates come from, for tests.
+  final RateFetcher? fetcher;
+
+  /// The clock, for tests.
+  final DateTime Function()? now;
 
   @override
   State<QuincenaApp> createState() => _QuincenaAppState();
@@ -62,11 +93,55 @@ class _QuincenaAppState extends State<QuincenaApp> {
         apiKey: _buildKey.isEmpty ? null : _buildKey,
       );
 
+  /// Null when a test passed a session: the sample is all there is.
+  late final AppModeController? _modes = widget.session != null
+      ? null
+      : (AppModeController(
+          store: widget.store ?? (storageAvailable ? openStore() : null),
+          startInDemo: widget.startInDemo,
+          fetcher: widget.fetcher,
+          now: widget.now,
+        )..start());
+
   @override
   void dispose() {
     _settings.dispose();
+    _modes?.dispose();
+    if (widget.store == null) _modes?.store?.close();
     if (widget.session == null) _session.dispose();
     super.dispose();
+  }
+
+  Widget _home() {
+    final AppModeController? modes = _modes;
+    if (modes == null) return HomePage(session: _session, settings: _settings);
+    return ListenableBuilder(
+      listenable: modes,
+      builder: (BuildContext context, _) => switch (modes.mode) {
+        AppMode.loading => Scaffold(backgroundColor: context.colors.canvas),
+        AppMode.choosing => StartPage(
+          onOwn: modes.useOwn,
+          onDemo: modes.useDemo,
+        ),
+        AppMode.onboarding => OnboardingPage(
+          store: modes.store!,
+          onDone: modes.finishedOnboarding,
+          onCancel: modes.cancelOnboarding,
+          newOwn: modes.newOwn,
+        ),
+        AppMode.demo => HomePage(
+          session: _session,
+          settings: _settings,
+          onUseOwn: modes.canUseOwn ? modes.useOwn : null,
+          hasOwn: modes.hasOwn,
+        ),
+        AppMode.own => OwnShell(
+          own: modes.own!,
+          modes: modes,
+          settings: _settings,
+        ),
+      },
+    );
   }
 
   @override
@@ -90,7 +165,7 @@ class _QuincenaAppState extends State<QuincenaApp> {
                   (Locale l) => l.languageCode == device?.languageCode,
                   orElse: () => const Locale('es'),
                 ),
-        home: HomePage(session: _session, settings: _settings),
+        home: _home(),
       ),
     );
   }

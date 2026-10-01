@@ -441,6 +441,42 @@ class QuincenaStore {
     return transferId;
   }
 
+  /// Rewrites both legs of the transfer [transferId] as one move from
+  /// [fromAccountId] to [toAccountId].
+  Future<void> updateTransfer(
+    String transferId, {
+    required String fromAccountId,
+    required String toAccountId,
+    required Decimal sent,
+    Decimal? received,
+    required DateTime date,
+    String note = '',
+  }) => db.transaction(() async {
+    await (db.delete(
+      db.entries,
+    )..where((e) => e.transferId.equals(transferId))).go();
+    for (final (String account, Decimal amount) in <(String, Decimal)>[
+      (fromAccountId, -sent.abs()),
+      (toAccountId, (received ?? sent).abs()),
+    ]) {
+      await db
+          .into(db.entries)
+          .insert(
+            _companion(
+              Entry(
+                id: _newId(),
+                accountId: account,
+                amount: amount,
+                date: date,
+                kind: EntryKind.transfer,
+                note: note.trim(),
+                transferId: transferId,
+              ),
+            ),
+          );
+    }
+  });
+
   Future<void> updateEntry(Entry entry) =>
       (db.update(db.entries)..where((e) => e.id.equals(entry.id))).write(
         EntriesCompanion(

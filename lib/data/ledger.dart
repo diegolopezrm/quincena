@@ -140,7 +140,7 @@ class Ledger {
   int get balance {
     var total = openingBalance;
     for (final Movement m in movements) {
-      if (m.date.isAfter(today)) continue;
+      if (_day(m.date).isAfter(today)) continue;
       total += m.flow == Flow.income || m.flow == Flow.transferIn
           ? m.amount
           : -m.amount;
@@ -157,7 +157,8 @@ class Ledger {
     var total = 0;
     for (final Movement m in <Movement>[...movements, ...upcoming]) {
       if (m.flow == Flow.income || m.flow == Flow.transferIn) continue;
-      if (!m.date.isAfter(today) || m.date.isAfter(payday)) continue;
+      final DateTime day = _day(m.date);
+      if (!day.isAfter(today) || day.isAfter(payday)) continue;
       total += m.amount;
     }
     return total;
@@ -172,7 +173,7 @@ class Ledger {
         m.flow == Flow.expense &&
         m.date.year == year &&
         m.date.month == month &&
-        !m.date.isAfter(today),
+        !_day(m.date).isAfter(today),
   );
 
   int spentIn(int year, int month) =>
@@ -232,3 +233,8 @@ class Ledger {
       ..sort((Movement a, Movement b) => a.date.compareTo(b.date));
   }
 }
+
+/// The calendar day of [moment]: a movement at noon today is today's, not
+/// the future's.
+DateTime _day(DateTime moment) =>
+    DateTime(moment.year, moment.month, moment.day);

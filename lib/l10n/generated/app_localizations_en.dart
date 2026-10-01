@@ -276,4 +276,484 @@ class AppLocalizationsEn extends AppLocalizations {
   String inTotal(String amount) {
     return '$amount in total';
   }
+
+  @override
+  String get startTitle => 'How do you want to start?';
+
+  @override
+  String get startOwnTitle => 'With my accounts';
+
+  @override
+  String get startOwnBody =>
+      'Add your accounts in pesos, dollars or crypto and record what comes in and what goes out.';
+
+  @override
+  String get startDemoTitle => 'With sample data';
+
+  @override
+  String get startDemoBody =>
+      'See how it works with Valentina\'s account, a designer in Medellín. You can switch to your own accounts any time.';
+
+  @override
+  String get privacyNote =>
+      'Your accounts and movements are stored only on this device.';
+
+  @override
+  String onboardingStep(int step, int total) {
+    return 'Step $step of $total';
+  }
+
+  @override
+  String get onboardingNameTitle => 'What\'s your name?';
+
+  @override
+  String get onboardingNameHint => 'Your name';
+
+  @override
+  String get onboardingBaseTitle => 'Which currency should your totals be in?';
+
+  @override
+  String get onboardingBaseBody =>
+      'Each account keeps its own currency; totals are converted to this one.';
+
+  @override
+  String get onboardingPayTitle => 'How do you get paid?';
+
+  @override
+  String get onboardingPayBody =>
+      'Quincena uses this to work out what is free until your next payday.';
+
+  @override
+  String get onboardingAccountsTitle => 'Add your accounts';
+
+  @override
+  String get onboardingAccountsBody =>
+      'Banks, wallets, cash, cards or crypto. You can add more later.';
+
+  @override
+  String get onboardingSuggestions => 'To start quickly';
+
+  @override
+  String get onboardingNeedAccount => 'Add at least one account to start.';
+
+  @override
+  String get next => 'Next';
+
+  @override
+  String get back => 'Back';
+
+  @override
+  String get finish => 'Start';
+
+  @override
+  String get payTwiceMonthly => 'Twice a month';
+
+  @override
+  String payTwiceMonthlyDetail(int first, int second) {
+    return 'Days $first and $second of each month';
+  }
+
+  @override
+  String get payMonthly => 'Monthly';
+
+  @override
+  String payMonthlyDetail(int day) {
+    return 'Day $day of each month';
+  }
+
+  @override
+  String get payBiweekly => 'Every two weeks';
+
+  @override
+  String payBiweeklyDetail(String date) {
+    return 'Every 14 days, counting from $date';
+  }
+
+  @override
+  String get payWeekly => 'Weekly';
+
+  @override
+  String payWeeklyDetail(String weekday) {
+    return 'Every $weekday';
+  }
+
+  @override
+  String get payFirstDay => 'First payday';
+
+  @override
+  String get paySecondDay => 'Second payday';
+
+  @override
+  String get payDay => 'Payday';
+
+  @override
+  String get payLastPayday => 'Your last payday';
+
+  @override
+  String get payWeekday => 'Day of the week';
+
+  @override
+  String payDayOption(int day) {
+    return 'Day $day';
+  }
+
+  @override
+  String get tabHome => 'Home';
+
+  @override
+  String get tabMovements => 'Movements';
+
+  @override
+  String get tabAccounts => 'Accounts';
+
+  @override
+  String get addAccount => 'Add account';
+
+  @override
+  String get editAccount => 'Edit account';
+
+  @override
+  String get accountName => 'Name';
+
+  @override
+  String get accountNameHint => 'For example, Checking account';
+
+  @override
+  String get accountKind => 'Type';
+
+  @override
+  String get kindBank => 'Bank';
+
+  @override
+  String get kindCard => 'Credit card';
+
+  @override
+  String get kindCash => 'Cash';
+
+  @override
+  String get kindWallet => 'Digital wallet';
+
+  @override
+  String get kindExchange => 'Crypto exchange';
+
+  @override
+  String get kindInvestment => 'Savings or investment';
+
+  @override
+  String get kindOther => 'Other';
+
+  @override
+  String get accountAsset => 'Currency';
+
+  @override
+  String get assetFiat => 'Currencies';
+
+  @override
+  String get assetCrypto => 'Crypto';
+
+  @override
+  String get assetOther => 'Other crypto';
+
+  @override
+  String get assetOtherHint => 'Ticker, for example ADA';
+
+  @override
+  String get accountInstitution => 'Institution (optional)';
+
+  @override
+  String get accountBalanceNow => 'How much is in it today?';
+
+  @override
+  String get accountDebtNow => 'How much do you owe today?';
+
+  @override
+  String get accountSpendable => 'Money to spend';
+
+  @override
+  String get accountSpendableHelp =>
+      'Its balance counts toward what is free until payday. Turn it off for savings, investments and crypto.';
+
+  @override
+  String get accountAssetLocked =>
+      'The currency can\'t change: the account\'s movements are in it.';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String deleteAccountTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String deleteAccountBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Its $count movements are deleted too. This can\'t be undone.',
+      one: 'Its movement is deleted too. This can\'t be undone.',
+      zero: 'It has no movements.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get groupSpendable => 'To spend';
+
+  @override
+  String get groupSaved => 'Savings, investments and crypto';
+
+  @override
+  String get netWorth => 'Everything you have';
+
+  @override
+  String get noAccounts => 'No accounts yet.';
+
+  @override
+  String get yourAccounts => 'Your accounts';
+
+  @override
+  String get accountMovements => 'Account movements';
+
+  @override
+  String get balanceToday => 'Balance today';
+
+  @override
+  String get ratesTitle => 'Rates';
+
+  @override
+  String ratesUpdated(String when) {
+    return 'Updated $when';
+  }
+
+  @override
+  String get ratesNever => 'No rates yet: they are fetched when online.';
+
+  @override
+  String get ratesRefresh => 'Refresh rates';
+
+  @override
+  String get ratesFailed => 'Couldn\'t update them. Using the last saved ones.';
+
+  @override
+  String ratesMissing(String assets) {
+    return 'No rate for $assets: it counts as zero in totals.';
+  }
+
+  @override
+  String get rateManual => 'Typed by hand';
+
+  @override
+  String get rateSourceTrm => 'Official TRM';
+
+  @override
+  String get rateSourceBinance => 'Binance';
+
+  @override
+  String get rateSourceEcb => 'European Central Bank';
+
+  @override
+  String get rateEdit => 'Type a rate';
+
+  @override
+  String rateEditBody(String asset, String quote) {
+    return 'What 1 $asset is worth in $quote. A rate typed by hand is not replaced when refreshing.';
+  }
+
+  @override
+  String get rateUseFetched => 'Back to the automatic rate';
+
+  @override
+  String stablecoinPeg(String asset) {
+    return '$asset counts as one dollar.';
+  }
+
+  @override
+  String get addMovement => 'Add movement';
+
+  @override
+  String get editMovement => 'Edit movement';
+
+  @override
+  String get kindExpense => 'Expense';
+
+  @override
+  String get kindIncome => 'Income';
+
+  @override
+  String get kindTransfer => 'Transfer';
+
+  @override
+  String get amount => 'Amount';
+
+  @override
+  String get account => 'Account';
+
+  @override
+  String get fromAccount => 'From';
+
+  @override
+  String get toAccount => 'To';
+
+  @override
+  String get received => 'Received';
+
+  @override
+  String get receivedHelp =>
+      'What arrived in the other account, in its currency.';
+
+  @override
+  String get category => 'Category';
+
+  @override
+  String get newCategory => 'New category';
+
+  @override
+  String get payee => 'Where or to whom?';
+
+  @override
+  String get payeeIncome => 'From where?';
+
+  @override
+  String get date => 'Date';
+
+  @override
+  String get note => 'Note (optional)';
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get yesterday => 'Yesterday';
+
+  @override
+  String get searchMovements => 'Search movements';
+
+  @override
+  String get noMovements => 'No movements yet.';
+
+  @override
+  String get noMovementsBody =>
+      'Record an expense, an income or a transfer with the + button.';
+
+  @override
+  String get noResults => 'Nothing matches the search.';
+
+  @override
+  String get deleteMovementTitle => 'Delete this movement?';
+
+  @override
+  String get deleteTransferBody => 'Both sides of the transfer are deleted.';
+
+  @override
+  String get invalidAmount => 'Enter an amount';
+
+  @override
+  String get sameAccount => 'Pick two different accounts';
+
+  @override
+  String get needAccountFirst => 'Add an account first.';
+
+  @override
+  String get recentMovements => 'Recent movements';
+
+  @override
+  String get seeAll => 'See all';
+
+  @override
+  String get scheduled => 'Scheduled';
+
+  @override
+  String get settingsProfile => 'Profile';
+
+  @override
+  String get settingsName => 'Name';
+
+  @override
+  String get settingsBase => 'Currency for totals';
+
+  @override
+  String get settingsPay => 'How you get paid';
+
+  @override
+  String get settingsData => 'Your data';
+
+  @override
+  String get exportData => 'Export my data';
+
+  @override
+  String get exportDone => 'File saved.';
+
+  @override
+  String get importData => 'Import a file';
+
+  @override
+  String get importConfirmTitle => 'Replace everything with this file?';
+
+  @override
+  String get importConfirmBody =>
+      'What is in Quincena now is deleted and replaced by the file.';
+
+  @override
+  String get importConfirm => 'Replace';
+
+  @override
+  String get importDone => 'Data imported.';
+
+  @override
+  String importFailed(String reason) {
+    return 'That file couldn\'t be read: $reason';
+  }
+
+  @override
+  String get deleteAll => 'Delete everything';
+
+  @override
+  String get deleteAllTitle => 'Delete all your data?';
+
+  @override
+  String get deleteAllBody =>
+      'Accounts, movements and settings are deleted from this device. This can\'t be undone; export first if you want to keep them.';
+
+  @override
+  String get useDemo => 'See the sample data';
+
+  @override
+  String get useOwn => 'Use with my accounts';
+
+  @override
+  String get backToOwn => 'Back to my accounts';
+
+  @override
+  String get privacyTitle => 'Privacy';
+
+  @override
+  String get privacyBody =>
+      'Your accounts and movements are stored only on this device. For rates, Quincena looks up public sources (the TRM, Binance and the European Central Bank) without sending anything of yours.';
+
+  @override
+  String get settingsTitle => 'Settings';
+
+  @override
+  String standingDaysLeft(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days until payday.',
+      one: 'One day until payday.',
+      zero: 'Today is payday.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String standingCommittedOwn(String committed) {
+    return '$committed is already committed to scheduled payments.';
+  }
 }

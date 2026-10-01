@@ -181,6 +181,26 @@ void main() {
     expect(l.major(l.balance), 250);
   });
 
+  test('a movement later today is today\'s, not a scheduled one', () async {
+    final Account bank = await store.addAccount(
+      name: 'Nequi',
+      kind: AccountKind.wallet,
+      asset: Asset.cop,
+      opening: d('100000'),
+    );
+    await store.addEntry(
+      accountId: bank.id,
+      amount: d('23500'),
+      kind: EntryKind.expense,
+      date: DateTime(2026, 10, 3, 18, 30),
+      category: 'restaurants',
+    );
+    final Ledger l = await ledger();
+    expect(l.balance, 76500);
+    expect(l.committedUntilPayday, 0);
+    expect(l.spentIn(2026, 10), 23500);
+  });
+
   test('an asset with no rate is counted as zero and named', () async {
     await store.addAccount(
       name: 'Billetera',

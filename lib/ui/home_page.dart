@@ -16,10 +16,21 @@ import 'icons.dart';
 
 /// The one screen: where the money stands, the conversation, the question.
 class HomePage extends StatefulWidget {
-  const HomePage({super.key, required this.session, required this.settings});
+  const HomePage({
+    super.key,
+    required this.session,
+    required this.settings,
+    this.onUseOwn,
+    this.hasOwn = false,
+  });
 
   final Session session;
   final AppSettings settings;
+
+  /// Leaves the sample for the person's own accounts, where the build can
+  /// keep them.
+  final VoidCallback? onUseOwn;
+  final bool hasOwn;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -134,6 +145,8 @@ class _HomePageState extends State<HomePage> {
                     context,
                     settings: widget.settings,
                     session: _session,
+                    onUseOwn: widget.onUseOwn,
+                    hasOwn: widget.hasOwn,
                   ),
                   onRestart: _session.turns.isEmpty ? null : _session.restart,
                   live: _session.mode == AgentMode.live,

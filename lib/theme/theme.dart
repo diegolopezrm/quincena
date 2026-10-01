@@ -211,6 +211,65 @@ ThemeData quincenaTheme(Brightness brightness) {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
       showCheckmark: false,
     ),
+    // Back arrows and close buttons from the same icon set as everything
+    // else.
+    actionIconTheme: ActionIconThemeData(
+      backButtonIconBuilder: (BuildContext context) =>
+          const Icon(IconData(0xe058, fontFamily: 'Phosphor')),
+      closeButtonIconBuilder: (BuildContext context) =>
+          const Icon(IconData(0xe4f6, fontFamily: 'Phosphor')),
+    ),
+    // Flat, like every surface in the app: a border or a fill says what is
+    // what, not a shadow.
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: c.brand,
+      foregroundColor: c.onBrand,
+      elevation: 0,
+      focusElevation: 0,
+      hoverElevation: 0,
+      highlightElevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      extendedTextStyle: text.labelLarge,
+    ),
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: c.surface,
+      indicatorColor: c.brandSoft,
+      elevation: 0,
+      iconTheme: WidgetStateProperty.resolveWith(
+        (Set<WidgetState> s) => IconThemeData(
+          color: s.contains(WidgetState.selected) ? c.brand : c.inkSoft,
+          size: 24,
+        ),
+      ),
+      labelTextStyle: WidgetStateProperty.resolveWith(
+        (Set<WidgetState> s) => text.labelMedium?.copyWith(
+          color: s.contains(WidgetState.selected) ? c.ink : c.inkSoft,
+        ),
+      ),
+    ),
+    navigationRailTheme: NavigationRailThemeData(
+      backgroundColor: c.canvas,
+      indicatorColor: c.brandSoft,
+      selectedIconTheme: IconThemeData(color: c.brand),
+      unselectedIconTheme: IconThemeData(color: c.inkSoft),
+      selectedLabelTextStyle: text.labelMedium?.copyWith(color: c.ink),
+      unselectedLabelTextStyle: text.labelMedium,
+    ),
+    segmentedButtonTheme: SegmentedButtonThemeData(
+      style: ButtonStyle(
+        // Room for "Transferencia" in a third of a phone.
+        padding: const WidgetStatePropertyAll<EdgeInsets>(
+          EdgeInsets.symmetric(horizontal: 6),
+        ),
+        backgroundColor: WidgetStateProperty.resolveWith(
+          (Set<WidgetState> s) =>
+              s.contains(WidgetState.selected) ? c.brandSoft : c.surface,
+        ),
+        foregroundColor: WidgetStatePropertyAll<Color>(c.ink),
+        side: WidgetStatePropertyAll<BorderSide>(BorderSide(color: c.line)),
+        textStyle: WidgetStatePropertyAll<TextStyle?>(text.labelMedium),
+      ),
+    ),
     tooltipTheme: TooltipThemeData(
       decoration: BoxDecoration(
         color: c.ink,

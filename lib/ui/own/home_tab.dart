@@ -1,0 +1,194 @@
+import 'package:flutter/material.dart';
+
+import '../../data/ledger.dart';
+import '../../domain/records.dart';
+import '../../format/money.dart';
+import '../../l10n/l10n.dart';
+import '../../money/asset.dart';
+import '../../own/own_controller.dart';
+import '../../theme/tokens.dart';
+import '../icons.dart';
+import '../standing.dart';
+import 'accounts_tab.dart';
+import 'look.dart';
+import 'movement_list.dart';
+
+/// Where the money stands until payday, the accounts and the last
+/// movements.
+class OwnHomeTab extends StatelessWidget {
+  const OwnHomeTab({super.key, required this.own, required this.onSeeAll});
+
+  final OwnController own;
+
+  /// Opens the full list of movements.
+  final VoidCallback onSeeAll;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    final Ledger? ledger = own.ledger;
+    if (ledger == null) return const SizedBox.shrink();
+    final List<Entry> recent = visibleEntries(own).take(5).toList();
+    final Set<Asset> missing = own.unconverted;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        StandingCard(
+          ledger: ledger,
+          balanceLabel: l.groupSpendable,
+          detail: <String>[
+            l.standingDaysLeft(
+              ledger.nextPayday.difference(ledger.today).inDays,
+            ),
+            if (ledger.committedUntilPayday > 0)
+              l.standingCommittedOwn(
+                pesos(ledger.major(ledger.committedUntilPayday)),
+              ),
+          ].join(' '),
+        ),
+        if (missing.isNotEmpty) ...<Widget>[
+          const SizedBox(height: 12),
+          _Notice(
+            text: l.ratesMissing(missing.map((Asset a) => a.code).join(', ')),
+          ),
+        ],
+        const SizedBox(height: 28),
+        SectionLabel(l.yourAccounts),
+        Panel(
+          children: <Widget>[
+            for (final Account a in own.accounts)
+              AccountRow(own: own, account: a),
+          ],
+        ),
+        const SizedBox(height: 28),
+        SectionLabel(
+          l.recentMovements,
+          trailing: recent.isEmpty
+              ? null
+              : TextButton(onPressed: onSeeAll, child: Text(l.seeAll)),
+        ),
+        if (recent.isEmpty)
+          _Empty(title: l.noMovements, body: l.noMovementsBody)
+        else
+          Panel(
+            children: <Widget>[
+              for (final Entry e in recent) MovementRow(own: own, entry: e),
+            ],
+          ),
+      ],
+    );
+  }
+}
+
+class _Notice extends StatelessWidget {
+  const _Notice({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: context.colors.cautionSoft,
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Row(
+      children: <Widget>[
+        Icon(Glyph.warningCircle, size: 20, color: context.colors.caution),
+        const SizedBox(width: 10),
+        Expanded(child: Text(text, style: context.type.bodyMedium)),
+      ],
+    ),
+  );
+}
+
+class _Empty extends StatelessWidget {
+  const _Empty({required this.title, required this.body});
+
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: context.colors.surface,
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: context.colors.line),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(title, style: context.type.titleSmall),
+        const SizedBox(height: 4),
+        Text(body, style: context.type.bodyMedium),
+      ],
+    ),
+  );
+}
+
+/// Every movement, with a search over what it was, where and in which
+/// account.
+class MovementsTab extends StatefulWidget {
+  const MovementsTab({super.key, required this.own});
+
+  final OwnController own;
+
+  @override
+  State<MovementsTab> createState() => _MovementsTabState();
+}
+
+class _MovementsTabState extends State<MovementsTab> {
+  final TextEditingController _search = TextEditingController();
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  bool _matches(BuildContext context, Entry e, String q) {
+    final OwnController own = widget.own;
+    final String account = own.snapshot?.account(e.accountId)?.name ?? '';
+    final String category = e.category == null
+        ? ''
+        : categoryNameFor(context, e.category!, own.categories);
+    return <String>[
+      e.payee,
+      e.note,
+      account,
+      category,
+    ].any((String s) => s.toLowerCase().contains(q));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    final OwnController own = widget.own;
+    final String q = _search.text.trim().toLowerCase();
+    final List<Entry> all = visibleEntries(own);
+    final List<Entry> shown = q.isEmpty
+        ? all
+        : all.where((Entry e) => _matches(context, e, q)).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        TextField(
+          controller: _search,
+          onChanged: (_) => setState(() {}),
+          decoration: InputDecoration(
+            hintText: l.searchMovements,
+            prefixIcon: const Icon(Glyph.magnifyingGlass, size: 20),
+          ),
+        ),
+        const SizedBox(height: 20),
+        if (all.isEmpty)
+          _Empty(title: l.noMovements, body: l.noMovementsBody)
+        else if (shown.isEmpty)
+          Text(l.noResults, style: context.type.bodyMedium)
+        else
+          MovementGroups(own: own, entries: shown),
+      ],
+    );
+  }
+}
