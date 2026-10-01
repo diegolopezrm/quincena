@@ -52,6 +52,44 @@ screen with the same components, bindings and function calls a model sends,
 and every number in its answers comes from the account, so saving an expense
 changes the next answer.
 
+## Talk to Gemini
+
+In settings, choose "Gemini en vivo" and paste a key from
+[Google AI Studio](https://aistudio.google.com). The key stays in the tab:
+it is not saved, and it only travels to Google. Then ask anything about the
+account.
+
+Gemini gets the catalog through genui's prompt builder, with two of its
+defaults switched off: the chat preset forbids `updateDataModel`, which every
+interactive component here relies on, and tells a model that cannot run code
+to do arithmetic itself, which a finance app must never let it do. It gets
+the numbers from tools that ask the account, never from its own head. When a
+surface it sends fails validation against the catalog, genui reports why and
+the app sends that back within the same turn, so the person sees the
+corrected answer rather than the broken one.
+
+For a local run you can also pass the key at build time:
+
+```bash
+flutter run -d chrome --dart-define=GEMINI_API_KEY=your-key
+```
+
+Never do that for a build you publish: a web build made with the key
+defined carries it in its JavaScript.
+
+## Recording real sessions
+
+```bash
+GEMINI_API_KEY=your-key flutter test tool/record
+```
+
+asks Gemini each question on the home screen and writes what it sent to
+`assets/traces/` as genui_gen traces. The app replays them in "Lo que
+respondió Gemini", step by step and with no network, and
+`test/recorded_test.dart` replays every one against the current catalog on
+each run, so a catalog change that would break a real conversation fails a
+test instead of a person.
+
 After changing a widget or a function, regenerate the catalog:
 
 ```bash
@@ -79,7 +117,7 @@ the goal slider announced its value without saying what the value was of.
 |---|---|
 | `lib/catalog/` | the components the agent composes with, and the data shapes they take |
 | `lib/functions/` | the functions the agent can call from a binding |
-| `lib/agent/` | the assembled catalog and the scripted agent |
+| `lib/agent/` | the assembled catalog, the prompt, the tools, the scripted agent and the live one |
 | `lib/data/` | the account: movements, subscriptions, the goal |
 | `lib/ui/` | the screen around the conversation |
 

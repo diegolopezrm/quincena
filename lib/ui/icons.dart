@@ -36,5 +36,6 @@ abstract final class Glyph {
     fontFamily: _family,
   );
   static const IconData gear = IconData(0xe270, fontFamily: _family);
+  static const IconData sparkle = IconData(0xe6a2, fontFamily: _family);
   static const IconData paperPlaneRight = IconData(0xe396, fontFamily: _family);
 }

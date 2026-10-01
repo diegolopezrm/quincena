@@ -57,6 +57,10 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
+  assets:
+    # Real Gemini sessions, recorded with tool/record and replayed in the app.
+    - assets/traces/
+
   fonts:
     # Both are variable fonts under the SIL Open Font License; the licenses
     # sit next to the files. Weights are set through the `wght` axis, so a

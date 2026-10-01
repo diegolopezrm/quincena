@@ -12,10 +12,18 @@ import 'icons.dart';
 /// What the screen shows before the first question: where the money stands,
 /// and what to ask it.
 class Welcome extends StatelessWidget {
-  const Welcome({super.key, required this.ledger, required this.onAsk});
+  const Welcome({
+    super.key,
+    required this.ledger,
+    required this.onAsk,
+    this.onRecordings,
+  });
 
   final Ledger ledger;
   final ValueChanged<String> onAsk;
+
+  /// Opens the sessions Gemini answered for real; null when there are none.
+  final VoidCallback? onRecordings;
 
   static const List<IconData> _icons = <IconData>[
     Glyph.chartDonut,
@@ -60,6 +68,16 @@ class Welcome extends StatelessWidget {
             );
           },
         ),
+        if (onRecordings case final VoidCallback open) ...<Widget>[
+          const SizedBox(height: 18),
+          Center(
+            child: TextButton.icon(
+              onPressed: open,
+              icon: const Icon(Glyph.sparkle, size: 18),
+              label: const Text('Mira lo que respondió Gemini de verdad'),
+            ),
+          ),
+        ],
       ],
     );
   }

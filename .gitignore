@@ -46,3 +46,6 @@ app.*.map.json
 
 # Screens rendered for review; a few are copied into docs/ for the README.
 test_screens/goldens/
+
+# Pictures the recording tool takes of each answer, for review.
+tool/record/out/

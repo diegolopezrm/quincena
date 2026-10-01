@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:genui_gen/inspector.dart';
 
 import '../app.dart';
+import '../session/recordings.dart';
 import '../session/session.dart';
 import '../theme/tokens.dart';
 import 'ask_bar.dart';
 import 'conversation.dart';
 import 'mark.dart';
+import 'recorded_page.dart';
 import 'settings_sheet.dart';
 import 'welcome.dart';
 import 'icons.dart';
@@ -28,12 +30,18 @@ class _HomePageState extends State<HomePage> {
   int _seenTurns = 0;
   bool _wasBusy = false;
 
+  /// Sessions Gemini answered for real, if the app ships any.
+  List<Recording> _recordings = const <Recording>[];
+
   Session get _session => widget.session;
 
   @override
   void initState() {
     super.initState();
     _session.addListener(_follow);
+    loadRecordings().then((List<Recording> found) {
+      if (mounted && found.isNotEmpty) setState(() => _recordings = found);
+    }, onError: (Object _) {});
   }
 
   @override
@@ -77,7 +85,18 @@ class _HomePageState extends State<HomePage> {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                   child: _session.turns.isEmpty
-                      ? Welcome(ledger: _session.ledger, onAsk: _session.ask)
+                      ? Welcome(
+                          ledger: _session.ledger,
+                          onAsk: _session.ask,
+                          onRecordings: _recordings.isEmpty
+                              ? null
+                              : () => Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (BuildContext context) =>
+                                        RecordedPage(recordings: _recordings),
+                                  ),
+                                ),
+                        )
                       : Conversation(session: _session, latest: _latest),
                 ),
               ),
