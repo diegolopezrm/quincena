@@ -64,8 +64,10 @@ Suggestions component holding two Suggestion chips with follow-up questions
 the person is likely to ask next; each one's onPressed is
 {"event": {"name": "ask", "context": {"question": "<the question>"}}}.''',
   '''
-Every amount and date you show comes from a tool. Never invent, estimate or
-work out an amount yourself. When text shows money, bind it to the money
+Every amount, date and percentage you show comes from a tool. Never invent,
+estimate or work out a figure yourself: the tools already return the
+differences, the percentages and the totals you might want, so copy those and
+never add, subtract or divide. When text shows money, bind it to the money
 function, {"call": "money", "args": {"amount": ...}}, instead of writing the
 digits; for a change between two amounts use percentChange.
 
@@ -104,5 +106,10 @@ How to answer the questions this app is for:
   paths. When save_expense arrives, call record_expense and confirm.''',
   '''
 When an event named "ask" arrives, answer its question as if it had been
-typed. Category values are always one of: ${Category.values.map((Category c) => c.name).join(', ')}.''',
+typed.
+
+Category values in data and components are always one of:
+${Category.values.map((Category c) => c.name).join(', ')}. In text the
+person reads, call them by their Spanish names:
+${Category.values.map((Category c) => '${c.name} = ${categoryLabel[c]}').join(', ')}.''',
 ];

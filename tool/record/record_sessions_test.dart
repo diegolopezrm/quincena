@@ -76,7 +76,13 @@ void main() {
         await tester.pumpAndSettle();
 
         final watch = Stopwatch()..start();
-        await tester.runAsync(() => session.ask(question));
+        await tester.runAsync(() async {
+          await session.ask(question);
+          // The HTTP client races IPv4 and IPv6 connections and leaves the
+          // loser's 250 ms timer behind. Waiting it out here, on the real
+          // clock, keeps it from landing on the test's fake one.
+          await Future<void>.delayed(const Duration(seconds: 1));
+        });
         watch.stop();
         await tester.pumpAndSettle();
 

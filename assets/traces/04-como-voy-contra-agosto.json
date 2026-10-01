@@ -1,0 +1,212 @@
+{
+  "version": 1,
+  "recordedAt": "2026-10-01T07:33:24.081832",
+  "catalogId": "dev.dlsoft.quincena",
+  "notes": {
+    "app": "quincena",
+    "agent": "live",
+    "question": "¿Cómo voy contra agosto?",
+    "model": "gemini-3-flash-preview",
+    "seconds": 11.081
+  },
+  "steps": [
+    {
+      "at": 11119,
+      "kind": "message",
+      "message": {
+        "version": "v0.9",
+        "createSurface": {
+          "surfaceId": "answer-1",
+          "catalogId": "dev.dlsoft.quincena",
+          "sendDataModel": true
+        }
+      }
+    },
+    {
+      "at": 11121,
+      "kind": "data",
+      "surfaceId": "answer-1",
+      "data": {}
+    },
+    {
+      "at": 11121,
+      "kind": "message",
+      "message": {
+        "version": "v0.9",
+        "updateComponents": {
+          "surfaceId": "answer-1",
+          "components": [
+            {
+              "id": "root",
+              "component": "Answer",
+              "children": [
+                "head",
+                "bars",
+                "changes",
+                "sug"
+              ]
+            },
+            {
+              "id": "head",
+              "component": "Headline",
+              "title": {
+                "call": "formatString",
+                "args": {
+                  "value": "Gastaste ${money(amount: 480500)} más que en agosto"
+                }
+              },
+              "kicker": "Comparación de meses",
+              "body": "Septiembre fue tu mes de mayor gasto en el último semestre."
+            },
+            {
+              "id": "bars",
+              "component": "MonthBars",
+              "title": "Gasto mensual",
+              "months": {
+                "path": "/months"
+              },
+              "reference": {
+                "path": "/income"
+              },
+              "referenceLabel": "Ingresos"
+            },
+            {
+              "id": "changes",
+              "component": "Group",
+              "title": "Categorías con más cambios",
+              "children": [
+                "meter1",
+                "meter2"
+              ]
+            },
+            {
+              "id": "meter1",
+              "component": "BudgetMeter",
+              "category": "restaurants",
+              "spent": 596900,
+              "limit": 341600,
+              "caption": "Agosto"
+            },
+            {
+              "id": "meter2",
+              "component": "BudgetMeter",
+              "category": "shopping",
+              "spent": 389000,
+              "limit": 145000,
+              "caption": "Agosto"
+            },
+            {
+              "id": "sug",
+              "component": "Suggestions",
+              "children": [
+                "sug1",
+                "sug2"
+              ]
+            },
+            {
+              "id": "sug1",
+              "component": "Suggestion",
+              "label": "¿En qué gasté en restaurantes?",
+              "onPressed": {
+                "event": {
+                  "name": "ask",
+                  "context": {
+                    "question": "¿En qué gasté en restaurantes en septiembre?"
+                  }
+                }
+              }
+            },
+            {
+              "id": "sug2",
+              "component": "Suggestion",
+              "label": "¿Cómo va mi ahorro?",
+              "onPressed": {
+                "event": {
+                  "name": "ask",
+                  "context": {
+                    "question": "¿Cómo voy con mi meta de ahorro?"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "at": 11125,
+      "kind": "message",
+      "message": {
+        "version": "v0.9",
+        "updateDataModel": {
+          "surfaceId": "answer-1",
+          "value": {
+            "months": [
+              {
+                "month": "2026-04",
+                "amount": 4171900
+              },
+              {
+                "month": "2026-05",
+                "amount": 4145100
+              },
+              {
+                "month": "2026-06",
+                "amount": 4223600
+              },
+              {
+                "month": "2026-07",
+                "amount": 4319200
+              },
+              {
+                "month": "2026-08",
+                "amount": 4238900
+              },
+              {
+                "month": "2026-09",
+                "amount": 4719400,
+                "highlight": true
+              }
+            ],
+            "income": 4800000
+          }
+        }
+      }
+    },
+    {
+      "at": 11125,
+      "kind": "data",
+      "surfaceId": "answer-1",
+      "data": {
+        "months": [
+          {
+            "month": "2026-04",
+            "amount": 4171900
+          },
+          {
+            "month": "2026-05",
+            "amount": 4145100
+          },
+          {
+            "month": "2026-06",
+            "amount": 4223600
+          },
+          {
+            "month": "2026-07",
+            "amount": 4319200
+          },
+          {
+            "month": "2026-08",
+            "amount": 4238900
+          },
+          {
+            "month": "2026-09",
+            "amount": 4719400,
+            "highlight": true
+          }
+        ],
+        "income": 4800000
+      }
+    }
+  ]
+}

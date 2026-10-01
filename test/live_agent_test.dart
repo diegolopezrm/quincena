@@ -236,7 +236,11 @@ void main() {
 
     test('it is not told to do the arithmetic itself', () {
       expect(prompt, isNot(contains('do them yourself')));
-      expect(prompt, contains('Never invent, estimate or'));
+      expect(prompt, contains('never add, subtract or divide'));
+    });
+
+    test('it is told the Spanish names of the categories', () {
+      expect(prompt, contains('shopping = Compras'));
     });
 
     test('it knows the catalog, today and the person', () {
@@ -273,6 +277,16 @@ void main() {
       );
       expect((sept['previousMonth']! as Map)['spent'], 4238900);
       expect((sept['largest']! as List).length, 5);
+      // The derived figures come from the tool, so the model never has to
+      // work one out.
+      expect(sept['spentDifference'], 480500);
+      expect(sept['spentChangePercent'], 11);
+      expect(sept['spentShareOfIncomePercent'], 98);
+      final Map<Object?, Object?> restaurants =
+          (sept['categories']! as Map)['restaurants']! as Map;
+      expect(restaurants['changePercent'], 75);
+      expect(restaurants['payments'], 20);
+      expect(restaurants['previousPayments'], 15);
     });
 
     test('a malformed month is an error, not a guess', () async {
@@ -281,6 +295,18 @@ void main() {
       });
       expect(result['error'], isNotNull);
     });
+
+    test(
+      'subscriptions and the goal come with their totals worked out',
+      () async {
+        final Map<String, Object?> subs = await call('subscriptions');
+        expect(subs['unusedMonthlyTotal'], 153900);
+        final Map<String, Object?> goal = await call('savings_goal');
+        expect(goal['missing'], 1800000);
+        expect(goal['monthlyNeeded'], 600000);
+        expect(goal['arrivalAtCurrentPace'], 'mayo de 2027');
+      },
+    );
 
     test('account_overview matches the home screen', () async {
       final Map<String, Object?> overview = await call('account_overview');

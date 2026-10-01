@@ -1,0 +1,231 @@
+{
+  "version": 1,
+  "recordedAt": "2026-10-01T07:33:12.753067",
+  "catalogId": "dev.dlsoft.quincena",
+  "notes": {
+    "app": "quincena",
+    "agent": "live",
+    "question": "¿Qué suscripciones tengo?",
+    "model": "gemini-3-flash-preview",
+    "seconds": 9.709
+  },
+  "steps": [
+    {
+      "at": 9763,
+      "kind": "message",
+      "message": {
+        "version": "v0.9",
+        "createSurface": {
+          "surfaceId": "answer-1",
+          "catalogId": "dev.dlsoft.quincena",
+          "sendDataModel": true
+        }
+      }
+    },
+    {
+      "at": 9763,
+      "kind": "data",
+      "surfaceId": "answer-1",
+      "data": {}
+    },
+    {
+      "at": 9763,
+      "kind": "message",
+      "message": {
+        "version": "v0.9",
+        "updateComponents": {
+          "surfaceId": "answer-1",
+          "components": [
+            {
+              "id": "root",
+              "component": "Answer",
+              "children": [
+                "head",
+                "list",
+                "sugs"
+              ]
+            },
+            {
+              "id": "head",
+              "component": "Headline",
+              "title": {
+                "call": "formatString",
+                "args": {
+                  "value": "Tienes ${money(amount: 153900)} en suscripciones que no usas"
+                }
+              },
+              "kicker": "Suscripciones"
+            },
+            {
+              "id": "list",
+              "component": "SubscriptionList",
+              "title": "Tus suscripciones",
+              "rows": {
+                "componentId": "row",
+                "path": "/subscriptions"
+              },
+              "savings": {
+                "call": "money",
+                "args": {
+                  "amount": {
+                    "call": "savingsIfCancelled",
+                    "args": {
+                      "items": {
+                        "path": "/subscriptions"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "id": "row",
+              "component": "SubscriptionRow",
+              "name": {
+                "path": "name"
+              },
+              "price": {
+                "path": "price"
+              },
+              "keep": {
+                "path": "keep"
+              },
+              "lastUsed": {
+                "path": "lastUsed"
+              }
+            },
+            {
+              "id": "sugs",
+              "component": "Suggestions",
+              "children": [
+                "sug-1",
+                "sug-2"
+              ]
+            },
+            {
+              "id": "sug-1",
+              "component": "Suggestion",
+              "label": "¿Cómo estuvo mi gasto en septiembre?",
+              "onPressed": {
+                "event": {
+                  "name": "ask",
+                  "context": {
+                    "question": "¿Cómo estuvo mi gasto en septiembre?"
+                  }
+                }
+              }
+            },
+            {
+              "id": "sug-2",
+              "component": "Suggestion",
+              "label": "¿Cómo voy con mi meta?",
+              "onPressed": {
+                "event": {
+                  "name": "ask",
+                  "context": {
+                    "question": "¿Cómo voy con mi meta?"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "at": 9764,
+      "kind": "message",
+      "message": {
+        "version": "v0.9",
+        "updateDataModel": {
+          "surfaceId": "answer-1",
+          "value": {
+            "subscriptions": [
+              {
+                "name": "Fit24 gimnasio",
+                "price": 119000,
+                "lastUsed": "2026-08-19",
+                "keep": false
+              },
+              {
+                "name": "Cineplus",
+                "price": 38900,
+                "lastUsed": "2026-09-29",
+                "keep": true
+              },
+              {
+                "name": "Lingo Pro",
+                "price": 34900,
+                "lastUsed": "2026-07-30",
+                "keep": false
+              },
+              {
+                "name": "Pantalla+",
+                "price": 26900,
+                "lastUsed": "2026-09-12",
+                "keep": true
+              },
+              {
+                "name": "Ritmo",
+                "price": 21900,
+                "lastUsed": "2026-09-30",
+                "keep": true
+              },
+              {
+                "name": "Nube 200 GB",
+                "price": 11900,
+                "lastUsed": "2026-09-30",
+                "keep": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "at": 9764,
+      "kind": "data",
+      "surfaceId": "answer-1",
+      "data": {
+        "subscriptions": [
+          {
+            "name": "Fit24 gimnasio",
+            "price": 119000,
+            "lastUsed": "2026-08-19",
+            "keep": false
+          },
+          {
+            "name": "Cineplus",
+            "price": 38900,
+            "lastUsed": "2026-09-29",
+            "keep": true
+          },
+          {
+            "name": "Lingo Pro",
+            "price": 34900,
+            "lastUsed": "2026-07-30",
+            "keep": false
+          },
+          {
+            "name": "Pantalla+",
+            "price": 26900,
+            "lastUsed": "2026-09-12",
+            "keep": true
+          },
+          {
+            "name": "Ritmo",
+            "price": 21900,
+            "lastUsed": "2026-09-30",
+            "keep": true
+          },
+          {
+            "name": "Nube 200 GB",
+            "price": 11900,
+            "lastUsed": "2026-09-30",
+            "keep": true
+          }
+        ]
+      }
+    }
+  ]
+}

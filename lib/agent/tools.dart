@@ -3,6 +3,7 @@ import 'package:dartantic_ai/dartantic_ai.dart';
 import '../data/category.dart';
 import '../data/clock.dart';
 import '../data/ledger.dart';
+import '../functions/money_functions.dart';
 
 /// The questions a model can ask the account.
 ///
@@ -45,25 +46,50 @@ List<Tool> ledgerTools(Ledger ledger) => <Tool>[
       final DateTime? month = _month(args['month']);
       if (month == null) return _error('month must be written as YYYY-MM');
       final DateTime before = DateTime(month.year, month.month - 1);
-      Map<String, Object?> categories(DateTime m) => <String, Object?>{
-        for (final MapEntry<Category, int> e in ledger.byCategory(
-          m.year,
-          m.month,
-        ))
-          e.key.name: <String, Object?>{
-            'amount': e.value,
-            'payments': ledger.countIn(e.key, m.year, m.month),
-          },
-      };
+      final int spent = ledger.spentIn(month.year, month.month);
+      final int spentBefore = ledger.spentIn(before.year, before.month);
+      final int income = ledger.incomeIn(month.year, month.month);
+      Map<String, Object?> categories(DateTime m, {bool compare = false}) =>
+          <String, Object?>{
+            for (final MapEntry<Category, int> e in ledger.byCategory(
+              m.year,
+              m.month,
+            ))
+              e.key.name: () {
+                final int previous = ledger.spentOn(
+                  e.key,
+                  before.year,
+                  before.month,
+                );
+                return <String, Object?>{
+                  'amount': e.value,
+                  'payments': ledger.countIn(e.key, m.year, m.month),
+                  if (compare) ...<String, Object?>{
+                    'previousAmount': previous,
+                    'previousPayments': ledger.countIn(
+                      e.key,
+                      before.year,
+                      before.month,
+                    ),
+                    'difference': e.value - previous,
+                    'changePercent': _percent(e.value, previous),
+                  },
+                };
+              }(),
+          };
       return <String, Object?>{
         'month': _monthKey(month),
-        'spent': ledger.spentIn(month.year, month.month),
-        'income': ledger.incomeIn(month.year, month.month),
-        'categories': categories(month),
+        'spent': spent,
+        'income': income,
+        'spentShareOfIncomePercent': income == 0
+            ? null
+            : (spent / income * 100).round(),
+        'spentDifference': spent - spentBefore,
+        'spentChangePercent': _percent(spent, spentBefore),
+        'categories': categories(month, compare: true),
         'previousMonth': <String, Object?>{
           'month': _monthKey(before),
-          'spent': ledger.spentIn(before.year, before.month),
-          'categories': categories(before),
+          'spent': spentBefore,
         },
         'largest': <Object?>[
           for (final Movement m in ledger.largestIn(month.year, month.month))
@@ -142,6 +168,11 @@ List<Tool> ledgerTools(Ledger ledger) => <Tool>[
         'started and the last day it was used.',
     onCall: (_) => <String, Object?>{
       'monthlyTotal': ledger.subscriptionsMonthly,
+      'unusedMonthlyTotal': ledger.subscriptions
+          .where(
+            (Subscription s) => appToday.difference(s.lastUsed).inDays > 30,
+          )
+          .fold<int>(0, (int sum, Subscription s) => sum + s.price),
       'subscriptions': <Object?>[
         for (final Subscription s in ledger.subscriptions)
           <String, Object?>{
@@ -150,6 +181,7 @@ List<Tool> ledgerTools(Ledger ledger) => <Tool>[
             'since': _day(s.since),
             'lastUsed': _day(s.lastUsed),
             'daysSinceUsed': appToday.difference(s.lastUsed).inDays,
+            'unused': appToday.difference(s.lastUsed).inDays > 30,
           },
       ],
     },
@@ -165,7 +197,18 @@ List<Tool> ledgerTools(Ledger ledger) => <Tool>[
         'name': goal.name,
         'target': goal.target,
         'saved': goal.saved,
+        'missing': goal.missing,
         'monthly': goal.monthly,
+        'monthlyNeeded': monthlyNeeded(
+          goal.target.toDouble(),
+          goal.saved.toDouble(),
+          _day(goal.deadline),
+        ).round(),
+        'arrivalAtCurrentPace': arrivalMonth(
+          goal.target.toDouble(),
+          goal.saved.toDouble(),
+          goal.monthly.toDouble(),
+        ),
         'deadline': _day(goal.deadline),
       };
     },
@@ -233,6 +276,11 @@ List<Tool> ledgerTools(Ledger ledger) => <Tool>[
 ];
 
 DateTime get _lastMonth => DateTime(appToday.year, appToday.month - 1);
+
+/// The change from [before] to [now] as a whole percentage, or null when
+/// there was nothing before to compare with.
+int? _percent(int now, int before) =>
+    before == 0 ? null : ((now - before) / before * 100).round();
 
 Map<String, Object?> _error(String message) => <String, Object?>{
   'error': message,

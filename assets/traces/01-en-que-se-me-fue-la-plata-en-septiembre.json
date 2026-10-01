@@ -1,0 +1,362 @@
+{
+  "version": 1,
+  "recordedAt": "2026-10-01T07:32:52.257255",
+  "catalogId": "dev.dlsoft.quincena",
+  "notes": {
+    "app": "quincena",
+    "agent": "live",
+    "question": "¿En qué se me fue la plata en septiembre?",
+    "model": "gemini-3-flash-preview",
+    "seconds": 22.67
+  },
+  "steps": [
+    {
+      "at": 23160,
+      "kind": "message",
+      "message": {
+        "version": "v0.9",
+        "createSurface": {
+          "surfaceId": "answer-1",
+          "catalogId": "dev.dlsoft.quincena",
+          "sendDataModel": true
+        }
+      }
+    },
+    {
+      "at": 23175,
+      "kind": "data",
+      "surfaceId": "answer-1",
+      "data": {}
+    },
+    {
+      "at": 23176,
+      "kind": "message",
+      "message": {
+        "version": "v0.9",
+        "updateComponents": {
+          "surfaceId": "answer-1",
+          "components": [
+            {
+              "id": "root",
+              "component": "Answer",
+              "children": [
+                "head",
+                "tiles",
+                "donut",
+                "insight-rest",
+                "insight-shop",
+                "list",
+                "sugs"
+              ]
+            },
+            {
+              "id": "head",
+              "component": "Headline",
+              "title": "Gastaste $ 4.719.400, casi el 100 % de lo que recibiste",
+              "kicker": "Septiembre"
+            },
+            {
+              "id": "tiles",
+              "component": "Tiles",
+              "children": [
+                "tile-total",
+                "tile-change"
+              ]
+            },
+            {
+              "id": "tile-total",
+              "component": "StatTile",
+              "label": "Total gastado",
+              "value": {
+                "call": "money",
+                "args": {
+                  "amount": {
+                    "path": "/spent"
+                  }
+                }
+              },
+              "caption": {
+                "call": "formatString",
+                "args": {
+                  "value": "de ${money(amount:/income)} que entraron"
+                }
+              }
+            },
+            {
+              "id": "tile-change",
+              "component": "StatTile",
+              "label": "Frente a agosto",
+              "value": {
+                "call": "percentChange",
+                "args": {
+                  "current": {
+                    "path": "/spent"
+                  },
+                  "previous": {
+                    "path": "/prevSpent"
+                  }
+                }
+              },
+              "tone": "caution"
+            },
+            {
+              "id": "donut",
+              "component": "SpendingDonut",
+              "centerLabel": "septiembre",
+              "slices": {
+                "path": "/slices"
+              }
+            },
+            {
+              "id": "insight-rest",
+              "component": "Insight",
+              "tone": "caution",
+              "title": "Restaurantes subió un 75 %",
+              "body": "Pasaste de 15 pagos en agosto a 20 en septiembre.",
+              "actionLabel": "Ver esos pagos",
+              "onAction": {
+                "event": {
+                  "name": "ask",
+                  "context": {
+                    "question": "¿Qué gasté en restaurantes en septiembre?"
+                  }
+                }
+              }
+            },
+            {
+              "id": "insight-shop",
+              "component": "Insight",
+              "tone": "neutral",
+              "title": "Shopping creció por una compra",
+              "body": "El gasto en TecnoCentro audífonos por $ 389.000 explica el aumento.",
+              "actionLabel": "Ver detalle",
+              "onAction": {
+                "event": {
+                  "name": "ask",
+                  "context": {
+                    "question": "¿Cuánto gasté en shopping en septiembre?"
+                  }
+                }
+              }
+            },
+            {
+              "id": "list",
+              "component": "MovementList",
+              "title": "Los cinco pagos más grandes",
+              "items": {
+                "path": "/largest"
+              }
+            },
+            {
+              "id": "sugs",
+              "component": "Suggestions",
+              "children": [
+                "sug-1",
+                "sug-2"
+              ]
+            },
+            {
+              "id": "sug-1",
+              "component": "Suggestion",
+              "label": "¿Cómo voy contra agosto?",
+              "onPressed": {
+                "event": {
+                  "name": "ask",
+                  "context": {
+                    "question": "¿Cómo voy contra agosto?"
+                  }
+                }
+              }
+            },
+            {
+              "id": "sug-2",
+              "component": "Suggestion",
+              "label": "¿Qué suscripciones tengo?",
+              "onPressed": {
+                "event": {
+                  "name": "ask",
+                  "context": {
+                    "question": "¿Qué suscripciones tengo?"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "at": 23192,
+      "kind": "message",
+      "message": {
+        "version": "v0.9",
+        "updateDataModel": {
+          "surfaceId": "answer-1",
+          "value": {
+            "spent": 4719400,
+            "prevSpent": 4238900,
+            "income": 4800000,
+            "slices": [
+              {
+                "category": "housing",
+                "amount": 1650000
+              },
+              {
+                "category": "groceries",
+                "amount": 615500
+              },
+              {
+                "category": "restaurants",
+                "amount": 596900
+              },
+              {
+                "category": "shopping",
+                "amount": 389000
+              },
+              {
+                "category": "utilities",
+                "amount": 355700
+              },
+              {
+                "category": "debt",
+                "amount": 312000
+              },
+              {
+                "category": "subscriptions",
+                "amount": 253500
+              },
+              {
+                "category": "health",
+                "amount": 228900
+              },
+              {
+                "category": "transport",
+                "amount": 223900
+              },
+              {
+                "category": "leisure",
+                "amount": 94000
+              }
+            ],
+            "largest": [
+              {
+                "merchant": "Arriendo apartamento",
+                "category": "housing",
+                "amount": 1650000,
+                "date": "2026-09-05"
+              },
+              {
+                "merchant": "TecnoCentro audífonos",
+                "category": "shopping",
+                "amount": 389000,
+                "date": "2026-09-06"
+              },
+              {
+                "merchant": "Crédito educativo",
+                "category": "debt",
+                "amount": 312000,
+                "date": "2026-09-10"
+              },
+              {
+                "merchant": "Supermercado Andino",
+                "category": "groceries",
+                "amount": 204500,
+                "date": "2026-09-03"
+              },
+              {
+                "merchant": "Supermercado Andino",
+                "category": "groceries",
+                "amount": 201900,
+                "date": "2026-09-18"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "at": 23193,
+      "kind": "data",
+      "surfaceId": "answer-1",
+      "data": {
+        "spent": 4719400,
+        "prevSpent": 4238900,
+        "income": 4800000,
+        "slices": [
+          {
+            "category": "housing",
+            "amount": 1650000
+          },
+          {
+            "category": "groceries",
+            "amount": 615500
+          },
+          {
+            "category": "restaurants",
+            "amount": 596900
+          },
+          {
+            "category": "shopping",
+            "amount": 389000
+          },
+          {
+            "category": "utilities",
+            "amount": 355700
+          },
+          {
+            "category": "debt",
+            "amount": 312000
+          },
+          {
+            "category": "subscriptions",
+            "amount": 253500
+          },
+          {
+            "category": "health",
+            "amount": 228900
+          },
+          {
+            "category": "transport",
+            "amount": 223900
+          },
+          {
+            "category": "leisure",
+            "amount": 94000
+          }
+        ],
+        "largest": [
+          {
+            "merchant": "Arriendo apartamento",
+            "category": "housing",
+            "amount": 1650000,
+            "date": "2026-09-05"
+          },
+          {
+            "merchant": "TecnoCentro audífonos",
+            "category": "shopping",
+            "amount": 389000,
+            "date": "2026-09-06"
+          },
+          {
+            "merchant": "Crédito educativo",
+            "category": "debt",
+            "amount": 312000,
+            "date": "2026-09-10"
+          },
+          {
+            "merchant": "Supermercado Andino",
+            "category": "groceries",
+            "amount": 204500,
+            "date": "2026-09-03"
+          },
+          {
+            "merchant": "Supermercado Andino",
+            "category": "groceries",
+            "amount": 201900,
+            "date": "2026-09-18"
+          }
+        ]
+      }
+    }
+  ]
+}

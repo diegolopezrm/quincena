@@ -1,0 +1,222 @@
+{
+  "version": 1,
+  "recordedAt": "2026-10-01T07:33:02.785788",
+  "catalogId": "dev.dlsoft.quincena",
+  "notes": {
+    "app": "quincena",
+    "agent": "live",
+    "question": "¿Me alcanza para ir a Cartagena en diciembre?",
+    "model": "gemini-3-flash-preview",
+    "seconds": 10.117
+  },
+  "steps": [
+    {
+      "at": 10161,
+      "kind": "message",
+      "message": {
+        "version": "v0.9",
+        "createSurface": {
+          "surfaceId": "answer-1",
+          "catalogId": "dev.dlsoft.quincena",
+          "sendDataModel": true
+        }
+      }
+    },
+    {
+      "at": 10162,
+      "kind": "data",
+      "surfaceId": "answer-1",
+      "data": {}
+    },
+    {
+      "at": 10162,
+      "kind": "message",
+      "message": {
+        "version": "v0.9",
+        "updateComponents": {
+          "surfaceId": "answer-1",
+          "components": [
+            {
+              "id": "root",
+              "component": "Answer",
+              "children": [
+                "head",
+                "planner",
+                "needed",
+                "action",
+                "suggest"
+              ]
+            },
+            {
+              "id": "head",
+              "component": "Headline",
+              "title": "Necesitas ahorrar más para llegar a Cartagena en diciembre",
+              "kicker": "Tu meta"
+            },
+            {
+              "id": "planner",
+              "component": "GoalPlanner",
+              "name": {
+                "path": "/goal/name"
+              },
+              "target": {
+                "path": "/goal/target"
+              },
+              "saved": {
+                "path": "/goal/saved"
+              },
+              "monthly": {
+                "path": "/goal/monthly"
+              },
+              "max": 1000000,
+              "arrival": {
+                "call": "arrivalMonth",
+                "args": {
+                  "target": {
+                    "path": "/goal/target"
+                  },
+                  "saved": {
+                    "path": "/goal/saved"
+                  },
+                  "monthly": {
+                    "path": "/goal/monthly"
+                  }
+                },
+                "returnType": "string"
+              },
+              "onTime": {
+                "call": "arrivesBy",
+                "args": {
+                  "target": {
+                    "path": "/goal/target"
+                  },
+                  "saved": {
+                    "path": "/goal/saved"
+                  },
+                  "monthly": {
+                    "path": "/goal/monthly"
+                  },
+                  "deadline": {
+                    "path": "/goal/deadline"
+                  }
+                },
+                "returnType": "boolean"
+              },
+              "deadlineLabel": "20 de diciembre"
+            },
+            {
+              "id": "needed",
+              "component": "StatTile",
+              "label": "Ahorro necesario",
+              "value": {
+                "call": "money",
+                "args": {
+                  "amount": {
+                    "call": "monthlyNeeded",
+                    "args": {
+                      "target": {
+                        "path": "/goal/target"
+                      },
+                      "saved": {
+                        "path": "/goal/saved"
+                      },
+                      "deadline": {
+                        "path": "/goal/deadline"
+                      }
+                    },
+                    "returnType": "number"
+                  }
+                }
+              },
+              "caption": "cada mes para cumplir la meta",
+              "tone": "caution"
+            },
+            {
+              "id": "action",
+              "component": "ActionButton",
+              "label": "Ajustar ahorro mensual",
+              "emphasis": "primary",
+              "onPressed": {
+                "event": {
+                  "name": "save_goal_plan",
+                  "context": {
+                    "monthly": {
+                      "path": "/goal/monthly"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "id": "suggest",
+              "component": "Suggestions",
+              "children": [
+                "sug1",
+                "sug2"
+              ]
+            },
+            {
+              "id": "sug1",
+              "component": "Suggestion",
+              "label": "¿Cómo cierro este mes?",
+              "onPressed": {
+                "event": {
+                  "name": "ask",
+                  "context": {
+                    "question": "¿Cómo cierro este mes?"
+                  }
+                }
+              }
+            },
+            {
+              "id": "sug2",
+              "component": "Suggestion",
+              "label": "¿Qué puedo recortar?",
+              "onPressed": {
+                "event": {
+                  "name": "ask",
+                  "context": {
+                    "question": "¿Qué suscripciones puedo cancelar?"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "at": 10164,
+      "kind": "message",
+      "message": {
+        "version": "v0.9",
+        "updateDataModel": {
+          "surfaceId": "answer-1",
+          "value": {
+            "goal": {
+              "name": "Cartagena",
+              "target": 2800000,
+              "saved": 1000000,
+              "monthly": 250000,
+              "deadline": "2026-12-20"
+            }
+          }
+        }
+      }
+    },
+    {
+      "at": 10164,
+      "kind": "data",
+      "surfaceId": "answer-1",
+      "data": {
+        "goal": {
+          "name": "Cartagena",
+          "target": 2800000,
+          "saved": 1000000,
+          "monthly": 250000,
+          "deadline": "2026-12-20"
+        }
+      }
+    }
+  ]
+}

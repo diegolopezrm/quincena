@@ -1,0 +1,193 @@
+{
+  "version": 1,
+  "recordedAt": "2026-10-01T07:33:29.932318",
+  "catalogId": "dev.dlsoft.quincena",
+  "notes": {
+    "app": "quincena",
+    "agent": "live",
+    "question": "Registra 45 mil en el mercado",
+    "model": "gemini-3-flash-preview",
+    "seconds": 5.601
+  },
+  "steps": [
+    {
+      "at": 5634,
+      "kind": "message",
+      "message": {
+        "version": "v0.9",
+        "createSurface": {
+          "surfaceId": "answer-1",
+          "catalogId": "dev.dlsoft.quincena",
+          "sendDataModel": true
+        }
+      }
+    },
+    {
+      "at": 5636,
+      "kind": "data",
+      "surfaceId": "answer-1",
+      "data": {}
+    },
+    {
+      "at": 5636,
+      "kind": "message",
+      "message": {
+        "version": "v0.9",
+        "updateComponents": {
+          "surfaceId": "answer-1",
+          "components": [
+            {
+              "id": "root",
+              "component": "Answer",
+              "children": [
+                "head",
+                "form",
+                "save",
+                "suggest"
+              ]
+            },
+            {
+              "id": "head",
+              "component": "Headline",
+              "title": "Confirma tu gasto en mercado"
+            },
+            {
+              "id": "form",
+              "component": "Group",
+              "title": "Detalle del gasto",
+              "children": [
+                "amount",
+                "cat",
+                "note"
+              ]
+            },
+            {
+              "id": "amount",
+              "component": "MoneyField",
+              "label": "Monto",
+              "value": {
+                "path": "/form/amount"
+              },
+              "checks": [
+                {
+                  "condition": {
+                    "call": "numeric",
+                    "args": {
+                      "value": {
+                        "path": "/form/amount"
+                      },
+                      "min": 1
+                    }
+                  },
+                  "message": "El monto debe ser mayor a cero"
+                }
+              ]
+            },
+            {
+              "id": "cat",
+              "component": "CategoryChoice",
+              "label": "Categoría",
+              "value": {
+                "path": "/form/category"
+              }
+            },
+            {
+              "id": "note",
+              "component": "TextEntry",
+              "label": "Nota",
+              "value": {
+                "path": "/form/note"
+              },
+              "hint": "Opcional"
+            },
+            {
+              "id": "save",
+              "component": "ActionButton",
+              "label": "Guardar gasto",
+              "emphasis": "primary",
+              "onPressed": {
+                "event": {
+                  "name": "save_expense",
+                  "context": {
+                    "amount": {
+                      "path": "/form/amount"
+                    },
+                    "category": {
+                      "path": "/form/category"
+                    },
+                    "note": {
+                      "path": "/form/note"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "id": "suggest",
+              "component": "Suggestions",
+              "children": [
+                "suggest-1",
+                "suggest-2"
+              ]
+            },
+            {
+              "id": "suggest-1",
+              "component": "Suggestion",
+              "label": "¿Cómo voy en mercado?",
+              "onPressed": {
+                "event": {
+                  "name": "ask",
+                  "context": {
+                    "question": "¿Cómo voy en mercado este mes?"
+                  }
+                }
+              }
+            },
+            {
+              "id": "suggest-2",
+              "component": "Suggestion",
+              "label": "¿Cuánto me queda?",
+              "onPressed": {
+                "event": {
+                  "name": "ask",
+                  "context": {
+                    "question": "¿Cuánto dinero me queda?"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "at": 5638,
+      "kind": "message",
+      "message": {
+        "version": "v0.9",
+        "updateDataModel": {
+          "surfaceId": "answer-1",
+          "value": {
+            "form": {
+              "amount": 45000,
+              "category": "groceries",
+              "note": "el mercado"
+            }
+          }
+        }
+      }
+    },
+    {
+      "at": 5638,
+      "kind": "data",
+      "surfaceId": "answer-1",
+      "data": {
+        "form": {
+          "amount": 45000,
+          "category": "groceries",
+          "note": "el mercado"
+        }
+      }
+    }
+  ]
+}
