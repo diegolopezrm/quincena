@@ -89,13 +89,17 @@ void main() {
           'model': GeminiClient.defaultModel,
           'seconds': watch.elapsedMilliseconds / 1000,
         };
-        File('assets/traces/$name.json').writeAsStringSync(
-          '${const JsonEncoder.withIndent('  ').convert(json)}\n',
-        );
-
         await expectLater(
           find.byType(MaterialApp),
           matchesGoldenFile('out/$name.png'),
+        );
+        // What the model wrote, word for word, beside the picture of it.
+        File('tool/record/out/$name.md').writeAsStringSync(
+          session.replies
+              .asMap()
+              .entries
+              .map((e) => '## Reply ${e.key + 1}\n\n${e.value}\n')
+              .join('\n'),
         );
 
         final List<GenUiMessageStep> messages = trace.steps
@@ -129,6 +133,11 @@ void main() {
         );
         expect(turn.error, isNull);
         expect(turn.surfaceIds, isNotEmpty);
+
+        // Only an answer that worked becomes a recording the app replays.
+        File('assets/traces/$name.json').writeAsStringSync(
+          '${const JsonEncoder.withIndent('  ').convert(json)}\n',
+        );
       },
       skip: key.isEmpty,
       timeout: const Timeout(Duration(minutes: 3)),

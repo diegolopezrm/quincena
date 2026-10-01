@@ -10,10 +10,15 @@ import 'source.dart';
 
 /// Answers from a model.
 ///
-/// The model writes A2UI messages as JSON blocks in its reply; genui's
-/// transport adapter pulls them out of the text as it streams, and they go to
-/// the same sink the scripted agent uses. Text outside the blocks is passed
-/// on as text.
+/// The model writes A2UI messages as JSON blocks in its reply. genui's
+/// parser pulls them out of the text as it streams; text outside the blocks
+/// is passed on as text, and a block that looks like a message but is not a
+/// valid one is passed on as an error, so the model can be told and fix it.
+///
+/// The parser is used directly rather than through genui's
+/// `A2uiTransportAdapter`, whose own subscription to it has no error
+/// handler: a rejected message there produces no surface, no text and no
+/// report, and the model never learns it was rejected.
 class ModelSource implements AnswerSource {
   ModelSource({
     required this.client,
@@ -22,16 +27,26 @@ class ModelSource implements AnswerSource {
   }) : _history = <ChatMessage>[
          ChatMessage.system(quincenaPrompt(quincenaCatalog, ledger)),
        ] {
-    _messages = _adapter.incomingMessages.listen(sink.message);
-    _text = _adapter.incomingText.listen(sink.text);
+    _events = _chunks.stream
+        .transform(const A2uiParserTransformer())
+        .listen(
+          (GenerationEvent event) => switch (event) {
+            A2uiMessageEvent(:final message) => sink.message(message),
+            TextEvent(:final text) => sink.text(text),
+          },
+          onError: sink.error,
+        );
   }
 
   final ModelClient client;
   final AnswerSink sink;
   final List<ChatMessage> _history;
-  final A2uiTransportAdapter _adapter = A2uiTransportAdapter();
-  late final StreamSubscription<Object?> _messages;
-  late final StreamSubscription<Object?> _text;
+  final StreamController<String> _chunks = StreamController<String>();
+  late final StreamSubscription<GenerationEvent> _events;
+
+  /// Every reply the model wrote, exactly as it wrote it, for debugging and
+  /// for the recording tool.
+  final List<String> replies = <String>[];
 
   @override
   Future<void> ask(String question) => _send(question);
@@ -49,8 +64,9 @@ class ModelSource implements AnswerSource {
       history: List<ChatMessage>.of(_history),
     )) {
       reply.write(chunk);
-      _adapter.addChunk(chunk);
+      _chunks.add(chunk);
     }
+    replies.add(reply.toString());
     _history
       ..add(ChatMessage.user(text))
       ..add(ChatMessage.model(reply.toString()));
@@ -58,8 +74,7 @@ class ModelSource implements AnswerSource {
 
   @override
   void dispose() {
-    unawaited(_messages.cancel());
-    unawaited(_text.cancel());
-    _adapter.dispose();
+    unawaited(_events.cancel());
+    unawaited(_chunks.close());
   }
 }

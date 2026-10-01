@@ -84,6 +84,29 @@ class CorrectedModel implements ModelClient {
   }
 }
 
+/// A model that leaves the version out of its first answer, which genui's
+/// parser rejects, and gets it right when told.
+class VersionlessModel implements ModelClient {
+  final List<String> prompts = <String>[];
+
+  @override
+  Stream<String> send(
+    String prompt, {
+    required List<ChatMessage> history,
+  }) async* {
+    prompts.add(prompt);
+    final String version = prompts.length == 1 ? '' : '"version": "v0.9", ';
+    final String id = 'answer-${prompts.length}';
+    yield 'Listo.\n';
+    yield '```json\n{$version"createSurface": '
+        '{"surfaceId": "$id", "catalogId": "dev.dlsoft.quincena"}}\n```\n';
+    yield '```json\n{$version"updateComponents": {"surfaceId": "$id", '
+        '"components": [{"id": "root", "component": "Answer", '
+        '"children": ["head"]}, {"id": "head", "component": "Headline", '
+        '"title": "Con versión"}]}}\n```\n';
+  }
+}
+
 Future<Session> open(WidgetTester tester, ModelClient model) async {
   tester.view.physicalSize = const Size(1170, 2532);
   tester.view.devicePixelRatio = 3;
@@ -174,6 +197,23 @@ void main() {
       expect(session.turns, hasLength(1));
       expect(session.turns.single.surfaceIds, <String>['right']);
       expect(screen(tester), contains('Ya quedó'));
+    });
+
+    testWidgets('a message genui cannot parse is reported, not lost', (
+      tester,
+    ) async {
+      final model = VersionlessModel();
+      final Session session = await open(tester, model);
+      await ask(tester, session, '¿En qué gasté?');
+
+      // genui's own adapter drops this without a word; here the model is
+      // told what was wrong, and answers again in the same turn.
+      expect(model.prompts, hasLength(2));
+      expect(model.prompts.last, contains('version'));
+      expect(session.turns, hasLength(1));
+      expect(session.turns.single.surfaceIds, <String>['answer-2']);
+      expect(screen(tester), contains('Con versión'));
+      expect(session.replies, hasLength(2));
     });
 
     testWidgets('a model that fails says so instead of hanging', (

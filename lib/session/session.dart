@@ -83,6 +83,12 @@ class Session extends ChangeNotifier {
   late SurfaceController controller;
   late GenUiTraceRecorder recorder;
   late AnswerSource _source;
+
+  /// The model's raw replies in this conversation, when a model is answering.
+  List<String> get replies => switch (_source) {
+    final ModelSource source => List<String>.unmodifiable(source.replies),
+    _ => const <String>[],
+  };
   late StreamSubscription<ChatMessage> _submissions;
   late StreamSubscription<SurfaceUpdate> _surfaces;
 
@@ -107,7 +113,14 @@ class Session extends ChangeNotifier {
       catalogId: quincenaCatalog.catalogId,
       notes: <String, Object?>{'app': 'quincena', 'agent': _mode.name},
     );
-    final sink = AnswerSink(message: _onMessage, text: _onText);
+    final sink = AnswerSink(
+      message: _onMessage,
+      text: _onText,
+      // Through genui's own error path, so it reaches the model the way a
+      // validation failure does, and lands in the recording.
+      error: (Object error, StackTrace stack) =>
+          controller.reportError(error, stack),
+    );
     _source = switch (_mode) {
       AgentMode.demo => ScriptedSource(ledger, sink: sink, thinking: thinking),
       AgentMode.live => ModelSource(

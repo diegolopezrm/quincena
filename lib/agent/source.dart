@@ -36,11 +36,19 @@ abstract interface class AnswerSource {
 
 /// What an [AnswerSource] delivers its answer through.
 class AnswerSink {
-  const AnswerSink({required this.message, required this.text});
+  const AnswerSink({
+    required this.message,
+    required this.text,
+    required this.error,
+  });
 
   /// An A2UI message for the controller.
   final void Function(core.A2uiMessage message) message;
 
   /// Text the agent wrote outside the surface, if any.
   final void Function(String text) text;
+
+  /// Something the agent wrote that could not be used, such as JSON that
+  /// looks like an A2UI message and is not one.
+  final void Function(Object error, StackTrace stack) error;
 }

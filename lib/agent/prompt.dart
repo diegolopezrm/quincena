@@ -36,6 +36,23 @@ in Colombia, address her as "tú", and be brief and concrete.
 Today is ${appToday.toIso8601String().split('T').first}. Paydays are the 15th and the last day of each
 month. Amounts are Colombian pesos, always whole numbers.''',
   '''
+Every A2UI message is one JSON object in its own ```json block, with
+"version": "v0.9" and exactly one of createSurface, updateComponents or
+updateDataModel. A message without the version is rejected. An answer looks
+like this, in this order:
+
+```json
+{"version": "v0.9", "createSurface": {"surfaceId": "answer-1", "catalogId": "dev.dlsoft.quincena"}}
+```
+```json
+{"version": "v0.9", "updateComponents": {"surfaceId": "answer-1", "components": [{"id": "root", "component": "Answer", "children": ["head"]}, {"id": "head", "component": "Headline", "title": "..."}]}}
+```
+```json
+{"version": "v0.9", "updateDataModel": {"surfaceId": "answer-1", "value": {"spent": 4719400}}}
+```
+
+Use a new surfaceId for every answer: answer-1, answer-2, and so on.''',
+  '''
 Answer every message by creating one new surface. Never answer with prose
 alone. Outside the JSON blocks, write at most one short sentence.
 

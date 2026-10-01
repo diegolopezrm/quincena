@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genui_gen/testing.dart';
@@ -24,47 +26,57 @@ void main() {
     await initializeDateFormatting('es');
   });
 
-  testWidgets(
-    'every recorded session still renders with the catalog of today',
-    (tester) async {
-      final List<Recording> recordings =
-          await tester.runAsync(loadRecordings) ?? const <Recording>[];
-      if (recordings.isEmpty) {
-        markTestSkipped('No sessions recorded yet; see tool/record.');
-        return;
-      }
-      for (final Recording recording in recordings) {
-        final player = GenUiTracePlayer(
-          recording.trace,
-          catalog: quincenaCatalog,
-        )..seekToEnd();
-        final errors = <Object>[];
-        final sub = player.controller.onSubmit.listen(errors.add);
-        await tester.pumpWidget(
-          host(
-            Scaffold(
-              body: SingleChildScrollView(
-                child: GenUiTraceView(player: player),
-              ),
-            ),
-          ),
-        );
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull, reason: recording.asset);
-        expect(errors, isEmpty, reason: recording.asset);
-        await sub.cancel();
-        player.dispose();
-      }
+  // One test per recording, read from disk when the suite is defined, so
+  // each replays on a fresh tree and a failure names the session it was.
+  final List<File> files =
+      Directory('assets/traces')
+          .listSync()
+          .whereType<File>()
+          .where((File f) => f.path.endsWith('.json'))
+          .toList()
+        ..sort((File a, File b) => a.path.compareTo(b.path));
 
-      // What Gemini actually asked for, out of what the catalog offers.
+  for (final File file in files) {
+    testWidgets('${file.uri.pathSegments.last} still renders today', (
+      tester,
+    ) async {
+      final player = GenUiTracePlayer(
+        GenUiTrace.decode(file.readAsStringSync()),
+        catalog: quincenaCatalog,
+      )..seekToEnd();
+      addTearDown(player.dispose);
+      final errors = <Object>[];
+      player.controller.onSubmit.listen(errors.add);
+
+      await tester.pumpWidget(
+        host(
+          Scaffold(
+            body: SingleChildScrollView(child: GenUiTraceView(player: player)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(errors, isEmpty);
+      expect(player.currentSurfaceId, isNotNull);
+    });
+  }
+
+  if (files.isNotEmpty) {
+    test('what the recorded sessions used of the catalog', () {
+      // Informational: which components a real model asked for, out of what
+      // the catalog offers, and what the unused ones cost every request.
       debugPrint(
         genUiCoverage(
           catalog: genUiCatalog,
-          traces: <GenUiTrace>[for (final Recording r in recordings) r.trace],
+          traces: <GenUiTrace>[
+            for (final File f in files) GenUiTrace.decode(f.readAsStringSync()),
+          ],
         ).describe(),
       );
-    },
-  );
+    });
+  }
 
   testWidgets('a recording replays step by step', (tester) async {
     tester.view.physicalSize = const Size(1170, 2532);
