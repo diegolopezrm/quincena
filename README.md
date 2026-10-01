@@ -4,6 +4,18 @@
 
 Personal finance where every answer is an interface.
 
+**[Try it in the browser](https://diegolopezrm.github.io/quincena/)**, in
+Spanish or English. It needs no account and no key: a scripted agent answers
+the questions on the home screen, and "Lo que respondió Gemini" replays five
+sessions Gemini answered for real.
+
+<p align="center">
+  <img src="docs/screens/inicio.png" width="24%" alt="Home screen: what is free until payday, and the questions to ask">
+  <img src="docs/screens/en-que-se-fue.png" width="24%" alt="Where September's money went: what was spent, the change against August and a donut chart by category">
+  <img src="docs/screens/meta-cartagena.png" width="24%" alt="The Cartagena goal in dark mode, with a slider for what to set aside each month and the arrival date it gives">
+  <img src="docs/screens/suscripciones.png" width="24%" alt="Six subscriptions with a switch on each, the two unused ones switched off">
+</p>
+
 Ask where September's money went and you get a donut chart, the two things
 that moved and the five largest payments. Ask whether you can afford
 Cartagena in December and you get a goal with a slider: drag it and the
@@ -19,6 +31,10 @@ the catalog from the widgets' own constructors.
 The account is made up. Valentina is a designer in Medellín, paid on the 15th
 and the last day of the month, saving for a trip while she pays off a student
 loan. Every merchant is made up too.
+
+<p align="center">
+  <img src="docs/screens/escritorio.png" alt="The September answer on a wide screen in dark mode, with the donut chart next to every category and its share">
+</p>
 
 ## What it shows
 
@@ -64,9 +80,9 @@ changes the next answer.
 ## Talk to Gemini
 
 In settings, choose "Gemini en vivo" and paste a key from
-[Google AI Studio](https://aistudio.google.com). The key stays in the tab:
-it is not saved, and it only travels to Google. Then ask anything about the
-account.
+[Google AI Studio](https://aistudio.google.com), on the published demo or a
+local run. The key stays in the tab: it is not saved, and it only travels to
+Google. Then ask anything about the account.
 
 Gemini gets the catalog through genui's prompt builder, with two of its
 defaults switched off: the chat preset forbids `updateDataModel`, which every

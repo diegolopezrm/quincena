@@ -52,7 +52,8 @@
 
   "recordedTitle": "What Gemini answered",
   "recordedIntro": "These sessions are not the demo's script. Gemini got each question, asked the account through tools and composed the screen from the app's catalog. genui_gen recorded everything it sent, and it replays here step by step, with no network.",
-  "recordedMeta": "{model} · {steps} steps",
+  "recordedMeta": "{model} · {steps}\u00a0steps",
+  "recordedSeconds": "{seconds}\u00a0s",
   "stepBefore": "Before the answer",
   "stepCreate": "Creates the surface",
   "stepComponents": "Sends the components",

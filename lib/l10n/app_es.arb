@@ -57,8 +57,10 @@
 
   "recordedTitle": "Lo que respondió Gemini",
   "recordedIntro": "Estas sesiones no son del guion de la demo. Gemini recibió cada pregunta, consultó la cuenta con herramientas y compuso la pantalla con el catálogo de la app. genui_gen grabó todo lo que mandó, y aquí se reproduce paso a paso, sin red.",
-  "recordedMeta": "{model} · {steps} pasos",
+  "recordedMeta": "{model} · {steps}\u00a0pasos",
   "@recordedMeta": {"placeholders": {"model": {"type": "String"}, "steps": {"type": "int"}}},
+  "recordedSeconds": "{seconds}\u00a0s",
+  "@recordedSeconds": {"placeholders": {"seconds": {"type": "double", "format": "decimalPatternDigits", "optionalParameters": {"decimalDigits": 1}}}},
   "stepBefore": "Antes de la respuesta",
   "stepCreate": "Crea la superficie",
   "stepComponents": "Manda los componentes",

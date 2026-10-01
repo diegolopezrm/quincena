@@ -76,8 +76,11 @@ class _Entry extends StatelessWidget {
                     Text(recording.question, style: context.type.titleSmall),
                     const SizedBox(height: 4),
                     Text(
-                      '${context.l10n.recordedMeta(recording.model, steps)}'
-                      '${recording.seconds == null ? '' : ' · ${recording.seconds!.toStringAsFixed(1)} s'}',
+                      <String>[
+                        context.l10n.recordedMeta(recording.model, steps),
+                        if (recording.seconds case final num seconds)
+                          context.l10n.recordedSeconds(seconds.toDouble()),
+                      ].join(' · '),
                       style: context.type.bodySmall,
                     ),
                   ],

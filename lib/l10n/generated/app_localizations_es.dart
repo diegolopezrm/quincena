@@ -168,7 +168,19 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String recordedMeta(String model, int steps) {
-    return '$model · $steps pasos';
+    return '$model · $steps pasos';
+  }
+
+  @override
+  String recordedSeconds(double seconds) {
+    final intl.NumberFormat secondsNumberFormat =
+        intl.NumberFormat.decimalPatternDigits(
+          locale: localeName,
+          decimalDigits: 1,
+        );
+    final String secondsString = secondsNumberFormat.format(seconds);
+
+    return '$secondsString s';
   }
 
   @override

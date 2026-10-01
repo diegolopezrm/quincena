@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'tokens.dart';
@@ -114,7 +115,10 @@ ThemeData quincenaTheme(Brightness brightness) {
     textTheme: text,
     extensions: <ThemeExtension<dynamic>>[c],
     dividerTheme: DividerThemeData(color: c.line, thickness: 1, space: 1),
-    splashFactory: InkSparkle.splashFactory,
+    // The sparkle is a fragment shader, which Flutter only turns on for
+    // Android outside the web. With it on in the web build, the frames after
+    // a tap came 400 ms to a second apart, long enough for a tap to look lost.
+    splashFactory: kIsWeb ? InkRipple.splashFactory : InkSparkle.splashFactory,
     cardTheme: CardThemeData(
       color: c.surface,
       elevation: 0,

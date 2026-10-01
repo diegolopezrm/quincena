@@ -1,46 +1,72 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
+  <!-- Replaced by the value of `flutter build web --base-href`. -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="Personal finance where every answer is an interface. A showcase for genui and genui_gen.">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Quincena</title>
+  <meta name="description" content="Finanzas personales donde cada respuesta es una interfaz. Una demo de genui y genui_gen, hecha en Flutter.">
+  <meta name="theme-color" content="#F2F4F1" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C0F0E" media="(prefers-color-scheme: dark)">
 
-  <!-- iOS meta tags & icons -->
+  <!-- What a shared link shows. -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Quincena">
+  <meta property="og:description" content="Finanzas personales donde cada respuesta es una interfaz. Una demo de genui y genui_gen, hecha en Flutter.">
+  <meta property="og:url" content="https://diegolopezrm.github.io/quincena/">
+  <meta property="og:image" content="https://diegolopezrm.github.io/quincena/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="quincena">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Quincena">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
-
-  <title>quincena</title>
+  <link rel="icon" type="image/png" href="favicon.png">
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    /* Shown while Flutter loads, in the app's own colors, and gone on the
+       first frame. */
+    :root { --canvas: #F2F4F1; --ink: #111513; --soft: #4A5450; --brand: #0B7552; --brand-soft: #D5EEE2; }
+    @media (prefers-color-scheme: dark) {
+      :root { --canvas: #0C0F0E; --ink: #E8EEEA; --soft: #A7B2AC; --brand: #3FCB93; --brand-soft: #16382A; }
+    }
+    html, body { margin: 0; height: 100%; background: var(--canvas); }
+    #splash {
+      position: fixed; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 18px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      transition: opacity 240ms ease;
+    }
+    #splash .mark { display: flex; gap: 3px; height: 44px; }
+    #splash .mark span { width: 22px; height: 44px; }
+    #splash .mark .left { background: var(--brand); border-radius: 44px 0 0 44px; }
+    #splash .mark .right { background: var(--brand-soft); border-radius: 0 44px 44px 0; }
+    #splash .name { color: var(--ink); font-size: 26px; font-weight: 700; letter-spacing: -0.8px; }
+    #splash .what { color: var(--soft); font-size: 14px; }
+    #splash.gone { opacity: 0; pointer-events: none; }
+    @media (prefers-reduced-motion: reduce) { #splash { transition: none; } }
+  </style>
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
-
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
+  <div id="splash" role="status" aria-label="Cargando Quincena">
+    <div class="mark"><span class="left"></span><span class="right"></span></div>
+    <div class="name">quincena</div>
+    <div class="what">Cargando la demo</div>
+  </div>
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      var splash = document.getElementById('splash');
+      if (!splash) return;
+      splash.classList.add('gone');
+      setTimeout(function () { splash.remove(); }, 300);
+    });
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

@@ -120,4 +120,30 @@ void main() {
     expect(find.text('Antes de la respuesta'), findsOneWidget);
     expect(find.text('Gastaste casi todo lo que entró'), findsNothing);
   });
+
+  testWidgets('the list gives each session its time the Spanish way', (
+    tester,
+  ) async {
+    final trace = GenUiTrace(
+      steps: const <GenUiTraceStep>[],
+      notes: <String, Object?>{
+        'question': '¿Qué suscripciones tengo?',
+        'model': 'gemini-3-flash-preview',
+        'seconds': 22.712,
+      },
+    );
+    await tester.pumpWidget(
+      host(
+        RecordedPage(
+          recordings: <Recording>[Recording(trace: trace, asset: 'test')],
+        ),
+      ),
+    );
+
+    // A decimal comma, and a number that never ends a line without its unit.
+    expect(
+      find.text('gemini-3-flash-preview · 0 pasos · 22,7 s'),
+      findsOneWidget,
+    );
+  });
 }

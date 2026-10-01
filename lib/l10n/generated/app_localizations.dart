@@ -383,8 +383,14 @@ abstract class AppLocalizations {
   /// No description provided for @recordedMeta.
   ///
   /// In es, this message translates to:
-  /// **'{model} · {steps} pasos'**
+  /// **'{model} · {steps} pasos'**
   String recordedMeta(String model, int steps);
+
+  /// No description provided for @recordedSeconds.
+  ///
+  /// In es, this message translates to:
+  /// **'{seconds} s'**
+  String recordedSeconds(double seconds);
 
   /// No description provided for @stepBefore.
   ///
