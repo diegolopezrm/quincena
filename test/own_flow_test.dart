@@ -8,6 +8,11 @@ import 'package:http/testing.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/app.dart';
+import 'package:quincena/capture/capture_service.dart';
+import 'package:quincena/capture/event.dart';
+import 'package:quincena/domain/pay_schedule.dart';
+import 'package:quincena/domain/records.dart';
+import 'package:decimal/decimal.dart';
 import 'package:quincena/data/clock.dart';
 import 'package:quincena/format/money.dart' as format;
 import 'package:quincena/money/asset.dart';
@@ -158,6 +163,76 @@ void main() {
     expect(screen(tester), contains(r'$ 1.854.100'));
     expect(screen(tester), contains(r'1 USDT = $ 4.000'));
   });
+
+  testWidgets(
+    'a payment the phone caught waits in the inbox and is confirmed in one tap',
+    (tester) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      tester.platformDispatcher.localesTestValue = const <Locale>[Locale('es')];
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+      final DateTime at = DateTime(2026, 10, 3, 10);
+      final QuincenaStore store = (await tester.runAsync(() async {
+        final s = QuincenaStore(
+          QuincenaDatabase(NativeDatabase.memory()),
+          now: () => at,
+        );
+        await s.ensureCategories();
+        await s.saveProfile(
+          const Profile(
+            name: 'Diego',
+            base: Asset.cop,
+            schedule: TwiceMonthly(),
+          ),
+        );
+        await s.setSetting('app.mode', 'own');
+        await s.addAccount(
+          name: 'Bancolombia',
+          kind: AccountKind.bank,
+          asset: Asset.cop,
+          institution: 'Bancolombia',
+          opening: Decimal.parse('1000000'),
+        );
+        await CaptureService(s, now: () => at).ingest(<CaptureEvent>[
+          CaptureEvent(
+            source: CaptureSource.notification,
+            at: at,
+            app: 'com.todo1.mobile',
+            text:
+                r'Bancolombia: Compraste $45.900,00 en EXITO LAURELES con tu T.Deb *1234',
+          ),
+        ]);
+        return s;
+      }))!;
+      addTearDown(() => tester.runAsync(store.close));
+      await tester.pumpWidget(
+        QuincenaApp(
+          store: store,
+          startInDemo: false,
+          fetcher: fakeRates(),
+          now: () => at,
+        ),
+      );
+      await settle(tester);
+
+      expect(screen(tester), contains('Un movimiento por revisar'));
+      await tester.tap(find.text('Un movimiento por revisar'));
+      await settle(tester);
+      expect(screen(tester), contains('Exito Laureles'));
+      expect(screen(tester), contains('Mercado · Bancolombia'));
+      expect(screen(tester), contains(r'−$ 45.900'));
+
+      await tester.tap(find.text('Confirmar'));
+      await settle(tester);
+      expect(screen(tester), contains('Nada por revisar.'));
+
+      await tester.tap(find.byTooltip('Atrás'));
+      await settle(tester);
+      expect(screen(tester), isNot(contains('por revisar')));
+      expect(screen(tester), contains(r'$ 954.100'));
+    },
+  );
 
   testWidgets(
     'the sample is one tap away, and the way back is in its settings',

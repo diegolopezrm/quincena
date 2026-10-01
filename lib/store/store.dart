@@ -5,11 +5,14 @@ import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
+import '../capture/event.dart';
+import '../capture/inbox.dart';
 import '../domain/categories.dart';
 import '../domain/records.dart';
 import '../money/asset.dart';
 import '../money/money.dart';
 import '../money/rates.dart';
+import '../capture/parser.dart';
 import 'database.dart';
 
 /// Everything known about a person's money at one moment, for the screens
@@ -734,6 +737,108 @@ class QuincenaStore {
               ..limit(1))
             .get();
     return rows.isEmpty ? null : rows.first.fetchedAt;
+  }
+
+  // Capture -------------------------------------------------------------------
+
+  static const String _captureKey = 'capture';
+
+  Future<CaptureSettings> captureSettings() async {
+    final String? json = await setting(_captureKey);
+    return json == null
+        ? const CaptureSettings()
+        : CaptureSettings.fromJson(jsonDecode(json) as Map<String, Object?>);
+  }
+
+  Stream<CaptureSettings> watchCaptureSettings() =>
+      (db.select(
+        db.settings,
+      )..where((s) => s.key.equals(_captureKey))).watchSingleOrNull().map(
+        (SettingRow? row) => row == null
+            ? const CaptureSettings()
+            : CaptureSettings.fromJson(
+                jsonDecode(row.value) as Map<String, Object?>,
+              ),
+      );
+
+  Future<void> saveCaptureSettings(CaptureSettings settings) =>
+      setSetting(_captureKey, jsonEncode(settings.toJson()));
+
+  InboxItem _inbox(InboxRow r) {
+    final ({
+      ParsedCapture parsed,
+      Suggestion suggestion,
+      String? duplicateOf,
+      bool automatic,
+    })
+    read = readParsedColumn(
+      r.parsed == null
+          ? const <String, Object?>{}
+          : jsonDecode(r.parsed!) as Map<String, Object?>,
+    );
+    return InboxItem(
+      id: r.id,
+      event: CaptureEvent.fromJson(jsonDecode(r.raw) as Map<String, Object?>),
+      parsed: read.parsed,
+      suggestion: read.suggestion,
+      status: InboxStatus.parse(r.status),
+      entryId: r.entryId,
+      duplicateOf: read.duplicateOf,
+      automatic: read.automatic,
+    );
+  }
+
+  /// A new id for an inbox item.
+  String newInboxId() => _newId();
+
+  Future<void> saveInboxItem(InboxItem item) => db
+      .into(db.inboxItems)
+      .insertOnConflictUpdate(
+        InboxItemsCompanion.insert(
+          id: item.id,
+          source: item.event.source.name,
+          receivedAt: item.event.at,
+          raw: jsonEncode(item.event.toJson()),
+          parsed: Value(jsonEncode(item.parsedJson())),
+          status: Value(item.status.stored),
+          entryId: Value(item.entryId),
+        ),
+      );
+
+  /// Items in the inbox, newest first; only those in [statuses] when given.
+  Stream<List<InboxItem>> watchInbox({Set<InboxStatus>? statuses}) =>
+      _inboxQuery(
+        statuses,
+      ).watch().map((List<InboxRow> rows) => rows.map(_inbox).toList());
+
+  Future<List<InboxItem>> inbox({
+    Set<InboxStatus>? statuses,
+    DateTime? since,
+  }) async =>
+      (await _inboxQuery(statuses, since: since).get()).map(_inbox).toList();
+
+  SimpleSelectStatement<$InboxItemsTable, InboxRow> _inboxQuery(
+    Set<InboxStatus>? statuses, {
+    DateTime? since,
+  }) {
+    final SimpleSelectStatement<$InboxItemsTable, InboxRow> q =
+        db.select(db.inboxItems)
+          ..orderBy(<OrderClauseGenerator<$InboxItemsTable>>[
+            (i) =>
+                OrderingTerm(expression: i.receivedAt, mode: OrderingMode.desc),
+          ]);
+    if (statuses != null) {
+      q.where((i) => i.status.isIn(statuses.map((InboxStatus s) => s.stored)));
+    }
+    if (since != null) q.where((i) => i.receivedAt.isBiggerOrEqualValue(since));
+    return q;
+  }
+
+  Future<InboxItem?> inboxItem(String id) async {
+    final InboxRow? row = await (db.select(
+      db.inboxItems,
+    )..where((i) => i.id.equals(id))).getSingleOrNull();
+    return row == null ? null : _inbox(row);
   }
 
   // Snapshot ------------------------------------------------------------------

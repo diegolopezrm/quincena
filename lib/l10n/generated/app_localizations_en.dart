@@ -756,4 +756,181 @@ class AppLocalizationsEn extends AppLocalizations {
   String standingCommittedOwn(String committed) {
     return '$committed is already committed to scheduled payments.';
   }
+
+  @override
+  String get inboxTitle => 'To review';
+
+  @override
+  String inboxBanner(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count movements to review',
+      one: 'One movement to review',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inboxBannerBody =>
+      'They came from your notifications and messages.';
+
+  @override
+  String get inboxEmpty => 'Nothing to review.';
+
+  @override
+  String get inboxEmptyBody =>
+      'When a payment arrives from your bank, it shows up here to confirm.';
+
+  @override
+  String get confirm => 'Confirm';
+
+  @override
+  String get edit => 'Edit';
+
+  @override
+  String get dismiss => 'Dismiss';
+
+  @override
+  String dismissAndMute(String app) {
+    return 'Dismiss and stop reading $app';
+  }
+
+  @override
+  String get chooseAccount => 'Choose the account';
+
+  @override
+  String get noMerchant => 'No merchant';
+
+  @override
+  String get sourceWallet => 'Apple Pay';
+
+  @override
+  String get sourceNotification => 'Notification';
+
+  @override
+  String get sourceSms => 'SMS';
+
+  @override
+  String get sourceEmail => 'Email';
+
+  @override
+  String get sourceScreenshot => 'Screenshot';
+
+  @override
+  String get sourcePaste => 'Pasted';
+
+  @override
+  String nearbyPlace(String name, int metres) {
+    return 'Nearby: $name, $metres m away';
+  }
+
+  @override
+  String get possibleDuplicates => 'Possible repeats';
+
+  @override
+  String get duplicateLine => 'The same payment already arrived another way.';
+
+  @override
+  String get notDuplicate => 'Not a repeat';
+
+  @override
+  String get recordedAutomatically => 'Recorded automatically';
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String get pasteMessage => 'Paste a message';
+
+  @override
+  String get pasteHint =>
+      'Paste the message or notification from your bank here';
+
+  @override
+  String get pasteRead => 'Read';
+
+  @override
+  String get pasteAdded => 'It is in To review.';
+
+  @override
+  String get pasteRecorded => 'It was recorded.';
+
+  @override
+  String get pasteNothing => 'I could not find a payment in that text.';
+
+  @override
+  String get pasteDuplicate => 'That payment was already there.';
+
+  @override
+  String get showOriginal => 'See the message';
+
+  @override
+  String get captureTitle => 'Automatic capture';
+
+  @override
+  String get captureSubtitle =>
+      'Payments that arrive by themselves from your notifications and messages';
+
+  @override
+  String get captureAuto => 'Record what is clear on its own';
+
+  @override
+  String get captureAutoHelp =>
+      'When the account, the category and the amount are certain and it is not a repeat, it is recorded without asking. The rest waits in To review.';
+
+  @override
+  String get captureLocation => 'Use where the payment happened';
+
+  @override
+  String get captureLocationHelp =>
+      'When the alert does not say where, Quincena looks up the shops a few metres from where the phone was. The location stays here; only the coordinates go to OpenStreetMap, through Photon, to find the shops.';
+
+  @override
+  String get captureIosTitle => 'On iPhone, with Shortcuts';
+
+  @override
+  String get captureIosSteps =>
+      '1. Open Shortcuts and go to Automation.\n2. Create a new one with Wallet and pick your cards.\n3. Add \"Get Current Location\" if you want to use the location, then Quincena\'s \"Record movement\" action. Give it the merchant, the amount, the card and the location.\n4. Choose \"Run Immediately\".\nFor your bank\'s text messages, create a Message automation for the bank\'s sender and give it the message as text. From iOS 27, the Notification automation does the same with your banks\' apps.';
+
+  @override
+  String get captureOpenShortcuts => 'Open Shortcuts';
+
+  @override
+  String get captureAndroidTitle => 'On Android, with your notifications';
+
+  @override
+  String get captureAndroidBody =>
+      'Quincena reads the notifications that look like payments and lets the rest go by without keeping them. Verification codes are never kept.';
+
+  @override
+  String get captureAndroidGranted => 'Notification access is on';
+
+  @override
+  String get captureAndroidGrant => 'Allow notification access';
+
+  @override
+  String get captureOtherTitle => 'On this device';
+
+  @override
+  String get captureOtherBody =>
+      'Automatic capture works on the phone. Here you can paste a message from your bank.';
+
+  @override
+  String get mutedApps => 'Apps not read';
+
+  @override
+  String get unmute => 'Read again';
+
+  @override
+  String learnedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'It knows $count merchants.',
+      one: 'It knows one merchant.',
+      zero: 'It has not learned any merchants yet.',
+    );
+    return '$_temp0';
+  }
 }

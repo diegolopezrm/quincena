@@ -11,6 +11,7 @@ import 'account_sheet.dart';
 import 'accounts_tab.dart';
 import 'entry_sheet.dart';
 import 'home_tab.dart';
+import 'inbox_page.dart';
 import 'own_settings_page.dart';
 
 /// The person's own accounts: home, movements and accounts, a tap apart.
@@ -30,10 +31,37 @@ class OwnShell extends StatefulWidget {
   State<OwnShell> createState() => _OwnShellState();
 }
 
-class _OwnShellState extends State<OwnShell> {
+class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
   int _tab = 0;
 
   OwnController get own => widget.own;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// Back in the app: whatever the phone captured meanwhile, and fresh
+  /// rates if they are old.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    own.pullCaptures();
+    own.refreshRates();
+  }
+
+  void _openInbox() => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (BuildContext context) => InboxPage(own: own),
+    ),
+  );
 
   void _openSettings() => Navigator.of(context).push(
     MaterialPageRoute<void>(
@@ -101,6 +129,22 @@ class _OwnShellState extends State<OwnShell> {
         titleSpacing: 20,
         title: const Wordmark(),
         actions: <Widget>[
+          ListenableBuilder(
+            listenable: own,
+            builder: (BuildContext context, _) {
+              final int count = own.pendingInbox.length;
+              return IconButton(
+                tooltip: l.inboxTitle,
+                onPressed: _openInbox,
+                icon: Badge(
+                  isLabelVisible: count > 0,
+                  label: Text('$count'),
+                  backgroundColor: context.colors.brand,
+                  child: const Icon(Glyph.tray),
+                ),
+              );
+            },
+          ),
           IconButton(
             tooltip: l.settingsTitle,
             onPressed: _openSettings,

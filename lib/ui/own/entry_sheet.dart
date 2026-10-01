@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../capture/inbox.dart';
 import '../../domain/records.dart';
 import '../../format/dates.dart';
 import '../../l10n/l10n.dart';
@@ -20,6 +21,7 @@ Future<void> showEntrySheet(
   required OwnController own,
   Entry? entry,
   String? accountId,
+  InboxItem? fromInbox,
 }) {
   if (own.accounts.isEmpty) {
     ScaffoldMessenger.of(
@@ -34,17 +36,30 @@ Future<void> showEntrySheet(
     useSafeArea: true,
     backgroundColor: context.colors.surface,
     constraints: const BoxConstraints(maxWidth: 560),
-    builder: (BuildContext context) =>
-        _EntryForm(own: own, entry: entry, accountId: accountId),
+    builder: (BuildContext context) => _EntryForm(
+      own: own,
+      entry: entry,
+      accountId: accountId,
+      fromInbox: fromInbox,
+    ),
   );
 }
 
 class _EntryForm extends StatefulWidget {
-  const _EntryForm({required this.own, this.entry, this.accountId});
+  const _EntryForm({
+    required this.own,
+    this.entry,
+    this.accountId,
+    this.fromInbox,
+  });
 
   final OwnController own;
   final Entry? entry;
   final String? accountId;
+
+  /// A capture being confirmed: its reading fills the form, and saving it
+  /// records it through the inbox, so the app learns from what changed.
+  final InboxItem? fromInbox;
 
   @override
   State<_EntryForm> createState() => _EntryFormState();
@@ -58,7 +73,11 @@ class _EntryFormState extends State<_EntryForm> {
   /// that arrived.
   late final (Entry, Entry)? _legs = _findLegs();
 
-  late EntryKind _kind = _editing?.kind == EntryKind.transfer
+  InboxItem? get _capture => widget.fromInbox;
+
+  late EntryKind _kind = _capture != null
+      ? (_capture!.parsed.kind ?? EntryKind.expense)
+      : _editing?.kind == EntryKind.transfer
       ? EntryKind.transfer
       : (_editing == null || _editing!.amount < Decimal.zero)
       ? EntryKind.expense
@@ -67,11 +86,14 @@ class _EntryFormState extends State<_EntryForm> {
   late String _accountId =
       _legs?.$1.accountId ??
       _editing?.accountId ??
+      _capture?.suggestion.accountId ??
       widget.accountId ??
       own.accounts.first.id;
   late String? _toAccountId = _legs?.$2.accountId ?? _secondAccount();
   late final TextEditingController _amount = TextEditingController(
-    text: _editing == null
+    text: _capture?.parsed.amount != null
+        ? _decimalText(_capture!.parsed.amount!, _assetOf(_accountId))
+        : _editing == null
         ? ''
         : _decimalText(
             _legs?.$1.amount ?? _editing!.amount,
@@ -85,13 +107,17 @@ class _EntryFormState extends State<_EntryForm> {
   );
   late bool _receivedTouched = _legs != null;
   late final TextEditingController _payee = TextEditingController(
-    text: _editing?.payee ?? '',
+    text: _editing?.payee ?? _capture?.suggestion.payee ?? '',
   );
   late final TextEditingController _note = TextEditingController(
     text: _editing?.note ?? '',
   );
-  late String? _category = _editing?.category;
-  late DateTime _date = _editing?.date ?? own.today;
+  late String? _category = _editing?.category ?? _capture?.suggestion.category;
+  late DateTime _date =
+      _editing?.date ??
+      _capture?.parsed.when ??
+      _capture?.event.at ??
+      own.today;
   String? _amountError;
   String? _accountError;
   bool _saving = false;
@@ -186,6 +212,20 @@ class _EntryFormState extends State<_EntryForm> {
     final String? category = _kind == EntryKind.transfer
         ? null
         : (_category ?? (_kind == EntryKind.income ? 'other_income' : 'other'));
+    final InboxItem? capture = _capture;
+    if (capture != null && _kind != EntryKind.transfer) {
+      await own.capture.accept(
+        capture,
+        accountId: _accountId,
+        category: category,
+        payee: _payee.text,
+        amount: amount,
+        kind: _kind,
+        date: when,
+      );
+      if (mounted) Navigator.of(context).pop();
+      return;
+    }
     if (_kind == EntryKind.transfer) {
       final String? editingTransfer = _editing?.transferId;
       if (editingTransfer != null) {
@@ -208,6 +248,11 @@ class _EntryFormState extends State<_EntryForm> {
           date: when,
           note: _note.text,
         );
+        if (capture != null) {
+          await own.store.saveInboxItem(
+            capture.copyWith(status: InboxStatus.accepted),
+          );
+        }
       }
     } else if (_editing == null || _editing!.transferId != null) {
       if (_editing != null) await own.store.deleteEntry(_editing!);

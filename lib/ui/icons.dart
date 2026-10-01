@@ -97,4 +97,5 @@ abstract final class Glyph {
   static const IconData arrowsDownUp = IconData(0xe098, fontFamily: _family);
   static const IconData scales = IconData(0xe750, fontFamily: _family);
   static const IconData currencyEth = IconData(0xeada, fontFamily: _family);
+  static const IconData arrowUpRight = IconData(0xe092, fontFamily: _family);
 }

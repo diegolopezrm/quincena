@@ -1,0 +1,391 @@
+import 'package:decimal/decimal.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import '../../capture/capture_service.dart';
+import '../../capture/event.dart';
+import '../../capture/inbox.dart';
+import '../../domain/records.dart';
+import '../../format/dates.dart';
+import '../../l10n/l10n.dart';
+import '../../money/asset.dart';
+import '../../money/money.dart';
+import '../../own/own_controller.dart';
+import '../../theme/tokens.dart';
+import '../icons.dart';
+import '../kit.dart';
+import 'entry_sheet.dart';
+import 'look.dart';
+
+/// Captures waiting to be confirmed, the possible repeats, and what was
+/// recorded on its own lately.
+class InboxPage extends StatelessWidget {
+  const InboxPage({super.key, required this.own});
+
+  final OwnController own;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: own,
+      builder: (BuildContext context, _) {
+        final AppLocalizations l = context.l10n;
+        final List<InboxItem> pending = own.pendingInbox;
+        final List<InboxItem> repeats = <InboxItem>[
+          for (final InboxItem i in own.inbox)
+            if (i.status == InboxStatus.duplicate) i,
+        ];
+        return Scaffold(
+          appBar: AppBar(
+            backgroundColor: context.colors.canvas,
+            surfaceTintColor: Colors.transparent,
+            title: Text(l.inboxTitle, style: context.type.titleLarge),
+            actions: <Widget>[
+              IconButton(
+                tooltip: l.pasteMessage,
+                onPressed: () => showPasteDialog(context, own),
+                icon: const Icon(Glyph.notePencil),
+              ),
+              const SizedBox(width: 8),
+            ],
+          ),
+          body: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 760),
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                children: <Widget>[
+                  if (pending.isEmpty)
+                    Block(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(l.inboxEmpty, style: context.type.titleSmall),
+                          const SizedBox(height: 4),
+                          Text(
+                            l.inboxEmptyBody,
+                            style: context.type.bodyMedium,
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    for (final InboxItem item in pending) ...<Widget>[
+                      InboxCard(own: own, item: item),
+                      const SizedBox(height: 12),
+                    ],
+                  if (repeats.isNotEmpty) ...<Widget>[
+                    const SizedBox(height: 16),
+                    SectionLabel(l.possibleDuplicates),
+                    for (final InboxItem item in repeats) ...<Widget>[
+                      InboxCard(own: own, item: item),
+                      const SizedBox(height: 12),
+                    ],
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+String sourceLabel(AppLocalizations l, CaptureSource s) => switch (s) {
+  CaptureSource.wallet => l.sourceWallet,
+  CaptureSource.notification => l.sourceNotification,
+  CaptureSource.sms => l.sourceSms,
+  CaptureSource.email => l.sourceEmail,
+  CaptureSource.screenshot => l.sourceScreenshot,
+  CaptureSource.paste => l.sourcePaste,
+};
+
+IconData sourceIcon(CaptureSource s) => switch (s) {
+  CaptureSource.wallet => Glyph.creditCard,
+  CaptureSource.notification => Glyph.bell,
+  CaptureSource.sms => Glyph.chatCircleDots,
+  CaptureSource.email => Glyph.envelope,
+  CaptureSource.screenshot => Glyph.camera,
+  CaptureSource.paste => Glyph.notePencil,
+};
+
+/// One capture: what it says, what the app proposes, and what to do.
+class InboxCard extends StatefulWidget {
+  const InboxCard({super.key, required this.own, required this.item});
+
+  final OwnController own;
+  final InboxItem item;
+
+  @override
+  State<InboxCard> createState() => _InboxCardState();
+}
+
+class _InboxCardState extends State<InboxCard> {
+  bool _original = false;
+  bool _busy = false;
+
+  OwnController get own => widget.own;
+  InboxItem get item => widget.item;
+
+  Account? get _account {
+    final String? id = item.suggestion.accountId;
+    return id == null ? null : own.snapshot?.account(id);
+  }
+
+  Future<void> _confirm() async {
+    final Account? account = _account;
+    if (account == null) return _edit();
+    setState(() => _busy = true);
+    await own.capture.accept(
+      item,
+      accountId: account.id,
+      category: item.suggestion.category,
+      payee: item.suggestion.payee,
+    );
+  }
+
+  Future<void> _edit() => showEntrySheet(context, own: own, fromInbox: item);
+
+  Future<void> _dismiss({bool mute = false}) async {
+    setState(() => _busy = true);
+    await own.capture.dismiss(item, muteApp: mute);
+  }
+
+  String _who(AppLocalizations l) {
+    final String source = sourceLabel(l, item.event.source);
+    final String? from = item.parsed.institution ?? item.event.sender;
+    return from == null ? source : '$source · $from';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    final InboxItem i = item;
+    final Account? account = _account;
+    final Asset? asset = i.parsed.asset ?? account?.asset;
+    final Decimal? amount = i.parsed.amount;
+    final bool income = i.parsed.kind == EntryKind.income;
+    final String? category = i.suggestion.category;
+    final bool repeat = i.status == InboxStatus.duplicate;
+    final String amountText = amount == null
+        ? '—'
+        : asset == null
+        ? formatDecimal(amount, decimals: 2, trim: true)
+        : moneyText(
+            Money(income ? amount : -amount, asset),
+            base: own.profile?.base,
+            signed: true,
+          );
+    return Material(
+      color: context.colors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: context.colors.line),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Icon(
+                  sourceIcon(i.event.source),
+                  size: 16,
+                  color: context.colors.inkFaint,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    '${_who(l)} · ${dayAndTime(i.event.at)}',
+                    style: context.type.bodySmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: <Widget>[
+                CategoryDisc(category ?? (income ? 'other_income' : 'other')),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        i.suggestion.payee ?? i.parsed.merchant ?? l.noMerchant,
+                        style: context.type.titleSmall,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        <String>[
+                          if (category != null)
+                            categoryNameFor(context, category, own.categories),
+                          account?.name ?? l.chooseAccount,
+                        ].join(' · '),
+                        style: context.type.bodySmall?.copyWith(
+                          color: account == null
+                              ? context.colors.caution
+                              : null,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Figures(
+                  amountText,
+                  style: context.type.titleMedium?.copyWith(
+                    color: income
+                        ? context.colors.positive
+                        : context.colors.ink,
+                  ),
+                ),
+              ],
+            ),
+            if (i.suggestion.place case final place?) ...<Widget>[
+              const SizedBox(height: 8),
+              Row(
+                children: <Widget>[
+                  Icon(Glyph.globe, size: 14, color: context.colors.inkFaint),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      l.nearbyPlace(place.name, place.metres.round()),
+                      style: context.type.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (repeat) ...<Widget>[
+              const SizedBox(height: 8),
+              Text(
+                l.duplicateLine,
+                style: context.type.bodySmall?.copyWith(
+                  color: context.colors.caution,
+                ),
+              ),
+            ],
+            if (_original) ...<Widget>[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: context.colors.sunken,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: SelectableText(
+                  i.event.text,
+                  style: context.type.bodySmall,
+                ),
+              ),
+            ],
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: <Widget>[
+                if (repeat)
+                  OutlinedButton(
+                    onPressed: _busy ? null : () => own.capture.notDuplicate(i),
+                    child: Text(l.notDuplicate),
+                  )
+                else ...<Widget>[
+                  FilledButton(
+                    onPressed: _busy || amount == null ? null : _confirm,
+                    child: Text(account == null ? l.chooseAccount : l.confirm),
+                  ),
+                  OutlinedButton(
+                    onPressed: _busy ? null : _edit,
+                    child: Text(l.edit),
+                  ),
+                ],
+                PopupMenuButton<bool>(
+                  tooltip: l.dismiss,
+                  icon: Icon(
+                    Glyph.dotsThreeVertical,
+                    color: context.colors.inkSoft,
+                  ),
+                  onSelected: (bool mute) => _dismiss(mute: mute),
+                  itemBuilder: (BuildContext context) => <PopupMenuEntry<bool>>[
+                    PopupMenuItem<bool>(value: false, child: Text(l.dismiss)),
+                    if (i.event.app case final String app)
+                      PopupMenuItem<bool>(
+                        value: true,
+                        child: Text(
+                          l.dismissAndMute(i.parsed.institution ?? app),
+                        ),
+                      ),
+                  ],
+                ),
+                TextButton(
+                  onPressed: () => setState(() => _original = !_original),
+                  child: Text(l.showOriginal),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Reads a message the person pastes, as if it had arrived on its own.
+Future<void> showPasteDialog(BuildContext context, OwnController own) async {
+  final AppLocalizations l = context.l10n;
+  final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+  final ClipboardData? clip = await Clipboard.getData(Clipboard.kTextPlain);
+  if (!context.mounted) return;
+  final TextEditingController text = TextEditingController(
+    text: clip?.text?.trim() ?? '',
+  );
+  final String? typed = await showDialog<String>(
+    context: context,
+    builder: (BuildContext context) => AlertDialog(
+      title: Text(l.pasteMessage),
+      content: TextField(
+        controller: text,
+        autofocus: true,
+        minLines: 3,
+        maxLines: 6,
+        decoration: InputDecoration(hintText: l.pasteHint),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(text.text),
+          child: Text(l.pasteRead),
+        ),
+      ],
+    ),
+  );
+  text.dispose();
+  if (typed == null || typed.trim().isEmpty) return;
+  final IngestReport r = await own.ingestText(typed.trim());
+  messenger.showSnackBar(
+    SnackBar(
+      content: Text(
+        r.recorded > 0
+            ? l.pasteRecorded
+            : r.added > 0
+            ? l.pasteAdded
+            : r.duplicates > 0
+            ? l.pasteDuplicate
+            : l.pasteNothing,
+      ),
+    ),
+  );
+}

@@ -1381,6 +1381,300 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{committed} ya están comprometidos en pagos programados.'**
   String standingCommittedOwn(String committed);
+
+  /// No description provided for @inboxTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Por revisar'**
+  String get inboxTitle;
+
+  /// No description provided for @inboxBanner.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Un movimiento por revisar} other{{count} movimientos por revisar}}'**
+  String inboxBanner(int count);
+
+  /// No description provided for @inboxBannerBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegaron de tus notificaciones y mensajes.'**
+  String get inboxBannerBody;
+
+  /// No description provided for @inboxEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Nada por revisar.'**
+  String get inboxEmpty;
+
+  /// No description provided for @inboxEmptyBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuando llegue un pago de tu banco, aparece aquí para confirmarlo.'**
+  String get inboxEmptyBody;
+
+  /// No description provided for @confirm.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirmar'**
+  String get confirm;
+
+  /// No description provided for @edit.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar'**
+  String get edit;
+
+  /// No description provided for @dismiss.
+  ///
+  /// In es, this message translates to:
+  /// **'Descartar'**
+  String get dismiss;
+
+  /// No description provided for @dismissAndMute.
+  ///
+  /// In es, this message translates to:
+  /// **'Descartar y no leer más {app}'**
+  String dismissAndMute(String app);
+
+  /// No description provided for @chooseAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige la cuenta'**
+  String get chooseAccount;
+
+  /// No description provided for @noMerchant.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin comercio'**
+  String get noMerchant;
+
+  /// No description provided for @sourceWallet.
+  ///
+  /// In es, this message translates to:
+  /// **'Apple Pay'**
+  String get sourceWallet;
+
+  /// No description provided for @sourceNotification.
+  ///
+  /// In es, this message translates to:
+  /// **'Notificación'**
+  String get sourceNotification;
+
+  /// No description provided for @sourceSms.
+  ///
+  /// In es, this message translates to:
+  /// **'SMS'**
+  String get sourceSms;
+
+  /// No description provided for @sourceEmail.
+  ///
+  /// In es, this message translates to:
+  /// **'Correo'**
+  String get sourceEmail;
+
+  /// No description provided for @sourceScreenshot.
+  ///
+  /// In es, this message translates to:
+  /// **'Captura de pantalla'**
+  String get sourceScreenshot;
+
+  /// No description provided for @sourcePaste.
+  ///
+  /// In es, this message translates to:
+  /// **'Pegado'**
+  String get sourcePaste;
+
+  /// No description provided for @nearbyPlace.
+  ///
+  /// In es, this message translates to:
+  /// **'Cerca: {name}, a {metres} m'**
+  String nearbyPlace(String name, int metres);
+
+  /// No description provided for @possibleDuplicates.
+  ///
+  /// In es, this message translates to:
+  /// **'Posibles repetidos'**
+  String get possibleDuplicates;
+
+  /// No description provided for @duplicateLine.
+  ///
+  /// In es, this message translates to:
+  /// **'El mismo pago ya llegó por otra vía.'**
+  String get duplicateLine;
+
+  /// No description provided for @notDuplicate.
+  ///
+  /// In es, this message translates to:
+  /// **'No es repetido'**
+  String get notDuplicate;
+
+  /// No description provided for @recordedAutomatically.
+  ///
+  /// In es, this message translates to:
+  /// **'Registrado automáticamente'**
+  String get recordedAutomatically;
+
+  /// No description provided for @undo.
+  ///
+  /// In es, this message translates to:
+  /// **'Deshacer'**
+  String get undo;
+
+  /// No description provided for @pasteMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'Pegar un mensaje'**
+  String get pasteMessage;
+
+  /// No description provided for @pasteHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Pega aquí el mensaje o la notificación del banco'**
+  String get pasteHint;
+
+  /// No description provided for @pasteRead.
+  ///
+  /// In es, this message translates to:
+  /// **'Leer'**
+  String get pasteRead;
+
+  /// No description provided for @pasteAdded.
+  ///
+  /// In es, this message translates to:
+  /// **'Quedó en Por revisar.'**
+  String get pasteAdded;
+
+  /// No description provided for @pasteRecorded.
+  ///
+  /// In es, this message translates to:
+  /// **'Quedó registrado.'**
+  String get pasteRecorded;
+
+  /// No description provided for @pasteNothing.
+  ///
+  /// In es, this message translates to:
+  /// **'No encontré un pago en ese texto.'**
+  String get pasteNothing;
+
+  /// No description provided for @pasteDuplicate.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese pago ya estaba.'**
+  String get pasteDuplicate;
+
+  /// No description provided for @showOriginal.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver el mensaje'**
+  String get showOriginal;
+
+  /// No description provided for @captureTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Captura automática'**
+  String get captureTitle;
+
+  /// No description provided for @captureSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagos que llegan solos desde tus notificaciones y mensajes'**
+  String get captureSubtitle;
+
+  /// No description provided for @captureAuto.
+  ///
+  /// In es, this message translates to:
+  /// **'Registrar solo lo que esté claro'**
+  String get captureAuto;
+
+  /// No description provided for @captureAutoHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuando la cuenta, la categoría y el monto son seguros y no es un repetido, se registra sin preguntarte. Lo demás espera en Por revisar.'**
+  String get captureAutoHelp;
+
+  /// No description provided for @captureLocation.
+  ///
+  /// In es, this message translates to:
+  /// **'Usar la ubicación del pago'**
+  String get captureLocation;
+
+  /// No description provided for @captureLocationHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuando la alerta no dice dónde fue, Quincena busca los comercios a unos metros de donde estaba el teléfono. La ubicación se guarda solo aquí; para buscar los comercios se envían únicamente las coordenadas a OpenStreetMap, a través de Photon.'**
+  String get captureLocationHelp;
+
+  /// No description provided for @captureIosTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'En iPhone, con Atajos'**
+  String get captureIosTitle;
+
+  /// No description provided for @captureIosSteps.
+  ///
+  /// In es, this message translates to:
+  /// **'1. Abre Atajos y ve a Automatización.\n2. Crea una nueva con Wallet y elige tus tarjetas.\n3. Agrega «Obtener ubicación actual» si quieres usar la ubicación, y luego la acción «Registrar movimiento» de Quincena. Pásale el comercio, el monto, la tarjeta y la ubicación.\n4. Elige «Ejecutar inmediatamente».\nPara los SMS del banco, crea la automatización Mensaje con el remitente del banco y pásale el mensaje como texto. Desde iOS 27, la automatización Notificación hace lo mismo con las apps de tus bancos.'**
+  String get captureIosSteps;
+
+  /// No description provided for @captureOpenShortcuts.
+  ///
+  /// In es, this message translates to:
+  /// **'Abrir Atajos'**
+  String get captureOpenShortcuts;
+
+  /// No description provided for @captureAndroidTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'En Android, con tus notificaciones'**
+  String get captureAndroidTitle;
+
+  /// No description provided for @captureAndroidBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Quincena lee las notificaciones que parecen pagos y deja pasar el resto sin guardarlo. Los códigos de verificación nunca se guardan.'**
+  String get captureAndroidBody;
+
+  /// No description provided for @captureAndroidGranted.
+  ///
+  /// In es, this message translates to:
+  /// **'Acceso a notificaciones activado'**
+  String get captureAndroidGranted;
+
+  /// No description provided for @captureAndroidGrant.
+  ///
+  /// In es, this message translates to:
+  /// **'Permitir acceso a notificaciones'**
+  String get captureAndroidGrant;
+
+  /// No description provided for @captureOtherTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'En este dispositivo'**
+  String get captureOtherTitle;
+
+  /// No description provided for @captureOtherBody.
+  ///
+  /// In es, this message translates to:
+  /// **'La captura automática funciona en el teléfono. Aquí puedes pegar un mensaje del banco.'**
+  String get captureOtherBody;
+
+  /// No description provided for @mutedApps.
+  ///
+  /// In es, this message translates to:
+  /// **'Apps que no se leen'**
+  String get mutedApps;
+
+  /// No description provided for @unmute.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver a leer'**
+  String get unmute;
+
+  /// No description provided for @learnedCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Aún no ha aprendido comercios.} =1{Ya reconoce un comercio.} other{Ya reconoce {count} comercios.}}'**
+  String learnedCount(int count);
 }
 
 class _AppLocalizationsDelegate

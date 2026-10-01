@@ -10,6 +10,7 @@ import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../standing.dart';
 import 'accounts_tab.dart';
+import 'inbox_page.dart';
 import 'look.dart';
 import 'movement_list.dart';
 
@@ -46,6 +47,10 @@ class OwnHomeTab extends StatelessWidget {
               ),
           ].join(' '),
         ),
+        if (own.pendingInbox.isNotEmpty) ...<Widget>[
+          const SizedBox(height: 12),
+          _InboxBanner(own: own),
+        ],
         if (missing.isNotEmpty) ...<Widget>[
           const SizedBox(height: 12),
           _Notice(
@@ -76,6 +81,51 @@ class OwnHomeTab extends StatelessWidget {
             ],
           ),
       ],
+    );
+  }
+}
+
+class _InboxBanner extends StatelessWidget {
+  const _InboxBanner({required this.own});
+
+  final OwnController own;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    return Material(
+      color: context.colors.brandSoft,
+      borderRadius: BorderRadius.circular(18),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (BuildContext context) => InboxPage(own: own),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: <Widget>[
+              Icon(Glyph.tray, size: 24, color: context.colors.brand),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      l.inboxBanner(own.pendingInbox.length),
+                      style: context.type.titleSmall,
+                    ),
+                    Text(l.inboxBannerBody, style: context.type.bodySmall),
+                  ],
+                ),
+              ),
+              Icon(Glyph.arrowRight, size: 18, color: context.colors.inkSoft),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

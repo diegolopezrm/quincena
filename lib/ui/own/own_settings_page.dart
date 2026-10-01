@@ -13,6 +13,7 @@ import '../../money/asset.dart';
 import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
+import 'capture_settings_page.dart';
 import 'look.dart';
 import 'pay_schedule_editor.dart';
 
@@ -306,6 +307,24 @@ class OwnSettingsPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                   ],
+                  SectionLabel(l.captureTitle),
+                  Panel(
+                    children: <Widget>[
+                      _row(
+                        context,
+                        icon: Glyph.bell,
+                        title: l.captureTitle,
+                        value: l.captureSubtitle,
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (BuildContext context) =>
+                                CaptureSettingsPage(own: own),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
                   SectionLabel(l.appearance),
                   Panel(
                     padding: const EdgeInsets.all(16),
