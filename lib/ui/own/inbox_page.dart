@@ -154,7 +154,8 @@ class _InboxCardState extends State<InboxCard> {
 
   String _who(AppLocalizations l) {
     final String source = sourceLabel(l, item.event.source);
-    final String? from = item.parsed.institution ?? item.event.sender;
+    final String? from =
+        item.parsed.institution ?? item.event.sender ?? item.event.appName;
     return from == null ? source : '$source · $from';
   }
 
@@ -163,7 +164,8 @@ class _InboxCardState extends State<InboxCard> {
     final AppLocalizations l = context.l10n;
     final InboxItem i = item;
     final Account? account = _account;
-    final Asset? asset = i.parsed.asset ?? account?.asset;
+    // A bare `$` with no account yet reads as the base currency.
+    final Asset? asset = i.parsed.asset ?? account?.asset ?? own.profile?.base;
     final Decimal? amount = i.parsed.amount;
     final bool income = i.parsed.kind == EntryKind.income;
     final String? category = i.suggestion.category;
@@ -322,7 +324,9 @@ class _InboxCardState extends State<InboxCard> {
                       PopupMenuItem<bool>(
                         value: true,
                         child: Text(
-                          l.dismissAndMute(i.parsed.institution ?? app),
+                          l.dismissAndMute(
+                            i.parsed.institution ?? i.event.appName ?? app,
+                          ),
                         ),
                       ),
                   ],

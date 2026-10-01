@@ -108,8 +108,9 @@ final RegExp _date = RegExp(r'\b(\d{1,2})/(\d{1,2})/(\d{2,4})\b');
 final RegExp _time = RegExp(r'\b(\d{1,2}):(\d{2})\b');
 
 // Where a merchant's name stops.
+// A notification's title and body arrive joined by ` · `.
 const String _stop =
-    r'(?=\s+(?:con|el|a las|desde|por|tarjeta|t\.?\s?cred|t\.?\s?deb|cuenta|en tu|a tu|via|mediante|aprobad\w*)\b|\s+\d{1,2}:\d{2}|\s+\d{1,2}/\d{1,2}|\s+\*|[.,;!]\s|[.,;!]?$)';
+    r'(?=\s+(?:con|el|a las|desde|por|tarjeta|t\.?\s?cred|t\.?\s?deb|cuenta|en tu|a tu|via|mediante|aprobad\w*)\b|\s+\d{1,2}:\d{2}|\s+\d{1,2}/\d{1,2}|\s+\*|\s*·|[.,;!]\s|[.,;!]?$)';
 final List<RegExp> _merchantAfter = <RegExp>[
   RegExp(
     r'\ben\s+(?!tu\b|su\b|el cajero\b)(.+?)' + _stop,
@@ -122,7 +123,7 @@ final List<RegExp> _merchantAfter = <RegExp>[
   RegExp(r'\bde\s+(?!tu\b|su\b|\$)(.+?)' + _stop, caseSensitive: false),
 ];
 final RegExp _merchantBefore = RegExp(
-  r'^(?:[^:]*:\s*)?(.+?)\s+te\s+(?:envi[oó]|transfiri[oó]|pag[oó]|consign[oó])(?![a-z])',
+  r'^(?:[^:·]*[:·]\s*)?(.+?)\s+te\s+(?:envi[oó]|transfiri[oó]|pag[oó]|consign[oó])(?![a-z])',
   caseSensitive: false,
 );
 

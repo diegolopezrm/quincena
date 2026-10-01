@@ -329,46 +329,56 @@ class OwnSettingsPage extends StatelessWidget {
                   Panel(
                     padding: const EdgeInsets.all(16),
                     children: <Widget>[
-                      SegmentedButton<ThemeMode>(
-                        segments: <ButtonSegment<ThemeMode>>[
-                          ButtonSegment<ThemeMode>(
-                            value: ThemeMode.system,
-                            label: Text(l.themeSystem),
+                      // One row: the two choices belong together.
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          SegmentedButton<ThemeMode>(
+                            segments: <ButtonSegment<ThemeMode>>[
+                              ButtonSegment<ThemeMode>(
+                                value: ThemeMode.system,
+                                label: Text(l.themeSystem),
+                              ),
+                              ButtonSegment<ThemeMode>(
+                                value: ThemeMode.light,
+                                label: Text(l.themeLight),
+                              ),
+                              ButtonSegment<ThemeMode>(
+                                value: ThemeMode.dark,
+                                label: Text(l.themeDark),
+                              ),
+                            ],
+                            selected: <ThemeMode>{settings.themeMode},
+                            showSelectedIcon: false,
+                            onSelectionChanged: (Set<ThemeMode> s) =>
+                                settings.themeMode = s.first,
                           ),
-                          ButtonSegment<ThemeMode>(
-                            value: ThemeMode.light,
-                            label: Text(l.themeLight),
-                          ),
-                          ButtonSegment<ThemeMode>(
-                            value: ThemeMode.dark,
-                            label: Text(l.themeDark),
+                          const SizedBox(height: 12),
+                          SegmentedButton<String>(
+                            segments: <ButtonSegment<String>>[
+                              ButtonSegment<String>(
+                                value: '',
+                                label: Text(l.languageSystem),
+                              ),
+                              const ButtonSegment<String>(
+                                value: 'es',
+                                label: Text('Español'),
+                              ),
+                              const ButtonSegment<String>(
+                                value: 'en',
+                                label: Text('English'),
+                              ),
+                            ],
+                            selected: <String>{
+                              settings.locale?.languageCode ?? '',
+                            },
+                            showSelectedIcon: false,
+                            onSelectionChanged: (Set<String> s) =>
+                                settings.locale = s.first.isEmpty
+                                ? null
+                                : Locale(s.first),
                           ),
                         ],
-                        selected: <ThemeMode>{settings.themeMode},
-                        showSelectedIcon: false,
-                        onSelectionChanged: (Set<ThemeMode> s) =>
-                            settings.themeMode = s.first,
-                      ),
-                      const SizedBox(height: 12),
-                      SegmentedButton<String>(
-                        segments: <ButtonSegment<String>>[
-                          ButtonSegment<String>(
-                            value: '',
-                            label: Text(l.languageSystem),
-                          ),
-                          const ButtonSegment<String>(
-                            value: 'es',
-                            label: Text('Español'),
-                          ),
-                          const ButtonSegment<String>(
-                            value: 'en',
-                            label: Text('English'),
-                          ),
-                        ],
-                        selected: <String>{settings.locale?.languageCode ?? ''},
-                        showSelectedIcon: false,
-                        onSelectionChanged: (Set<String> s) => settings.locale =
-                            s.first.isEmpty ? null : Locale(s.first),
                       ),
                     ],
                   ),

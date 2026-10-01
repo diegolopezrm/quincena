@@ -277,6 +277,68 @@ void main() {
     },
   );
 
+  test(
+    'with a single peso account, a bare \$ proposes it but waits for the person',
+    () async {
+      await store.deleteAccount(nequi.id);
+      await store.saveCaptureSettings(const CaptureSettings(autoRecord: true));
+      final IngestReport r = await capture.ingest(<CaptureEvent>[
+        push(r'Compraste $12.000 en TIENDAS D1', app: 'com.some.wallet'),
+      ]);
+      expect(r.recorded, 0);
+      expect(r.added, 1);
+      final InboxItem item = (await pending()).single;
+      expect(item.suggestion.accountId, bancolombia.id);
+      expect(item.suggestion.category, 'groceries');
+      expect(item.suggestion.why, contains('only'));
+
+      // A bank the person has no account in is not taken for that one.
+      await capture.ingest(<CaptureEvent>[
+        push(
+          r'Juan Pérez te envió $50.000',
+          app: 'com.nequi.MobileApp',
+          at: now.add(const Duration(hours: 1)),
+        ),
+      ]);
+      final InboxItem nequiItem = (await pending()).firstWhere(
+        (InboxItem i) => i.parsed.institution == 'Nequi',
+      );
+      expect(nequiItem.suggestion.accountId, isNull);
+    },
+  );
+
+  test('an approximate location does not name a shop', () async {
+    await store.saveCaptureSettings(const CaptureSettings(useLocation: true));
+    await capture.ingest(<CaptureEvent>[
+      CaptureEvent(
+        source: CaptureSource.notification,
+        at: now,
+        app: 'com.todo1.mobile',
+        text: r'Bancolombia: Compra por $45.900 POS 4512 T.Deb *1234',
+        latitude: 6.2445,
+        longitude: -75.5905,
+        accuracy: 2000,
+      ),
+    ]);
+    expect((await pending()).single.suggestion.place, isNull);
+  });
+
+  test('a muted app keeps its name for the list', () async {
+    await capture.ingest(<CaptureEvent>[
+      CaptureEvent(
+        source: CaptureSource.notification,
+        at: now,
+        app: 'com.some.shop',
+        appName: 'Tienda X',
+        text: r'Compraste $9.900 en TIENDA X',
+      ),
+    ]);
+    await capture.dismiss((await pending()).single, muteApp: true);
+    final CaptureSettings s = await store.captureSettings();
+    expect(s.mutedApps, contains('com.some.shop'));
+    expect(s.appNames['com.some.shop'], 'Tienda X');
+  });
+
   test('a movement already entered by hand is not suggested again', () async {
     await store.addEntry(
       accountId: bancolombia.id,

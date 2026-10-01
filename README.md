@@ -65,6 +65,48 @@ or the choice in settings. The scripted answers, the prompt Gemini gets,
 the catalog's own words and every amount and date switch together:
 `$ 4.719.400` and `19 sept` in Spanish, `$4,719,400` and `Sep 19` in English.
 
+## Your own accounts
+
+On a phone or the desktop, "Con mis cuentas" sets Quincena up with your own
+money instead of Valentina's: how you get paid, your accounts in pesos,
+dollars or crypto, and what comes in and goes out. It all stays in a SQLite
+database on the device. Totals convert to the currency you pick, with the
+official TRM for dollars and Binance's prices for crypto.
+
+<p align="center">
+  <img src="docs/screens/mis-cuentas.png" width="24%" alt="Home with your own accounts: what is free until payday, two movements waiting to be reviewed, and the accounts">
+  <img src="docs/screens/por-revisar.png" width="24%" alt="Por revisar: a purchase the alert named no shop for, matched to Éxito Laureles 6 metres away; a transfer from Nequi; and a Spotify charge set apart as a possible repeat">
+  <img src="docs/screens/captura.png" width="24%" alt="Automatic capture settings: notification access on Android, recording what is clear on its own, and the location of payments">
+</p>
+
+## Automatic capture
+
+Payments reach Quincena without anyone typing them.
+
+- **iPhone.** The app adds a "Record a movement" action to Shortcuts. An
+  automation on Wallet hands it each Apple Pay payment, one on Message the
+  bank's texts and, from iOS 27, one on Notification the banks' apps. It runs
+  without opening Quincena.
+- **Android.** With notification access, Quincena keeps the notifications
+  that carry an amount next to a currency and lets the rest go by unread.
+  Security codes are never kept, and any app can be muted.
+- **Anywhere.** A message pasted into "Por revisar" is read the same way.
+
+Everything goes through one parser, written for how Colombian banks and
+wallets word their alerts: `$45.900,00` or `$45,900.00`, the merchant, the
+card's last four digits, a balance that is not the purchase. A payment seen
+by Wallet, the bank's push and an SMS becomes one movement, and one already
+entered by hand is not suggested again. Confirming a capture teaches
+Quincena that card's account and that merchant's category. With "Registrar
+solo lo que esté claro" on, the next one goes straight in, and can be undone.
+
+When an alert only says "Compra POS 4512", the location fills the gap. With
+it on, Quincena looks up the shops within 80 metres of where the phone was,
+in OpenStreetMap's data through [Photon](https://photon.komoot.io), and
+proposes the nearest. The coordinates are the only thing that leaves the
+device. Android asks for "Allow all the time" for this, since payments
+arrive while the app is closed; the app says why before asking.
+
 ## Run it
 
 ```bash
@@ -144,8 +186,13 @@ the goal slider announced its value without saying what the value was of.
 | `lib/catalog/` | the components the agent composes with, and the data shapes they take |
 | `lib/functions/` | the functions the agent can call from a binding |
 | `lib/agent/` | the assembled catalog, the prompt, the tools, the scripted agent and the live one |
-| `lib/data/` | the account: movements, subscriptions, the goal |
-| `lib/ui/` | the screen around the conversation |
+| `lib/data/` | the sample account: movements, subscriptions, the goal |
+| `lib/money/` | assets, decimal amounts, exchange rates and where they come from |
+| `lib/domain/`, `lib/store/` | accounts, movements and pay schedules, and the SQLite database they live in |
+| `lib/capture/` | the parser, the deduplicator, the inbox and the lookup of nearby shops |
+| `lib/ui/` | the conversation, and in `own/` the screens for your own accounts |
+| `ios/Runner/RecordMovementIntent.swift` | the Shortcuts action |
+| `android/app/src/main/kotlin/` | the notification listener |
 
 ## Credits
 

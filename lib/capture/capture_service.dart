@@ -59,6 +59,7 @@ class CaptureService {
     if (events.isEmpty) return const IngestReport();
     final CaptureSettings settings = await store.captureSettings();
     final List<Account> accounts = await store.accounts();
+    final Asset base = (await store.profile())?.base ?? Asset.cop;
     final DateTime since = _now().subtract(lookBack);
     final List<Sighting> known = <Sighting>[
       for (final InboxItem i in await store.inbox(since: since))
@@ -96,6 +97,7 @@ class CaptureService {
         parsed,
         settings,
         accounts,
+        base,
       );
       var item = InboxItem(
         id: store.newInboxId(),
@@ -170,8 +172,12 @@ class CaptureService {
     final String? app = item.event.app;
     if (muteApp && app != null) {
       final CaptureSettings s = await store.captureSettings();
+      final String? name = item.parsed.institution ?? item.event.appName;
       await store.saveCaptureSettings(
-        s.copyWith(mutedApps: <String>{...s.mutedApps, app}),
+        s.copyWith(
+          mutedApps: <String>{...s.mutedApps, app},
+          appNames: <String, String>{...s.appNames, app: ?name},
+        ),
       );
     }
   }
@@ -207,10 +213,13 @@ class CaptureService {
     ),
   );
 
+  /// Whether [p] can be recorded without asking. An account guessed only
+  /// because it is the one in pesos is proposed, never assumed.
   bool _clear(ParsedCapture p, Suggestion s) =>
       p.isMovement &&
       p.confidence >= 0.8 &&
       s.accountId != null &&
+      !s.why.contains('only') &&
       s.category != null;
 
   Future<Suggestion> _suggest(
@@ -218,6 +227,7 @@ class CaptureService {
     ParsedCapture parsed,
     CaptureSettings settings,
     List<Account> accounts,
+    Asset base,
   ) async {
     final List<String> why = <String>[];
     String? accountId;
@@ -250,6 +260,19 @@ class CaptureService {
         why.add('currency');
       }
     }
+    // A bare `$` is pesos in Colombia, or whatever the base is: with a
+    // single account in it, that is the likely one. Not when the alert
+    // names a bank the person has no account in.
+    if (accountId == null && parsed.asset == null && institution == null) {
+      final List<Account> same = <Account>[
+        for (final Account a in accounts)
+          if (a.asset == base && a.spendable) a,
+      ];
+      if (same.length == 1) {
+        accountId = same.single.id;
+        why.add('only');
+      }
+    }
     if (accountId != null && !accounts.any((Account a) => a.id == accountId)) {
       accountId = null;
     }
@@ -280,6 +303,7 @@ class CaptureService {
     if (settings.useLocation &&
         finder != null &&
         event.hasLocation &&
+        (event.accuracy ?? 0) <= PlaceFinder.usefulAccuracy &&
         parsed.kind == EntryKind.expense &&
         (payee == null || category == null)) {
       final List<NearbyPlace> near = await finder.near(

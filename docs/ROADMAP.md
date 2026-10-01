@@ -57,20 +57,27 @@ set up the app, record a week of movements and see the right totals, offline.
 
 ### 6. Automatic capture
 
-- Inbox for everything that arrives from outside, with review.
-- Parsers for the alerts of the banks and wallets used in Colombia, and a
-  deduplicator across sources.
-- iOS: an App Intent that Shortcuts automations call without opening the app,
-  and signed shortcuts for Apple Pay (Wallet), SMS, bank notifications (iOS 27)
-  and email subjects.
-- Android: a notification listener, opt-in, limited to the apps the person
-  picks.
-- Share a screenshot or a text to Quincena from any app, read on the device.
+- An inbox, "Por revisar", for everything that arrives from outside: confirm,
+  edit, dismiss, mute the app that sent it, and record on its own what is
+  clear, with undo.
+- A parser for the alerts of the banks and wallets used in Colombia, and a
+  deduplicator across sources and against movements entered by hand.
+- iOS: a "Record a movement" App Intent that Shortcuts automations call without
+  opening the app, for Wallet (Apple Pay), Message, Email and, from iOS 27,
+  Notification. Automations are set up by hand, following the steps in the
+  app: iOS does not let an app or a file create them.
+- Android: a notification listener, opt-in, that keeps only notifications
+  with an amount next to a currency, never security codes, and skips the
+  apps the person mutes.
 - Where a payment happened, when the alert does not say: the phone's
-  location at that moment, kept on the device, and the shops within a few
-  metres of it from OpenStreetMap, so "Compra POS 4512" can become a
-  suggestion like "Éxito Laureles · Groceries". Off until the person turns
-  it on; the coordinates are the only thing that leaves the device.
+  location at that moment, kept on the device, and the shops within 80
+  metres of it from OpenStreetMap through Photon, so "Compra POS 4512" can
+  become a suggestion like "Éxito Laureles · Groceries". Off until the
+  person turns it on; the coordinates are the only thing that leaves the
+  device. On Android it needs "Allow all the time", and the app explains why
+  before asking.
+- Still to do: share a screenshot or a text to Quincena from any app, read on
+  the device (Vision on iOS, ML Kit on Android).
 
 ### 7. Gemini for everyone
 
@@ -94,3 +101,6 @@ set up the app, record a week of movements and see the right totals, offline.
   English.
 - Privacy policy under Colombia's Ley 1581 de 2012, and the data controls the
   app already has (export, delete) linked from it.
+- Google Play's declarations for notification access and background
+  location, with the in-app explanations they ask for.
+- The app's icon and name on the home screen.

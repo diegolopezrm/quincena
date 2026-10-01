@@ -3,13 +3,20 @@
 // Not part of `flutter test`, like the rest of this folder. Regenerate with:
 //
 //   flutter test test_screens/own_screens_test.dart --update-goldens
+import 'dart:convert';
+
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/app.dart';
+import 'package:quincena/capture/capture_service.dart';
+import 'package:quincena/capture/event.dart';
+import 'package:quincena/capture/places.dart';
 import 'package:quincena/data/clock.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
@@ -158,6 +165,72 @@ Future<QuincenaStore> seeded() async {
   return store;
 }
 
+/// What the phone caught over a morning: a purchase the alert names no shop
+/// for, found by where the phone was; a transfer from a friend; and the
+/// same Spotify charge already entered by hand.
+Future<QuincenaStore> withCaptures() async {
+  final QuincenaStore store = await seeded();
+  final PlaceFinder photon = PlaceFinder(
+    client: MockClient(
+      (http.Request request) async => http.Response.bytes(
+        utf8.encode(
+          jsonEncode(<String, Object>{
+            'features': <Object>[
+              <String, Object>{
+                'geometry': <String, Object>{
+                  'coordinates': <double>[-75.60178, 6.24634],
+                },
+                'properties': <String, String>{
+                  'name': 'Éxito Laureles',
+                  'osm_key': 'shop',
+                  'osm_value': 'supermarket',
+                },
+              },
+            ],
+          }),
+        ),
+        200,
+      ),
+    ),
+  );
+  await store.saveCaptureSettings(
+    (await store.captureSettings()).copyWith(useLocation: true),
+  );
+  await CaptureService(
+    store,
+    places: photon,
+    now: () => _now,
+  ).ingest(<CaptureEvent>[
+    CaptureEvent(
+      source: CaptureSource.sms,
+      at: DateTime(2026, 10, 2, 9, 1),
+      sender: '85784',
+      text:
+          r'Bancolombia le informa Compra por US$10,99 en SPOTIFY. 02/10/2026 09:00',
+    ),
+    CaptureEvent(
+      source: CaptureSource.notification,
+      at: DateTime(2026, 10, 3, 8, 12),
+      app: 'com.nequi.MobileApp',
+      appName: 'Nequi',
+      title: 'Nequi',
+      text: r'Nequi · Laura Gómez te envió $85.000',
+    ),
+    CaptureEvent(
+      source: CaptureSource.notification,
+      at: DateTime(2026, 10, 3, 9, 40),
+      app: 'com.todo1.mobile',
+      appName: 'Bancolombia',
+      title: 'Bancolombia',
+      text: r'Bancolombia · Compra por $63.200 POS 4512 T.Deb *1234',
+      latitude: 6.2463,
+      longitude: -75.60175,
+      accuracy: 12,
+    ),
+  ]);
+  return store;
+}
+
 void main() {
   setUpAll(() async {
     await loadAppFonts();
@@ -263,6 +336,23 @@ void main() {
     await tester.tap(find.text('Binance').first);
     await settle(tester);
     await shoot('account-binance');
+  });
+
+  testWidgets('capture', (tester) async {
+    final QuincenaStore store = (await tester.runAsync(withCaptures))!;
+    await open(tester, store, phone, Brightness.light);
+    await shoot('home-inbox');
+    await tester.tap(find.byTooltip('Por revisar'));
+    await settle(tester);
+    await shoot('inbox');
+    await tester.tap(find.byTooltip('Atrás'));
+    await settle(tester);
+    await tester.tap(find.byTooltip('Ajustes'));
+    await settle(tester);
+    await shoot('settings');
+    await tester.tap(find.text('Captura automática'));
+    await settle(tester);
+    await shoot('capture');
   });
 
   testWidgets('desktop', (tester) async {

@@ -26,12 +26,16 @@ class CaptureSettingsPage extends StatefulWidget {
 class _CaptureSettingsPageState extends State<CaptureSettingsPage>
     with WidgetsBindingObserver {
   bool? _access;
+  LocationAccess? _location;
 
   OwnController get own => widget.own;
 
   bool get _ios => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
   bool get _android =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
+  /// Only the phone knows where a payment happened.
+  bool get _phone => _ios || _android;
 
   @override
   void initState() {
@@ -55,14 +59,76 @@ class _CaptureSettingsPageState extends State<CaptureSettingsPage>
   Future<void> _checkAccess() async {
     if (!_android) return;
     final bool granted = await CaptureChannel.notificationAccess();
-    if (mounted) setState(() => _access = granted);
+    final LocationAccess location = await CaptureChannel.locationAccess();
+    if (mounted) {
+      setState(() {
+        _access = granted;
+        _location = location;
+      });
+    }
   }
 
   Future<void> _save(CaptureSettings s) => own.store.saveCaptureSettings(s);
 
+  /// Turning the location on asks for it while the app is in use and then,
+  /// after saying why, for all the time: payments arrive with the app
+  /// closed. Either way the person decides; with only the first, it works
+  /// while the app is open.
   Future<void> _useLocation(bool on) async {
-    final bool allowed = await CaptureChannel.setUseLocation(on);
-    await _save(own.captureSettings.copyWith(useLocation: on && allowed));
+    if (!on) return _save(own.captureSettings.copyWith(useLocation: false));
+    final AppLocalizations l = context.l10n;
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    LocationAccess access = await CaptureChannel.locationAccess();
+    if (access == LocationAccess.none) {
+      access = await CaptureChannel.askForLocation();
+    }
+    if (access == LocationAccess.foreground && await _explainAlways()) {
+      access = await CaptureChannel.askForBackgroundLocation();
+    }
+    await _save(
+      own.captureSettings.copyWith(useLocation: access != LocationAccess.none),
+    );
+    if (mounted) setState(() => _location = access);
+    if (access == LocationAccess.none) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(l.captureLocationDenied),
+          action: SnackBarAction(
+            label: l.openPhoneSettings,
+            onPressed: CaptureChannel.openAppSettings,
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _allowAlways() async {
+    final LocationAccess access =
+        await CaptureChannel.askForBackgroundLocation();
+    if (mounted) setState(() => _location = access);
+  }
+
+  Future<bool> _explainAlways() async {
+    if (!mounted) return false;
+    final AppLocalizations l = context.l10n;
+    return await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) => AlertDialog(
+            title: Text(l.captureAlwaysTitle),
+            content: Text(l.captureAlwaysBody),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text(l.notNow),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: Text(l.continueLabel),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 
   Widget _platform(AppLocalizations l) {
@@ -158,6 +224,7 @@ class _CaptureSettingsPageState extends State<CaptureSettingsPage>
                   _platform(l),
                   const SizedBox(height: 20),
                   Panel(
+                    indent: 16,
                     children: <Widget>[
                       SwitchListTile(
                         value: s.autoRecord,
@@ -171,18 +238,52 @@ class _CaptureSettingsPageState extends State<CaptureSettingsPage>
                           style: context.type.bodySmall,
                         ),
                       ),
-                      SwitchListTile(
-                        value: s.useLocation,
-                        onChanged: _useLocation,
-                        title: Text(
-                          l.captureLocation,
-                          style: context.type.titleSmall,
+                      if (_phone)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            SwitchListTile(
+                              value: s.useLocation,
+                              onChanged: _useLocation,
+                              title: Text(
+                                l.captureLocation,
+                                style: context.type.titleSmall,
+                              ),
+                              subtitle: Text(
+                                l.captureLocationHelp,
+                                style: context.type.bodySmall,
+                              ),
+                            ),
+                            if (s.useLocation &&
+                                _location == LocationAccess.foreground)
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  0,
+                                  16,
+                                  8,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    Text(
+                                      l.captureLocationOnlyOpen,
+                                      style: context.type.bodySmall?.copyWith(
+                                        color: context.colors.caution,
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: _allowAlways,
+                                      style: TextButton.styleFrom(
+                                        padding: EdgeInsets.zero,
+                                      ),
+                                      child: Text(l.captureAllowAlways),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
                         ),
-                        subtitle: Text(
-                          l.captureLocationHelp,
-                          style: context.type.bodySmall,
-                        ),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -197,14 +298,20 @@ class _CaptureSettingsPageState extends State<CaptureSettingsPage>
                     const SizedBox(height: 24),
                     SectionLabel(l.mutedApps),
                     Panel(
+                      indent: 16,
                       children: <Widget>[
                         for (final String app in s.mutedApps)
                           ListTile(
-                            title: Text(app, style: context.type.bodyMedium),
+                            title: Text(
+                              s.appNames[app] ?? app,
+                              style: context.type.bodyMedium,
+                            ),
                             trailing: TextButton(
                               onPressed: () => _save(
                                 s.copyWith(
                                   mutedApps: <String>{...s.mutedApps}
+                                    ..remove(app),
+                                  appNames: <String, String>{...s.appNames}
                                     ..remove(app),
                                 ),
                               ),

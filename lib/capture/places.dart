@@ -47,6 +47,10 @@ class NearbyPlace {
 /// Only the coordinates leave the device, and only when the person turned
 /// the location on; nothing about the payment goes with them.
 class PlaceFinder {
+  /// Beyond this many metres off, the shops around the point are a guess:
+  /// an approximate location covers a whole neighbourhood.
+  static const double usefulAccuracy = 150;
+
   PlaceFinder({
     http.Client? client,
     this.radius = 80,

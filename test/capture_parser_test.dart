@@ -219,6 +219,38 @@ void main() {
     expect(parseCapture(e).amount, d('45900'));
   });
 
+  group('what the Android listener writes', () {
+    test('a title and a body read as one message', () {
+      final CaptureEvent e = CaptureEvent.fromJson(<String, Object?>{
+        'source': 'notification',
+        'at': '2026-10-01T18:45:12.345Z',
+        'app': 'com.davivienda.daviviendaapp',
+        'appName': 'Davivienda',
+        'title': r'Compra por $45.900 en EXITO LAURELES',
+        'body': 'con tu tarjeta *1234. Si no la reconoces llama al 018000',
+      });
+      final ParsedCapture p = parseCapture(e);
+      expect(e.appName, 'Davivienda');
+      expect(p.amount, d('45900'));
+      expect(p.kind, EntryKind.expense);
+      expect(p.merchant, 'Exito Laureles');
+      expect(p.card, '1234');
+    });
+
+    test('the app\'s name in the title is not part of who sent it', () {
+      final CaptureEvent e = CaptureEvent.fromJson(<String, Object?>{
+        'source': 'notification',
+        'at': '2026-10-01T18:45:12.345Z',
+        'app': 'com.nequi.MobileApp',
+        'title': 'Nequi',
+        'body': r'Juan Pérez te envió $50.000',
+      });
+      final ParsedCapture p = parseCapture(e);
+      expect(p.kind, EntryKind.income);
+      expect(p.merchant, 'Juan Pérez');
+    });
+  });
+
   group('merchant names', () {
     test('are written the way people write them', () {
       expect(prettyMerchant('EXITO LAURELES'), 'Exito Laureles');

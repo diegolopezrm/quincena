@@ -887,11 +887,38 @@ class AppLocalizationsEn extends AppLocalizations {
       'When the alert does not say where, Quincena looks up the shops a few metres from where the phone was. The location stays here; only the coordinates go to OpenStreetMap, through Photon, to find the shops.';
 
   @override
+  String get captureLocationDenied =>
+      'Quincena can\'t use the location. You can allow it in the phone\'s settings.';
+
+  @override
+  String get openPhoneSettings => 'Open settings';
+
+  @override
+  String get captureAlwaysTitle => 'Location while Quincena is closed';
+
+  @override
+  String get captureAlwaysBody =>
+      'Payments almost always arrive while Quincena is closed. To know where you were at that moment, Android asks you to choose \"Allow all the time\". Quincena only looks at the location when a payment notification arrives.';
+
+  @override
+  String get captureLocationOnlyOpen =>
+      'For now only while the app is open. Choose \"Allow all the time\" for payments that arrive while it\'s closed.';
+
+  @override
+  String get captureAllowAlways => 'Allow all the time';
+
+  @override
+  String get notNow => 'Not now';
+
+  @override
+  String get continueLabel => 'Continue';
+
+  @override
   String get captureIosTitle => 'On iPhone, with Shortcuts';
 
   @override
   String get captureIosSteps =>
-      '1. Open Shortcuts and go to Automation.\n2. Create a new one with Wallet and pick your cards.\n3. Add \"Get Current Location\" if you want to use the location, then Quincena\'s \"Record movement\" action. Give it the merchant, the amount, the card and the location.\n4. Choose \"Run Immediately\".\nFor your bank\'s text messages, create a Message automation for the bank\'s sender and give it the message as text. From iOS 27, the Notification automation does the same with your banks\' apps.';
+      '1. Open Shortcuts and go to Automation.\n2. Create a new one with Wallet and pick your cards.\n3. If you want to use the location, add \"Get Current Location\". Then add Quincena\'s \"Record a movement\" action, choose Apple Pay as the source and give it the amount, the merchant and the card.\n4. Choose \"Run Immediately\".\nFor your bank\'s text messages, create a Message automation for the bank\'s sender, use the same action with Message as the source and give it the message as text. From iOS 27, the Notification automation does the same with your banks\' apps.';
 
   @override
   String get captureOpenShortcuts => 'Open Shortcuts';

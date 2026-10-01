@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../capture/capture_service.dart';
 import '../capture/event.dart';
 import '../capture/inbox.dart';
+import '../capture/native_channel.dart';
 import '../capture/native_inbox.dart';
 import '../capture/places.dart';
 import '../data/clock.dart';
@@ -58,6 +59,8 @@ class OwnController extends ChangeNotifier {
   List<InboxItem> _inbox = const <InboxItem>[];
   CaptureSettings _captureSettings = const CaptureSettings();
   bool _pulling = false;
+  bool _pullAgain = false;
+  String? _configured;
   Timer? _pending;
   bool _disposed = false;
 
@@ -120,6 +123,7 @@ class OwnController extends ChangeNotifier {
     await _reload();
     _changes = store.watchChanges().listen((_) => _schedule());
     unawaited(refreshRates());
+    if (readNative) CaptureChannel.listen(this, pullCaptures);
     unawaited(pullCaptures());
   }
 
@@ -145,16 +149,28 @@ class OwnController extends ChangeNotifier {
   }
 
   /// Takes what the native side captured since the last time and runs it
-  /// through the inbox. Called on start and whenever the app comes back.
+  /// through the inbox. Called on start, whenever the app comes back, and
+  /// when the platform says something arrived while it was open.
+  ///
+  /// A call during a pull makes that pull look again when it ends, so an
+  /// event that lands meanwhile is not left waiting for the next return.
   Future<IngestReport> pullCaptures() async {
-    if (!readNative || _pulling) return const IngestReport();
+    if (!readNative) return const IngestReport();
+    if (_pulling) {
+      _pullAgain = true;
+      return const IngestReport();
+    }
     _pulling = true;
+    var report = const IngestReport();
     try {
-      final List<CaptureEvent> events = await takeNativeEvents();
-      return await capture.ingest(events);
+      do {
+        _pullAgain = false;
+        report += await capture.ingest(await takeNativeEvents());
+      } while (_pullAgain && !_disposed);
     } finally {
       _pulling = false;
     }
+    return report;
   }
 
   /// A message the person pasted or shared.
@@ -179,6 +195,7 @@ class OwnController extends ChangeNotifier {
     );
     _captureSettings = await store.captureSettings();
     if (_disposed) return;
+    _configureListener();
     if (s != null) {
       final DateTime day = today;
       appToday = day;
@@ -192,6 +209,17 @@ class OwnController extends ChangeNotifier {
     _notify();
   }
 
+  /// Hands the notification listener what it needs to know, when it
+  /// changed.
+  void _configureListener() {
+    if (!readNative) return;
+    final CaptureSettings s = _captureSettings;
+    final String now = '${s.useLocation} ${(s.mutedApps.toList()..sort())}';
+    if (now == _configured) return;
+    _configured = now;
+    unawaited(CaptureChannel.configure(s));
+  }
+
   void _notify() {
     if (!_disposed) notifyListeners();
   }
@@ -199,6 +227,7 @@ class OwnController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    CaptureChannel.stop(this);
     _pending?.cancel();
     unawaited(_changes?.cancel());
     super.dispose();

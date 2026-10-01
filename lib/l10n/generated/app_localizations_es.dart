@@ -887,11 +887,38 @@ class AppLocalizationsEs extends AppLocalizations {
       'Cuando la alerta no dice dónde fue, Quincena busca los comercios a unos metros de donde estaba el teléfono. La ubicación se guarda solo aquí; para buscar los comercios se envían únicamente las coordenadas a OpenStreetMap, a través de Photon.';
 
   @override
+  String get captureLocationDenied =>
+      'Quincena no tiene permiso para usar la ubicación. Puedes darlo en los ajustes del teléfono.';
+
+  @override
+  String get openPhoneSettings => 'Abrir ajustes';
+
+  @override
+  String get captureAlwaysTitle => 'Ubicación con la app cerrada';
+
+  @override
+  String get captureAlwaysBody =>
+      'Los pagos casi siempre llegan con Quincena cerrada. Para saber dónde estabas en ese momento, Android pide elegir «Permitir todo el tiempo». Quincena solo mira la ubicación cuando llega una notificación de pago.';
+
+  @override
+  String get captureLocationOnlyOpen =>
+      'Por ahora solo con la app abierta. Elige «Permitir todo el tiempo» para los pagos que llegan con la app cerrada.';
+
+  @override
+  String get captureAllowAlways => 'Permitir todo el tiempo';
+
+  @override
+  String get notNow => 'Ahora no';
+
+  @override
+  String get continueLabel => 'Continuar';
+
+  @override
   String get captureIosTitle => 'En iPhone, con Atajos';
 
   @override
   String get captureIosSteps =>
-      '1. Abre Atajos y ve a Automatización.\n2. Crea una nueva con Wallet y elige tus tarjetas.\n3. Agrega «Obtener ubicación actual» si quieres usar la ubicación, y luego la acción «Registrar movimiento» de Quincena. Pásale el comercio, el monto, la tarjeta y la ubicación.\n4. Elige «Ejecutar inmediatamente».\nPara los SMS del banco, crea la automatización Mensaje con el remitente del banco y pásale el mensaje como texto. Desde iOS 27, la automatización Notificación hace lo mismo con las apps de tus bancos.';
+      '1. Abre Atajos y ve a Automatización.\n2. Crea una nueva con Wallet y elige tus tarjetas.\n3. Si quieres usar la ubicación, agrega «Obtener ubicación actual». Luego agrega la acción «Registrar movimiento» de Quincena, elige Apple Pay como origen y pásale el monto, el comercio y la tarjeta.\n4. Elige «Ejecutar inmediatamente».\nPara los SMS del banco, crea la automatización Mensaje con el remitente del banco, usa la misma acción con Mensaje como origen y pásale el mensaje como texto. Desde iOS 27, la automatización Notificación hace lo mismo con las apps de tus bancos.';
 
   @override
   String get captureOpenShortcuts => 'Abrir Atajos';

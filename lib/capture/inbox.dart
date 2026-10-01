@@ -47,7 +47,8 @@ class Suggestion {
   /// The place nearest to where the phone was, when the location was on.
   final NearbyPlace? place;
 
-  /// Short reasons, for the screen: `card`, `merchant`, `learned`, `place`.
+  /// Short reasons: `card`, `institution`, `currency`, `only` (the single
+  /// account in the base currency), `learned`, `merchant`, `words`, `place`.
   final List<String> why;
 
   Map<String, Object?> toJson() => <String, Object?>{
@@ -136,6 +137,7 @@ class CaptureSettings {
     this.autoRecord = false,
     this.useLocation = false,
     this.mutedApps = const <String>{},
+    this.appNames = const <String, String>{},
     this.merchantCategories = const <String, String>{},
     this.cardAccounts = const <String, String>{},
     this.institutionAccounts = const <String, String>{},
@@ -152,6 +154,9 @@ class CaptureSettings {
   /// Apps whose notifications are not read.
   final Set<String> mutedApps;
 
+  /// The names of [mutedApps], for the list where they can be read again.
+  final Map<String, String> appNames;
+
   /// Merchant key to category, learned from what the person confirmed.
   final Map<String, String> merchantCategories;
 
@@ -165,6 +170,7 @@ class CaptureSettings {
     'autoRecord': autoRecord,
     'useLocation': useLocation,
     'mutedApps': mutedApps.toList()..sort(),
+    'appNames': appNames,
     'merchantCategories': merchantCategories,
     'cardAccounts': cardAccounts,
     'institutionAccounts': institutionAccounts,
@@ -184,6 +190,7 @@ class CaptureSettings {
             in json['mutedApps'] as List<Object?>? ?? const <Object?>[])
           '$a',
       },
+      appNames: map('appNames'),
       merchantCategories: map('merchantCategories'),
       cardAccounts: map('cardAccounts'),
       institutionAccounts: map('institutionAccounts'),
@@ -194,6 +201,7 @@ class CaptureSettings {
     bool? autoRecord,
     bool? useLocation,
     Set<String>? mutedApps,
+    Map<String, String>? appNames,
     Map<String, String>? merchantCategories,
     Map<String, String>? cardAccounts,
     Map<String, String>? institutionAccounts,
@@ -201,6 +209,7 @@ class CaptureSettings {
     autoRecord: autoRecord ?? this.autoRecord,
     useLocation: useLocation ?? this.useLocation,
     mutedApps: mutedApps ?? this.mutedApps,
+    appNames: appNames ?? this.appNames,
     merchantCategories: merchantCategories ?? this.merchantCategories,
     cardAccounts: cardAccounts ?? this.cardAccounts,
     institutionAccounts: institutionAccounts ?? this.institutionAccounts,

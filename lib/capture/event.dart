@@ -45,6 +45,7 @@ class CaptureEvent {
     required this.at,
     required this.text,
     this.app,
+    this.appName,
     this.title,
     this.sender,
     this.merchant,
@@ -66,6 +67,9 @@ class CaptureEvent {
 
   /// The app that posted it (a package name on Android, a name on iOS).
   final String? app;
+
+  /// The name people know [app] by, when the platform says.
+  final String? appName;
   final String? title;
 
   /// Who sent the SMS or the email.
@@ -90,6 +94,7 @@ class CaptureEvent {
     'at': at.toIso8601String(),
     'text': text,
     if (app != null) 'app': app,
+    if (appName != null) 'appName': appName,
     if (title != null) 'title': title,
     if (sender != null) 'sender': sender,
     if (merchant != null) 'merchant': merchant,
@@ -150,6 +155,7 @@ class CaptureEvent {
           DateTime.now(),
       text: text,
       app: str(<String>['app', 'package']),
+      appName: str(<String>['appName', 'app_name']),
       title: title,
       sender: str(<String>['sender', 'remitente']),
       merchant: merchant,

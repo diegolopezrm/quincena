@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import 'app_mode.dart';
 import 'l10n/l10n.dart';
@@ -165,6 +166,14 @@ class _QuincenaAppState extends State<QuincenaApp> {
                   (Locale l) => l.languageCode == device?.languageCode,
                   orElse: () => const Locale('es'),
                 ),
+        // Amounts and dates are written in the language the interface
+        // resolved to, in every mode, not only where a conversation sets it.
+        builder: (BuildContext context, Widget? child) {
+          Intl.defaultLocale = intlLocaleFor(
+            Localizations.localeOf(context).languageCode,
+          );
+          return child!;
+        },
         home: _home(),
       ),
     );

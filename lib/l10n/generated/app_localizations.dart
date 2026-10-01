@@ -1604,6 +1604,54 @@ abstract class AppLocalizations {
   /// **'Cuando la alerta no dice dónde fue, Quincena busca los comercios a unos metros de donde estaba el teléfono. La ubicación se guarda solo aquí; para buscar los comercios se envían únicamente las coordenadas a OpenStreetMap, a través de Photon.'**
   String get captureLocationHelp;
 
+  /// No description provided for @captureLocationDenied.
+  ///
+  /// In es, this message translates to:
+  /// **'Quincena no tiene permiso para usar la ubicación. Puedes darlo en los ajustes del teléfono.'**
+  String get captureLocationDenied;
+
+  /// No description provided for @openPhoneSettings.
+  ///
+  /// In es, this message translates to:
+  /// **'Abrir ajustes'**
+  String get openPhoneSettings;
+
+  /// No description provided for @captureAlwaysTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Ubicación con la app cerrada'**
+  String get captureAlwaysTitle;
+
+  /// No description provided for @captureAlwaysBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Los pagos casi siempre llegan con Quincena cerrada. Para saber dónde estabas en ese momento, Android pide elegir «Permitir todo el tiempo». Quincena solo mira la ubicación cuando llega una notificación de pago.'**
+  String get captureAlwaysBody;
+
+  /// No description provided for @captureLocationOnlyOpen.
+  ///
+  /// In es, this message translates to:
+  /// **'Por ahora solo con la app abierta. Elige «Permitir todo el tiempo» para los pagos que llegan con la app cerrada.'**
+  String get captureLocationOnlyOpen;
+
+  /// No description provided for @captureAllowAlways.
+  ///
+  /// In es, this message translates to:
+  /// **'Permitir todo el tiempo'**
+  String get captureAllowAlways;
+
+  /// No description provided for @notNow.
+  ///
+  /// In es, this message translates to:
+  /// **'Ahora no'**
+  String get notNow;
+
+  /// No description provided for @continueLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Continuar'**
+  String get continueLabel;
+
   /// No description provided for @captureIosTitle.
   ///
   /// In es, this message translates to:
@@ -1613,7 +1661,7 @@ abstract class AppLocalizations {
   /// No description provided for @captureIosSteps.
   ///
   /// In es, this message translates to:
-  /// **'1. Abre Atajos y ve a Automatización.\n2. Crea una nueva con Wallet y elige tus tarjetas.\n3. Agrega «Obtener ubicación actual» si quieres usar la ubicación, y luego la acción «Registrar movimiento» de Quincena. Pásale el comercio, el monto, la tarjeta y la ubicación.\n4. Elige «Ejecutar inmediatamente».\nPara los SMS del banco, crea la automatización Mensaje con el remitente del banco y pásale el mensaje como texto. Desde iOS 27, la automatización Notificación hace lo mismo con las apps de tus bancos.'**
+  /// **'1. Abre Atajos y ve a Automatización.\n2. Crea una nueva con Wallet y elige tus tarjetas.\n3. Si quieres usar la ubicación, agrega «Obtener ubicación actual». Luego agrega la acción «Registrar movimiento» de Quincena, elige Apple Pay como origen y pásale el monto, el comercio y la tarjeta.\n4. Elige «Ejecutar inmediatamente».\nPara los SMS del banco, crea la automatización Mensaje con el remitente del banco, usa la misma acción con Mensaje como origen y pásale el mensaje como texto. Desde iOS 27, la automatización Notificación hace lo mismo con las apps de tus bancos.'**
   String get captureIosSteps;
 
   /// No description provided for @captureOpenShortcuts.

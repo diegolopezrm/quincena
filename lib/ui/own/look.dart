@@ -160,10 +160,19 @@ class SectionLabel extends StatelessWidget {
 
 /// A rounded group of rows on the surface color.
 class Panel extends StatelessWidget {
-  const Panel({super.key, required this.children, this.padding});
+  const Panel({
+    super.key,
+    required this.children,
+    this.padding,
+    this.indent = 68,
+  });
 
   final List<Widget> children;
   final EdgeInsetsGeometry? padding;
+
+  /// Where the line between rows starts: after the icon of a row that has
+  /// one, at the text of a row that does not.
+  final double indent;
 
   @override
   Widget build(BuildContext context) => Material(
@@ -180,7 +189,7 @@ class Panel extends StatelessWidget {
         children: <Widget>[
           for (var i = 0; i < children.length; i++) ...<Widget>[
             if (i > 0)
-              Divider(height: 1, indent: 68, color: context.colors.line),
+              Divider(height: 1, indent: indent, color: context.colors.line),
             children[i],
           ],
         ],
