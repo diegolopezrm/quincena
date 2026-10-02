@@ -50,6 +50,7 @@ dependencies:
   firebase_auth: ^6.7.0
   firebase_app_check: ^0.4.8
   firebase_ai: ^4.0.0
+  web: ^1.1.1
 
 dev_dependencies:
   flutter_test:

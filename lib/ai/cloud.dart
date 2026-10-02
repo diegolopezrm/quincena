@@ -4,6 +4,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 
 import '../firebase_options.dart';
+import 'web_provider_stub.dart'
+    if (dart.library.js_interop) 'web_provider_web.dart';
 
 /// Quincena's Firebase project, through which anyone asks Gemini without a
 /// key of their own.
@@ -44,11 +46,17 @@ abstract final class Cloud {
   static Future<bool> _start() async {
     final FirebaseOptions? options = DefaultFirebaseOptions.currentPlatform;
     if (options == null) return false;
+    final bool debug = _debugToken.isNotEmpty;
     try {
       if (Firebase.apps.isEmpty) {
+        if (kIsWeb) {
+          rememberWebProvider(
+            debug: debug,
+            key: debug ? _debugToken : _recaptchaKey,
+          );
+        }
         await Firebase.initializeApp(options: options);
       }
-      final bool debug = _debugToken.isNotEmpty;
       await FirebaseAppCheck.instance.activate(
         providerWeb: debug
             ? WebDebugProvider(debugToken: _debugToken)
