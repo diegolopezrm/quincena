@@ -20,6 +20,8 @@ import '../money/asset.dart';
 import '../money/money.dart';
 import '../money/rate_sources.dart';
 import '../money/rates.dart';
+import '../portfolio/market.dart';
+import '../portfolio/portfolio_controller.dart';
 import '../store/store.dart';
 
 /// The person's own accounts, kept current for the screens.
@@ -34,6 +36,7 @@ class OwnController extends ChangeNotifier {
     this.ratesMaxAge = const Duration(hours: 6),
     PlaceFinder? places,
     this.readNative = true,
+    this._market,
   }) : _fetcher = fetcher ?? RateFetcher(),
        _now = now ?? DateTime.now {
     capture = CaptureService(store, places: places ?? PlaceFinder(), now: _now);
@@ -47,7 +50,13 @@ class OwnController extends ChangeNotifier {
 
   final QuincenaStore store;
   final RateFetcher _fetcher;
+  final MarketData? _market;
   final DateTime Function() _now;
+
+  /// The person's crypto, priced as it moves.
+  PortfolioController get portfolio =>
+      _portfolio ??= PortfolioController(this, market: _market);
+  PortfolioController? _portfolio;
 
   /// How old the rates may be before opening the app fetches new ones.
   final Duration ratesMaxAge;
@@ -300,6 +309,7 @@ class OwnController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _portfolio?.dispose();
     CaptureChannel.stop(this);
     _pending?.cancel();
     unawaited(_changes?.cancel());

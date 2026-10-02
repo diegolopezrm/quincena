@@ -63,17 +63,23 @@ LedgerBuild buildLedger(StoreSnapshot s, {required DateTime today}) {
     if (!spendable(e.accountId)) continue;
     final bool out = e.amount < Decimal.zero;
     final Flow flow;
-    switch (e.kind) {
-      case EntryKind.expense:
-        flow = Flow.expense;
-      case EntryKind.income:
-        flow = Flow.income;
-      case EntryKind.transfer:
-        // Between two spendable accounts nothing left the money to spend.
-        if (spendable(otherLeg[e.id])) continue;
-        flow = out ? Flow.saving : Flow.transferIn;
-      case EntryKind.adjustment:
-        flow = out ? Flow.saving : Flow.transferIn;
+    if (e.isTrade) {
+      // Buying or selling what the account holds is neither spending nor
+      // income: money changed form.
+      flow = out ? Flow.saving : Flow.transferIn;
+    } else {
+      switch (e.kind) {
+        case EntryKind.expense:
+          flow = Flow.expense;
+        case EntryKind.income:
+          flow = Flow.income;
+        case EntryKind.transfer:
+          // Between two spendable accounts nothing left the money to spend.
+          if (spendable(otherLeg[e.id])) continue;
+          flow = out ? Flow.saving : Flow.transferIn;
+        case EntryKind.adjustment:
+          flow = out ? Flow.saving : Flow.transferIn;
+      }
     }
     movements.add(
       Movement(
