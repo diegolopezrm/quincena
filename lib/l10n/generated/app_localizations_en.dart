@@ -987,6 +987,291 @@ class AppLocalizationsEn extends AppLocalizations {
   String get computedSeeFree => 'See how the free amount is worked out';
 
   @override
+  String get comingTitle => 'Next 30 days';
+
+  @override
+  String comingLowest(String amount, String date) {
+    return 'Lowest before payday: $amount on $date';
+  }
+
+  @override
+  String comingTight(String date) {
+    return 'On $date you\'d be under your cushion.';
+  }
+
+  @override
+  String get comingNoTight => 'No day under your cushion in these 30 days.';
+
+  @override
+  String get comingNoTightZero => 'You don\'t run out in these 30 days.';
+
+  @override
+  String get comingLegendSure => 'What\'s sure';
+
+  @override
+  String get comingLegendLikely => 'With your pay and what you try';
+
+  @override
+  String comingLegendCushion(String amount) {
+    return '$amount cushion';
+  }
+
+  @override
+  String comingLeft(String amount) {
+    return '$amount left';
+  }
+
+  @override
+  String comingLeftTrying(String amount) {
+    return 'with what you try, $amount';
+  }
+
+  @override
+  String get comingUnderCushion => 'Under your cushion';
+
+  @override
+  String get comingPay => 'Your pay';
+
+  @override
+  String get comingLatePay => 'Your late pay';
+
+  @override
+  String get comingTryOut => 'What you\'re trying';
+
+  @override
+  String get comingMove => 'Move in the simulation';
+
+  @override
+  String get comingSimulation =>
+      'You\'re trying things out: none of this is saved or changes your payments.';
+
+  @override
+  String get comingClearSimulation => 'Clear what you\'re trying';
+
+  @override
+  String get comingNoEvents => 'Nothing scheduled in these days.';
+
+  @override
+  String get comingClose => 'Fortnight close';
+
+  @override
+  String get buyTitle => 'Can I afford it?';
+
+  @override
+  String get buyPrice => 'How much is it?';
+
+  @override
+  String get buyWhat => 'What is it? (optional)';
+
+  @override
+  String get buyToday => 'Today';
+
+  @override
+  String get buyAfterPay => 'After payday';
+
+  @override
+  String get buyOther => 'Another day';
+
+  @override
+  String get buyFits => 'It fits, from what the app knows';
+
+  @override
+  String buyFitsBody(String amount, String date) {
+    return 'The lowest you\'d get is $amount on $date, above your cushion.';
+  }
+
+  @override
+  String buyFitsBodyNoCushion(String amount, String date) {
+    return 'The lowest you\'d get is $amount on $date.';
+  }
+
+  @override
+  String get buyBelow => 'You\'d go under your cushion';
+
+  @override
+  String buyBelowBody(String date, String amount, String cushion) {
+    return 'On $date you\'d have $amount; your cushion is $cushion.';
+  }
+
+  @override
+  String get buyShort => 'It doesn\'t stretch to payday';
+
+  @override
+  String buyShortBody(String date, String amount) {
+    return 'On $date you\'d be $amount short.';
+  }
+
+  @override
+  String buyReliesOnPay(String amount, String date) {
+    return 'It counts on your pay of $amount on $date, which hasn\'t arrived yet.';
+  }
+
+  @override
+  String get buyPayUnknown =>
+      'I don\'t know what you get paid, so I don\'t count it. You can say it in Settings.';
+
+  @override
+  String get buyEstimate =>
+      'It\'s an estimate from what\'s scheduled, not a guarantee.';
+
+  @override
+  String get buyCompareToday => 'If you buy today';
+
+  @override
+  String buyCompareAfter(String date) {
+    return 'If you wait until $date';
+  }
+
+  @override
+  String buyLowest(String amount) {
+    return 'lowest: $amount';
+  }
+
+  @override
+  String get closeTitle => 'Fortnight close';
+
+  @override
+  String closeRange(String from, String to) {
+    return 'From $from to $to';
+  }
+
+  @override
+  String get closeChanged => 'What changed';
+
+  @override
+  String get closeComing => 'What\'s coming';
+
+  @override
+  String get closeAction => 'One thing you could do';
+
+  @override
+  String closeSpentMore(String spent, String difference) {
+    return 'You spent $spent, $difference more than the fortnight before.';
+  }
+
+  @override
+  String closeSpentLess(String spent, String difference) {
+    return 'You spent $spent, $difference less than the fortnight before.';
+  }
+
+  @override
+  String closeSpentSame(String spent) {
+    return 'You spent $spent, the same as the fortnight before.';
+  }
+
+  @override
+  String closeSpentFirst(String spent) {
+    return 'You spent $spent. It\'s your first whole fortnight recorded: there\'s nothing to compare it with yet.';
+  }
+
+  @override
+  String get closeNone =>
+      'There\'s no whole fortnight recorded yet. The close shows up once there is one, from one payday to the next.';
+
+  @override
+  String closeComingTotal(String date, String amount) {
+    return 'Until $date, $amount is committed.';
+  }
+
+  @override
+  String closeComingNone(String date) {
+    return 'Nothing is committed until $date.';
+  }
+
+  @override
+  String closeComingMore(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'And $count more.',
+      one: 'And one more.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String closeFree(String amount) {
+    return 'Free until payday: $amount';
+  }
+
+  @override
+  String get closeSeeDays => 'See the next 30 days';
+
+  @override
+  String closeActionTight(String date) {
+    return 'On $date you\'d go under your cushion. See which charge could move to another day.';
+  }
+
+  @override
+  String closeActionCategory(String category, String before, String now) {
+    return '$category went from $before to $now against the fortnight before. Have a look at those payments.';
+  }
+
+  @override
+  String closeActionGoal(String amount) {
+    return 'You have $amount free until payday. If you want, part of it can go to your goal.';
+  }
+
+  @override
+  String get closeActionNone => 'Nothing to adjust this time.';
+
+  @override
+  String get closeSeePayments => 'See the payments';
+
+  @override
+  String closePaymentsTitle(String category, String from, String to) {
+    return '$category, $from to $to';
+  }
+
+  @override
+  String get homeComing => 'What\'s coming';
+
+  @override
+  String get homeSeeDays => 'See 30 days';
+
+  @override
+  String get buyWithoutPay => 'without counting your pay';
+
+  @override
+  String get closeSpentNone => 'You recorded no spending this fortnight.';
+
+  @override
+  String comingLowestWithout(String amount, String date) {
+    return 'Without what you try, lowest before payday: $amount on $date';
+  }
+
+  @override
+  String get computedBuy =>
+      'How your money would look with that purchase until payday, today and after payday';
+
+  @override
+  String get computedComing => 'Your money over the next 30 days, day by day';
+
+  @override
+  String get computedClose =>
+      'The close of your last fortnight, against the one before';
+
+  @override
+  String get remindersTitle => 'Reminders';
+
+  @override
+  String get remindersClose => 'Remind me on payday';
+
+  @override
+  String get remindersCloseHelp =>
+      'A reminder with no amounts, to see the fortnight\'s close. Nothing about your money shows on the lock screen.';
+
+  @override
+  String get remindersDenied =>
+      'For reminders, allow Quincena\'s notifications in your phone\'s settings.';
+
+  @override
+  String get reminderTitle => 'Your fortnight close is ready';
+
+  @override
+  String get reminderBody => 'Open it to see what changed and what\'s coming.';
+
+  @override
   String get freeExplainAction => 'Where does this come from?';
 
   @override

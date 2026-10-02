@@ -1,5 +1,6 @@
 import Flutter
 import UIKit
+import UserNotifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -34,5 +35,60 @@ import UIKit
       }
     }
     CaptureInbox.onAppend = { capture.invokeMethod("captured", arguments: nil) }
+
+    // The same channel as `Reminders` in lib/reminders/reminders.dart.
+    let reminders = FlutterMethodChannel(
+      name: "dev.dlsoft.quincena/reminders",
+      binaryMessenger: engineBridge.applicationRegistrar.messenger())
+    reminders.setMethodCallHandler { call, result in
+      let center = UNUserNotificationCenter.current()
+      switch call.method {
+      case "ask":
+        center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
+          DispatchQueue.main.async { result(granted) }
+        }
+      case "schedule":
+        guard let args = call.arguments as? [String: Any],
+          let days = args["days"] as? [NSNumber],
+          let title = args["title"] as? String
+        else { return result(FlutterError(code: "args", message: nil, details: nil)) }
+        Reminders.schedule(
+          days.map { Date(timeIntervalSince1970: $0.doubleValue / 1000) },
+          title: title, body: args["body"] as? String ?? "")
+        result(nil)
+      case "cancel":
+        Reminders.cancel()
+        result(nil)
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
+  }
+}
+
+/// The reminder that the close of the fortnight is ready, on each payday.
+/// It says only that: no amount ever shows on the lock screen.
+enum Reminders {
+  static let count = 12
+  static func ids() -> [String] { (0..<count).map { "close-\($0)" } }
+
+  static func schedule(_ days: [Date], title: String, body: String) {
+    let center = UNUserNotificationCenter.current()
+    center.removePendingNotificationRequests(withIdentifiers: ids())
+    let calendar = Calendar.current
+    for (i, day) in days.prefix(count).enumerated() where day > Date() {
+      let content = UNMutableNotificationContent()
+      content.title = title
+      content.body = body
+      let when = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: day)
+      center.add(
+        UNNotificationRequest(
+          identifier: "close-\(i)", content: content,
+          trigger: UNCalendarNotificationTrigger(dateMatching: when, repeats: false)))
+    }
+  }
+
+  static func cancel() {
+    UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids())
   }
 }

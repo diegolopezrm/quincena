@@ -20,6 +20,8 @@ import 'package:quincena/theme/theme.dart';
 import 'package:quincena/ui/own/accounts_tab.dart';
 import 'package:quincena/ui/own/binance_page.dart';
 import 'package:quincena/ui/own/capture_settings_page.dart';
+import 'package:quincena/ui/own/close_page.dart';
+import 'package:quincena/ui/own/coming_days_page.dart';
 import 'package:quincena/ui/own/home_tab.dart';
 import 'package:quincena/ui/own/inbox_page.dart';
 import 'package:quincena/ui/own/portfolio_page.dart';
@@ -99,6 +101,10 @@ void main() {
           ),
         ),
         'to review': (OwnController own) => InboxPage(own: own),
+        'the next 30 days': (OwnController own) => ComingDaysPage(own: own),
+        'can I afford it': (OwnController own) =>
+            ComingDaysPage(own: own, tryPurchase: true),
+        'the close': (OwnController own) => ClosePage(own: own),
         'automatic capture': (OwnController own) =>
             CaptureSettingsPage(own: own),
       };

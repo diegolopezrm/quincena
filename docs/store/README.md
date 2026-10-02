@@ -72,6 +72,13 @@ teléfono.
 > Importa el extracto de tu banco o tarjeta en CSV, Excel o PDF, se lee en
 > el teléfono y revisas cada movimiento antes de guardarlo.
 >
+> DECIDE ANTES DE GASTAR
+> «¿Me alcanza?» te muestra lo más bajo que quedaría tu plata hasta el pago
+> si compras hoy o si esperas; ves los próximos 30 días con los días
+> apretados marcados y el cierre de cada quincena en tres tarjetas. Cada
+> cifra muestra de dónde sale. Son estimaciones con lo que tienes
+> programado, nunca una garantía.
+>
 > CRIPTO, COMO UN PROFESIONAL
 > Tu portafolio con precios en vivo, lo que te costó cada moneda en pesos y
 > en dólares, la ganancia o pérdida y la gráfica de 24 horas a un año.
@@ -117,6 +124,13 @@ you can touch. Your finances stay on your phone.
 > STATEMENTS
 > Import your bank or card statement as CSV, Excel or PDF. It is read on
 > your phone, and you review every movement before it is saved.
+>
+> DECIDE BEFORE YOU SPEND
+> "Can I afford it?" shows the lowest your money would get until payday if
+> you buy today or wait; you see the next 30 days with the tight ones
+> marked, and the close of each fortnight in three cards. Every figure
+> shows where it comes from. They're estimates from what's scheduled, never
+> a guarantee.
 >
 > CRYPTO, LIKE A PRO
 > Your portfolio with live prices, what each coin cost you in pesos and

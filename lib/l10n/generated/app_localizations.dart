@@ -1646,6 +1646,444 @@ abstract class AppLocalizations {
   /// **'Ver el desglose de lo libre'**
   String get computedSeeFree;
 
+  /// No description provided for @comingTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Próximos 30 días'**
+  String get comingTitle;
+
+  /// No description provided for @comingLowest.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo más bajo antes del pago: {amount} el {date}'**
+  String comingLowest(String amount, String date);
+
+  /// No description provided for @comingTight.
+  ///
+  /// In es, this message translates to:
+  /// **'El {date} quedarías bajo tu colchón.'**
+  String comingTight(String date);
+
+  /// No description provided for @comingNoTight.
+  ///
+  /// In es, this message translates to:
+  /// **'Ningún día bajo tu colchón en estos 30 días.'**
+  String get comingNoTight;
+
+  /// No description provided for @comingNoTightZero.
+  ///
+  /// In es, this message translates to:
+  /// **'No te quedas sin plata en estos 30 días.'**
+  String get comingNoTightZero;
+
+  /// No description provided for @comingLegendSure.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo seguro'**
+  String get comingLegendSure;
+
+  /// No description provided for @comingLegendLikely.
+  ///
+  /// In es, this message translates to:
+  /// **'Con tu pago y lo que pruebas'**
+  String get comingLegendLikely;
+
+  /// No description provided for @comingLegendCushion.
+  ///
+  /// In es, this message translates to:
+  /// **'Colchón de {amount}'**
+  String comingLegendCushion(String amount);
+
+  /// No description provided for @comingLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'Quedan {amount}'**
+  String comingLeft(String amount);
+
+  /// No description provided for @comingLeftTrying.
+  ///
+  /// In es, this message translates to:
+  /// **'con lo que pruebas, {amount}'**
+  String comingLeftTrying(String amount);
+
+  /// No description provided for @comingUnderCushion.
+  ///
+  /// In es, this message translates to:
+  /// **'Bajo tu colchón'**
+  String get comingUnderCushion;
+
+  /// No description provided for @comingPay.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu pago'**
+  String get comingPay;
+
+  /// No description provided for @comingLatePay.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu pago atrasado'**
+  String get comingLatePay;
+
+  /// No description provided for @comingTryOut.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que pruebas'**
+  String get comingTryOut;
+
+  /// No description provided for @comingMove.
+  ///
+  /// In es, this message translates to:
+  /// **'Mover en la simulación'**
+  String get comingMove;
+
+  /// No description provided for @comingSimulation.
+  ///
+  /// In es, this message translates to:
+  /// **'Estás probando: nada de esto se guarda ni cambia tus pagos.'**
+  String get comingSimulation;
+
+  /// No description provided for @comingClearSimulation.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar lo que pruebas'**
+  String get comingClearSimulation;
+
+  /// No description provided for @comingNoEvents.
+  ///
+  /// In es, this message translates to:
+  /// **'Nada programado en estos días.'**
+  String get comingNoEvents;
+
+  /// No description provided for @comingClose.
+  ///
+  /// In es, this message translates to:
+  /// **'Cierre de la quincena'**
+  String get comingClose;
+
+  /// No description provided for @buyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Me alcanza?'**
+  String get buyTitle;
+
+  /// No description provided for @buyPrice.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto cuesta?'**
+  String get buyPrice;
+
+  /// No description provided for @buyWhat.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Qué es? (opcional)'**
+  String get buyWhat;
+
+  /// No description provided for @buyToday.
+  ///
+  /// In es, this message translates to:
+  /// **'Hoy'**
+  String get buyToday;
+
+  /// No description provided for @buyAfterPay.
+  ///
+  /// In es, this message translates to:
+  /// **'Después del pago'**
+  String get buyAfterPay;
+
+  /// No description provided for @buyOther.
+  ///
+  /// In es, this message translates to:
+  /// **'Otra fecha'**
+  String get buyOther;
+
+  /// No description provided for @buyFits.
+  ///
+  /// In es, this message translates to:
+  /// **'Te alcanza, según lo que sabe la app'**
+  String get buyFits;
+
+  /// No description provided for @buyFitsBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo más bajo que quedarías es {amount} el {date}, por encima de tu colchón.'**
+  String buyFitsBody(String amount, String date);
+
+  /// No description provided for @buyFitsBodyNoCushion.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo más bajo que quedarías es {amount} el {date}.'**
+  String buyFitsBodyNoCushion(String amount, String date);
+
+  /// No description provided for @buyBelow.
+  ///
+  /// In es, this message translates to:
+  /// **'Quedarías por debajo de tu colchón'**
+  String get buyBelow;
+
+  /// No description provided for @buyBelowBody.
+  ///
+  /// In es, this message translates to:
+  /// **'El {date} quedarías con {amount}; tu colchón es {cushion}.'**
+  String buyBelowBody(String date, String amount, String cushion);
+
+  /// No description provided for @buyShort.
+  ///
+  /// In es, this message translates to:
+  /// **'No alcanza antes del pago'**
+  String get buyShort;
+
+  /// No description provided for @buyShortBody.
+  ///
+  /// In es, this message translates to:
+  /// **'El {date} te faltarían {amount}.'**
+  String buyShortBody(String date, String amount);
+
+  /// No description provided for @buyReliesOnPay.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta con tu pago de {amount} del {date}, que todavía no llega.'**
+  String buyReliesOnPay(String amount, String date);
+
+  /// No description provided for @buyPayUnknown.
+  ///
+  /// In es, this message translates to:
+  /// **'No sé cuánto te pagan, así que no lo cuento. Puedes decirlo en Ajustes.'**
+  String get buyPayUnknown;
+
+  /// No description provided for @buyEstimate.
+  ///
+  /// In es, this message translates to:
+  /// **'Es una estimación con lo que está programado, no una garantía.'**
+  String get buyEstimate;
+
+  /// No description provided for @buyCompareToday.
+  ///
+  /// In es, this message translates to:
+  /// **'Si compras hoy'**
+  String get buyCompareToday;
+
+  /// No description provided for @buyCompareAfter.
+  ///
+  /// In es, this message translates to:
+  /// **'Si esperas al {date}'**
+  String buyCompareAfter(String date);
+
+  /// No description provided for @buyLowest.
+  ///
+  /// In es, this message translates to:
+  /// **'lo más bajo: {amount}'**
+  String buyLowest(String amount);
+
+  /// No description provided for @closeTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cierre de la quincena'**
+  String get closeTitle;
+
+  /// No description provided for @closeRange.
+  ///
+  /// In es, this message translates to:
+  /// **'Del {from} al {to}'**
+  String closeRange(String from, String to);
+
+  /// No description provided for @closeChanged.
+  ///
+  /// In es, this message translates to:
+  /// **'Qué cambió'**
+  String get closeChanged;
+
+  /// No description provided for @closeComing.
+  ///
+  /// In es, this message translates to:
+  /// **'Qué viene'**
+  String get closeComing;
+
+  /// No description provided for @closeAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Una acción posible'**
+  String get closeAction;
+
+  /// No description provided for @closeSpentMore.
+  ///
+  /// In es, this message translates to:
+  /// **'Gastaste {spent}, {difference} más que la quincena anterior.'**
+  String closeSpentMore(String spent, String difference);
+
+  /// No description provided for @closeSpentLess.
+  ///
+  /// In es, this message translates to:
+  /// **'Gastaste {spent}, {difference} menos que la quincena anterior.'**
+  String closeSpentLess(String spent, String difference);
+
+  /// No description provided for @closeSpentSame.
+  ///
+  /// In es, this message translates to:
+  /// **'Gastaste {spent}, lo mismo que la quincena anterior.'**
+  String closeSpentSame(String spent);
+
+  /// No description provided for @closeSpentFirst.
+  ///
+  /// In es, this message translates to:
+  /// **'Gastaste {spent}. Es tu primera quincena completa registrada: todavía no hay con qué compararla.'**
+  String closeSpentFirst(String spent);
+
+  /// No description provided for @closeNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no hay una quincena completa registrada. El cierre aparece cuando haya una, de un pago al siguiente.'**
+  String get closeNone;
+
+  /// No description provided for @closeComingTotal.
+  ///
+  /// In es, this message translates to:
+  /// **'Hasta el {date} hay {amount} comprometidos.'**
+  String closeComingTotal(String date, String amount);
+
+  /// No description provided for @closeComingNone.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay nada comprometido hasta el {date}.'**
+  String closeComingNone(String date);
+
+  /// No description provided for @closeComingMore.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Y uno más.} other{Y {count} más.}}'**
+  String closeComingMore(int count);
+
+  /// No description provided for @closeFree.
+  ///
+  /// In es, this message translates to:
+  /// **'Libre hasta el pago: {amount}'**
+  String closeFree(String amount);
+
+  /// No description provided for @closeSeeDays.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver los próximos 30 días'**
+  String get closeSeeDays;
+
+  /// No description provided for @closeActionTight.
+  ///
+  /// In es, this message translates to:
+  /// **'El {date} quedarías bajo tu colchón. Mira qué cobro podrías mover de fecha.'**
+  String closeActionTight(String date);
+
+  /// No description provided for @closeActionCategory.
+  ///
+  /// In es, this message translates to:
+  /// **'{category} pasó de {before} a {now} frente a la quincena anterior. Mira esos pagos.'**
+  String closeActionCategory(String category, String before, String now);
+
+  /// No description provided for @closeActionGoal.
+  ///
+  /// In es, this message translates to:
+  /// **'Te quedan {amount} libres hasta el pago. Si quieres, una parte puede ir a tu meta.'**
+  String closeActionGoal(String amount);
+
+  /// No description provided for @closeActionNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Nada que ajustar esta vez.'**
+  String get closeActionNone;
+
+  /// No description provided for @closeSeePayments.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver los pagos'**
+  String get closeSeePayments;
+
+  /// No description provided for @closePaymentsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'{category} del {from} al {to}'**
+  String closePaymentsTitle(String category, String from, String to);
+
+  /// No description provided for @homeComing.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que viene'**
+  String get homeComing;
+
+  /// No description provided for @homeSeeDays.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver 30 días'**
+  String get homeSeeDays;
+
+  /// No description provided for @buyWithoutPay.
+  ///
+  /// In es, this message translates to:
+  /// **'sin contar tu pago'**
+  String get buyWithoutPay;
+
+  /// No description provided for @closeSpentNone.
+  ///
+  /// In es, this message translates to:
+  /// **'No registraste gastos en esta quincena.'**
+  String get closeSpentNone;
+
+  /// No description provided for @comingLowestWithout.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin lo que pruebas, lo más bajo antes del pago: {amount} el {date}'**
+  String comingLowestWithout(String amount, String date);
+
+  /// No description provided for @computedBuy.
+  ///
+  /// In es, this message translates to:
+  /// **'Cómo quedaría tu plata con esa compra hasta el pago, hoy y después del pago'**
+  String get computedBuy;
+
+  /// No description provided for @computedComing.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu plata en los próximos 30 días, día por día'**
+  String get computedComing;
+
+  /// No description provided for @computedClose.
+  ///
+  /// In es, this message translates to:
+  /// **'El cierre de tu última quincena, frente a la anterior'**
+  String get computedClose;
+
+  /// No description provided for @remindersTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Avisos'**
+  String get remindersTitle;
+
+  /// No description provided for @remindersClose.
+  ///
+  /// In es, this message translates to:
+  /// **'Avisarme el día de pago'**
+  String get remindersClose;
+
+  /// No description provided for @remindersCloseHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Un aviso sin montos para ver el cierre de la quincena. Nada de tu plata aparece en la pantalla bloqueada.'**
+  String get remindersCloseHelp;
+
+  /// No description provided for @remindersDenied.
+  ///
+  /// In es, this message translates to:
+  /// **'Para los avisos, permite las notificaciones de Quincena en los ajustes del teléfono.'**
+  String get remindersDenied;
+
+  /// No description provided for @reminderTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu cierre de quincena está listo'**
+  String get reminderTitle;
+
+  /// No description provided for @reminderBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Ábrelo para ver qué cambió y qué viene.'**
+  String get reminderBody;
+
   /// No description provided for @freeExplainAction.
   ///
   /// In es, this message translates to:

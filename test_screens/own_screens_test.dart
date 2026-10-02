@@ -366,6 +366,32 @@ void main() {
     await shoot('rules');
   });
 
+  testWidgets('coming days', (tester) async {
+    final QuincenaStore store = (await tester.runAsync(seeded))!;
+    await open(tester, store, phone, Brightness.light);
+    await shoot('home-coming');
+    await tester.tap(find.text('Ver 30 días'));
+    await settle(tester);
+    await shoot('coming');
+    tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+    await settle(tester);
+    await tester.tap(find.text('¿Me alcanza?'));
+    await settle(tester);
+    await tester.enterText(
+      find.widgetWithText(TextField, '¿Cuánto cuesta?'),
+      '350.000',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, '¿Qué es? (opcional)'),
+      'Audífonos',
+    );
+    await settle(tester);
+    await shoot('buy');
+    await tester.tap(find.byTooltip('Cierre de la quincena'));
+    await settle(tester);
+    await shoot('close');
+  });
+
   testWidgets('explained', (tester) async {
     final QuincenaStore store = (await tester.runAsync(seeded))!;
     await open(tester, store, phone, Brightness.light);

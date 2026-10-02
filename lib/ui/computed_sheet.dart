@@ -32,6 +32,9 @@ String computedLabel(BuildContext context, Computed c) {
     'record_expense' => l.computedRecord,
     'accounts' => l.computedAccounts,
     'portfolio' => l.computedPortfolio,
+    'can_i_buy' => l.computedBuy,
+    'coming_days' => l.computedComing,
+    'fortnight_close' => l.computedClose,
     _ => c.tool,
   };
 }

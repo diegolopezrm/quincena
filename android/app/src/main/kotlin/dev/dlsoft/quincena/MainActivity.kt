@@ -15,7 +15,9 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private var capture: MethodChannel? = null
+    private var reminders: MethodChannel? = null
     private var asking: MethodChannel.Result? = null
+    private var askingToNotify: MethodChannel.Result? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -85,12 +87,44 @@ class MainActivity : FlutterActivity() {
         }
         CaptureListener.onCaptured = { channel.invokeMethod("captured", null) }
         capture = channel
+
+        // The same channel as `Reminders` in lib/reminders/reminders.dart.
+        val remind = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, REMINDERS)
+        remind.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "ask" ->
+                    if (Build.VERSION.SDK_INT >= 33 && !granted(NOTIFY)) {
+                        askingToNotify?.success(false)
+                        askingToNotify = result
+                        requestPermissions(arrayOf(NOTIFY), ASK_NOTIFY)
+                    } else {
+                        result.success(true)
+                    }
+                "schedule" -> {
+                    Reminders.schedule(
+                        this,
+                        call.argument<List<Number>>("days").orEmpty().map { it.toLong() },
+                        call.argument<String>("title").orEmpty(),
+                        call.argument<String>("body").orEmpty(),
+                    )
+                    result.success(null)
+                }
+                "cancel" -> {
+                    Reminders.cancel(this)
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
+        reminders = remind
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
         CaptureListener.onCaptured = null
         capture?.setMethodCallHandler(null)
         capture = null
+        reminders?.setMethodCallHandler(null)
+        reminders = null
         super.cleanUpFlutterEngine(flutterEngine)
     }
 
@@ -140,6 +174,11 @@ class MainActivity : FlutterActivity() {
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == ASK_NOTIFY) {
+            askingToNotify?.success(Build.VERSION.SDK_INT < 33 || granted(NOTIFY))
+            askingToNotify = null
+            return
+        }
         if (requestCode != ASK_LOCATION) return
         asking?.success(locationAccess())
         asking = null
@@ -147,7 +186,10 @@ class MainActivity : FlutterActivity() {
 
     private companion object {
         const val CHANNEL = "dev.dlsoft.quincena/capture"
+        const val REMINDERS = "dev.dlsoft.quincena/reminders"
         const val ASK_LOCATION = 4815
+        const val ASK_NOTIFY = 4816
+        const val NOTIFY = "android.permission.POST_NOTIFICATIONS"
         const val FINE = Manifest.permission.ACCESS_FINE_LOCATION
         const val COARSE = Manifest.permission.ACCESS_COARSE_LOCATION
     }

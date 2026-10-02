@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
@@ -26,6 +27,7 @@ import '../exchanges/p2p_match.dart';
 import '../exchanges/wallets.dart';
 import '../portfolio/market.dart';
 import '../portfolio/portfolio_controller.dart';
+import '../reminders/reminders.dart';
 import '../store/store.dart';
 
 /// The person's own accounts, kept current for the screens.
@@ -86,6 +88,13 @@ class OwnController extends ChangeNotifier {
   StreamSubscription<void>? _changes;
   List<InboxItem> _inbox = const <InboxItem>[];
   List<InboxItem> _automatic = const <InboxItem>[];
+
+  /// The reminder's words as saved when it was turned on, or null when it
+  /// is off.
+  Map<String, String>? _reminder;
+
+  /// The schedule the reminders were last set for.
+  String? _remindedFor;
   CaptureSettings _captureSettings = const CaptureSettings();
   bool _pulling = false;
   bool _pullAgain = false;
@@ -101,6 +110,60 @@ class OwnController extends ChangeNotifier {
   /// What was recorded without asking in the last two weeks, newest first,
   /// to undo or correct.
   List<InboxItem> get recentAutomatic => _automatic;
+
+  /// Whether the close of each fortnight is reminded on payday.
+  bool get remindsClose => _reminder != null;
+
+  /// Turns the payday reminder on, once the system lets the app notify,
+  /// or off. [title] and [body] are what it says, with no amounts. False
+  /// when the system said no.
+  Future<bool> remindClose(
+    bool on, {
+    required String title,
+    required String body,
+  }) async {
+    if (!on) {
+      await store.setSetting(_reminderKey, '');
+      await Reminders.cancel();
+      _remindedFor = null;
+      return true;
+    }
+    if (!await Reminders.ask()) return false;
+    await store.setSetting(
+      _reminderKey,
+      jsonEncode(<String, String>{'title': title, 'body': body}),
+    );
+    _remindedFor = null;
+    return true;
+  }
+
+  static const String _reminderKey = 'reminders.close';
+
+  static Object? _json(String? text) {
+    if (text == null || text.isEmpty) return null;
+    try {
+      return jsonDecode(text);
+    } on FormatException {
+      return null;
+    }
+  }
+
+  /// Sets the reminders again when the schedule they follow changed.
+  Future<void> _remind() async {
+    final Profile? p = profile;
+    final Map<String, String>? words = _reminder;
+    if (p == null || words == null) return;
+    final String forSchedule = jsonEncode(p.schedule.toJson());
+    if (forSchedule == _remindedFor) return;
+    _remindedFor = forSchedule;
+    await Reminders.schedule(
+      p.schedule,
+      _now(),
+      title: words['title'] ?? '',
+      body: words['body'] ?? '',
+    );
+  }
+
   List<InboxItem> get pendingInbox => <InboxItem>[
     for (final InboxItem i in _inbox)
       if (i.status == InboxStatus.pending) i,
@@ -337,8 +400,16 @@ class OwnController extends ChangeNotifier {
         if (i.automatic) i,
     ];
     _captureSettings = await store.captureSettings();
+    _reminder = switch (_json(await store.setting(_reminderKey))) {
+      final Map<Object?, Object?> m => <String, String>{
+        for (final MapEntry<Object?, Object?> e in m.entries)
+          '${e.key}': '${e.value}',
+      },
+      _ => null,
+    };
     if (_disposed) return;
     _configureListener();
+    unawaited(_remind());
     if (s != null) {
       final DateTime day = today;
       appToday = day;

@@ -991,6 +991,291 @@ class AppLocalizationsEs extends AppLocalizations {
   String get computedSeeFree => 'Ver el desglose de lo libre';
 
   @override
+  String get comingTitle => 'Próximos 30 días';
+
+  @override
+  String comingLowest(String amount, String date) {
+    return 'Lo más bajo antes del pago: $amount el $date';
+  }
+
+  @override
+  String comingTight(String date) {
+    return 'El $date quedarías bajo tu colchón.';
+  }
+
+  @override
+  String get comingNoTight => 'Ningún día bajo tu colchón en estos 30 días.';
+
+  @override
+  String get comingNoTightZero => 'No te quedas sin plata en estos 30 días.';
+
+  @override
+  String get comingLegendSure => 'Lo seguro';
+
+  @override
+  String get comingLegendLikely => 'Con tu pago y lo que pruebas';
+
+  @override
+  String comingLegendCushion(String amount) {
+    return 'Colchón de $amount';
+  }
+
+  @override
+  String comingLeft(String amount) {
+    return 'Quedan $amount';
+  }
+
+  @override
+  String comingLeftTrying(String amount) {
+    return 'con lo que pruebas, $amount';
+  }
+
+  @override
+  String get comingUnderCushion => 'Bajo tu colchón';
+
+  @override
+  String get comingPay => 'Tu pago';
+
+  @override
+  String get comingLatePay => 'Tu pago atrasado';
+
+  @override
+  String get comingTryOut => 'Lo que pruebas';
+
+  @override
+  String get comingMove => 'Mover en la simulación';
+
+  @override
+  String get comingSimulation =>
+      'Estás probando: nada de esto se guarda ni cambia tus pagos.';
+
+  @override
+  String get comingClearSimulation => 'Quitar lo que pruebas';
+
+  @override
+  String get comingNoEvents => 'Nada programado en estos días.';
+
+  @override
+  String get comingClose => 'Cierre de la quincena';
+
+  @override
+  String get buyTitle => '¿Me alcanza?';
+
+  @override
+  String get buyPrice => '¿Cuánto cuesta?';
+
+  @override
+  String get buyWhat => '¿Qué es? (opcional)';
+
+  @override
+  String get buyToday => 'Hoy';
+
+  @override
+  String get buyAfterPay => 'Después del pago';
+
+  @override
+  String get buyOther => 'Otra fecha';
+
+  @override
+  String get buyFits => 'Te alcanza, según lo que sabe la app';
+
+  @override
+  String buyFitsBody(String amount, String date) {
+    return 'Lo más bajo que quedarías es $amount el $date, por encima de tu colchón.';
+  }
+
+  @override
+  String buyFitsBodyNoCushion(String amount, String date) {
+    return 'Lo más bajo que quedarías es $amount el $date.';
+  }
+
+  @override
+  String get buyBelow => 'Quedarías por debajo de tu colchón';
+
+  @override
+  String buyBelowBody(String date, String amount, String cushion) {
+    return 'El $date quedarías con $amount; tu colchón es $cushion.';
+  }
+
+  @override
+  String get buyShort => 'No alcanza antes del pago';
+
+  @override
+  String buyShortBody(String date, String amount) {
+    return 'El $date te faltarían $amount.';
+  }
+
+  @override
+  String buyReliesOnPay(String amount, String date) {
+    return 'Cuenta con tu pago de $amount del $date, que todavía no llega.';
+  }
+
+  @override
+  String get buyPayUnknown =>
+      'No sé cuánto te pagan, así que no lo cuento. Puedes decirlo en Ajustes.';
+
+  @override
+  String get buyEstimate =>
+      'Es una estimación con lo que está programado, no una garantía.';
+
+  @override
+  String get buyCompareToday => 'Si compras hoy';
+
+  @override
+  String buyCompareAfter(String date) {
+    return 'Si esperas al $date';
+  }
+
+  @override
+  String buyLowest(String amount) {
+    return 'lo más bajo: $amount';
+  }
+
+  @override
+  String get closeTitle => 'Cierre de la quincena';
+
+  @override
+  String closeRange(String from, String to) {
+    return 'Del $from al $to';
+  }
+
+  @override
+  String get closeChanged => 'Qué cambió';
+
+  @override
+  String get closeComing => 'Qué viene';
+
+  @override
+  String get closeAction => 'Una acción posible';
+
+  @override
+  String closeSpentMore(String spent, String difference) {
+    return 'Gastaste $spent, $difference más que la quincena anterior.';
+  }
+
+  @override
+  String closeSpentLess(String spent, String difference) {
+    return 'Gastaste $spent, $difference menos que la quincena anterior.';
+  }
+
+  @override
+  String closeSpentSame(String spent) {
+    return 'Gastaste $spent, lo mismo que la quincena anterior.';
+  }
+
+  @override
+  String closeSpentFirst(String spent) {
+    return 'Gastaste $spent. Es tu primera quincena completa registrada: todavía no hay con qué compararla.';
+  }
+
+  @override
+  String get closeNone =>
+      'Todavía no hay una quincena completa registrada. El cierre aparece cuando haya una, de un pago al siguiente.';
+
+  @override
+  String closeComingTotal(String date, String amount) {
+    return 'Hasta el $date hay $amount comprometidos.';
+  }
+
+  @override
+  String closeComingNone(String date) {
+    return 'No hay nada comprometido hasta el $date.';
+  }
+
+  @override
+  String closeComingMore(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Y $count más.',
+      one: 'Y uno más.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String closeFree(String amount) {
+    return 'Libre hasta el pago: $amount';
+  }
+
+  @override
+  String get closeSeeDays => 'Ver los próximos 30 días';
+
+  @override
+  String closeActionTight(String date) {
+    return 'El $date quedarías bajo tu colchón. Mira qué cobro podrías mover de fecha.';
+  }
+
+  @override
+  String closeActionCategory(String category, String before, String now) {
+    return '$category pasó de $before a $now frente a la quincena anterior. Mira esos pagos.';
+  }
+
+  @override
+  String closeActionGoal(String amount) {
+    return 'Te quedan $amount libres hasta el pago. Si quieres, una parte puede ir a tu meta.';
+  }
+
+  @override
+  String get closeActionNone => 'Nada que ajustar esta vez.';
+
+  @override
+  String get closeSeePayments => 'Ver los pagos';
+
+  @override
+  String closePaymentsTitle(String category, String from, String to) {
+    return '$category del $from al $to';
+  }
+
+  @override
+  String get homeComing => 'Lo que viene';
+
+  @override
+  String get homeSeeDays => 'Ver 30 días';
+
+  @override
+  String get buyWithoutPay => 'sin contar tu pago';
+
+  @override
+  String get closeSpentNone => 'No registraste gastos en esta quincena.';
+
+  @override
+  String comingLowestWithout(String amount, String date) {
+    return 'Sin lo que pruebas, lo más bajo antes del pago: $amount el $date';
+  }
+
+  @override
+  String get computedBuy =>
+      'Cómo quedaría tu plata con esa compra hasta el pago, hoy y después del pago';
+
+  @override
+  String get computedComing => 'Tu plata en los próximos 30 días, día por día';
+
+  @override
+  String get computedClose =>
+      'El cierre de tu última quincena, frente a la anterior';
+
+  @override
+  String get remindersTitle => 'Avisos';
+
+  @override
+  String get remindersClose => 'Avisarme el día de pago';
+
+  @override
+  String get remindersCloseHelp =>
+      'Un aviso sin montos para ver el cierre de la quincena. Nada de tu plata aparece en la pantalla bloqueada.';
+
+  @override
+  String get remindersDenied =>
+      'Para los avisos, permite las notificaciones de Quincena en los ajustes del teléfono.';
+
+  @override
+  String get reminderTitle => 'Tu cierre de quincena está listo';
+
+  @override
+  String get reminderBody => 'Ábrelo para ver qué cambió y qué viene.';
+
+  @override
   String get freeExplainAction => '¿De dónde sale?';
 
   @override

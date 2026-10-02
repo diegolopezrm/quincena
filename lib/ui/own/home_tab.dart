@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../data/ledger.dart';
+import '../../domain/decisions.dart';
+import '../../domain/projection.dart';
 import '../../domain/records.dart';
 import '../../format/dates.dart';
 import '../../format/money.dart';
@@ -9,8 +11,11 @@ import '../../money/asset.dart';
 import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
+import '../kit.dart';
 import '../standing.dart';
 import 'accounts_tab.dart';
+import 'close_page.dart';
+import 'coming_days_page.dart';
 import 'free_explained.dart';
 import 'inbox_page.dart';
 import 'look.dart';
@@ -69,6 +74,8 @@ class OwnHomeTab extends StatelessWidget {
           const SizedBox(height: 12),
           _InboxBanner(own: own),
         ],
+        const SizedBox(height: 12),
+        _ComingCard(own: own, ledger: ledger),
         if (missing.isNotEmpty) ...<Widget>[
           const SizedBox(height: 12),
           _Notice(
@@ -290,6 +297,79 @@ class _MovementsTabState extends State<MovementsTab> {
         else
           MovementGroups(own: own, entries: shown),
       ],
+    );
+  }
+}
+
+/// What comes until payday: the lowest point, a tight day if there is one,
+/// and the ways to look closer or try a purchase. In the week after a
+/// payday, the close of the period that ended.
+class _ComingCard extends StatelessWidget {
+  const _ComingCard({required this.own, required this.ledger});
+
+  final OwnController own;
+  final Ledger ledger;
+
+  void _open(BuildContext context, Widget page) => Navigator.of(
+    context,
+  ).push(MaterialPageRoute<void>(builder: (BuildContext context) => page));
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    final Projection? projection = own.projection;
+    if (projection == null) return const SizedBox.shrink();
+    final ProjectedDay low = projection.lowestBeforePayday;
+    final ProjectedDay? tight = projection.firstTight;
+    final PeriodClose? close = closePeriod(ledger);
+    final bool closeFresh =
+        close != null && ledger.today.difference(close.end).inDays <= 7;
+    return Block(
+      padding: const EdgeInsets.fromLTRB(18, 14, 14, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(l.homeComing, style: context.type.titleSmall),
+          const SizedBox(height: 4),
+          Text(
+            l.comingLowest(
+              pesos(ledger.major(low.sure)),
+              dayShortMonth(low.date),
+            ),
+            style: context.type.bodyMedium,
+          ),
+          if (tight != null)
+            Text(
+              l.comingTight(dayShortMonth(tight.date)),
+              style: context.type.bodySmall?.copyWith(
+                color: context.colors.caution,
+              ),
+            ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            children: <Widget>[
+              TextButton.icon(
+                onPressed: () =>
+                    _open(context, ComingDaysPage(own: own, tryPurchase: true)),
+                icon: const Icon(Glyph.shoppingBag, size: 18),
+                label: Text(l.buyTitle),
+              ),
+              TextButton.icon(
+                onPressed: () => _open(context, ComingDaysPage(own: own)),
+                icon: const Icon(Glyph.calendarBlank, size: 18),
+                label: Text(l.homeSeeDays),
+              ),
+              if (closeFresh)
+                TextButton.icon(
+                  onPressed: () => _open(context, ClosePage(own: own)),
+                  icon: const Icon(Glyph.receipt, size: 18),
+                  label: Text(l.closeTitle),
+                ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

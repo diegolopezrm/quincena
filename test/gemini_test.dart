@@ -248,6 +248,36 @@ void main() {
       expect(model.asked, 1);
     });
   });
+  test('can I buy it, what comes and the close, as tools', () async {
+    final List<dartantic.Tool> tools = ledgerTools(demoLedger());
+    Future<Map<String, Object?>> call(
+      String name, [
+      Map<String, dynamic> args = const <String, dynamic>{},
+    ]) async =>
+        (await tools.firstWhere((dartantic.Tool t) => t.name == name).call(args)
+                as Map)
+            .cast<String, Object?>();
+
+    final Map<String, Object?> buy = await call('can_i_buy', <String, dynamic>{
+      'amount': 350000,
+    });
+    final Map<String, Object?> asked = (buy['asked']! as Map)
+        .cast<String, Object?>();
+    expect(asked['verdict'], isIn(<String>['fits', 'belowCushion', 'short']));
+    expect(buy['afterPayday'], isA<Map<Object?, Object?>>());
+    expect(
+      (await call('can_i_buy', <String, dynamic>{'amount': -1}))['error'],
+      isNotNull,
+    );
+
+    final Map<String, Object?> coming = await call('coming_days');
+    expect(coming['lowestBeforePayday'], isA<num>());
+    expect(coming['events'], isA<List<Object?>>());
+
+    final Map<String, Object?> close = await call('fortnight_close');
+    expect(close['available'], isA<bool>());
+  });
+
   test('an answer keeps what the phone computed for it', () async {
     final Session session = Session(
       mode: AgentMode.gemini,

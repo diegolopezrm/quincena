@@ -3,6 +3,7 @@ import 'package:dartantic_ai/dartantic_ai.dart';
 import '../data/category.dart';
 import '../data/clock.dart';
 import '../data/ledger.dart';
+import '../domain/decisions.dart';
 import '../domain/projection.dart';
 import '../functions/money_functions.dart';
 
@@ -84,6 +85,157 @@ List<Tool> accountTools(
         'monthlyIncome': ledger.major(
           ledger.incomeIn(_lastMonth.year, _lastMonth.month),
         ),
+      };
+    },
+  ),
+  Tool<Map<String, dynamic>>(
+    name: 'can_i_buy',
+    description:
+        'Weighs buying something for an amount on a day against the money to '
+        'spend: the lowest the balance gets from that day to the payday after '
+        'it, counting what is committed, and whether that stays at or above '
+        'the cushion (fits), goes under it (belowCushion) or runs out (short). '
+        'Bought after the next payday it counts on the expected pay and says '
+        'so (countsOnExpectedPay); without a known pay it counts none '
+        '(payUnknown). It also weighs the same purchase today and the day '
+        'after the next payday, to compare. It is an estimate from what is '
+        'scheduled, never a promise: never call a purchase safe.',
+    inputSchema: S.object(
+      properties: <String, Schema>{
+        'amount': S.number(
+          description: 'The price, in whole units of the account currency.',
+        ),
+        'date': S.string(
+          description:
+              'The day it would be bought, YYYY-MM-DD. Today when '
+              'left out.',
+        ),
+      },
+      required: <String>['amount'],
+    ),
+    onCall: (Map<String, dynamic> args) {
+      final Ledger ledger = current();
+      final Object? raw = args['amount'];
+      final num? amount = raw is num ? raw : num.tryParse('$raw');
+      if (amount == null || amount <= 0) {
+        return _error('amount must be a positive number');
+      }
+      final DateTime asked =
+          DateTime.tryParse('${args['date'] ?? ''}') ?? ledger.today;
+      Map<String, Object?> weigh(DateTime on) {
+        final PurchaseCheck c = checkPurchase(
+          ledger,
+          price: ledger.minor(amount),
+          date: on,
+        );
+        return <String, Object?>{
+          'date': _day(c.date),
+          'lowest': ledger.major(c.lowest),
+          'lowestOn': _day(c.lowestOn),
+          'until': _day(c.until),
+          'verdict': c.verdict.name,
+          'countsOnExpectedPay': c.reliesOnPay,
+          'payUnknown': c.payUnknown,
+        };
+      }
+
+      return <String, Object?>{
+        'currency': ledger.currency.code,
+        'price': amount,
+        'cushion': ledger.major(ledger.cushion),
+        'committedUntilPayday': ledger.major(ledger.committedUntilPayday),
+        'nextPayday': _day(ledger.nextPayday),
+        'asked': weigh(asked),
+        'today': weigh(ledger.today),
+        'afterPayday': weigh(ledger.nextPayday.add(const Duration(days: 1))),
+      };
+    },
+  ),
+  Tool<Map<String, dynamic>>(
+    name: 'coming_days',
+    description:
+        'The money to spend over the next 30 days: the balance today, the '
+        'lowest point before payday and its day, the first day under the '
+        'cushion if there is one, and every scheduled charge, movement and '
+        'expected pay with its day. What is sure (the balance and what is '
+        'scheduled) is kept apart from the pay, which is only expected.',
+    onCall: (_) {
+      final Ledger ledger = current();
+      final Projection p = Projection.of(ledger, horizon: 30);
+      final ProjectedDay low = p.lowestBeforePayday;
+      final ProjectedDay? tight = p.firstTight;
+      return <String, Object?>{
+        'currency': ledger.currency.code,
+        'today': _day(ledger.today),
+        'balance': ledger.major(p.start),
+        'cushion': ledger.major(ledger.cushion),
+        'nextPayday': _day(ledger.nextPayday),
+        'lowestBeforePayday': ledger.major(low.sure),
+        'lowestOn': _day(low.date),
+        if (tight != null) 'firstDayUnderCushion': _day(tight.date),
+        if (p.latePay != null) 'latePayday': _day(p.latePay!),
+        'events': <Map<String, Object?>>[
+          for (final ProjectedDay d in p.days)
+            for (final ProjectedEvent e in d.events)
+              <String, Object?>{
+                'date': _day(e.date),
+                'what': e.label.isEmpty ? e.kind.name : e.label,
+                'amount': ledger.major(e.amount),
+                'certainty': e.certainty.name,
+                'sureBalanceAfter': ledger.major(d.sure),
+              },
+        ],
+      };
+    },
+  ),
+  Tool<Map<String, dynamic>>(
+    name: 'fortnight_close',
+    description:
+        'The pay period that just ended, payday to payday: what was spent '
+        'and earned; the period before, only when a whole one is recorded '
+        '(without it, compare nothing and never draw a trend); the categories '
+        'that moved most; what is committed until the next payday; and the '
+        'one suggestion the app worked out (a tight day ahead, a category '
+        'that grew, free money and a goal), or none. Never judge the spending.',
+    onCall: (_) {
+      final Ledger ledger = current();
+      final PeriodClose? c = closePeriod(ledger);
+      if (c == null) {
+        return <String, Object?>{
+          'available': false,
+          'reason': 'No whole pay period is recorded yet.',
+        };
+      }
+      return <String, Object?>{
+        'available': true,
+        'currency': ledger.currency.code,
+        'from': _day(c.start),
+        'to': _day(c.end.subtract(const Duration(days: 1))),
+        'spent': ledger.major(c.spent),
+        'income': ledger.major(c.income),
+        if (c.spentBefore != null)
+          'spentPeriodBefore': ledger.major(c.spentBefore!),
+        'categories': <Map<String, Object?>>[
+          for (final CategoryChange ch in c.changes.take(5))
+            <String, Object?>{
+              'category': ch.category.name,
+              'spent': ledger.major(ch.now),
+              if (ch.before != null) 'spentBefore': ledger.major(ch.before!),
+            },
+        ],
+        'committedUntilPayday': <Map<String, Object?>>[
+          for (final Movement m in c.coming)
+            <String, Object?>{
+              'date': _day(m.date),
+              'what': m.merchant,
+              'amount': ledger.major(m.amount),
+            },
+        ],
+        'freeUntilPayday': ledger.major(ledger.freeUntilPayday),
+        if (c.action != null) 'suggestion': c.action!.name,
+        if (c.tightDay != null) 'tightDay': _day(c.tightDay!),
+        if (c.actionCategory != null)
+          'categoryToLookAt': c.actionCategory!.name,
       };
     },
   ),

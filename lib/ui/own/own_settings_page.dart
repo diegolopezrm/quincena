@@ -15,6 +15,7 @@ import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
 import '../../own/own_controller.dart';
+import '../../reminders/reminders.dart';
 import '../../store/store.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
@@ -376,6 +377,39 @@ class OwnSettingsPage extends StatelessWidget {
                             save: (Decimal? v) => own.store.saveProfile(
                               p.copyWith(cushion: v, clearCushion: v == null),
                             ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                  if (Reminders.supported) ...<Widget>[
+                    SectionLabel(l.remindersTitle),
+                    Panel(
+                      children: <Widget>[
+                        SwitchListTile(
+                          value: own.remindsClose,
+                          onChanged: (bool on) async {
+                            final ScaffoldMessengerState messenger =
+                                ScaffoldMessenger.of(context);
+                            final bool done = await own.remindClose(
+                              on,
+                              title: l.reminderTitle,
+                              body: l.reminderBody,
+                            );
+                            if (!done) {
+                              messenger.showSnackBar(
+                                SnackBar(content: Text(l.remindersDenied)),
+                              );
+                            }
+                          },
+                          title: Text(
+                            l.remindersClose,
+                            style: context.type.titleSmall,
+                          ),
+                          subtitle: Text(
+                            l.remindersCloseHelp,
+                            style: context.type.bodySmall,
                           ),
                         ),
                       ],

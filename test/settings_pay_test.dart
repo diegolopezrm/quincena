@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
@@ -10,6 +11,7 @@ import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/format/money.dart' as format;
 import 'package:quincena/money/asset.dart';
+import 'package:quincena/reminders/reminders.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
 
@@ -101,4 +103,101 @@ void main() {
     expect((await tester.runAsync(store.profile))!.cushion, isNull);
     expect(find.text('Sin definir'), findsOneWidget);
   });
+  test('reminders fall on the next six paydays, at nine', () {
+    expect(
+      Reminders.days(const TwiceMonthly(), DateTime(2026, 10, 3, 10)),
+      <DateTime>[
+        DateTime(2026, 10, 15, 9),
+        DateTime(2026, 10, 30, 9),
+        DateTime(2026, 11, 15, 9),
+        DateTime(2026, 11, 30, 9),
+        DateTime(2026, 12, 15, 9),
+        DateTime(2026, 12, 30, 9),
+      ],
+    );
+  });
+
+  for (final bool allowed in <bool>[true, false]) {
+    testWidgets('the payday reminder, ${allowed ? 'allowed' : 'turned down'}', (
+      tester,
+    ) async {
+      final List<MethodCall> calls = <MethodCall>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('dev.dlsoft.quincena/reminders'),
+        (MethodCall call) async {
+          calls.add(call);
+          return call.method == 'ask' ? allowed : null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          const MethodChannel('dev.dlsoft.quincena/reminders'),
+          null,
+        ),
+      );
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      tester.platformDispatcher.localesTestValue = const <Locale>[Locale('es')];
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+      final QuincenaStore store = (await tester.runAsync(() async {
+        final QuincenaStore store = QuincenaStore(
+          QuincenaDatabase(NativeDatabase.memory()),
+          now: () => now,
+        );
+        await store.ensureCategories();
+        await store.saveProfile(
+          const Profile(name: 'Ana', base: Asset.cop, schedule: TwiceMonthly()),
+        );
+        await store.setSetting('app.mode', 'own');
+        await store.addAccount(
+          name: 'Bancolombia',
+          kind: AccountKind.bank,
+          asset: Asset.cop,
+          opening: Decimal.parse('900000'),
+        );
+        return store;
+      }))!;
+      addTearDown(() => tester.runAsync(store.close));
+      await tester.pumpWidget(
+        QuincenaApp(
+          store: store,
+          startInDemo: false,
+          fetcher: fakeRates(),
+          now: () => now,
+        ),
+      );
+      await settle(tester);
+      await tester.tap(find.byTooltip('Ajustes'));
+      await settle(tester);
+      await tester.ensureVisible(find.text('Avisarme el día de pago'));
+      await tester.tap(find.text('Avisarme el día de pago'));
+      await settle(tester);
+
+      expect(calls.first.method, 'ask');
+      if (!allowed) {
+        expect(
+          find.textContaining('permite las notificaciones de Quincena'),
+          findsOneWidget,
+        );
+        expect(calls.where((MethodCall c) => c.method == 'schedule'), isEmpty);
+        return;
+      }
+      final MethodCall set = calls.lastWhere(
+        (MethodCall c) => c.method == 'schedule',
+      );
+      final Map<Object?, Object?> args = set.arguments as Map<Object?, Object?>;
+      expect(args['days'], hasLength(6));
+      expect(args['title'], 'Tu cierre de quincena está listo');
+      // Nothing about the money: no amount, not even a digit.
+      expect(
+        '${args['title']} ${args['body']}',
+        isNot(contains(RegExp(r'[\d$]'))),
+      );
+
+      await tester.tap(find.text('Avisarme el día de pago'));
+      await settle(tester);
+      expect(calls.last.method, 'cancel');
+    });
+  }
 }
