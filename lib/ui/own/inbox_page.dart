@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../../capture/capture_service.dart';
 import '../../capture/event.dart';
 import '../../capture/inbox.dart';
+import '../../capture/native_channel.dart';
 import '../../domain/records.dart';
 import '../../format/dates.dart';
 import '../../l10n/l10n.dart';
@@ -16,6 +17,7 @@ import '../icons.dart';
 import '../kit.dart';
 import 'entry_sheet.dart';
 import 'look.dart';
+import 'read_images.dart';
 
 /// Captures waiting to be confirmed, the possible repeats, and what was
 /// recorded on its own lately.
@@ -41,6 +43,12 @@ class InboxPage extends StatelessWidget {
             surfaceTintColor: Colors.transparent,
             title: Text(l.inboxTitle, style: context.type.titleLarge),
             actions: <Widget>[
+              if (CaptureChannel.readsImages)
+                IconButton(
+                  tooltip: l.readScreenshot,
+                  onPressed: () => readImages(context, own),
+                  icon: const Icon(Glyph.scan),
+                ),
               IconButton(
                 tooltip: l.pasteMessage,
                 onPressed: () => showPasteDialog(context, own),
@@ -65,6 +73,24 @@ class InboxPage extends StatelessWidget {
                           Text(
                             l.inboxEmptyBody,
                             style: context.type.bodyMedium,
+                          ),
+                          const SizedBox(height: 14),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: <Widget>[
+                              if (CaptureChannel.readsImages)
+                                OutlinedButton.icon(
+                                  onPressed: () => readImages(context, own),
+                                  icon: const Icon(Glyph.scan, size: 18),
+                                  label: Text(l.readScreenshot),
+                                ),
+                              OutlinedButton.icon(
+                                onPressed: () => showPasteDialog(context, own),
+                                icon: const Icon(Glyph.notePencil, size: 18),
+                                label: Text(l.pasteMessage),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -201,7 +227,9 @@ class _InboxCardState extends State<InboxCard> {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    '${_who(l)} · ${dayAndTime(i.event.at)}',
+                    // When the payment happened, as the receipt says, not
+                    // when it was shared.
+                    '${_who(l)} · ${dayAndTime(i.parsed.when ?? i.event.at)}',
                     style: context.type.bodySmall,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

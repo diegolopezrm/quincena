@@ -173,6 +173,17 @@ class OwnController extends ChangeNotifier {
     return report;
   }
 
+  /// Text read from screenshots, photos or PDFs the person picked.
+  Future<IngestReport> ingestRead(Iterable<String> texts) =>
+      capture.ingest(<CaptureEvent>[
+        for (final String text in texts)
+          CaptureEvent(
+            source: CaptureSource.screenshot,
+            at: _now(),
+            text: text,
+          ),
+      ]);
+
   /// A message the person pasted or shared.
   Future<IngestReport> ingestText(String text) => capture.ingest(<CaptureEvent>[
     CaptureEvent(source: CaptureSource.paste, at: _now(), text: text),

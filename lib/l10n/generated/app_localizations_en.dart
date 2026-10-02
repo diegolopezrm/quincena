@@ -863,6 +863,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pasteDuplicate => 'That payment was already there.';
 
   @override
+  String get readScreenshot => 'Read a screenshot';
+
+  @override
+  String get pickImages => 'Screenshots or photos';
+
+  @override
+  String get pickPdf => 'A PDF';
+
+  @override
+  String get readingImages => 'Reading…';
+
+  @override
+  String readFound(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Found $count payments. They are in To review.',
+      one: 'Found a payment. It is in To review.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get readNothing =>
+      'No amount with its currency was found. Try a screenshot where the amount shows.';
+
+  @override
   String get showOriginal => 'See the message';
 
   @override
@@ -912,6 +939,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get continueLabel => 'Continue';
+
+  @override
+  String get captureImagesTitle => 'Screenshots and receipts';
+
+  @override
+  String get captureImagesIos =>
+      'In To review you can pick a screenshot, a photo or a PDF of a payment, and Quincena reads it on the phone.\nTo send them from other apps, make a shortcut with Quincena\'s \"Read a receipt\" action and turn on \"Show in Share Sheet\".\nWith \"Take Screenshot\" before it and Back Tap (Settings, Accessibility, Touch), double-tap the back of the iPhone to read what is on the screen.';
+
+  @override
+  String get captureImagesAndroid =>
+      'Share a screenshot, a photo, a PDF or a text with Quincena from any app, or pick them in To review. They are read on the phone and wait for you to confirm them.';
+
+  @override
+  String get captureImagesDesktop =>
+      'Pick a screenshot, a photo or a PDF of a payment in To review, and Quincena reads it on this computer.';
 
   @override
   String get captureIosTitle => 'On iPhone, with Shortcuts';

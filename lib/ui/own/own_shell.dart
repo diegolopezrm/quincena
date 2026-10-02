@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app.dart';
 import '../../app_mode.dart';
+import '../../capture/native_channel.dart';
 import '../../l10n/l10n.dart';
 import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
@@ -40,6 +41,13 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _openInboxIfAsked());
+  }
+
+  /// Someone shared a screenshot or a text with Quincena from another app
+  /// and chose to see it.
+  Future<void> _openInboxIfAsked() async {
+    if (await CaptureChannel.takeOpenInbox() && mounted) _openInbox();
   }
 
   @override
@@ -55,6 +63,7 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
     if (state != AppLifecycleState.resumed) return;
     own.pullCaptures();
     own.refreshRates();
+    _openInboxIfAsked();
   }
 
   void _openInbox() => Navigator.of(context).push(

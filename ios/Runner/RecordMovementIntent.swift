@@ -122,5 +122,11 @@ struct QuincenaShortcuts: AppShortcutsProvider {
       shortTitle: "Record a movement",
       systemImageName: "tray.and.arrow.down"
     )
+    AppShortcut(
+      intent: ReadReceiptIntent(),
+      phrases: ["Read a receipt in \(.applicationName)"],
+      shortTitle: "Read a receipt",
+      systemImageName: "doc.text.viewfinder"
+    )
   }
 }

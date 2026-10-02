@@ -53,6 +53,20 @@ object CaptureStore {
         FileOutputStream(File(context.filesDir, FILE), true).use { it.write(line) }
     }
 
+    /** The person shared something and chose to see it: the app opens on
+     *  the inbox when it comes up. */
+    fun askToOpenInbox(context: Context) {
+        prefs(context).edit().putBoolean("openInbox", true).apply()
+    }
+
+    /** Whether the app should open on the inbox, once. */
+    fun takeOpenInbox(context: Context): Boolean {
+        val prefs = prefs(context)
+        val asked = prefs.getBoolean("openInbox", false)
+        if (asked) prefs.edit().remove("openInbox").apply()
+        return asked
+    }
+
     /** A moment as Dart's `DateTime.parse` reads it, in UTC. */
     fun iso(millis: Long): String =
         SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)

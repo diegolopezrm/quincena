@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.util.Log
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -49,6 +50,23 @@ class MainActivity : FlutterActivity() {
                     )
                     result.success(null)
                 }
+                "readText" -> {
+                    val bytes = call.arguments as? ByteArray
+                    if (bytes == null) {
+                        result.success(null)
+                    } else {
+                        Thread {
+                            val text = try {
+                                TextReader.read(this, bytes)
+                            } catch (e: Exception) {
+                                Log.w("Quincena", "Could not read the image", e)
+                                null
+                            }
+                            runOnUiThread { result.success(text) }
+                        }.start()
+                    }
+                }
+                "takeOpenInbox" -> result.success(CaptureStore.takeOpenInbox(this))
                 "configure" -> {
                     CaptureStore.configure(
                         this,

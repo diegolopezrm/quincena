@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="share_reading">Leyendo en el teléfono…</string>
+    <string name="share_nothing">No encontré un monto con su moneda. Prueba con una captura donde se vea el valor.</string>
+    <plurals name="share_kept">
+        <item quantity="one">Quedó en Por revisar de Quincena, para que lo confirmes.</item>
+        <item quantity="many">Quedaron %d pagos en Por revisar de Quincena, para que los confirmes.</item>
+        <item quantity="other">Quedaron %d pagos en Por revisar de Quincena, para que los confirmes.</item>
+    </plurals>
+    <string name="share_open">Abrir Quincena</string>
+    <string name="share_done">Listo</string>
+</resources>

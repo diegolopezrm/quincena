@@ -90,11 +90,20 @@ Payments reach Quincena without anyone typing them.
 - **Android.** With notification access, Quincena keeps the notifications
   that carry an amount next to a currency and lets the rest go by unread.
   Security codes are never kept, and any app can be muted.
+- **Screenshots, receipts and texts.** A screenshot, a photo or a PDF of a
+  payment is read on the device, with Vision on the iPhone and the Mac and
+  ML Kit on Android. On Android, share it with Quincena from any app; on the
+  iPhone, pick it in "Por revisar", or make a shortcut with the "Read a
+  receipt" action and turn on "Show in Share Sheet". What is read from an
+  image always waits to be confirmed.
 - **Anywhere.** A message pasted into "Por revisar" is read the same way.
 
 Everything goes through one parser, written for how Colombian banks and
 wallets word their alerts: `$45.900,00` or `$45,900.00`, the merchant, the
-card's last four digits, a balance that is not the purchase. A payment seen
+card's last four digits, a balance that is not the purchase. A receipt is
+read by its labels: the figure after "Valor" or "¿Cuánto?", who got it after
+"Para", the date and time it says, not the clock at the top of the
+screenshot. A payment seen
 by Wallet, the bank's push and an SMS becomes one movement, and one already
 entered by hand is not suggested again. Confirming a capture teaches
 Quincena that card's account and that merchant's category. With "Registrar
@@ -191,8 +200,8 @@ the goal slider announced its value without saying what the value was of.
 | `lib/domain/`, `lib/store/` | accounts, movements and pay schedules, and the SQLite database they live in |
 | `lib/capture/` | the parser, the deduplicator, the inbox and the lookup of nearby shops |
 | `lib/ui/` | the conversation, and in `own/` the screens for your own accounts |
-| `ios/Runner/RecordMovementIntent.swift` | the Shortcuts action |
-| `android/app/src/main/kotlin/` | the notification listener |
+| `ios/Runner/` | the Shortcuts actions, and the text reader the Mac shares |
+| `android/app/src/main/kotlin/` | the notification listener, the share target and the text reader |
 
 ## Credits
 

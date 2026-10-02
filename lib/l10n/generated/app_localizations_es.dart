@@ -863,6 +863,33 @@ class AppLocalizationsEs extends AppLocalizations {
   String get pasteDuplicate => 'Ese pago ya estaba.';
 
   @override
+  String get readScreenshot => 'Leer una captura';
+
+  @override
+  String get pickImages => 'Capturas o fotos';
+
+  @override
+  String get pickPdf => 'Un PDF';
+
+  @override
+  String get readingImages => 'Leyendo…';
+
+  @override
+  String readFound(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Leí $count pagos. Quedaron en Por revisar.',
+      one: 'Leí un pago. Quedó en Por revisar.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get readNothing =>
+      'No encontré un monto con su moneda. Prueba con una captura donde se vea el valor.';
+
+  @override
   String get showOriginal => 'Ver el mensaje';
 
   @override
@@ -912,6 +939,21 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get continueLabel => 'Continuar';
+
+  @override
+  String get captureImagesTitle => 'Capturas y comprobantes';
+
+  @override
+  String get captureImagesIos =>
+      'En Por revisar puedes elegir una captura, una foto o un PDF de un pago, y Quincena lo lee en el teléfono.\nPara mandarlos desde otras apps, crea un atajo con la acción «Leer comprobante» de Quincena y actívale «Mostrar en la hoja de compartir».\nCon «Hacer captura de pantalla» antes y Toque posterior (Ajustes, Accesibilidad, Tocar), lees lo que tengas en pantalla con dos toques en la parte de atrás del iPhone.';
+
+  @override
+  String get captureImagesAndroid =>
+      'Comparte con Quincena una captura, una foto, un PDF o un texto desde cualquier app, o elígelos en Por revisar. Se leen en el teléfono y quedan para que los confirmes.';
+
+  @override
+  String get captureImagesDesktop =>
+      'Elige en Por revisar una captura, una foto o un PDF de un pago, y Quincena lo lee en este computador.';
 
   @override
   String get captureIosTitle => 'En iPhone, con Atajos';

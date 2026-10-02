@@ -1562,6 +1562,42 @@ abstract class AppLocalizations {
   /// **'Ese pago ya estaba.'**
   String get pasteDuplicate;
 
+  /// No description provided for @readScreenshot.
+  ///
+  /// In es, this message translates to:
+  /// **'Leer una captura'**
+  String get readScreenshot;
+
+  /// No description provided for @pickImages.
+  ///
+  /// In es, this message translates to:
+  /// **'Capturas o fotos'**
+  String get pickImages;
+
+  /// No description provided for @pickPdf.
+  ///
+  /// In es, this message translates to:
+  /// **'Un PDF'**
+  String get pickPdf;
+
+  /// No description provided for @readingImages.
+  ///
+  /// In es, this message translates to:
+  /// **'Leyendo…'**
+  String get readingImages;
+
+  /// No description provided for @readFound.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Leí un pago. Quedó en Por revisar.} other{Leí {count} pagos. Quedaron en Por revisar.}}'**
+  String readFound(int count);
+
+  /// No description provided for @readNothing.
+  ///
+  /// In es, this message translates to:
+  /// **'No encontré un monto con su moneda. Prueba con una captura donde se vea el valor.'**
+  String get readNothing;
+
   /// No description provided for @showOriginal.
   ///
   /// In es, this message translates to:
@@ -1651,6 +1687,30 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Continuar'**
   String get continueLabel;
+
+  /// No description provided for @captureImagesTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Capturas y comprobantes'**
+  String get captureImagesTitle;
+
+  /// No description provided for @captureImagesIos.
+  ///
+  /// In es, this message translates to:
+  /// **'En Por revisar puedes elegir una captura, una foto o un PDF de un pago, y Quincena lo lee en el teléfono.\nPara mandarlos desde otras apps, crea un atajo con la acción «Leer comprobante» de Quincena y actívale «Mostrar en la hoja de compartir».\nCon «Hacer captura de pantalla» antes y Toque posterior (Ajustes, Accesibilidad, Tocar), lees lo que tengas en pantalla con dos toques en la parte de atrás del iPhone.'**
+  String get captureImagesIos;
+
+  /// No description provided for @captureImagesAndroid.
+  ///
+  /// In es, this message translates to:
+  /// **'Comparte con Quincena una captura, una foto, un PDF o un texto desde cualquier app, o elígelos en Por revisar. Se leen en el teléfono y quedan para que los confirmes.'**
+  String get captureImagesAndroid;
+
+  /// No description provided for @captureImagesDesktop.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige en Por revisar una captura, una foto o un PDF de un pago, y Quincena lo lee en este computador.'**
+  String get captureImagesDesktop;
 
   /// No description provided for @captureIosTitle.
   ///

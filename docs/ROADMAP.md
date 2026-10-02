@@ -76,8 +76,11 @@ set up the app, record a week of movements and see the right totals, offline.
   person turns it on; the coordinates are the only thing that leaves the
   device. On Android it needs "Allow all the time", and the app explains why
   before asking.
-- Still to do: share a screenshot or a text to Quincena from any app, read on
-  the device (Vision on iOS, ML Kit on Android).
+- Screenshots, photos, PDFs and texts of payments, read on the device (Vision
+  on iOS and macOS, ML Kit on Android) and parsed by their labels: shared
+  from any app on Android, picked in the inbox everywhere, and through a
+  "Read a receipt" action in Shortcuts on iOS, which a shortcut can put in
+  the share sheet or on Back Tap.
 
 ### 7. Gemini for everyone
 
@@ -104,3 +107,6 @@ set up the app, record a week of movements and see the right totals, offline.
 - Google Play's declarations for notification access and background
   location, with the in-app explanations they ask for.
 - The app's icon and name on the home screen.
+- An iOS share extension, so Quincena is in the share sheet without a
+  shortcut. It needs an App Group between the extension and the app, set up
+  with the developer account the App Store needs anyway.

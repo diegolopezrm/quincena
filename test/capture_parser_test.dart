@@ -251,6 +251,165 @@ void main() {
     });
   });
 
+  group('receipts and screens read from an image', () {
+    ParsedCapture read(String text) =>
+        parse(text, source: CaptureSource.screenshot);
+
+    test('a transfer from a wallet, under the clock of the screenshot', () {
+      final ParsedCapture p = read(r'''9:41
+¡Listo! Envío exitoso
+Para
+Juan Pérez
+¿Cuánto?
+$ 50.000,00
+Número Nequi
+300 123 4567
+Fecha
+1 de octubre de 2026 a las 6:30 p. m.
+Referencia
+M12345678''');
+      expect(p.amount, d('50000'));
+      expect(p.kind, EntryKind.expense);
+      expect(p.merchant, 'Juan Pérez');
+      expect(p.institution, 'Nequi');
+      expect(p.when, DateTime(2026, 10, 1, 18, 30));
+    });
+
+    test('a bank transfer, with the cost of it left out', () {
+      final ParsedCapture p = read(r'''¡Transferencia exitosa!
+Comprobante No. 0000123456
+01 Oct 2026 - 06:30 p. m.
+Producto origen
+Ahorros *1234
+Producto destino
+Juan Pérez
+Costo de la transferencia
+$ 0,00
+Valor de la transferencia
+$ 50.000,00''');
+      expect(p.amount, d('50000'));
+      expect(p.kind, EntryKind.expense);
+      expect(p.merchant, 'Juan Pérez');
+      expect(p.card, '1234');
+      expect(p.when, DateTime(2026, 10, 1, 18, 30));
+    });
+
+    test('a bill paid through PSE', () {
+      final ParsedCapture p = read(r'''Pago exitoso
+Empresa
+EPM
+Valor pagado
+$ 187.420
+Fecha de pago
+2026-10-01 18:30:12
+Banco Bancolombia''');
+      expect(p.amount, d('187420'));
+      expect(p.merchant, 'EPM');
+      expect(p.when, DateTime(2026, 10, 1, 18, 30));
+    });
+
+    test('a wallet that says it in a sentence', () {
+      final ParsedCapture p = read(r'''Daviplata
+Pasaste plata
+$20.000
+a Laura Gómez
+celular 310 *** 4567
+1 oct. 2026 6:30 p. m.''');
+      expect(p.amount, d('20000'));
+      expect(p.kind, EntryKind.expense);
+      expect(p.merchant, 'Laura Gómez');
+      expect(p.when, DateTime(2026, 10, 1, 18, 30));
+    });
+
+    test('a movement in the bank app, where no date passes for a name', () {
+      final ParsedCapture p = read(r'''Detalle del movimiento
+Compra
+EXITO LAURELES
+-$ 45.900,00
+Tarjeta débito *1234
+1 de octubre de 2026''');
+      expect(p.amount, d('45900'));
+      expect(p.merchant, 'Exito Laureles');
+      expect(p.card, '1234');
+      // No hour: the day it arrived keeps the hour it arrived, another
+      // day is noon.
+      expect(p.when, arrived);
+      expect(
+        read(r'''Compra
+EXITO LAURELES
+-$ 45.900,00
+28 de septiembre de 2026''').when,
+        DateTime(2026, 9, 28, 12),
+      );
+    });
+
+    test('two columns read as one line each', () {
+      final ParsedCapture p = read(r'''Transferencia exitosa
+Para  Juan Pérez
+Valor de la transferencia  $ 50.000,00
+Fecha  Oct 1, 2026, 6:30 PM''');
+      expect(p.amount, d('50000'));
+      expect(p.merchant, 'Juan Pérez');
+      expect(p.when, DateTime(2026, 10, 1, 18, 30));
+    });
+
+    test('a notification captured from the lock screen', () {
+      final ParsedCapture p = read(
+        r'''BANCOLOMBIA
+ahora
+Bancolombia: Compraste $45.900,00 en EXITO LAURELES con tu T.Deb *1234, el 01/10/2026 a las 13:45.''',
+      );
+      expect(p.amount, d('45900'));
+      expect(p.merchant, 'Exito Laureles');
+      expect(p.when, DateTime(2026, 10, 1, 13, 45));
+    });
+
+    test('a transfer as Vision reads it on iOS and macOS', () {
+      final ParsedCapture p = read(r'''¡Transferencia exitosa!
+Comprobante No. 0000123456
+Fecha  01 Oct 2026 - 06:30 p.m.
+Producto origen  Ahorros *1234
+Producto destino  Laura Gómez
+Costo de la transferencia  $ 0,00
+Valor de la transferencia  $ 85.000,00''');
+      expect(p.amount, d('85000'));
+      expect(p.merchant, 'Laura Gómez');
+      expect(p.card, '1234');
+      expect(p.when, DateTime(2026, 10, 1, 18, 30));
+    });
+
+    test('a transfer as ML Kit reads it on Android', () {
+      final ParsedCapture p = read(r'''9:41  87%
+¡Listo! Envío exitoso
+Para
+Juan Pérez
+¿Cuánto?
+$ 50.000,00
+Número Nequi
+300 123 4567
+Fecha
+1 de octubre de 2026 a las 6:30 p. m
+Referencia
+M12345678''');
+      expect(p.amount, d('50000'));
+      expect(p.merchant, 'Juan Pérez');
+      expect(p.when, DateTime(2026, 10, 1, 18, 30));
+    });
+
+    test('an image always waits for the person', () {
+      expect(
+        read(r'Bancolombia: Compraste $45.900,00 en EXITO LAURELES').confidence,
+        lessThanOrEqualTo(0.7),
+      );
+      expect(
+        parse(
+          r'Bancolombia: Compraste $45.900,00 en EXITO LAURELES',
+        ).confidence,
+        greaterThan(0.8),
+      );
+    });
+  });
+
   group('merchant names', () {
     test('are written the way people write them', () {
       expect(prettyMerchant('EXITO LAURELES'), 'Exito Laureles');

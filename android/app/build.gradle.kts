@@ -43,3 +43,9 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // Text in screenshots, photos and PDFs, read on the device. The model
+    // ships with the app, so it works offline and without Google Play.
+    implementation("com.google.mlkit:text-recognition:16.0.1")
+}

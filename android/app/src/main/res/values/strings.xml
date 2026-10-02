@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="share_reading">Reading on the phone…</string>
+    <string name="share_nothing">No amount with its currency was found. Try a screenshot where the amount shows.</string>
+    <plurals name="share_kept">
+        <item quantity="one">It is in Quincena\'s To review, waiting for you to confirm it.</item>
+        <item quantity="other">%d payments are in Quincena\'s To review, waiting for you to confirm them.</item>
+    </plurals>
+    <string name="share_open">Open Quincena</string>
+    <string name="share_done">Done</string>
+</resources>

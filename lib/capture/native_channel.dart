@@ -41,6 +41,37 @@ abstract final class CaptureChannel {
       (defaultTargetPlatform == TargetPlatform.android ||
           defaultTargetPlatform == TargetPlatform.iOS);
 
+  /// Whether this device reads the text in an image or a PDF: Vision on
+  /// iOS and macOS, ML Kit on Android.
+  static bool get readsImages =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS ||
+          defaultTargetPlatform == TargetPlatform.macOS);
+
+  /// The text in a screenshot, a photo or a PDF, read on the device, with
+  /// a receipt's label and value on one line. Null when it could not be
+  /// read.
+  static Future<String?> readText(Uint8List bytes) async {
+    if (!readsImages) return null;
+    try {
+      return await _channel.invokeMethod<String>('readText', bytes);
+    } on Object {
+      return null;
+    }
+  }
+
+  /// Whether the person shared something with Quincena from another app and
+  /// asked to see it, since the last time this was asked. Android only.
+  static Future<bool> takeOpenInbox() async {
+    if (!_android) return false;
+    try {
+      return await _channel.invokeMethod<bool>('takeOpenInbox') ?? false;
+    } on Object {
+      return false;
+    }
+  }
+
   static Object? _listener;
 
   /// Calls [onCaptured] each time the platform leaves a new event while the

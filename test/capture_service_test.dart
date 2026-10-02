@@ -339,6 +339,33 @@ void main() {
     expect(s.appNames['com.some.shop'], 'Tienda X');
   });
 
+  test(
+    'a receipt shared hours later repeats the alert of the same payment',
+    () async {
+      await capture.ingest(<CaptureEvent>[
+        push(
+          r'Nequi: Enviaste $50.000 a Juan Pérez',
+          app: 'com.nequi.MobileApp',
+          at: DateTime(2026, 10, 1, 13, 30),
+        ),
+      ]);
+      final IngestReport r = await capture.ingest(<CaptureEvent>[
+        CaptureEvent(
+          source: CaptureSource.screenshot,
+          at: DateTime(2026, 10, 1, 21, 5),
+          text: '''¡Listo! Envío exitoso
+Para
+Juan Pérez
+¿Cuánto?
+\$ 50.000,00
+Fecha
+1 de octubre de 2026 a las 1:30 p. m.''',
+        ),
+      ]);
+      expect(r.duplicates, 1);
+    },
+  );
+
   test('a movement already entered by hand is not suggested again', () async {
     await store.addEntry(
       accountId: bancolombia.id,

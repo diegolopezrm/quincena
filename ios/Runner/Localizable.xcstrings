@@ -51,6 +51,16 @@
         }
       }
     },
+    "It is waiting in Quincena's inbox." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quedó en Por revisar de Quincena."
+          }
+        }
+      }
+    },
     "Location" : {
       "localizations" : {
         "es" : {
@@ -87,6 +97,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Notificación"
+          }
+        }
+      }
+    },
+    "Read ${files}" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leer ${files}"
+          }
+        }
+      }
+    },
+    "Read a receipt" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leer comprobante"
+          }
+        }
+      }
+    },
+    "Reads screenshots, photos, PDFs or texts of payments on the device and leaves them in Quincena's inbox to confirm." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lee en el teléfono capturas, fotos, PDF o textos de pagos y los deja en Por revisar de Quincena para que los confirmes."
+          }
+        }
+      }
+    },
+    "Receipts" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comprobantes"
           }
         }
       }
@@ -131,6 +181,16 @@
         }
       }
     },
+    "Screenshots, photos, PDFs or texts." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capturas, fotos, PDF o textos."
+          }
+        }
+      }
+    },
     "Sender" : {
       "localizations" : {
         "es" : {
@@ -167,6 +227,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "El mensaje, el asunto del correo o la notificación, tal como llegó."
+          }
+        }
+      }
+    },
+    "There was no text to read in it." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No encontré texto para leer."
+          }
+        }
+      }
+    },
+    "They are waiting in Quincena's inbox." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quedaron en Por revisar de Quincena."
           }
         }
       }

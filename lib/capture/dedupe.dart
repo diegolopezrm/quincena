@@ -38,13 +38,17 @@ class Sighting {
 ///
 /// One Apple Pay purchase can arrive as the Wallet's record, the bank's
 /// push, an SMS and an email. They share the amount and the direction, and
-/// arrive within minutes of each other, an email within hours. When both
-/// name a merchant, the names have to share a word: two different $20.000
-/// payments a few minutes apart do happen.
+/// arrive within minutes of each other, an email within hours. A movement
+/// entered by hand, a screenshot or a text the person shares can come any
+/// time that day or the next. When both name a merchant, the names have to
+/// share a word: two different $20.000 payments a few minutes apart do
+/// happen.
 bool samePayment(Sighting a, Sighting b) {
   if (a.amount != b.amount || a.kind != b.kind) return false;
   if (a.asset != null && b.asset != null && a.asset != b.asset) return false;
-  final Duration window = a.source == null || b.source == null
+  bool whenever(CaptureSource? s) =>
+      s == null || s == CaptureSource.screenshot || s == CaptureSource.paste;
+  final Duration window = whenever(a.source) || whenever(b.source)
       ? const Duration(hours: 36)
       : a.source == CaptureSource.email || b.source == CaptureSource.email
       ? const Duration(hours: 6)

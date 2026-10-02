@@ -13,12 +13,21 @@ import UIKit
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
 
-    // The same channel as `CaptureChannel` in lib/capture/native_channel.dart.
-    // On iOS it only goes one way: a shortcut ran while the app was open.
+    // The same channel as `CaptureChannel` in lib/capture/native_channel.dart:
+    // the app asks for the text in an image, and hears when a shortcut ran
+    // while it was open.
     let capture = FlutterMethodChannel(
       name: "dev.dlsoft.quincena/capture",
       binaryMessenger: engineBridge.applicationRegistrar.messenger())
-    capture.setMethodCallHandler { _, result in result(FlutterMethodNotImplemented) }
+    capture.setMethodCallHandler { call, result in
+      guard call.method == "readText",
+        let bytes = call.arguments as? FlutterStandardTypedData
+      else { return result(FlutterMethodNotImplemented) }
+      DispatchQueue.global(qos: .userInitiated).async {
+        let text = try? TextReader.read(bytes.data)
+        DispatchQueue.main.async { result(text) }
+      }
+    }
     CaptureInbox.onAppend = { capture.invokeMethod("captured", arguments: nil) }
   }
 }

@@ -11,6 +11,7 @@ import '../icons.dart';
 import '../kit.dart';
 import 'inbox_page.dart';
 import 'look.dart';
+import 'read_images.dart';
 
 /// How payments get into Quincena on their own on this device, and the two
 /// choices about them: recording what is clear, and using the location.
@@ -222,6 +223,35 @@ class _CaptureSettingsPageState extends State<CaptureSettingsPage>
                   Text(l.captureSubtitle, style: context.type.bodyMedium),
                   const SizedBox(height: 16),
                   _platform(l),
+                  if (CaptureChannel.readsImages) ...<Widget>[
+                    const SizedBox(height: 12),
+                    Block(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            l.captureImagesTitle,
+                            style: context.type.titleSmall,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _ios
+                                ? l.captureImagesIos
+                                : _android
+                                ? l.captureImagesAndroid
+                                : l.captureImagesDesktop,
+                            style: context.type.bodyMedium,
+                          ),
+                          const SizedBox(height: 14),
+                          OutlinedButton.icon(
+                            onPressed: () => readImages(context, own),
+                            icon: const Icon(Glyph.scan, size: 18),
+                            label: Text(l.readScreenshot),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 20),
                   Panel(
                     indent: 16,
