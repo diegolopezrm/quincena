@@ -427,5 +427,22 @@
   "statementFlip": "Flip the signs",
   "statementImport": "{count, plural, =0{Nothing to import} =1{Import one movement} other{Import {count} movements}}",
   "statementDone": "{count, plural, =1{One movement was imported.} other{{count} movements were imported.}}",
-  "statementByGemini": "Read by Gemini: check it well before importing."
+  "statementByGemini": "Read by Gemini: check it well before importing.",
+  "walletsTitle": "Your own wallets",
+  "walletsCardBody": "Ledger, MetaMask, Trust Wallet: by their public address.",
+  "walletsBody": "Follow what you hold in Ledger, MetaMask, Trust Wallet or any wallet, by its public address. It is only read: nobody can move anything with an address.",
+  "walletsChains": "Bitcoin, Ethereum (ETH, USDT and USDC) and TRON (TRX, USDT and USDC).",
+  "walletsPrivacy": "The address is looked up on public services: mempool.space, a public Ethereum node and TronGrid. They see the address, not who you are.",
+  "walletsAdd": "Add a wallet",
+  "walletsAddress": "Public address",
+  "walletsLabel": "Name: Ledger, MetaMask…",
+  "walletsBadAddress": "That does not look like a {chain} address.",
+  "walletsUnreadable": "That address could not be read. Check your connection and try again.",
+  "walletsRemove": "Stop following",
+  "walletsRemoveBody": "It is no longer read. The accounts it brought stay as yours.",
+  "walletsSyncedAt": "Read {when}",
+  "walletsEmpty": "You do not follow any wallet yet.",
+  "walletsAdjustment": "Wallet adjustment",
+  "walletsFailed": "A wallet could not be read; its last balances are shown.",
+  "chartWithoutTrades": "From prices, not counting what you bought or sold in those days."
 }

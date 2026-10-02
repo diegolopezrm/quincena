@@ -19,6 +19,7 @@ import 'capture_settings_page.dart';
 import 'look.dart';
 import 'pay_schedule_editor.dart';
 import 'statement_page.dart';
+import 'wallets_page.dart';
 
 /// The person's profile, appearance, and what they can do with their data.
 class OwnSettingsPage extends StatelessWidget {
@@ -322,6 +323,18 @@ class OwnSettingsPage extends StatelessWidget {
                           MaterialPageRoute<void>(
                             builder: (BuildContext context) =>
                                 CaptureSettingsPage(own: own),
+                          ),
+                        ),
+                      ),
+                      _row(
+                        context,
+                        icon: Glyph.vault,
+                        title: l.walletsTitle,
+                        value: l.walletsCardBody,
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (BuildContext context) =>
+                                WalletsPage(own: own),
                           ),
                         ),
                       ),

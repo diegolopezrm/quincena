@@ -22,6 +22,7 @@ import '../money/rate_sources.dart';
 import '../money/rates.dart';
 import '../exchanges/binance_link.dart';
 import '../exchanges/p2p_match.dart';
+import '../exchanges/wallets.dart';
 import '../portfolio/market.dart';
 import '../portfolio/portfolio_controller.dart';
 import '../store/store.dart';
@@ -64,6 +65,10 @@ class OwnController extends ChangeNotifier {
   /// Their Binance account, when they link it.
   BinanceLink get binance => _binance ??= BinanceLink(store);
   BinanceLink? _binance;
+
+  /// The wallets they follow by public address.
+  WalletLink get wallets => _wallets ??= WalletLink(store, now: _now);
+  WalletLink? _wallets;
 
   /// How old the rates may be before opening the app fetches new ones.
   final Duration ratesMaxAge;
@@ -323,6 +328,7 @@ class OwnController extends ChangeNotifier {
     _disposed = true;
     _portfolio?.dispose();
     _binance?.dispose();
+    _wallets?.dispose();
     CaptureChannel.stop(this);
     _pending?.cancel();
     unawaited(_changes?.cancel());

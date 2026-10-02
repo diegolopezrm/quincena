@@ -18,6 +18,7 @@ import '../kit.dart';
 import '../../exchanges/binance_link.dart';
 import 'account_page.dart';
 import 'binance_page.dart';
+import 'wallets_page.dart';
 import 'look.dart';
 
 /// [fraction] as a percentage: `+1,2 %` in Spanish, `+1.2%` in English.
@@ -312,6 +313,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
     if (BinanceLink.available) {
       widget.own.binance.syncIfOlder(const Duration(minutes: 30));
     }
+    widget.own.wallets.syncIfOlder(const Duration(minutes: 30));
   }
 
   @override
@@ -367,8 +369,10 @@ class _PortfolioPageState extends State<PortfolioPage> {
                     const SizedBox(height: 20),
                     if (BinanceLink.available) ...<Widget>[
                       BinanceCard(own: widget.own),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                     ],
+                    WalletsCard(own: widget.own),
+                    const SizedBox(height: 16),
                     _ChartCard(
                       portfolio: p,
                       controller: _controller,
@@ -591,7 +595,15 @@ class _ChartCard extends StatelessWidget {
         portfolio.value.base.toDouble(),
     ];
     final double? first = values.isEmpty ? null : values.first;
-    final double moved = values.isEmpty ? 0 : values.last - values.first;
+    // What prices made over the range on what was held, not what was
+    // bought or sold in it.
+    final Pair made = points == null || points.isEmpty
+        ? Pair.zero
+        : points.last.gain;
+    final double moved = made.base.toDouble();
+    final double changed = values.isEmpty ? 0 : values.last - values.first;
+    final bool flows =
+        first != null && (changed - moved).abs() > (first.abs() * 0.01 + 1);
     final Color color = changeColor(context, moved);
     return Block(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -604,7 +616,7 @@ class _ChartCard extends StatelessWidget {
                 children: <InlineSpan>[
                   TextSpan(
                     text:
-                        '${moneyText(Money(Decimal.parse(moved.toStringAsFixed(base.decimals)), base), base: base, signed: true)} '
+                        '${moneyText(Money(made.base.round(scale: base.decimals), base), base: base, signed: true)} '
                         '(${percentText(moved / first)}) ',
                     style: context.type.titleSmall?.copyWith(color: color),
                   ),
@@ -615,6 +627,7 @@ class _ChartCard extends StatelessWidget {
                 ],
               ),
             ),
+          if (flows) Text(l.chartWithoutTrades, style: context.type.bodySmall),
           const SizedBox(height: 12),
           SizedBox(
             height: 168,

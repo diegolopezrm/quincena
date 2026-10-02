@@ -227,6 +227,13 @@ void main() {
       d('2400'),
     ]);
     expect(points.last.value.base, d('9600000'));
+    // Prices made 200 dollars on what was held; the purchase is not gain.
+    expect(points.map((ValuePoint v) => v.gain.usd), <Decimal>[
+      d('0'),
+      d('100'),
+      d('200'),
+    ]);
+    expect(points.last.gain.base, d('800000'));
   });
 
   group('the portfolio tool', () {

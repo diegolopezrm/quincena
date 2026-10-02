@@ -243,14 +243,20 @@ Portfolio buildPortfolio(
 /// One point of the portfolio's value over time.
 @immutable
 class ValuePoint {
-  const ValuePoint(this.at, this.value);
+  ValuePoint(this.at, this.value, [Pair? gain]) : gain = gain ?? Pair.zero;
 
   final DateTime at;
   final Pair value;
+
+  /// What prices made since the first point, on what was held at each
+  /// moment: buying or selling moves [value], not this.
+  final Pair gain;
 }
 
 /// What the portfolio was worth at every candle of [candles], with what
-/// each account held at that moment.
+/// each account held at that moment, and what prices made from one candle
+/// to the next on what was held: a purchase raises the value, not the
+/// gain.
 ///
 /// [candles] are each asset's closing prices in tether over the same
 /// range. A moment some held asset has no candle for is left out, rather
@@ -295,9 +301,15 @@ List<ValuePoint> valueOverTime({
   };
 
   final List<ValuePoint> out = <ValuePoint>[];
+  // Each account's quantity and price at the last point drawn.
+  final Map<String, Decimal> heldBefore = <String, Decimal>{};
+  final Map<String, Decimal> priceBefore = <String, Decimal>{};
+  Decimal? dollarBefore;
+  var gain = Pair.zero;
   for (final DateTime t in axis) {
     var usd = Decimal.zero;
     var complete = true;
+    final Map<String, Decimal> priceNow = <String, Decimal>{};
     for (final Account a in held) {
       final List<Entry> list = byAccount[a.id] ?? const <Entry>[];
       var i = walked[a.id]!;
@@ -319,11 +331,37 @@ List<ValuePoint> valueOverTime({
         continue;
       }
       usd += quantity * close;
+      priceNow[a.id] = close;
     }
     if (!complete) continue;
     final Decimal? dollar = base.code == 'USD' ? Decimal.one : dollarOn(t);
     if (dollar == null) continue;
-    out.add(ValuePoint(t, Pair(usd * dollar, usd)));
+    // What the move from the last point made on what was held then; the
+    // peso's own move counts too, in the base currency.
+    final Decimal? before = dollarBefore;
+    if (before != null) {
+      var stepUsd = Decimal.zero;
+      var stepBase = Decimal.zero;
+      for (final MapEntry<String, Decimal> h in heldBefore.entries) {
+        final Decimal? was = priceBefore[h.key];
+        final Decimal? now = priceNow[h.key];
+        if (was == null || now == null) continue;
+        stepUsd += h.value * (now - was);
+        stepBase += h.value * (now * dollar - was * before);
+      }
+      gain = gain + Pair(stepBase, stepUsd);
+    }
+    heldBefore
+      ..clear()
+      ..addAll(<String, Decimal>{
+        for (final Account a in held)
+          if (priceNow.containsKey(a.id)) a.id: quantities[a.id]!,
+      });
+    priceBefore
+      ..clear()
+      ..addAll(priceNow);
+    dollarBefore = dollar;
+    out.add(ValuePoint(t, Pair(usd * dollar, usd), gain));
   }
   return out;
 }

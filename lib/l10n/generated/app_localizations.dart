@@ -2617,6 +2617,108 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Leído por Gemini: revisa bien antes de importar.'**
   String get statementByGemini;
+
+  /// No description provided for @walletsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Billeteras propias'**
+  String get walletsTitle;
+
+  /// No description provided for @walletsCardBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Ledger, MetaMask, Trust Wallet: por su dirección pública.'**
+  String get walletsCardBody;
+
+  /// No description provided for @walletsBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Sigue lo que tienes en Ledger, MetaMask, Trust Wallet o cualquier billetera, con su dirección pública. Solo se lee: con una dirección nadie puede mover nada.'**
+  String get walletsBody;
+
+  /// No description provided for @walletsChains.
+  ///
+  /// In es, this message translates to:
+  /// **'Bitcoin, Ethereum (ETH, USDT y USDC) y TRON (TRX, USDT y USDC).'**
+  String get walletsChains;
+
+  /// No description provided for @walletsPrivacy.
+  ///
+  /// In es, this message translates to:
+  /// **'La dirección se consulta en servicios públicos: mempool.space, un nodo público de Ethereum y TronGrid. Ellos ven la dirección, no quién eres.'**
+  String get walletsPrivacy;
+
+  /// No description provided for @walletsAdd.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar billetera'**
+  String get walletsAdd;
+
+  /// No description provided for @walletsAddress.
+  ///
+  /// In es, this message translates to:
+  /// **'Dirección pública'**
+  String get walletsAddress;
+
+  /// No description provided for @walletsLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre: Ledger, MetaMask…'**
+  String get walletsLabel;
+
+  /// No description provided for @walletsBadAddress.
+  ///
+  /// In es, this message translates to:
+  /// **'Esa no parece una dirección de {chain}.'**
+  String walletsBadAddress(String chain);
+
+  /// No description provided for @walletsUnreadable.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo leer esa dirección. Revisa tu conexión e intenta de nuevo.'**
+  String get walletsUnreadable;
+
+  /// No description provided for @walletsRemove.
+  ///
+  /// In es, this message translates to:
+  /// **'Dejar de seguir'**
+  String get walletsRemove;
+
+  /// No description provided for @walletsRemoveBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya no se lee. Las cuentas que trajo se quedan como tuyas.'**
+  String get walletsRemoveBody;
+
+  /// No description provided for @walletsSyncedAt.
+  ///
+  /// In es, this message translates to:
+  /// **'Leídas {when}'**
+  String walletsSyncedAt(String when);
+
+  /// No description provided for @walletsEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no sigues ninguna billetera.'**
+  String get walletsEmpty;
+
+  /// No description provided for @walletsAdjustment.
+  ///
+  /// In es, this message translates to:
+  /// **'Ajuste con la billetera'**
+  String get walletsAdjustment;
+
+  /// No description provided for @walletsFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'Una billetera no se pudo leer; se muestran sus últimos saldos.'**
+  String get walletsFailed;
+
+  /// No description provided for @chartWithoutTrades.
+  ///
+  /// In es, this message translates to:
+  /// **'Por el precio, sin contar lo que compraste o vendiste en esos días.'**
+  String get chartWithoutTrades;
 }
 
 class _AppLocalizationsDelegate

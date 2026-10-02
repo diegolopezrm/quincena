@@ -1535,4 +1535,67 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get statementByGemini =>
       'Leído por Gemini: revisa bien antes de importar.';
+
+  @override
+  String get walletsTitle => 'Billeteras propias';
+
+  @override
+  String get walletsCardBody =>
+      'Ledger, MetaMask, Trust Wallet: por su dirección pública.';
+
+  @override
+  String get walletsBody =>
+      'Sigue lo que tienes en Ledger, MetaMask, Trust Wallet o cualquier billetera, con su dirección pública. Solo se lee: con una dirección nadie puede mover nada.';
+
+  @override
+  String get walletsChains =>
+      'Bitcoin, Ethereum (ETH, USDT y USDC) y TRON (TRX, USDT y USDC).';
+
+  @override
+  String get walletsPrivacy =>
+      'La dirección se consulta en servicios públicos: mempool.space, un nodo público de Ethereum y TronGrid. Ellos ven la dirección, no quién eres.';
+
+  @override
+  String get walletsAdd => 'Agregar billetera';
+
+  @override
+  String get walletsAddress => 'Dirección pública';
+
+  @override
+  String get walletsLabel => 'Nombre: Ledger, MetaMask…';
+
+  @override
+  String walletsBadAddress(String chain) {
+    return 'Esa no parece una dirección de $chain.';
+  }
+
+  @override
+  String get walletsUnreadable =>
+      'No se pudo leer esa dirección. Revisa tu conexión e intenta de nuevo.';
+
+  @override
+  String get walletsRemove => 'Dejar de seguir';
+
+  @override
+  String get walletsRemoveBody =>
+      'Ya no se lee. Las cuentas que trajo se quedan como tuyas.';
+
+  @override
+  String walletsSyncedAt(String when) {
+    return 'Leídas $when';
+  }
+
+  @override
+  String get walletsEmpty => 'Aún no sigues ninguna billetera.';
+
+  @override
+  String get walletsAdjustment => 'Ajuste con la billetera';
+
+  @override
+  String get walletsFailed =>
+      'Una billetera no se pudo leer; se muestran sus últimos saldos.';
+
+  @override
+  String get chartWithoutTrades =>
+      'Por el precio, sin contar lo que compraste o vendiste en esos días.';
 }

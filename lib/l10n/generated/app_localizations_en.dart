@@ -1536,4 +1536,67 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get statementByGemini =>
       'Read by Gemini: check it well before importing.';
+
+  @override
+  String get walletsTitle => 'Your own wallets';
+
+  @override
+  String get walletsCardBody =>
+      'Ledger, MetaMask, Trust Wallet: by their public address.';
+
+  @override
+  String get walletsBody =>
+      'Follow what you hold in Ledger, MetaMask, Trust Wallet or any wallet, by its public address. It is only read: nobody can move anything with an address.';
+
+  @override
+  String get walletsChains =>
+      'Bitcoin, Ethereum (ETH, USDT and USDC) and TRON (TRX, USDT and USDC).';
+
+  @override
+  String get walletsPrivacy =>
+      'The address is looked up on public services: mempool.space, a public Ethereum node and TronGrid. They see the address, not who you are.';
+
+  @override
+  String get walletsAdd => 'Add a wallet';
+
+  @override
+  String get walletsAddress => 'Public address';
+
+  @override
+  String get walletsLabel => 'Name: Ledger, MetaMask…';
+
+  @override
+  String walletsBadAddress(String chain) {
+    return 'That does not look like a $chain address.';
+  }
+
+  @override
+  String get walletsUnreadable =>
+      'That address could not be read. Check your connection and try again.';
+
+  @override
+  String get walletsRemove => 'Stop following';
+
+  @override
+  String get walletsRemoveBody =>
+      'It is no longer read. The accounts it brought stay as yours.';
+
+  @override
+  String walletsSyncedAt(String when) {
+    return 'Read $when';
+  }
+
+  @override
+  String get walletsEmpty => 'You do not follow any wallet yet.';
+
+  @override
+  String get walletsAdjustment => 'Wallet adjustment';
+
+  @override
+  String get walletsFailed =>
+      'A wallet could not be read; its last balances are shown.';
+
+  @override
+  String get chartWithoutTrades =>
+      'From prices, not counting what you bought or sold in those days.';
 }
