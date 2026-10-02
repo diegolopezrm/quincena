@@ -213,7 +213,75 @@ class Session extends ChangeNotifier {
     _surfaces = controller.surfaceUpdates.listen(_onSurface);
   }
 
-  void _onMessage(core.A2uiMessage message) => recorder.handleMessage(message);
+  void _onMessage(core.A2uiMessage message) {
+    recorder.handleMessage(message);
+    if (_mode == AgentMode.demo) return;
+    // Valid to genui, and still wrong: the person would read the call itself.
+    if (writtenOutCall(message) case final String where) {
+      final String surfaceId =
+          (message as core.UpdateComponentsMessage).surfaceId;
+      if (turns.isNotEmpty) turns.last.surfaceIds.remove(surfaceId);
+      _errors.add(
+        'Surface "$surfaceId" shows a function call as text, in $where. '
+        'Text cannot make calls: an amount on its own is {"call": "money", '
+        '"args": {"amount": 120000}}, and inside a sentence it goes through '
+        'formatString, {"call": "formatString", "args": {"value": "You have '
+        '\${money(amount: 120000)} left"}}. Answer the same message again by '
+        'creating one new surface.',
+      );
+      notifyListeners();
+    }
+  }
+
+  /// Where [message] writes a function call out as text instead of making
+  /// it, as a model may when it puts an amount inside a sentence: "Tienes
+  /// {call: money, args: {amount: 2283966}}". genui shows such text as it
+  /// is. Null when there is none.
+  @visibleForTesting
+  static String? writtenOutCall(core.A2uiMessage message) {
+    if (message is! core.UpdateComponentsMessage) return null;
+    for (final Map<String, dynamic> component in message.components) {
+      for (final MapEntry<String, dynamic> property in component.entries) {
+        if (property.key == 'id' || property.key == 'component') continue;
+        if (_writtenOut(property.value) case final String text) {
+          return '${component['id']}.${property.key}: "$text"';
+        }
+      }
+    }
+    return null;
+  }
+
+  static final RegExp _textCall = RegExp(r'\{\s*"?call"?\s*:');
+  static final RegExp _interpolation = RegExp(r'\$\{');
+
+  /// Text holding a call, or holding `${...}` anywhere but in formatString,
+  /// the one function that reads it.
+  static String? _writtenOut(Object? value, {bool formatted = false}) {
+    switch (value) {
+      case final String text:
+        final bool wrong =
+            _textCall.hasMatch(text) ||
+            (!formatted && _interpolation.hasMatch(text));
+        return wrong ? text : null;
+      case final Map<Object?, Object?> map:
+        final bool format = formatted || map['call'] == 'formatString';
+        for (final Object? inner in map.values) {
+          if (_writtenOut(inner, formatted: format) case final String text) {
+            return text;
+          }
+        }
+        return null;
+      case final List<Object?> list:
+        for (final Object? inner in list) {
+          if (_writtenOut(inner, formatted: formatted) case final String text) {
+            return text;
+          }
+        }
+        return null;
+      default:
+        return null;
+    }
+  }
 
   void _onText(String text) {
     if (turns.isEmpty) return;

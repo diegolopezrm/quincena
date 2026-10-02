@@ -134,7 +134,11 @@ estimate or work out a figure yourself: the tools already return the
 differences, the percentages and the totals you might want, so copy those and
 never add, subtract or divide. When text shows money, bind it to the money
 function, {"call": "money", "args": {"amount": ...}}, instead of writing the
-digits; for a change between two amounts use percentChange.
+digits; for a change between two amounts use percentChange. For an amount
+inside a sentence, build the sentence with formatString and call money in it:
+{"call": "formatString", "args": {"value": "You have \${money(amount: 120000)} left"}}.
+Only formatString reads \${...}, and a call written out as text, such as
+{call: money, ...}, reaches the person as it is.
 
 Put the data components read in the data model with updateDataModel, after
 updateComponents, and bind properties to it with {"path": "..."}. Anything

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:a2ui_core/a2ui_core.dart' as core;
 import 'package:dartantic_ai/dartantic_ai.dart' as dartantic;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -104,6 +105,31 @@ class VersionlessModel implements ModelClient {
         '"components": [{"id": "root", "component": "Answer", '
         '"children": ["head"]}, {"id": "head", "component": "Headline", '
         '"title": "Con versión"}]}}\n```\n';
+  }
+}
+
+/// A model that writes the call to money into its sentence as text, the way
+/// Gemini 3.5 Flash once did, and builds the sentence properly when told.
+class WrittenOutCallModel implements ModelClient {
+  final List<String> prompts = <String>[];
+
+  @override
+  Stream<String> send(
+    String prompt, {
+    required List<ChatMessage> history,
+  }) async* {
+    prompts.add(prompt);
+    final String id = 'answer-${prompts.length}';
+    final String title = prompts.length == 1
+        ? '"Tienes un total de {call: money, args: {amount: 2283966}}"'
+        : '{"call": "formatString", "args": {"value": '
+              r'"Tienes un total de ${money(amount: 2283966)}"}}';
+    yield '```json\n{"version": "v0.9", "createSurface": '
+        '{"surfaceId": "$id", "catalogId": "dev.dlsoft.quincena"}}\n```\n';
+    yield '```json\n{"version": "v0.9", "updateComponents": '
+        '{"surfaceId": "$id", "components": [{"id": "root", '
+        '"component": "Answer", "children": ["head"]}, {"id": "head", '
+        '"component": "Headline", "title": $title}]}}\n```\n';
   }
 }
 
@@ -219,6 +245,21 @@ void main() {
       expect(session.replies, hasLength(2));
     });
 
+    testWidgets('a call written out as text goes back to be fixed', (
+      tester,
+    ) async {
+      final model = WrittenOutCallModel();
+      final Session session = await open(tester, model);
+      await ask(tester, session, '¿Cuánto tengo en total?');
+
+      // genui accepts the text, so the app is the one that notices.
+      expect(model.prompts, hasLength(2));
+      expect(model.prompts.last, contains('formatString'));
+      expect(session.turns.single.surfaceIds, <String>['answer-2']);
+      expect(screen(tester), contains('Tienes un total de \$'));
+      expect(screen(tester), isNot(contains('call:')));
+    });
+
     testWidgets('a model that fails says so instead of hanging', (
       tester,
     ) async {
@@ -246,12 +287,69 @@ void main() {
       expect(prompt, contains('shopping = Compras'));
     });
 
+    test('it is told how to put an amount inside a sentence', () {
+      expect(prompt, contains(r'"value": "You have ${money(amount: 120000)}'));
+    });
+
     test('it knows the catalog, today and the person', () {
       expect(prompt, contains('dev.dlsoft.quincena'));
       expect(prompt, contains('GoalPlanner'));
       expect(prompt, contains('savingsIfCancelled'));
       expect(prompt, contains('Today is 2026-10-01'));
       expect(prompt, contains('Valentina'));
+    });
+  });
+
+  group('a call written out as text', () {
+    String? found(Object? title) => Session.writtenOutCall(
+      core.UpdateComponentsMessage(
+        surfaceId: 's',
+        components: <Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'head',
+            'component': 'Headline',
+            'title': title,
+          },
+        ],
+      ),
+    );
+
+    test('is found in plain text, however it is spelled', () {
+      expect(found('Tienes {call: money, args: {amount: 5}}'), isNotNull);
+      expect(
+        found('Tienes {"call": "money", "args": {"amount": 5}}'),
+        isNotNull,
+      );
+      expect(found(r'Tienes ${money(amount: 5)}'), isNotNull);
+      expect(found('Tienes 5 pesos'), isNull);
+    });
+
+    test('is not confused with a call made the right way', () {
+      expect(
+        found(<String, Object?>{
+          'call': 'money',
+          'args': <String, Object?>{'amount': 5},
+        }),
+        isNull,
+      );
+      expect(
+        found(<String, Object?>{
+          'call': 'formatString',
+          'args': <String, Object?>{'value': r'Tienes ${money(amount: 5)}'},
+        }),
+        isNull,
+      );
+      expect(found(<String, Object?>{'path': '/total'}), isNull);
+    });
+
+    test('is found inside formatString too', () {
+      expect(
+        found(<String, Object?>{
+          'call': 'formatString',
+          'args': <String, Object?>{'value': 'Tienes {call: money}'},
+        }),
+        contains('head.title'),
+      );
     });
   });
 
