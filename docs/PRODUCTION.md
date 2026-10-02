@@ -132,9 +132,13 @@ catalog description would save on every round either way.
 
 Waiting on the owner:
 
-1. Request the opt-out from Agent Platform's abuse logging, with the form
-   linked from the abuse monitoring page. It asks for the organization's
-   details.
+1. Request the opt-out from Agent Platform's abuse logging. The abuse
+   monitoring page still links a form for it, but the form no longer takes
+   answers (checked on 2 October 2026), so the request goes to Google:
+   through the form's "contact the owner" link, Google Cloud sales, or a
+   support case. Until then a prompt is only kept if a safety classifier
+   flags it, for up to 90 days in the project's location, and never used
+   for training.
 2. Play Integrity:
    1. Create the upload key and point `android/key.properties` at it:
 
