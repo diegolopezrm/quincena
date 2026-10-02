@@ -171,10 +171,16 @@ void main() {
       ]);
       final InboxItem item = (await pending()).single;
       expect(item.suggestion.accountId, nequi.id);
-      final Entry entry = await capture.accept(
+      final Accepted done = await capture.accept(
         item,
         accountId: nequi.id,
         category: 'restaurants',
+      );
+      final Entry entry = done.entry;
+      // What it learned comes back, so the person can see it and undo it.
+      expect(
+        <String>[for (final RuleChange c in done.learned) c.rule.id],
+        <String>['merchant:crepes y waffles', 'card:9876'],
       );
       expect(entry.amount, d('-23500'));
       expect(entry.payee, 'Crepes y Waffles Oviedo');
@@ -270,7 +276,10 @@ void main() {
         push(r'Bancolombia: Pagaste US$ 10,99 a SPOTIFY con tu T.Cred *1234'),
       ]);
       final InboxItem item = (await pending()).single;
-      final Entry entry = await capture.accept(item, accountId: bancolombia.id);
+      final Entry entry = (await capture.accept(
+        item,
+        accountId: bancolombia.id,
+      )).entry;
       expect(entry.amount, d('-43960'));
       expect(entry.category, 'subscriptions');
       expect(entry.note, contains('10,99'));
@@ -381,5 +390,110 @@ Fecha
       ),
     ]);
     expect(r.duplicates, 1);
+  });
+  group('rules', () {
+    // A bakery no list knows, paid with a Nequi card.
+    CaptureEvent bakery(String amount, {int day = 1}) => push(
+      'Pagaste \$$amount en PANADERIA LA ESPIGA con tu tarjeta *9876',
+      app: 'com.nequi.MobileApp',
+      at: DateTime(2026, 10, day, 9),
+    );
+
+    Future<Accepted> confirmFirst() async {
+      await capture.ingest(<CaptureEvent>[bakery('8.000')]);
+      return capture.accept(
+        (await pending()).single,
+        accountId: nequi.id,
+        category: 'groceries',
+      );
+    }
+
+    test('what was learned reads as rules', () async {
+      await confirmFirst();
+      final List<CaptureRule> rules = (await store.captureSettings()).rules;
+      expect(rules, <CaptureRule>[
+        const CaptureRule(
+          kind: RuleKind.merchant,
+          key: 'panaderia la espiga',
+          target: 'groceries',
+        ),
+        CaptureRule(kind: RuleKind.card, key: '9876', target: nequi.id),
+      ]);
+    });
+
+    test('a rule turned off is kept but not used', () async {
+      await confirmFirst();
+      final CaptureSettings s = await store.captureSettings();
+      await store.saveCaptureSettings(
+        s.withRule(
+          s.rules
+              .firstWhere((CaptureRule r) => r.kind == RuleKind.merchant)
+              .copyWith(enabled: false),
+        ),
+      );
+
+      await capture.ingest(<CaptureEvent>[bakery('9.500', day: 2)]);
+      final InboxItem next = (await pending()).single;
+      // The rule said groceries; what is left is the app's own guess.
+      expect(next.suggestion.category, isNot('groceries'));
+      expect(next.suggestion.why, isNot(contains('learned')));
+      // The card's rule still points at Nequi.
+      expect(next.suggestion.accountId, nequi.id);
+
+      // Confirming with another category does not bring the rule back on.
+      final Accepted done = await capture.accept(
+        next,
+        accountId: nequi.id,
+        category: 'restaurants',
+      );
+      expect(done.learned, isEmpty);
+      final CaptureSettings after = await store.captureSettings();
+      expect(after.merchantCategories['panaderia la espiga'], 'groceries');
+      expect(after.disabledRules, <String>{'merchant:panaderia la espiga'});
+    });
+
+    test('what a confirmation taught can be taken back', () async {
+      final CaptureSettings before = await store.captureSettings();
+      final Accepted done = await confirmFirst();
+      expect(done.learned, hasLength(2));
+
+      await capture.forget(done.learned);
+      final CaptureSettings after = await store.captureSettings();
+      expect(after.rules, before.rules);
+    });
+
+    test('changing a rule leaves what was recorded as it was', () async {
+      final Accepted first = await confirmFirst();
+      final CaptureSettings s = await store.captureSettings();
+      await store.saveCaptureSettings(
+        s.withRule(
+          const CaptureRule(
+            kind: RuleKind.merchant,
+            key: 'panaderia la espiga',
+            target: 'restaurants',
+          ),
+        ),
+      );
+
+      final Entry kept = (await store.entries()).singleWhere(
+        (Entry e) => e.id == first.entry.id,
+      );
+      expect(kept.category, 'groceries');
+      await capture.ingest(<CaptureEvent>[bakery('9.500', day: 2)]);
+      final InboxItem next = (await pending()).single;
+      expect(next.suggestion.category, 'restaurants');
+      expect(next.suggestion.why, contains('learned'));
+    });
+
+    test('confirming what a rule already says teaches nothing new', () async {
+      await confirmFirst();
+      await capture.ingest(<CaptureEvent>[bakery('9.500', day: 2)]);
+      final Accepted again = await capture.accept(
+        (await pending()).single,
+        accountId: nequi.id,
+        category: 'groceries',
+      );
+      expect(again.learned, isEmpty);
+    });
   });
 }

@@ -778,6 +778,219 @@ class AppLocalizationsEs extends AppLocalizations {
   String get exportDone => 'Archivo guardado.';
 
   @override
+  String get settingsPayAmount => 'Lo que te pagan';
+
+  @override
+  String get settingsPayAmountBody =>
+      'Lo que te llega cada pago. Sirve para proyectar los días que vienen; no cuenta como plata hasta que llega.';
+
+  @override
+  String get settingsCushion => 'Colchón';
+
+  @override
+  String get settingsCushionBody =>
+      'Lo que quieres guardar sin tocar. Lo libre hasta el pago lo deja por fuera.';
+
+  @override
+  String get settingsNotSet => 'Sin definir';
+
+  @override
+  String get settingsRemove => 'Quitar';
+
+  @override
+  String get freeExplainCushion => 'Colchón que guardas';
+
+  @override
+  String get freeExplainAssumptions => 'Lo que supone';
+
+  @override
+  String freeExplainAssumeToday(String payday) {
+    return 'Cuenta lo que hay hoy en tus cuentas para gastar y resta lo que vence hasta el $payday.';
+  }
+
+  @override
+  String freeExplainAssumePay(String pay, String payday) {
+    return 'Tu pago de $pay del $payday no cuenta hasta que llegue.';
+  }
+
+  @override
+  String get freeExplainAssumeNoPay =>
+      'No sabe cuánto te pagan. Si lo dices en Ajustes, la proyección lo tiene en cuenta.';
+
+  @override
+  String freeExplainAssumeCushion(String cushion) {
+    return 'Deja por fuera $cushion de colchón.';
+  }
+
+  @override
+  String get freeExplainAssumeNoCushion =>
+      'No tiene colchón. Puedes elegir uno en Ajustes.';
+
+  @override
+  String payLate(String date) {
+    return 'Tu pago del $date todavía no aparece. Si ya llegó, regístralo.';
+  }
+
+  @override
+  String standingCushion(String amount) {
+    return 'Guardas $amount de colchón.';
+  }
+
+  @override
+  String get accountExplainTitle => 'Así se llega al saldo';
+
+  @override
+  String get accountExplainOpening => 'Con lo que empezó';
+
+  @override
+  String get accountExplainBalance => 'Saldo hoy';
+
+  @override
+  String accountExplainAhead(int count, String amount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count movimientos con fecha más adelante ($amount) todavía no cuentan.',
+      one: 'Un movimiento con fecha más adelante ($amount) todavía no cuenta.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String traceIncome(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ingresos',
+      one: 'Un ingreso',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String traceExpense(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count gastos',
+      one: 'Un gasto',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String traceTransferIn(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count transferencias que entraron',
+      one: 'Una transferencia que entró',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String traceTransferOut(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count transferencias que salieron',
+      one: 'Una transferencia que salió',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String traceBought(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count compras',
+      one: 'Una compra',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String traceSold(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ventas',
+      one: 'Una venta',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String traceAdjustment(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ajustes',
+      one: 'Un ajuste',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get totalExplainTitle => 'Así se suma tu patrimonio';
+
+  @override
+  String totalExplainUnpriced(String names) {
+    return 'Sin tasa todavía, no suman: $names.';
+  }
+
+  @override
+  String get computedOnPhone => 'Calculado en tu teléfono';
+
+  @override
+  String get computedTitle => 'Cómo se calculó';
+
+  @override
+  String computedFooter(String time) {
+    return 'Cada cifra de la respuesta salió de estos cálculos, hechos en tu teléfono con tus datos de $time. Gemini solo los explica.';
+  }
+
+  @override
+  String get computedOverview =>
+      'Tus saldos, lo comprometido, el colchón y lo libre hasta el pago';
+
+  @override
+  String computedMonth(String month) {
+    return 'Gastos de $month por categoría, frente al mes anterior';
+  }
+
+  @override
+  String computedCategory(String category, String month) {
+    return 'Pagos de $category en $month';
+  }
+
+  @override
+  String get computedTotals => 'Ingresos y gastos de los últimos meses';
+
+  @override
+  String get computedSubscriptions =>
+      'Tus suscripciones y lo que cuestan al mes';
+
+  @override
+  String get computedGoal => 'Tu meta de ahorro y lo que falta';
+
+  @override
+  String get computedRecord => 'El gasto que se registró';
+
+  @override
+  String get computedAccounts => 'Tus cuentas, cada una en su moneda';
+
+  @override
+  String get computedPortfolio =>
+      'Tu portafolio cripto con precios del mercado';
+
+  @override
+  String get computedSeeFree => 'Ver el desglose de lo libre';
+
+  @override
   String get freeExplainAction => '¿De dónde sale?';
 
   @override
@@ -968,6 +1181,134 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get notDuplicate => 'No es repetido';
+
+  @override
+  String whyLabel(String reasons) {
+    return 'Por qué: $reasons';
+  }
+
+  @override
+  String whyCard(String digits, String account) {
+    return 'la tarjeta *$digits es de $account';
+  }
+
+  @override
+  String whyInstitution(String institution, String account) {
+    return 'las alertas de $institution van a $account';
+  }
+
+  @override
+  String whyInstitutionSame(String institution) {
+    return 'es tu cuenta de $institution';
+  }
+
+  @override
+  String whyCurrency(String asset) {
+    return 'es tu única cuenta en $asset';
+  }
+
+  @override
+  String whyOnly(String asset) {
+    return 'es tu única cuenta para gastar en $asset; revísala';
+  }
+
+  @override
+  String whyLearned(String merchant) {
+    return 'tu regla para «$merchant»';
+  }
+
+  @override
+  String whyMerchant(String merchant) {
+    return '$merchant es un comercio conocido';
+  }
+
+  @override
+  String get whyWords => 'el mensaje dice de qué es';
+
+  @override
+  String ruleLearnedMerchant(String merchant, String category) {
+    return 'Desde ahora, «$merchant» va a $category.';
+  }
+
+  @override
+  String ruleLearnedCard(String digits, String account) {
+    return 'Desde ahora, la tarjeta *$digits va a $account.';
+  }
+
+  @override
+  String ruleLearnedInstitution(String institution, String account) {
+    return 'Desde ahora, lo de $institution va a $account.';
+  }
+
+  @override
+  String ruleLearnedMore(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Y $count reglas más.',
+      one: 'Y una regla más.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ruleMissingAccount => 'una cuenta que ya no está';
+
+  @override
+  String ruleCardKey(String digits) {
+    return 'Tarjeta *$digits';
+  }
+
+  @override
+  String get rulesTitle => 'Reglas aprendidas';
+
+  @override
+  String get rulesBody =>
+      'Se crean cuando confirmas algo en Por revisar. Una regla solo cambia lo que llegue después: lo ya registrado se queda como está.';
+
+  @override
+  String get rulesEmpty =>
+      'Todavía no hay reglas. Aparecen cuando confirmas tus primeros movimientos.';
+
+  @override
+  String get rulesMerchants => 'Comercios';
+
+  @override
+  String get rulesCards => 'Tarjetas';
+
+  @override
+  String get rulesInstitutions => 'Bancos y billeteras';
+
+  @override
+  String rulesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count reglas',
+      one: 'Una regla',
+      zero: 'Ninguna todavía',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ruleDelete => 'Borrar regla';
+
+  @override
+  String get ruleOn => 'Usar esta regla';
+
+  @override
+  String get ruleChooseCategory => '¿A qué categoría va?';
+
+  @override
+  String get ruleChooseAccount => '¿A qué cuenta va?';
+
+  @override
+  String get autoRecordedBody =>
+      'Lo que la app registró sola en las últimas dos semanas. Si algo no va, deshazlo y vuelve a Por revisar.';
+
+  @override
+  String get fixMovement => 'Corregir';
 
   @override
   String get recordedAutomatically => 'Registrado automáticamente';

@@ -1,8 +1,9 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
+import 'package:decimal/decimal.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app.dart';
@@ -12,10 +13,12 @@ import '../../domain/records.dart';
 import '../../exchanges/binance_link.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
+import '../../money/money.dart';
 import '../../own/own_controller.dart';
 import '../../store/store.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
+import 'amount_input.dart';
 import 'binance_page.dart';
 import 'capture_settings_page.dart';
 import 'look.dart';
@@ -45,33 +48,52 @@ class OwnSettingsPage extends StatelessWidget {
   };
 
   Future<void> _editName(BuildContext context, Profile p) async {
-    final AppLocalizations l = context.l10n;
-    final TextEditingController name = TextEditingController(text: p.name);
     final String? typed = await showDialog<String>(
       context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text(l.settingsName),
-        content: TextField(
-          controller: name,
-          autofocus: true,
-          textCapitalization: TextCapitalization.words,
-          onSubmitted: (String v) => Navigator.of(context).pop(v),
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(l.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(name.text),
-            child: Text(l.save),
-          ),
-        ],
+      builder: (BuildContext context) => _TextDialog(
+        title: context.l10n.settingsName,
+        initial: p.name,
+        capitalization: TextCapitalization.words,
       ),
     );
-    name.dispose();
     if (typed == null || typed.trim().isEmpty) return;
     await own.store.saveProfile(p.copyWith(name: typed.trim()));
+  }
+
+  /// Asks for an amount in [base]; an empty one, or "Quitar", forgets it.
+  Future<void> _editAmount(
+    BuildContext context, {
+    required String title,
+    required String body,
+    required Decimal? current,
+    required Asset base,
+    required Future<void> Function(Decimal? value) save,
+  }) async {
+    final String? sign = base.localSymbol ?? base.symbol;
+    // Null when cancelled; an empty text forgets the amount.
+    final String? typed = await showDialog<String>(
+      context: context,
+      builder: (BuildContext context) => _TextDialog(
+        title: title,
+        body: body,
+        initial: current == null
+            ? ''
+            : formatDecimal(current, decimals: base.decimals, trim: true),
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        formatters: <TextInputFormatter>[
+          AmountInputFormatter(maxDecimals: base.decimals),
+        ],
+        prefix: sign == null ? null : '$sign ',
+        suffix: sign == null ? base.code : null,
+        canRemove: current != null,
+      ),
+    );
+    if (typed == null) return;
+    final Decimal? value = typed.trim().isEmpty ? null : parseAmount(typed);
+    if (typed.trim().isNotEmpty && (value == null || value <= Decimal.zero)) {
+      return;
+    }
+    await save(value);
   }
 
   Future<void> _editBase(BuildContext context, Profile p) async {
@@ -317,6 +339,45 @@ class OwnSettingsPage extends StatelessWidget {
                           value: _schedule(l, p.schedule),
                           onTap: () => _editSchedule(context, p),
                         ),
+                        _row(
+                          context,
+                          icon: Glyph.money,
+                          title: l.settingsPayAmount,
+                          value: p.pay == null
+                              ? l.settingsNotSet
+                              : moneyText(Money(p.pay!, p.base), base: p.base),
+                          onTap: () => _editAmount(
+                            context,
+                            title: l.settingsPayAmount,
+                            body: l.settingsPayAmountBody,
+                            current: p.pay,
+                            base: p.base,
+                            save: (Decimal? v) => own.store.saveProfile(
+                              p.copyWith(pay: v, clearPay: v == null),
+                            ),
+                          ),
+                        ),
+                        _row(
+                          context,
+                          icon: Glyph.piggyBank,
+                          title: l.settingsCushion,
+                          value: p.cushion == null
+                              ? l.settingsNotSet
+                              : moneyText(
+                                  Money(p.cushion!, p.base),
+                                  base: p.base,
+                                ),
+                          onTap: () => _editAmount(
+                            context,
+                            title: l.settingsCushion,
+                            body: l.settingsCushionBody,
+                            current: p.cushion,
+                            base: p.base,
+                            save: (Decimal? v) => own.store.saveProfile(
+                              p.copyWith(cushion: v, clearCushion: v == null),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 24),
@@ -517,6 +578,94 @@ class OwnSettingsPage extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Asks for one line of text. It owns its controller, so the field can
+/// still draw while the dialog closes.
+class _TextDialog extends StatefulWidget {
+  const _TextDialog({
+    required this.title,
+    required this.initial,
+    this.body,
+    this.capitalization = TextCapitalization.none,
+    this.keyboardType,
+    this.formatters,
+    this.prefix,
+    this.suffix,
+    this.canRemove = false,
+  });
+
+  final String title;
+  final String initial;
+  final String? body;
+  final TextCapitalization capitalization;
+  final TextInputType? keyboardType;
+  final List<TextInputFormatter>? formatters;
+  final String? prefix;
+  final String? suffix;
+
+  /// Offers "Quitar", which answers with an empty text.
+  final bool canRemove;
+
+  @override
+  State<_TextDialog> createState() => _TextDialogState();
+}
+
+class _TextDialogState extends State<_TextDialog> {
+  late final TextEditingController _text = TextEditingController(
+    text: widget.initial,
+  );
+
+  @override
+  void dispose() {
+    _text.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    return AlertDialog(
+      title: Text(widget.title),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          if (widget.body case final String body) ...<Widget>[
+            Text(body, style: context.type.bodyMedium),
+            const SizedBox(height: 12),
+          ],
+          TextField(
+            controller: _text,
+            autofocus: true,
+            textCapitalization: widget.capitalization,
+            keyboardType: widget.keyboardType,
+            inputFormatters: widget.formatters,
+            decoration: InputDecoration(
+              prefixText: widget.prefix,
+              suffixText: widget.suffix,
+            ),
+            onSubmitted: (String v) => Navigator.of(context).pop(v),
+          ),
+        ],
+      ),
+      actions: <Widget>[
+        if (widget.canRemove)
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(''),
+            child: Text(l.settingsRemove),
+          ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l.cancel),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_text.text),
+          child: Text(l.save),
+        ),
+      ],
     );
   }
 }

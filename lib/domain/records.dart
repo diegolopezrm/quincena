@@ -269,6 +269,8 @@ class Profile {
     required this.name,
     required this.base,
     required this.schedule,
+    this.pay,
+    this.cushion,
   });
 
   final String name;
@@ -277,10 +279,20 @@ class Profile {
   final Asset base;
   final PaySchedule schedule;
 
+  /// What arrives each payday, in [base], when the person said. A
+  /// projection counts it as expected, never as money already there.
+  final Decimal? pay;
+
+  /// What the person wants to keep untouched, in [base]: the free amount
+  /// leaves it out.
+  final Decimal? cushion;
+
   Map<String, Object?> toJson() => <String, Object?>{
     'name': name,
     'base': base.code,
     'schedule': schedule.toJson(),
+    if (pay != null) 'pay': pay.toString(),
+    if (cushion != null) 'cushion': cushion.toString(),
   };
 
   static Profile fromJson(Map<String, Object?> json) => Profile(
@@ -289,14 +301,26 @@ class Profile {
     schedule: PaySchedule.fromJson(
       (json['schedule'] as Map<String, Object?>?) ?? const <String, Object?>{},
     ),
+    pay: Decimal.tryParse('${json['pay']}'),
+    cushion: Decimal.tryParse('${json['cushion']}'),
   );
 
-  Profile copyWith({String? name, Asset? base, PaySchedule? schedule}) =>
-      Profile(
-        name: name ?? this.name,
-        base: base ?? this.base,
-        schedule: schedule ?? this.schedule,
-      );
+  /// A copy with what is given; [clearPay] and [clearCushion] forget them.
+  Profile copyWith({
+    String? name,
+    Asset? base,
+    PaySchedule? schedule,
+    Decimal? pay,
+    bool clearPay = false,
+    Decimal? cushion,
+    bool clearCushion = false,
+  }) => Profile(
+    name: name ?? this.name,
+    base: base ?? this.base,
+    schedule: schedule ?? this.schedule,
+    pay: clearPay ? null : pay ?? this.pay,
+    cushion: clearCushion ? null : cushion ?? this.cushion,
+  );
 }
 
 /// A category as stored: built in (named by the app) or the person's own.

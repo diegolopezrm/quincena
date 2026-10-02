@@ -7,6 +7,7 @@ import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import 'account_sheet.dart';
+import 'balance_explained.dart';
 import 'entry_sheet.dart';
 import 'look.dart';
 import 'movement_list.dart';
@@ -84,6 +85,8 @@ class AccountPage extends StatelessWidget {
                       Expanded(
                         child: Headline(
                           caption: l.balanceToday,
+                          onExplain: () =>
+                              showAccountExplained(context, own, account),
                           value: moneyText(balance, base: own.profile?.base),
                           detail: converted == null
                               ? null

@@ -10,6 +10,7 @@ import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import 'capture_rules_page.dart';
 import 'inbox_page.dart';
 import 'look.dart';
 import 'read_images.dart';
@@ -283,6 +284,27 @@ class _CaptureSettingsPageState extends State<CaptureSettingsPage>
                         subtitle: Text(
                           l.captureAutoHelp,
                           style: context.type.bodySmall,
+                        ),
+                      ),
+                      ListTile(
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (BuildContext context) =>
+                                CaptureRulesPage(own: own),
+                          ),
+                        ),
+                        title: Text(
+                          l.rulesTitle,
+                          style: context.type.titleSmall,
+                        ),
+                        subtitle: Text(
+                          l.rulesCount(s.rules.length),
+                          style: context.type.bodySmall,
+                        ),
+                        trailing: Icon(
+                          Glyph.caretRight,
+                          size: 18,
+                          color: context.colors.inkFaint,
                         ),
                       ),
                       if (_phone)

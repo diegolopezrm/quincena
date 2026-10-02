@@ -361,6 +361,26 @@ void main() {
     await tester.tap(find.text('Captura automática'));
     await settle(tester);
     await shoot('capture');
+    await tester.tap(find.text('Reglas aprendidas'));
+    await settle(tester);
+    await shoot('rules');
+  });
+
+  testWidgets('explained', (tester) async {
+    final QuincenaStore store = (await tester.runAsync(seeded))!;
+    await open(tester, store, phone, Brightness.light);
+    await tester.tap(find.text('Cuentas'));
+    await settle(tester);
+    await tester.tap(find.text('¿De dónde sale?').first);
+    await settle(tester);
+    await shoot('total-explained');
+    tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+    await settle(tester);
+    await tester.tap(find.text('Bancolombia').first);
+    await settle(tester);
+    await tester.tap(find.text('¿De dónde sale?').first);
+    await settle(tester);
+    await shoot('account-explained');
   });
 
   testWidgets('desktop', (tester) async {

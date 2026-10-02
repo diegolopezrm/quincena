@@ -4,17 +4,26 @@ import 'package:genui/genui.dart';
 import '../session/session.dart';
 import '../l10n/l10n.dart';
 import '../theme/tokens.dart';
+import 'computed_sheet.dart';
 import 'icons.dart';
 import 'mark.dart';
 
 /// The exchange so far: each question and the surface that answered it.
 class Conversation extends StatelessWidget {
-  const Conversation({super.key, required this.session, required this.latest});
+  const Conversation({
+    super.key,
+    required this.session,
+    required this.latest,
+    this.onExplainFree,
+  });
 
   final Session session;
 
   /// Attached to the newest turn, so the screen can bring it into view.
   final GlobalKey latest;
+
+  /// Shows how the free amount is worked out, where there is one to show.
+  final VoidCallback? onExplainFree;
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +38,7 @@ class Conversation extends StatelessWidget {
               turn: turns[i],
               session: session,
               waiting: session.busy && i == turns.length - 1,
+              onExplainFree: onExplainFree,
             ),
           ),
       ],
@@ -41,11 +51,13 @@ class _TurnView extends StatelessWidget {
     required this.turn,
     required this.session,
     required this.waiting,
+    this.onExplainFree,
   });
 
   final Turn turn;
   final Session session;
   final bool waiting;
+  final VoidCallback? onExplainFree;
 
   @override
   Widget build(BuildContext context) {
@@ -78,6 +90,22 @@ class _TurnView extends StatelessWidget {
             ),
             const SizedBox(height: 12),
           ],
+          if (!waiting && turn.error == null && turn.computed.isNotEmpty)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => showComputed(
+                  context,
+                  turn.computed,
+                  onExplainFree: onExplainFree,
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                ),
+                icon: const Icon(Glyph.info, size: 18),
+                label: Text(context.l10n.computedOnPhone),
+              ),
+            ),
           if (turn.error case final AnswerProblem problem)
             _Problem(switch (problem) {
               AnswerProblem.key => context.l10n.problemKey,

@@ -132,8 +132,9 @@ class CaptureService {
   }
 
   /// Records [item] as a movement, with whatever the person changed, and
-  /// learns from it: the merchant's category, the card's account.
-  Future<Entry> accept(
+  /// learns from it: the merchant's category, the card's account. What it
+  /// learned comes back, for the person to see and undo.
+  Future<Accepted> accept(
     InboxItem item, {
     required String accountId,
     String? category,
@@ -156,13 +157,26 @@ class CaptureService {
     await store.saveInboxItem(
       item.copyWith(status: InboxStatus.accepted, entryId: entry.id),
     );
-    await _learn(
+    final List<RuleChange> learned = await _learn(
       item,
       accountId: accountId,
       category: category ?? entry.category,
       payee: entry.payee,
     );
-    return entry;
+    return Accepted(entry, learned);
+  }
+
+  /// Takes back what a confirmation taught: each rule goes back to what it
+  /// said before, or away when it was new.
+  Future<void> forget(Iterable<RuleChange> changes) async {
+    CaptureSettings s = await store.captureSettings();
+    for (final RuleChange c in changes) {
+      final String? previous = c.previous;
+      s = previous == null
+          ? s.withoutRule(c.rule)
+          : s.withRule(c.rule.copyWith(target: previous));
+    }
+    await store.saveCaptureSettings(s);
   }
 
   /// Not a movement. With [muteApp], the app that posted it is not read
@@ -232,13 +246,13 @@ class CaptureService {
     final List<String> why = <String>[];
     String? accountId;
     final String? card = parsed.card;
-    if (card != null && settings.cardAccounts[card] != null) {
-      accountId = settings.cardAccounts[card];
+    if (card != null && settings.use(RuleKind.card, card) != null) {
+      accountId = settings.use(RuleKind.card, card);
       why.add('card');
     }
     final String? institution = parsed.institution;
     if (accountId == null && institution != null) {
-      accountId = settings.institutionAccounts[institution];
+      accountId = settings.use(RuleKind.institution, institution);
       if (accountId == null) {
         final List<Account> same = <Account>[
           for (final Account a in accounts)
@@ -280,7 +294,7 @@ class CaptureService {
     String? payee = parsed.merchant;
     String? category;
     if (payee != null) {
-      category = settings.merchantCategories[merchantKey(payee)];
+      category = settings.use(RuleKind.merchant, merchantKey(payee));
       if (category != null) {
         why.add('learned');
       } else if (parsed.kind == EntryKind.expense) {
@@ -373,31 +387,47 @@ class CaptureService {
     );
   }
 
-  Future<void> _learn(
+  /// Turns what the person confirmed into rules, and says which ones are
+  /// new or changed. A rule the person turned off is left as it is.
+  Future<List<RuleChange>> _learn(
     InboxItem item, {
     required String accountId,
     String? category,
     String? payee,
   }) async {
-    final CaptureSettings s = await store.captureSettings();
+    CaptureSettings s = await store.captureSettings();
     final String? key = payee == null || payee.isEmpty
         ? null
         : merchantKey(payee);
     final String? card = item.parsed.card;
     final String? institution = item.parsed.institution;
-    await store.saveCaptureSettings(
-      s.copyWith(
-        merchantCategories: <String, String>{
-          ...s.merchantCategories,
-          if (key != null && key.isNotEmpty && category != null) key: category,
-        },
-        cardAccounts: <String, String>{...s.cardAccounts, ?card: accountId},
-        institutionAccounts: <String, String>{
-          ...s.institutionAccounts,
-          if (institution != null && card == null) institution: accountId,
-        },
-      ),
-    );
+    final List<RuleChange> changes = <RuleChange>[];
+    void learn(RuleKind kind, String key, String target) {
+      final CaptureRule rule = CaptureRule(
+        kind: kind,
+        key: key,
+        target: target,
+      );
+      if (s.disabledRules.contains(rule.id)) return;
+      final String? before = switch (kind) {
+        RuleKind.merchant => s.merchantCategories[key],
+        RuleKind.card => s.cardAccounts[key],
+        RuleKind.institution => s.institutionAccounts[key],
+      };
+      if (before == target) return;
+      s = s.withRule(rule);
+      changes.add(RuleChange(rule, previous: before));
+    }
+
+    if (key != null && key.isNotEmpty && category != null) {
+      learn(RuleKind.merchant, key, category);
+    }
+    if (card != null) learn(RuleKind.card, card, accountId);
+    if (institution != null && card == null) {
+      learn(RuleKind.institution, institution, accountId);
+    }
+    if (changes.isNotEmpty) await store.saveCaptureSettings(s);
+    return changes;
   }
 
   Sighting? _sighting(InboxItem i, {List<Account>? accounts}) {
@@ -426,4 +456,12 @@ class CaptureService {
     }
     return null;
   }
+}
+
+/// A capture recorded, and the rules recording it taught.
+class Accepted {
+  const Accepted(this.entry, this.learned);
+
+  final Entry entry;
+  final List<RuleChange> learned;
 }

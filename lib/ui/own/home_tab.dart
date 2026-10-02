@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/ledger.dart';
 import '../../domain/records.dart';
+import '../../format/dates.dart';
 import '../../format/money.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
@@ -56,8 +57,14 @@ class OwnHomeTab extends StatelessWidget {
               l.standingCommittedOwn(
                 pesos(ledger.major(ledger.committedUntilPayday)),
               ),
+            if (ledger.cushion > 0)
+              l.standingCushion(pesos(ledger.major(ledger.cushion))),
           ].join(' '),
         ),
+        if (own.projection?.latePay case final DateTime late) ...<Widget>[
+          const SizedBox(height: 12),
+          _Notice(text: l.payLate(dayMonth(late))),
+        ],
         if (own.pendingInbox.isNotEmpty) ...<Widget>[
           const SizedBox(height: 12),
           _InboxBanner(own: own),

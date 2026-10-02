@@ -13,6 +13,7 @@ import '../ask_bar.dart';
 import '../conversation.dart';
 import '../icons.dart';
 import '../welcome.dart';
+import 'free_explained.dart';
 import 'gemini_note_page.dart';
 
 /// The questions offered before the first one, for the person's own money.
@@ -174,7 +175,12 @@ class _AskPageState extends State<AskPage> {
                                   onNote: _openNote,
                                 ),
                               )
-                            : Conversation(session: session, latest: _latest),
+                            : Conversation(
+                                session: session,
+                                latest: _latest,
+                                onExplainFree: () =>
+                                    showFreeExplained(context, widget.own),
+                              ),
                       ),
                     ),
                   ),

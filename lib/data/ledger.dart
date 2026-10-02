@@ -107,6 +107,8 @@ class Ledger {
     this.schedule = const TwiceMonthly(first: 15, second: 31),
     this.currency = Asset.cop,
     List<Movement> upcoming = const <Movement>[],
+    this.cushion = 0,
+    this.pay,
   }) : movements = List<Movement>.of(movements)
          ..sort((Movement a, Movement b) => a.date.compareTo(b.date)),
        upcoming = List<Movement>.unmodifiable(upcoming);
@@ -127,9 +129,17 @@ class Ledger {
   /// The currency every amount here is in, converted from each account's own.
   final Asset currency;
 
-  /// Charges expected before payday that are not movements yet: the next
-  /// rent, a subscription about to renew.
+  /// Charges expected in the coming weeks that are not movements yet: the
+  /// next rent, a subscription about to renew. Those due by the next payday
+  /// are committed.
   final List<Movement> upcoming;
+
+  /// What the person keeps untouched, left out of the free amount.
+  final int cushion;
+
+  /// What arrives each payday, when the person said; expected, not counted
+  /// as money until it is there.
+  final int? pay;
 
   /// [amount] in whole units of [currency]: pesos stay as they are, cents
   /// become dollars. What the agent's tools and the catalog read.
@@ -177,8 +187,8 @@ class Ledger {
       committed.fold(0, (int total, Movement m) => total + m.amount);
 
   /// What can be spent until the next payday without touching what is
-  /// already committed.
-  int get freeUntilPayday => balance - committedUntilPayday;
+  /// already committed or the cushion.
+  int get freeUntilPayday => balance - committedUntilPayday - cushion;
 
   Iterable<Movement> expensesIn(int year, int month) => movements.where(
     (Movement m) =>

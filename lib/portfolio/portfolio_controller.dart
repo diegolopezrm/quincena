@@ -139,7 +139,7 @@ class PortfolioController extends ChangeNotifier {
   /// asks for them.
   Future<void> refreshIfOlder(Duration age) async {
     final DateTime? at = _pricedAt;
-    if (at != null && DateTime.now().difference(at) < age) return;
+    if (at != null && own.now().difference(at) < age) return;
     await refresh();
   }
 
@@ -161,7 +161,7 @@ class PortfolioController extends ChangeNotifier {
       _pricingFailed = fetched.isEmpty;
       if (fetched.isNotEmpty) {
         _tickers = <String, Ticker>{..._tickers, ...fetched};
-        _pricedAt = DateTime.now();
+        _pricedAt = own.now();
         // The same prices for every total in the app.
         await own.store.saveRates(<Rate>[
           for (final Ticker t in fetched.values)
@@ -238,7 +238,7 @@ class PortfolioController extends ChangeNotifier {
     final DateTime? at = _chartedAt[range];
     if (_charts[range] != null &&
         at != null &&
-        DateTime.now().difference(at) < range.step) {
+        own.now().difference(at) < range.step) {
       return;
     }
     _charting.add(range);
@@ -271,7 +271,7 @@ class PortfolioController extends ChangeNotifier {
             recent ? dollarNow : (_history.on(day) ?? dollarNow),
         base: base,
       );
-      _chartedAt[range] = DateTime.now();
+      _chartedAt[range] = own.now();
     } finally {
       _charting.remove(range);
       _notify();

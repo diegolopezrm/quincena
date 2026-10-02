@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../capture/capture_service.dart';
 import '../../capture/inbox.dart';
 import '../../domain/records.dart';
 import '../../format/dates.dart';
@@ -12,6 +13,7 @@ import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import 'amount_input.dart';
+import 'capture_reasons.dart';
 import 'look.dart';
 
 /// Records a movement, or edits [entry]. A transfer is edited as one move,
@@ -214,7 +216,8 @@ class _EntryFormState extends State<_EntryForm> {
         : (_category ?? (_kind == EntryKind.income ? 'other_income' : 'other'));
     final InboxItem? capture = _capture;
     if (capture != null && _kind != EntryKind.transfer) {
-      await own.capture.accept(
+      final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+      final Accepted done = await own.capture.accept(
         capture,
         accountId: _accountId,
         category: category,
@@ -223,7 +226,9 @@ class _EntryFormState extends State<_EntryForm> {
         kind: _kind,
         date: when,
       );
-      if (mounted) Navigator.of(context).pop();
+      if (!mounted) return;
+      showLearned(messenger, context, own, done.learned);
+      Navigator.of(context).pop();
       return;
     }
     if (_kind == EntryKind.transfer) {

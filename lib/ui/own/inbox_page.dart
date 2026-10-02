@@ -15,6 +15,7 @@ import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import 'capture_reasons.dart';
 import 'entry_sheet.dart';
 import 'look.dart';
 import 'read_images.dart';
@@ -108,6 +109,22 @@ class InboxPage extends StatelessWidget {
                       const SizedBox(height: 12),
                     ],
                   ],
+                  if (own.recentAutomatic.isNotEmpty) ...<Widget>[
+                    const SizedBox(height: 16),
+                    SectionLabel(l.recordedAutomatically),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+                      child: Text(
+                        l.autoRecordedBody,
+                        style: context.type.bodySmall,
+                      ),
+                    ),
+                    for (final InboxItem item
+                        in own.recentAutomatic) ...<Widget>[
+                      InboxCard(own: own, item: item),
+                      const SizedBox(height: 12),
+                    ],
+                  ],
                 ],
               ),
             ),
@@ -162,16 +179,33 @@ class _InboxCardState extends State<InboxCard> {
   Future<void> _confirm() async {
     final Account? account = _account;
     if (account == null) return _edit();
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     setState(() => _busy = true);
-    await own.capture.accept(
+    final Accepted done = await own.capture.accept(
       item,
       accountId: account.id,
       category: item.suggestion.category,
       payee: item.suggestion.payee,
     );
+    if (mounted) showLearned(messenger, context, own, done.learned);
   }
 
   Future<void> _edit() => showEntrySheet(context, own: own, fromInbox: item);
+
+  /// The movement an automatic record made, to correct it in place.
+  Future<void> _fix() async {
+    final String? id = item.entryId;
+    final Entry? entry = own.snapshot?.entries
+        .where((Entry e) => e.id == id)
+        .firstOrNull;
+    if (entry == null) return;
+    await showEntrySheet(context, own: own, entry: entry);
+  }
+
+  Future<void> _undo() async {
+    setState(() => _busy = true);
+    await own.capture.undo(item);
+  }
 
   Future<void> _dismiss({bool mute = false}) async {
     setState(() => _busy = true);
@@ -196,6 +230,8 @@ class _InboxCardState extends State<InboxCard> {
     final bool income = i.parsed.kind == EntryKind.income;
     final String? category = i.suggestion.category;
     final bool repeat = i.status == InboxStatus.duplicate;
+    // Recorded on its own: it can be undone or corrected, not confirmed.
+    final bool recorded = i.status == InboxStatus.accepted;
     final String amountText = amount == null
         ? '—'
         : asset == null
@@ -280,6 +316,10 @@ class _InboxCardState extends State<InboxCard> {
                 ),
               ],
             ),
+            if (reasonsText(context, own, i) case final String why) ...<Widget>[
+              const SizedBox(height: 8),
+              Text(why, style: context.type.bodySmall),
+            ],
             if (i.suggestion.place case final place?) ...<Widget>[
               const SizedBox(height: 8),
               Row(
@@ -324,7 +364,16 @@ class _InboxCardState extends State<InboxCard> {
               runSpacing: 4,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: <Widget>[
-                if (repeat)
+                if (recorded) ...<Widget>[
+                  OutlinedButton(
+                    onPressed: _busy ? null : _undo,
+                    child: Text(l.undo),
+                  ),
+                  OutlinedButton(
+                    onPressed: _busy ? null : _fix,
+                    child: Text(l.fixMovement),
+                  ),
+                ] else if (repeat)
                   OutlinedButton(
                     onPressed: _busy ? null : () => own.capture.notDuplicate(i),
                     child: Text(l.notDuplicate),
@@ -339,26 +388,33 @@ class _InboxCardState extends State<InboxCard> {
                     child: Text(l.edit),
                   ),
                 ],
-                PopupMenuButton<bool>(
-                  tooltip: l.dismiss,
-                  icon: Icon(
-                    Glyph.dotsThreeVertical,
-                    color: context.colors.inkSoft,
-                  ),
-                  onSelected: (bool mute) => _dismiss(mute: mute),
-                  itemBuilder: (BuildContext context) => <PopupMenuEntry<bool>>[
-                    PopupMenuItem<bool>(value: false, child: Text(l.dismiss)),
-                    if (i.event.app case final String app)
-                      PopupMenuItem<bool>(
-                        value: true,
-                        child: Text(
-                          l.dismissAndMute(
-                            i.parsed.institution ?? i.event.appName ?? app,
+                if (!recorded)
+                  PopupMenuButton<bool>(
+                    tooltip: l.dismiss,
+                    icon: Icon(
+                      Glyph.dotsThreeVertical,
+                      color: context.colors.inkSoft,
+                    ),
+                    onSelected: (bool mute) => _dismiss(mute: mute),
+                    itemBuilder: (BuildContext context) =>
+                        <PopupMenuEntry<bool>>[
+                          PopupMenuItem<bool>(
+                            value: false,
+                            child: Text(l.dismiss),
                           ),
-                        ),
-                      ),
-                  ],
-                ),
+                          if (i.event.app case final String app)
+                            PopupMenuItem<bool>(
+                              value: true,
+                              child: Text(
+                                l.dismissAndMute(
+                                  i.parsed.institution ??
+                                      i.event.appName ??
+                                      app,
+                                ),
+                              ),
+                            ),
+                        ],
+                  ),
                 TextButton(
                   onPressed: () => setState(() => _original = !_original),
                   child: Text(l.showOriginal),

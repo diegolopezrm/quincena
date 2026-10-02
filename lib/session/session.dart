@@ -31,6 +31,16 @@ enum TurnNote { savedExpense, choseMonthly, askedCancel, askedPayments, other }
 /// Why an answer did not arrive. [limit] is the day's questions used up.
 enum AnswerProblem { key, busy, limit, offline, other }
 
+/// A computation the phone made for an answer: which tool, with what.
+@immutable
+class Computed {
+  const Computed(this.tool, this.arguments, this.at);
+
+  final String tool;
+  final Map<String, Object?> arguments;
+  final DateTime at;
+}
+
 /// One exchange: what the person asked, and what answered it.
 class Turn {
   Turn({this.question, this.note});
@@ -49,6 +59,10 @@ class Turn {
 
   /// Set when the answer failed.
   AnswerProblem? error;
+
+  /// What the phone worked out for the answer, in order: every figure in
+  /// it comes from one of these.
+  final List<Computed> computed = <Computed>[];
 }
 
 /// A conversation with the agent about an account: the demo's, unless
@@ -66,6 +80,7 @@ class Session extends ChangeNotifier {
     String? apiKey,
     String language = 'es',
     this.client,
+    this.clientFor,
     Ledger Function()? ledgerOf,
     List<dartantic.Tool> Function(Ledger ledger)? toolsFor,
     this.own = false,
@@ -108,6 +123,10 @@ class Session extends ChangeNotifier {
 
   /// A model to use instead of Gemini, for tests.
   final ModelClient? client;
+
+  /// Makes the model from the tools it may call, as they are noted on each
+  /// turn; for tests of what an answer computed. Gemini otherwise.
+  final ModelClient Function(List<dartantic.Tool> tools)? clientFor;
 
   /// The account each conversation starts from: a fresh demo one by
   /// default, or the person's own as it is now.
@@ -195,14 +214,24 @@ class Session extends ChangeNotifier {
       ),
       AgentMode.live => ModelSource(
         client:
-            client ?? GeminiClient(apiKey: _apiKey!, tools: _toolsFor(ledger)),
+            client ??
+            (clientFor ??
+                (List<dartantic.Tool> tools) => GeminiClient(
+                  apiKey: _apiKey!,
+                  tools: tools,
+                ))(_traced(_toolsFor(ledger))),
         ledger: ledger,
         sink: sink,
         language: _language,
         own: own,
       ),
       AgentMode.gemini => ModelSource(
-        client: client ?? FirebaseGeminiClient(tools: _toolsFor(ledger)),
+        client:
+            client ??
+            (clientFor ??
+                (List<dartantic.Tool> tools) => FirebaseGeminiClient(
+                  tools: tools,
+                ))(_traced(_toolsFor(ledger))),
         ledger: ledger,
         sink: sink,
         language: _language,
@@ -295,6 +324,26 @@ class Session extends ChangeNotifier {
     if (!ids.contains(update.surfaceId)) ids.add(update.surfaceId);
     notifyListeners();
   }
+
+  /// [tools] as the model calls them: each call is noted on the turn being
+  /// answered, so the answer can say where its figures come from.
+  List<dartantic.Tool> _traced(List<dartantic.Tool> tools) => <dartantic.Tool>[
+    for (final dartantic.Tool t in tools)
+      dartantic.Tool<Map<String, dynamic>>(
+        name: t.name,
+        description: t.description,
+        inputSchema: t.inputSchema,
+        onCall: (Map<String, dynamic> args) {
+          if (turns.isNotEmpty) {
+            turns.last.computed.add(
+              Computed(t.name, Map<String, Object?>.of(args), DateTime.now()),
+            );
+            notifyListeners();
+          }
+          return t.call(args);
+        },
+      ),
+  ];
 
   /// Asks the agent [question].
   Future<void> ask(String question) async {

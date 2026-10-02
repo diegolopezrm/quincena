@@ -35,7 +35,11 @@ void main() {
 
   /// Pesos and dollars to spend, savings that do not count, and Netflix
   /// due before payday.
-  Future<OwnController> open(WidgetTester tester) async {
+  Future<OwnController> open(
+    WidgetTester tester, {
+    String? pay,
+    String? cushion,
+  }) async {
     tester.view.physicalSize = const Size(1170, 2532);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
@@ -53,7 +57,13 @@ void main() {
     await tester.runAsync(() async {
       await store.ensureCategories();
       await store.saveProfile(
-        const Profile(name: 'Ana', base: Asset.cop, schedule: TwiceMonthly()),
+        Profile(
+          name: 'Ana',
+          base: Asset.cop,
+          schedule: const TwiceMonthly(),
+          pay: pay == null ? null : d(pay),
+          cushion: cushion == null ? null : d(cushion),
+        ),
       );
       await store.saveRates(<Rate>[
         Rate(
@@ -141,7 +151,25 @@ void main() {
       inSheet(find.textContaining('Ahorro: las marcaste')),
       findsOneWidget,
     );
-    expect(inSheet(find.textContaining('Es una estimación')), findsOneWidget);
+    // Further down: what it assumes, said plainly.
+    final Finder sheetScroll = find
+        .descendant(
+          of: find.byType(FreeExplained),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    for (final String line in <String>[
+      'No sabe cuánto te pagan',
+      'No tiene colchón',
+      'Es una estimación',
+    ]) {
+      await tester.scrollUntilVisible(
+        inSheet(find.textContaining(line)),
+        120,
+        scrollable: sheetScroll,
+      );
+      expect(inSheet(find.textContaining(line)), findsOneWidget);
+    }
 
     expect(tester.takeException(), isNull);
     await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
@@ -167,5 +195,49 @@ void main() {
       ),
     );
     semantics.dispose();
+  });
+  testWidgets('the cushion is taken out, and a late pay is said', (
+    tester,
+  ) async {
+    // Paid on the 30th, nothing came in, and 100.000 kept untouched.
+    final OwnController own = await open(
+      tester,
+      pay: '2400000',
+      cushion: '100000',
+    );
+    final Ledger ledger = own.ledger!;
+    expect(ledger.freeUntilPayday, 2200000 - 26900 - 100000);
+    expect(
+      find.text(
+        'Tu pago del 30 de septiembre todavía no aparece. '
+        'Si ya llegó, regístralo.',
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('¿De dónde sale?'));
+    await settle(tester);
+    Finder inSheet(Finder f) =>
+        find.descendant(of: find.byType(FreeExplained), matching: f);
+    expect(inSheet(find.text('Colchón que guardas')), findsOneWidget);
+    expect(inSheet(find.text(pesos(-100000))), findsOneWidget);
+    expect(inSheet(find.text(pesos(2200000 - 26900 - 100000))), findsOneWidget);
+    final Finder sheetScroll = find
+        .descendant(
+          of: find.byType(FreeExplained),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    for (final String line in <String>[
+      'Tu pago de ${pesos(2400000)} del 15 de octubre no cuenta',
+      'Deja por fuera ${pesos(100000)} de colchón',
+    ]) {
+      await tester.scrollUntilVisible(
+        inSheet(find.textContaining(line)),
+        120,
+        scrollable: sheetScroll,
+      );
+      expect(inSheet(find.textContaining(line)), findsOneWidget);
+    }
   });
 }

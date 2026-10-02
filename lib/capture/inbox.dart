@@ -141,6 +141,7 @@ class CaptureSettings {
     this.merchantCategories = const <String, String>{},
     this.cardAccounts = const <String, String>{},
     this.institutionAccounts = const <String, String>{},
+    this.disabledRules = const <String>{},
   });
 
   /// Record without asking what is clear: a known account, a known
@@ -166,6 +167,10 @@ class CaptureSettings {
   /// Institution name to account id, for alerts that name no card.
   final Map<String, String> institutionAccounts;
 
+  /// The rules the person turned off, by [CaptureRule.id]: kept, but not
+  /// used.
+  final Set<String> disabledRules;
+
   Map<String, Object?> toJson() => <String, Object?>{
     'autoRecord': autoRecord,
     'useLocation': useLocation,
@@ -174,6 +179,7 @@ class CaptureSettings {
     'merchantCategories': merchantCategories,
     'cardAccounts': cardAccounts,
     'institutionAccounts': institutionAccounts,
+    'disabledRules': disabledRules.toList()..sort(),
   };
 
   static CaptureSettings fromJson(Map<String, Object?> json) {
@@ -194,6 +200,11 @@ class CaptureSettings {
       merchantCategories: map('merchantCategories'),
       cardAccounts: map('cardAccounts'),
       institutionAccounts: map('institutionAccounts'),
+      disabledRules: <String>{
+        for (final Object? r
+            in json['disabledRules'] as List<Object?>? ?? const <Object?>[])
+          '$r',
+      },
     );
   }
 
@@ -205,6 +216,7 @@ class CaptureSettings {
     Map<String, String>? merchantCategories,
     Map<String, String>? cardAccounts,
     Map<String, String>? institutionAccounts,
+    Set<String>? disabledRules,
   }) => CaptureSettings(
     autoRecord: autoRecord ?? this.autoRecord,
     useLocation: useLocation ?? this.useLocation,
@@ -213,7 +225,153 @@ class CaptureSettings {
     merchantCategories: merchantCategories ?? this.merchantCategories,
     cardAccounts: cardAccounts ?? this.cardAccounts,
     institutionAccounts: institutionAccounts ?? this.institutionAccounts,
+    disabledRules: disabledRules ?? this.disabledRules,
   );
+
+  /// Everything learned, as rules a person can read.
+  List<CaptureRule> get rules => <CaptureRule>[
+    for (final MapEntry<String, String> e in merchantCategories.entries)
+      _rule(RuleKind.merchant, e),
+    for (final MapEntry<String, String> e in cardAccounts.entries)
+      _rule(RuleKind.card, e),
+    for (final MapEntry<String, String> e in institutionAccounts.entries)
+      _rule(RuleKind.institution, e),
+  ];
+
+  CaptureRule _rule(RuleKind kind, MapEntry<String, String> e) => CaptureRule(
+    kind: kind,
+    key: e.key,
+    target: e.value,
+    enabled: !disabledRules.contains(CaptureRule.idOf(kind, e.key)),
+  );
+
+  /// The target of the rule for [key], or null when there is none or it is
+  /// turned off.
+  String? use(RuleKind kind, String key) =>
+      disabledRules.contains(CaptureRule.idOf(kind, key))
+      ? null
+      : _map(kind)[key];
+
+  Map<String, String> _map(RuleKind kind) => switch (kind) {
+    RuleKind.merchant => merchantCategories,
+    RuleKind.card => cardAccounts,
+    RuleKind.institution => institutionAccounts,
+  };
+
+  /// With [rule] in place of whatever rule had its key.
+  CaptureSettings withRule(CaptureRule rule) {
+    final Map<String, String> map = <String, String>{
+      ..._map(rule.kind),
+      rule.key: rule.target,
+    };
+    final Set<String> off = <String>{
+      for (final String id in disabledRules)
+        if (id != rule.id) id,
+      if (!rule.enabled) rule.id,
+    };
+    return switch (rule.kind) {
+      RuleKind.merchant => copyWith(
+        merchantCategories: map,
+        disabledRules: off,
+      ),
+      RuleKind.card => copyWith(cardAccounts: map, disabledRules: off),
+      RuleKind.institution => copyWith(
+        institutionAccounts: map,
+        disabledRules: off,
+      ),
+    };
+  }
+
+  /// Without the rule for [rule]'s key.
+  CaptureSettings withoutRule(CaptureRule rule) {
+    final Map<String, String> map = <String, String>{
+      for (final MapEntry<String, String> e in _map(rule.kind).entries)
+        if (e.key != rule.key) e.key: e.value,
+    };
+    final Set<String> off = <String>{
+      for (final String id in disabledRules)
+        if (id != rule.id) id,
+    };
+    return switch (rule.kind) {
+      RuleKind.merchant => copyWith(
+        merchantCategories: map,
+        disabledRules: off,
+      ),
+      RuleKind.card => copyWith(cardAccounts: map, disabledRules: off),
+      RuleKind.institution => copyWith(
+        institutionAccounts: map,
+        disabledRules: off,
+      ),
+    };
+  }
+}
+
+/// What a rule matches on.
+enum RuleKind {
+  /// A merchant's name, to a category.
+  merchant,
+
+  /// A card's or an account's last digits, to an account.
+  card,
+
+  /// A bank or a wallet whose alerts name no card, to an account.
+  institution,
+}
+
+/// Something the app learned from what the person confirmed, as a rule
+/// they can read, change or turn off. A rule only shapes what arrives
+/// after it: nothing already recorded changes with it.
+@immutable
+class CaptureRule {
+  const CaptureRule({
+    required this.kind,
+    required this.key,
+    required this.target,
+    this.enabled = true,
+  });
+
+  final RuleKind kind;
+
+  /// What it matches: a merchant's key, last digits, an institution.
+  final String key;
+
+  /// A category for a merchant, an account id otherwise.
+  final String target;
+
+  final bool enabled;
+
+  String get id => idOf(kind, key);
+
+  static String idOf(RuleKind kind, String key) => '${kind.name}:$key';
+
+  CaptureRule copyWith({String? target, bool? enabled}) => CaptureRule(
+    kind: kind,
+    key: key,
+    target: target ?? this.target,
+    enabled: enabled ?? this.enabled,
+  );
+
+  @override
+  bool operator ==(Object other) =>
+      other is CaptureRule &&
+      other.kind == kind &&
+      other.key == key &&
+      other.target == target &&
+      other.enabled == enabled;
+
+  @override
+  int get hashCode => Object.hash(kind, key, target, enabled);
+}
+
+/// A rule a confirmation created or changed, and what it said before.
+@immutable
+class RuleChange {
+  const RuleChange(this.rule, {this.previous});
+
+  final CaptureRule rule;
+
+  /// The target the rule had before, or null when it is new.
+  final String? previous;
 }
 
 /// Reads an inbox row's parsed column back into its parts.

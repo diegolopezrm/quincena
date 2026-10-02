@@ -43,6 +43,25 @@ class OneSurfaceModel implements ModelClient {
   }
 }
 
+/// A model that asks the account for its overview before answering, as
+/// Gemini does before talking about what is left.
+class OverviewFirstModel implements ModelClient {
+  OverviewFirstModel(this.tools);
+
+  final List<dartantic.Tool> tools;
+
+  @override
+  Stream<String> send(
+    String prompt, {
+    required List<ChatMessage> history,
+  }) async* {
+    await tools
+        .firstWhere((dartantic.Tool t) => t.name == 'account_overview')
+        .call(<String, dynamic>{});
+    yield* OneSurfaceModel().send(prompt, history: history);
+  }
+}
+
 /// A model the phone cannot reach.
 class UnreachableModel implements ModelClient {
   @override
@@ -229,6 +248,24 @@ void main() {
       expect(model.asked, 1);
     });
   });
+  test('an answer keeps what the phone computed for it', () async {
+    final Session session = Session(
+      mode: AgentMode.gemini,
+      clientFor: OverviewFirstModel.new,
+      errorWindow: Duration.zero,
+    );
+    addTearDown(session.dispose);
+
+    await session.ask('¿Cuánto me queda libre?');
+    final Turn turn = session.turns.last;
+    expect(turn.error, isNull);
+    expect(turn.surfaceIds, isNotEmpty);
+    expect(
+      <String>[for (final Computed c in turn.computed) c.tool],
+      <String>['account_overview'],
+    );
+  });
+
   group('when the answer cannot arrive', () {
     test('without a connection it says so, not that something broke', () async {
       final Session session = Session(

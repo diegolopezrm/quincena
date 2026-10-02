@@ -15,6 +15,7 @@ import '../icons.dart';
 import '../kit.dart';
 import 'account_page.dart';
 import 'amount_input.dart';
+import 'balance_explained.dart';
 import 'look.dart';
 import 'binance_page.dart';
 import 'portfolio_page.dart';
@@ -120,6 +121,7 @@ class AccountsTab extends StatelessWidget {
       children: <Widget>[
         Headline(
           caption: l.netWorth,
+          onExplain: () => showTotalExplained(context, own),
           value: moneyText(own.total(), base: base),
           detail:
               '${l.groupSpendable}: ${moneyText(own.total(spendableOnly: true), base: base)}',

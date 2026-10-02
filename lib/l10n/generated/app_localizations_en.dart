@@ -776,6 +776,217 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exportDone => 'File saved.';
 
   @override
+  String get settingsPayAmount => 'What you get paid';
+
+  @override
+  String get settingsPayAmountBody =>
+      'What arrives each payday. It\'s used to project the coming days; it doesn\'t count as money until it arrives.';
+
+  @override
+  String get settingsCushion => 'Cushion';
+
+  @override
+  String get settingsCushionBody =>
+      'What you want to keep untouched. The free amount until payday leaves it out.';
+
+  @override
+  String get settingsNotSet => 'Not set';
+
+  @override
+  String get settingsRemove => 'Remove';
+
+  @override
+  String get freeExplainCushion => 'Cushion you keep';
+
+  @override
+  String get freeExplainAssumptions => 'What it assumes';
+
+  @override
+  String freeExplainAssumeToday(String payday) {
+    return 'It counts what your spending accounts hold today and takes away what\'s due by $payday.';
+  }
+
+  @override
+  String freeExplainAssumePay(String pay, String payday) {
+    return 'Your pay of $pay on $payday doesn\'t count until it arrives.';
+  }
+
+  @override
+  String get freeExplainAssumeNoPay =>
+      'It doesn\'t know what you get paid. Tell it in Settings and the projection takes it into account.';
+
+  @override
+  String freeExplainAssumeCushion(String cushion) {
+    return 'It leaves out $cushion as a cushion.';
+  }
+
+  @override
+  String get freeExplainAssumeNoCushion =>
+      'There\'s no cushion. You can choose one in Settings.';
+
+  @override
+  String payLate(String date) {
+    return 'Your pay from $date hasn\'t shown up yet. If it arrived, record it.';
+  }
+
+  @override
+  String standingCushion(String amount) {
+    return 'You keep $amount as a cushion.';
+  }
+
+  @override
+  String get accountExplainTitle => 'How the balance adds up';
+
+  @override
+  String get accountExplainOpening => 'What it started with';
+
+  @override
+  String get accountExplainBalance => 'Balance today';
+
+  @override
+  String accountExplainAhead(int count, String amount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count movements dated ahead ($amount) don\'t count yet.',
+      one: 'One movement dated ahead ($amount) doesn\'t count yet.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String traceIncome(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count incomes',
+      one: 'One income',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String traceExpense(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count expenses',
+      one: 'One expense',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String traceTransferIn(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count transfers in',
+      one: 'One transfer in',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String traceTransferOut(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count transfers out',
+      one: 'One transfer out',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String traceBought(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count purchases',
+      one: 'One purchase',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String traceSold(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sales',
+      one: 'One sale',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String traceAdjustment(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count adjustments',
+      one: 'One adjustment',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get totalExplainTitle => 'How your net worth adds up';
+
+  @override
+  String totalExplainUnpriced(String names) {
+    return 'No rate yet, not added: $names.';
+  }
+
+  @override
+  String get computedOnPhone => 'Worked out on your phone';
+
+  @override
+  String get computedTitle => 'How it was worked out';
+
+  @override
+  String computedFooter(String time) {
+    return 'Every figure in the answer came from these calculations, done on your phone with your data as of $time. Gemini only explains them.';
+  }
+
+  @override
+  String get computedOverview =>
+      'Your balances, what\'s committed, the cushion and what\'s free until payday';
+
+  @override
+  String computedMonth(String month) {
+    return 'Spending in $month by category, against the month before';
+  }
+
+  @override
+  String computedCategory(String category, String month) {
+    return '$category payments in $month';
+  }
+
+  @override
+  String get computedTotals => 'Income and spending over the last months';
+
+  @override
+  String get computedSubscriptions =>
+      'Your subscriptions and what they cost a month';
+
+  @override
+  String get computedGoal => 'Your savings goal and what\'s left';
+
+  @override
+  String get computedRecord => 'The expense that was recorded';
+
+  @override
+  String get computedAccounts => 'Your accounts, each in its currency';
+
+  @override
+  String get computedPortfolio => 'Your crypto portfolio at market prices';
+
+  @override
+  String get computedSeeFree => 'See how the free amount is worked out';
+
+  @override
   String get freeExplainAction => 'Where does this come from?';
 
   @override
@@ -967,6 +1178,134 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notDuplicate => 'Not a repeat';
+
+  @override
+  String whyLabel(String reasons) {
+    return 'Why: $reasons';
+  }
+
+  @override
+  String whyCard(String digits, String account) {
+    return 'card *$digits belongs to $account';
+  }
+
+  @override
+  String whyInstitution(String institution, String account) {
+    return '$institution alerts go to $account';
+  }
+
+  @override
+  String whyInstitutionSame(String institution) {
+    return 'it\'s your $institution account';
+  }
+
+  @override
+  String whyCurrency(String asset) {
+    return 'it\'s your only account in $asset';
+  }
+
+  @override
+  String whyOnly(String asset) {
+    return 'it\'s your only spending account in $asset; check it';
+  }
+
+  @override
+  String whyLearned(String merchant) {
+    return 'your rule for \"$merchant\"';
+  }
+
+  @override
+  String whyMerchant(String merchant) {
+    return '$merchant is a known shop';
+  }
+
+  @override
+  String get whyWords => 'the message says what it is';
+
+  @override
+  String ruleLearnedMerchant(String merchant, String category) {
+    return 'From now on, \"$merchant\" goes to $category.';
+  }
+
+  @override
+  String ruleLearnedCard(String digits, String account) {
+    return 'From now on, card *$digits goes to $account.';
+  }
+
+  @override
+  String ruleLearnedInstitution(String institution, String account) {
+    return 'From now on, $institution goes to $account.';
+  }
+
+  @override
+  String ruleLearnedMore(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'And $count more rules.',
+      one: 'And one more rule.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ruleMissingAccount => 'an account that\'s gone';
+
+  @override
+  String ruleCardKey(String digits) {
+    return 'Card *$digits';
+  }
+
+  @override
+  String get rulesTitle => 'Learned rules';
+
+  @override
+  String get rulesBody =>
+      'They\'re made when you confirm something in To review. A rule only shapes what arrives later: nothing already recorded changes.';
+
+  @override
+  String get rulesEmpty =>
+      'No rules yet. They show up when you confirm your first movements.';
+
+  @override
+  String get rulesMerchants => 'Shops';
+
+  @override
+  String get rulesCards => 'Cards';
+
+  @override
+  String get rulesInstitutions => 'Banks and wallets';
+
+  @override
+  String rulesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count rules',
+      one: 'One rule',
+      zero: 'None yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ruleDelete => 'Delete rule';
+
+  @override
+  String get ruleOn => 'Use this rule';
+
+  @override
+  String get ruleChooseCategory => 'Which category does it go to?';
+
+  @override
+  String get ruleChooseAccount => 'Which account does it go to?';
+
+  @override
+  String get autoRecordedBody =>
+      'What the app recorded on its own in the last two weeks. If something is wrong, undo it and it goes back to To review.';
+
+  @override
+  String get fixMovement => 'Fix';
 
   @override
   String get recordedAutomatically => 'Recorded automatically';

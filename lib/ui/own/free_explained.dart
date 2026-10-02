@@ -71,16 +71,21 @@ class FreeExplained extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
             child: Column(
               children: <Widget>[
-                _Sum(
+                ExplainSum(
                   label: l.freeExplainSpendable,
                   value: amount(ledger.balance),
                 ),
-                _Sum(
+                ExplainSum(
                   label: l.freeExplainCommitted,
                   value: amount(-ledger.committedUntilPayday),
                 ),
+                if (ledger.cushion > 0)
+                  ExplainSum(
+                    label: l.freeExplainCushion,
+                    value: amount(-ledger.cushion),
+                  ),
                 Divider(color: context.colors.line, height: 20),
-                _Sum(
+                ExplainSum(
                   label: l.freeUntil(dayMonth(ledger.nextPayday)),
                   value: amount(ledger.freeUntilPayday),
                   strong: true,
@@ -109,7 +114,7 @@ class FreeExplained extends StatelessWidget {
             Panel(
               children: <Widget>[
                 for (final Movement m in committed)
-                  _Line(
+                  ExplainLine(
                     title: m.merchant,
                     detail: dayShortMonth(m.date),
                     value: amount(-m.amount),
@@ -137,16 +142,39 @@ class FreeExplained extends StatelessWidget {
             ],
           ],
           const SizedBox(height: 24),
-          Text(l.freeExplainEstimate, style: context.type.bodySmall),
+          SectionLabel(l.freeExplainAssumptions),
+          for (final String line in <String>[
+            l.freeExplainAssumeToday(dayMonth(ledger.nextPayday)),
+            if (ledger.pay case final int pay)
+              l.freeExplainAssumePay(amount(pay), dayMonth(ledger.nextPayday))
+            else
+              l.freeExplainAssumeNoPay,
+            if (own.projection?.latePay case final DateTime late)
+              l.payLate(dayMonth(late)),
+            if (ledger.cushion > 0)
+              l.freeExplainAssumeCushion(amount(ledger.cushion))
+            else
+              l.freeExplainAssumeNoCushion,
+            l.freeExplainEstimate,
+          ])
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(line, style: context.type.bodyMedium),
+            ),
         ],
       ),
     );
   }
 }
 
-/// One line of the sum.
-class _Sum extends StatelessWidget {
-  const _Sum({required this.label, required this.value, this.strong = false});
+/// One line of a sum: a label and an amount, the total in bold.
+class ExplainSum extends StatelessWidget {
+  const ExplainSum({
+    super.key,
+    required this.label,
+    required this.value,
+    this.strong = false,
+  });
 
   final String label;
   final String value;
@@ -192,37 +220,21 @@ class _AccountPart extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
     final Money held = own.balances[account.id] ?? account.openingMoney;
-    final RateTable rates = own.rates;
-    String? detail;
-    if (account.asset != base) {
-      final Decimal? rate = rates.rate(account.asset, base);
-      if (rate == null) {
-        detail = l.ratesMissing(account.asset.code);
-      } else {
-        final List<Rate> used = rates.used(account.asset, base);
-        detail = <String>[
-          l.freeExplainHeldAt(
-            moneyText(held, base: base),
-            formatAmount(
-              rate,
-              base,
-              base: base,
-              decimals: rate < Decimal.fromInt(10) ? 4 : 2,
-            ),
-          ),
-          rateSources(l, rates, account.asset, base),
-          if (used.isNotEmpty)
-            l.freeExplainRateOf(dayShortMonth(used.first.asOf)),
-        ].join(' · ');
-      }
-    }
-    return _Line(title: account.name, detail: detail, value: value);
+    final String? detail = account.asset == base
+        ? null
+        : conversionDetail(l, own.rates, held, base);
+    return ExplainLine(title: account.name, detail: detail, value: value);
   }
 }
 
 /// A name, what explains it, and an amount.
-class _Line extends StatelessWidget {
-  const _Line({required this.title, required this.value, this.detail});
+class ExplainLine extends StatelessWidget {
+  const ExplainLine({
+    super.key,
+    required this.title,
+    required this.value,
+    this.detail,
+  });
 
   final String title;
   final String? detail;
@@ -251,4 +263,30 @@ class _Line extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// How [held] became the base currency: at what rate, from where, as of
+/// which day; or that no rate converts it.
+String conversionDetail(
+  AppLocalizations l,
+  RateTable rates,
+  Money held,
+  Asset base,
+) {
+  final Decimal? rate = rates.rate(held.asset, base);
+  if (rate == null) return l.ratesMissing(held.asset.code);
+  final List<Rate> used = rates.used(held.asset, base);
+  return <String>[
+    l.freeExplainHeldAt(
+      moneyText(held, base: base),
+      formatAmount(
+        rate,
+        base,
+        base: base,
+        decimals: rate < Decimal.fromInt(10) ? 4 : 2,
+      ),
+    ),
+    rateSources(l, rates, held.asset, base),
+    if (used.isNotEmpty) l.freeExplainRateOf(dayShortMonth(used.first.asOf)),
+  ].join(' · ');
 }

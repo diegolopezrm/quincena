@@ -95,11 +95,13 @@ LedgerBuild buildLedger(StoreSnapshot s, {required DateTime today}) {
     accountOf[e.id] = e.accountId;
   }
 
-  final DateTime payday = s.profile.schedule.nextAfter(today);
+  // Two months of charges ahead: those by payday are committed, the rest
+  // are for projections.
+  final DateTime horizon = today.add(const Duration(days: 62));
   final List<Movement> upcoming = <Movement>[
     for (final RecurringCharge r in s.recurring)
       if (r.active && (r.accountId == null || spendable(r.accountId)))
-        for (final DateTime d in r.datesUntil(payday))
+        for (final DateTime d in r.datesUntil(horizon))
           if (d.isAfter(today))
             Movement(
               id: '${r.id}@${d.toIso8601String()}',
@@ -144,6 +146,14 @@ LedgerBuild buildLedger(StoreSnapshot s, {required DateTime today}) {
     ],
     schedule: s.profile.schedule,
     currency: base,
+    cushion: switch (s.profile.cushion) {
+      final Decimal c when c > Decimal.zero => inBase(Money(c, base)),
+      _ => 0,
+    },
+    pay: switch (s.profile.pay) {
+      final Decimal p when p > Decimal.zero => inBase(Money(p, base)),
+      _ => null,
+    },
   );
   // What each spendable account adds to the balance, worked out with the
   // ledger's own arithmetic, so the parts always add up to the whole.

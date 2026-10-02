@@ -1400,6 +1400,252 @@ abstract class AppLocalizations {
   /// **'Archivo guardado.'**
   String get exportDone;
 
+  /// No description provided for @settingsPayAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que te pagan'**
+  String get settingsPayAmount;
+
+  /// No description provided for @settingsPayAmountBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que te llega cada pago. Sirve para proyectar los días que vienen; no cuenta como plata hasta que llega.'**
+  String get settingsPayAmountBody;
+
+  /// No description provided for @settingsCushion.
+  ///
+  /// In es, this message translates to:
+  /// **'Colchón'**
+  String get settingsCushion;
+
+  /// No description provided for @settingsCushionBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que quieres guardar sin tocar. Lo libre hasta el pago lo deja por fuera.'**
+  String get settingsCushionBody;
+
+  /// No description provided for @settingsNotSet.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin definir'**
+  String get settingsNotSet;
+
+  /// No description provided for @settingsRemove.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar'**
+  String get settingsRemove;
+
+  /// No description provided for @freeExplainCushion.
+  ///
+  /// In es, this message translates to:
+  /// **'Colchón que guardas'**
+  String get freeExplainCushion;
+
+  /// No description provided for @freeExplainAssumptions.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que supone'**
+  String get freeExplainAssumptions;
+
+  /// No description provided for @freeExplainAssumeToday.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta lo que hay hoy en tus cuentas para gastar y resta lo que vence hasta el {payday}.'**
+  String freeExplainAssumeToday(String payday);
+
+  /// No description provided for @freeExplainAssumePay.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu pago de {pay} del {payday} no cuenta hasta que llegue.'**
+  String freeExplainAssumePay(String pay, String payday);
+
+  /// No description provided for @freeExplainAssumeNoPay.
+  ///
+  /// In es, this message translates to:
+  /// **'No sabe cuánto te pagan. Si lo dices en Ajustes, la proyección lo tiene en cuenta.'**
+  String get freeExplainAssumeNoPay;
+
+  /// No description provided for @freeExplainAssumeCushion.
+  ///
+  /// In es, this message translates to:
+  /// **'Deja por fuera {cushion} de colchón.'**
+  String freeExplainAssumeCushion(String cushion);
+
+  /// No description provided for @freeExplainAssumeNoCushion.
+  ///
+  /// In es, this message translates to:
+  /// **'No tiene colchón. Puedes elegir uno en Ajustes.'**
+  String get freeExplainAssumeNoCushion;
+
+  /// No description provided for @payLate.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu pago del {date} todavía no aparece. Si ya llegó, regístralo.'**
+  String payLate(String date);
+
+  /// No description provided for @standingCushion.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardas {amount} de colchón.'**
+  String standingCushion(String amount);
+
+  /// No description provided for @accountExplainTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Así se llega al saldo'**
+  String get accountExplainTitle;
+
+  /// No description provided for @accountExplainOpening.
+  ///
+  /// In es, this message translates to:
+  /// **'Con lo que empezó'**
+  String get accountExplainOpening;
+
+  /// No description provided for @accountExplainBalance.
+  ///
+  /// In es, this message translates to:
+  /// **'Saldo hoy'**
+  String get accountExplainBalance;
+
+  /// No description provided for @accountExplainAhead.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Un movimiento con fecha más adelante ({amount}) todavía no cuenta.} other{{count} movimientos con fecha más adelante ({amount}) todavía no cuentan.}}'**
+  String accountExplainAhead(int count, String amount);
+
+  /// No description provided for @traceIncome.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Un ingreso} other{{count} ingresos}}'**
+  String traceIncome(int count);
+
+  /// No description provided for @traceExpense.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Un gasto} other{{count} gastos}}'**
+  String traceExpense(int count);
+
+  /// No description provided for @traceTransferIn.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Una transferencia que entró} other{{count} transferencias que entraron}}'**
+  String traceTransferIn(int count);
+
+  /// No description provided for @traceTransferOut.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Una transferencia que salió} other{{count} transferencias que salieron}}'**
+  String traceTransferOut(int count);
+
+  /// No description provided for @traceBought.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Una compra} other{{count} compras}}'**
+  String traceBought(int count);
+
+  /// No description provided for @traceSold.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Una venta} other{{count} ventas}}'**
+  String traceSold(int count);
+
+  /// No description provided for @traceAdjustment.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Un ajuste} other{{count} ajustes}}'**
+  String traceAdjustment(int count);
+
+  /// No description provided for @totalExplainTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Así se suma tu patrimonio'**
+  String get totalExplainTitle;
+
+  /// No description provided for @totalExplainUnpriced.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin tasa todavía, no suman: {names}.'**
+  String totalExplainUnpriced(String names);
+
+  /// No description provided for @computedOnPhone.
+  ///
+  /// In es, this message translates to:
+  /// **'Calculado en tu teléfono'**
+  String get computedOnPhone;
+
+  /// No description provided for @computedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cómo se calculó'**
+  String get computedTitle;
+
+  /// No description provided for @computedFooter.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada cifra de la respuesta salió de estos cálculos, hechos en tu teléfono con tus datos de {time}. Gemini solo los explica.'**
+  String computedFooter(String time);
+
+  /// No description provided for @computedOverview.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus saldos, lo comprometido, el colchón y lo libre hasta el pago'**
+  String get computedOverview;
+
+  /// No description provided for @computedMonth.
+  ///
+  /// In es, this message translates to:
+  /// **'Gastos de {month} por categoría, frente al mes anterior'**
+  String computedMonth(String month);
+
+  /// No description provided for @computedCategory.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagos de {category} en {month}'**
+  String computedCategory(String category, String month);
+
+  /// No description provided for @computedTotals.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresos y gastos de los últimos meses'**
+  String get computedTotals;
+
+  /// No description provided for @computedSubscriptions.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus suscripciones y lo que cuestan al mes'**
+  String get computedSubscriptions;
+
+  /// No description provided for @computedGoal.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu meta de ahorro y lo que falta'**
+  String get computedGoal;
+
+  /// No description provided for @computedRecord.
+  ///
+  /// In es, this message translates to:
+  /// **'El gasto que se registró'**
+  String get computedRecord;
+
+  /// No description provided for @computedAccounts.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus cuentas, cada una en su moneda'**
+  String get computedAccounts;
+
+  /// No description provided for @computedPortfolio.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu portafolio cripto con precios del mercado'**
+  String get computedPortfolio;
+
+  /// No description provided for @computedSeeFree.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver el desglose de lo libre'**
+  String get computedSeeFree;
+
   /// No description provided for @freeExplainAction.
   ///
   /// In es, this message translates to:
@@ -1705,6 +1951,174 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'No es repetido'**
   String get notDuplicate;
+
+  /// No description provided for @whyLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Por qué: {reasons}'**
+  String whyLabel(String reasons);
+
+  /// No description provided for @whyCard.
+  ///
+  /// In es, this message translates to:
+  /// **'la tarjeta *{digits} es de {account}'**
+  String whyCard(String digits, String account);
+
+  /// No description provided for @whyInstitution.
+  ///
+  /// In es, this message translates to:
+  /// **'las alertas de {institution} van a {account}'**
+  String whyInstitution(String institution, String account);
+
+  /// No description provided for @whyInstitutionSame.
+  ///
+  /// In es, this message translates to:
+  /// **'es tu cuenta de {institution}'**
+  String whyInstitutionSame(String institution);
+
+  /// No description provided for @whyCurrency.
+  ///
+  /// In es, this message translates to:
+  /// **'es tu única cuenta en {asset}'**
+  String whyCurrency(String asset);
+
+  /// No description provided for @whyOnly.
+  ///
+  /// In es, this message translates to:
+  /// **'es tu única cuenta para gastar en {asset}; revísala'**
+  String whyOnly(String asset);
+
+  /// No description provided for @whyLearned.
+  ///
+  /// In es, this message translates to:
+  /// **'tu regla para «{merchant}»'**
+  String whyLearned(String merchant);
+
+  /// No description provided for @whyMerchant.
+  ///
+  /// In es, this message translates to:
+  /// **'{merchant} es un comercio conocido'**
+  String whyMerchant(String merchant);
+
+  /// No description provided for @whyWords.
+  ///
+  /// In es, this message translates to:
+  /// **'el mensaje dice de qué es'**
+  String get whyWords;
+
+  /// No description provided for @ruleLearnedMerchant.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde ahora, «{merchant}» va a {category}.'**
+  String ruleLearnedMerchant(String merchant, String category);
+
+  /// No description provided for @ruleLearnedCard.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde ahora, la tarjeta *{digits} va a {account}.'**
+  String ruleLearnedCard(String digits, String account);
+
+  /// No description provided for @ruleLearnedInstitution.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde ahora, lo de {institution} va a {account}.'**
+  String ruleLearnedInstitution(String institution, String account);
+
+  /// No description provided for @ruleLearnedMore.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Y una regla más.} other{Y {count} reglas más.}}'**
+  String ruleLearnedMore(int count);
+
+  /// No description provided for @ruleMissingAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'una cuenta que ya no está'**
+  String get ruleMissingAccount;
+
+  /// No description provided for @ruleCardKey.
+  ///
+  /// In es, this message translates to:
+  /// **'Tarjeta *{digits}'**
+  String ruleCardKey(String digits);
+
+  /// No description provided for @rulesTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Reglas aprendidas'**
+  String get rulesTitle;
+
+  /// No description provided for @rulesBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Se crean cuando confirmas algo en Por revisar. Una regla solo cambia lo que llegue después: lo ya registrado se queda como está.'**
+  String get rulesBody;
+
+  /// No description provided for @rulesEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no hay reglas. Aparecen cuando confirmas tus primeros movimientos.'**
+  String get rulesEmpty;
+
+  /// No description provided for @rulesMerchants.
+  ///
+  /// In es, this message translates to:
+  /// **'Comercios'**
+  String get rulesMerchants;
+
+  /// No description provided for @rulesCards.
+  ///
+  /// In es, this message translates to:
+  /// **'Tarjetas'**
+  String get rulesCards;
+
+  /// No description provided for @rulesInstitutions.
+  ///
+  /// In es, this message translates to:
+  /// **'Bancos y billeteras'**
+  String get rulesInstitutions;
+
+  /// No description provided for @rulesCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Ninguna todavía} =1{Una regla} other{{count} reglas}}'**
+  String rulesCount(int count);
+
+  /// No description provided for @ruleDelete.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrar regla'**
+  String get ruleDelete;
+
+  /// No description provided for @ruleOn.
+  ///
+  /// In es, this message translates to:
+  /// **'Usar esta regla'**
+  String get ruleOn;
+
+  /// No description provided for @ruleChooseCategory.
+  ///
+  /// In es, this message translates to:
+  /// **'¿A qué categoría va?'**
+  String get ruleChooseCategory;
+
+  /// No description provided for @ruleChooseAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'¿A qué cuenta va?'**
+  String get ruleChooseAccount;
+
+  /// No description provided for @autoRecordedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que la app registró sola en las últimas dos semanas. Si algo no va, deshazlo y vuelve a Por revisar.'**
+  String get autoRecordedBody;
+
+  /// No description provided for @fixMovement.
+  ///
+  /// In es, this message translates to:
+  /// **'Corregir'**
+  String get fixMovement;
 
   /// No description provided for @recordedAutomatically.
   ///

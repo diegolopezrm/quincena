@@ -3,6 +3,7 @@ import 'package:dartantic_ai/dartantic_ai.dart';
 import '../data/category.dart';
 import '../data/clock.dart';
 import '../data/ledger.dart';
+import '../domain/projection.dart';
 import '../functions/money_functions.dart';
 
 /// An expense the person confirmed, on its way to being saved.
@@ -61,18 +62,25 @@ List<Tool> accountTools(
     name: 'account_overview',
     description:
         'The account today: the balance, what is already committed until the '
-        'next payday, what is free to spend until then, the next payday and '
-        'the monthly income. Call it before talking about what is left.',
+        'next payday, the cushion the person keeps untouched, what is free to '
+        'spend until then (balance minus committed minus cushion), the next '
+        'payday, the pay they expect, whether the last pay is late, and the '
+        'monthly income. Call it before talking about what is left. The '
+        'expected pay is not money yet: never add it to what is free.',
     onCall: (_) {
       final Ledger ledger = current();
+      final DateTime? late = Projection.of(ledger, horizon: 1).latePay;
       return <String, Object?>{
         'owner': ledger.owner,
         'today': _day(appToday),
         'currency': ledger.currency.code,
         'balance': ledger.major(ledger.balance),
         'committedUntilPayday': ledger.major(ledger.committedUntilPayday),
+        'cushion': ledger.major(ledger.cushion),
         'freeUntilPayday': ledger.major(ledger.freeUntilPayday),
         'nextPayday': _day(ledger.nextPayday),
+        if (ledger.pay case final int pay) 'expectedPay': ledger.major(pay),
+        if (late != null) 'latePayday': _day(late),
         'monthlyIncome': ledger.major(
           ledger.incomeIn(_lastMonth.year, _lastMonth.month),
         ),

@@ -14,6 +14,7 @@ import '../agent/tools.dart';
 import '../data/clock.dart';
 import '../data/ledger.dart';
 import '../domain/ledger_builder.dart';
+import '../domain/projection.dart';
 import '../domain/records.dart';
 import '../format/money.dart' as format;
 import '../money/asset.dart';
@@ -57,6 +58,9 @@ class OwnController extends ChangeNotifier {
   final MarketData? _market;
   final DateTime Function() _now;
 
+  /// The moment now, by the clock the controller was given.
+  DateTime now() => _now();
+
   /// The person's crypto, priced as it moves.
   PortfolioController get portfolio =>
       _portfolio ??= PortfolioController(this, market: _market);
@@ -81,6 +85,7 @@ class OwnController extends ChangeNotifier {
   bool _ratesFailed = false;
   StreamSubscription<void>? _changes;
   List<InboxItem> _inbox = const <InboxItem>[];
+  List<InboxItem> _automatic = const <InboxItem>[];
   CaptureSettings _captureSettings = const CaptureSettings();
   bool _pulling = false;
   bool _pullAgain = false;
@@ -92,6 +97,10 @@ class OwnController extends ChangeNotifier {
 
   /// Captures waiting for the person, and the ones that may be repeats.
   List<InboxItem> get inbox => _inbox;
+
+  /// What was recorded without asking in the last two weeks, newest first,
+  /// to undo or correct.
+  List<InboxItem> get recentAutomatic => _automatic;
   List<InboxItem> get pendingInbox => <InboxItem>[
     for (final InboxItem i in _inbox)
       if (i.status == InboxStatus.pending) i,
@@ -99,6 +108,16 @@ class OwnController extends ChangeNotifier {
   CaptureSettings get captureSettings => _captureSettings;
   Profile? get profile => _snapshot?.profile;
   Ledger? get ledger => _build?.ledger;
+
+  /// The coming days, from the ledger as it is now.
+  Projection? get projection {
+    final Ledger? l = ledger;
+    if (l == null) return null;
+    if (!identical(_projected?.ledger, l)) _projected = Projection.of(l);
+    return _projected;
+  }
+
+  Projection? _projected;
 
   /// Assets held somewhere that no known rate converts to the base.
   Set<Asset> get unconverted => _build?.unconverted ?? const <Asset>{};
@@ -133,15 +152,29 @@ class OwnController extends ChangeNotifier {
     return rates.convert(money, p.base);
   }
 
+  /// What [account] holds in the base currency, to the base currency's
+  /// smallest unit, as a total adds it; null without a rate.
+  Money? partOfTotal(Account account) {
+    final Money? converted = inBase(
+      _balances[account.id] ?? account.openingMoney,
+    );
+    if (converted == null) return null;
+    return Money(
+      converted.amount.round(scale: converted.asset.decimals),
+      converted.asset,
+    );
+  }
+
   /// What the accounts hold together in the base currency: all of them, or
-  /// only those whose money is to spend.
+  /// only those whose money is to spend. Each account is rounded to the
+  /// base currency's smallest unit first, so the parts add up to it.
   Money total({bool spendableOnly = false}) {
     final Asset base = profile?.base ?? Asset.cop;
     var sum = Money.zero(base);
     for (final Account a in accounts) {
       if (spendableOnly && !a.spendable) continue;
-      final Money? converted = inBase(_balances[a.id] ?? a.openingMoney);
-      if (converted != null) sum += converted;
+      final Money? part = partOfTotal(a);
+      if (part != null) sum += part;
     }
     return sum;
   }
@@ -296,6 +329,13 @@ class OwnController extends ChangeNotifier {
     _inbox = await store.inbox(
       statuses: <InboxStatus>{InboxStatus.pending, InboxStatus.duplicate},
     );
+    _automatic = <InboxItem>[
+      for (final InboxItem i in await store.inbox(
+        statuses: <InboxStatus>{InboxStatus.accepted},
+        since: _now().subtract(const Duration(days: 14)),
+      ))
+        if (i.automatic) i,
+    ];
     _captureSettings = await store.captureSettings();
     if (_disposed) return;
     _configureListener();

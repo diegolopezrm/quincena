@@ -205,11 +205,15 @@ class Headline extends StatelessWidget {
     required this.caption,
     required this.value,
     this.detail,
+    this.onExplain,
   });
 
   final String caption;
   final String value;
   final String? detail;
+
+  /// Shows where [value] comes from.
+  final VoidCallback? onExplain;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -226,6 +230,15 @@ class Headline extends StatelessWidget {
         const SizedBox(height: 4),
         Text(detail!, style: context.type.bodySmall),
       ],
+      if (onExplain case final VoidCallback explain)
+        TextButton.icon(
+          onPressed: explain,
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+          ),
+          icon: const Icon(Glyph.info, size: 18),
+          label: Text(context.l10n.freeExplainAction),
+        ),
     ],
   );
 }
