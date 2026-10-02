@@ -35,7 +35,7 @@ final DateTime _now = DateTime(2026, 10, 3, 10);
 /// A Ledger the example person follows by address, with the bitcoin it
 /// holds; the address is made up.
 Future<void> followLedger(QuincenaStore store) async {
-  const String address = 'bc1qexampleaddressforquincenatests0000000';
+  const String address = 'bc1qexampqe2wa77etq9yxz8c2kdu3ts6hrv0lmg5w';
   await store.setSetting(
     'wallets',
     jsonEncode(<String, Object?>{

@@ -67,7 +67,7 @@ class WalletAddress {
     'label': label,
   };
 
-  /// The address shortened for a screen: `bc1qar0…wf5mdq`.
+  /// The address shortened for a screen: `bc1qexa…0lmg5w`.
   String get short => address.length <= 14
       ? address
       : '${address.substring(0, 7)}…${address.substring(address.length - 6)}';

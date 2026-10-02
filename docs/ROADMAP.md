@@ -183,3 +183,28 @@ Not done, and why:
 - An iOS share extension, so Quincena is in the share sheet without a
   shortcut. It needs an App Group between the extension and the app, set up
   with the developer account the App Store needs anyway.
+
+Built:
+
+- The privacy policy, under Ley 1581 de 2012 with DL SOFT TECHNOLOGIES SAS
+  as the party responsible, and a support page, in Spanish and English on
+  the web. Settings links both, next to export and delete, and an export
+  now carries what the app learned: capture rules and the wallets followed.
+- The store listings in both languages, the answers to App Privacy and Data
+  safety, the background location declaration and the review notes, in
+  `docs/store/README.md`, with screenshots rendered from an example person.
+- The iOS share extension: a screenshot, a photo, a PDF or a text shared
+  from any app is read on the device and waits in "Por revisar". It shares
+  the `group.dev.dlsoft.quincena` App Group with the app; Android already
+  had its share target.
+- The quality gate, recorded in `docs/QUALITY.md`: a build for every
+  platform, the stores' and the model's requirements checked, nine screens
+  held to the accessibility guidelines at twice the text size in both
+  themes, imports that roll back whole, Gemini saying when there is no
+  connection, no real data in fixtures or release logs, and "¿De dónde
+  sale?" under the free amount, which shows each part of it and the rates
+  behind it.
+
+Left for the developer accounts: submitting to the App Store, creating the
+app in Google Play with its upload key, and the checks on real devices that
+`docs/QUALITY.md` lists.

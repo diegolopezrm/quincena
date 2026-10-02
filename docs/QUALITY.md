@@ -1,0 +1,111 @@
+# Release quality gate
+
+What was checked before Quincena's first public version, 1.0.0, how it was
+checked, and what is left for a real device or for the developer account.
+The gate itself is in `docs/ROADMAP.md`, phase 9. Checked on 2 October 2026.
+
+## Builds
+
+| Platform | How | Result |
+| --- | --- | --- |
+| iOS | `flutter build ipa --release`, Xcode 26.1.1, iOS 26.1 SDK | Signed for the App Store. The app and its share extension each carry their distribution profile and the `group.dev.dlsoft.quincena` App Group. |
+| Android | `flutter build appbundle --release` and `flutter build apk --release` | Built, 89 MB bundle and 108 MB APK with every ABI; signed with the debug certificate until the upload key exists. |
+| Web | `flutter build web --release --base-href /quincena/`, as CI publishes it | Built. |
+| macOS | `flutter build macos --release` | Built, 72 MB. |
+
+## Store and provider requirements
+
+Checked against each provider's published requirements on 2 October 2026.
+
+| Requirement | Since | Quincena |
+| --- | --- | --- |
+| Google Play: new apps and updates target Android 16, API 36 | 31 August 2026 | `targetSdk` 36, `compileSdk` 36, `minSdk` 24 |
+| App Store: built with Xcode 26 and an iOS 26 SDK | 28 April 2026 | Xcode 26.1.1, iOS 26.1 SDK; deployment target iOS 16 |
+| Firebase AI Logic: a model that is not being retired | | `gemini-3.8-flash`, the latest stable, which Google lists as short-term; when it is withdrawn the app falls back to `gemini-3.5-flash`, not retired before 19 May 2027. Gemini 2.5, which shuts down in October 2026, is not used. |
+| Firebase: App Check required for AI Logic | 2 November 2026 | Already enforced (`docs/PRODUCTION.md`) |
+
+## Automated checks
+
+`flutter test` runs 229 tests, the same that CI runs on every push,
+with `dart format`, `flutter analyze --fatal-infos` and a check that the
+generated catalog is current.
+
+- **Accessibility.** `test/own_accessibility_test.dart` opens nine screens
+  of someone's own money (home, movements, accounts, crypto, Binance,
+  wallets, a statement, "Por revisar" and automatic capture) on a 360-point
+  phone with the system text at twice its size, in both themes, and holds
+  each to Flutter's guidelines: every tap target labeled, 48 by 48 on
+  Android and 44 by 44 on iOS, and text contrast of at least 4.5:1. It
+  found the faint ink at 3.5:1 on the light canvas and 4.3:1 on dark cards;
+  it is now at least 4.5:1 on every ground it sits on.
+  `test/large_text_test.dart` holds the sample account and its five answers
+  to the same text size, and `test/catalog_test.dart` audits what every
+  component tells a screen reader.
+- **No signal by color alone.** Gains and losses carry a sign, the free and
+  committed bar has a legend, and categories are named next to their color.
+- **Migrations and restore.** `test/migration_test.dart` upgrades a version
+  1 database to version 2 with drift's schema verifier. `test/store_test.dart`
+  restores an export from version 1, refuses a file from elsewhere or from
+  a newer version, and checks that a file breaking halfway through leaves
+  the data as it was: an import runs in one transaction.
+- **Where a number comes from.** "¿De dónde sale?" under the free amount
+  shows each spendable account's part with the rate that converted it, its
+  source and day, what is committed before payday, what is left out, and
+  that it is an estimate. `test/ledger_builder_test.dart` checks that the
+  parts add up to the figure exactly, with dollars, a transfer to savings,
+  a payment entered ahead and charges expected before payday.
+- **Without a connection.** Rates and prices fall back to the last ones
+  saved, with their date, and the chart waits for the network; Binance and
+  wallets say they could not be reached;
+  Gemini says there is no connection and that the rest of the app works
+  (`test/gemini_test.dart`). Capture, the ledger and every figure work
+  offline.
+- **Spanish and English.** Every string is in both `.arb` files; amounts,
+  dates and percentages follow the interface language
+  (`test/english_test.dart`).
+- **No real data.** The store screenshots show Valentina, an example
+  person. Wallet addresses in tests are made up; the only real ones in the
+  code are the USDT and USDC contracts the app reads balances from. Errors
+  that could quote a statement, a Binance response or a question are only
+  logged in debug builds.
+
+## On a simulator and an emulator
+
+- **iOS share extension**, iPhone 17 Pro simulator, iOS 26.1: a receipt
+  shared from Photos to Quincena was read on the device ("Quedó en Por
+  revisar") and, after onboarding, waited in "Por revisar" as Ana Gomez,
+  −$45.900, on 2 October at 10:42, with the Bancolombia account already
+  chosen. Shared a second time it was set apart as a likely repeat. A
+  payment shared before onboarding now waits until the first accounts
+  exist, so it is matched to its account.
+- **Android share target**, Pixel 9 emulator, Android 16 (API 36), the
+  release APK: a bank message shared to Quincena was "in Quincena's To
+  review"; after onboarding it waited there as Ana Gomez, −$45,900, on
+  2 October at 10:42, with the Bancolombia account chosen. An image shared
+  from the shell was turned down by Android, which lets an app read only
+  what it was granted: shared from the gallery, the share grants it. That
+  path is left for a real device.
+
+## Left for real devices
+
+TestFlight build 5 and an Android phone, before the stores' review:
+
+- Capture: the ready shortcuts on iOS 26 and 27, the share sheet from a
+  bank app, and bank notifications on Android.
+- Permissions turned down: notification access, location while in use and
+  always, and turning location off in the system's settings afterwards.
+- Airplane mode: the app opens, records and shows its figures; rates,
+  prices, Binance, wallets and Gemini say what they could not reach.
+- Recovery: closing the app while a statement imports or a sync runs, and
+  reopening it.
+- VoiceOver and TalkBack on the home, a movement and "Por revisar".
+
+## Left for the developer account
+
+- App Store Connect: submit 1.0.0 with the listing, App Privacy answers and
+  review notes in `docs/store/README.md`, and answer the age rating.
+- Google Play Console: create the app, make the upload key
+  (`docs/PRODUCTION.md`), fill Data safety, and record the background
+  location declaration's video.
+- The privacy policy still needs DL SOFT's address and phone, which Decreto
+  1074 de 2015 asks a data controller's policy to include.

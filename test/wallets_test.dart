@@ -15,19 +15,20 @@ import 'package:quincena/store/store.dart';
 
 Decimal d(String s) => Decimal.parse(s);
 
+// Every address here is made up; only its shape is real.
 const WalletAddress btc = WalletAddress(
   chain: Chain.bitcoin,
-  address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
+  address: 'bc1qexampqe2wa77etq9yxz8c2kdu3ts6hrv0lmg5w',
   label: 'Ledger',
 );
 const WalletAddress eth = WalletAddress(
   chain: Chain.ethereum,
-  address: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
+  address: '0x5a7c3e2f9d1b8a6c4e0f2a9b7d5c3e1f0a8b6c4d',
   label: 'MetaMask',
 );
 const WalletAddress tron = WalletAddress(
   chain: Chain.tron,
-  address: 'TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE',
+  address: 'TQuincenaExampLeWa11etAddr3sZq8Kxy',
   label: 'Trust Wallet',
 );
 
@@ -92,12 +93,12 @@ http.Client chains({int sats = 150000}) => MockClient((
 void main() {
   test('addresses are checked against each chain\'s shape', () {
     expect(Chain.bitcoin.accepts(btc.address), isTrue);
-    expect(Chain.bitcoin.accepts('1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa'), isTrue);
+    expect(Chain.bitcoin.accepts('1QuincenaExampLeAddress2x9ZkRwT'), isTrue);
     expect(Chain.ethereum.accepts(eth.address), isTrue);
     expect(Chain.tron.accepts(tron.address), isTrue);
     expect(Chain.ethereum.accepts(tron.address), isFalse);
     expect(Chain.bitcoin.accepts('mi billetera'), isFalse);
-    expect(btc.short, 'bc1qar0…wf5mdq');
+    expect(btc.short, 'bc1qexa…0lmg5w');
   });
 
   test('each chain\'s coin and its dollar tokens are read', () async {
