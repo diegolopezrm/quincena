@@ -45,8 +45,9 @@ class AppModeController extends ChangeNotifier {
   final DateTime Function() now;
 
   /// A controller for the person's own accounts, with this one's clock and
-  /// rates.
-  OwnController newOwn() => OwnController(store!, fetcher: fetcher, now: now);
+  /// rates. [readNative] false leaves what was captured where it is.
+  OwnController newOwn({bool readNative = true}) =>
+      OwnController(store!, fetcher: fetcher, now: now, readNative: readNative);
 
   /// Null where the build cannot keep a database: the demo is all there is.
   final QuincenaStore? store;

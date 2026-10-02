@@ -2,10 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- App Attest, which App Check uses to vouch for the app to Firebase. -->
-	<key>com.apple.developer.devicecheck.appattest-environment</key>
-	<string>production</string>
-	<!-- The folder the app shares with its share extension. -->
+	<!-- The folder the app and this extension share, where what is shared
+	     waits for the app. -->
 	<key>com.apple.security.application-groups</key>
 	<array>
 		<string>group.dev.dlsoft.quincena</string>

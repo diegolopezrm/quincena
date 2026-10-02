@@ -14,13 +14,18 @@ import Vision
 enum TextReader {
   static func read(_ data: Data) throws -> String {
     if data.starts(with: Array("%PDF".utf8)) { return try readPDF(data) }
+    // Upright, and at most 3,072 pixels long: a screenshot keeps its size,
+    // and a 48-megapixel photo of a receipt fits in the share extension's
+    // memory with its print still legible.
+    let options: [CFString: Any] = [
+      kCGImageSourceCreateThumbnailFromImageAlways: true,
+      kCGImageSourceCreateThumbnailWithTransform: true,
+      kCGImageSourceThumbnailMaxPixelSize: 3072,
+    ]
     guard let source = CGImageSourceCreateWithData(data as CFData, nil),
-      let image = CGImageSourceCreateImageAtIndex(source, 0, nil)
+      let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
     else { throw CocoaError(.fileReadCorruptFile) }
-    let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]
-    let orientation = (properties?[kCGImagePropertyOrientation] as? UInt32)
-      .flatMap(CGImagePropertyOrientation.init(rawValue:)) ?? .up
-    return try read(image, orientation: orientation)
+    return try read(image)
   }
 
   static func read(_ image: CGImage, orientation: CGImagePropertyOrientation = .up) throws

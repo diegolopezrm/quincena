@@ -61,6 +61,17 @@ abstract final class CaptureChannel {
     }
   }
 
+  /// The folder the share extension leaves what it read in, on iOS; null
+  /// elsewhere, or when the app has no App Group.
+  static Future<String?> sharedInbox() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return null;
+    try {
+      return await _channel.invokeMethod<String>('sharedInbox');
+    } on Object {
+      return null;
+    }
+  }
+
   /// Every page of a statement's PDF, read on the device row by row as it
   /// is printed. Null when it could not be read, and on the web.
   static Future<String?> readStatement(Uint8List bytes) async {

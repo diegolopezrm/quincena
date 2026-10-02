@@ -20,6 +20,9 @@ import UIKit
       name: "dev.dlsoft.quincena/capture",
       binaryMessenger: engineBridge.applicationRegistrar.messenger())
     capture.setMethodCallHandler { call, result in
+      if call.method == "sharedInbox" {
+        return result(CaptureInbox.sharedFolder?.path)
+      }
       guard call.method == "readText" || call.method == "readStatement",
         let bytes = call.arguments as? FlutterStandardTypedData
       else { return result(FlutterMethodNotImplemented) }

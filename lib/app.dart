@@ -129,7 +129,7 @@ class _QuincenaAppState extends State<QuincenaApp> {
           store: modes.store!,
           onDone: modes.finishedOnboarding,
           onCancel: modes.cancelOnboarding,
-          newOwn: modes.newOwn,
+          newOwn: () => modes.newOwn(readNative: false),
         ),
         AppMode.demo => HomePage(
           session: _session,

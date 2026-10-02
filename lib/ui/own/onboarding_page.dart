@@ -28,6 +28,10 @@ class OnboardingPage extends StatefulWidget {
   final QuincenaStore store;
 
   /// Makes the controller the accounts step adds accounts through.
+  ///
+  /// It does not read what was captured: a payment shared before the
+  /// accounts exist would wait in "Por revisar" without its account. The
+  /// app's own controller reads it once onboarding is done.
   final OwnController Function()? newOwn;
   final VoidCallback onDone;
 
@@ -91,7 +95,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
       );
       if (_own == null) {
         final OwnController own =
-            widget.newOwn?.call() ?? OwnController(widget.store);
+            widget.newOwn?.call() ??
+            OwnController(widget.store, readNative: false);
         _own = own;
         await own.start();
       }
