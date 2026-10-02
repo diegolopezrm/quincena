@@ -68,6 +68,17 @@ class _AccountFormState extends State<_AccountForm> {
   late final TextEditingController _balance = TextEditingController(
     text: _editing == null ? '' : _initialBalanceText(),
   );
+  late final TextEditingController _cost = TextEditingController(
+    text: _editing?.openingCost == null
+        ? ''
+        : formatDecimal(
+            _editing!.openingCost!.amount,
+            decimals: _editing.openingCost!.asset.decimals,
+            trim: true,
+          ),
+  );
+  late Asset _costAsset = _editing?.openingCost?.asset ?? _defaultAsset;
+  String? _costError;
   late AccountKind _kind =
       _editing?.kind ?? widget.draft?.kind ?? AccountKind.bank;
   late Asset _asset = _editing?.asset ?? widget.draft?.asset ?? _defaultAsset;
@@ -95,6 +106,7 @@ class _AccountFormState extends State<_AccountForm> {
     _institution.dispose();
     _otherAsset.dispose();
     _balance.dispose();
+    _cost.dispose();
     super.dispose();
   }
 
@@ -108,11 +120,22 @@ class _AccountFormState extends State<_AccountForm> {
     final Decimal? typed = _balance.text.trim().isEmpty
         ? Decimal.zero
         : parseAmount(_balance.text);
+    // What the opening balance cost, for an investment: optional.
+    final bool investment = _chosenAsset.isCrypto;
+    final Decimal? cost = !investment || _cost.text.trim().isEmpty
+        ? null
+        : parseAmount(_cost.text);
+    final bool costInvalid =
+        investment &&
+        _cost.text.trim().isNotEmpty &&
+        (cost == null || cost < Decimal.zero);
     setState(() {
       _nameError = name.isEmpty ? l.accountNameHint : null;
       _balanceError = typed == null ? l.invalidAmount : null;
+      _costError = costInvalid ? l.invalidAmount : null;
     });
-    if (_nameError != null || typed == null || _saving) return;
+    if (_nameError != null || typed == null || costInvalid || _saving) return;
+    final Money? openingCost = cost == null ? null : Money(cost, _costAsset);
     setState(() => _saving = true);
     // A card shows what is owed, a positive number; its balance is negative.
     final Decimal balance = _kind == AccountKind.card ? -typed.abs() : typed;
@@ -125,6 +148,7 @@ class _AccountFormState extends State<_AccountForm> {
         opening: balance,
         institution: _institution.text,
         spendable: _spendable,
+        openingCost: openingCost,
       );
     } else {
       final Account edited = _editing.copyWith(
@@ -135,6 +159,8 @@ class _AccountFormState extends State<_AccountForm> {
         // The person corrected today's balance: the opening absorbs the
         // difference, and the movements stay as they were.
         opening: _editing.opening + (balance - _currentBalance.amount),
+        openingCost: openingCost,
+        clearOpeningCost: openingCost == null,
       );
       await widget.own.store.updateAccount(edited);
       saved = edited;
@@ -263,6 +289,16 @@ class _AccountFormState extends State<_AccountForm> {
                 errorText: _balanceError,
               ),
             ),
+            if (asset.isCrypto) ...<Widget>[
+              const SizedBox(height: 16),
+              _OpeningCost(
+                controller: _cost,
+                asset: _costAsset,
+                choices: <Asset>{_defaultAsset, Asset.usd}.toList(),
+                error: _costError,
+                onAsset: (Asset a) => setState(() => _costAsset = a),
+              ),
+            ],
             const SizedBox(height: 8),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
@@ -298,6 +334,80 @@ class _AccountFormState extends State<_AccountForm> {
       ),
     );
   }
+}
+
+/// What an investment's opening balance cost, in pesos or dollars.
+class _OpeningCost extends StatelessWidget {
+  const _OpeningCost({
+    required this.controller,
+    required this.asset,
+    required this.choices,
+    required this.error,
+    required this.onAsset,
+  });
+
+  final TextEditingController controller;
+  final Asset asset;
+  final List<Asset> choices;
+  final String? error;
+  final ValueChanged<Asset> onAsset;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        TextField(
+          controller: controller,
+          inputFormatters: <TextInputFormatter>[
+            AmountInputFormatter(maxDecimals: asset.decimals),
+          ],
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(
+            labelText: l.accountOpeningCost,
+            helperText: l.accountOpeningCostHelp,
+            helperMaxLines: 3,
+            suffixText: asset.code,
+            errorText: error,
+          ),
+        ),
+        if (choices.length > 1) ...<Widget>[
+          const SizedBox(height: 10),
+          CurrencyChoice(choices: choices, chosen: asset, onChosen: onAsset),
+        ],
+      ],
+    );
+  }
+}
+
+/// A row of currencies to pick one from, for an amount just typed.
+class CurrencyChoice extends StatelessWidget {
+  const CurrencyChoice({
+    super.key,
+    required this.choices,
+    required this.chosen,
+    required this.onChosen,
+  });
+
+  final List<Asset> choices;
+  final Asset chosen;
+  final ValueChanged<Asset> onChosen;
+
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: Alignment.centerLeft,
+    child: SegmentedButton<String>(
+      showSelectedIcon: false,
+      segments: <ButtonSegment<String>>[
+        for (final Asset a in choices)
+          ButtonSegment<String>(value: a.code, label: Text(a.code)),
+      ],
+      selected: <String>{chosen.code},
+      onSelectionChanged: (Set<String> picked) =>
+          onChosen(Asset.of(picked.single)),
+    ),
+  );
 }
 
 /// The currency of an account that already has one.

@@ -1963,6 +1963,324 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{count, plural, =0{Aún no ha aprendido comercios.} =1{Ya reconoce un comercio.} other{Ya reconoce {count} comercios.}}'**
   String learnedCount(int count);
+
+  /// No description provided for @portfolioTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cripto'**
+  String get portfolioTitle;
+
+  /// No description provided for @portfolioWorth.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu cripto vale'**
+  String get portfolioWorth;
+
+  /// No description provided for @portfolioToday.
+  ///
+  /// In es, this message translates to:
+  /// **'Últimas 24 h'**
+  String get portfolioToday;
+
+  /// No description provided for @portfolioGain.
+  ///
+  /// In es, this message translates to:
+  /// **'Ganancia'**
+  String get portfolioGain;
+
+  /// No description provided for @portfolioLoss.
+  ///
+  /// In es, this message translates to:
+  /// **'Pérdida'**
+  String get portfolioLoss;
+
+  /// No description provided for @portfolioSinceBought.
+  ///
+  /// In es, this message translates to:
+  /// **'frente a lo que pagaste'**
+  String get portfolioSinceBought;
+
+  /// No description provided for @portfolioPricedAt.
+  ///
+  /// In es, this message translates to:
+  /// **'Precios de Binance a las {time}'**
+  String portfolioPricedAt(String time);
+
+  /// No description provided for @portfolioPricing.
+  ///
+  /// In es, this message translates to:
+  /// **'Leyendo precios…'**
+  String get portfolioPricing;
+
+  /// No description provided for @portfolioPricingFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudieron leer los precios: se muestran los últimos guardados.'**
+  String get portfolioPricingFailed;
+
+  /// No description provided for @portfolioNeverPriced.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún sin precios: se leen al conectarse.'**
+  String get portfolioNeverPriced;
+
+  /// No description provided for @rangeDay.
+  ///
+  /// In es, this message translates to:
+  /// **'24 h'**
+  String get rangeDay;
+
+  /// No description provided for @rangeWeek.
+  ///
+  /// In es, this message translates to:
+  /// **'7 d'**
+  String get rangeWeek;
+
+  /// No description provided for @rangeMonth.
+  ///
+  /// In es, this message translates to:
+  /// **'30 d'**
+  String get rangeMonth;
+
+  /// No description provided for @rangeYear.
+  ///
+  /// In es, this message translates to:
+  /// **'1 a'**
+  String get rangeYear;
+
+  /// No description provided for @rangeDayLong.
+  ///
+  /// In es, this message translates to:
+  /// **'en 24 horas'**
+  String get rangeDayLong;
+
+  /// No description provided for @rangeWeekLong.
+  ///
+  /// In es, this message translates to:
+  /// **'en 7 días'**
+  String get rangeWeekLong;
+
+  /// No description provided for @rangeMonthLong.
+  ///
+  /// In es, this message translates to:
+  /// **'en 30 días'**
+  String get rangeMonthLong;
+
+  /// No description provided for @rangeYearLong.
+  ///
+  /// In es, this message translates to:
+  /// **'en un año'**
+  String get rangeYearLong;
+
+  /// No description provided for @chartEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no hay precios para dibujar.'**
+  String get chartEmpty;
+
+  /// No description provided for @chartWithHoldings.
+  ///
+  /// In es, this message translates to:
+  /// **'Con lo que tenías en cada momento.'**
+  String get chartWithHoldings;
+
+  /// No description provided for @portfolioAllocation.
+  ///
+  /// In es, this message translates to:
+  /// **'Distribución'**
+  String get portfolioAllocation;
+
+  /// No description provided for @portfolioOtherPlace.
+  ///
+  /// In es, this message translates to:
+  /// **'Otras'**
+  String get portfolioOtherPlace;
+
+  /// No description provided for @portfolioOtherAssets.
+  ///
+  /// In es, this message translates to:
+  /// **'Otras'**
+  String get portfolioOtherAssets;
+
+  /// No description provided for @portfolioRealized.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya ganado en ventas y conversiones: {amount}'**
+  String portfolioRealized(String amount);
+
+  /// No description provided for @portfolioRealizedLoss.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya perdido en ventas y conversiones: {amount}'**
+  String portfolioRealizedLoss(String amount);
+
+  /// No description provided for @portfolioUncosted.
+  ///
+  /// In es, this message translates to:
+  /// **'{amount} llegaron sin precio de compra y cuentan como ganancia. Puedes poner lo que costaron en su cuenta.'**
+  String portfolioUncosted(String amount);
+
+  /// No description provided for @portfolioUnpriced.
+  ///
+  /// In es, this message translates to:
+  /// **'Binance no tiene precio para {assets}: no suman al total.'**
+  String portfolioUnpriced(String assets);
+
+  /// No description provided for @portfolioDisclaimer.
+  ///
+  /// In es, this message translates to:
+  /// **'Precios de mercado de Binance, que cambian a cada momento. Quincena no da asesoría de inversión.'**
+  String get portfolioDisclaimer;
+
+  /// No description provided for @portfolioOpen.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver cripto'**
+  String get portfolioOpen;
+
+  /// No description provided for @portfolioEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no tienes cripto. Agrega una cuenta con bitcoin, tether o la moneda que tengas.'**
+  String get portfolioEmpty;
+
+  /// No description provided for @holdingQuantity.
+  ///
+  /// In es, this message translates to:
+  /// **'Tienes'**
+  String get holdingQuantity;
+
+  /// No description provided for @holdingPrice.
+  ///
+  /// In es, this message translates to:
+  /// **'Precio'**
+  String get holdingPrice;
+
+  /// No description provided for @holdingWorth.
+  ///
+  /// In es, this message translates to:
+  /// **'Vale'**
+  String get holdingWorth;
+
+  /// No description provided for @holdingCost.
+  ///
+  /// In es, this message translates to:
+  /// **'Te costó'**
+  String get holdingCost;
+
+  /// No description provided for @holdingAverage.
+  ///
+  /// In es, this message translates to:
+  /// **'Costo promedio'**
+  String get holdingAverage;
+
+  /// No description provided for @holdingNoCost.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin costo'**
+  String get holdingNoCost;
+
+  /// No description provided for @holdingNoCostHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Pon lo que te costó al editar la cuenta, o registra tus compras.'**
+  String get holdingNoCostHelp;
+
+  /// No description provided for @tradeBuy.
+  ///
+  /// In es, this message translates to:
+  /// **'Registrar compra'**
+  String get tradeBuy;
+
+  /// No description provided for @tradeSell.
+  ///
+  /// In es, this message translates to:
+  /// **'Registrar venta'**
+  String get tradeSell;
+
+  /// No description provided for @tradeBought.
+  ///
+  /// In es, this message translates to:
+  /// **'Compra'**
+  String get tradeBought;
+
+  /// No description provided for @tradeSold.
+  ///
+  /// In es, this message translates to:
+  /// **'Venta'**
+  String get tradeSold;
+
+  /// No description provided for @tradeQuantity.
+  ///
+  /// In es, this message translates to:
+  /// **'Cantidad de {code}'**
+  String tradeQuantity(String code);
+
+  /// No description provided for @tradePaid.
+  ///
+  /// In es, this message translates to:
+  /// **'Total pagado'**
+  String get tradePaid;
+
+  /// No description provided for @tradeReceived.
+  ///
+  /// In es, this message translates to:
+  /// **'Total recibido'**
+  String get tradeReceived;
+
+  /// No description provided for @tradePaidFrom.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagado desde'**
+  String get tradePaidFrom;
+
+  /// No description provided for @tradeReceivedIn.
+  ///
+  /// In es, this message translates to:
+  /// **'Recibido en'**
+  String get tradeReceivedIn;
+
+  /// No description provided for @tradeOutside.
+  ///
+  /// In es, this message translates to:
+  /// **'Fuera de Quincena'**
+  String get tradeOutside;
+
+  /// No description provided for @tradeOutsideHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'En Binance P2P, en otro exchange o en efectivo. Si sale de una de tus cuentas, elígela y su saldo también cambia.'**
+  String get tradeOutsideHelp;
+
+  /// No description provided for @tradeCurrency.
+  ///
+  /// In es, this message translates to:
+  /// **'Moneda'**
+  String get tradeCurrency;
+
+  /// No description provided for @tradePriceEach.
+  ///
+  /// In es, this message translates to:
+  /// **'Precio por unidad: {price}'**
+  String tradePriceEach(String price);
+
+  /// No description provided for @tradeNotEnough.
+  ///
+  /// In es, this message translates to:
+  /// **'Esa cuenta tiene {amount}.'**
+  String tradeNotEnough(String amount);
+
+  /// No description provided for @accountOpeningCost.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto te costó?'**
+  String get accountOpeningCost;
+
+  /// No description provided for @accountOpeningCostHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Opcional. Lo que pagaste por ese saldo; con esto Quincena calcula cuánto has ganado.'**
+  String get accountOpeningCostHelp;
 }
 
 class _AppLocalizationsDelegate

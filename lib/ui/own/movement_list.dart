@@ -56,6 +56,7 @@ class MovementRow extends StatelessWidget {
     final Account? account = _account(entry.accountId);
     if (account == null) return const SizedBox.shrink();
     final bool transfer = entry.transferId != null;
+    final Money? cost = entry.cost;
     final String? category = entry.category;
     final String categoryName = category == null
         ? ''
@@ -66,6 +67,10 @@ class MovementRow extends StatelessWidget {
       title = entry.amount < Decimal.zero
           ? '${account.name} → $other'
           : '$other → ${account.name}';
+    } else if (cost != null) {
+      title = entry.payee.isNotEmpty
+          ? entry.payee
+          : (entry.amount > Decimal.zero ? l.tradeBought : l.tradeSold);
     } else {
       title = entry.payee.isNotEmpty
           ? entry.payee
@@ -74,6 +79,8 @@ class MovementRow extends StatelessWidget {
     final List<String> detail = <String>[
       if (transfer)
         l.kindTransfer
+      else if (cost != null)
+        moneyText(cost, base: own.profile?.base)
       else if (entry.payee.isNotEmpty)
         categoryName,
       if (!inAccount && !transfer) account.name,
@@ -84,7 +91,7 @@ class MovementRow extends StatelessWidget {
     final Money? base = account.asset == own.profile?.base
         ? null
         : own.inBase(money);
-    final Color amountColor = transfer
+    final Color amountColor = transfer || cost != null
         ? context.colors.inkSoft
         : entry.amount > Decimal.zero
         ? context.colors.positive
@@ -96,7 +103,7 @@ class MovementRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: <Widget>[
-            CategoryDisc(transfer ? null : category),
+            CategoryDisc(transfer || cost != null ? null : category),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

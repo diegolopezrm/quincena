@@ -10,6 +10,8 @@ import 'account_sheet.dart';
 import 'entry_sheet.dart';
 import 'look.dart';
 import 'movement_list.dart';
+import 'portfolio_page.dart';
+import 'position_panel.dart';
 
 /// One account: what it holds today and every movement in it.
 class AccountPage extends StatelessWidget {
@@ -62,7 +64,10 @@ class AccountPage extends StatelessWidget {
                 children: <Widget>[
                   Row(
                     children: <Widget>[
-                      AccountTile(account.kind, size: 48),
+                      if (account.asset.isCrypto)
+                        CoinMark(account.asset, size: 48)
+                      else
+                        AccountTile(account.kind, size: 48),
                       const SizedBox(width: 14),
                       Expanded(
                         child: Headline(
@@ -75,6 +80,10 @@ class AccountPage extends StatelessWidget {
                       ),
                     ],
                   ),
+                  if (account.asset.isCrypto) ...<Widget>[
+                    const SizedBox(height: 20),
+                    PositionPanel(own: own, account: account),
+                  ],
                   const SizedBox(height: 28),
                   if (entries.isEmpty)
                     Text(l.noMovements, style: context.type.bodyMedium)

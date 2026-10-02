@@ -6,6 +6,8 @@ import '../domain/records.dart';
 import '../money/asset.dart';
 import '../money/money.dart';
 import '../money/rates.dart';
+import '../portfolio/cost_basis.dart';
+import '../portfolio/portfolio.dart';
 import 'own_controller.dart';
 
 /// What a model can ask about the person's own accounts: everything it can
@@ -26,7 +28,102 @@ List<Tool> ownTools(OwnController own) => <Tool>[
         'account, or everything the person has.',
     onCall: (_) => accountsAnswer(own),
   ),
+  Tool<Map<String, dynamic>>(
+    name: 'portfolio',
+    description:
+        'The person\'s crypto, priced with Binance\'s market prices of the '
+        'moment. Each holding with where it is kept, how much is held '
+        '(quantityText, to show as it comes), its price, what it is worth in '
+        'the base currency and in dollars, how its price moved in the last '
+        '24 hours, what it cost and the gain or loss against that cost. The '
+        'cost follows the money that went in: bitcoin bought with tether '
+        'bought with pesos cost those pesos. Then the totals, how the value '
+        'splits between coins, what sales and conversions already gained, '
+        'and when the prices were read. Call it for anything about crypto, '
+        'an exchange, prices, or gains and losses on investments.',
+    onCall: (_) async {
+      await own.portfolio.refreshIfOlder(const Duration(minutes: 1));
+      return portfolioAnswer(own);
+    },
+  ),
 ];
+
+/// The `portfolio` tool's answer, apart so a test can read it.
+Map<String, Object?> portfolioAnswer(OwnController own) {
+  final Portfolio? p = own.portfolio.portfolio;
+  if (p == null || p.isEmpty) {
+    return <String, Object?>{
+      'holdings': <Object?>[],
+      'note': 'No crypto held.',
+    };
+  }
+  final Asset base = p.base;
+  num inBase(Decimal amount) => base.decimals == 0
+      ? amount.round().toBigInt().toInt()
+      : double.parse(amount.toStringAsFixed(base.decimals));
+  num dollars(Decimal amount) => double.parse(amount.toStringAsFixed(2));
+  num? percent(double? fraction) => fraction == null
+      ? null
+      : double.parse((fraction * 100).toStringAsFixed(2));
+  final Decimal total = p.value.base;
+  return <String, Object?>{
+    'baseCurrency': base.code,
+    'pricesFrom': 'Binance',
+    'pricedAt': p.pricedAt?.toIso8601String().split('.').first,
+    'totalValueInBase': inBase(total),
+    'totalValueInUsd': dollars(p.value.usd),
+    'totalCostInBase': inBase(p.cost.base),
+    'gainInBase': inBase(p.gain.base),
+    'gainPercent': percent(p.gainRatio),
+    'change24hInBase': inBase(p.moved24h.base),
+    'change24hPercent': percent(p.change24h),
+    'realizedInBase': inBase(p.realized.base),
+    'holdings': <Object?>[
+      for (final Holding h in p.holdings)
+        <String, Object?>{
+          'asset': h.asset.code,
+          'account': h.account.name,
+          if (h.account.institution.isNotEmpty) 'place': h.account.institution,
+          'quantityText': formatAmount(
+            h.position.quantity,
+            h.asset,
+            base: base,
+          ),
+          'priceInBase': h.price == null ? null : inBase(h.price!.base),
+          'priceInUsd': h.price == null ? null : dollars(h.price!.usd),
+          'valueInBase': h.value == null ? null : inBase(h.value!.base),
+          'valueInUsd': h.value == null ? null : dollars(h.value!.usd),
+          'change24hPercent': percent(h.change24h),
+          'costInBase': inBase(h.position.cost.base),
+          'averageCostInBase': h.position.averageCost == null
+              ? null
+              : inBase(h.position.averageCost!.base),
+          'gainInBase': h.gain == null ? null : inBase(h.gain!.base),
+          'gainPercent': percent(h.gainRatio),
+          if (h.position.uncosted > Decimal.zero)
+            'heldWithoutCostText': formatAmount(
+              h.position.uncosted,
+              h.asset,
+              base: base,
+            ),
+        },
+    ],
+    'allocation': <Object?>[
+      for (final (Asset a, Pair v) in p.allocation)
+        <String, Object?>{
+          'asset': a.code,
+          'percent': total == Decimal.zero
+              ? 0
+              : percent(
+                  (v.base / total)
+                      .toDecimal(scaleOnInfinitePrecision: 8)
+                      .toDouble(),
+                ),
+        },
+    ],
+    'withoutPrice': <String>[for (final Asset a in p.unpriced) a.code],
+  };
+}
 
 /// The `accounts` tool's answer, apart so a test can read it.
 Map<String, Object?> accountsAnswer(OwnController own) {

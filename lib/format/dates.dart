@@ -68,3 +68,6 @@ String weekdayName(int weekday) =>
 /// `1 oct, 9:30` or `Oct 1, 9:30 AM`: when something was last done.
 String dayAndTime(DateTime moment) =>
     _format('d MMM, H:mm', 'MMM d, h:mm a').format(moment).replaceAll('.', '');
+
+/// `14:05` or `2:05 PM`: the time of something that happened today.
+String timeOfDay(DateTime moment) => _format('H:mm', 'h:mm a').format(moment);

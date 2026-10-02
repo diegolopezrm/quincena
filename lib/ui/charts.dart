@@ -148,6 +148,81 @@ class BarsPainter extends CustomPainter {
       old.lineColor != lineColor;
 }
 
+/// A line over time with a soft fill under it, scaled between its own
+/// lowest and highest points.
+///
+/// [progress] draws it in from the left. The values are only shapes here:
+/// the screen around the chart says what they are.
+class LinePainter extends CustomPainter {
+  LinePainter({
+    required this.values,
+    required this.color,
+    this.progress = 1,
+    this.strokeWidth = 2.2,
+  });
+
+  final List<double> values;
+  final Color color;
+  final double progress;
+  final double strokeWidth;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (values.length < 2) return;
+    final double low = values.reduce(math.min);
+    final double high = values.reduce(math.max);
+    // A flat line sits in the middle rather than on the floor.
+    final double spread = high - low == 0 ? 1 : high - low;
+    final double pad = strokeWidth;
+    double y(double v) => high - low == 0
+        ? size.height / 2
+        : pad + (1 - (v - low) / spread) * (size.height - pad * 2);
+    final double step = size.width / (values.length - 1);
+    final int shown = math.max(2, (values.length * progress).ceil());
+
+    final Path line = Path()..moveTo(0, y(values.first));
+    for (var i = 1; i < shown; i++) {
+      line.lineTo(step * i, y(values[i]));
+    }
+    final Path area = Path.from(line)
+      ..lineTo(step * (shown - 1), size.height)
+      ..lineTo(0, size.height)
+      ..close();
+    canvas.drawPath(
+      area,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[
+            color.withValues(alpha: 0.22),
+            color.withValues(alpha: 0),
+          ],
+        ).createShader(Offset.zero & size),
+    );
+    canvas.drawPath(
+      line,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeJoin = StrokeJoin.round
+        ..strokeCap = StrokeCap.round,
+    );
+    // Where it ends now.
+    if (shown == values.length) {
+      final Offset end = Offset(step * (shown - 1), y(values.last));
+      canvas
+        ..drawCircle(end, 5, Paint()..color = color.withValues(alpha: 0.25))
+        ..drawCircle(end, 2.8, Paint()..color = color);
+    }
+  }
+
+  @override
+  bool shouldRepaint(LinePainter old) =>
+      old.progress != progress || old.values != values || old.color != color;
+}
+
 /// Plays a chart in once, the first time it is built.
 ///
 /// Honors the platform's reduced-motion setting: with animations disabled the

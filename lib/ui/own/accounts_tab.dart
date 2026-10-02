@@ -15,6 +15,7 @@ import '../kit.dart';
 import 'account_page.dart';
 import 'amount_input.dart';
 import 'look.dart';
+import 'portfolio_page.dart';
 
 /// One account: where it is, and what it holds in its own currency and in
 /// the base one.
@@ -44,7 +45,10 @@ class AccountRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: <Widget>[
-            AccountTile(account.kind),
+            if (account.asset.isCrypto)
+              CoinMark(account.asset)
+            else
+              AccountTile(account.kind),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -119,6 +123,10 @@ class AccountsTab extends StatelessWidget {
               '${l.groupSpendable}: ${moneyText(own.total(spendableOnly: true), base: base)}',
         ),
         const SizedBox(height: 20),
+        if (own.portfolio.hasHoldings) ...<Widget>[
+          PortfolioCard(own: own),
+          const SizedBox(height: 16),
+        ],
         RatesPanel(own: own),
         const SizedBox(height: 24),
         if (own.accounts.isEmpty)

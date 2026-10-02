@@ -118,6 +118,7 @@ void main() {
       find.widgetWithText(TextField, '¿Cuánto tiene hoy?'),
       '1.500.000',
     );
+    await tester.ensureVisible(find.text('Guardar'));
     await tester.tap(find.text('Guardar'));
     await settle(tester);
     await tester.tap(find.text('Binance · USDT'));
@@ -126,6 +127,7 @@ void main() {
       find.widgetWithText(TextField, '¿Cuánto tiene hoy?'),
       '100',
     );
+    await tester.ensureVisible(find.text('Guardar'));
     await tester.tap(find.text('Guardar'));
     await settle(tester);
     expect(screen(tester), contains(r'$ 1.500.000'));
@@ -148,6 +150,7 @@ void main() {
       find.widgetWithText(TextField, '¿Dónde o a quién?'),
       'Éxito',
     );
+    await tester.ensureVisible(find.text('Guardar'));
     await tester.ensureVisible(find.text('Guardar'));
     await tester.tap(find.text('Guardar'));
     await settle(tester);

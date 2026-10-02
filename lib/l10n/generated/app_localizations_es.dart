@@ -1121,4 +1121,185 @@ class AppLocalizationsEs extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get portfolioTitle => 'Cripto';
+
+  @override
+  String get portfolioWorth => 'Tu cripto vale';
+
+  @override
+  String get portfolioToday => 'Últimas 24 h';
+
+  @override
+  String get portfolioGain => 'Ganancia';
+
+  @override
+  String get portfolioLoss => 'Pérdida';
+
+  @override
+  String get portfolioSinceBought => 'frente a lo que pagaste';
+
+  @override
+  String portfolioPricedAt(String time) {
+    return 'Precios de Binance a las $time';
+  }
+
+  @override
+  String get portfolioPricing => 'Leyendo precios…';
+
+  @override
+  String get portfolioPricingFailed =>
+      'No se pudieron leer los precios: se muestran los últimos guardados.';
+
+  @override
+  String get portfolioNeverPriced => 'Aún sin precios: se leen al conectarse.';
+
+  @override
+  String get rangeDay => '24 h';
+
+  @override
+  String get rangeWeek => '7 d';
+
+  @override
+  String get rangeMonth => '30 d';
+
+  @override
+  String get rangeYear => '1 a';
+
+  @override
+  String get rangeDayLong => 'en 24 horas';
+
+  @override
+  String get rangeWeekLong => 'en 7 días';
+
+  @override
+  String get rangeMonthLong => 'en 30 días';
+
+  @override
+  String get rangeYearLong => 'en un año';
+
+  @override
+  String get chartEmpty => 'Aún no hay precios para dibujar.';
+
+  @override
+  String get chartWithHoldings => 'Con lo que tenías en cada momento.';
+
+  @override
+  String get portfolioAllocation => 'Distribución';
+
+  @override
+  String get portfolioOtherPlace => 'Otras';
+
+  @override
+  String get portfolioOtherAssets => 'Otras';
+
+  @override
+  String portfolioRealized(String amount) {
+    return 'Ya ganado en ventas y conversiones: $amount';
+  }
+
+  @override
+  String portfolioRealizedLoss(String amount) {
+    return 'Ya perdido en ventas y conversiones: $amount';
+  }
+
+  @override
+  String portfolioUncosted(String amount) {
+    return '$amount llegaron sin precio de compra y cuentan como ganancia. Puedes poner lo que costaron en su cuenta.';
+  }
+
+  @override
+  String portfolioUnpriced(String assets) {
+    return 'Binance no tiene precio para $assets: no suman al total.';
+  }
+
+  @override
+  String get portfolioDisclaimer =>
+      'Precios de mercado de Binance, que cambian a cada momento. Quincena no da asesoría de inversión.';
+
+  @override
+  String get portfolioOpen => 'Ver cripto';
+
+  @override
+  String get portfolioEmpty =>
+      'Aún no tienes cripto. Agrega una cuenta con bitcoin, tether o la moneda que tengas.';
+
+  @override
+  String get holdingQuantity => 'Tienes';
+
+  @override
+  String get holdingPrice => 'Precio';
+
+  @override
+  String get holdingWorth => 'Vale';
+
+  @override
+  String get holdingCost => 'Te costó';
+
+  @override
+  String get holdingAverage => 'Costo promedio';
+
+  @override
+  String get holdingNoCost => 'Sin costo';
+
+  @override
+  String get holdingNoCostHelp =>
+      'Pon lo que te costó al editar la cuenta, o registra tus compras.';
+
+  @override
+  String get tradeBuy => 'Registrar compra';
+
+  @override
+  String get tradeSell => 'Registrar venta';
+
+  @override
+  String get tradeBought => 'Compra';
+
+  @override
+  String get tradeSold => 'Venta';
+
+  @override
+  String tradeQuantity(String code) {
+    return 'Cantidad de $code';
+  }
+
+  @override
+  String get tradePaid => 'Total pagado';
+
+  @override
+  String get tradeReceived => 'Total recibido';
+
+  @override
+  String get tradePaidFrom => 'Pagado desde';
+
+  @override
+  String get tradeReceivedIn => 'Recibido en';
+
+  @override
+  String get tradeOutside => 'Fuera de Quincena';
+
+  @override
+  String get tradeOutsideHelp =>
+      'En Binance P2P, en otro exchange o en efectivo. Si sale de una de tus cuentas, elígela y su saldo también cambia.';
+
+  @override
+  String get tradeCurrency => 'Moneda';
+
+  @override
+  String tradePriceEach(String price) {
+    return 'Precio por unidad: $price';
+  }
+
+  @override
+  String tradeNotEnough(String amount) {
+    return 'Esa cuenta tiene $amount.';
+  }
+
+  @override
+  String get accountOpeningCost => '¿Cuánto te costó?';
+
+  @override
+  String get accountOpeningCostHelp =>
+      'Opcional. Lo que pagaste por ese saldo; con esto Quincena calcula cuánto has ganado.';
 }

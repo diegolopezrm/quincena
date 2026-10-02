@@ -66,9 +66,13 @@ ${ledger.nextPayday.toIso8601String().split('T').first}. ${_currency(ledger)}'''
 The person's accounts can be in different currencies, and some can hold
 crypto on an exchange. What account_overview, month_spending and the other
 tools return is already in ${ledger.currency.code}. For anything about one account,
-dollars, crypto or everything the person has, call accounts: show each
-account's balanceText exactly as it comes, and bind balanceInBase and the
-totals to the money function.
+dollars or everything the person has, call accounts: show each account's
+balanceText exactly as it comes, and bind balanceInBase and the totals to the
+money function. For crypto, what it is worth now, how it moved or what it
+gained, call portfolio: its prices are Binance's of the moment, quantityText
+shows as it comes, the InBase figures go through money, and a gain is against
+the pesos or dollars that went in. Describe what happened; never tell the
+person to buy or sell.
 
 Recording an expense saves it in the person's own accounts, for real: call
 record_expense only after save_expense arrives, with the account the person
