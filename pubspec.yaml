@@ -51,6 +51,8 @@ dependencies:
   firebase_app_check: ^0.4.8
   firebase_ai: ^4.0.0
   web: ^1.1.1
+  flutter_secure_storage: ^11.2.0
+  crypto: ^3.0.7
 
 dev_dependencies:
   flutter_test:

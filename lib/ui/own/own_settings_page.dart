@@ -8,11 +8,13 @@ import '../../app.dart';
 import '../../app_mode.dart';
 import '../../domain/pay_schedule.dart';
 import '../../domain/records.dart';
+import '../../exchanges/binance_link.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
+import 'binance_page.dart';
 import 'capture_settings_page.dart';
 import 'look.dart';
 import 'pay_schedule_editor.dart';
@@ -322,6 +324,21 @@ class OwnSettingsPage extends StatelessWidget {
                           ),
                         ),
                       ),
+                      if (BinanceLink.available)
+                        _row(
+                          context,
+                          icon: Glyph.currencyBtc,
+                          title: l.binanceTitle,
+                          value: own.binance.connected
+                              ? l.binanceConnected
+                              : l.binanceCardBody,
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (BuildContext context) =>
+                                  BinancePage(own: own),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 24),

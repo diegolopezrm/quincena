@@ -1303,4 +1303,144 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get accountOpeningCostHelp =>
       'Optional. What you paid for that balance; with it, Quincena works out how much you have gained.';
+
+  @override
+  String get binanceTitle => 'Binance';
+
+  @override
+  String get binanceCardTitle => 'Connect Binance';
+
+  @override
+  String get binanceCardBody =>
+      'Bring in your balances, P2P purchases and conversions on their own, with a key that can only read.';
+
+  @override
+  String get binanceConnectTitle => 'Your Binance account, on its own';
+
+  @override
+  String get binanceConnectBody =>
+      'Quincena brings in your spot, funding and Earn balances, your P2P purchases and sales, your conversions, market trades, deposits and withdrawals, and works out from them what each coin cost you.';
+
+  @override
+  String get binanceReadOnlyTitle => 'Read only';
+
+  @override
+  String get binanceReadOnlyBody =>
+      'The key can only read: it cannot buy, sell, move or withdraw anything. If it can do anything more, Quincena does not take it.';
+
+  @override
+  String get binanceKeyStoredTitle => 'Only on this device';
+
+  @override
+  String get binanceKeyStoredBody =>
+      'The key is kept in the device\'s keychain and only used to talk to Binance. It does not go to Gemini, into the copy you export, or to any Quincena server.';
+
+  @override
+  String get binanceStepsTitle => 'How to create the key';
+
+  @override
+  String get binanceSteps =>
+      '1. In the Binance app, open your profile and go to API Management.\n2. Create a system-generated API and name it Quincena.\n3. Leave only \"Enable Reading\" checked. Since a phone has no fixed IP, choose no IP restriction: with read-only access nobody can move your money.\n4. Copy the API Key and the Secret Key and paste them here.';
+
+  @override
+  String get binanceApiKey => 'API Key';
+
+  @override
+  String get binanceSecretKey => 'Secret Key';
+
+  @override
+  String get binanceConnect => 'Connect';
+
+  @override
+  String get binanceConnecting => 'Checking the key with Binance…';
+
+  @override
+  String binanceNotReadOnly(String what) {
+    return 'This key can do more than read ($what). Create one with only \"Enable Reading\"; this one was not kept.';
+  }
+
+  @override
+  String get binanceBadKey =>
+      'Binance does not recognize that key. Check that you copied both in full, or that it was not deleted.';
+
+  @override
+  String get binanceOffline =>
+      'Binance could not be reached. Check your connection and try again.';
+
+  @override
+  String get binanceLimited =>
+      'Binance asked to wait a moment. Try again in a minute.';
+
+  @override
+  String get binanceFailed =>
+      'Something went wrong reading Binance. Try again.';
+
+  @override
+  String get binanceConnected => 'Connected with a read-only key';
+
+  @override
+  String binanceSyncedAt(String when) {
+    return 'Read $when';
+  }
+
+  @override
+  String get binanceNeverSynced => 'Not read yet';
+
+  @override
+  String get binanceSyncNow => 'Read now';
+
+  @override
+  String get binanceSyncing => 'Reading your Binance account…';
+
+  @override
+  String binanceReport(int movements) {
+    String _temp0 = intl.Intl.pluralLogic(
+      movements,
+      locale: localeName,
+      other: '$movements new movements',
+      one: 'one new movement',
+      zero: 'nothing new',
+    );
+    return 'Done: $_temp0.';
+  }
+
+  @override
+  String get binanceDisconnect => 'Disconnect';
+
+  @override
+  String get binanceDisconnectTitle => 'Disconnect Binance?';
+
+  @override
+  String get binanceDisconnectBody =>
+      'The key is erased from this device. The accounts and movements it brought stay as yours.';
+
+  @override
+  String get binanceWebOnly =>
+      'On the web, Binance does not let a page connect to your account. Connect it from the phone or computer app.';
+
+  @override
+  String binanceManualAccounts(String names) {
+    return 'You also have Binance accounts you kept by hand: $names. Archive them so the same money is not counted twice.';
+  }
+
+  @override
+  String get binanceArchive => 'Archive them';
+
+  @override
+  String get binanceLabelP2p => 'Binance P2P';
+
+  @override
+  String get binanceLabelConversion => 'Binance conversion';
+
+  @override
+  String get binanceLabelDeposit => 'Deposit to Binance';
+
+  @override
+  String get binanceLabelWithdrawal => 'Withdrawal from Binance';
+
+  @override
+  String get binanceLabelFee => 'Binance fee';
+
+  @override
+  String get binanceLabelAdjustment => 'Adjustment with Binance';
 }

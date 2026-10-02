@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../domain/records.dart';
+import '../../exchanges/binance_link.dart';
 import '../../format/dates.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
@@ -15,6 +16,7 @@ import '../kit.dart';
 import 'account_page.dart';
 import 'amount_input.dart';
 import 'look.dart';
+import 'binance_page.dart';
 import 'portfolio_page.dart';
 
 /// One account: where it is, and what it holds in its own currency and in
@@ -125,6 +127,9 @@ class AccountsTab extends StatelessWidget {
         const SizedBox(height: 20),
         if (own.portfolio.hasHoldings) ...<Widget>[
           PortfolioCard(own: own),
+          const SizedBox(height: 16),
+        ] else if (BinanceLink.available) ...<Widget>[
+          BinanceCard(own: own),
           const SizedBox(height: 16),
         ],
         RatesPanel(own: own),

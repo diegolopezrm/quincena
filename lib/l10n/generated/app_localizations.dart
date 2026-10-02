@@ -2281,6 +2281,234 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Opcional. Lo que pagaste por ese saldo; con esto Quincena calcula cuánto has ganado.'**
   String get accountOpeningCostHelp;
+
+  /// No description provided for @binanceTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Binance'**
+  String get binanceTitle;
+
+  /// No description provided for @binanceCardTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Conecta Binance'**
+  String get binanceCardTitle;
+
+  /// No description provided for @binanceCardBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Trae tus saldos, compras P2P y conversiones solos, con una llave que solo puede leer.'**
+  String get binanceCardBody;
+
+  /// No description provided for @binanceConnectTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu cuenta de Binance, sola'**
+  String get binanceConnectTitle;
+
+  /// No description provided for @binanceConnectBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Quincena trae tus saldos de spot, fondos y Earn, tus compras y ventas en P2P, tus conversiones, compras en el mercado, depósitos y retiros, y con eso calcula cuánto te costó cada moneda.'**
+  String get binanceConnectBody;
+
+  /// No description provided for @binanceReadOnlyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo lectura'**
+  String get binanceReadOnlyTitle;
+
+  /// No description provided for @binanceReadOnlyBody.
+  ///
+  /// In es, this message translates to:
+  /// **'La llave solo puede leer: no puede comprar, vender, mover ni retirar nada. Si puede hacer algo más, Quincena no la acepta.'**
+  String get binanceReadOnlyBody;
+
+  /// No description provided for @binanceKeyStoredTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo en este dispositivo'**
+  String get binanceKeyStoredTitle;
+
+  /// No description provided for @binanceKeyStoredBody.
+  ///
+  /// In es, this message translates to:
+  /// **'La llave se guarda en el llavero del dispositivo y solo se usa para hablar con Binance. No va a Gemini, ni a la copia que exportas, ni a ningún servidor de Quincena.'**
+  String get binanceKeyStoredBody;
+
+  /// No description provided for @binanceStepsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cómo crear la llave'**
+  String get binanceStepsTitle;
+
+  /// No description provided for @binanceSteps.
+  ///
+  /// In es, this message translates to:
+  /// **'1. En la app de Binance, abre tu perfil y entra a Gestión de API.\n2. Crea una API generada por el sistema y llámala Quincena.\n3. Deja marcado solo «Habilitar lectura». Como el teléfono no tiene una IP fija, elige sin restricción de IP: con solo lectura no hay riesgo de que muevan tu plata.\n4. Copia la API Key y la Secret Key y pégalas aquí.'**
+  String get binanceSteps;
+
+  /// No description provided for @binanceApiKey.
+  ///
+  /// In es, this message translates to:
+  /// **'API Key'**
+  String get binanceApiKey;
+
+  /// No description provided for @binanceSecretKey.
+  ///
+  /// In es, this message translates to:
+  /// **'Secret Key'**
+  String get binanceSecretKey;
+
+  /// No description provided for @binanceConnect.
+  ///
+  /// In es, this message translates to:
+  /// **'Conectar'**
+  String get binanceConnect;
+
+  /// No description provided for @binanceConnecting.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisando la llave con Binance…'**
+  String get binanceConnecting;
+
+  /// No description provided for @binanceNotReadOnly.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta llave puede hacer más que leer ({what}). Crea una que solo tenga «Habilitar lectura»; esta no se guardó.'**
+  String binanceNotReadOnly(String what);
+
+  /// No description provided for @binanceBadKey.
+  ///
+  /// In es, this message translates to:
+  /// **'Binance no reconoce esa llave. Revisa que copiaste las dos completas, o que no la hayas borrado.'**
+  String get binanceBadKey;
+
+  /// No description provided for @binanceOffline.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo hablar con Binance. Revisa tu conexión e intenta de nuevo.'**
+  String get binanceOffline;
+
+  /// No description provided for @binanceLimited.
+  ///
+  /// In es, this message translates to:
+  /// **'Binance pidió esperar un momento. Intenta en un minuto.'**
+  String get binanceLimited;
+
+  /// No description provided for @binanceFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'Algo salió mal al leer Binance. Intenta de nuevo.'**
+  String get binanceFailed;
+
+  /// No description provided for @binanceConnected.
+  ///
+  /// In es, this message translates to:
+  /// **'Conectada con una llave de solo lectura'**
+  String get binanceConnected;
+
+  /// No description provided for @binanceSyncedAt.
+  ///
+  /// In es, this message translates to:
+  /// **'Leída {when}'**
+  String binanceSyncedAt(String when);
+
+  /// No description provided for @binanceNeverSynced.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún sin leer'**
+  String get binanceNeverSynced;
+
+  /// No description provided for @binanceSyncNow.
+  ///
+  /// In es, this message translates to:
+  /// **'Leer ahora'**
+  String get binanceSyncNow;
+
+  /// No description provided for @binanceSyncing.
+  ///
+  /// In es, this message translates to:
+  /// **'Leyendo tu cuenta de Binance…'**
+  String get binanceSyncing;
+
+  /// No description provided for @binanceReport.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo: {movements, plural, =0{nada nuevo} =1{un movimiento nuevo} other{{movements} movimientos nuevos}}.'**
+  String binanceReport(int movements);
+
+  /// No description provided for @binanceDisconnect.
+  ///
+  /// In es, this message translates to:
+  /// **'Desconectar'**
+  String get binanceDisconnect;
+
+  /// No description provided for @binanceDisconnectTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Desconectar Binance?'**
+  String get binanceDisconnectTitle;
+
+  /// No description provided for @binanceDisconnectBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Se borra la llave de este dispositivo. Las cuentas y los movimientos que trajo se quedan como tuyos.'**
+  String get binanceDisconnectBody;
+
+  /// No description provided for @binanceWebOnly.
+  ///
+  /// In es, this message translates to:
+  /// **'En la web, Binance no deja que una página se conecte a tu cuenta. Conéctala desde la app del teléfono o del computador.'**
+  String get binanceWebOnly;
+
+  /// No description provided for @binanceManualAccounts.
+  ///
+  /// In es, this message translates to:
+  /// **'También tienes cuentas de Binance que llevabas a mano: {names}. Archívalas para no contar lo mismo dos veces.'**
+  String binanceManualAccounts(String names);
+
+  /// No description provided for @binanceArchive.
+  ///
+  /// In es, this message translates to:
+  /// **'Archivarlas'**
+  String get binanceArchive;
+
+  /// No description provided for @binanceLabelP2p.
+  ///
+  /// In es, this message translates to:
+  /// **'Binance P2P'**
+  String get binanceLabelP2p;
+
+  /// No description provided for @binanceLabelConversion.
+  ///
+  /// In es, this message translates to:
+  /// **'Conversión en Binance'**
+  String get binanceLabelConversion;
+
+  /// No description provided for @binanceLabelDeposit.
+  ///
+  /// In es, this message translates to:
+  /// **'Depósito a Binance'**
+  String get binanceLabelDeposit;
+
+  /// No description provided for @binanceLabelWithdrawal.
+  ///
+  /// In es, this message translates to:
+  /// **'Retiro de Binance'**
+  String get binanceLabelWithdrawal;
+
+  /// No description provided for @binanceLabelFee.
+  ///
+  /// In es, this message translates to:
+  /// **'Comisión de Binance'**
+  String get binanceLabelFee;
+
+  /// No description provided for @binanceLabelAdjustment.
+  ///
+  /// In es, this message translates to:
+  /// **'Ajuste con Binance'**
+  String get binanceLabelAdjustment;
 }
 
 class _AppLocalizationsDelegate

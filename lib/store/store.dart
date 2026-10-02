@@ -435,6 +435,8 @@ class QuincenaStore {
     Decimal? received,
     required DateTime date,
     String note = '',
+    String source = 'manual',
+    String? sourceRef,
   }) async {
     final String transferId = _newId();
     await db.transaction(() async {
@@ -450,6 +452,8 @@ class QuincenaStore {
                 kind: EntryKind.transfer,
                 note: note.trim(),
                 transferId: transferId,
+                source: source,
+                sourceRef: sourceRef,
               ),
             ),
           );
@@ -465,6 +469,8 @@ class QuincenaStore {
                 kind: EntryKind.transfer,
                 note: note.trim(),
                 transferId: transferId,
+                source: source,
+                sourceRef: sourceRef,
               ),
             ),
           );

@@ -1302,4 +1302,144 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get accountOpeningCostHelp =>
       'Opcional. Lo que pagaste por ese saldo; con esto Quincena calcula cuánto has ganado.';
+
+  @override
+  String get binanceTitle => 'Binance';
+
+  @override
+  String get binanceCardTitle => 'Conecta Binance';
+
+  @override
+  String get binanceCardBody =>
+      'Trae tus saldos, compras P2P y conversiones solos, con una llave que solo puede leer.';
+
+  @override
+  String get binanceConnectTitle => 'Tu cuenta de Binance, sola';
+
+  @override
+  String get binanceConnectBody =>
+      'Quincena trae tus saldos de spot, fondos y Earn, tus compras y ventas en P2P, tus conversiones, compras en el mercado, depósitos y retiros, y con eso calcula cuánto te costó cada moneda.';
+
+  @override
+  String get binanceReadOnlyTitle => 'Solo lectura';
+
+  @override
+  String get binanceReadOnlyBody =>
+      'La llave solo puede leer: no puede comprar, vender, mover ni retirar nada. Si puede hacer algo más, Quincena no la acepta.';
+
+  @override
+  String get binanceKeyStoredTitle => 'Solo en este dispositivo';
+
+  @override
+  String get binanceKeyStoredBody =>
+      'La llave se guarda en el llavero del dispositivo y solo se usa para hablar con Binance. No va a Gemini, ni a la copia que exportas, ni a ningún servidor de Quincena.';
+
+  @override
+  String get binanceStepsTitle => 'Cómo crear la llave';
+
+  @override
+  String get binanceSteps =>
+      '1. En la app de Binance, abre tu perfil y entra a Gestión de API.\n2. Crea una API generada por el sistema y llámala Quincena.\n3. Deja marcado solo «Habilitar lectura». Como el teléfono no tiene una IP fija, elige sin restricción de IP: con solo lectura no hay riesgo de que muevan tu plata.\n4. Copia la API Key y la Secret Key y pégalas aquí.';
+
+  @override
+  String get binanceApiKey => 'API Key';
+
+  @override
+  String get binanceSecretKey => 'Secret Key';
+
+  @override
+  String get binanceConnect => 'Conectar';
+
+  @override
+  String get binanceConnecting => 'Revisando la llave con Binance…';
+
+  @override
+  String binanceNotReadOnly(String what) {
+    return 'Esta llave puede hacer más que leer ($what). Crea una que solo tenga «Habilitar lectura»; esta no se guardó.';
+  }
+
+  @override
+  String get binanceBadKey =>
+      'Binance no reconoce esa llave. Revisa que copiaste las dos completas, o que no la hayas borrado.';
+
+  @override
+  String get binanceOffline =>
+      'No se pudo hablar con Binance. Revisa tu conexión e intenta de nuevo.';
+
+  @override
+  String get binanceLimited =>
+      'Binance pidió esperar un momento. Intenta en un minuto.';
+
+  @override
+  String get binanceFailed =>
+      'Algo salió mal al leer Binance. Intenta de nuevo.';
+
+  @override
+  String get binanceConnected => 'Conectada con una llave de solo lectura';
+
+  @override
+  String binanceSyncedAt(String when) {
+    return 'Leída $when';
+  }
+
+  @override
+  String get binanceNeverSynced => 'Aún sin leer';
+
+  @override
+  String get binanceSyncNow => 'Leer ahora';
+
+  @override
+  String get binanceSyncing => 'Leyendo tu cuenta de Binance…';
+
+  @override
+  String binanceReport(int movements) {
+    String _temp0 = intl.Intl.pluralLogic(
+      movements,
+      locale: localeName,
+      other: '$movements movimientos nuevos',
+      one: 'un movimiento nuevo',
+      zero: 'nada nuevo',
+    );
+    return 'Listo: $_temp0.';
+  }
+
+  @override
+  String get binanceDisconnect => 'Desconectar';
+
+  @override
+  String get binanceDisconnectTitle => '¿Desconectar Binance?';
+
+  @override
+  String get binanceDisconnectBody =>
+      'Se borra la llave de este dispositivo. Las cuentas y los movimientos que trajo se quedan como tuyos.';
+
+  @override
+  String get binanceWebOnly =>
+      'En la web, Binance no deja que una página se conecte a tu cuenta. Conéctala desde la app del teléfono o del computador.';
+
+  @override
+  String binanceManualAccounts(String names) {
+    return 'También tienes cuentas de Binance que llevabas a mano: $names. Archívalas para no contar lo mismo dos veces.';
+  }
+
+  @override
+  String get binanceArchive => 'Archivarlas';
+
+  @override
+  String get binanceLabelP2p => 'Binance P2P';
+
+  @override
+  String get binanceLabelConversion => 'Conversión en Binance';
+
+  @override
+  String get binanceLabelDeposit => 'Depósito a Binance';
+
+  @override
+  String get binanceLabelWithdrawal => 'Retiro de Binance';
+
+  @override
+  String get binanceLabelFee => 'Comisión de Binance';
+
+  @override
+  String get binanceLabelAdjustment => 'Ajuste con Binance';
 }

@@ -20,6 +20,7 @@ import '../money/asset.dart';
 import '../money/money.dart';
 import '../money/rate_sources.dart';
 import '../money/rates.dart';
+import '../exchanges/binance_link.dart';
 import '../portfolio/market.dart';
 import '../portfolio/portfolio_controller.dart';
 import '../store/store.dart';
@@ -37,6 +38,7 @@ class OwnController extends ChangeNotifier {
     PlaceFinder? places,
     this.readNative = true,
     this._market,
+    this._binance,
   }) : _fetcher = fetcher ?? RateFetcher(),
        _now = now ?? DateTime.now {
     capture = CaptureService(store, places: places ?? PlaceFinder(), now: _now);
@@ -57,6 +59,10 @@ class OwnController extends ChangeNotifier {
   PortfolioController get portfolio =>
       _portfolio ??= PortfolioController(this, market: _market);
   PortfolioController? _portfolio;
+
+  /// Their Binance account, when they link it.
+  BinanceLink get binance => _binance ??= BinanceLink(store);
+  BinanceLink? _binance;
 
   /// How old the rates may be before opening the app fetches new ones.
   final Duration ratesMaxAge;
@@ -310,6 +316,7 @@ class OwnController extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _portfolio?.dispose();
+    _binance?.dispose();
     CaptureChannel.stop(this);
     _pending?.cancel();
     unawaited(_changes?.cancel());

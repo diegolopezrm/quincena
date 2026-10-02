@@ -15,7 +15,9 @@ import '../../theme/tokens.dart';
 import '../charts.dart';
 import '../icons.dart';
 import '../kit.dart';
+import '../../exchanges/binance_link.dart';
 import 'account_page.dart';
+import 'binance_page.dart';
 import 'look.dart';
 
 /// [fraction] as a percentage: `+1,2 %` in Spanish, `+1.2%` in English.
@@ -307,6 +309,15 @@ class _PortfolioPageState extends State<PortfolioPage> {
     super.initState();
     _controller.watch();
     _controller.loadChart(_range);
+    if (BinanceLink.available) {
+      widget.own.binance.syncIfOlder(const Duration(minutes: 30));
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    widget.own.binance.labels = binanceLabels(context.l10n);
   }
 
   @override
@@ -354,6 +365,10 @@ class _PortfolioPageState extends State<PortfolioPage> {
                   children: <Widget>[
                     _Hero(portfolio: p, controller: _controller),
                     const SizedBox(height: 20),
+                    if (BinanceLink.available) ...<Widget>[
+                      BinanceCard(own: widget.own),
+                      const SizedBox(height: 16),
+                    ],
                     _ChartCard(
                       portfolio: p,
                       controller: _controller,
