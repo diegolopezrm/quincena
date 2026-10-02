@@ -103,7 +103,25 @@ asks for them, the largest payments of a month with their merchants.
   Flash is a short-term model that can be retired 45 days after its
   replacement ships.
 - The terms also rule out relying on Gemini for financial advice, and apps
-  directed at minors.
+  directed at minors. The prompt tells Gemini to describe what happened to
+  an investment and never to say what to buy or sell.
+
+Crypto and Binance:
+
+- **A Binance key** is checked with Binance before it is kept, and refused
+  unless it can only read. It lives in the device's keychain (the Keychain
+  on Apple devices, the Keystore on Android), on that device only: never in
+  the database, an export, the logs or a prompt. Requests go from the device
+  straight to `api.binance.com`, signed with HMAC-SHA256 and stamped with
+  Binance's clock; nothing passes through the Firebase project. What a sync
+  reads stays in the local database like any other movement. The web does
+  not offer it: Binance does not answer a browser's signed requests, and a
+  browser has no keychain.
+- **Market prices** come from Binance's public market data
+  (`data-api.binance.vision`), and past dollar rates from datos.gov.co or,
+  for other currencies, the European Central Bank through Frankfurter. Those
+  requests say which coins or currencies are wanted, never how much the
+  person holds.
 
 Sources: [Agent Platform zero data retention](https://docs.cloud.google.com/gemini-enterprise-agent-platform/resources/zero-data-retention),
 [Agent Platform abuse monitoring](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/abuse-monitoring),

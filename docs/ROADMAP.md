@@ -64,8 +64,11 @@ set up the app, record a week of movements and see the right totals, offline.
   deduplicator across sources and against movements entered by hand.
 - iOS: a "Record a movement" App Intent that Shortcuts automations call without
   opening the app, for Wallet (Apple Pay), Message, Email and, from iOS 27,
-  Notification. Automations are set up by hand, following the steps in the
-  app: iOS does not let an app or a file create them.
+  Notification. From iOS 27 a shortcut carries its own trigger, so the app
+  offers ready ones, each added from an iCloud link and switched on with one
+  toggle: the banks' notifications, bank texts that mention $, any Apple Pay
+  card, and screenshots whose text, read on the phone first, shows $. iOS 26
+  automations are still set up by hand, following the steps in the app.
 - Android: a notification listener, opt-in, that keeps only notifications
   with an amount next to a currency, never security codes, and skips the
   apps the person mutes.
@@ -114,13 +117,45 @@ set up the app, record a week of movements and see the right totals, offline.
   once the app is in the Play Console, and a daily limit per person on a
   server if 30 a day has to hold.
 
-### 8. Statements, email and exchanges
+### 8. Investments, statements and exchanges
+
+Built, waiting to be released:
+
+- A crypto portfolio. Every account in crypto, priced with Binance's public
+  market data every 30 seconds while a screen shows it: its value in the base
+  currency and in dollars, the last 24 hours, how it splits between coins and
+  where each one is kept, and a chart from 24 hours to a year drawn with what
+  was held at each moment.
+- What each holding cost, followed from the money that went in: bitcoin
+  bought with tether bought with pesos cost those pesos, with each day's TRM
+  for the dollar side. Against it, the gain or loss while held, the gains
+  already taken in sales and conversions, and what came in with no known
+  cost, said apart.
+- Purchases and sales recorded with their cost, paid from one of the
+  person's accounts or outside them (Binance P2P, cash), and the cost of what
+  an account started with. Buying or selling is neither spending nor income.
+- Binance linked with a read-only API key, checked with Binance and refused
+  if it can trade, move or withdraw, and kept in the device's keychain. Each
+  sync reads every wallet's balances, P2P orders with what they cost in
+  pesos, conversions, spot trades, deposits and withdrawals: a year back the
+  first time, then since the last one. Each movement is recorded once, and
+  every account ends holding what Binance says. Not on the web, where
+  Binance does not answer a browser's signed requests.
+- Gemini's `portfolio` tool, with the same figures and no advice on what to
+  buy or sell.
+
+Next:
 
 - Statement import: CSV and Excel read on the device; PDF read by Gemini. Every
   extracted movement is shown for review before it is saved.
-- Bank alert emails over IMAP, on the device, filtered by sender.
-- Binance with a read-only API key kept in the device's secure storage:
-  balances, deposits, withdrawals and conversions.
+- Bank alert emails. iOS 27's Email trigger only filters by sender or subject,
+  so it needs the person's bank and stays in the in-app steps; IMAP on the
+  device remains the way on Android and the desktop.
+- A Binance P2P purchase also leaves the bank as a payment to the seller:
+  matching the two would make them one transfer instead of a purchase and an
+  expense.
+- Other exchanges common in Colombia, such as Bitso and Buda, by read-only
+  API, and self-custody wallets by public address.
 
 ### 9. Release
 
