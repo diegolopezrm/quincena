@@ -69,6 +69,39 @@ class $AccountsTable extends Accounts
     requiredDuringInsert: false,
     defaultValue: const Constant('0'),
   );
+  static const VerificationMeta _openingCostMeta = const VerificationMeta(
+    'openingCost',
+  );
+  @override
+  late final GeneratedColumn<String> openingCost = GeneratedColumn<String>(
+    'opening_cost',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _openingCostAssetMeta = const VerificationMeta(
+    'openingCostAsset',
+  );
+  @override
+  late final GeneratedColumn<String> openingCostAsset = GeneratedColumn<String>(
+    'opening_cost_asset',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _syncRefMeta = const VerificationMeta(
+    'syncRef',
+  );
+  @override
+  late final GeneratedColumn<String> syncRef = GeneratedColumn<String>(
+    'sync_ref',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _spendableMeta = const VerificationMeta(
     'spendable',
   );
@@ -130,6 +163,9 @@ class $AccountsTable extends Accounts
     asset,
     institution,
     openingBalance,
+    openingCost,
+    openingCostAsset,
+    syncRef,
     spendable,
     archived,
     sortOrder,
@@ -194,6 +230,30 @@ class $AccountsTable extends Accounts
         ),
       );
     }
+    if (data.containsKey('opening_cost')) {
+      context.handle(
+        _openingCostMeta,
+        openingCost.isAcceptableOrUnknown(
+          data['opening_cost']!,
+          _openingCostMeta,
+        ),
+      );
+    }
+    if (data.containsKey('opening_cost_asset')) {
+      context.handle(
+        _openingCostAssetMeta,
+        openingCostAsset.isAcceptableOrUnknown(
+          data['opening_cost_asset']!,
+          _openingCostAssetMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sync_ref')) {
+      context.handle(
+        _syncRefMeta,
+        syncRef.isAcceptableOrUnknown(data['sync_ref']!, _syncRefMeta),
+      );
+    }
     if (data.containsKey('spendable')) {
       context.handle(
         _spendableMeta,
@@ -253,6 +313,18 @@ class $AccountsTable extends Accounts
         DriftSqlType.string,
         data['${effectivePrefix}opening_balance'],
       )!,
+      openingCost: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}opening_cost'],
+      ),
+      openingCostAsset: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}opening_cost_asset'],
+      ),
+      syncRef: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_ref'],
+      ),
       spendable: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}spendable'],
@@ -290,6 +362,16 @@ class AccountRow extends DataClass implements Insertable<AccountRow> {
   final String institution;
   final String openingBalance;
 
+  /// What the opening balance cost, in [openingCostAsset], when it is known:
+  /// the pesos paid for the bitcoin an account started with. Null when the
+  /// person did not say, and for money that is not an investment.
+  final String? openingCost;
+  final String? openingCostAsset;
+
+  /// What keeps the account in sync, such as `binance:BTC`; null for the
+  /// accounts the person keeps by hand.
+  final String? syncRef;
+
   /// Whether its money counts as available to spend before payday. Savings,
   /// investments and crypto usually do not.
   final bool spendable;
@@ -303,6 +385,9 @@ class AccountRow extends DataClass implements Insertable<AccountRow> {
     required this.asset,
     required this.institution,
     required this.openingBalance,
+    this.openingCost,
+    this.openingCostAsset,
+    this.syncRef,
     required this.spendable,
     required this.archived,
     required this.sortOrder,
@@ -317,6 +402,15 @@ class AccountRow extends DataClass implements Insertable<AccountRow> {
     map['asset'] = Variable<String>(asset);
     map['institution'] = Variable<String>(institution);
     map['opening_balance'] = Variable<String>(openingBalance);
+    if (!nullToAbsent || openingCost != null) {
+      map['opening_cost'] = Variable<String>(openingCost);
+    }
+    if (!nullToAbsent || openingCostAsset != null) {
+      map['opening_cost_asset'] = Variable<String>(openingCostAsset);
+    }
+    if (!nullToAbsent || syncRef != null) {
+      map['sync_ref'] = Variable<String>(syncRef);
+    }
     map['spendable'] = Variable<bool>(spendable);
     map['archived'] = Variable<bool>(archived);
     map['sort_order'] = Variable<int>(sortOrder);
@@ -332,6 +426,15 @@ class AccountRow extends DataClass implements Insertable<AccountRow> {
       asset: Value(asset),
       institution: Value(institution),
       openingBalance: Value(openingBalance),
+      openingCost: openingCost == null && nullToAbsent
+          ? const Value.absent()
+          : Value(openingCost),
+      openingCostAsset: openingCostAsset == null && nullToAbsent
+          ? const Value.absent()
+          : Value(openingCostAsset),
+      syncRef: syncRef == null && nullToAbsent
+          ? const Value.absent()
+          : Value(syncRef),
       spendable: Value(spendable),
       archived: Value(archived),
       sortOrder: Value(sortOrder),
@@ -351,6 +454,9 @@ class AccountRow extends DataClass implements Insertable<AccountRow> {
       asset: serializer.fromJson<String>(json['asset']),
       institution: serializer.fromJson<String>(json['institution']),
       openingBalance: serializer.fromJson<String>(json['openingBalance']),
+      openingCost: serializer.fromJson<String?>(json['openingCost']),
+      openingCostAsset: serializer.fromJson<String?>(json['openingCostAsset']),
+      syncRef: serializer.fromJson<String?>(json['syncRef']),
       spendable: serializer.fromJson<bool>(json['spendable']),
       archived: serializer.fromJson<bool>(json['archived']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
@@ -367,6 +473,9 @@ class AccountRow extends DataClass implements Insertable<AccountRow> {
       'asset': serializer.toJson<String>(asset),
       'institution': serializer.toJson<String>(institution),
       'openingBalance': serializer.toJson<String>(openingBalance),
+      'openingCost': serializer.toJson<String?>(openingCost),
+      'openingCostAsset': serializer.toJson<String?>(openingCostAsset),
+      'syncRef': serializer.toJson<String?>(syncRef),
       'spendable': serializer.toJson<bool>(spendable),
       'archived': serializer.toJson<bool>(archived),
       'sortOrder': serializer.toJson<int>(sortOrder),
@@ -381,6 +490,9 @@ class AccountRow extends DataClass implements Insertable<AccountRow> {
     String? asset,
     String? institution,
     String? openingBalance,
+    Value<String?> openingCost = const Value.absent(),
+    Value<String?> openingCostAsset = const Value.absent(),
+    Value<String?> syncRef = const Value.absent(),
     bool? spendable,
     bool? archived,
     int? sortOrder,
@@ -392,6 +504,11 @@ class AccountRow extends DataClass implements Insertable<AccountRow> {
     asset: asset ?? this.asset,
     institution: institution ?? this.institution,
     openingBalance: openingBalance ?? this.openingBalance,
+    openingCost: openingCost.present ? openingCost.value : this.openingCost,
+    openingCostAsset: openingCostAsset.present
+        ? openingCostAsset.value
+        : this.openingCostAsset,
+    syncRef: syncRef.present ? syncRef.value : this.syncRef,
     spendable: spendable ?? this.spendable,
     archived: archived ?? this.archived,
     sortOrder: sortOrder ?? this.sortOrder,
@@ -409,6 +526,13 @@ class AccountRow extends DataClass implements Insertable<AccountRow> {
       openingBalance: data.openingBalance.present
           ? data.openingBalance.value
           : this.openingBalance,
+      openingCost: data.openingCost.present
+          ? data.openingCost.value
+          : this.openingCost,
+      openingCostAsset: data.openingCostAsset.present
+          ? data.openingCostAsset.value
+          : this.openingCostAsset,
+      syncRef: data.syncRef.present ? data.syncRef.value : this.syncRef,
       spendable: data.spendable.present ? data.spendable.value : this.spendable,
       archived: data.archived.present ? data.archived.value : this.archived,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
@@ -425,6 +549,9 @@ class AccountRow extends DataClass implements Insertable<AccountRow> {
           ..write('asset: $asset, ')
           ..write('institution: $institution, ')
           ..write('openingBalance: $openingBalance, ')
+          ..write('openingCost: $openingCost, ')
+          ..write('openingCostAsset: $openingCostAsset, ')
+          ..write('syncRef: $syncRef, ')
           ..write('spendable: $spendable, ')
           ..write('archived: $archived, ')
           ..write('sortOrder: $sortOrder, ')
@@ -441,6 +568,9 @@ class AccountRow extends DataClass implements Insertable<AccountRow> {
     asset,
     institution,
     openingBalance,
+    openingCost,
+    openingCostAsset,
+    syncRef,
     spendable,
     archived,
     sortOrder,
@@ -456,6 +586,9 @@ class AccountRow extends DataClass implements Insertable<AccountRow> {
           other.asset == this.asset &&
           other.institution == this.institution &&
           other.openingBalance == this.openingBalance &&
+          other.openingCost == this.openingCost &&
+          other.openingCostAsset == this.openingCostAsset &&
+          other.syncRef == this.syncRef &&
           other.spendable == this.spendable &&
           other.archived == this.archived &&
           other.sortOrder == this.sortOrder &&
@@ -469,6 +602,9 @@ class AccountsCompanion extends UpdateCompanion<AccountRow> {
   final Value<String> asset;
   final Value<String> institution;
   final Value<String> openingBalance;
+  final Value<String?> openingCost;
+  final Value<String?> openingCostAsset;
+  final Value<String?> syncRef;
   final Value<bool> spendable;
   final Value<bool> archived;
   final Value<int> sortOrder;
@@ -481,6 +617,9 @@ class AccountsCompanion extends UpdateCompanion<AccountRow> {
     this.asset = const Value.absent(),
     this.institution = const Value.absent(),
     this.openingBalance = const Value.absent(),
+    this.openingCost = const Value.absent(),
+    this.openingCostAsset = const Value.absent(),
+    this.syncRef = const Value.absent(),
     this.spendable = const Value.absent(),
     this.archived = const Value.absent(),
     this.sortOrder = const Value.absent(),
@@ -494,6 +633,9 @@ class AccountsCompanion extends UpdateCompanion<AccountRow> {
     required String asset,
     this.institution = const Value.absent(),
     this.openingBalance = const Value.absent(),
+    this.openingCost = const Value.absent(),
+    this.openingCostAsset = const Value.absent(),
+    this.syncRef = const Value.absent(),
     this.spendable = const Value.absent(),
     this.archived = const Value.absent(),
     this.sortOrder = const Value.absent(),
@@ -511,6 +653,9 @@ class AccountsCompanion extends UpdateCompanion<AccountRow> {
     Expression<String>? asset,
     Expression<String>? institution,
     Expression<String>? openingBalance,
+    Expression<String>? openingCost,
+    Expression<String>? openingCostAsset,
+    Expression<String>? syncRef,
     Expression<bool>? spendable,
     Expression<bool>? archived,
     Expression<int>? sortOrder,
@@ -524,6 +669,9 @@ class AccountsCompanion extends UpdateCompanion<AccountRow> {
       if (asset != null) 'asset': asset,
       if (institution != null) 'institution': institution,
       if (openingBalance != null) 'opening_balance': openingBalance,
+      if (openingCost != null) 'opening_cost': openingCost,
+      if (openingCostAsset != null) 'opening_cost_asset': openingCostAsset,
+      if (syncRef != null) 'sync_ref': syncRef,
       if (spendable != null) 'spendable': spendable,
       if (archived != null) 'archived': archived,
       if (sortOrder != null) 'sort_order': sortOrder,
@@ -539,6 +687,9 @@ class AccountsCompanion extends UpdateCompanion<AccountRow> {
     Value<String>? asset,
     Value<String>? institution,
     Value<String>? openingBalance,
+    Value<String?>? openingCost,
+    Value<String?>? openingCostAsset,
+    Value<String?>? syncRef,
     Value<bool>? spendable,
     Value<bool>? archived,
     Value<int>? sortOrder,
@@ -552,6 +703,9 @@ class AccountsCompanion extends UpdateCompanion<AccountRow> {
       asset: asset ?? this.asset,
       institution: institution ?? this.institution,
       openingBalance: openingBalance ?? this.openingBalance,
+      openingCost: openingCost ?? this.openingCost,
+      openingCostAsset: openingCostAsset ?? this.openingCostAsset,
+      syncRef: syncRef ?? this.syncRef,
       spendable: spendable ?? this.spendable,
       archived: archived ?? this.archived,
       sortOrder: sortOrder ?? this.sortOrder,
@@ -581,6 +735,15 @@ class AccountsCompanion extends UpdateCompanion<AccountRow> {
     if (openingBalance.present) {
       map['opening_balance'] = Variable<String>(openingBalance.value);
     }
+    if (openingCost.present) {
+      map['opening_cost'] = Variable<String>(openingCost.value);
+    }
+    if (openingCostAsset.present) {
+      map['opening_cost_asset'] = Variable<String>(openingCostAsset.value);
+    }
+    if (syncRef.present) {
+      map['sync_ref'] = Variable<String>(syncRef.value);
+    }
     if (spendable.present) {
       map['spendable'] = Variable<bool>(spendable.value);
     }
@@ -608,6 +771,9 @@ class AccountsCompanion extends UpdateCompanion<AccountRow> {
           ..write('asset: $asset, ')
           ..write('institution: $institution, ')
           ..write('openingBalance: $openingBalance, ')
+          ..write('openingCost: $openingCost, ')
+          ..write('openingCostAsset: $openingCostAsset, ')
+          ..write('syncRef: $syncRef, ')
           ..write('spendable: $spendable, ')
           ..write('archived: $archived, ')
           ..write('sortOrder: $sortOrder, ')
@@ -1093,6 +1259,26 @@ class $EntriesTable extends Entries with TableInfo<$EntriesTable, EntryRow> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _costMeta = const VerificationMeta('cost');
+  @override
+  late final GeneratedColumn<String> cost = GeneratedColumn<String>(
+    'cost',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _costAssetMeta = const VerificationMeta(
+    'costAsset',
+  );
+  @override
+  late final GeneratedColumn<String> costAsset = GeneratedColumn<String>(
+    'cost_asset',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1128,6 +1314,8 @@ class $EntriesTable extends Entries with TableInfo<$EntriesTable, EntryRow> {
     transferId,
     source,
     sourceRef,
+    cost,
+    costAsset,
     createdAt,
     updatedAt,
   ];
@@ -1216,6 +1404,18 @@ class $EntriesTable extends Entries with TableInfo<$EntriesTable, EntryRow> {
         sourceRef.isAcceptableOrUnknown(data['source_ref']!, _sourceRefMeta),
       );
     }
+    if (data.containsKey('cost')) {
+      context.handle(
+        _costMeta,
+        cost.isAcceptableOrUnknown(data['cost']!, _costMeta),
+      );
+    }
+    if (data.containsKey('cost_asset')) {
+      context.handle(
+        _costAssetMeta,
+        costAsset.isAcceptableOrUnknown(data['cost_asset']!, _costAssetMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -1285,6 +1485,14 @@ class $EntriesTable extends Entries with TableInfo<$EntriesTable, EntryRow> {
         DriftSqlType.string,
         data['${effectivePrefix}source_ref'],
       ),
+      cost: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cost'],
+      ),
+      costAsset: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cost_asset'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -1325,6 +1533,13 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
 
   /// The inbox item or external id it came from, to never import it twice.
   final String? sourceRef;
+
+  /// What was paid for what came in, or received for what went out, in
+  /// [costAsset], when the other side is not one of the person's accounts:
+  /// the pesos a bitcoin bought on Binance P2P cost. Null otherwise; a
+  /// transfer's cost is its other leg.
+  final String? cost;
+  final String? costAsset;
   final DateTime createdAt;
   final DateTime updatedAt;
   const EntryRow({
@@ -1339,6 +1554,8 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
     this.transferId,
     required this.source,
     this.sourceRef,
+    this.cost,
+    this.costAsset,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -1361,6 +1578,12 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
     map['source'] = Variable<String>(source);
     if (!nullToAbsent || sourceRef != null) {
       map['source_ref'] = Variable<String>(sourceRef);
+    }
+    if (!nullToAbsent || cost != null) {
+      map['cost'] = Variable<String>(cost);
+    }
+    if (!nullToAbsent || costAsset != null) {
+      map['cost_asset'] = Variable<String>(costAsset);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -1386,6 +1609,10 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
       sourceRef: sourceRef == null && nullToAbsent
           ? const Value.absent()
           : Value(sourceRef),
+      cost: cost == null && nullToAbsent ? const Value.absent() : Value(cost),
+      costAsset: costAsset == null && nullToAbsent
+          ? const Value.absent()
+          : Value(costAsset),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -1408,6 +1635,8 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
       transferId: serializer.fromJson<String?>(json['transferId']),
       source: serializer.fromJson<String>(json['source']),
       sourceRef: serializer.fromJson<String?>(json['sourceRef']),
+      cost: serializer.fromJson<String?>(json['cost']),
+      costAsset: serializer.fromJson<String?>(json['costAsset']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -1427,6 +1656,8 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
       'transferId': serializer.toJson<String?>(transferId),
       'source': serializer.toJson<String>(source),
       'sourceRef': serializer.toJson<String?>(sourceRef),
+      'cost': serializer.toJson<String?>(cost),
+      'costAsset': serializer.toJson<String?>(costAsset),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -1444,6 +1675,8 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
     Value<String?> transferId = const Value.absent(),
     String? source,
     Value<String?> sourceRef = const Value.absent(),
+    Value<String?> cost = const Value.absent(),
+    Value<String?> costAsset = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => EntryRow(
@@ -1458,6 +1691,8 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
     transferId: transferId.present ? transferId.value : this.transferId,
     source: source ?? this.source,
     sourceRef: sourceRef.present ? sourceRef.value : this.sourceRef,
+    cost: cost.present ? cost.value : this.cost,
+    costAsset: costAsset.present ? costAsset.value : this.costAsset,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -1476,6 +1711,8 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
           : this.transferId,
       source: data.source.present ? data.source.value : this.source,
       sourceRef: data.sourceRef.present ? data.sourceRef.value : this.sourceRef,
+      cost: data.cost.present ? data.cost.value : this.cost,
+      costAsset: data.costAsset.present ? data.costAsset.value : this.costAsset,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -1495,6 +1732,8 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
           ..write('transferId: $transferId, ')
           ..write('source: $source, ')
           ..write('sourceRef: $sourceRef, ')
+          ..write('cost: $cost, ')
+          ..write('costAsset: $costAsset, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -1514,6 +1753,8 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
     transferId,
     source,
     sourceRef,
+    cost,
+    costAsset,
     createdAt,
     updatedAt,
   );
@@ -1532,6 +1773,8 @@ class EntryRow extends DataClass implements Insertable<EntryRow> {
           other.transferId == this.transferId &&
           other.source == this.source &&
           other.sourceRef == this.sourceRef &&
+          other.cost == this.cost &&
+          other.costAsset == this.costAsset &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -1548,6 +1791,8 @@ class EntriesCompanion extends UpdateCompanion<EntryRow> {
   final Value<String?> transferId;
   final Value<String> source;
   final Value<String?> sourceRef;
+  final Value<String?> cost;
+  final Value<String?> costAsset;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -1563,6 +1808,8 @@ class EntriesCompanion extends UpdateCompanion<EntryRow> {
     this.transferId = const Value.absent(),
     this.source = const Value.absent(),
     this.sourceRef = const Value.absent(),
+    this.cost = const Value.absent(),
+    this.costAsset = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1579,6 +1826,8 @@ class EntriesCompanion extends UpdateCompanion<EntryRow> {
     this.transferId = const Value.absent(),
     this.source = const Value.absent(),
     this.sourceRef = const Value.absent(),
+    this.cost = const Value.absent(),
+    this.costAsset = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -1601,6 +1850,8 @@ class EntriesCompanion extends UpdateCompanion<EntryRow> {
     Expression<String>? transferId,
     Expression<String>? source,
     Expression<String>? sourceRef,
+    Expression<String>? cost,
+    Expression<String>? costAsset,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -1617,6 +1868,8 @@ class EntriesCompanion extends UpdateCompanion<EntryRow> {
       if (transferId != null) 'transfer_id': transferId,
       if (source != null) 'source': source,
       if (sourceRef != null) 'source_ref': sourceRef,
+      if (cost != null) 'cost': cost,
+      if (costAsset != null) 'cost_asset': costAsset,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -1635,6 +1888,8 @@ class EntriesCompanion extends UpdateCompanion<EntryRow> {
     Value<String?>? transferId,
     Value<String>? source,
     Value<String?>? sourceRef,
+    Value<String?>? cost,
+    Value<String?>? costAsset,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -1651,6 +1906,8 @@ class EntriesCompanion extends UpdateCompanion<EntryRow> {
       transferId: transferId ?? this.transferId,
       source: source ?? this.source,
       sourceRef: sourceRef ?? this.sourceRef,
+      cost: cost ?? this.cost,
+      costAsset: costAsset ?? this.costAsset,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -1693,6 +1950,12 @@ class EntriesCompanion extends UpdateCompanion<EntryRow> {
     if (sourceRef.present) {
       map['source_ref'] = Variable<String>(sourceRef.value);
     }
+    if (cost.present) {
+      map['cost'] = Variable<String>(cost.value);
+    }
+    if (costAsset.present) {
+      map['cost_asset'] = Variable<String>(costAsset.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1719,6 +1982,8 @@ class EntriesCompanion extends UpdateCompanion<EntryRow> {
           ..write('transferId: $transferId, ')
           ..write('source: $source, ')
           ..write('sourceRef: $sourceRef, ')
+          ..write('cost: $cost, ')
+          ..write('costAsset: $costAsset, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -3949,6 +4214,359 @@ class RatesCompanion extends UpdateCompanion<RateRow> {
   }
 }
 
+class $DailyRatesTable extends DailyRates
+    with TableInfo<$DailyRatesTable, DailyRateRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DailyRatesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _assetMeta = const VerificationMeta('asset');
+  @override
+  late final GeneratedColumn<String> asset = GeneratedColumn<String>(
+    'asset',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _quoteMeta = const VerificationMeta('quote');
+  @override
+  late final GeneratedColumn<String> quote = GeneratedColumn<String>(
+    'quote',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dayMeta = const VerificationMeta('day');
+  @override
+  late final GeneratedColumn<DateTime> day = GeneratedColumn<DateTime>(
+    'day',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
+  @override
+  late final GeneratedColumn<String> value = GeneratedColumn<String>(
+    'value',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [asset, quote, day, value, source];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'daily_rates';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DailyRateRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('asset')) {
+      context.handle(
+        _assetMeta,
+        asset.isAcceptableOrUnknown(data['asset']!, _assetMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_assetMeta);
+    }
+    if (data.containsKey('quote')) {
+      context.handle(
+        _quoteMeta,
+        quote.isAcceptableOrUnknown(data['quote']!, _quoteMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_quoteMeta);
+    }
+    if (data.containsKey('day')) {
+      context.handle(
+        _dayMeta,
+        day.isAcceptableOrUnknown(data['day']!, _dayMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dayMeta);
+    }
+    if (data.containsKey('value')) {
+      context.handle(
+        _valueMeta,
+        value.isAcceptableOrUnknown(data['value']!, _valueMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_valueMeta);
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {asset, quote, day};
+  @override
+  DailyRateRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DailyRateRow(
+      asset: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}asset'],
+      )!,
+      quote: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}quote'],
+      )!,
+      day: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}day'],
+      )!,
+      value: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}value'],
+      )!,
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+    );
+  }
+
+  @override
+  $DailyRatesTable createAlias(String alias) {
+    return $DailyRatesTable(attachedDatabase, alias);
+  }
+}
+
+class DailyRateRow extends DataClass implements Insertable<DailyRateRow> {
+  final String asset;
+  final String quote;
+
+  /// Midnight, local time, of the day the rate was in force.
+  final DateTime day;
+  final String value;
+  final String source;
+  const DailyRateRow({
+    required this.asset,
+    required this.quote,
+    required this.day,
+    required this.value,
+    required this.source,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['asset'] = Variable<String>(asset);
+    map['quote'] = Variable<String>(quote);
+    map['day'] = Variable<DateTime>(day);
+    map['value'] = Variable<String>(value);
+    map['source'] = Variable<String>(source);
+    return map;
+  }
+
+  DailyRatesCompanion toCompanion(bool nullToAbsent) {
+    return DailyRatesCompanion(
+      asset: Value(asset),
+      quote: Value(quote),
+      day: Value(day),
+      value: Value(value),
+      source: Value(source),
+    );
+  }
+
+  factory DailyRateRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DailyRateRow(
+      asset: serializer.fromJson<String>(json['asset']),
+      quote: serializer.fromJson<String>(json['quote']),
+      day: serializer.fromJson<DateTime>(json['day']),
+      value: serializer.fromJson<String>(json['value']),
+      source: serializer.fromJson<String>(json['source']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'asset': serializer.toJson<String>(asset),
+      'quote': serializer.toJson<String>(quote),
+      'day': serializer.toJson<DateTime>(day),
+      'value': serializer.toJson<String>(value),
+      'source': serializer.toJson<String>(source),
+    };
+  }
+
+  DailyRateRow copyWith({
+    String? asset,
+    String? quote,
+    DateTime? day,
+    String? value,
+    String? source,
+  }) => DailyRateRow(
+    asset: asset ?? this.asset,
+    quote: quote ?? this.quote,
+    day: day ?? this.day,
+    value: value ?? this.value,
+    source: source ?? this.source,
+  );
+  DailyRateRow copyWithCompanion(DailyRatesCompanion data) {
+    return DailyRateRow(
+      asset: data.asset.present ? data.asset.value : this.asset,
+      quote: data.quote.present ? data.quote.value : this.quote,
+      day: data.day.present ? data.day.value : this.day,
+      value: data.value.present ? data.value.value : this.value,
+      source: data.source.present ? data.source.value : this.source,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DailyRateRow(')
+          ..write('asset: $asset, ')
+          ..write('quote: $quote, ')
+          ..write('day: $day, ')
+          ..write('value: $value, ')
+          ..write('source: $source')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(asset, quote, day, value, source);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DailyRateRow &&
+          other.asset == this.asset &&
+          other.quote == this.quote &&
+          other.day == this.day &&
+          other.value == this.value &&
+          other.source == this.source);
+}
+
+class DailyRatesCompanion extends UpdateCompanion<DailyRateRow> {
+  final Value<String> asset;
+  final Value<String> quote;
+  final Value<DateTime> day;
+  final Value<String> value;
+  final Value<String> source;
+  final Value<int> rowid;
+  const DailyRatesCompanion({
+    this.asset = const Value.absent(),
+    this.quote = const Value.absent(),
+    this.day = const Value.absent(),
+    this.value = const Value.absent(),
+    this.source = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DailyRatesCompanion.insert({
+    required String asset,
+    required String quote,
+    required DateTime day,
+    required String value,
+    required String source,
+    this.rowid = const Value.absent(),
+  }) : asset = Value(asset),
+       quote = Value(quote),
+       day = Value(day),
+       value = Value(value),
+       source = Value(source);
+  static Insertable<DailyRateRow> custom({
+    Expression<String>? asset,
+    Expression<String>? quote,
+    Expression<DateTime>? day,
+    Expression<String>? value,
+    Expression<String>? source,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (asset != null) 'asset': asset,
+      if (quote != null) 'quote': quote,
+      if (day != null) 'day': day,
+      if (value != null) 'value': value,
+      if (source != null) 'source': source,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DailyRatesCompanion copyWith({
+    Value<String>? asset,
+    Value<String>? quote,
+    Value<DateTime>? day,
+    Value<String>? value,
+    Value<String>? source,
+    Value<int>? rowid,
+  }) {
+    return DailyRatesCompanion(
+      asset: asset ?? this.asset,
+      quote: quote ?? this.quote,
+      day: day ?? this.day,
+      value: value ?? this.value,
+      source: source ?? this.source,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (asset.present) {
+      map['asset'] = Variable<String>(asset.value);
+    }
+    if (quote.present) {
+      map['quote'] = Variable<String>(quote.value);
+    }
+    if (day.present) {
+      map['day'] = Variable<DateTime>(day.value);
+    }
+    if (value.present) {
+      map['value'] = Variable<String>(value.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DailyRatesCompanion(')
+          ..write('asset: $asset, ')
+          ..write('quote: $quote, ')
+          ..write('day: $day, ')
+          ..write('value: $value, ')
+          ..write('source: $source, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $SettingsTable extends Settings
     with TableInfo<$SettingsTable, SettingRow> {
   @override
@@ -4168,6 +4786,7 @@ abstract class _$QuincenaDatabase extends GeneratedDatabase {
   late final $BudgetsTable budgets = $BudgetsTable(this);
   late final $InboxItemsTable inboxItems = $InboxItemsTable(this);
   late final $RatesTable rates = $RatesTable(this);
+  late final $DailyRatesTable dailyRates = $DailyRatesTable(this);
   late final $SettingsTable settings = $SettingsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -4182,6 +4801,7 @@ abstract class _$QuincenaDatabase extends GeneratedDatabase {
     budgets,
     inboxItems,
     rates,
+    dailyRates,
     settings,
   ];
   @override
@@ -4204,6 +4824,9 @@ typedef $$AccountsTableCreateCompanionBuilder =
       required String asset,
       Value<String> institution,
       Value<String> openingBalance,
+      Value<String?> openingCost,
+      Value<String?> openingCostAsset,
+      Value<String?> syncRef,
       Value<bool> spendable,
       Value<bool> archived,
       Value<int> sortOrder,
@@ -4218,6 +4841,9 @@ typedef $$AccountsTableUpdateCompanionBuilder =
       Value<String> asset,
       Value<String> institution,
       Value<String> openingBalance,
+      Value<String?> openingCost,
+      Value<String?> openingCostAsset,
+      Value<String?> syncRef,
       Value<bool> spendable,
       Value<bool> archived,
       Value<int> sortOrder,
@@ -4285,6 +4911,21 @@ class $$AccountsTableFilterComposer
 
   ColumnFilters<String> get openingBalance => $composableBuilder(
     column: $table.openingBalance,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get openingCost => $composableBuilder(
+    column: $table.openingCost,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get openingCostAsset => $composableBuilder(
+    column: $table.openingCostAsset,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncRef => $composableBuilder(
+    column: $table.syncRef,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4373,6 +5014,21 @@ class $$AccountsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get openingCost => $composableBuilder(
+    column: $table.openingCost,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get openingCostAsset => $composableBuilder(
+    column: $table.openingCostAsset,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncRef => $composableBuilder(
+    column: $table.syncRef,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get spendable => $composableBuilder(
     column: $table.spendable,
     builder: (column) => ColumnOrderings(column),
@@ -4424,6 +5080,19 @@ class $$AccountsTableAnnotationComposer
     column: $table.openingBalance,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get openingCost => $composableBuilder(
+    column: $table.openingCost,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get openingCostAsset => $composableBuilder(
+    column: $table.openingCostAsset,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get syncRef =>
+      $composableBuilder(column: $table.syncRef, builder: (column) => column);
 
   GeneratedColumn<bool> get spendable =>
       $composableBuilder(column: $table.spendable, builder: (column) => column);
@@ -4497,6 +5166,9 @@ class $$AccountsTableTableManager
                 Value<String> asset = const Value.absent(),
                 Value<String> institution = const Value.absent(),
                 Value<String> openingBalance = const Value.absent(),
+                Value<String?> openingCost = const Value.absent(),
+                Value<String?> openingCostAsset = const Value.absent(),
+                Value<String?> syncRef = const Value.absent(),
                 Value<bool> spendable = const Value.absent(),
                 Value<bool> archived = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
@@ -4509,6 +5181,9 @@ class $$AccountsTableTableManager
                 asset: asset,
                 institution: institution,
                 openingBalance: openingBalance,
+                openingCost: openingCost,
+                openingCostAsset: openingCostAsset,
+                syncRef: syncRef,
                 spendable: spendable,
                 archived: archived,
                 sortOrder: sortOrder,
@@ -4523,6 +5198,9 @@ class $$AccountsTableTableManager
                 required String asset,
                 Value<String> institution = const Value.absent(),
                 Value<String> openingBalance = const Value.absent(),
+                Value<String?> openingCost = const Value.absent(),
+                Value<String?> openingCostAsset = const Value.absent(),
+                Value<String?> syncRef = const Value.absent(),
                 Value<bool> spendable = const Value.absent(),
                 Value<bool> archived = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
@@ -4535,6 +5213,9 @@ class $$AccountsTableTableManager
                 asset: asset,
                 institution: institution,
                 openingBalance: openingBalance,
+                openingCost: openingCost,
+                openingCostAsset: openingCostAsset,
+                syncRef: syncRef,
                 spendable: spendable,
                 archived: archived,
                 sortOrder: sortOrder,
@@ -4815,6 +5496,8 @@ typedef $$EntriesTableCreateCompanionBuilder =
       Value<String?> transferId,
       Value<String> source,
       Value<String?> sourceRef,
+      Value<String?> cost,
+      Value<String?> costAsset,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<int> rowid,
@@ -4832,6 +5515,8 @@ typedef $$EntriesTableUpdateCompanionBuilder =
       Value<String?> transferId,
       Value<String> source,
       Value<String?> sourceRef,
+      Value<String?> cost,
+      Value<String?> costAsset,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -4915,6 +5600,16 @@ class $$EntriesTableFilterComposer
 
   ColumnFilters<String> get sourceRef => $composableBuilder(
     column: $table.sourceRef,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cost => $composableBuilder(
+    column: $table.cost,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get costAsset => $composableBuilder(
+    column: $table.costAsset,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5011,6 +5706,16 @@ class $$EntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get cost => $composableBuilder(
+    column: $table.cost,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get costAsset => $composableBuilder(
+    column: $table.costAsset,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -5086,6 +5791,12 @@ class $$EntriesTableAnnotationComposer
   GeneratedColumn<String> get sourceRef =>
       $composableBuilder(column: $table.sourceRef, builder: (column) => column);
 
+  GeneratedColumn<String> get cost =>
+      $composableBuilder(column: $table.cost, builder: (column) => column);
+
+  GeneratedColumn<String> get costAsset =>
+      $composableBuilder(column: $table.costAsset, builder: (column) => column);
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -5155,6 +5866,8 @@ class $$EntriesTableTableManager
                 Value<String?> transferId = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<String?> sourceRef = const Value.absent(),
+                Value<String?> cost = const Value.absent(),
+                Value<String?> costAsset = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -5170,6 +5883,8 @@ class $$EntriesTableTableManager
                 transferId: transferId,
                 source: source,
                 sourceRef: sourceRef,
+                cost: cost,
+                costAsset: costAsset,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -5187,6 +5902,8 @@ class $$EntriesTableTableManager
                 Value<String?> transferId = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<String?> sourceRef = const Value.absent(),
+                Value<String?> cost = const Value.absent(),
+                Value<String?> costAsset = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -5202,6 +5919,8 @@ class $$EntriesTableTableManager
                 transferId: transferId,
                 source: source,
                 sourceRef: sourceRef,
+                cost: cost,
+                costAsset: costAsset,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -6476,6 +7195,215 @@ typedef $$RatesTableProcessedTableManager =
       RateRow,
       PrefetchHooks Function()
     >;
+typedef $$DailyRatesTableCreateCompanionBuilder =
+    DailyRatesCompanion Function({
+      required String asset,
+      required String quote,
+      required DateTime day,
+      required String value,
+      required String source,
+      Value<int> rowid,
+    });
+typedef $$DailyRatesTableUpdateCompanionBuilder =
+    DailyRatesCompanion Function({
+      Value<String> asset,
+      Value<String> quote,
+      Value<DateTime> day,
+      Value<String> value,
+      Value<String> source,
+      Value<int> rowid,
+    });
+
+class $$DailyRatesTableFilterComposer
+    extends Composer<_$QuincenaDatabase, $DailyRatesTable> {
+  $$DailyRatesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get asset => $composableBuilder(
+    column: $table.asset,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get quote => $composableBuilder(
+    column: $table.quote,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DailyRatesTableOrderingComposer
+    extends Composer<_$QuincenaDatabase, $DailyRatesTable> {
+  $$DailyRatesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get asset => $composableBuilder(
+    column: $table.asset,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get quote => $composableBuilder(
+    column: $table.quote,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DailyRatesTableAnnotationComposer
+    extends Composer<_$QuincenaDatabase, $DailyRatesTable> {
+  $$DailyRatesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get asset =>
+      $composableBuilder(column: $table.asset, builder: (column) => column);
+
+  GeneratedColumn<String> get quote =>
+      $composableBuilder(column: $table.quote, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get day =>
+      $composableBuilder(column: $table.day, builder: (column) => column);
+
+  GeneratedColumn<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+}
+
+class $$DailyRatesTableTableManager
+    extends
+        RootTableManager<
+          _$QuincenaDatabase,
+          $DailyRatesTable,
+          DailyRateRow,
+          $$DailyRatesTableFilterComposer,
+          $$DailyRatesTableOrderingComposer,
+          $$DailyRatesTableAnnotationComposer,
+          $$DailyRatesTableCreateCompanionBuilder,
+          $$DailyRatesTableUpdateCompanionBuilder,
+          (
+            DailyRateRow,
+            BaseReferences<_$QuincenaDatabase, $DailyRatesTable, DailyRateRow>,
+          ),
+          DailyRateRow,
+          PrefetchHooks Function()
+        > {
+  $$DailyRatesTableTableManager(_$QuincenaDatabase db, $DailyRatesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DailyRatesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DailyRatesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DailyRatesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> asset = const Value.absent(),
+                Value<String> quote = const Value.absent(),
+                Value<DateTime> day = const Value.absent(),
+                Value<String> value = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DailyRatesCompanion(
+                asset: asset,
+                quote: quote,
+                day: day,
+                value: value,
+                source: source,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String asset,
+                required String quote,
+                required DateTime day,
+                required String value,
+                required String source,
+                Value<int> rowid = const Value.absent(),
+              }) => DailyRatesCompanion.insert(
+                asset: asset,
+                quote: quote,
+                day: day,
+                value: value,
+                source: source,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$DailyRatesTable, DailyRateRow>(table),
+                  BaseReferences<
+                    _$QuincenaDatabase,
+                    $DailyRatesTable,
+                    DailyRateRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DailyRatesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$QuincenaDatabase,
+      $DailyRatesTable,
+      DailyRateRow,
+      $$DailyRatesTableFilterComposer,
+      $$DailyRatesTableOrderingComposer,
+      $$DailyRatesTableAnnotationComposer,
+      $$DailyRatesTableCreateCompanionBuilder,
+      $$DailyRatesTableUpdateCompanionBuilder,
+      (
+        DailyRateRow,
+        BaseReferences<_$QuincenaDatabase, $DailyRatesTable, DailyRateRow>,
+      ),
+      DailyRateRow,
+      PrefetchHooks Function()
+    >;
 typedef $$SettingsTableCreateCompanionBuilder =
     SettingsCompanion Function({
       required String key,
@@ -6644,6 +7572,8 @@ class $QuincenaDatabaseManager {
       $$InboxItemsTableTableManager(_db, _db.inboxItems);
   $$RatesTableTableManager get rates =>
       $$RatesTableTableManager(_db, _db.rates);
+  $$DailyRatesTableTableManager get dailyRates =>
+      $$DailyRatesTableTableManager(_db, _db.dailyRates);
   $$SettingsTableTableManager get settings =>
       $$SettingsTableTableManager(_db, _db.settings);
 }

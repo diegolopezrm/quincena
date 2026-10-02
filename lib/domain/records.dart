@@ -41,6 +41,8 @@ class Account {
     this.spendable = true,
     this.archived = false,
     this.sortOrder = 0,
+    this.openingCost,
+    this.syncRef,
   });
 
   final String id;
@@ -55,6 +57,14 @@ class Account {
   final bool archived;
   final int sortOrder;
 
+  /// What the opening balance cost, when the person said: the pesos paid
+  /// for the bitcoin the account started with.
+  final Money? openingCost;
+
+  /// What keeps the account in sync, such as `binance:BTC`; null for one
+  /// the person keeps by hand.
+  final String? syncRef;
+
   Money get openingMoney => Money(opening, asset);
 
   Account copyWith({
@@ -65,6 +75,8 @@ class Account {
     bool? spendable,
     bool? archived,
     int? sortOrder,
+    Money? openingCost,
+    bool clearOpeningCost = false,
   }) => Account(
     id: id,
     name: name ?? this.name,
@@ -75,6 +87,8 @@ class Account {
     spendable: spendable ?? this.spendable,
     archived: archived ?? this.archived,
     sortOrder: sortOrder ?? this.sortOrder,
+    openingCost: clearOpeningCost ? null : (openingCost ?? this.openingCost),
+    syncRef: syncRef,
   );
 }
 
@@ -110,6 +124,7 @@ class Entry {
     this.transferId,
     this.source = 'manual',
     this.sourceRef,
+    this.cost,
   });
 
   final String id;
@@ -126,7 +141,17 @@ class Entry {
   final String source;
   final String? sourceRef;
 
+  /// What was paid for what came in, or received for what went out, when
+  /// the other side is not one of the person's accounts: the pesos a
+  /// bitcoin bought on Binance P2P cost. Null for a transfer, whose other
+  /// leg says it, and for everyday money.
+  final Money? cost;
+
   bool get isTransfer => transferId != null;
+
+  /// A purchase or a sale of what the account holds, paid or collected
+  /// outside the person's accounts.
+  bool get isTrade => cost != null;
 
   Entry copyWith({
     String? accountId,
@@ -137,6 +162,8 @@ class Entry {
     bool clearCategory = false,
     String? payee,
     String? note,
+    Money? cost,
+    bool clearCost = false,
   }) => Entry(
     id: id,
     accountId: accountId ?? this.accountId,
@@ -149,6 +176,7 @@ class Entry {
     transferId: transferId,
     source: source,
     sourceRef: sourceRef,
+    cost: clearCost ? null : (cost ?? this.cost),
   );
 }
 

@@ -20,6 +20,16 @@ class Accounts extends Table {
   TextColumn get institution => text().withDefault(const Constant(''))();
   TextColumn get openingBalance => text().withDefault(const Constant('0'))();
 
+  /// What the opening balance cost, in [openingCostAsset], when it is known:
+  /// the pesos paid for the bitcoin an account started with. Null when the
+  /// person did not say, and for money that is not an investment.
+  TextColumn get openingCost => text().nullable()();
+  TextColumn get openingCostAsset => text().nullable()();
+
+  /// What keeps the account in sync, such as `binance:BTC`; null for the
+  /// accounts the person keeps by hand.
+  TextColumn get syncRef => text().nullable()();
+
   /// Whether its money counts as available to spend before payday. Savings,
   /// investments and crypto usually do not.
   BoolColumn get spendable => boolean().withDefault(const Constant(true))();
@@ -78,6 +88,13 @@ class Entries extends Table {
 
   /// The inbox item or external id it came from, to never import it twice.
   TextColumn get sourceRef => text().nullable()();
+
+  /// What was paid for what came in, or received for what went out, in
+  /// [costAsset], when the other side is not one of the person's accounts:
+  /// the pesos a bitcoin bought on Binance P2P cost. Null otherwise; a
+  /// transfer's cost is its other leg.
+  TextColumn get cost => text().nullable()();
+  TextColumn get costAsset => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 
@@ -175,6 +192,22 @@ class Rates extends Table {
   Set<Column<Object>> get primaryKey => <Column<Object>>{asset, quote};
 }
 
+/// What one unit of [asset] was worth in [quote] on a past [day]: the TRM of
+/// the day a bitcoin was bought, to know what it cost in dollars too.
+@DataClassName('DailyRateRow')
+class DailyRates extends Table {
+  TextColumn get asset => text()();
+  TextColumn get quote => text()();
+
+  /// Midnight, local time, of the day the rate was in force.
+  DateTimeColumn get day => dateTime()();
+  TextColumn get value => text()();
+  TextColumn get source => text()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{asset, quote, day};
+}
+
 /// The person's choices: name, base currency, pay schedule.
 @DataClassName('SettingRow')
 class Settings extends Table {
@@ -195,17 +228,30 @@ class Settings extends Table {
     Budgets,
     InboxItems,
     Rates,
+    DailyRates,
     Settings,
   ],
 )
 class QuincenaDatabase extends _$QuincenaDatabase {
   QuincenaDatabase(super.executor);
 
+  /// 2 adds what investments cost (an account's opening cost, a movement's
+  /// cost), the accounts kept in sync, and past daily rates.
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
+    onUpgrade: (Migrator m, int from, int to) async {
+      if (from < 2) {
+        await m.addColumn(accounts, accounts.openingCost);
+        await m.addColumn(accounts, accounts.openingCostAsset);
+        await m.addColumn(accounts, accounts.syncRef);
+        await m.addColumn(entries, entries.cost);
+        await m.addColumn(entries, entries.costAsset);
+        await m.createTable(dailyRates);
+      }
+    },
     beforeOpen: (OpeningDetails details) async {
       await customStatement('PRAGMA foreign_keys = ON');
     },

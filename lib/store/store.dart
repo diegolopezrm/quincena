@@ -88,7 +88,10 @@ class QuincenaStore {
   static const String _profileKey = 'profile';
 
   /// The format [exportJson] writes. An import refuses a newer one.
-  static const int exportVersion = 1;
+  ///
+  /// 2 adds what investments cost; a file of version 1 reads as before,
+  /// with no costs.
+  static const int exportVersion = 2;
 
   // Profile ------------------------------------------------------------------
 
@@ -226,7 +229,15 @@ class QuincenaStore {
     spendable: r.spendable,
     archived: r.archived,
     sortOrder: r.sortOrder,
+    openingCost: _money(r.openingCost, r.openingCostAsset),
+    syncRef: r.syncRef,
   );
+
+  /// The amount stored as [amount] in [asset], when both are there.
+  static Money? _money(String? amount, String? asset) =>
+      amount == null || asset == null
+      ? null
+      : Money.parse(amount, Asset.of(asset));
 
   Future<Account> addAccount({
     required String name,
@@ -235,6 +246,8 @@ class QuincenaStore {
     Decimal? opening,
     String institution = '',
     bool? spendable,
+    Money? openingCost,
+    String? syncRef,
   }) async {
     final String id = _newId();
     final int order = (await accounts(archived: true)).length;
@@ -247,6 +260,8 @@ class QuincenaStore {
       institution: institution.trim(),
       spendable: spendable ?? kind.spendableByDefault,
       sortOrder: order,
+      openingCost: openingCost,
+      syncRef: syncRef,
     );
     await db
         .into(db.accounts)
@@ -260,6 +275,9 @@ class QuincenaStore {
             openingBalance: Value(account.opening.toString()),
             spendable: Value(account.spendable),
             sortOrder: Value(order),
+            openingCost: Value(openingCost?.amount.toString()),
+            openingCostAsset: Value(openingCost?.asset.code),
+            syncRef: Value(syncRef),
             createdAt: _now(),
           ),
         );
@@ -278,6 +296,8 @@ class QuincenaStore {
           spendable: Value(account.spendable),
           archived: Value(account.archived),
           sortOrder: Value(account.sortOrder),
+          openingCost: Value(account.openingCost?.amount.toString()),
+          openingCostAsset: Value(account.openingCost?.asset.code),
         ),
       );
 
@@ -343,10 +363,14 @@ class QuincenaStore {
     transferId: r.transferId,
     source: r.source,
     sourceRef: r.sourceRef,
+    cost: _money(r.cost, r.costAsset),
   );
 
   /// Records an expense or an income. [amount] is how much, positive; the
   /// sign comes from [kind].
+  ///
+  /// [cost] makes it a purchase (an income) or a sale (an expense) of what
+  /// the account holds: what was paid for it, or received.
   Future<Entry> addEntry({
     required String accountId,
     required Decimal amount,
@@ -357,6 +381,7 @@ class QuincenaStore {
     String note = '',
     String source = 'manual',
     String? sourceRef,
+    Money? cost,
   }) async {
     assert(kind != EntryKind.transfer, 'Use addTransfer for transfers');
     final Decimal signed = kind == EntryKind.expense
@@ -373,6 +398,7 @@ class QuincenaStore {
       note: note.trim(),
       source: source,
       sourceRef: sourceRef,
+      cost: cost?.abs(),
     );
     await db.into(db.entries).insert(_companion(entry));
     return entry;
@@ -392,6 +418,8 @@ class QuincenaStore {
       transferId: Value(e.transferId),
       source: Value(e.source),
       sourceRef: Value(e.sourceRef),
+      cost: Value(e.cost?.amount.toString()),
+      costAsset: Value(e.cost?.asset.code),
       createdAt: now,
       updatedAt: now,
     );
@@ -490,6 +518,8 @@ class QuincenaStore {
           category: Value(entry.category),
           payee: Value(entry.payee.trim()),
           note: Value(entry.note.trim()),
+          cost: Value(entry.cost?.amount.toString()),
+          costAsset: Value(entry.cost?.asset.code),
           updatedAt: Value(_now()),
         ),
       );
@@ -738,6 +768,46 @@ class QuincenaStore {
             .get();
     return rows.isEmpty ? null : rows.first.fetchedAt;
   }
+
+  /// Past daily rates of [asset] in [quote], oldest first, from [from] on
+  /// when given.
+  Future<List<Rate>> dailyRates(
+    String asset,
+    String quote, {
+    DateTime? from,
+  }) async {
+    final SimpleSelectStatement<$DailyRatesTable, DailyRateRow> q =
+        db.select(db.dailyRates)
+          ..where((r) => r.asset.equals(asset) & r.quote.equals(quote))
+          ..orderBy(<OrderClauseGenerator<$DailyRatesTable>>[
+            (r) => OrderingTerm(expression: r.day),
+          ]);
+    if (from != null) q.where((r) => r.day.isBiggerOrEqualValue(from));
+    return <Rate>[
+      for (final DailyRateRow r in await q.get())
+        Rate(
+          asset: r.asset,
+          quote: r.quote,
+          value: Decimal.parse(r.value),
+          asOf: r.day,
+          source: r.source,
+        ),
+    ];
+  }
+
+  /// Keeps past daily rates, each over what was there for its day.
+  Future<void> saveDailyRates(Iterable<Rate> rates) => db.batch((Batch batch) {
+    batch.insertAll(db.dailyRates, <DailyRatesCompanion>[
+      for (final Rate r in rates)
+        DailyRatesCompanion.insert(
+          asset: r.asset,
+          quote: r.quote,
+          day: DateTime(r.asOf.year, r.asOf.month, r.asOf.day),
+          value: r.value.toString(),
+          source: r.source,
+        ),
+    ], mode: InsertMode.insertOrReplace);
+  });
 
   // Capture -------------------------------------------------------------------
 
