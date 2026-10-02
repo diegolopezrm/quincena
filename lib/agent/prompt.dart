@@ -177,6 +177,10 @@ How to answer the questions this app is for:
 - What comes, or which days get tight: call coming_days. Show the lowest
   point before payday, the first day under the cushion if there is one, and
   the charges that cause it; the expected pay is not money yet.
+- What is already committed, fixed payments or instalments: call
+  commitments. List what comes with its day, and the subscriptions' cost in
+  a year when it helps. Never say a service goes unused, nor that the app
+  cancels or pays anything.
 - How the fortnight went: call fortnight_close. Without a whole period
   before, compare nothing. Describe, never judge, and give its suggestion
   only if it has one.

@@ -4357,6 +4357,1074 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Soporte'**
   String get supportTitle;
+
+  /// No description provided for @cadencePerMonth.
+  ///
+  /// In es, this message translates to:
+  /// **'al mes'**
+  String get cadencePerMonth;
+
+  /// No description provided for @cadencePerTwoWeeks.
+  ///
+  /// In es, this message translates to:
+  /// **'cada dos semanas'**
+  String get cadencePerTwoWeeks;
+
+  /// No description provided for @cadencePerWeek.
+  ///
+  /// In es, this message translates to:
+  /// **'a la semana'**
+  String get cadencePerWeek;
+
+  /// No description provided for @cadencePerYear.
+  ///
+  /// In es, this message translates to:
+  /// **'al año'**
+  String get cadencePerYear;
+
+  /// No description provided for @cadenceMonthly.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada mes'**
+  String get cadenceMonthly;
+
+  /// No description provided for @cadenceBiweekly.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada dos semanas'**
+  String get cadenceBiweekly;
+
+  /// No description provided for @cadenceWeekly.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada semana'**
+  String get cadenceWeekly;
+
+  /// No description provided for @cadenceYearly.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada año'**
+  String get cadenceYearly;
+
+  /// No description provided for @chargeAdd.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar pago fijo'**
+  String get chargeAdd;
+
+  /// No description provided for @chargeEdit.
+  ///
+  /// In es, this message translates to:
+  /// **'Pago fijo'**
+  String get chargeEdit;
+
+  /// No description provided for @chargePausedNote.
+  ///
+  /// In es, this message translates to:
+  /// **'En pausa: no se cuenta como comprometido.'**
+  String get chargePausedNote;
+
+  /// No description provided for @chargeName.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Qué es?'**
+  String get chargeName;
+
+  /// No description provided for @chargeAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto cobra?'**
+  String get chargeAmount;
+
+  /// No description provided for @chargeUseLast.
+  ///
+  /// In es, this message translates to:
+  /// **'El último cobro fue {amount}, el {date}: usar ese valor'**
+  String chargeUseLast(String amount, String date);
+
+  /// No description provided for @chargeCadence.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada cuánto'**
+  String get chargeCadence;
+
+  /// No description provided for @chargeNext.
+  ///
+  /// In es, this message translates to:
+  /// **'Próximo cobro: {date}'**
+  String chargeNext(String date);
+
+  /// No description provided for @chargeAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Se paga desde'**
+  String get chargeAccount;
+
+  /// No description provided for @chargeNoAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Ninguna cuenta en particular'**
+  String get chargeNoAccount;
+
+  /// No description provided for @chargeRemind.
+  ///
+  /// In es, this message translates to:
+  /// **'Avisarme antes de cada cobro'**
+  String get chargeRemind;
+
+  /// No description provided for @remindNever.
+  ///
+  /// In es, this message translates to:
+  /// **'No avisarme'**
+  String get remindNever;
+
+  /// No description provided for @remindSameDay.
+  ///
+  /// In es, this message translates to:
+  /// **'El mismo día'**
+  String get remindSameDay;
+
+  /// No description provided for @remindDayBefore.
+  ///
+  /// In es, this message translates to:
+  /// **'Un día antes'**
+  String get remindDayBefore;
+
+  /// No description provided for @remindDaysBefore.
+  ///
+  /// In es, this message translates to:
+  /// **'{days} días antes'**
+  String remindDaysBefore(int days);
+
+  /// No description provided for @remindWeekBefore.
+  ///
+  /// In es, this message translates to:
+  /// **'Una semana antes'**
+  String get remindWeekBefore;
+
+  /// No description provided for @chargeSubscription.
+  ///
+  /// In es, this message translates to:
+  /// **'Suscripción'**
+  String get chargeSubscription;
+
+  /// No description provided for @chargeTrialAsk.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Está en prueba gratis?'**
+  String get chargeTrialAsk;
+
+  /// No description provided for @chargeTrialUntil.
+  ///
+  /// In es, this message translates to:
+  /// **'Prueba gratis hasta el {date}'**
+  String chargeTrialUntil(String date);
+
+  /// No description provided for @chargeTrialClear.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar la prueba gratis'**
+  String get chargeTrialClear;
+
+  /// No description provided for @chargeTrialNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Te avisamos el día antes de que empiece a cobrar.'**
+  String get chargeTrialNote;
+
+  /// No description provided for @chargeInUseAsk.
+  ///
+  /// In es, this message translates to:
+  /// **'¿La sigues usando?'**
+  String get chargeInUseAsk;
+
+  /// No description provided for @chargeInUseYes.
+  ///
+  /// In es, this message translates to:
+  /// **'Sí, la uso'**
+  String get chargeInUseYes;
+
+  /// No description provided for @chargeInUseNo.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya no la uso'**
+  String get chargeInUseNo;
+
+  /// No description provided for @chargeInUseNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Un cobro que se repite no dice si la usas: eso solo lo sabes tú.'**
+  String get chargeInUseNote;
+
+  /// No description provided for @chargeYearly.
+  ///
+  /// In es, this message translates to:
+  /// **'Al año son {amount}.'**
+  String chargeYearly(String amount);
+
+  /// No description provided for @chargeSaving.
+  ///
+  /// In es, this message translates to:
+  /// **'Si la pausas, te ahorras {amount} al año. Quincena no la cancela: hazlo en la app o en la página del servicio.'**
+  String chargeSaving(String amount);
+
+  /// No description provided for @chargeIncomplete.
+  ///
+  /// In es, this message translates to:
+  /// **'Falta el nombre o el valor.'**
+  String get chargeIncomplete;
+
+  /// No description provided for @chargeRemindDenied.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin permiso para avisarte. Si quieres el aviso, activa las notificaciones de Quincena en los ajustes del teléfono.'**
+  String get chargeRemindDenied;
+
+  /// No description provided for @chargePause.
+  ///
+  /// In es, this message translates to:
+  /// **'Pausar'**
+  String get chargePause;
+
+  /// No description provided for @chargeResume.
+  ///
+  /// In es, this message translates to:
+  /// **'Reanudar'**
+  String get chargeResume;
+
+  /// No description provided for @chargePauseNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Pausar aquí solo deja de contarlo como comprometido. Para que deje de cobrarte, cancélalo con el servicio.'**
+  String get chargePauseNote;
+
+  /// No description provided for @chargeDelete.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrar pago fijo'**
+  String get chargeDelete;
+
+  /// No description provided for @chargeDeleteTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Borrar {name}?'**
+  String chargeDeleteTitle(String name);
+
+  /// No description provided for @chargeDeleteBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Deja de contarse como comprometido. Los cobros que ya registraste se quedan.'**
+  String get chargeDeleteBody;
+
+  /// No description provided for @fixedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagos fijos'**
+  String get fixedTitle;
+
+  /// No description provided for @fixedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que se cobra solo cada mes o cada año: suscripciones, arriendo, servicios. Quincena lo cuenta como comprometido antes de que llegue.'**
+  String get fixedBody;
+
+  /// No description provided for @fixedEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no tienes pagos fijos. Agrega el arriendo, el internet o una suscripción para verlos venir.'**
+  String get fixedEmpty;
+
+  /// No description provided for @fixedNext30.
+  ///
+  /// In es, this message translates to:
+  /// **'En los próximos 30 días'**
+  String get fixedNext30;
+
+  /// No description provided for @fixedSubscriptionsYear.
+  ///
+  /// In es, this message translates to:
+  /// **'Suscripciones al año'**
+  String get fixedSubscriptionsYear;
+
+  /// No description provided for @guessTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Parecen pagos fijos'**
+  String get guessTitle;
+
+  /// No description provided for @guessEvidence.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} cobros parecidos, el último de {amount}: {dates}'**
+  String guessEvidence(int count, String amount, String dates);
+
+  /// No description provided for @guessAdd.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar como pago fijo'**
+  String get guessAdd;
+
+  /// No description provided for @guessNot.
+  ///
+  /// In es, this message translates to:
+  /// **'No es fijo'**
+  String get guessNot;
+
+  /// No description provided for @fixedSubscriptions.
+  ///
+  /// In es, this message translates to:
+  /// **'Suscripciones'**
+  String get fixedSubscriptions;
+
+  /// No description provided for @fixedOthers.
+  ///
+  /// In es, this message translates to:
+  /// **'Otros pagos fijos'**
+  String get fixedOthers;
+
+  /// No description provided for @fixedPausedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'En pausa'**
+  String get fixedPausedTitle;
+
+  /// No description provided for @fixedNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Quincena no paga ni cancela nada: eso se hace con tu banco o con cada servicio.'**
+  String get fixedNote;
+
+  /// No description provided for @fixedNextOn.
+  ///
+  /// In es, this message translates to:
+  /// **'próximo cobro el {date}'**
+  String fixedNextOn(String date);
+
+  /// No description provided for @fixedPaused.
+  ///
+  /// In es, this message translates to:
+  /// **'en pausa'**
+  String get fixedPaused;
+
+  /// No description provided for @fixedTrial.
+  ///
+  /// In es, this message translates to:
+  /// **'Prueba gratis hasta el {date}'**
+  String fixedTrial(String date);
+
+  /// No description provided for @fixedNotUsed.
+  ///
+  /// In es, this message translates to:
+  /// **'Dijiste que ya no la usas: pausarla te ahorra {amount} al año'**
+  String fixedNotUsed(String amount);
+
+  /// No description provided for @fixedPriceUp.
+  ///
+  /// In es, this message translates to:
+  /// **'Subió de {from} a {to} el {date}'**
+  String fixedPriceUp(String from, String to, String date);
+
+  /// No description provided for @fixedPriceDown.
+  ///
+  /// In es, this message translates to:
+  /// **'Bajó de {from} a {to} el {date}'**
+  String fixedPriceDown(String from, String to, String date);
+
+  /// No description provided for @fixedFollowLast.
+  ///
+  /// In es, this message translates to:
+  /// **'Actualizar a {amount}, como el último cobro'**
+  String fixedFollowLast(String amount);
+
+  /// No description provided for @fixedReminds.
+  ///
+  /// In es, this message translates to:
+  /// **'Con aviso'**
+  String get fixedReminds;
+
+  /// No description provided for @instalTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Compras a cuotas'**
+  String get instalTitle;
+
+  /// No description provided for @instalAdd.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar compra a cuotas'**
+  String get instalAdd;
+
+  /// No description provided for @instalEdit.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar compra a cuotas'**
+  String get instalEdit;
+
+  /// No description provided for @instalBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que compraste a cuotas, con los datos que te dio el banco o la tienda. Lo que no sepas queda como estimado, nunca como definitivo.'**
+  String get instalBody;
+
+  /// No description provided for @instalEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no registras compras a cuotas.'**
+  String get instalEmpty;
+
+  /// No description provided for @instalCardNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Si compraste con una tarjeta que tienes en Quincena, la compra cuenta una sola vez, el día que la hiciste. Pagar la tarjeta es mover plata entre tus cuentas, no un gasto nuevo.'**
+  String get instalCardNote;
+
+  /// No description provided for @instalOwed.
+  ///
+  /// In es, this message translates to:
+  /// **'Te falta pagar'**
+  String get instalOwed;
+
+  /// No description provided for @instalOwedKnown.
+  ///
+  /// In es, this message translates to:
+  /// **'Con los datos que diste.'**
+  String get instalOwedKnown;
+
+  /// No description provided for @instalOwedEstimated.
+  ///
+  /// In es, this message translates to:
+  /// **'Estimado: falta algún dato del banco.'**
+  String get instalOwedEstimated;
+
+  /// No description provided for @instalOwedUnknown.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Una compra no tiene datos para calcular.} other{{count} compras no tienen datos para calcular.}}'**
+  String instalOwedUnknown(int count);
+
+  /// No description provided for @instalList.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus compras'**
+  String get instalList;
+
+  /// No description provided for @instalNoData.
+  ///
+  /// In es, this message translates to:
+  /// **'Falta la tasa o el valor de la cuota'**
+  String get instalNoData;
+
+  /// No description provided for @instalPaidOff.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagada'**
+  String get instalPaidOff;
+
+  /// No description provided for @instalNextRow.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuota {number} de {count}: {date}'**
+  String instalNextRow(int number, int count, String date);
+
+  /// No description provided for @instalEstimated.
+  ///
+  /// In es, this message translates to:
+  /// **'estimado'**
+  String get instalEstimated;
+
+  /// No description provided for @instalUnknown.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin datos'**
+  String get instalUnknown;
+
+  /// No description provided for @instalTotalUnknown.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin la tasa ni el valor de la cuota no se puede calcular el total.'**
+  String get instalTotalUnknown;
+
+  /// No description provided for @instalTotalKnown.
+  ///
+  /// In es, this message translates to:
+  /// **'En total pagarás {amount}, con los datos que diste.'**
+  String instalTotalKnown(String amount);
+
+  /// No description provided for @instalTotalEstimated.
+  ///
+  /// In es, this message translates to:
+  /// **'En total pagarás unos {amount}: es un estimado, porque falta la cuota de manejo o el seguro.'**
+  String instalTotalEstimated(String amount);
+
+  /// No description provided for @instalVsCash.
+  ///
+  /// In es, this message translates to:
+  /// **'De contado costaba {cash}: a cuotas pagas {extra} más.'**
+  String instalVsCash(String cash, String extra);
+
+  /// No description provided for @instalVsCashAtLeast.
+  ///
+  /// In es, this message translates to:
+  /// **'De contado costaba {cash}: a cuotas pagas al menos {extra} más.'**
+  String instalVsCashAtLeast(String cash, String extra);
+
+  /// No description provided for @instalVsCashSame.
+  ///
+  /// In es, this message translates to:
+  /// **'De contado costaba {cash}: a cuotas no pagas más.'**
+  String instalVsCashSame(String cash);
+
+  /// No description provided for @instalProgress.
+  ///
+  /// In es, this message translates to:
+  /// **'Llevas {covered} de {count} cuotas'**
+  String instalProgress(int covered, int count);
+
+  /// No description provided for @instalOwing.
+  ///
+  /// In es, this message translates to:
+  /// **'A la cuota {number} le faltan {amount}.'**
+  String instalOwing(int number, String amount);
+
+  /// No description provided for @instalLate.
+  ///
+  /// In es, this message translates to:
+  /// **'La cuota {number} era el {date}. Si ya la pagaste, regístrala para llevar la cuenta.'**
+  String instalLate(int number, String date);
+
+  /// No description provided for @instalPay.
+  ///
+  /// In es, this message translates to:
+  /// **'Registrar un pago'**
+  String get instalPay;
+
+  /// No description provided for @instalFacts.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que dijo el banco'**
+  String get instalFacts;
+
+  /// No description provided for @instalFinanced.
+  ///
+  /// In es, this message translates to:
+  /// **'Valor financiado'**
+  String get instalFinanced;
+
+  /// No description provided for @instalCount.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuotas'**
+  String get instalCount;
+
+  /// No description provided for @instalRate.
+  ///
+  /// In es, this message translates to:
+  /// **'Tasa'**
+  String get instalRate;
+
+  /// No description provided for @instalRateValue.
+  ///
+  /// In es, this message translates to:
+  /// **'{rate} {kind} ({monthly} al mes)'**
+  String instalRateValue(String rate, String kind, String monthly);
+
+  /// No description provided for @instalNotKnown.
+  ///
+  /// In es, this message translates to:
+  /// **'No la sabes'**
+  String get instalNotKnown;
+
+  /// No description provided for @instalPayment.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuota'**
+  String get instalPayment;
+
+  /// No description provided for @instalPaymentStated.
+  ///
+  /// In es, this message translates to:
+  /// **'{amount}, la que dijo el banco'**
+  String instalPaymentStated(String amount);
+
+  /// No description provided for @instalPaymentWorked.
+  ///
+  /// In es, this message translates to:
+  /// **'{amount}, calculada con la tasa'**
+  String instalPaymentWorked(String amount);
+
+  /// No description provided for @instalFee.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuota de manejo o seguro'**
+  String get instalFee;
+
+  /// No description provided for @instalNoFee.
+  ///
+  /// In es, this message translates to:
+  /// **'No tiene'**
+  String get instalNoFee;
+
+  /// No description provided for @instalPaysFrom.
+  ///
+  /// In es, this message translates to:
+  /// **'Con qué la pagas'**
+  String get instalPaysFrom;
+
+  /// No description provided for @instalOutside.
+  ///
+  /// In es, this message translates to:
+  /// **'Fuera de Quincena: tienda o crédito'**
+  String get instalOutside;
+
+  /// No description provided for @instalCountedOnce.
+  ///
+  /// In es, this message translates to:
+  /// **'La compra ya está en esa cuenta: sus cuotas no se suman otra vez a lo comprometido.'**
+  String get instalCountedOnce;
+
+  /// No description provided for @instalCountedAsComing.
+  ///
+  /// In es, this message translates to:
+  /// **'Las cuotas que vienen se cuentan como comprometidas.'**
+  String get instalCountedAsComing;
+
+  /// No description provided for @instalPayments.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagos'**
+  String get instalPayments;
+
+  /// No description provided for @instalNoPayments.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no registras pagos.'**
+  String get instalNoPayments;
+
+  /// No description provided for @instalPaymentRemove.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar este pago'**
+  String get instalPaymentRemove;
+
+  /// No description provided for @instalSchedule.
+  ///
+  /// In es, this message translates to:
+  /// **'Calendario de cuotas'**
+  String get instalSchedule;
+
+  /// No description provided for @instalNoSchedule.
+  ///
+  /// In es, this message translates to:
+  /// **'Con la tasa o el valor de la cuota se arma el calendario.'**
+  String get instalNoSchedule;
+
+  /// No description provided for @instalRow.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuota {number} · {date}'**
+  String instalRow(int number, String date);
+
+  /// No description provided for @instalRowSplit.
+  ///
+  /// In es, this message translates to:
+  /// **'Interés {interest} · capital {principal} · quedan {balance}'**
+  String instalRowSplit(String interest, String principal, String balance);
+
+  /// No description provided for @instalRowLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'Quedan {balance}'**
+  String instalRowLeft(String balance);
+
+  /// No description provided for @instalRowPaid.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagada'**
+  String get instalRowPaid;
+
+  /// No description provided for @instalPaymentAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'Valor pagado'**
+  String get instalPaymentAmount;
+
+  /// No description provided for @instalPaymentInvalid.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe cuánto pagaste.'**
+  String get instalPaymentInvalid;
+
+  /// No description provided for @instalPaymentPartial.
+  ///
+  /// In es, this message translates to:
+  /// **'Puede ser menos que la cuota: lo que falte queda pendiente.'**
+  String get instalPaymentPartial;
+
+  /// No description provided for @instalDelete.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrar compra'**
+  String get instalDelete;
+
+  /// No description provided for @instalDeleteTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Borrar {name}?'**
+  String instalDeleteTitle(String name);
+
+  /// No description provided for @instalDeleteBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Se borran sus datos y pagos aquí. Tus movimientos no se tocan.'**
+  String get instalDeleteBody;
+
+  /// No description provided for @instalSheetBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Copia los datos del extracto o del contrato. Lo que no sepas, déjalo vacío.'**
+  String get instalSheetBody;
+
+  /// No description provided for @instalName.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Qué compraste?'**
+  String get instalName;
+
+  /// No description provided for @instalPrincipal.
+  ///
+  /// In es, this message translates to:
+  /// **'Valor financiado'**
+  String get instalPrincipal;
+
+  /// No description provided for @instalCountField.
+  ///
+  /// In es, this message translates to:
+  /// **'Número de cuotas'**
+  String get instalCountField;
+
+  /// No description provided for @instalFirstDue.
+  ///
+  /// In es, this message translates to:
+  /// **'Primera cuota: {date}'**
+  String instalFirstDue(String date);
+
+  /// No description provided for @instalRateField.
+  ///
+  /// In es, this message translates to:
+  /// **'Tasa de interés'**
+  String get instalRateField;
+
+  /// No description provided for @instalRateKind.
+  ///
+  /// In es, this message translates to:
+  /// **'Cómo la dicen'**
+  String get instalRateKind;
+
+  /// No description provided for @instalRateHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Como aparece en el extracto: efectiva anual (E.A.), nominal mes vencido (M.V.) o mensual. Una tasa de 0 también es un dato: sin interés.'**
+  String get instalRateHelp;
+
+  /// No description provided for @rateEffectiveAnnual.
+  ///
+  /// In es, this message translates to:
+  /// **'E.A.'**
+  String get rateEffectiveAnnual;
+
+  /// No description provided for @rateNominalMonthly.
+  ///
+  /// In es, this message translates to:
+  /// **'M.V.'**
+  String get rateNominalMonthly;
+
+  /// No description provided for @rateMonthly.
+  ///
+  /// In es, this message translates to:
+  /// **'mensual'**
+  String get rateMonthly;
+
+  /// No description provided for @instalStated.
+  ///
+  /// In es, this message translates to:
+  /// **'Valor de la cuota, si te lo dieron'**
+  String get instalStated;
+
+  /// No description provided for @instalStatedHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin la cuota de manejo. Si no lo sabes, se calcula con la tasa.'**
+  String get instalStatedHelp;
+
+  /// No description provided for @instalFeeField.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuota de manejo o seguro, por cuota'**
+  String get instalFeeField;
+
+  /// No description provided for @instalFeeHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe 0 si no tiene. Si no lo sabes, déjalo vacío: el total quedará como estimado.'**
+  String get instalFeeHelp;
+
+  /// No description provided for @instalCash.
+  ///
+  /// In es, this message translates to:
+  /// **'Precio de contado'**
+  String get instalCash;
+
+  /// No description provided for @instalCashHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Para comparar cuánto cuesta pagar a cuotas.'**
+  String get instalCashHelp;
+
+  /// No description provided for @instalIncomplete.
+  ///
+  /// In es, this message translates to:
+  /// **'Falta el nombre, el valor financiado o el número de cuotas.'**
+  String get instalIncomplete;
+
+  /// No description provided for @detectiveTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cargos para revisar'**
+  String get detectiveTitle;
+
+  /// No description provided for @detectiveBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Quincena mira tus movimientos de los últimos 60 días, aquí en el teléfono, y te muestra lo que vale la pena revisar, con la evidencia. Nunca borra un movimiento ni dice que algo sea fraude.'**
+  String get detectiveBody;
+
+  /// No description provided for @detectiveEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Nada para revisar por ahora.'**
+  String get detectiveEmpty;
+
+  /// No description provided for @detectiveOpen.
+  ///
+  /// In es, this message translates to:
+  /// **'Para revisar'**
+  String get detectiveOpen;
+
+  /// No description provided for @detectiveReviewing.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo vas a revisar'**
+  String get detectiveReviewing;
+
+  /// No description provided for @detectiveShowPutAway.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Ver la que marcaste} other{Ver las {count} que marcaste}}'**
+  String detectiveShowPutAway(int count);
+
+  /// No description provided for @detectiveHidePutAway.
+  ///
+  /// In es, this message translates to:
+  /// **'Ocultar las que marcaste'**
+  String get detectiveHidePutAway;
+
+  /// No description provided for @detectiveWhat.
+  ///
+  /// In es, this message translates to:
+  /// **'Qué revisar'**
+  String get detectiveWhat;
+
+  /// No description provided for @detectiveKindTwice.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagos repetidos'**
+  String get detectiveKindTwice;
+
+  /// No description provided for @detectiveKindPriceUp.
+  ///
+  /// In es, this message translates to:
+  /// **'Subidas de precio'**
+  String get detectiveKindPriceUp;
+
+  /// No description provided for @detectiveKindUnusual.
+  ///
+  /// In es, this message translates to:
+  /// **'Cargos fuera de lo común'**
+  String get detectiveKindUnusual;
+
+  /// No description provided for @detectiveRuleTwice.
+  ///
+  /// In es, this message translates to:
+  /// **'Mismo valor, comercio y cuenta, con menos de un día y medio de diferencia.'**
+  String get detectiveRuleTwice;
+
+  /// No description provided for @detectiveRulePriceUp.
+  ///
+  /// In es, this message translates to:
+  /// **'Un comercio que cobró tres veces o más y en el último cobro subió 5 % o más.'**
+  String get detectiveRulePriceUp;
+
+  /// No description provided for @detectiveRuleUnusual.
+  ///
+  /// In es, this message translates to:
+  /// **'Un cargo de tres veces o más lo que sueles gastar en esa categoría y esa cuenta.'**
+  String get detectiveRuleUnusual;
+
+  /// No description provided for @detectiveTwiceSeenTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Puede ser el mismo pago visto dos veces'**
+  String get detectiveTwiceSeenTitle;
+
+  /// No description provided for @detectiveTwiceSeenWhy.
+  ///
+  /// In es, this message translates to:
+  /// **'Mismo valor, comercio y cuenta, muy seguidos, pero llegaron por caminos distintos: {first} y {second}. Lo más probable es que sea un solo pago registrado dos veces. Si sobra uno, ábrelo y bórralo tú.'**
+  String detectiveTwiceSeenWhy(String first, String second);
+
+  /// No description provided for @detectiveTwiceTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Dos cobros iguales, muy seguidos'**
+  String get detectiveTwiceTitle;
+
+  /// No description provided for @detectiveTwiceWhy.
+  ///
+  /// In es, this message translates to:
+  /// **'Mismo valor, comercio y cuenta, y llegaron por el mismo camino: pueden ser dos cobros reales. Si hiciste una sola compra, revísalo con tu banco.'**
+  String get detectiveTwiceWhy;
+
+  /// No description provided for @detectivePriceUpTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'{merchant} cobra más que antes'**
+  String detectivePriceUpTitle(String merchant);
+
+  /// No description provided for @detectivePriceUpWhy.
+  ///
+  /// In es, this message translates to:
+  /// **'Solía cobrar {before} y el último cobro fue {now}, un {percent} % más. Que suba no quiere decir que esté mal: puede ser un cambio de plan o de tarifa.'**
+  String detectivePriceUpWhy(String before, String now, int percent);
+
+  /// No description provided for @detectiveUnusualTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Mucho más de lo usual en {category}'**
+  String detectiveUnusualTitle(String category);
+
+  /// No description provided for @detectiveUnusualWhy.
+  ///
+  /// In es, this message translates to:
+  /// **'Es unas {times} veces lo que sueles gastar por compra en {category} en esta cuenta. Puede ser una compra grande que planeaste.'**
+  String detectiveUnusualWhy(String times, String category);
+
+  /// No description provided for @detectiveExpected.
+  ///
+  /// In es, this message translates to:
+  /// **'Es esperado'**
+  String get detectiveExpected;
+
+  /// No description provided for @detectiveReview.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo voy a revisar'**
+  String get detectiveReview;
+
+  /// No description provided for @detectiveDismiss.
+  ///
+  /// In es, this message translates to:
+  /// **'Descartar'**
+  String get detectiveDismiss;
+
+  /// No description provided for @detectiveShowAgain.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver a mostrar'**
+  String get detectiveShowAgain;
+
+  /// No description provided for @sourceManual.
+  ///
+  /// In es, this message translates to:
+  /// **'A mano'**
+  String get sourceManual;
+
+  /// No description provided for @sourceStatement.
+  ///
+  /// In es, this message translates to:
+  /// **'Extracto'**
+  String get sourceStatement;
+
+  /// No description provided for @sourceGemini.
+  ///
+  /// In es, this message translates to:
+  /// **'Conversación con Gemini'**
+  String get sourceGemini;
+
+  /// No description provided for @sourceOther.
+  ///
+  /// In es, this message translates to:
+  /// **'Otra fuente'**
+  String get sourceOther;
+
+  /// No description provided for @planCommitments.
+  ///
+  /// In es, this message translates to:
+  /// **'Compromisos'**
+  String get planCommitments;
+
+  /// No description provided for @planFixedNext30.
+  ///
+  /// In es, this message translates to:
+  /// **'{amount} en los próximos 30 días'**
+  String planFixedNext30(String amount);
+
+  /// No description provided for @planFixedGuesses.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Uno parece pago fijo: revísalo} other{{count} parecen pagos fijos: revísalos}}'**
+  String planFixedGuesses(int count);
+
+  /// No description provided for @planFixedNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Arriendo, servicios, suscripciones'**
+  String get planFixedNone;
+
+  /// No description provided for @planInstalNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Ninguna registrada'**
+  String get planInstalNone;
+
+  /// No description provided for @planInstalOwed.
+  ///
+  /// In es, this message translates to:
+  /// **'Te falta pagar {amount}'**
+  String planInstalOwed(String amount);
+
+  /// No description provided for @planInstalOwedEstimated.
+  ///
+  /// In es, this message translates to:
+  /// **'Te falta pagar unos {amount}'**
+  String planInstalOwedEstimated(String amount);
+
+  /// No description provided for @planDetective.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Un cargo para revisar} other{{count} cargos para revisar}}'**
+  String planDetective(int count);
+
+  /// No description provided for @planDetectiveNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Nada raro por ahora'**
+  String get planDetectiveNone;
+
+  /// No description provided for @computedCommitments.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo ya comprometido en los próximos 30 días'**
+  String get computedCommitments;
 }
 
 class _AppLocalizationsDelegate

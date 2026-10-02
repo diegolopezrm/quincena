@@ -242,6 +242,46 @@ List<Tool> accountTools(
     },
   ),
   Tool<Map<String, dynamic>>(
+    name: 'commitments',
+    description:
+        'What is already committed in the next 30 days: every fixed payment, '
+        'subscription and instalment still to pay, with its day and amount, '
+        'and the total; and what the subscriptions cost in a year. An '
+        'instalment on a card the app counts is left out: that purchase was '
+        'counted once, on the card. A charge that repeats does not prove the '
+        'service goes unused, and the app never cancels anything.',
+    onCall: (_) {
+      final Ledger ledger = current();
+      final DateTime until = ledger.today.add(const Duration(days: 30));
+      final List<Movement> coming = <Movement>[
+        for (final Movement m in ledger.upcoming)
+          if (!m.date.isAfter(until)) m,
+      ]..sort((Movement a, Movement b) => a.date.compareTo(b.date));
+      return <String, Object?>{
+        'currency': ledger.currency.code,
+        'today': _day(ledger.today),
+        'next30Days': <Map<String, Object?>>[
+          for (final Movement m in coming)
+            <String, Object?>{
+              'date': _day(m.date),
+              'what': m.merchant,
+              'amount': ledger.major(m.amount),
+              'kind': m.id.startsWith('instalment:') ? 'instalment' : 'fixed',
+            },
+        ],
+        'totalNext30Days': ledger.major(
+          coming.fold(0, (int sum, Movement m) => sum + m.amount),
+        ),
+        'subscriptionsPerYear': ledger.major(
+          ledger.subscriptions.fold(
+            0,
+            (int sum, Subscription s) => sum + s.price * 12,
+          ),
+        ),
+      };
+    },
+  ),
+  Tool<Map<String, dynamic>>(
     name: 'month_spending',
     description:
         'Spending in one month: the total, the income, every category with '

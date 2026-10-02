@@ -35,6 +35,7 @@ String computedLabel(BuildContext context, Computed c) {
     'can_i_buy' => l.computedBuy,
     'coming_days' => l.computedComing,
     'fortnight_close' => l.computedClose,
+    'commitments' => l.computedCommitments,
     _ => c.tool,
   };
 }

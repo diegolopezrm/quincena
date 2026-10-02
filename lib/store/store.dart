@@ -685,6 +685,23 @@ class QuincenaStore {
     );
   }
 
+  /// Saves [charge] over the one with its id: what it costs, how often, its
+  /// next day, its account and category, and whether it is still on. What
+  /// it already charged is not touched.
+  Future<void> saveRecurring(RecurringCharge charge) =>
+      (db.update(db.recurrings)..where((r) => r.id.equals(charge.id))).write(
+        RecurringsCompanion(
+          name: Value(charge.name.trim()),
+          amount: Value(charge.amount.amount.abs().toString()),
+          asset: Value(charge.amount.asset.code),
+          cadence: Value(charge.cadence.name),
+          nextDate: Value(charge.nextDate),
+          accountId: Value(charge.accountId),
+          category: Value(charge.category),
+          active: Value(charge.active),
+        ),
+      );
+
   /// Changes what a recurring charge costs from now on.
   Future<void> updateRecurring(String id, {required Money amount}) =>
       (db.update(db.recurrings)..where((r) => r.id.equals(id))).write(
@@ -1062,6 +1079,9 @@ class QuincenaStore {
     'plan.wishes',
     'plan.cushion',
     'plan.scenarios',
+    'commitments.memories',
+    'commitments.instalments',
+    'commitments.detective',
   ];
 
   /// Replaces everything with what [exportJson] wrote, or throws an

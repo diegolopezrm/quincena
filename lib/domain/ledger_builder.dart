@@ -6,6 +6,7 @@ import '../money/money.dart';
 import '../money/rates.dart';
 import '../store/store.dart';
 import 'categories.dart';
+import 'commitments.dart';
 import 'records.dart';
 
 /// The ledger the screens and the agent read, built from the person's own
@@ -18,11 +19,14 @@ import 'records.dart';
 /// out, and [LedgerBuild.unconverted] says which assets those were.
 ///
 /// [setAside] is what this period's envelopes keep apart, in the base
-/// currency's smallest unit.
+/// currency's smallest unit. The [instalments] still to pay join the
+/// charges to come, unless their debt is already in an account counted
+/// here.
 LedgerBuild buildLedger(
   StoreSnapshot s, {
   required DateTime today,
   int setAside = 0,
+  List<Instalments> instalments = const <Instalments>[],
 }) {
   final Asset base = s.profile.base;
   final RateTable rates = RateTable(s.rates);
@@ -117,6 +121,12 @@ LedgerBuild buildLedger(
               amount: inBase(r.amount),
               category: ledgerCategory(r.category),
             ),
+    ...instalmentsDue(
+      instalments,
+      today: today,
+      until: horizon,
+      counted: spendable,
+    ),
   ];
 
   final Map<String, int> openings = <String, int>{

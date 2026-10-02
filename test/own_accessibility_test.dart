@@ -21,11 +21,14 @@ import 'package:quincena/ui/own/accounts_tab.dart';
 import 'package:quincena/ui/own/binance_page.dart';
 import 'package:quincena/ui/own/capture_settings_page.dart';
 import 'package:quincena/ui/own/close_page.dart';
+import 'package:quincena/ui/own/commitments_page.dart';
 import 'package:quincena/ui/own/coming_days_page.dart';
 import 'package:quincena/ui/own/cushion_page.dart';
+import 'package:quincena/ui/own/detective_page.dart';
 import 'package:quincena/ui/own/envelopes_page.dart';
 import 'package:quincena/ui/own/home_tab.dart';
 import 'package:quincena/ui/own/inbox_page.dart';
+import 'package:quincena/ui/own/instalments_page.dart';
 import 'package:quincena/ui/own/plan_tab.dart';
 import 'package:quincena/ui/own/portfolio_page.dart';
 import 'package:quincena/ui/own/statement_page.dart';
@@ -34,6 +37,7 @@ import 'package:quincena/ui/own/what_if_page.dart';
 import 'package:quincena/ui/own/wishes_page.dart';
 
 import '../test_screens/store_screens_test.dart' show ExampleMarket, example;
+import 'commitments_data.dart';
 import 'fonts.dart';
 import 'own_flow_test.dart' show settle;
 
@@ -117,6 +121,11 @@ void main() {
         'what if': (OwnController own) => WhatIfPage(own: own),
         'automatic capture': (OwnController own) =>
             CaptureSettingsPage(own: own),
+        'fixed payments': (OwnController own) => CommitmentsPage(own: own),
+        'instalments': (OwnController own) => InstalmentsPage(own: own),
+        'an instalment purchase': (OwnController own) =>
+            InstalmentDetailPage(own: own, id: televisor),
+        'charges to check': (OwnController own) => DetectivePage(own: own),
       };
 
   for (final MapEntry<String, Widget Function(OwnController)> screen
@@ -136,6 +145,7 @@ void main() {
           final QuincenaStore store = (await tester.runAsync(() async {
             final QuincenaStore store = await example();
             await followLedger(store);
+            await addCommitments(store);
             return store;
           }))!;
           addTearDown(() => tester.runAsync(store.close));

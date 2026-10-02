@@ -2727,4 +2727,676 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get supportTitle => 'Support';
+
+  @override
+  String get cadencePerMonth => 'a month';
+
+  @override
+  String get cadencePerTwoWeeks => 'every two weeks';
+
+  @override
+  String get cadencePerWeek => 'a week';
+
+  @override
+  String get cadencePerYear => 'a year';
+
+  @override
+  String get cadenceMonthly => 'Every month';
+
+  @override
+  String get cadenceBiweekly => 'Every two weeks';
+
+  @override
+  String get cadenceWeekly => 'Every week';
+
+  @override
+  String get cadenceYearly => 'Every year';
+
+  @override
+  String get chargeAdd => 'Add a fixed payment';
+
+  @override
+  String get chargeEdit => 'Fixed payment';
+
+  @override
+  String get chargePausedNote => 'Paused: not counted as committed.';
+
+  @override
+  String get chargeName => 'What is it?';
+
+  @override
+  String get chargeAmount => 'How much is it?';
+
+  @override
+  String chargeUseLast(String amount, String date) {
+    return 'The last charge was $amount, on $date: use that';
+  }
+
+  @override
+  String get chargeCadence => 'How often';
+
+  @override
+  String chargeNext(String date) {
+    return 'Next charge: $date';
+  }
+
+  @override
+  String get chargeAccount => 'Paid from';
+
+  @override
+  String get chargeNoAccount => 'No particular account';
+
+  @override
+  String get chargeRemind => 'Remind me before each charge';
+
+  @override
+  String get remindNever => 'Don\'t remind me';
+
+  @override
+  String get remindSameDay => 'On the day';
+
+  @override
+  String get remindDayBefore => 'A day before';
+
+  @override
+  String remindDaysBefore(int days) {
+    return '$days days before';
+  }
+
+  @override
+  String get remindWeekBefore => 'A week before';
+
+  @override
+  String get chargeSubscription => 'Subscription';
+
+  @override
+  String get chargeTrialAsk => 'On a free trial?';
+
+  @override
+  String chargeTrialUntil(String date) {
+    return 'Free trial until $date';
+  }
+
+  @override
+  String get chargeTrialClear => 'Remove the free trial';
+
+  @override
+  String get chargeTrialNote =>
+      'You\'ll get a reminder the day before it starts charging.';
+
+  @override
+  String get chargeInUseAsk => 'Do you still use it?';
+
+  @override
+  String get chargeInUseYes => 'Yes, I use it';
+
+  @override
+  String get chargeInUseNo => 'Not anymore';
+
+  @override
+  String get chargeInUseNote =>
+      'A charge that repeats doesn\'t say whether you use it: only you know that.';
+
+  @override
+  String chargeYearly(String amount) {
+    return 'That\'s $amount a year.';
+  }
+
+  @override
+  String chargeSaving(String amount) {
+    return 'Pausing it saves you $amount a year. Quincena doesn\'t cancel it: do that in the service\'s app or website.';
+  }
+
+  @override
+  String get chargeIncomplete => 'The name or the amount is missing.';
+
+  @override
+  String get chargeRemindDenied =>
+      'No permission to remind you. If you want the reminder, turn on Quincena\'s notifications in your phone\'s settings.';
+
+  @override
+  String get chargePause => 'Pause';
+
+  @override
+  String get chargeResume => 'Resume';
+
+  @override
+  String get chargePauseNote =>
+      'Pausing here only stops counting it as committed. To stop the charges, cancel it with the service.';
+
+  @override
+  String get chargeDelete => 'Delete fixed payment';
+
+  @override
+  String chargeDeleteTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get chargeDeleteBody =>
+      'It stops counting as committed. The charges you already recorded stay.';
+
+  @override
+  String get fixedTitle => 'Fixed payments';
+
+  @override
+  String get fixedBody =>
+      'What\'s charged on its own every month or year: subscriptions, rent, utilities. Quincena counts it as committed before it comes.';
+
+  @override
+  String get fixedEmpty =>
+      'No fixed payments yet. Add rent, internet or a subscription to see them coming.';
+
+  @override
+  String get fixedNext30 => 'In the next 30 days';
+
+  @override
+  String get fixedSubscriptionsYear => 'Subscriptions a year';
+
+  @override
+  String get guessTitle => 'These look like fixed payments';
+
+  @override
+  String guessEvidence(int count, String amount, String dates) {
+    return '$count similar charges, the last one $amount: $dates';
+  }
+
+  @override
+  String get guessAdd => 'Add as a fixed payment';
+
+  @override
+  String get guessNot => 'Not fixed';
+
+  @override
+  String get fixedSubscriptions => 'Subscriptions';
+
+  @override
+  String get fixedOthers => 'Other fixed payments';
+
+  @override
+  String get fixedPausedTitle => 'Paused';
+
+  @override
+  String get fixedNote =>
+      'Quincena never pays or cancels anything: that is done with your bank or each service.';
+
+  @override
+  String fixedNextOn(String date) {
+    return 'next on $date';
+  }
+
+  @override
+  String get fixedPaused => 'paused';
+
+  @override
+  String fixedTrial(String date) {
+    return 'Free trial until $date';
+  }
+
+  @override
+  String fixedNotUsed(String amount) {
+    return 'You said you no longer use it: pausing it saves $amount a year';
+  }
+
+  @override
+  String fixedPriceUp(String from, String to, String date) {
+    return 'Went up from $from to $to on $date';
+  }
+
+  @override
+  String fixedPriceDown(String from, String to, String date) {
+    return 'Went down from $from to $to on $date';
+  }
+
+  @override
+  String fixedFollowLast(String amount) {
+    return 'Update to $amount, like the last charge';
+  }
+
+  @override
+  String get fixedReminds => 'With a reminder';
+
+  @override
+  String get instalTitle => 'Instalment purchases';
+
+  @override
+  String get instalAdd => 'Add an instalment purchase';
+
+  @override
+  String get instalEdit => 'Edit instalment purchase';
+
+  @override
+  String get instalBody =>
+      'What you bought in instalments, with the figures the bank or the shop gave you. What you don\'t know stays an estimate, never a final figure.';
+
+  @override
+  String get instalEmpty => 'No instalment purchases yet.';
+
+  @override
+  String get instalCardNote =>
+      'If you paid with a card you have in Quincena, the purchase counts once, on the day you made it. Paying the card moves money between your accounts; it is not a new expense.';
+
+  @override
+  String get instalOwed => 'Left to pay';
+
+  @override
+  String get instalOwedKnown => 'From the figures you gave.';
+
+  @override
+  String get instalOwedEstimated =>
+      'Estimated: a figure from the bank is missing.';
+
+  @override
+  String instalOwedUnknown(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count purchases have no figures to work from.',
+      one: 'One purchase has no figures to work from.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get instalList => 'Your purchases';
+
+  @override
+  String get instalNoData => 'The rate or the instalment is missing';
+
+  @override
+  String get instalPaidOff => 'Paid off';
+
+  @override
+  String instalNextRow(int number, int count, String date) {
+    return 'Instalment $number of $count: $date';
+  }
+
+  @override
+  String get instalEstimated => 'estimated';
+
+  @override
+  String get instalUnknown => 'Unknown';
+
+  @override
+  String get instalTotalUnknown =>
+      'Without the rate or the instalment, the total can\'t be worked out.';
+
+  @override
+  String instalTotalKnown(String amount) {
+    return 'In total you\'ll pay $amount, from the figures you gave.';
+  }
+
+  @override
+  String instalTotalEstimated(String amount) {
+    return 'In total you\'ll pay about $amount: an estimate, since the fee or insurance is missing.';
+  }
+
+  @override
+  String instalVsCash(String cash, String extra) {
+    return 'Paying at once cost $cash: in instalments you pay $extra more.';
+  }
+
+  @override
+  String instalVsCashAtLeast(String cash, String extra) {
+    return 'Paying at once cost $cash: in instalments you pay at least $extra more.';
+  }
+
+  @override
+  String instalVsCashSame(String cash) {
+    return 'Paying at once cost $cash: instalments cost you no more.';
+  }
+
+  @override
+  String instalProgress(int covered, int count) {
+    return '$covered of $count instalments paid';
+  }
+
+  @override
+  String instalOwing(int number, String amount) {
+    return 'Instalment $number still needs $amount.';
+  }
+
+  @override
+  String instalLate(int number, String date) {
+    return 'Instalment $number was due on $date. If you paid it, record it to keep count.';
+  }
+
+  @override
+  String get instalPay => 'Record a payment';
+
+  @override
+  String get instalFacts => 'What the bank said';
+
+  @override
+  String get instalFinanced => 'Amount financed';
+
+  @override
+  String get instalCount => 'Instalments';
+
+  @override
+  String get instalRate => 'Rate';
+
+  @override
+  String instalRateValue(String rate, String kind, String monthly) {
+    return '$rate $kind ($monthly a month)';
+  }
+
+  @override
+  String get instalNotKnown => 'Unknown';
+
+  @override
+  String get instalPayment => 'Instalment';
+
+  @override
+  String instalPaymentStated(String amount) {
+    return '$amount, as the bank said';
+  }
+
+  @override
+  String instalPaymentWorked(String amount) {
+    return '$amount, worked out from the rate';
+  }
+
+  @override
+  String get instalFee => 'Fee or insurance';
+
+  @override
+  String get instalNoFee => 'None';
+
+  @override
+  String get instalPaysFrom => 'Paid with';
+
+  @override
+  String get instalOutside => 'Outside Quincena: a shop or a loan';
+
+  @override
+  String get instalCountedOnce =>
+      'The purchase is already in that account: its instalments aren\'t added to what\'s committed again.';
+
+  @override
+  String get instalCountedAsComing =>
+      'The coming instalments count as committed.';
+
+  @override
+  String get instalPayments => 'Payments';
+
+  @override
+  String get instalNoPayments => 'No payments recorded yet.';
+
+  @override
+  String get instalPaymentRemove => 'Remove this payment';
+
+  @override
+  String get instalSchedule => 'Instalment schedule';
+
+  @override
+  String get instalNoSchedule =>
+      'The rate or the instalment is needed for the schedule.';
+
+  @override
+  String instalRow(int number, String date) {
+    return 'Instalment $number · $date';
+  }
+
+  @override
+  String instalRowSplit(String interest, String principal, String balance) {
+    return 'Interest $interest · principal $principal · $balance left';
+  }
+
+  @override
+  String instalRowLeft(String balance) {
+    return '$balance left';
+  }
+
+  @override
+  String get instalRowPaid => 'Paid';
+
+  @override
+  String get instalPaymentAmount => 'Amount paid';
+
+  @override
+  String get instalPaymentInvalid => 'Type how much you paid.';
+
+  @override
+  String get instalPaymentPartial =>
+      'It can be less than the instalment: what\'s missing stays owed.';
+
+  @override
+  String get instalDelete => 'Delete purchase';
+
+  @override
+  String instalDeleteTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get instalDeleteBody =>
+      'Its figures and payments here are deleted. Your movements stay as they are.';
+
+  @override
+  String get instalSheetBody =>
+      'Copy the figures from the statement or the contract. Leave empty what you don\'t know.';
+
+  @override
+  String get instalName => 'What did you buy?';
+
+  @override
+  String get instalPrincipal => 'Amount financed';
+
+  @override
+  String get instalCountField => 'Number of instalments';
+
+  @override
+  String instalFirstDue(String date) {
+    return 'First instalment: $date';
+  }
+
+  @override
+  String get instalRateField => 'Interest rate';
+
+  @override
+  String get instalRateKind => 'Stated as';
+
+  @override
+  String get instalRateHelp =>
+      'As the statement says: effective annual (EAR), nominal annual paid monthly (APR) or monthly. A rate of 0 is a figure too: no interest.';
+
+  @override
+  String get rateEffectiveAnnual => 'EAR';
+
+  @override
+  String get rateNominalMonthly => 'APR';
+
+  @override
+  String get rateMonthly => 'monthly';
+
+  @override
+  String get instalStated => 'Instalment amount, if you were told';
+
+  @override
+  String get instalStatedHelp =>
+      'Without the fee. If you don\'t know it, it\'s worked out from the rate.';
+
+  @override
+  String get instalFeeField => 'Fee or insurance, per instalment';
+
+  @override
+  String get instalFeeHelp =>
+      'Type 0 if there is none. If you don\'t know, leave it empty: the total will be an estimate.';
+
+  @override
+  String get instalCash => 'Price paying at once';
+
+  @override
+  String get instalCashHelp => 'To compare what instalments cost.';
+
+  @override
+  String get instalIncomplete =>
+      'The name, the amount financed or the number of instalments is missing.';
+
+  @override
+  String get detectiveTitle => 'Charges to check';
+
+  @override
+  String get detectiveBody =>
+      'Quincena looks at your last 60 days of movements, here on the phone, and shows what\'s worth a look, with the evidence. It never deletes a movement or calls anything fraud.';
+
+  @override
+  String get detectiveEmpty => 'Nothing to check for now.';
+
+  @override
+  String get detectiveOpen => 'To check';
+
+  @override
+  String get detectiveReviewing => 'You\'ll look into these';
+
+  @override
+  String detectiveShowPutAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Show the $count you put away',
+      one: 'Show the one you put away',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get detectiveHidePutAway => 'Hide the ones you put away';
+
+  @override
+  String get detectiveWhat => 'What to check';
+
+  @override
+  String get detectiveKindTwice => 'Repeated payments';
+
+  @override
+  String get detectiveKindPriceUp => 'Price increases';
+
+  @override
+  String get detectiveKindUnusual => 'Unusual charges';
+
+  @override
+  String get detectiveRuleTwice =>
+      'Same amount, merchant and account, less than a day and a half apart.';
+
+  @override
+  String get detectiveRulePriceUp =>
+      'A merchant that charged three times or more and went up 5% or more the last time.';
+
+  @override
+  String get detectiveRuleUnusual =>
+      'A charge three times or more what you usually spend in that category and account.';
+
+  @override
+  String get detectiveTwiceSeenTitle => 'It may be one payment seen twice';
+
+  @override
+  String detectiveTwiceSeenWhy(String first, String second) {
+    return 'Same amount, merchant and account, close together, but they came two ways: $first and $second. Most likely it\'s one payment recorded twice. If one is extra, open it and delete it yourself.';
+  }
+
+  @override
+  String get detectiveTwiceTitle => 'Two identical charges, close together';
+
+  @override
+  String get detectiveTwiceWhy =>
+      'Same amount, merchant and account, and they came the same way: they may be two real charges. If you made one purchase, check with your bank.';
+
+  @override
+  String detectivePriceUpTitle(String merchant) {
+    return '$merchant charges more than before';
+  }
+
+  @override
+  String detectivePriceUpWhy(String before, String now, int percent) {
+    return 'It used to charge $before and the last charge was $now, $percent% more. Going up doesn\'t mean it\'s wrong: it may be a new plan or rate.';
+  }
+
+  @override
+  String detectiveUnusualTitle(String category) {
+    return 'Far more than usual in $category';
+  }
+
+  @override
+  String detectiveUnusualWhy(String times, String category) {
+    return 'It\'s about $times times what you usually spend per purchase in $category in this account. It may be a big purchase you planned.';
+  }
+
+  @override
+  String get detectiveExpected => 'Expected';
+
+  @override
+  String get detectiveReview => 'I\'ll look into it';
+
+  @override
+  String get detectiveDismiss => 'Dismiss';
+
+  @override
+  String get detectiveShowAgain => 'Show again';
+
+  @override
+  String get sourceManual => 'By hand';
+
+  @override
+  String get sourceStatement => 'Statement';
+
+  @override
+  String get sourceGemini => 'Conversation with Gemini';
+
+  @override
+  String get sourceOther => 'Another source';
+
+  @override
+  String get planCommitments => 'Commitments';
+
+  @override
+  String planFixedNext30(String amount) {
+    return '$amount in the next 30 days';
+  }
+
+  @override
+  String planFixedGuesses(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count look like fixed payments',
+      one: 'One looks like a fixed payment',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get planFixedNone => 'Rent, utilities, subscriptions';
+
+  @override
+  String get planInstalNone => 'None recorded';
+
+  @override
+  String planInstalOwed(String amount) {
+    return '$amount left to pay';
+  }
+
+  @override
+  String planInstalOwedEstimated(String amount) {
+    return 'About $amount left to pay';
+  }
+
+  @override
+  String planDetective(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count charges to check',
+      one: 'One charge to check',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get planDetectiveNone => 'Nothing odd for now';
+
+  @override
+  String get computedCommitments =>
+      'What\'s already committed in the next 30 days';
 }

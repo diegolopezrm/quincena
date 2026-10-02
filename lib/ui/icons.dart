@@ -101,4 +101,8 @@ abstract final class Glyph {
   static const IconData image = IconData(0xe2ca, fontFamily: _family);
   static const IconData scan = IconData(0xebb6, fontFamily: _family);
   static const IconData filePdf = IconData(0xe702, fontFamily: _family);
+  static const IconData pause = IconData(0xe39e, fontFamily: _family);
+  static const IconData play = IconData(0xe3d0, fontFamily: _family);
+  static const IconData bellSlash = IconData(0xe0d4, fontFamily: _family);
+  static const IconData hourglass = IconData(0xe2b2, fontFamily: _family);
 }

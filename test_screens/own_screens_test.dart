@@ -27,6 +27,7 @@ import 'package:quincena/money/rates.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
 
+import '../test/commitments_data.dart';
 import '../test/fonts.dart';
 import '../test/own_flow_test.dart' show fakeRates, settle;
 
@@ -410,6 +411,53 @@ void main() {
     await tester.tap(find.text('Repartir en sobres'));
     await settle(tester);
     await shoot('envelopes');
+  });
+
+  testWidgets('commitments', (tester) async {
+    final QuincenaStore store = (await tester.runAsync(() async {
+      final QuincenaStore store = await seeded();
+      await addCommitments(store);
+      return store;
+    }))!;
+    await open(tester, store, phone, Brightness.light);
+    await tester.tap(find.text('Plan'));
+    await settle(tester);
+    Future<void> visit(String row, String name) async {
+      await tester.scrollUntilVisible(
+        find.text(row),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text(row));
+      await settle(tester);
+      await shoot(name);
+    }
+
+    await tester.scrollUntilVisible(
+      find.text('COMPROMISOS'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -260));
+    await settle(tester);
+    await shoot('plan-commitments');
+    await visit('Pagos fijos', 'fixed');
+    await tester.tap(find.text('Netflix'));
+    await settle(tester);
+    await shoot('fixed-sheet');
+    tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+    await settle(tester);
+    await tester.tap(find.byTooltip('Atrás'));
+    await settle(tester);
+    await visit('Compras a cuotas', 'instalments');
+    await tester.tap(find.text('Televisor'));
+    await settle(tester);
+    await shoot('instalment');
+    await tester.tap(find.byTooltip('Atrás'));
+    await settle(tester);
+    await tester.tap(find.byTooltip('Atrás'));
+    await settle(tester);
+    await visit('Cargos para revisar', 'detective');
   });
 
   testWidgets('explained', (tester) async {

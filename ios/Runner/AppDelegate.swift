@@ -49,12 +49,17 @@ import UserNotifications
         }
       case "schedule":
         guard let args = call.arguments as? [String: Any],
-          let days = args["days"] as? [NSNumber],
-          let title = args["title"] as? String
+          let items = args["items"] as? [[String: Any]]
         else { return result(FlutterError(code: "args", message: nil, details: nil)) }
         Reminders.schedule(
-          days.map { Date(timeIntervalSince1970: $0.doubleValue / 1000) },
-          title: title, body: args["body"] as? String ?? "")
+          items.compactMap { item in
+            guard let at = item["at"] as? NSNumber, let title = item["title"] as? String
+            else { return nil }
+            return (
+              Date(timeIntervalSince1970: at.doubleValue / 1000), title,
+              item["body"] as? String ?? ""
+            )
+          })
         result(nil)
       case "cancel":
         Reminders.cancel()
@@ -66,24 +71,28 @@ import UserNotifications
   }
 }
 
-/// The reminder that the close of the fortnight is ready, on each payday.
-/// It says only that: no amount ever shows on the lock screen.
+/// Quincena's reminders: the close of the fortnight on payday, and the
+/// renewals the person asked about. None ever carries an amount, since the
+/// lock screen shows them.
 enum Reminders {
-  static let count = 12
-  static func ids() -> [String] { (0..<count).map { "close-\($0)" } }
+  static let count = 24
+  // The ones before build 9 were named after the close only.
+  static func ids() -> [String] {
+    (0..<count).map { "quincena-\($0)" } + (0..<12).map { "close-\($0)" }
+  }
 
-  static func schedule(_ days: [Date], title: String, body: String) {
+  static func schedule(_ items: [(Date, String, String)]) {
     let center = UNUserNotificationCenter.current()
     center.removePendingNotificationRequests(withIdentifiers: ids())
     let calendar = Calendar.current
-    for (i, day) in days.prefix(count).enumerated() where day > Date() {
+    for (i, (day, title, body)) in items.prefix(count).enumerated() where day > Date() {
       let content = UNMutableNotificationContent()
       content.title = title
       content.body = body
       let when = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: day)
       center.add(
         UNNotificationRequest(
-          identifier: "close-\(i)", content: content,
+          identifier: "quincena-\(i)", content: content,
           trigger: UNCalendarNotificationTrigger(dateMatching: when, repeats: false)))
     }
   }

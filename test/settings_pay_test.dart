@@ -186,13 +186,18 @@ void main() {
       final MethodCall set = calls.lastWhere(
         (MethodCall c) => c.method == 'schedule',
       );
-      final Map<Object?, Object?> args = set.arguments as Map<Object?, Object?>;
-      expect(args['days'], hasLength(6));
-      expect(args['title'], 'Tu cierre de quincena está listo');
-      // Nothing about the money: no amount, not even a digit.
+      final List<Object?> items =
+          (set.arguments as Map<Object?, Object?>)['items']! as List<Object?>;
+      expect(items, hasLength(6));
+      for (final Object? item in items) {
+        final Map<Object?, Object?> i = item! as Map<Object?, Object?>;
+        expect(i['title'], 'Tu cierre de quincena está listo');
+        // Nothing about the money: no amount, not even a digit.
+        expect('${i['title']} ${i['body']}', isNot(contains(RegExp(r'[\d$]'))));
+      }
       expect(
-        '${args['title']} ${args['body']}',
-        isNot(contains(RegExp(r'[\d$]'))),
+        (items.first! as Map<Object?, Object?>)['at'],
+        DateTime(2026, 10, 15, 9).millisecondsSinceEpoch,
       );
 
       await tester.tap(find.text('Avisarme el día de pago'));

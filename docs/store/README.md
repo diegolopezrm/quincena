@@ -86,6 +86,15 @@ teléfono.
 > te pagan tarde. Guarda lo que quieres para después y mira qué le haría
 > a tus metas comprarlo.
 >
+> TUS COMPROMISOS, A LA VISTA
+> Tus suscripciones y pagos fijos con la próxima renovación, el fin de cada
+> prueba gratis, los cambios de precio y un aviso antes de que cobren; ves
+> cuánto te ahorrarías al pausar una, y la app nunca cancela nada por ti.
+> Lleva tus compras a cuotas con su calendario, lo que te falta y lo que
+> cuestan frente al contado, separando lo que sabes de lo estimado. Un
+> detective de cargos te muestra pagos repetidos, subidas de precio y
+> cargos fuera de lo común, con la evidencia y sin borrar nada.
+>
 > CRIPTO, COMO UN PROFESIONAL
 > Tu portafolio con precios en vivo, lo que te costó cada moneda en pesos y
 > en dólares, la ganancia o pérdida y la gráfica de 24 horas a un año.
@@ -145,6 +154,15 @@ you can touch. Your finances stay on your phone.
 > reach each goal, how many days your cushion covers, and what would
 > happen if you saved more, a charge went up or your pay came late. Keep
 > what you want for later and see what buying it would do to your goals.
+>
+> YOUR COMMITMENTS, IN SIGHT
+> Your subscriptions and fixed payments with their next renewal, the end of
+> each free trial, price changes and a reminder before they charge; see
+> what pausing one would save, and the app never cancels anything for you.
+> Track instalment purchases with their schedule, what's left and what they
+> cost against paying at once, keeping what you know apart from what's
+> estimated. A charge detective shows repeated payments, price increases
+> and unusual charges, with the evidence, and deletes nothing.
 >
 > CRYPTO, LIKE A PRO
 > Your portfolio with live prices, what each coin cost you in pesos and

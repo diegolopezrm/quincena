@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/ledger.dart';
+import '../../domain/commitments.dart';
 import '../../domain/plan.dart';
 import '../../domain/records.dart';
 import '../../format/dates.dart';
@@ -11,9 +12,12 @@ import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
 import 'coming_days_page.dart';
+import 'commitments_page.dart';
 import 'cushion_page.dart';
+import 'detective_page.dart';
 import 'envelopes_page.dart';
 import 'goal_sheet.dart';
+import 'instalments_page.dart';
 import 'look.dart';
 import 'what_if_page.dart';
 import 'wishes_page.dart';
@@ -60,6 +64,9 @@ class PlanTab extends StatelessWidget {
             ],
           ),
         const SizedBox(height: 28),
+        SectionLabel(l.planCommitments),
+        _CommitmentsPanel(own: own, ledger: ledger, open: _open),
+        const SizedBox(height: 28),
         SectionLabel(l.planTools),
         Panel(
           children: <Widget>[
@@ -94,6 +101,75 @@ class PlanTab extends StatelessWidget {
               onTap: () => _open(context, ComingDaysPage(own: own)),
             ),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+/// What is already promised ahead: fixed payments, instalments, and the
+/// charges worth a look.
+class _CommitmentsPanel extends StatelessWidget {
+  const _CommitmentsPanel({
+    required this.own,
+    required this.ledger,
+    required this.open,
+  });
+
+  final OwnController own;
+  final Ledger ledger;
+  final void Function(BuildContext context, Widget page) open;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    String amount(int minor) => pesos(ledger.major(minor));
+    final DateTime until = ledger.today.add(const Duration(days: 30));
+    final int fixed = <Movement>[
+      for (final Movement m in ledger.upcoming)
+        if (!m.id.startsWith('instalment:') && !m.date.isAfter(until)) m,
+    ].fold(0, (int sum, Movement m) => sum + m.amount);
+    final bool anyFixed = own.recurring.any((RecurringCharge r) => r.active);
+    final List<Instalments> plans = own.instalments;
+    var owed = 0;
+    var estimated = false;
+    for (final Instalments p in plans) {
+      final int? left = p.remaining;
+      if (left == null) continue;
+      owed += left;
+      if (!p.totalKnown && left > 0) estimated = true;
+    }
+    final int alerts = <ChargeAlert>[
+      for (final ChargeAlert a in own.alerts)
+        if (own.detective.answers[a.id] == null) a,
+    ].length;
+    return Panel(
+      children: <Widget>[
+        _ToolRow(
+          icon: Glyph.repeat,
+          title: l.fixedTitle,
+          detail: anyFixed
+              ? l.planFixedNext30(amount(fixed))
+              : own.recurringGuesses.isNotEmpty
+              ? l.planFixedGuesses(own.recurringGuesses.length)
+              : l.planFixedNone,
+          onTap: () => open(context, CommitmentsPage(own: own)),
+        ),
+        _ToolRow(
+          icon: Glyph.creditCard,
+          title: l.instalTitle,
+          detail: plans.isEmpty
+              ? l.planInstalNone
+              : estimated
+              ? l.planInstalOwedEstimated(amount(owed))
+              : l.planInstalOwed(amount(owed)),
+          onTap: () => open(context, InstalmentsPage(own: own)),
+        ),
+        _ToolRow(
+          icon: Glyph.magnifyingGlass,
+          title: l.detectiveTitle,
+          detail: alerts == 0 ? l.planDetectiveNone : l.planDetective(alerts),
+          onTap: () => open(context, DetectivePage(own: own)),
         ),
       ],
     );

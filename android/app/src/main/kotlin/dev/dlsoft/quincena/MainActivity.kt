@@ -103,9 +103,7 @@ class MainActivity : FlutterActivity() {
                 "schedule" -> {
                     Reminders.schedule(
                         this,
-                        call.argument<List<Number>>("days").orEmpty().map { it.toLong() },
-                        call.argument<String>("title").orEmpty(),
-                        call.argument<String>("body").orEmpty(),
+                        call.argument<List<Map<String, Any?>>>("items").orEmpty(),
                     )
                     result.success(null)
                 }

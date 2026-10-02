@@ -14,6 +14,7 @@ import '../capture/places.dart';
 import '../agent/tools.dart';
 import '../data/clock.dart';
 import '../data/ledger.dart';
+import '../domain/commitments.dart';
 import '../domain/ledger_builder.dart';
 import '../domain/plan.dart';
 import '../domain/projection.dart';
@@ -103,8 +104,15 @@ class OwnController extends ChangeNotifier {
   /// is off.
   Map<String, String>? _reminder;
 
-  /// The schedule the reminders were last set for.
+  /// What the reminders were last set to, to set them again only when it
+  /// changes.
   String? _remindedFor;
+
+  /// What the person told about each recurring charge, by its id.
+  Map<String, ChargeMemory> _memories = const <String, ChargeMemory>{};
+  List<Instalments> _instalments = const <Instalments>[];
+  DetectiveState _detective = const DetectiveState();
+  List<ChargeAlert>? _alerts;
   CaptureSettings _captureSettings = const CaptureSettings();
   bool _pulling = false;
   bool _pullAgain = false;
@@ -196,6 +204,113 @@ class OwnController extends ChangeNotifier {
   static const String _scenariosKey = 'plan.scenarios';
   static const String _cushionKey = 'plan.cushion';
 
+  /// The recurring charges, those paused included.
+  List<RecurringCharge> get recurring =>
+      _snapshot?.recurring ?? const <RecurringCharge>[];
+
+  /// What the person told about the recurring charge [id].
+  ChargeMemory memoryOf(String id) => _memories[id] ?? const ChargeMemory();
+
+  /// The purchases in instalments, as the person typed them.
+  List<Instalments> get instalments => _instalments;
+
+  DetectiveState get detective => _detective;
+
+  /// Everything the charge detective finds, before the person's answers.
+  List<ChargeAlert> get allAlerts {
+    final StoreSnapshot? s = _snapshot;
+    if (s == null) return const <ChargeAlert>[];
+    return _alerts ??= detectCharges(s.entries, today: today);
+  }
+
+  /// The alerts to show: not silenced, not put away.
+  List<ChargeAlert> get alerts => _detective.shown(allAlerts);
+
+  /// Merchants charged about the same each month that are not a fixed
+  /// payment yet, nor ones the person said are not.
+  List<RecurringGuess> get recurringGuesses {
+    final Ledger? l = ledger;
+    if (l == null) return const <RecurringGuess>[];
+    // Every change rebuilds the ledger, so one guess per ledger holds.
+    if (!identical(_guessedFrom, l)) {
+      _guessedFrom = l;
+      _guesses = guessRecurring(
+        l,
+        known: <String>[
+          for (final RecurringCharge r in recurring) r.name,
+          ..._detective.notRecurring,
+        ],
+      );
+    }
+    return _guesses;
+  }
+
+  Ledger? _guessedFrom;
+  List<RecurringGuess> _guesses = const <RecurringGuess>[];
+
+  Future<void> saveMemory(String id, ChargeMemory memory) =>
+      _saveMemories(<String, ChargeMemory>{..._memories, id: memory});
+
+  Future<void> forgetMemory(String id) => _saveMemories(<String, ChargeMemory>{
+    for (final MapEntry<String, ChargeMemory> e in _memories.entries)
+      if (e.key != id) e.key: e.value,
+  });
+
+  Future<void> _saveMemories(Map<String, ChargeMemory> memories) =>
+      store.setSetting(
+        _memoriesKey,
+        jsonEncode(<String, Object?>{
+          for (final MapEntry<String, ChargeMemory> e in memories.entries)
+            e.key: e.value.toJson(),
+        }),
+      );
+
+  /// Adds [plan], or replaces the one with its id.
+  Future<void> saveInstalments(Instalments plan) =>
+      _saveInstalments(<Instalments>[
+        for (final Instalments p in _instalments)
+          if (p.id != plan.id) p,
+        plan,
+      ]);
+
+  Future<void> deleteInstalments(String id) => _saveInstalments(<Instalments>[
+    for (final Instalments p in _instalments)
+      if (p.id != id) p,
+  ]);
+
+  Future<void> _saveInstalments(List<Instalments> plans) => store.setSetting(
+    _instalmentsKey,
+    jsonEncode(<Object?>[for (final Instalments p in plans) p.toJson()]),
+  );
+
+  /// Keeps what the person made of the alert [id]; null takes it back.
+  Future<void> answerAlert(String id, AlertAnswer? answer) => _saveDetective(
+    _detective.withAnswer(
+      id,
+      answer,
+      current: <String>[for (final ChargeAlert a in allAlerts) a.id],
+    ),
+  );
+
+  /// Silences every alert of [kind], or lets them show again.
+  Future<void> muteAlerts(AlertKind kind, {required bool muted}) =>
+      _saveDetective(_detective.withMuted(kind, muted: muted));
+
+  /// Stops offering [name] as a fixed payment.
+  Future<void> notRecurring(String name) =>
+      _saveDetective(_detective.withNotRecurring(name));
+
+  Future<void> _saveDetective(DetectiveState state) =>
+      store.setSetting(_detectiveKey, jsonEncode(state.toJson()));
+
+  /// Asks the system to let the app notify, for a renewal or trial
+  /// reminder. False when the person said no.
+  Future<bool> allowReminders() => Reminders.ask();
+
+  static const String _memoriesKey = 'commitments.memories';
+  static const String _instalmentsKey = 'commitments.instalments';
+  static const String _detectiveKey = 'commitments.detective';
+
   /// Whether the close of each fortnight is reminded on payday.
   bool get remindsClose => _reminder != null;
 
@@ -208,9 +323,8 @@ class OwnController extends ChangeNotifier {
     required String body,
   }) async {
     if (!on) {
+      // The renewals stay: the next reload sets them without the close.
       await store.setSetting(_reminderKey, '');
-      await Reminders.cancel();
-      _remindedFor = null;
       return true;
     }
     if (!await Reminders.ask()) return false;
@@ -238,20 +352,35 @@ class OwnController extends ChangeNotifier {
     }
   }
 
-  /// Sets the reminders again when the schedule they follow changed.
+  /// Sets the reminders again when what they would say, or when, changed:
+  /// the close on each payday when it is on, and the renewals and trials
+  /// the person asked about.
   Future<void> _remind() async {
     final Profile? p = profile;
-    final Map<String, String>? words = _reminder;
-    if (p == null || words == null) return;
-    final String forSchedule = jsonEncode(p.schedule.toJson());
-    if (forSchedule == _remindedFor) return;
-    _remindedFor = forSchedule;
-    await Reminders.schedule(
-      p.schedule,
-      _now(),
-      title: words['title'] ?? '',
-      body: words['body'] ?? '',
-    );
+    if (p == null) return;
+    final DateTime now = _now();
+    final List<Reminder> all = <Reminder>[
+      if (_reminder case final Map<String, String> words)
+        for (final DateTime day in Reminders.days(p.schedule, now))
+          Reminder(
+            at: day,
+            title: words['title'] ?? '',
+            body: words['body'] ?? '',
+          ),
+      ...renewalReminders(recurring, _memories, now: now),
+    ];
+    final String signature = jsonEncode(<Object?>[
+      for (final Reminder r in all)
+        <Object?>[r.at.millisecondsSinceEpoch, r.title, r.body],
+    ]);
+    final String? before = _remindedFor;
+    if (signature == before) return;
+    _remindedFor = signature;
+    if (all.isNotEmpty) {
+      await Reminders.schedule(all);
+    } else if (before != null) {
+      await Reminders.cancel();
+    }
   }
 
   List<InboxItem> get pendingInbox => <InboxItem>[
@@ -503,6 +632,21 @@ class OwnController extends ChangeNotifier {
     _cushion = CushionSettings.fromJson(
       _json(await store.setting(_cushionKey)),
     );
+    _memories = switch (_json(await store.setting(_memoriesKey))) {
+      final Map<Object?, Object?> m => <String, ChargeMemory>{
+        for (final MapEntry<Object?, Object?> e in m.entries)
+          '${e.key}': ChargeMemory.fromJson(e.value),
+      },
+      _ => const <String, ChargeMemory>{},
+    };
+    _instalments = <Instalments>[
+      for (final Object? p in _list(await store.setting(_instalmentsKey)))
+        ?Instalments.fromJson(p),
+    ];
+    _detective = DetectiveState.fromJson(
+      _json(await store.setting(_detectiveKey)),
+    );
+    _alerts = null;
     _reminder = switch (_json(await store.setting(_reminderKey))) {
       final Map<Object?, Object?> m => <String, String>{
         for (final MapEntry<Object?, Object?> e in m.entries)
@@ -528,6 +672,7 @@ class OwnController extends ChangeNotifier {
                     DateTime(started.year, started.month, started.day)
             ? plan.setAside
             : 0,
+        instalments: _instalments,
       );
       _balances = balancesOf(s.accounts, s.entries, day);
     } else {

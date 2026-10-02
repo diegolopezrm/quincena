@@ -2727,4 +2727,676 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get supportTitle => 'Soporte';
+
+  @override
+  String get cadencePerMonth => 'al mes';
+
+  @override
+  String get cadencePerTwoWeeks => 'cada dos semanas';
+
+  @override
+  String get cadencePerWeek => 'a la semana';
+
+  @override
+  String get cadencePerYear => 'al año';
+
+  @override
+  String get cadenceMonthly => 'Cada mes';
+
+  @override
+  String get cadenceBiweekly => 'Cada dos semanas';
+
+  @override
+  String get cadenceWeekly => 'Cada semana';
+
+  @override
+  String get cadenceYearly => 'Cada año';
+
+  @override
+  String get chargeAdd => 'Agregar pago fijo';
+
+  @override
+  String get chargeEdit => 'Pago fijo';
+
+  @override
+  String get chargePausedNote => 'En pausa: no se cuenta como comprometido.';
+
+  @override
+  String get chargeName => '¿Qué es?';
+
+  @override
+  String get chargeAmount => '¿Cuánto cobra?';
+
+  @override
+  String chargeUseLast(String amount, String date) {
+    return 'El último cobro fue $amount, el $date: usar ese valor';
+  }
+
+  @override
+  String get chargeCadence => 'Cada cuánto';
+
+  @override
+  String chargeNext(String date) {
+    return 'Próximo cobro: $date';
+  }
+
+  @override
+  String get chargeAccount => 'Se paga desde';
+
+  @override
+  String get chargeNoAccount => 'Ninguna cuenta en particular';
+
+  @override
+  String get chargeRemind => 'Avisarme antes de cada cobro';
+
+  @override
+  String get remindNever => 'No avisarme';
+
+  @override
+  String get remindSameDay => 'El mismo día';
+
+  @override
+  String get remindDayBefore => 'Un día antes';
+
+  @override
+  String remindDaysBefore(int days) {
+    return '$days días antes';
+  }
+
+  @override
+  String get remindWeekBefore => 'Una semana antes';
+
+  @override
+  String get chargeSubscription => 'Suscripción';
+
+  @override
+  String get chargeTrialAsk => '¿Está en prueba gratis?';
+
+  @override
+  String chargeTrialUntil(String date) {
+    return 'Prueba gratis hasta el $date';
+  }
+
+  @override
+  String get chargeTrialClear => 'Quitar la prueba gratis';
+
+  @override
+  String get chargeTrialNote =>
+      'Te avisamos el día antes de que empiece a cobrar.';
+
+  @override
+  String get chargeInUseAsk => '¿La sigues usando?';
+
+  @override
+  String get chargeInUseYes => 'Sí, la uso';
+
+  @override
+  String get chargeInUseNo => 'Ya no la uso';
+
+  @override
+  String get chargeInUseNote =>
+      'Un cobro que se repite no dice si la usas: eso solo lo sabes tú.';
+
+  @override
+  String chargeYearly(String amount) {
+    return 'Al año son $amount.';
+  }
+
+  @override
+  String chargeSaving(String amount) {
+    return 'Si la pausas, te ahorras $amount al año. Quincena no la cancela: hazlo en la app o en la página del servicio.';
+  }
+
+  @override
+  String get chargeIncomplete => 'Falta el nombre o el valor.';
+
+  @override
+  String get chargeRemindDenied =>
+      'Sin permiso para avisarte. Si quieres el aviso, activa las notificaciones de Quincena en los ajustes del teléfono.';
+
+  @override
+  String get chargePause => 'Pausar';
+
+  @override
+  String get chargeResume => 'Reanudar';
+
+  @override
+  String get chargePauseNote =>
+      'Pausar aquí solo deja de contarlo como comprometido. Para que deje de cobrarte, cancélalo con el servicio.';
+
+  @override
+  String get chargeDelete => 'Borrar pago fijo';
+
+  @override
+  String chargeDeleteTitle(String name) {
+    return '¿Borrar $name?';
+  }
+
+  @override
+  String get chargeDeleteBody =>
+      'Deja de contarse como comprometido. Los cobros que ya registraste se quedan.';
+
+  @override
+  String get fixedTitle => 'Pagos fijos';
+
+  @override
+  String get fixedBody =>
+      'Lo que se cobra solo cada mes o cada año: suscripciones, arriendo, servicios. Quincena lo cuenta como comprometido antes de que llegue.';
+
+  @override
+  String get fixedEmpty =>
+      'Aún no tienes pagos fijos. Agrega el arriendo, el internet o una suscripción para verlos venir.';
+
+  @override
+  String get fixedNext30 => 'En los próximos 30 días';
+
+  @override
+  String get fixedSubscriptionsYear => 'Suscripciones al año';
+
+  @override
+  String get guessTitle => 'Parecen pagos fijos';
+
+  @override
+  String guessEvidence(int count, String amount, String dates) {
+    return '$count cobros parecidos, el último de $amount: $dates';
+  }
+
+  @override
+  String get guessAdd => 'Agregar como pago fijo';
+
+  @override
+  String get guessNot => 'No es fijo';
+
+  @override
+  String get fixedSubscriptions => 'Suscripciones';
+
+  @override
+  String get fixedOthers => 'Otros pagos fijos';
+
+  @override
+  String get fixedPausedTitle => 'En pausa';
+
+  @override
+  String get fixedNote =>
+      'Quincena no paga ni cancela nada: eso se hace con tu banco o con cada servicio.';
+
+  @override
+  String fixedNextOn(String date) {
+    return 'próximo cobro el $date';
+  }
+
+  @override
+  String get fixedPaused => 'en pausa';
+
+  @override
+  String fixedTrial(String date) {
+    return 'Prueba gratis hasta el $date';
+  }
+
+  @override
+  String fixedNotUsed(String amount) {
+    return 'Dijiste que ya no la usas: pausarla te ahorra $amount al año';
+  }
+
+  @override
+  String fixedPriceUp(String from, String to, String date) {
+    return 'Subió de $from a $to el $date';
+  }
+
+  @override
+  String fixedPriceDown(String from, String to, String date) {
+    return 'Bajó de $from a $to el $date';
+  }
+
+  @override
+  String fixedFollowLast(String amount) {
+    return 'Actualizar a $amount, como el último cobro';
+  }
+
+  @override
+  String get fixedReminds => 'Con aviso';
+
+  @override
+  String get instalTitle => 'Compras a cuotas';
+
+  @override
+  String get instalAdd => 'Agregar compra a cuotas';
+
+  @override
+  String get instalEdit => 'Editar compra a cuotas';
+
+  @override
+  String get instalBody =>
+      'Lo que compraste a cuotas, con los datos que te dio el banco o la tienda. Lo que no sepas queda como estimado, nunca como definitivo.';
+
+  @override
+  String get instalEmpty => 'Aún no registras compras a cuotas.';
+
+  @override
+  String get instalCardNote =>
+      'Si compraste con una tarjeta que tienes en Quincena, la compra cuenta una sola vez, el día que la hiciste. Pagar la tarjeta es mover plata entre tus cuentas, no un gasto nuevo.';
+
+  @override
+  String get instalOwed => 'Te falta pagar';
+
+  @override
+  String get instalOwedKnown => 'Con los datos que diste.';
+
+  @override
+  String get instalOwedEstimated => 'Estimado: falta algún dato del banco.';
+
+  @override
+  String instalOwedUnknown(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count compras no tienen datos para calcular.',
+      one: 'Una compra no tiene datos para calcular.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get instalList => 'Tus compras';
+
+  @override
+  String get instalNoData => 'Falta la tasa o el valor de la cuota';
+
+  @override
+  String get instalPaidOff => 'Pagada';
+
+  @override
+  String instalNextRow(int number, int count, String date) {
+    return 'Cuota $number de $count: $date';
+  }
+
+  @override
+  String get instalEstimated => 'estimado';
+
+  @override
+  String get instalUnknown => 'Sin datos';
+
+  @override
+  String get instalTotalUnknown =>
+      'Sin la tasa ni el valor de la cuota no se puede calcular el total.';
+
+  @override
+  String instalTotalKnown(String amount) {
+    return 'En total pagarás $amount, con los datos que diste.';
+  }
+
+  @override
+  String instalTotalEstimated(String amount) {
+    return 'En total pagarás unos $amount: es un estimado, porque falta la cuota de manejo o el seguro.';
+  }
+
+  @override
+  String instalVsCash(String cash, String extra) {
+    return 'De contado costaba $cash: a cuotas pagas $extra más.';
+  }
+
+  @override
+  String instalVsCashAtLeast(String cash, String extra) {
+    return 'De contado costaba $cash: a cuotas pagas al menos $extra más.';
+  }
+
+  @override
+  String instalVsCashSame(String cash) {
+    return 'De contado costaba $cash: a cuotas no pagas más.';
+  }
+
+  @override
+  String instalProgress(int covered, int count) {
+    return 'Llevas $covered de $count cuotas';
+  }
+
+  @override
+  String instalOwing(int number, String amount) {
+    return 'A la cuota $number le faltan $amount.';
+  }
+
+  @override
+  String instalLate(int number, String date) {
+    return 'La cuota $number era el $date. Si ya la pagaste, regístrala para llevar la cuenta.';
+  }
+
+  @override
+  String get instalPay => 'Registrar un pago';
+
+  @override
+  String get instalFacts => 'Lo que dijo el banco';
+
+  @override
+  String get instalFinanced => 'Valor financiado';
+
+  @override
+  String get instalCount => 'Cuotas';
+
+  @override
+  String get instalRate => 'Tasa';
+
+  @override
+  String instalRateValue(String rate, String kind, String monthly) {
+    return '$rate $kind ($monthly al mes)';
+  }
+
+  @override
+  String get instalNotKnown => 'No la sabes';
+
+  @override
+  String get instalPayment => 'Cuota';
+
+  @override
+  String instalPaymentStated(String amount) {
+    return '$amount, la que dijo el banco';
+  }
+
+  @override
+  String instalPaymentWorked(String amount) {
+    return '$amount, calculada con la tasa';
+  }
+
+  @override
+  String get instalFee => 'Cuota de manejo o seguro';
+
+  @override
+  String get instalNoFee => 'No tiene';
+
+  @override
+  String get instalPaysFrom => 'Con qué la pagas';
+
+  @override
+  String get instalOutside => 'Fuera de Quincena: tienda o crédito';
+
+  @override
+  String get instalCountedOnce =>
+      'La compra ya está en esa cuenta: sus cuotas no se suman otra vez a lo comprometido.';
+
+  @override
+  String get instalCountedAsComing =>
+      'Las cuotas que vienen se cuentan como comprometidas.';
+
+  @override
+  String get instalPayments => 'Pagos';
+
+  @override
+  String get instalNoPayments => 'Aún no registras pagos.';
+
+  @override
+  String get instalPaymentRemove => 'Quitar este pago';
+
+  @override
+  String get instalSchedule => 'Calendario de cuotas';
+
+  @override
+  String get instalNoSchedule =>
+      'Con la tasa o el valor de la cuota se arma el calendario.';
+
+  @override
+  String instalRow(int number, String date) {
+    return 'Cuota $number · $date';
+  }
+
+  @override
+  String instalRowSplit(String interest, String principal, String balance) {
+    return 'Interés $interest · capital $principal · quedan $balance';
+  }
+
+  @override
+  String instalRowLeft(String balance) {
+    return 'Quedan $balance';
+  }
+
+  @override
+  String get instalRowPaid => 'Pagada';
+
+  @override
+  String get instalPaymentAmount => 'Valor pagado';
+
+  @override
+  String get instalPaymentInvalid => 'Escribe cuánto pagaste.';
+
+  @override
+  String get instalPaymentPartial =>
+      'Puede ser menos que la cuota: lo que falte queda pendiente.';
+
+  @override
+  String get instalDelete => 'Borrar compra';
+
+  @override
+  String instalDeleteTitle(String name) {
+    return '¿Borrar $name?';
+  }
+
+  @override
+  String get instalDeleteBody =>
+      'Se borran sus datos y pagos aquí. Tus movimientos no se tocan.';
+
+  @override
+  String get instalSheetBody =>
+      'Copia los datos del extracto o del contrato. Lo que no sepas, déjalo vacío.';
+
+  @override
+  String get instalName => '¿Qué compraste?';
+
+  @override
+  String get instalPrincipal => 'Valor financiado';
+
+  @override
+  String get instalCountField => 'Número de cuotas';
+
+  @override
+  String instalFirstDue(String date) {
+    return 'Primera cuota: $date';
+  }
+
+  @override
+  String get instalRateField => 'Tasa de interés';
+
+  @override
+  String get instalRateKind => 'Cómo la dicen';
+
+  @override
+  String get instalRateHelp =>
+      'Como aparece en el extracto: efectiva anual (E.A.), nominal mes vencido (M.V.) o mensual. Una tasa de 0 también es un dato: sin interés.';
+
+  @override
+  String get rateEffectiveAnnual => 'E.A.';
+
+  @override
+  String get rateNominalMonthly => 'M.V.';
+
+  @override
+  String get rateMonthly => 'mensual';
+
+  @override
+  String get instalStated => 'Valor de la cuota, si te lo dieron';
+
+  @override
+  String get instalStatedHelp =>
+      'Sin la cuota de manejo. Si no lo sabes, se calcula con la tasa.';
+
+  @override
+  String get instalFeeField => 'Cuota de manejo o seguro, por cuota';
+
+  @override
+  String get instalFeeHelp =>
+      'Escribe 0 si no tiene. Si no lo sabes, déjalo vacío: el total quedará como estimado.';
+
+  @override
+  String get instalCash => 'Precio de contado';
+
+  @override
+  String get instalCashHelp => 'Para comparar cuánto cuesta pagar a cuotas.';
+
+  @override
+  String get instalIncomplete =>
+      'Falta el nombre, el valor financiado o el número de cuotas.';
+
+  @override
+  String get detectiveTitle => 'Cargos para revisar';
+
+  @override
+  String get detectiveBody =>
+      'Quincena mira tus movimientos de los últimos 60 días, aquí en el teléfono, y te muestra lo que vale la pena revisar, con la evidencia. Nunca borra un movimiento ni dice que algo sea fraude.';
+
+  @override
+  String get detectiveEmpty => 'Nada para revisar por ahora.';
+
+  @override
+  String get detectiveOpen => 'Para revisar';
+
+  @override
+  String get detectiveReviewing => 'Lo vas a revisar';
+
+  @override
+  String detectiveShowPutAway(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ver las $count que marcaste',
+      one: 'Ver la que marcaste',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get detectiveHidePutAway => 'Ocultar las que marcaste';
+
+  @override
+  String get detectiveWhat => 'Qué revisar';
+
+  @override
+  String get detectiveKindTwice => 'Pagos repetidos';
+
+  @override
+  String get detectiveKindPriceUp => 'Subidas de precio';
+
+  @override
+  String get detectiveKindUnusual => 'Cargos fuera de lo común';
+
+  @override
+  String get detectiveRuleTwice =>
+      'Mismo valor, comercio y cuenta, con menos de un día y medio de diferencia.';
+
+  @override
+  String get detectiveRulePriceUp =>
+      'Un comercio que cobró tres veces o más y en el último cobro subió 5 % o más.';
+
+  @override
+  String get detectiveRuleUnusual =>
+      'Un cargo de tres veces o más lo que sueles gastar en esa categoría y esa cuenta.';
+
+  @override
+  String get detectiveTwiceSeenTitle =>
+      'Puede ser el mismo pago visto dos veces';
+
+  @override
+  String detectiveTwiceSeenWhy(String first, String second) {
+    return 'Mismo valor, comercio y cuenta, muy seguidos, pero llegaron por caminos distintos: $first y $second. Lo más probable es que sea un solo pago registrado dos veces. Si sobra uno, ábrelo y bórralo tú.';
+  }
+
+  @override
+  String get detectiveTwiceTitle => 'Dos cobros iguales, muy seguidos';
+
+  @override
+  String get detectiveTwiceWhy =>
+      'Mismo valor, comercio y cuenta, y llegaron por el mismo camino: pueden ser dos cobros reales. Si hiciste una sola compra, revísalo con tu banco.';
+
+  @override
+  String detectivePriceUpTitle(String merchant) {
+    return '$merchant cobra más que antes';
+  }
+
+  @override
+  String detectivePriceUpWhy(String before, String now, int percent) {
+    return 'Solía cobrar $before y el último cobro fue $now, un $percent % más. Que suba no quiere decir que esté mal: puede ser un cambio de plan o de tarifa.';
+  }
+
+  @override
+  String detectiveUnusualTitle(String category) {
+    return 'Mucho más de lo usual en $category';
+  }
+
+  @override
+  String detectiveUnusualWhy(String times, String category) {
+    return 'Es unas $times veces lo que sueles gastar por compra en $category en esta cuenta. Puede ser una compra grande que planeaste.';
+  }
+
+  @override
+  String get detectiveExpected => 'Es esperado';
+
+  @override
+  String get detectiveReview => 'Lo voy a revisar';
+
+  @override
+  String get detectiveDismiss => 'Descartar';
+
+  @override
+  String get detectiveShowAgain => 'Volver a mostrar';
+
+  @override
+  String get sourceManual => 'A mano';
+
+  @override
+  String get sourceStatement => 'Extracto';
+
+  @override
+  String get sourceGemini => 'Conversación con Gemini';
+
+  @override
+  String get sourceOther => 'Otra fuente';
+
+  @override
+  String get planCommitments => 'Compromisos';
+
+  @override
+  String planFixedNext30(String amount) {
+    return '$amount en los próximos 30 días';
+  }
+
+  @override
+  String planFixedGuesses(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count parecen pagos fijos: revísalos',
+      one: 'Uno parece pago fijo: revísalo',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get planFixedNone => 'Arriendo, servicios, suscripciones';
+
+  @override
+  String get planInstalNone => 'Ninguna registrada';
+
+  @override
+  String planInstalOwed(String amount) {
+    return 'Te falta pagar $amount';
+  }
+
+  @override
+  String planInstalOwedEstimated(String amount) {
+    return 'Te falta pagar unos $amount';
+  }
+
+  @override
+  String planDetective(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cargos para revisar',
+      one: 'Un cargo para revisar',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get planDetectiveNone => 'Nada raro por ahora';
+
+  @override
+  String get computedCommitments =>
+      'Lo ya comprometido en los próximos 30 días';
 }
