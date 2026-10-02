@@ -119,7 +119,7 @@ set up the app, record a week of movements and see the right totals, offline.
 
 ### 8. Investments, statements and exchanges
 
-Built, waiting to be released:
+Built and released on the web and in TestFlight:
 
 - A crypto portfolio. Every account in crypto, priced with Binance's public
   market data every 30 seconds while a screen shows it: its value in the base
@@ -144,18 +144,32 @@ Built, waiting to be released:
 - Gemini's `portfolio` tool, with the same figures and no advice on what to
   buy or sell.
 
-Next:
+- Bank and card statements: CSV and Excel read on the device, finding their
+  columns by their headers in Spanish or English (one signed amount, or
+  debits and credits, and a balance that gives positive amounts their sign);
+  a PDF read row by row as it is printed, every page, on the device, and by
+  Gemini only when the person asks. Each line is reviewed before it is
+  saved: the merchant without the bank's words around it, a category the
+  app already knows, and whether the account already has it within three
+  days. Importing the same statement again adds nothing.
+- A Binance P2P order and the bank's payment for it become one transfer, so
+  the payment no longer counts as spending.
+- Self-custody wallets by public address, read from public services:
+  Bitcoin, Ethereum (ETH, USDT, USDC) and TRON (TRX, USDT, USDC).
+- The chart's change over a range counts what prices made on what was held,
+  not what was bought or sold in it.
 
-- Statement import: CSV and Excel read on the device; PDF read by Gemini. Every
-  extracted movement is shown for review before it is saved.
-- Bank alert emails. iOS 27's Email trigger only filters by sender or subject,
-  so it needs the person's bank and stays in the in-app steps; IMAP on the
-  device remains the way on Android and the desktop.
-- A Binance P2P purchase also leaves the bank as a payment to the seller:
-  matching the two would make them one transfer instead of a purchase and an
-  expense.
-- Other exchanges common in Colombia, such as Bitso and Buda, by read-only
-  API, and self-custody wallets by public address.
+Not done, and why:
+
+- Bank alert emails. iOS 27's Email trigger only filters by sender or
+  subject, so it cannot catch every bank's alerts without setting up each
+  one, and reading a mailbox on the device needs the person's email password
+  or Google's restricted Gmail scopes. The banks' notifications and texts,
+  which the ready shortcuts and the Android listener already read, carry the
+  same movements.
+- Bitso and Buda. Their read-only APIs sign requests their own way; without
+  an account to try them against, nothing could be verified, so they wait
+  for one.
 
 ### 9. Release
 
