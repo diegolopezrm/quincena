@@ -25,9 +25,12 @@ account, with three apps: Android, Apple (iOS and macOS share the bundle ID
   are created; the app signs in again when that happens.
   `diegolopezrm.github.io` is an authorized domain.
 - **API keys** only reach Firebase APIs, so none of them can call Gemini
-  directly. The Apple key only answers the app's bundle ID, and the web key
-  only answers `diegolopezrm.github.io` and `localhost`. The Android key waits
-  for the signing certificates (see Play Integrity below).
+  directly. The Apple key only answers the app's bundle ID, the web key only
+  answers `diegolopezrm.github.io` and `localhost`, and the Android key only
+  answers the app's package signed with the debug certificate, which release
+  builds use until there is an upload key. GitHub flags all three as
+  secrets; they ship in every build by design, and those alerts are closed
+  as such.
 - **Logs**: prompts and answers are kept out of Cloud Logging by an exclusion
   on the `_Default` sink, in case AI monitoring is ever turned on. Out of the
   box it stores them, personal data included.
@@ -160,6 +163,8 @@ Waiting on the owner:
       This needs a direct Owner of the project.
    4. Add the SHA-256 of Play's app signing certificate to the Android app in
       Firebase, and register Play Integrity in App Check.
+   5. Add the SHA-1 of the upload and the Play signing certificates to the
+      Android API key, or release builds from Play will be refused.
 
    Builds that don't come from Google Play fail Play Integrity. They keep
    using the debug provider.
@@ -173,7 +178,6 @@ Waiting on the owner:
 
 Technical, once those are settled:
 
-- Restrict the Android key to the package and the signing certificates.
 - Replay protection (single-use App Check tokens): each request then costs an
   attestation. Play Integrity allows 10,000 a day, and reCAPTCHA gives 10,000
   free assessments a month for the whole organization.
