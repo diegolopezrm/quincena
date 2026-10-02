@@ -101,18 +101,18 @@ set up the app, record a week of movements and see the right totals, offline.
 - Firebase's Apple SDK, and every other plugin, through Swift Package
   Manager, with no CocoaPods left: Firebase published its last pods with
   12.19.0.
-- Limits that stop spending, set before the project pays: per model, per
-  minute and per day on every paid tier, every other model at zero, and no
-  Live API. Email alerts, prompts kept out of Cloud Logging, and API keys
-  restricted to the app. [PRODUCTION.md](PRODUCTION.md) says which limits
-  stop spending and which only warn.
+- The Blaze plan, with Gemini on Google Cloud's Agent Platform, which does
+  not train on what it is sent, and the project's prompt cache off. A
+  monthly budget with alerts and a spend cap that pauses Gemini when it is
+  reached; the Gemini Developer API closed; email alerts, prompts kept out of
+  Cloud Logging, and API keys restricted to the app.
+  [PRODUCTION.md](PRODUCTION.md) says which limits stop spending and which
+  only warn.
 - Android release builds signed with an upload key kept outside the
   repository.
-- Still open, each waiting on a decision or an account: the Blaze plan and
-  its budget (on the free tier Google may use what is sent, so no real
-  financial data until then), the Gemini Developer API or Agent Platform for
-  that data, Play Integrity once the app is in the Play Console, and a
-  daily limit per person on a server if 30 a day has to hold.
+- Still open: the opt-out from Agent Platform's abuse logging, Play Integrity
+  once the app is in the Play Console, and a daily limit per person on a
+  server if 30 a day has to hold.
 
 ### 8. Statements, email and exchanges
 

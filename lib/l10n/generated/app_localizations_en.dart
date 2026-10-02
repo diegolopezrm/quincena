@@ -146,7 +146,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get geminiNoteTerms =>
-      'For now Quincena uses the free tier of the Gemini API. On that tier Google may use what is sent to improve its products, and people may review it. Do not write in a question anything you would not share, such as an account number.';
+      'Quincena uses Gemini on Google Cloud\'s Agent Platform, as a paying customer: Google does not train its models on what is sent or keep it in a cache, and only holds on to a question its filters flag as abuse. Even so, do not write in a question anything you would not share, such as an account number.';
 
   @override
   String geminiNoteLimit(int count) {

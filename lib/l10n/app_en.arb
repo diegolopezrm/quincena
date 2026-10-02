@@ -41,7 +41,7 @@
   "geminiNoteHow": "When you ask your money something, the question goes to Gemini, Google's model, through Quincena's Firebase project. You need no key and no account: Quincena knows you by an anonymous user, only to count your questions.",
   "geminiNoteSends": "Gemini does not get your database. It asks tools that run on your phone or computer for the figures it needs, and what travels is their answers: your totals by category and by month, what is free until payday, your subscriptions, your savings goal, your accounts with their balances and, when the question calls for it, a month's largest payments with their merchants.",
   "geminiNoteNot": "Your other movements one by one do not travel, nor your notes, nor your bank's alerts, nor your location.",
-  "geminiNoteTerms": "For now Quincena uses the free tier of the Gemini API. On that tier Google may use what is sent to improve its products, and people may review it. Do not write in a question anything you would not share, such as an account number.",
+  "geminiNoteTerms": "Quincena uses Gemini on Google Cloud's Agent Platform, as a paying customer: Google does not train its models on what is sent or keep it in a cache, and only holds on to a question its filters flag as abuse. Even so, do not write in a question anything you would not share, such as an account number.",
   "geminiNoteLimit": "{count, plural, =1{Each person has one question a day.} other{Each person has {count} questions a day.}} Firebase App Check makes sure they come from the Quincena app and not from another program.",
 
   "whoAnswers": "Who answers",

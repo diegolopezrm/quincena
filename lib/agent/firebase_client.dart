@@ -9,11 +9,12 @@ import 'model_client.dart';
 
 /// Gemini through Quincena's Firebase project, with no key in the app.
 ///
-/// Firebase AI Logic holds the key and answers only an app App Check vouches
-/// for, and counts each person's requests. The tools are the same ones the
-/// keyed client gives dartantic, declared to Gemini from their own schemas
-/// and run here, on the device, when Gemini asks: the figures never leave
-/// the phone except as the answers to those calls.
+/// Firebase AI Logic answers only an app App Check vouches for, counts each
+/// person's requests, and sends them to Gemini on Google Cloud's Agent
+/// Platform, whose terms rule out training on what is sent. The tools are
+/// the same ones the keyed client gives dartantic, declared to Gemini from
+/// their own schemas and run here, on the device, when Gemini asks: the
+/// figures never leave the device except as the answers to those calls.
 class FirebaseGeminiClient implements ModelClient {
   FirebaseGeminiClient({
     required List<dartantic.Tool> tools,
@@ -27,6 +28,10 @@ class FirebaseGeminiClient implements ModelClient {
 
   /// The newest Gemini Flash the project offers.
   static const String defaultModel = 'gemini-3.8-flash';
+
+  /// Where Agent Platform runs the models. Firebase serves Gemini 3 only on
+  /// global, us and eu, and global costs the list price.
+  static const String location = 'global';
 
   /// How many times one answer may go back to the tools. Answers here take
   /// two or three; more means the model is going in circles.
@@ -105,7 +110,7 @@ class FirebaseGeminiClient implements ModelClient {
     String model,
     String system,
     List<ChatMessage> history,
-  ) => ai.FirebaseAI.googleAI()
+  ) => ai.FirebaseAI.agentPlatform(location: location)
       .generativeModel(
         model: model,
         systemInstruction: system.isEmpty ? null : ai.Content.system(system),

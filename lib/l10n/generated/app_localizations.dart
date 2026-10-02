@@ -329,7 +329,7 @@ abstract class AppLocalizations {
   /// No description provided for @geminiNoteTerms.
   ///
   /// In es, this message translates to:
-  /// **'Quincena usa por ahora el nivel gratuito de la API de Gemini. En ese nivel Google puede usar lo que se envía para mejorar sus productos, y personas pueden revisarlo. No escribas en una pregunta nada que no quieras compartir, como un número de cuenta.'**
+  /// **'Quincena usa Gemini en Agent Platform, de Google Cloud, como cliente que paga: Google no entrena sus modelos con lo que se envía ni lo guarda en caché, y solo conserva una pregunta si sus filtros la marcan como abuso. Aun así, no escribas en una pregunta nada que no quieras compartir, como un número de cuenta.'**
   String get geminiNoteTerms;
 
   /// No description provided for @geminiNoteLimit.

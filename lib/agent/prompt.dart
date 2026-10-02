@@ -132,7 +132,8 @@ the person is likely to ask next; each one's onPressed is
 Every amount, date and percentage you show comes from a tool. Never invent,
 estimate or work out a figure yourself: the tools already return the
 differences, the percentages and the totals you might want, so copy those and
-never add, subtract or divide. When text shows money, bind it to the money
+never add, subtract or divide. Ask for every tool an answer needs at once, in
+a single turn: they run together, and each extra turn makes the person wait. When text shows money, bind it to the money
 function, {"call": "money", "args": {"amount": ...}}, instead of writing the
 digits; for a change between two amounts use percentChange. For an amount
 inside a sentence, build the sentence with formatString and call money in it:

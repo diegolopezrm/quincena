@@ -2,10 +2,11 @@
 
     python3 tool/firebase/alerts.py admin@example.com
 
-Creates, once, an email channel and three alert policies in Cloud Monitoring:
-a burst of questions, requests refused for going over a limit, and a Gemini
-quota of the project running out. Alerts only warn: what stops spending is
-in caps.py and the spend cap (docs/PRODUCTION.md).
+Sets up an email channel and three alert policies in Cloud Monitoring, and
+brings existing ones up to date: a burst of questions, requests refused for
+going over a limit, and a Gemini quota of the project running out. Alerts
+only warn: what stops spending is in caps.py and the spend cap
+(docs/PRODUCTION.md).
 """
 import json
 import subprocess
@@ -16,7 +17,9 @@ import urllib.request
 PROJECT = 'quincena-dlsoft'
 BASE = f'https://monitoring.googleapis.com/v3/projects/{PROJECT}'
 AI_LOGIC = 'firebasevertexai.googleapis.com'
-GEMINI = 'generativelanguage.googleapis.com'
+# Agent Platform, which the app uses, and the Gemini Developer API, closed:
+# a quota of either running out is worth hearing about.
+GEMINI = ('aiplatform.googleapis.com', 'generativelanguage.googleapis.com')
 
 
 def rest(method, path, body=None):
@@ -95,12 +98,13 @@ POLICIES = [
     (
         'Gemini: se agotó una cuota del proyecto',
         {
-            'displayName': 'Una cuota de la API de Gemini llegó a su tope',
+            'displayName': 'Una cuota de Gemini llegó a su tope',
             'conditionThreshold': {
                 'filter': (
                     'metric.type="serviceruntime.googleapis.com/quota/exceeded" '
                     'AND resource.type="consumer_quota" '
-                    f'AND resource.label.service="{GEMINI}"'
+                    'AND resource.label.service=one_of('
+                    + ', '.join(f'"{s}"' for s in GEMINI) + ')'
                 ),
                 'aggregations': [{
                     'alignmentPeriod': '600s',
@@ -125,19 +129,25 @@ def main():
         sys.exit(__doc__)
     to = channel(sys.argv[1])
     _, b = rest('GET', '/alertPolicies')
-    existing = {p['displayName'] for p in b.get('alertPolicies', [])}
+    existing = {p['displayName']: p['name'] for p in b.get('alertPolicies', [])}
     for name, condition, doc in POLICIES:
-        if name in existing:
-            print(f'{name}: already there')
-            continue
-        status, p = rest('POST', '/alertPolicies', {
+        policy = {
             'displayName': name,
             'combiner': 'OR',
             'conditions': [condition],
             'notificationChannels': [to],
             'documentation': {'content': doc, 'mimeType': 'text/markdown'},
-        })
-        print(f'{name}: {"created" if status == 200 else p}')
+        }
+        if name in existing:
+            path = '/' + existing[name].split('/', 2)[2]
+            status, p = rest(
+                'PATCH',
+                f'{path}?updateMask=conditions,documentation,notificationChannels',
+                policy)
+            print(f'{name}: {"updated" if status == 200 else p}')
+        else:
+            status, p = rest('POST', '/alertPolicies', policy)
+            print(f'{name}: {"created" if status == 200 else p}')
 
 
 if __name__ == '__main__':

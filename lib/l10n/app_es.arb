@@ -46,7 +46,7 @@
   "geminiNoteHow": "Cuando le preguntas algo a tu plata, la pregunta va a Gemini, el modelo de Google, a través del proyecto de Quincena en Firebase. No necesitas una key ni una cuenta: Quincena te identifica con un usuario anónimo, solo para contar tus preguntas.",
   "geminiNoteSends": "Gemini no recibe tu base de datos. Pide las cifras que necesita a herramientas que corren en tu teléfono o tu computador, y lo que viaja son sus respuestas: tus totales por categoría y por mes, lo libre hasta el pago, tus suscripciones, tu meta de ahorro, tus cuentas con su saldo y, cuando la pregunta lo pide, los pagos más grandes de un mes con su comercio.",
   "geminiNoteNot": "No viajan tus otros movimientos uno por uno, ni tus notas, ni las alertas de tu banco, ni tu ubicación.",
-  "geminiNoteTerms": "Quincena usa por ahora el nivel gratuito de la API de Gemini. En ese nivel Google puede usar lo que se envía para mejorar sus productos, y personas pueden revisarlo. No escribas en una pregunta nada que no quieras compartir, como un número de cuenta.",
+  "geminiNoteTerms": "Quincena usa Gemini en Agent Platform, de Google Cloud, como cliente que paga: Google no entrena sus modelos con lo que se envía ni lo guarda en caché, y solo conserva una pregunta si sus filtros la marcan como abuso. Aun así, no escribas en una pregunta nada que no quieras compartir, como un número de cuenta.",
   "geminiNoteLimit": "{count, plural, =1{Cada persona tiene una pregunta al día.} other{Cada persona tiene {count} preguntas al día.}} Firebase App Check comprueba que vienen de la app de Quincena y no de otro programa.",
   "@geminiNoteLimit": {"placeholders": {"count": {"type": "int"}}},
 

@@ -287,6 +287,12 @@ void main() {
       expect(prompt, contains('shopping = Compras'));
     });
 
+    test('it is told to ask for its tools at once', () {
+      // Each turn sends the whole prompt again: six turns cost three times
+      // two, and the person waits for every one.
+      expect(prompt, contains('Ask for every tool an answer needs at once'));
+    });
+
     test('it is told how to put an amount inside a sentence', () {
       expect(prompt, contains(r'"value": "You have ${money(amount: 120000)}'));
     });
