@@ -2509,6 +2509,114 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Ajuste con Binance'**
   String get binanceLabelAdjustment;
+
+  /// No description provided for @statementTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Importar extracto'**
+  String get statementTitle;
+
+  /// No description provided for @statementSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'CSV, Excel o PDF de tu banco'**
+  String get statementSubtitle;
+
+  /// No description provided for @statementIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Trae los movimientos de un extracto de tu banco o tarjeta: CSV, Excel (.xlsx) o PDF. Se lee en este dispositivo, y revisas cada movimiento antes de guardarlo.'**
+  String get statementIntro;
+
+  /// No description provided for @statementPick.
+  ///
+  /// In es, this message translates to:
+  /// **'Elegir archivo'**
+  String get statementPick;
+
+  /// No description provided for @statementReading.
+  ///
+  /// In es, this message translates to:
+  /// **'Leyendo el extracto…'**
+  String get statementReading;
+
+  /// No description provided for @statementNothing.
+  ///
+  /// In es, this message translates to:
+  /// **'No encontré movimientos en este archivo.'**
+  String get statementNothing;
+
+  /// No description provided for @statementFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo leer el archivo. Prueba con un CSV, un Excel (.xlsx) o un PDF.'**
+  String get statementFailed;
+
+  /// No description provided for @statementGemini.
+  ///
+  /// In es, this message translates to:
+  /// **'Leer con Gemini'**
+  String get statementGemini;
+
+  /// No description provided for @statementGeminiNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Se envía a Gemini el texto del extracto, con sus fechas, descripciones y montos, para que lo ordene. Cuenta como una pregunta del día.'**
+  String get statementGeminiNote;
+
+  /// No description provided for @statementGeminiPdf.
+  ///
+  /// In es, this message translates to:
+  /// **'En la web el PDF no se puede leer aquí: se envía el archivo a Gemini para que lo lea. Cuenta como una pregunta del día.'**
+  String get statementGeminiPdf;
+
+  /// No description provided for @statementSummary.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Un movimiento} other{{count} movimientos}}, del {from} al {to}'**
+  String statementSummary(int count, String from, String to);
+
+  /// No description provided for @statementRecordedCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Ninguno estaba registrado.} =1{Uno ya estaba registrado y quedó sin marcar.} other{{count} ya estaban registrados y quedaron sin marcar.}}'**
+  String statementRecordedCount(int count);
+
+  /// No description provided for @statementRecorded.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya registrado'**
+  String get statementRecorded;
+
+  /// No description provided for @statementImportedBefore.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya importado'**
+  String get statementImportedBefore;
+
+  /// No description provided for @statementFlip.
+  ///
+  /// In es, this message translates to:
+  /// **'Invertir signos'**
+  String get statementFlip;
+
+  /// No description provided for @statementImport.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Nada para importar} =1{Importar un movimiento} other{Importar {count} movimientos}}'**
+  String statementImport(int count);
+
+  /// No description provided for @statementDone.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Se importó un movimiento.} other{Se importaron {count} movimientos.}}'**
+  String statementDone(int count);
+
+  /// No description provided for @statementByGemini.
+  ///
+  /// In es, this message translates to:
+  /// **'Leído por Gemini: revisa bien antes de importar.'**
+  String get statementByGemini;
 }
 
 class _AppLocalizationsDelegate

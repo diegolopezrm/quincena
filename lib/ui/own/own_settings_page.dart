@@ -18,6 +18,7 @@ import 'binance_page.dart';
 import 'capture_settings_page.dart';
 import 'look.dart';
 import 'pay_schedule_editor.dart';
+import 'statement_page.dart';
 
 /// The person's profile, appearance, and what they can do with their data.
 class OwnSettingsPage extends StatelessWidget {
@@ -403,6 +404,20 @@ class OwnSettingsPage extends StatelessWidget {
                   SectionLabel(l.settingsData),
                   Panel(
                     children: <Widget>[
+                      _row(
+                        context,
+                        icon: Glyph.fileText,
+                        title: l.statementTitle,
+                        value: l.statementSubtitle,
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (BuildContext context) => StatementPage(
+                              own: own,
+                              allowance: modes.allowance,
+                            ),
+                          ),
+                        ),
+                      ),
                       _row(
                         context,
                         icon: Glyph.downloadSimple,

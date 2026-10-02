@@ -12,6 +12,7 @@ import 'look.dart';
 import 'movement_list.dart';
 import 'portfolio_page.dart';
 import 'position_panel.dart';
+import 'statement_page.dart';
 
 /// One account: what it holds today and every movement in it.
 class AccountPage extends StatelessWidget {
@@ -42,6 +43,17 @@ class AccountPage extends StatelessWidget {
             surfaceTintColor: Colors.transparent,
             title: Text(account.name, style: context.type.titleLarge),
             actions: <Widget>[
+              if (!account.asset.isCrypto)
+                IconButton(
+                  tooltip: l.statementTitle,
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (BuildContext context) =>
+                          StatementPage(own: own, accountId: account.id),
+                    ),
+                  ),
+                  icon: const Icon(Glyph.fileText),
+                ),
               IconButton(
                 tooltip: l.editAccount,
                 onPressed: () =>

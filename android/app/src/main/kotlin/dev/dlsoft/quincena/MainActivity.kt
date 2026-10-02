@@ -50,14 +50,19 @@ class MainActivity : FlutterActivity() {
                     )
                     result.success(null)
                 }
-                "readText" -> {
+                "readText", "readStatement" -> {
                     val bytes = call.arguments as? ByteArray
                     if (bytes == null) {
                         result.success(null)
                     } else {
+                        val statement = call.method == "readStatement"
                         Thread {
                             val text = try {
-                                TextReader.read(this, bytes)
+                                if (statement) {
+                                    TextReader.readStatement(this, bytes)
+                                } else {
+                                    TextReader.read(this, bytes)
+                                }
                             } catch (e: Exception) {
                                 Log.w("Quincena", "Could not read the image", e)
                                 null

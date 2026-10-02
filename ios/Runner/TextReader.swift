@@ -56,6 +56,41 @@ enum TextReader {
     }.joined(separator: "\n")
   }
 
+  /// Every page of a statement, as rows: the text a PDF carries, laid out
+  /// line by line as it is printed, and a scanned page read like a photo.
+  /// Not a PDF, it is read as an image.
+  static func readStatement(_ data: Data, maxPages: Int = 60) throws -> String {
+    guard data.starts(with: Array("%PDF".utf8)) else { return try read(data) }
+    guard let document = PDFDocument(data: data) else { throw CocoaError(.fileReadCorruptFile) }
+    var pages: [String] = []
+    for index in 0..<min(document.pageCount, maxPages) {
+      guard let page = document.page(at: index) else { continue }
+      let text = printedRows(page)
+      if text.trimmingCharacters(in: .whitespacesAndNewlines).count >= 20 {
+        pages.append(text)
+      } else if let image = render(page) {
+        pages.append(try read(image))
+      }
+    }
+    return pages.joined(separator: "\n")
+  }
+
+  /// A page's own text, row by row as it is printed: a statement's date,
+  /// description and amount on one line, even when the PDF draws its
+  /// columns one after another.
+  static func printedRows(_ page: PDFPage) -> String {
+    guard let all = page.selection(for: page.bounds(for: .mediaBox)) else {
+      return page.string ?? ""
+    }
+    let lines: [(CGRect, String)] = all.selectionsByLine().compactMap { line in
+      guard let text = line.string?.trimmingCharacters(in: .whitespacesAndNewlines),
+        !text.isEmpty
+      else { return nil }
+      return (line.bounds(for: page), text)
+    }
+    return lines.isEmpty ? (page.string ?? "") : rows(lines)
+  }
+
   /// A PDF's own text when it has some; a scanned one is a picture, read
   /// like a photo.
   static func readPDF(_ data: Data) throws -> String {

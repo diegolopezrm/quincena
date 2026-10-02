@@ -32,7 +32,14 @@ object TextReader {
     private const val LONGEST_SIDE = 3000
 
     fun read(context: Context, bytes: ByteArray): String =
-        if (isPdf(bytes)) readPdf(context, bytes) else readImage(bytes)
+        if (isPdf(bytes)) readPdf(context, bytes, 3) else readImage(bytes)
+
+    /** Every page of a statement, up to [STATEMENT_PAGES], read like a photo:
+     *  Android has no reader for a PDF's own text. */
+    fun readStatement(context: Context, bytes: ByteArray): String =
+        if (isPdf(bytes)) readPdf(context, bytes, STATEMENT_PAGES) else readImage(bytes)
+
+    private const val STATEMENT_PAGES = 30
 
     private fun isPdf(bytes: ByteArray): Boolean =
         bytes.size > 4 && String(bytes, 0, 4, Charsets.US_ASCII) == "%PDF"
@@ -78,15 +85,15 @@ object TextReader {
         return turned
     }
 
-    /** The first pages at twice their size on white, enough for small
-     *  print. Android has no reader for a PDF's own text. */
-    private fun readPdf(context: Context, bytes: ByteArray): String {
+    /** The first [pages] pages at twice their size on white, enough for
+     *  small print. Android has no reader for a PDF's own text. */
+    private fun readPdf(context: Context, bytes: ByteArray, pages: Int): String {
         val file = File.createTempFile("quincena-receipt", ".pdf", context.cacheDir)
         return try {
             file.writeBytes(bytes)
             ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
                 PdfRenderer(fd).use { renderer ->
-                    (0 until min(renderer.pageCount, 3)).joinToString("\n") { i ->
+                    (0 until min(renderer.pageCount, pages)).joinToString("\n") { i ->
                         renderer.openPage(i).use { page ->
                             val bitmap = Bitmap.createBitmap(
                                 page.width * 2, page.height * 2, Bitmap.Config.ARGB_8888,

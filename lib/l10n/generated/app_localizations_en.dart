@@ -1443,4 +1443,97 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get binanceLabelAdjustment => 'Adjustment with Binance';
+
+  @override
+  String get statementTitle => 'Import a statement';
+
+  @override
+  String get statementSubtitle => 'Your bank\'s CSV, Excel or PDF';
+
+  @override
+  String get statementIntro =>
+      'Bring in the movements from a bank or card statement: CSV, Excel (.xlsx) or PDF. It is read on this device, and you review every movement before it is saved.';
+
+  @override
+  String get statementPick => 'Choose a file';
+
+  @override
+  String get statementReading => 'Reading the statement…';
+
+  @override
+  String get statementNothing => 'No movements were found in this file.';
+
+  @override
+  String get statementFailed =>
+      'The file could not be read. Try a CSV, an Excel (.xlsx) or a PDF.';
+
+  @override
+  String get statementGemini => 'Read it with Gemini';
+
+  @override
+  String get statementGeminiNote =>
+      'The statement\'s text, with its dates, descriptions and amounts, goes to Gemini to sort it out. It counts as one of the day\'s questions.';
+
+  @override
+  String get statementGeminiPdf =>
+      'On the web the PDF cannot be read here: the file goes to Gemini to read it. It counts as one of the day\'s questions.';
+
+  @override
+  String statementSummary(int count, String from, String to) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count movements',
+      one: 'One movement',
+    );
+    return '$_temp0, from $from to $to';
+  }
+
+  @override
+  String statementRecordedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count were already recorded and are left unchecked.',
+      one: 'One was already recorded and is left unchecked.',
+      zero: 'None was recorded yet.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get statementRecorded => 'Already recorded';
+
+  @override
+  String get statementImportedBefore => 'Already imported';
+
+  @override
+  String get statementFlip => 'Flip the signs';
+
+  @override
+  String statementImport(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Import $count movements',
+      one: 'Import one movement',
+      zero: 'Nothing to import',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String statementDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count movements were imported.',
+      one: 'One movement was imported.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get statementByGemini =>
+      'Read by Gemini: check it well before importing.';
 }

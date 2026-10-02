@@ -16,12 +16,14 @@ class MainFlutterWindow: NSWindow {
       name: "dev.dlsoft.quincena/capture",
       binaryMessenger: flutterViewController.engine.binaryMessenger)
     capture.setMethodCallHandler { call, result in
-      guard call.method == "readText",
+      guard call.method == "readText" || call.method == "readStatement",
         let bytes = call.arguments as? FlutterStandardTypedData
       else { return result(FlutterMethodNotImplemented) }
       guard #available(macOS 11.0, *) else { return result(nil) }
+      let statement = call.method == "readStatement"
       DispatchQueue.global(qos: .userInitiated).async {
-        let text = try? TextReader.read(bytes.data)
+        let text = try? (statement
+          ? TextReader.readStatement(bytes.data) : TextReader.read(bytes.data))
         DispatchQueue.main.async { result(text) }
       }
     }

@@ -282,6 +282,25 @@ const Map<String, List<String>> institutions = <String, List<String>>{
   'Global66': <String>['global66'],
 };
 
+/// The institution a document is from: the one it names first, as a
+/// statement names its bank at the top and others only in its movements.
+String? firstInstitution(String text) {
+  final String n = ' ${normalize(text)} ';
+  String? best;
+  var at = n.length;
+  for (final MapEntry<String, List<String>> e in institutions.entries) {
+    for (final String marker in e.value) {
+      if (marker.contains('.')) continue;
+      final int i = n.indexOf(' $marker ');
+      if (i >= 0 && i < at) {
+        at = i;
+        best = e.key;
+      }
+    }
+  }
+  return best;
+}
+
 /// The institution [texts] point to: the app that posted, the sender, the
 /// message. Null when none says.
 String? findInstitution(Iterable<String?> texts) {

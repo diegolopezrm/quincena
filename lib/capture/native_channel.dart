@@ -61,6 +61,17 @@ abstract final class CaptureChannel {
     }
   }
 
+  /// Every page of a statement's PDF, read on the device row by row as it
+  /// is printed. Null when it could not be read, and on the web.
+  static Future<String?> readStatement(Uint8List bytes) async {
+    if (!readsImages) return null;
+    try {
+      return await _channel.invokeMethod<String>('readStatement', bytes);
+    } on Object {
+      return null;
+    }
+  }
+
   /// Whether the person shared something with Quincena from another app and
   /// asked to see it, since the last time this was asked. Android only.
   static Future<bool> takeOpenInbox() async {
