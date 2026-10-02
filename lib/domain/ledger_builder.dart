@@ -59,6 +59,7 @@ LedgerBuild buildLedger(StoreSnapshot s, {required DateTime today}) {
   }
 
   final List<Movement> movements = <Movement>[];
+  final Map<String, String> accountOf = <String, String>{};
   for (final Entry e in s.entries) {
     if (!spendable(e.accountId)) continue;
     final bool out = e.amount < Decimal.zero;
@@ -91,6 +92,7 @@ LedgerBuild buildLedger(StoreSnapshot s, {required DateTime today}) {
         flow: flow,
       ),
     );
+    accountOf[e.id] = e.accountId;
   }
 
   final DateTime payday = s.profile.schedule.nextAfter(today);
@@ -108,13 +110,14 @@ LedgerBuild buildLedger(StoreSnapshot s, {required DateTime today}) {
             ),
   ];
 
+  final Map<String, int> openings = <String, int>{
+    for (final Account a in s.accounts)
+      if (spendable(a.id)) a.id: inBase(a.openingMoney),
+  };
   final Ledger ledger = Ledger(
     owner: s.profile.name,
     today: today,
-    openingBalance: <int>[
-      for (final Account a in s.accounts)
-        if (spendable(a.id)) inBase(a.openingMoney),
-    ].fold(0, (int sum, int v) => sum + v),
+    openingBalance: openings.values.fold(0, (int sum, int v) => sum + v),
     movements: movements,
     upcoming: upcoming,
     subscriptions: <Subscription>[
@@ -142,7 +145,15 @@ LedgerBuild buildLedger(StoreSnapshot s, {required DateTime today}) {
     schedule: s.profile.schedule,
     currency: base,
   );
-  return LedgerBuild(ledger, unconverted);
+  // What each spendable account adds to the balance, worked out with the
+  // ledger's own arithmetic, so the parts always add up to the whole.
+  final Map<String, int> parts = Map<String, int>.of(openings);
+  for (final Movement m in ledger.movements) {
+    final String? account = accountOf[m.id];
+    if (account == null || !ledger.settled(m)) continue;
+    parts[account] = (parts[account] ?? 0) + Ledger.effect(m);
+  }
+  return LedgerBuild(ledger, unconverted, parts);
 }
 
 /// What [r] costs in a month, whatever its cadence.
@@ -166,9 +177,13 @@ Money _monthly(RecurringCharge r) => switch (r.cadence) {
 
 /// A built ledger, and the assets it could not convert to the base currency.
 class LedgerBuild {
-  const LedgerBuild(this.ledger, this.unconverted);
+  const LedgerBuild(this.ledger, this.unconverted, [this.parts = const {}]);
 
   final Ledger ledger;
+
+  /// What each spendable account, by id, adds to [Ledger.balance], in the
+  /// ledger's smallest unit. They add up to it exactly.
+  final Map<String, int> parts;
 
   /// Held in some account but missing a rate: their amounts count as zero
   /// until one is fetched or typed.

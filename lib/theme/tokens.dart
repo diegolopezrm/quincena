@@ -55,7 +55,9 @@ class QuincenaColors extends ThemeExtension<QuincenaColors> {
     sunken: Color(0xFFE9EDE8),
     ink: Color(0xFF111513),
     inkSoft: Color(0xFF4A5450),
-    inkFaint: Color(0xFF7A857F),
+    // At least 4.5:1 on every ground it sits on, sunken and the soft
+    // greens, ambers and reds included: small text in it stays legible.
+    inkFaint: Color(0xFF5F6A64),
     line: Color(0xFFDCE2DC),
     brand: Color(0xFF0B7552),
     brandSoft: Color(0xFFD5EEE2),
@@ -86,7 +88,7 @@ class QuincenaColors extends ThemeExtension<QuincenaColors> {
     sunken: Color(0xFF1C2220),
     ink: Color(0xFFE8EEEA),
     inkSoft: Color(0xFFA7B2AC),
-    inkFaint: Color(0xFF75817B),
+    inkFaint: Color(0xFF909C96),
     line: Color(0xFF252D2A),
     brand: Color(0xFF3FCB93),
     brandSoft: Color(0xFF16382A),

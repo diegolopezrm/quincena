@@ -122,7 +122,9 @@ class _StatementPageState extends State<StatementPage> {
       }
       await _show(read);
     } on Object catch (e) {
-      debugPrint('Statement could not be read: $e');
+      // An error can quote what it failed on; a release build keeps it
+      // out of the device's logs.
+      if (kDebugMode) debugPrint('Statement could not be read: $e');
       setState(() {
         _stage = _Stage.pick;
         _problem = context.l10n.statementFailed;
@@ -146,7 +148,7 @@ class _StatementPageState extends State<StatementPage> {
           : await const GeminiStatementReader().readPdf(_pdfBytes!);
       await _show(read);
     } on Object catch (e) {
-      debugPrint('Gemini could not read the statement: $e');
+      if (kDebugMode) debugPrint('Gemini could not read the statement: $e');
       setState(() {
         _stage = _Stage.nothing;
         _problem = l.statementFailed;

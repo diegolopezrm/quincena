@@ -335,15 +335,51 @@ void main() {
 
     test('a file from somewhere else is refused and nothing changes', () async {
       await fill();
+      Matcher refused(ImportProblem problem) => throwsA(
+        isA<ImportException>().having(
+          (ImportException e) => e.problem,
+          'problem',
+          problem,
+        ),
+      );
       await expectLater(
         store.importJson(<String, Object?>{'app': 'other', 'version': 1}),
-        throwsFormatException,
+        refused(ImportProblem.notQuincena),
       );
       await expectLater(
         store.importJson(<String, Object?>{'app': 'quincena', 'version': 99}),
-        throwsFormatException,
+        refused(ImportProblem.newer),
+      );
+      await expectLater(
+        store.importJson(<String, Object?>{'app': 'quincena'}),
+        refused(ImportProblem.damaged),
       );
       expect(await store.accounts(), hasLength(2));
+    });
+
+    test('a file that breaks halfway leaves everything as it was', () async {
+      await fill();
+      final Map<String, Money> before = await store.watchBalances().first;
+      final Map<String, Object?> file = await store.exportJson();
+      // The accounts read fine; a movement further down does not.
+      (file['entries']! as List<Object?>).add(<String, Object?>{
+        'id': 'broken',
+        'amount': 'not a number',
+      });
+
+      await expectLater(
+        store.importJson(file),
+        throwsA(
+          isA<ImportException>().having(
+            (ImportException e) => e.problem,
+            'problem',
+            ImportProblem.damaged,
+          ),
+        ),
+      );
+      expect(await store.profile(), isNotNull);
+      expect(await store.accounts(), hasLength(2));
+      expect(await store.watchBalances().first, before);
     });
   });
 }

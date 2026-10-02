@@ -87,6 +87,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'The model is getting too many questions. Try again in a minute.';
 
   @override
+  String get problemOffline =>
+      'No internet connection. Your accounts and movements still work; ask again once you\'re online.';
+
+  @override
   String get problemOther => 'I couldn\'t answer this time. Try again.';
 
   @override
@@ -772,6 +776,48 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exportDone => 'File saved.';
 
   @override
+  String get freeExplainAction => 'Where does this come from?';
+
+  @override
+  String get freeExplainTitle => 'How the free amount is worked out';
+
+  @override
+  String get freeExplainSpendable => 'To spend today';
+
+  @override
+  String get freeExplainCommitted => 'Committed before payday';
+
+  @override
+  String get freeExplainNothingCommitted => 'Nothing scheduled before payday.';
+
+  @override
+  String get freeExplainLeftOut => 'Left out';
+
+  @override
+  String freeExplainLeftOutBody(String names) {
+    return '$names: you marked them as savings or investments, not money to spend. You can change that in each account.';
+  }
+
+  @override
+  String freeExplainUnpriced(String codes) {
+    return 'No rate yet, counted as zero: $codes.';
+  }
+
+  @override
+  String get freeExplainEstimate =>
+      'It\'s an estimate: it counts what already happened and what\'s scheduled until payday. Anything you spend or receive without scheduling it changes it.';
+
+  @override
+  String freeExplainHeldAt(String held, String rate) {
+    return '$held at $rate';
+  }
+
+  @override
+  String freeExplainRateOf(String date) {
+    return 'rate from $date';
+  }
+
+  @override
   String get importData => 'Import a file';
 
   @override
@@ -788,9 +834,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importDone => 'Data imported.';
 
   @override
-  String importFailed(String reason) {
-    return 'That file couldn\'t be read: $reason';
-  }
+  String get importNotQuincena =>
+      'That file wasn\'t exported by Quincena. Nothing was changed.';
+
+  @override
+  String get importNewer =>
+      'That file comes from a newer version of Quincena. Update the app and try again; nothing was changed.';
+
+  @override
+  String get importDamaged =>
+      'That file is damaged or incomplete. Nothing was changed.';
 
   @override
   String get deleteAll => 'Delete everything';

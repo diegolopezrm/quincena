@@ -29,7 +29,7 @@ enum AgentMode { demo, live, gemini }
 enum TurnNote { savedExpense, choseMonthly, askedCancel, askedPayments, other }
 
 /// Why an answer did not arrive. [limit] is the day's questions used up.
-enum AnswerProblem { key, busy, limit, other }
+enum AnswerProblem { key, busy, limit, offline, other }
 
 /// One exchange: what the person asked, and what answered it.
 class Turn {
@@ -348,7 +348,9 @@ class Session extends ChangeNotifier {
         }
       }
     } on Object catch (error) {
-      debugPrint('The answer did not arrive: $error');
+      // An error can quote what was asked; a release build keeps it out of
+      // the device's logs.
+      if (kDebugMode) debugPrint('The answer did not arrive: $error');
       turn.error = _explain(error, _mode);
     }
     if (!turns.contains(turn)) return;
@@ -421,6 +423,7 @@ class Session extends ChangeNotifier {
   /// key of the person's, a refusal is the project's, not theirs to fix.
   static AnswerProblem _explain(Object error, AgentMode mode) {
     final String text = '$error';
+    if (offline(text)) return AnswerProblem.offline;
     if (text.contains('429') ||
         text.contains('RESOURCE_EXHAUSTED') ||
         text.contains('quota') ||
@@ -439,6 +442,23 @@ class Session extends ChangeNotifier {
     }
     return AnswerProblem.other;
   }
+
+  /// Whether an error says the phone could not reach the network at all,
+  /// as `dart:io`, `package:http` and the browser each word it.
+  static bool offline(String error) => const <String>[
+    'SocketException',
+    'Failed host lookup',
+    'Network is unreachable',
+    'No address associated with hostname',
+    'Connection refused',
+    'Connection reset',
+    'Connection closed before full header',
+    'XMLHttpRequest error',
+    'Failed to fetch',
+    'NSURLErrorDomain',
+    'The Internet connection appears to be offline',
+    'network-request-failed',
+  ].any(error.contains);
 
   /// Switches who answers, and starts over with the untouched account.
   void use(AgentMode mode, {String? apiKey}) {

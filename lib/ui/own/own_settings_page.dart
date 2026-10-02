@@ -13,6 +13,7 @@ import '../../exchanges/binance_link.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../own/own_controller.dart';
+import '../../store/store.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import 'binance_page.dart';
@@ -178,8 +179,16 @@ class OwnSettingsPage extends StatelessWidget {
       await own.refreshRates(force: true);
       messenger.showSnackBar(SnackBar(content: Text(l.importDone)));
     } on Object catch (e) {
-      final String reason = e is FormatException ? e.message : '$e';
-      messenger.showSnackBar(SnackBar(content: Text(l.importFailed(reason))));
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(switch (e) {
+            ImportException(problem: ImportProblem.notQuincena) =>
+              l.importNotQuincena,
+            ImportException(problem: ImportProblem.newer) => l.importNewer,
+            _ => l.importDamaged,
+          }),
+        ),
+      );
     }
   }
 

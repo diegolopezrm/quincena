@@ -379,7 +379,9 @@ class WalletLink extends ChangeNotifier {
         now: _now,
       ).apply(wallet, held);
     } on Object catch (e) {
-      debugPrint('Wallet could not be read: $e');
+      // An error can quote what it failed on; a release build keeps it
+      // out of the device's logs.
+      if (kDebugMode) debugPrint('Wallet could not be read: $e');
       return false;
     } finally {
       reader.close();
@@ -423,7 +425,7 @@ class WalletLink extends ChangeNotifier {
             now: _now,
           ).apply(w, await reader.balances(w));
         } on Object catch (e) {
-          debugPrint('Wallet ${w.short} could not be read: $e');
+          if (kDebugMode) debugPrint('Wallet ${w.short} could not be read: $e');
           _failed = w.address;
         }
       }

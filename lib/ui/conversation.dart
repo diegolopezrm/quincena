@@ -83,6 +83,7 @@ class _TurnView extends StatelessWidget {
               AnswerProblem.key => context.l10n.problemKey,
               AnswerProblem.busy => context.l10n.problemBusy,
               AnswerProblem.limit => context.l10n.problemLimit,
+              AnswerProblem.offline => context.l10n.problemOffline,
               AnswerProblem.other => context.l10n.problemOther,
             })
           else if (waiting)

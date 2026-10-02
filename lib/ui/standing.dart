@@ -5,6 +5,7 @@ import '../format/dates.dart';
 import '../format/money.dart';
 import '../l10n/l10n.dart';
 import '../theme/tokens.dart';
+import 'icons.dart';
 import 'kit.dart';
 
 /// Where the money stands until payday: what is free, what is already
@@ -15,6 +16,7 @@ class StandingCard extends StatelessWidget {
     required this.ledger,
     this.balanceLabel,
     this.detail,
+    this.onExplain,
   });
 
   final Ledger ledger;
@@ -26,6 +28,10 @@ class StandingCard extends StatelessWidget {
   /// own accounts get one that only states what is committed.
   final String? detail;
 
+  /// Shows how the free amount is worked out. Without it the card has no
+  /// way to ask.
+  final VoidCallback? onExplain;
+
   @override
   Widget build(BuildContext context) {
     final int free = ledger.freeUntilPayday;
@@ -35,115 +41,133 @@ class StandingCard extends StatelessWidget {
     final int days = payday.difference(ledger.today).inDays;
     final double share = balance <= 0 ? 0 : (free / balance).clamp(0, 1);
 
-    return Semantics(
-      container: true,
-      label: context.l10n.standingSemantics(
-        dayMonth(payday),
-        pesos(ledger.major(free)),
-        days,
-        pesos(ledger.major(balance)),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: context.colors.line),
       ),
-      excludeSemantics: true,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
-        decoration: BoxDecoration(
-          color: context.colors.surface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: context.colors.line),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              context.l10n.greeting(ledger.owner),
-              style: context.type.titleMedium?.copyWith(
-                color: context.colors.inkSoft,
-              ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Semantics(
+            container: true,
+            label: context.l10n.standingSemantics(
+              dayMonth(payday),
+              pesos(ledger.major(free)),
+              days,
+              pesos(ledger.major(balance)),
             ),
-            const SizedBox(height: 18),
-            Text(
-              context.l10n.freeUntil(dayMonth(payday)),
-              style: context.type.labelMedium,
-            ),
-            const SizedBox(height: 4),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Figures(
-                pesos(ledger.major(free)),
-                style: context.type.displayLarge,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              detail ??
-                  context.l10n.standingDetail(
-                    days,
-                    pesos(ledger.major(committed)),
+            excludeSemantics: true,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  context.l10n.greeting(ledger.owner),
+                  style: context.type.titleMedium?.copyWith(
+                    color: context.colors.inkSoft,
                   ),
-              style: context.type.bodyMedium,
-            ),
-            const SizedBox(height: 18),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(99),
-              child: SizedBox(
-                height: 10,
-                child: Row(
-                  // An empty ColoredBox takes the smallest height it is
-                  // allowed, which in a Row is none.
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  context.l10n.freeUntil(dayMonth(payday)),
+                  style: context.type.labelMedium,
+                ),
+                const SizedBox(height: 4),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Figures(
+                    pesos(ledger.major(free)),
+                    style: context.type.displayLarge,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  detail ??
+                      context.l10n.standingDetail(
+                        days,
+                        pesos(ledger.major(committed)),
+                      ),
+                  style: context.type.bodyMedium,
+                ),
+                const SizedBox(height: 18),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(99),
+                  child: SizedBox(
+                    height: 10,
+                    child: Row(
+                      // An empty ColoredBox takes the smallest height it is
+                      // allowed, which in a Row is none.
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        Expanded(
+                          flex: (share * 1000).round(),
+                          child: ColoredBox(color: context.colors.brand),
+                        ),
+                        const SizedBox(width: 3),
+                        Expanded(
+                          flex: ((1 - share) * 1000).round(),
+                          child: ColoredBox(
+                            color: context.colors.inkFaint.withValues(
+                              alpha: 0.35,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 6,
+                  children: <Widget>[
+                    _Key(
+                      color: context.colors.brand,
+                      label: context.l10n.legendFree,
+                    ),
+                    _Key(
+                      color: context.colors.inkFaint.withValues(alpha: 0.35),
+                      label: context.l10n.legendCommitted,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Divider(color: context.colors.line, height: 1),
+                const SizedBox(height: 12),
+                Row(
                   children: <Widget>[
                     Expanded(
-                      flex: (share * 1000).round(),
-                      child: ColoredBox(color: context.colors.brand),
+                      child: Text(
+                        balanceLabel ?? context.l10n.inTheAccount,
+                        style: context.type.bodySmall,
+                      ),
                     ),
-                    const SizedBox(width: 3),
-                    Expanded(
-                      flex: ((1 - share) * 1000).round(),
-                      child: ColoredBox(
-                        color: context.colors.inkFaint.withValues(alpha: 0.35),
+                    Figures(
+                      pesos(ledger.major(balance)),
+                      style: context.type.bodySmall?.copyWith(
+                        color: context.colors.inkSoft,
                       ),
                     ),
                   ],
                 ),
+              ],
+            ),
+          ),
+          if (onExplain case final VoidCallback explain) ...<Widget>[
+            const SizedBox(height: 6),
+            TextButton.icon(
+              onPressed: explain,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
               ),
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 16,
-              runSpacing: 6,
-              children: <Widget>[
-                _Key(
-                  color: context.colors.brand,
-                  label: context.l10n.legendFree,
-                ),
-                _Key(
-                  color: context.colors.inkFaint.withValues(alpha: 0.35),
-                  label: context.l10n.legendCommitted,
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Divider(color: context.colors.line, height: 1),
-            const SizedBox(height: 12),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    balanceLabel ?? context.l10n.inTheAccount,
-                    style: context.type.bodySmall,
-                  ),
-                ),
-                Figures(
-                  pesos(ledger.major(balance)),
-                  style: context.type.bodySmall?.copyWith(
-                    color: context.colors.inkSoft,
-                  ),
-                ),
-              ],
+              icon: const Icon(Glyph.info, size: 18),
+              label: Text(context.l10n.freeExplainAction),
             ),
           ],
-        ),
+        ],
       ),
     );
   }

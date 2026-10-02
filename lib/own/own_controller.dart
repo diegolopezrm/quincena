@@ -102,6 +102,10 @@ class OwnController extends ChangeNotifier {
 
   /// Assets held somewhere that no known rate converts to the base.
   Set<Asset> get unconverted => _build?.unconverted ?? const <Asset>{};
+
+  /// What each spendable account adds to the money until payday, in the
+  /// ledger's smallest unit.
+  Map<String, int> get spendableParts => _build?.parts ?? const <String, int>{};
   Map<String, Money> get balances => _balances;
   DateTime? get ratesFetchedAt => _ratesFetchedAt;
   bool get refreshingRates => _refreshing;

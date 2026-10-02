@@ -159,6 +159,31 @@ class AccountsTab extends StatelessWidget {
   }
 }
 
+/// Where the rates converting [asset] to [base] come from, as a person
+/// knows them: `TRM`, `Binance`, or typed by hand.
+String rateSources(
+  AppLocalizations l,
+  RateTable rates,
+  Asset asset,
+  Asset base,
+) {
+  final List<Rate> used = rates.used(asset, base);
+  if (used.any((Rate r) => r.manual)) return l.rateManual;
+  final List<String> names = <String>[
+    for (final Rate r in used)
+      switch (r.source) {
+        'trm' => l.rateSourceTrm,
+        'binance' => l.rateSourceBinance,
+        'ecb' => l.rateSourceEcb,
+        _ => r.source,
+      },
+  ];
+  if (asset.code == 'USDT' || asset.code == 'USDC') {
+    names.insert(0, l.stablecoinPeg(asset.code));
+  }
+  return names.toSet().join(' · ');
+}
+
 /// How current the conversions are, and each rate the totals use.
 class RatesPanel extends StatelessWidget {
   const RatesPanel({super.key, required this.own});
@@ -241,23 +266,7 @@ class _RateLine extends StatelessWidget {
   final Asset base;
   final Decimal? rate;
 
-  String _sources(AppLocalizations l) {
-    final List<Rate> used = own.rates.used(asset, base);
-    if (used.any((Rate r) => r.manual)) return l.rateManual;
-    final List<String> names = <String>[
-      for (final Rate r in used)
-        switch (r.source) {
-          'trm' => l.rateSourceTrm,
-          'binance' => l.rateSourceBinance,
-          'ecb' => l.rateSourceEcb,
-          _ => r.source,
-        },
-    ];
-    if (asset.code == 'USDT' || asset.code == 'USDC') {
-      names.insert(0, l.stablecoinPeg(asset.code));
-    }
-    return names.toSet().join(' · ');
-  }
+  String _sources(AppLocalizations l) => rateSources(l, own.rates, asset, base);
 
   Future<void> _edit(BuildContext context) async {
     final AppLocalizations l = context.l10n;

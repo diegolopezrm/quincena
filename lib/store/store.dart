@@ -15,6 +15,26 @@ import '../money/rates.dart';
 import '../capture/parser.dart';
 import 'database.dart';
 
+/// Why a file could not be imported. Nothing was changed.
+enum ImportProblem {
+  /// Not a file Quincena exported.
+  notQuincena,
+
+  /// Exported by a newer version than this one.
+  newer,
+
+  /// Cut short, edited by hand, or otherwise unreadable.
+  damaged,
+}
+
+/// An import that was refused, or rolled back halfway; the data the app
+/// had is still there.
+class ImportException extends FormatException {
+  const ImportException(this.problem, [super.message]);
+
+  final ImportProblem problem;
+}
+
 /// Everything known about a person's money at one moment, for the screens
 /// and the agent to compute from.
 class StoreSnapshot {
@@ -1014,16 +1034,34 @@ class QuincenaStore {
     'wallets',
   ];
 
-  /// Replaces everything with what [exportJson] wrote, or throws a
-  /// [FormatException] and changes nothing.
+  /// Replaces everything with what [exportJson] wrote, or throws an
+  /// [ImportException] and changes nothing: a file that breaks halfway is
+  /// rolled back with the rest.
   Future<void> importJson(Map<String, Object?> json) async {
     if (json['app'] != 'quincena') {
-      throw const FormatException('This file was not exported by Quincena.');
+      throw const ImportException(
+        ImportProblem.notQuincena,
+        'This file was not exported by Quincena.',
+      );
     }
-    final int version = (json['version'] as int?) ?? 0;
-    if (version < 1 || version > exportVersion) {
-      throw FormatException('Unsupported export version $version.');
+    final Object? version = json['version'];
+    if (version is! int || version < 1) {
+      throw const ImportException(ImportProblem.damaged, 'No export version.');
     }
+    if (version > exportVersion) {
+      throw ImportException(
+        ImportProblem.newer,
+        'Export version $version is newer than this app.',
+      );
+    }
+    try {
+      await _replaceWith(json);
+    } on Object catch (e) {
+      throw ImportException(ImportProblem.damaged, '$e');
+    }
+  }
+
+  Future<void> _replaceWith(Map<String, Object?> json) async {
     List<Map<String, Object?>> rows(String key) => <Map<String, Object?>>[
       for (final Object? r
           in (json[key] as List<Object?>?) ?? const <Object?>[])

@@ -312,6 +312,14 @@ void main() {
     });
   }
 
+  testWidgets('free explained', (tester) async {
+    final QuincenaStore store = (await tester.runAsync(seeded))!;
+    await open(tester, store, phone, Brightness.light);
+    await tester.tap(find.text('¿De dónde sale?'));
+    await settle(tester);
+    await shoot('free-explained');
+  });
+
   testWidgets('sheets', (tester) async {
     final QuincenaStore store = (await tester.runAsync(seeded))!;
     await open(tester, store, phone, Brightness.light);

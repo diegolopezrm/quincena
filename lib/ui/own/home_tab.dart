@@ -10,6 +10,7 @@ import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../standing.dart';
 import 'accounts_tab.dart';
+import 'free_explained.dart';
 import 'inbox_page.dart';
 import 'look.dart';
 import 'movement_list.dart';
@@ -45,6 +46,7 @@ class OwnHomeTab extends StatelessWidget {
       children: <Widget>[
         StandingCard(
           ledger: ledger,
+          onExplain: () => showFreeExplained(context, own),
           balanceLabel: l.groupSpendable,
           detail: <String>[
             l.standingDaysLeft(

@@ -234,7 +234,9 @@ class BinanceLink extends ChangeNotifier {
           : SyncProblem.failed;
     } on Object catch (e) {
       _problem = _offline(e) ? SyncProblem.offline : SyncProblem.failed;
-      debugPrint('Binance sync failed: $e');
+      // An error can quote what it failed on; a release build keeps it
+      // out of the device's logs.
+      if (kDebugMode) debugPrint('Binance sync failed: $e');
     } finally {
       client.close();
       _syncing = false;

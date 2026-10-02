@@ -215,4 +215,87 @@ void main() {
     expect(built.ledger.balance, 0);
     expect(built.unconverted, <Asset>{Asset.eur});
   });
+  test('the free amount comes apart into parts that add up exactly', () async {
+    final Account pesos = await store.addAccount(
+      name: 'Bancolombia',
+      kind: AccountKind.bank,
+      asset: Asset.cop,
+      opening: d('1000000'),
+    );
+    final Account dollars = await store.addAccount(
+      name: 'Dólares',
+      kind: AccountKind.bank,
+      asset: Asset.usd,
+      opening: d('250'),
+    );
+    final Account savings = await store.addAccount(
+      name: 'Ahorro',
+      kind: AccountKind.investment,
+      asset: Asset.cop,
+      opening: d('0'),
+      spendable: false,
+    );
+    await store.addEntry(
+      accountId: pesos.id,
+      amount: d('2400000'),
+      kind: EntryKind.income,
+      date: DateTime(2026, 9, 30),
+      category: 'salary',
+      payee: 'Nómina',
+    );
+    await store.addEntry(
+      accountId: dollars.id,
+      amount: d('10.50'),
+      kind: EntryKind.expense,
+      date: DateTime(2026, 10, 2),
+      category: 'subscriptions',
+      payee: 'Spotify',
+    );
+    await store.addTransfer(
+      fromAccountId: pesos.id,
+      toAccountId: savings.id,
+      sent: d('200000'),
+      date: DateTime(2026, 10, 1),
+    );
+    // Entered ahead of its day: committed, not spent yet.
+    await store.addEntry(
+      accountId: pesos.id,
+      amount: d('1650000'),
+      kind: EntryKind.expense,
+      date: DateTime(2026, 10, 10),
+      category: 'housing',
+      payee: 'Arriendo',
+    );
+    await store.addRecurring(
+      name: 'Netflix',
+      amount: Money(d('26900'), Asset.cop),
+      cadence: Cadence.monthly,
+      nextDate: DateTime(2026, 10, 12),
+      accountId: pesos.id,
+      category: 'subscriptions',
+    );
+    await store.addRecurring(
+      name: 'iCloud',
+      amount: Money(d('5'), Asset.usd),
+      cadence: Cadence.monthly,
+      nextDate: DateTime(2026, 10, 8),
+      accountId: dollars.id,
+      category: 'subscriptions',
+    );
+
+    final LedgerBuild built = buildLedger(
+      (await store.snapshot())!,
+      today: today,
+    );
+    final Ledger l = built.ledger;
+    // 1.000.000 + 2.400.000 - 200.000, and (250 - 10,50) × 4.000.
+    expect(built.parts, <String, int>{pesos.id: 3200000, dollars.id: 958000});
+    expect(built.parts.values.fold(0, (int sum, int v) => sum + v), l.balance);
+    expect(
+      <String>[for (final Movement m in l.committed) m.merchant],
+      <String>['iCloud', 'Arriendo', 'Netflix'],
+    );
+    expect(l.committedUntilPayday, 20000 + 1650000 + 26900);
+    expect(l.freeUntilPayday, 4158000 - 1696900);
+  });
 }

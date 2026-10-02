@@ -87,6 +87,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'El modelo está recibiendo demasiadas preguntas. Prueba en un minuto.';
 
   @override
+  String get problemOffline =>
+      'Sin conexión a internet. Tus cuentas y movimientos siguen funcionando; vuelve a preguntar cuando tengas red.';
+
+  @override
   String get problemOther => 'No pude responder esta vez. Prueba de nuevo.';
 
   @override
@@ -774,6 +778,48 @@ class AppLocalizationsEs extends AppLocalizations {
   String get exportDone => 'Archivo guardado.';
 
   @override
+  String get freeExplainAction => '¿De dónde sale?';
+
+  @override
+  String get freeExplainTitle => 'Así se calcula lo libre';
+
+  @override
+  String get freeExplainSpendable => 'Para gastar hoy';
+
+  @override
+  String get freeExplainCommitted => 'Comprometido antes del pago';
+
+  @override
+  String get freeExplainNothingCommitted => 'Nada programado antes del pago.';
+
+  @override
+  String get freeExplainLeftOut => 'No cuentan';
+
+  @override
+  String freeExplainLeftOutBody(String names) {
+    return '$names: las marcaste como ahorro o inversión, no como plata para gastar. Puedes cambiarlo en cada cuenta.';
+  }
+
+  @override
+  String freeExplainUnpriced(String codes) {
+    return 'Sin tasa todavía, cuentan como cero: $codes.';
+  }
+
+  @override
+  String get freeExplainEstimate =>
+      'Es una estimación: cuenta lo que ya pasó y lo que está programado hasta el pago. Lo que gastes o recibas sin programarlo la cambia.';
+
+  @override
+  String freeExplainHeldAt(String held, String rate) {
+    return '$held a $rate';
+  }
+
+  @override
+  String freeExplainRateOf(String date) {
+    return 'tasa del $date';
+  }
+
+  @override
   String get importData => 'Importar un archivo';
 
   @override
@@ -790,9 +836,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get importDone => 'Datos importados.';
 
   @override
-  String importFailed(String reason) {
-    return 'Ese archivo no se pudo leer: $reason';
-  }
+  String get importNotQuincena =>
+      'Ese archivo no lo exportó Quincena. No se cambió nada.';
+
+  @override
+  String get importNewer =>
+      'Ese archivo viene de una versión más nueva de Quincena. Actualiza la app y vuelve a intentarlo; no se cambió nada.';
+
+  @override
+  String get importDamaged =>
+      'Ese archivo está dañado o incompleto. No se cambió nada.';
 
   @override
   String get deleteAll => 'Borrar todo';

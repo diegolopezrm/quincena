@@ -236,6 +236,12 @@ abstract class AppLocalizations {
   /// **'El modelo está recibiendo demasiadas preguntas. Prueba en un minuto.'**
   String get problemBusy;
 
+  /// No description provided for @problemOffline.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin conexión a internet. Tus cuentas y movimientos siguen funcionando; vuelve a preguntar cuando tengas red.'**
+  String get problemOffline;
+
   /// No description provided for @problemOther.
   ///
   /// In es, this message translates to:
@@ -1394,6 +1400,72 @@ abstract class AppLocalizations {
   /// **'Archivo guardado.'**
   String get exportDone;
 
+  /// No description provided for @freeExplainAction.
+  ///
+  /// In es, this message translates to:
+  /// **'¿De dónde sale?'**
+  String get freeExplainAction;
+
+  /// No description provided for @freeExplainTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Así se calcula lo libre'**
+  String get freeExplainTitle;
+
+  /// No description provided for @freeExplainSpendable.
+  ///
+  /// In es, this message translates to:
+  /// **'Para gastar hoy'**
+  String get freeExplainSpendable;
+
+  /// No description provided for @freeExplainCommitted.
+  ///
+  /// In es, this message translates to:
+  /// **'Comprometido antes del pago'**
+  String get freeExplainCommitted;
+
+  /// No description provided for @freeExplainNothingCommitted.
+  ///
+  /// In es, this message translates to:
+  /// **'Nada programado antes del pago.'**
+  String get freeExplainNothingCommitted;
+
+  /// No description provided for @freeExplainLeftOut.
+  ///
+  /// In es, this message translates to:
+  /// **'No cuentan'**
+  String get freeExplainLeftOut;
+
+  /// No description provided for @freeExplainLeftOutBody.
+  ///
+  /// In es, this message translates to:
+  /// **'{names}: las marcaste como ahorro o inversión, no como plata para gastar. Puedes cambiarlo en cada cuenta.'**
+  String freeExplainLeftOutBody(String names);
+
+  /// No description provided for @freeExplainUnpriced.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin tasa todavía, cuentan como cero: {codes}.'**
+  String freeExplainUnpriced(String codes);
+
+  /// No description provided for @freeExplainEstimate.
+  ///
+  /// In es, this message translates to:
+  /// **'Es una estimación: cuenta lo que ya pasó y lo que está programado hasta el pago. Lo que gastes o recibas sin programarlo la cambia.'**
+  String get freeExplainEstimate;
+
+  /// No description provided for @freeExplainHeldAt.
+  ///
+  /// In es, this message translates to:
+  /// **'{held} a {rate}'**
+  String freeExplainHeldAt(String held, String rate);
+
+  /// No description provided for @freeExplainRateOf.
+  ///
+  /// In es, this message translates to:
+  /// **'tasa del {date}'**
+  String freeExplainRateOf(String date);
+
   /// No description provided for @importData.
   ///
   /// In es, this message translates to:
@@ -1424,11 +1496,23 @@ abstract class AppLocalizations {
   /// **'Datos importados.'**
   String get importDone;
 
-  /// No description provided for @importFailed.
+  /// No description provided for @importNotQuincena.
   ///
   /// In es, this message translates to:
-  /// **'Ese archivo no se pudo leer: {reason}'**
-  String importFailed(String reason);
+  /// **'Ese archivo no lo exportó Quincena. No se cambió nada.'**
+  String get importNotQuincena;
+
+  /// No description provided for @importNewer.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese archivo viene de una versión más nueva de Quincena. Actualiza la app y vuelve a intentarlo; no se cambió nada.'**
+  String get importNewer;
+
+  /// No description provided for @importDamaged.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese archivo está dañado o incompleto. No se cambió nada.'**
+  String get importDamaged;
 
   /// No description provided for @deleteAll.
   ///

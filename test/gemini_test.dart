@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dartantic_ai/dartantic_ai.dart' as dartantic;
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
@@ -39,6 +41,17 @@ class OneSurfaceModel implements ModelClient {
         '{"id": "root", "component": "Answer", "children": ["head"]}, '
         '{"id": "head", "component": "Headline", "title": "Listo"}]}}\n```\n';
   }
+}
+
+/// A model the phone cannot reach.
+class UnreachableModel implements ModelClient {
+  @override
+  Stream<String> send(String prompt, {required List<ChatMessage> history}) =>
+      Stream<String>.error(
+        const SocketException(
+          'Failed host lookup: firebasevertexai.googleapis.com',
+        ),
+      );
 }
 
 void main() {
@@ -214,6 +227,35 @@ void main() {
       await session.ask('¿Y en qué se me fue?');
       expect(session.turns.last.error, AnswerProblem.limit);
       expect(model.asked, 1);
+    });
+  });
+  group('when the answer cannot arrive', () {
+    test('without a connection it says so, not that something broke', () async {
+      final Session session = Session(
+        mode: AgentMode.gemini,
+        client: UnreachableModel(),
+        errorWindow: Duration.zero,
+      );
+      addTearDown(session.dispose);
+
+      await session.ask('¿Cuánto me queda libre?');
+      expect(session.turns.last.error, AnswerProblem.offline);
+    });
+
+    test('a missing connection, the way each platform words it', () {
+      expect(
+        Session.offline('SocketException: Failed host lookup: example.com'),
+        isTrue,
+      );
+      expect(
+        Session.offline('ClientException: XMLHttpRequest error., uri=x'),
+        isTrue,
+      );
+      expect(
+        Session.offline('The Internet connection appears to be offline.'),
+        isTrue,
+      );
+      expect(Session.offline('429 RESOURCE_EXHAUSTED'), isFalse);
     });
   });
 }

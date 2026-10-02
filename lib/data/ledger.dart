@@ -143,32 +143,38 @@ class Ledger {
       ? amount.round()
       : (amount * math.pow(10, currency.decimals)).round();
 
-  int get balance {
-    var total = openingBalance;
-    for (final Movement m in movements) {
-      if (_day(m.date).isAfter(today)) continue;
-      total += m.flow == Flow.income || m.flow == Flow.transferIn
-          ? m.amount
-          : -m.amount;
-    }
-    return total;
-  }
+  /// Whether [m] has happened by [today], and so counts in [balance].
+  bool settled(Movement m) => !_day(m.date).isAfter(today);
+
+  /// What [m] does to the balance: money coming in adds, the rest takes
+  /// away.
+  static int effect(Movement m) =>
+      m.flow == Flow.income || m.flow == Flow.transferIn ? m.amount : -m.amount;
+
+  int get balance => movements
+      .where(settled)
+      .fold(openingBalance, (int total, Movement m) => total + effect(m));
 
   /// The next payday after [today].
   DateTime get nextPayday => schedule.nextAfter(today);
 
-  /// What is already committed between today and the next payday.
-  int get committedUntilPayday {
+  /// What is already committed between today and the next payday, by
+  /// date: movements dated ahead and the charges expected before it.
+  List<Movement> get committed {
     final DateTime payday = nextPayday;
-    var total = 0;
-    for (final Movement m in <Movement>[...movements, ...upcoming]) {
-      if (m.flow == Flow.income || m.flow == Flow.transferIn) continue;
-      final DateTime day = _day(m.date);
-      if (!day.isAfter(today) || day.isAfter(payday)) continue;
-      total += m.amount;
-    }
-    return total;
+    return <Movement>[
+      for (final Movement m in <Movement>[...movements, ...upcoming])
+        if (m.flow != Flow.income &&
+            m.flow != Flow.transferIn &&
+            _day(m.date).isAfter(today) &&
+            !_day(m.date).isAfter(payday))
+          m,
+    ]..sort((Movement a, Movement b) => a.date.compareTo(b.date));
   }
+
+  /// What is already committed between today and the next payday.
+  int get committedUntilPayday =>
+      committed.fold(0, (int total, Movement m) => total + m.amount);
 
   /// What can be spent until the next payday without touching what is
   /// already committed.
