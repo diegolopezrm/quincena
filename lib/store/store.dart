@@ -478,6 +478,32 @@ class QuincenaStore {
     return transferId;
   }
 
+  /// Makes two movements already recorded the two legs of one transfer:
+  /// [out] the money that left, [into] what arrived. Both keep their ids,
+  /// dates and where they came from; neither keeps a category or a cost, as
+  /// a transfer is neither spending nor a purchase from outside.
+  Future<String> linkAsTransfer({
+    required Entry out,
+    required Entry into,
+  }) async {
+    final String transferId = _newId();
+    await db.transaction(() async {
+      for (final Entry e in <Entry>[out, into]) {
+        await (db.update(db.entries)..where((r) => r.id.equals(e.id))).write(
+          EntriesCompanion(
+            kind: Value(EntryKind.transfer.name),
+            transferId: Value(transferId),
+            category: const Value(null),
+            cost: const Value(null),
+            costAsset: const Value(null),
+            updatedAt: Value(_now()),
+          ),
+        );
+      }
+    });
+    return transferId;
+  }
+
   /// Rewrites both legs of the transfer [transferId] as one move from
   /// [fromAccountId] to [toAccountId].
   Future<void> updateTransfer(

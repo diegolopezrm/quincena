@@ -21,6 +21,7 @@ import '../money/money.dart';
 import '../money/rate_sources.dart';
 import '../money/rates.dart';
 import '../exchanges/binance_link.dart';
+import '../exchanges/p2p_match.dart';
 import '../portfolio/market.dart';
 import '../portfolio/portfolio_controller.dart';
 import '../store/store.dart';
@@ -185,11 +186,16 @@ class OwnController extends ChangeNotifier {
         _pullAgain = false;
         report += await capture.ingest(await takeNativeEvents());
       } while (_pullAgain && !_disposed);
+      if (report.added + report.recorded > 0) await joinTransfers();
     } finally {
       _pulling = false;
     }
     return report;
   }
+
+  /// Joins movements that are two sides of one transfer: a Binance P2P
+  /// order and the bank's payment for it.
+  Future<int> joinTransfers() => linkP2pPayments(store);
 
   /// Text read from screenshots, photos or PDFs the person picked.
   Future<IngestReport> ingestRead(Iterable<String> texts) =>

@@ -213,6 +213,7 @@ class _StatementPageState extends State<StatementPage> {
       for (final int i in _chosen.toList()..sort()) _candidates[i],
     ];
     final int n = await StatementImporter(own.store).record(account, chosen);
+    await own.joinTransfers();
     if (!mounted) return;
     ScaffoldMessenger.of(
       context,

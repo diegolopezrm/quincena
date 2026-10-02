@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import '../store/store.dart';
 import 'binance_client.dart';
 import 'binance_sync.dart';
+import 'p2p_match.dart';
 
 /// Where a Binance key is kept: the device's keychain, never the database
 /// and never an export.
@@ -218,6 +219,8 @@ class BinanceLink extends ChangeNotifier {
         labels: labels,
         now: _now,
       ).apply(reading);
+      // A P2P order and the bank's payment for it become one transfer.
+      await linkP2pPayments(store);
       _syncedAt = started;
       await store.setSetting(
         _setting,

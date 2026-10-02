@@ -10,6 +10,7 @@ import 'package:quincena/domain/records.dart';
 import 'package:quincena/exchanges/binance_client.dart';
 import 'package:quincena/exchanges/binance_link.dart';
 import 'package:quincena/exchanges/binance_sync.dart';
+import 'package:quincena/exchanges/p2p_match.dart';
 import 'package:quincena/money/asset.dart';
 import 'package:quincena/money/money.dart';
 import 'package:quincena/store/database.dart';
@@ -393,6 +394,98 @@ void main() {
         ),
       );
       expect(await link.connect('key', 'secret'), ConnectOutcome.badKey);
+    });
+  });
+
+  group('a P2P order and the bank payment for it', () {
+    late QuincenaStore store;
+    late Account bank;
+    late Account usdt;
+    final DateTime at = DateTime(2026, 9, 10, 14, 5);
+
+    setUp(() async {
+      store = QuincenaStore(
+        QuincenaDatabase(NativeDatabase.memory()),
+        now: () => DateTime(2026, 10, 2),
+      );
+      await store.ensureCategories();
+      await store.saveProfile(
+        const Profile(name: 'Diego', base: Asset.cop, schedule: TwiceMonthly()),
+      );
+      bank = await store.addAccount(
+        name: 'Bancolombia',
+        kind: AccountKind.bank,
+        asset: Asset.cop,
+      );
+      usdt = await store.addAccount(
+        name: 'Tether',
+        kind: AccountKind.exchange,
+        asset: Asset.usdt,
+        institution: 'Binance',
+        syncRef: 'binance:USDT',
+      );
+    });
+
+    tearDown(() => store.close());
+
+    Future<Entry> order({bool buy = true, DateTime? when}) => store.addEntry(
+      accountId: usdt.id,
+      amount: d(buy ? '1000' : '500'),
+      kind: buy ? EntryKind.income : EntryKind.expense,
+      date: when ?? at,
+      payee: 'Binance P2P',
+      source: 'binance',
+      sourceRef: 'binance:p2p:${buy ? 1 : 2}',
+      cost: Money(d(buy ? '4100000' : '1900000'), Asset.cop),
+    );
+
+    Future<Entry> payment(String amount, DateTime when) => store.addEntry(
+      accountId: bank.id,
+      amount: d(amount).abs(),
+      kind: d(amount) < Decimal.zero ? EntryKind.expense : EntryKind.income,
+      date: when,
+      payee: 'Juan Perez',
+      category: 'other',
+      source: 'notification',
+    );
+
+    test('become one transfer from the bank to Binance', () async {
+      await order();
+      await payment('-4100000', at.add(const Duration(minutes: 3)));
+      expect(await linkP2pPayments(store), 1);
+      final List<Entry> entries = await store.entries();
+      expect(entries.every((Entry e) => e.kind == EntryKind.transfer), isTrue);
+      expect(entries.map((Entry e) => e.transferId).toSet(), hasLength(1));
+      // The order keeps its Binance id, so the next sync finds it.
+      expect(
+        entries.firstWhere((Entry e) => e.accountId == usdt.id).sourceRef,
+        'binance:p2p:1',
+      );
+      expect(entries.every((Entry e) => e.cost == null), isTrue);
+      expect(await linkP2pPayments(store), 0);
+    });
+
+    test('a sale becomes one transfer from Binance to the bank', () async {
+      await order(buy: false);
+      await payment('1900000', at.add(const Duration(minutes: 10)));
+      expect(await linkP2pPayments(store), 1);
+      final Entry out = (await store.entries()).firstWhere(
+        (Entry e) => e.amount < Decimal.zero,
+      );
+      expect(out.accountId, usdt.id);
+    });
+
+    test('two payments that could be it leave both alone', () async {
+      await order();
+      await payment('-4100000', at.add(const Duration(minutes: 3)));
+      await payment('-4100000', at.add(const Duration(hours: 2)));
+      expect(await linkP2pPayments(store), 0);
+    });
+
+    test('a payment days away is not it', () async {
+      await order();
+      await payment('-4100000', at.add(const Duration(days: 3)));
+      expect(await linkP2pPayments(store), 0);
     });
   });
 }
