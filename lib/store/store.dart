@@ -999,8 +999,20 @@ class QuincenaStore {
         for (final RateRow r in await db.select(db.rates).get())
           if (r.manual) r.toJson(),
       ],
+      // What the app learned and what the person follows; never a key,
+      // which lives in the device's keychain.
+      'settings': <String, Object?>{
+        for (final String key in _exportedSettings)
+          if (await setting(key) case final String value) key: value,
+      },
     };
   }
+
+  /// The settings an export carries.
+  static const List<String> _exportedSettings = <String>[
+    _captureKey,
+    'wallets',
+  ];
 
   /// Replaces everything with what [exportJson] wrote, or throws a
   /// [FormatException] and changes nothing.
@@ -1041,6 +1053,13 @@ class QuincenaStore {
           ..insertAll(db.budgets, rows('budgets').map(BudgetRow.fromJson))
           ..insertAll(db.rates, rows('rates').map(RateRow.fromJson));
       });
+      final Object? settings = json['settings'];
+      if (settings is Map) {
+        for (final String key in _exportedSettings) {
+          final Object? value = settings[key];
+          if (value is String) await setSetting(key, value);
+        }
+      }
     });
   }
 

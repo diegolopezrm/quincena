@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../app.dart';
 import '../../app_mode.dart';
@@ -468,6 +469,38 @@ class OwnSettingsPage extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Text(l.privacyBody, style: context.type.bodyMedium),
+                  ),
+                  const SizedBox(height: 12),
+                  Panel(
+                    children: <Widget>[
+                      _row(
+                        context,
+                        icon: Glyph.lock,
+                        title: l.privacyPolicy,
+                        onTap: () => launchUrl(
+                          Uri.parse(
+                            lang == 'en'
+                                ? 'https://diegolopezrm.github.io/quincena/privacy/'
+                                : 'https://diegolopezrm.github.io/quincena/privacidad/',
+                          ),
+                          mode: LaunchMode.externalApplication,
+                        ),
+                      ),
+                      _row(
+                        context,
+                        icon: Glyph.envelope,
+                        title: l.supportTitle,
+                        value: 'admin@dlsoft.dev',
+                        onTap: () => launchUrl(
+                          Uri.parse(
+                            lang == 'en'
+                                ? 'https://diegolopezrm.github.io/quincena/support/'
+                                : 'https://diegolopezrm.github.io/quincena/soporte/',
+                          ),
+                          mode: LaunchMode.externalApplication,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

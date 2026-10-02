@@ -236,7 +236,7 @@
   "useOwn": "Use with my accounts",
   "backToOwn": "Back to my accounts",
   "privacyTitle": "Privacy",
-  "privacyBody": "Your accounts and movements are stored only on this device. For rates, Quincena looks up public sources (the TRM, Binance and the European Central Bank) without sending anything of yours.",
+  "privacyBody": "Your accounts and movements are kept only on this device. Quincena has no server holding your finances, shows no ads and does not sell your data. The policy says what goes to Gemini, to Binance or to the price sources, and when.",
   "settingsTitle": "Settings",
   "standingDaysLeft": "{days, plural, =0{Today is payday.} =1{One day until payday.} other{{days} days until payday.}}",
   "standingCommittedOwn": "{committed} is already committed to scheduled payments.",
@@ -444,5 +444,7 @@
   "walletsEmpty": "You do not follow any wallet yet.",
   "walletsAdjustment": "Wallet adjustment",
   "walletsFailed": "A wallet could not be read; its last balances are shown.",
-  "chartWithoutTrades": "From prices, not counting what you bought or sold in those days."
+  "chartWithoutTrades": "From prices, not counting what you bought or sold in those days.",
+  "privacyPolicy": "Privacy policy",
+  "supportTitle": "Support"
 }

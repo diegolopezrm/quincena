@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Privacy policy · Quincena</title>
+  <meta name="description" content="How Quincena handles your personal data: your finances stay on your device.">
+  <link rel="icon" type="image/png" href="../favicon.png">
+  <link rel="alternate" hreflang="es" href="../privacidad/">
+  <style>
+    :root {
+      --canvas: #F2F4F1; --surface: #FFFFFF; --ink: #111513; --soft: #4A5450;
+      --line: #DCE2DC; --brand: #0B7552; --brand-soft: #D5EEE2;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --canvas: #0C0F0E; --surface: #151A18; --ink: #E8EEEA; --soft: #A7B2AC;
+        --line: #252D2A; --brand: #3FCB93; --brand-soft: #16382A;
+      }
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0; background: var(--canvas); color: var(--ink);
+      font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      padding: 0 16px;
+    }
+    main { max-width: 680px; margin: 0 auto; padding-block: 40px 64px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 28px; }
+    header img { height: 32px; width: auto; }
+    header a { color: var(--brand); font-weight: 600; text-decoration: none; }
+    h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 6px; text-wrap: balance; }
+    .updated { color: var(--soft); margin: 0 0 28px; }
+    h2 { font-size: 1.15rem; margin: 36px 0 8px; text-wrap: balance; }
+    p, li { color: var(--ink); }
+    ul { padding-left: 1.2em; }
+    li { margin: 6px 0; }
+    .lead {
+      background: var(--brand-soft); border-radius: 14px; padding: 16px 18px;
+      margin: 0 0 8px; font-weight: 500;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    .scroll { overflow-x: auto; }
+    th, td { text-align: left; vertical-align: top; padding: 10px 8px; border-bottom: 1px solid var(--line); }
+    th { color: var(--soft); font-weight: 600; font-size: 0.85rem; letter-spacing: 0.02em; }
+    a { color: var(--brand); }
+    footer { margin-top: 48px; color: var(--soft); font-size: 0.9rem; }
+    @media (max-width: 600px) {
+      .scroll { overflow: visible; }
+      table, tbody, tr, td { display: block; width: 100%; }
+      thead { display: none; }
+      tr { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 6px 14px; margin: 0 0 12px; }
+      td { border: 0; padding: 6px 0; }
+      td::before { content: attr(data-label); display: block; color: var(--soft); font-size: 0.8rem; font-weight: 600; letter-spacing: 0.02em; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <picture>
+      <source srcset="../brand/quincena-logo-on-dark.svg" media="(prefers-color-scheme: dark)">
+      <img src="../brand/quincena-logo.svg" alt="Quincena" width="156" height="32">
+    </picture>
+    <a href="../privacidad/" hreflang="es" lang="es">Español</a>
+  </header>
+
+  <h1>Privacy and personal data policy</h1>
+  <p class="updated">In force since October 2, 2026. This is a translation; the <a href="../privacidad/">Spanish version</a> governs.</p>
+
+  <p class="lead">Your finances stay on your device. Quincena has no server holding your accounts or movements, shows no ads, and does not sell or share your data for analytics.</p>
+
+  <h2>1. Who is responsible</h2>
+  <p>DL SOFT TECHNOLOGIES SAS, a Colombian company, is responsible for the personal data the Quincena app handles, under Colombia's Law 1581 of 2012 and Decree 1074 of 2015. For any question, claim or request about your data, write to <a href="mailto:admin@dlsoft.dev">admin@dlsoft.dev</a>.</p>
+
+  <h2>2. What data the app handles and where it stays</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Data</th><th>Where it stays</th><th>Who else receives it</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Data">Your name, how you get paid, your accounts, movements, categories, goals, budgets and what you import from statements.</td><td data-label="Where it stays">Only on your device, in a local database.</td><td data-label="Who else receives it">No one.</td></tr>
+      <tr><td data-label="Data">Your banks' notifications, texts, Apple Pay payments and screenshots you choose to read.</td><td data-label="Where it stays">On your device. The text is read there; security codes are discarded.</td><td data-label="Who else receives it">No one.</td></tr>
+      <tr><td data-label="Data">Where a payment happened, if you turn that option on (it comes off).</td><td data-label="Where it stays">On your device.</td><td data-label="Who else receives it">Only the coordinates go to Photon (OpenStreetMap, run by Komoot) to find the nearby shop.</td></tr>
+      <tr><td data-label="Data">Your questions to Gemini and the figures the app works out to answer them.</td><td data-label="Where it stays">Not kept on any Quincena server.</td><td data-label="Who else receives it">Google, through Firebase AI Logic and Gemini on Google Cloud's Agent Platform. Google does not use them to train its models; it only keeps them for up to 90 days if a safety system flags them as possible abuse.</td></tr>
+      <tr><td data-label="Data">A statement you ask Gemini to read.</td><td data-label="Where it stays">On your device.</td><td data-label="Who else receives it">Google, on the same terms as questions, only when you ask.</td></tr>
+      <tr><td data-label="Data">An anonymous identifier and the app's verification.</td><td data-label="Where it stays">On your device.</td><td data-label="Who else receives it">Firebase Authentication (an anonymous account, deleted after 30 days) and Firebase App Check, which uses Apple's App Attest and DeviceCheck, Google's Play Integrity, or reCAPTCHA Enterprise on the web to check that questions come from Quincena.</td></tr>
+      <tr><td data-label="Data">Your read-only Binance key, if you connect your account.</td><td data-label="Where it stays">In your device's keychain, never in the database or in what you export.</td><td data-label="Who else receives it">Binance, which receives the signed requests straight from your device.</td></tr>
+      <tr><td data-label="Data">Public addresses of wallets you choose to follow.</td><td data-label="Where it stays">On your device.</td><td data-label="Who else receives it">mempool.space, a public Ethereum node (PublicNode) and TronGrid, which see the address looked up.</td></tr>
+      <tr><td data-label="Data">Prices and exchange rates.</td><td data-label="Where it stays">On your device.</td><td data-label="Who else receives it">Binance, datos.gov.co and Frankfurter only receive which currencies are asked for, never how much you hold.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>3. What it is used for</h2>
+  <ul>
+    <li>Showing your accounts, movements, balances and projections, and recording what you capture or import.</li>
+    <li>Answering the questions you ask Gemini.</li>
+    <li>Checking that requests to Gemini come from the app, and limiting abuse.</li>
+    <li>Reading prices, rates and balances from the sources you connect.</li>
+  </ul>
+  <p>Quincena does not use your data for advertising, commercial profiles or analytics, and does not sell it.</p>
+
+  <h2>4. Your rights</h2>
+  <p>You have the right to know, update and correct your data; to ask for proof of your authorization; to be told how it is used; to revoke the authorization and ask for it to be deleted; to access it free of charge; and to file complaints with Colombia's Superintendence of Industry and Commerce.</p>
+  <p>Since your financial data is on your device, you can exercise most of these rights in the app itself: see and correct any movement, export everything to a file, turn off each optional feature, disconnect Binance and delete everything from Settings. For anything else, write to <a href="mailto:admin@dlsoft.dev">admin@dlsoft.dev</a>. Questions are answered within ten business days and claims within fifteen, as the law requires.</p>
+
+  <h2>5. Authorization</h2>
+  <p>By using Quincena you authorize the handling described here. Each optional feature asks for your permission separately before it turns on: notifications, location, Gemini, Binance and wallets. You can turn it off at any time.</p>
+
+  <h2>6. Minors and sensitive data</h2>
+  <p>Quincena is not directed at people under 18 and does not ask for sensitive data.</p>
+
+  <h2>7. International transfers</h2>
+  <p>Some of the providers above process data outside Colombia, mainly in the United States. They only receive what the table in section 2 shows, when you use the feature that needs them.</p>
+
+  <h2>8. Security and retention</h2>
+  <p>The app's data lives on your device and is protected by its own system; the Binance key is kept in the keychain; every connection is encrypted. Data is kept until you delete it or uninstall the app. The anonymous Firebase account is deleted after 30 days.</p>
+
+  <h2>9. Changes</h2>
+  <p>If this policy changes, the new version is published on this same page with the date it takes effect.</p>
+
+  <footer>Quincena · DL SOFT TECHNOLOGIES SAS · <a href="mailto:admin@dlsoft.dev">admin@dlsoft.dev</a> · <a href="../support/">Support</a></footer>
+</main>
+</body>
+</html>

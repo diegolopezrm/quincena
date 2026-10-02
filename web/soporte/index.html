@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Soporte · Quincena</title>
+  <link rel="icon" type="image/png" href="../favicon.png">
+  <style>
+    :root {
+      --canvas: #F2F4F1; --surface: #FFFFFF; --ink: #111513; --soft: #4A5450;
+      --line: #DCE2DC; --brand: #0B7552; --brand-soft: #D5EEE2;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --canvas: #0C0F0E; --surface: #151A18; --ink: #E8EEEA; --soft: #A7B2AC;
+        --line: #252D2A; --brand: #3FCB93; --brand-soft: #16382A;
+      }
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0; background: var(--canvas); color: var(--ink);
+      font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      padding: 0 16px;
+    }
+    main { max-width: 680px; margin: 0 auto; padding-block: 40px 64px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 28px; }
+    header img { height: 32px; width: auto; }
+    header a { color: var(--brand); font-weight: 600; text-decoration: none; }
+    h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 6px; text-wrap: balance; }
+    .updated { color: var(--soft); margin: 0 0 28px; }
+    h2 { font-size: 1.15rem; margin: 36px 0 8px; text-wrap: balance; }
+    p, li { color: var(--ink); }
+    ul { padding-left: 1.2em; }
+    li { margin: 6px 0; }
+    .lead {
+      background: var(--brand-soft); border-radius: 14px; padding: 16px 18px;
+      margin: 0 0 8px; font-weight: 500;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    .scroll { overflow-x: auto; }
+    th, td { text-align: left; vertical-align: top; padding: 10px 8px; border-bottom: 1px solid var(--line); }
+    th { color: var(--soft); font-weight: 600; font-size: 0.85rem; letter-spacing: 0.02em; }
+    a { color: var(--brand); }
+    footer { margin-top: 48px; color: var(--soft); font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <picture>
+      <source srcset="../brand/quincena-logo-on-dark.svg" media="(prefers-color-scheme: dark)">
+      <img src="../brand/quincena-logo.svg" alt="Quincena" width="156" height="32">
+    </picture>
+    <a href="../support/" hreflang="en" lang="en">English</a>
+  </header>
+  <h1>Soporte</h1>
+  <p class="lead">¿Algo no funciona o tienes una idea? Escríbenos a <a href="mailto:admin@dlsoft.dev">admin@dlsoft.dev</a>. Respondemos en español o en inglés.</p>
+  <h2>¿Dónde están mis datos?</h2>
+  <p>En tu dispositivo. Quincena no tiene un servidor con tus cuentas ni tus movimientos. Si cambias de teléfono, exporta tus datos desde Ajustes y vuelve a importarlos en el nuevo.</p>
+  <h2>¿Cómo hago que los pagos se registren solos?</h2>
+  <p>En Ajustes, Captura automática. En iPhone con iOS 27 hay atajos listos para las notificaciones de tus bancos, los SMS, Apple Pay y las capturas; en Android, la app lee las notificaciones de los bancos si le das permiso.</p>
+  <h2>¿Es seguro conectar Binance?</h2>
+  <p>Quincena solo acepta una llave de solo lectura: no puede comprar, vender, mover ni retirar nada. La llave se guarda en el llavero de tu dispositivo y las solicitudes van directo a Binance.</p>
+  <h2>¿Quincena da asesoría financiera o de inversión?</h2>
+  <p>No. Muestra tus cifras y te ayuda a decidir, pero no recomienda comprar o vender nada.</p>
+  <footer>Quincena · DL SOFT TECHNOLOGIES SAS · <a href="../privacidad/">Política de privacidad</a></footer>
+</main>
+</body>
+</html>

@@ -816,7 +816,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacyBody =>
-      'Your accounts and movements are stored only on this device. For rates, Quincena looks up public sources (the TRM, Binance and the European Central Bank) without sending anything of yours.';
+      'Your accounts and movements are kept only on this device. Quincena has no server holding your finances, shows no ads and does not sell your data. The policy says what goes to Gemini, to Binance or to the price sources, and when.';
 
   @override
   String get settingsTitle => 'Settings';
@@ -1599,4 +1599,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get chartWithoutTrades =>
       'From prices, not counting what you bought or sold in those days.';
+
+  @override
+  String get privacyPolicy => 'Privacy policy';
+
+  @override
+  String get supportTitle => 'Support';
 }

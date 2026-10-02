@@ -270,7 +270,7 @@
   "useOwn": "Usar con mis cuentas",
   "backToOwn": "Volver a mis cuentas",
   "privacyTitle": "Privacidad",
-  "privacyBody": "Tus cuentas y movimientos se guardan solo en este dispositivo. Para las tasas, Quincena consulta fuentes públicas (la TRM, Binance y el Banco Central Europeo) sin enviar nada tuyo.",
+  "privacyBody": "Tus cuentas y movimientos se guardan solo en este dispositivo. Quincena no tiene un servidor con tus finanzas, no muestra publicidad y no vende tus datos. La política explica qué va a Gemini, a Binance o a las fuentes de precios, y cuándo.",
   "settingsTitle": "Ajustes",
   "standingDaysLeft": "{days, plural, =0{Hoy es día de pago.} =1{Falta un día para el próximo pago.} other{Faltan {days} días para el próximo pago.}}",
   "@standingDaysLeft": {"placeholders": {"days": {"type": "int"}}},
@@ -503,5 +503,7 @@
   "walletsEmpty": "Aún no sigues ninguna billetera.",
   "walletsAdjustment": "Ajuste con la billetera",
   "walletsFailed": "Una billetera no se pudo leer; se muestran sus últimos saldos.",
-  "chartWithoutTrades": "Por el precio, sin contar lo que compraste o vendiste en esos días."
+  "chartWithoutTrades": "Por el precio, sin contar lo que compraste o vendiste en esos días.",
+  "privacyPolicy": "Política de privacidad",
+  "supportTitle": "Soporte"
 }

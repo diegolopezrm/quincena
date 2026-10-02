@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quincena/capture/inbox.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/money/asset.dart';
@@ -263,6 +266,72 @@ void main() {
         expect((await store.rates()).single.manual, isTrue);
       },
     );
+
+    test('costs, learned rules and wallets travel in the file', () async {
+      await fill();
+      final Account btc = (await store.accounts()).firstWhere(
+        (Account a) => a.asset == Asset.btc,
+      );
+      await store.updateAccount(
+        btc.copyWith(openingCost: Money(d('300000'), Asset.cop)),
+      );
+      await store.addEntry(
+        accountId: btc.id,
+        amount: d('0.001'),
+        kind: EntryKind.income,
+        date: today,
+        cost: Money(d('250'), Asset.usdt),
+      );
+      await store.saveCaptureSettings(
+        const CaptureSettings(
+          merchantCategories: <String, String>{'exito': 'groceries'},
+        ),
+      );
+      await store.setSetting('wallets', '{"wallets":[]}');
+      final Map<String, Object?> file =
+          jsonDecode(jsonEncode(await store.exportJson()))
+              as Map<String, Object?>;
+
+      await store.wipe();
+      await store.importJson(file);
+      final Account back = (await store.accounts()).firstWhere(
+        (Account a) => a.asset == Asset.btc,
+      );
+      expect(back.openingCost, Money(d('300000'), Asset.cop));
+      expect(
+        (await store.entries()).firstWhere((Entry e) => e.cost != null).cost,
+        Money(d('250'), Asset.usdt),
+      );
+      expect(
+        (await store.captureSettings()).merchantCategories['exito'],
+        'groceries',
+      );
+      expect(await store.setting('wallets'), '{"wallets":[]}');
+    });
+
+    test('a file written by version 1 still imports', () async {
+      await fill();
+      final Map<String, Object?> file =
+          jsonDecode(jsonEncode(await store.exportJson()))
+              as Map<String, Object?>;
+      // Version 1 had no costs, no synced accounts and no settings.
+      file['version'] = 1;
+      file.remove('settings');
+      for (final Object? a in file['accounts']! as List<Object?>) {
+        (a! as Map<String, Object?>)
+          ..remove('openingCost')
+          ..remove('openingCostAsset')
+          ..remove('syncRef');
+      }
+      for (final Object? e in file['entries']! as List<Object?>) {
+        (e! as Map<String, Object?>)
+          ..remove('cost')
+          ..remove('costAsset');
+      }
+      await store.wipe();
+      await store.importJson(file);
+      expect(await store.accounts(), hasLength(2));
+    });
 
     test('a file from somewhere else is refused and nothing changes', () async {
       await fill();
