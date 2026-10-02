@@ -32,9 +32,9 @@
   <style>
     /* Shown while Flutter loads, in the app's own colors, and gone on the
        first frame. */
-    :root { --canvas: #F2F4F1; --ink: #111513; --soft: #4A5450; --brand: #0B7552; --brand-soft: #D5EEE2; }
+    :root { --canvas: #F2F4F1; --soft: #4A5450; }
     @media (prefers-color-scheme: dark) {
-      :root { --canvas: #0C0F0E; --ink: #E8EEEA; --soft: #A7B2AC; --brand: #3FCB93; --brand-soft: #16382A; }
+      :root { --canvas: #0C0F0E; --soft: #A7B2AC; }
     }
     html, body { margin: 0; height: 100%; background: var(--canvas); }
     #splash {
@@ -43,11 +43,7 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       transition: opacity 240ms ease;
     }
-    #splash .mark { display: flex; gap: 3px; height: 44px; }
-    #splash .mark span { width: 22px; height: 44px; }
-    #splash .mark .left { background: var(--brand); border-radius: 44px 0 0 44px; }
-    #splash .mark .right { background: var(--brand-soft); border-radius: 0 44px 44px 0; }
-    #splash .name { color: var(--ink); font-size: 26px; font-weight: 700; letter-spacing: -0.8px; }
+    #splash .logo { display: block; width: 220px; max-width: 75vw; height: auto; }
     #splash .what { color: var(--soft); font-size: 14px; }
     #splash.gone { opacity: 0; pointer-events: none; }
     @media (prefers-reduced-motion: reduce) { #splash { transition: none; } }
@@ -55,8 +51,10 @@
 </head>
 <body>
   <div id="splash" role="status" aria-label="Cargando Quincena">
-    <div class="mark"><span class="left"></span><span class="right"></span></div>
-    <div class="name">quincena</div>
+    <picture>
+      <source srcset="brand/quincena-logo-on-dark.svg" media="(prefers-color-scheme: dark)">
+      <img class="logo" src="brand/quincena-logo.svg" width="220" height="45" alt="" fetchpriority="high">
+    </picture>
     <div class="what">Cargando la demo</div>
   </div>
   <script>

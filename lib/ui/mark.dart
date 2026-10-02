@@ -1,10 +1,13 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
-import '../theme/tokens.dart';
+import 'brand_paths.g.dart';
 
-/// Quincena's mark: a coin split in two halves, one per payday.
+const Color _emerald = Color(0xFF0B7552);
+const Color _mint = Color(0xFF42D6A4);
+const Color _ink = Color(0xFF111513);
+const Color _paper = Color(0xFFF2F4F1);
+
+/// A continuous Q; its two colors represent the halves of the pay cycle.
 class QuincenaMark extends StatelessWidget {
   const QuincenaMark({super.key, this.size = 24});
 
@@ -15,64 +18,78 @@ class QuincenaMark extends StatelessWidget {
     child: SizedBox.square(
       dimension: size,
       child: CustomPaint(
-        painter: _MarkPainter(context.colors.brand, context.colors.brandSoft),
+        painter: _BrandPainter(
+          dark: Theme.of(context).brightness == Brightness.dark,
+        ),
       ),
     ),
   );
 }
 
-class _MarkPainter extends CustomPainter {
-  _MarkPainter(this.full, this.soft);
+class _BrandPainter extends CustomPainter {
+  const _BrandPainter({required this.dark, this.wordmark = false});
 
-  final Color full;
-  final Color soft;
+  final bool dark;
+  final bool wordmark;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final Rect rect = Offset.zero & size;
-    final double gap = size.width * 0.08;
-    canvas.drawArc(
-      rect.deflate(gap / 2).shift(Offset(-gap / 2, 0)),
-      math.pi / 2,
-      math.pi,
-      true,
-      Paint()..color = full,
+    final Rect bounds = wordmark ? quincenaLogoBounds : quincenaMarkBounds;
+    final double scale = (size.width / bounds.width).clamp(
+      0.0,
+      size.height / bounds.height,
     );
-    canvas.drawArc(
-      rect.deflate(gap / 2).shift(Offset(gap / 2, 0)),
-      -math.pi / 2,
-      math.pi,
-      true,
-      Paint()..color = soft,
+    canvas.save();
+    canvas.translate(
+      (size.width - bounds.width * scale) / 2,
+      (size.height - bounds.height * scale) / 2,
     );
+    canvas.scale(scale);
+    canvas.translate(-bounds.left, -bounds.top);
+
+    // The same complete silhouette is exported to every SVG. Clip its color,
+    // never build its tail by overlaying an unrelated shape.
+    canvas.drawPath(quincenaQPath, Paint()..color = dark ? _paper : _emerald);
+    canvas.save();
+    canvas.clipRect(const Rect.fromLTWH(124, 0, 132, 256));
+    canvas.drawPath(quincenaQPath, Paint()..color = _mint);
+    canvas.restore();
+
+    if (wordmark) {
+      canvas.drawPath(
+        quincenaLetteringPath,
+        Paint()..color = dark ? _paper : _ink,
+      );
+    }
+    canvas.restore();
   }
 
   @override
-  bool shouldRepaint(_MarkPainter old) => old.full != full || old.soft != soft;
+  bool shouldRepaint(_BrandPainter old) =>
+      old.dark != dark || old.wordmark != wordmark;
 }
 
-/// The mark and the name, for the top of the screen.
+/// Outlined lettering fixes the logo's optical spacing on every platform.
 class Wordmark extends StatelessWidget {
   const Wordmark({super.key});
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    label: 'Quincena',
-    header: true,
-    excludeSemantics: true,
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        const QuincenaMark(size: 26),
-        const SizedBox(width: 10),
-        Text(
-          'quincena',
-          style: context.type.headlineMedium?.copyWith(
-            letterSpacing: -0.9,
-            height: 1,
+  Widget build(BuildContext context) {
+    final double height = MediaQuery.textScalerOf(context).scale(28);
+    return Semantics(
+      label: 'Quincena',
+      header: true,
+      excludeSemantics: true,
+      child: SizedBox(
+        width: height * quincenaLogoBounds.width / quincenaLogoBounds.height,
+        height: height,
+        child: CustomPaint(
+          painter: _BrandPainter(
+            dark: Theme.of(context).brightness == Brightness.dark,
+            wordmark: true,
           ),
         ),
-      ],
-    ),
-  );
+      ),
+    );
+  }
 }

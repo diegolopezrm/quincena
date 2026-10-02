@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="quincena_launch_background">#F2F4F1</color>
+    <color name="quincena_mark_primary">#0B7552</color>
+    <color name="quincena_mark_mint">#42D6A4</color>
+    <color name="quincena_icon_background">#0B7552</color>
+</resources>
