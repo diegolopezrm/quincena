@@ -4,6 +4,9 @@ analyzer:
   exclude:
     - "**/*.genui.dart"
     - "lib/genui_catalog.g.dart"
+    # With Swift Package Manager, Flutter copies each plugin into
+    # build/ios and build/macos, its Dart tests and examples included.
+    - "build/**"
   language:
     strict-casts: true
     strict-raw-types: true

@@ -96,11 +96,23 @@ set up the app, record a week of movements and see the right totals, offline.
   tool gives every account in its own currency, and recording an expense
   saves it for real.
 - A plain-language note on what Gemini sees.
-- Before inviting people: the paid tier of the Gemini API (the Blaze plan),
-  since on the free one Google may use what is sent to improve its products;
-  Play Integrity once the app is in the Play Console; reCAPTCHA Enterprise
-  for App Check on the web; and Firebase's Apple SDK through Swift Package
-  Manager, since its CocoaPods releases stop after October 2026.
+- The web too, with reCAPTCHA Enterprise for App Check and a key that only
+  works on diegolopezrm.github.io.
+- Firebase's Apple SDK, and every other plugin, through Swift Package
+  Manager, with no CocoaPods left: Firebase published its last pods with
+  12.19.0.
+- Limits that stop spending, set before the project pays: per model, per
+  minute and per day on every paid tier, every other model at zero, and no
+  Live API. Email alerts, prompts kept out of Cloud Logging, and API keys
+  restricted to the app. [PRODUCTION.md](PRODUCTION.md) says which limits
+  stop spending and which only warn.
+- Android release builds signed with an upload key kept outside the
+  repository.
+- Still open, each waiting on a decision or an account: the Blaze plan and
+  its budget (on the free tier Google may use what is sent, so no real
+  financial data until then), the Gemini Developer API or Agent Platform for
+  that data, Play Integrity once the app is in the Play Console, and a
+  daily limit per person on a server if 30 a day has to hold.
 
 ### 8. Statements, email and exchanges
 

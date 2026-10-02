@@ -138,7 +138,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get geminiNoteSends =>
-      'Gemini does not get your database. It asks tools that run on your phone for the figures it needs, and what travels is their answers: your totals by category and by month, what is free until payday, your subscriptions, your savings goal, your accounts with their balances and, when the question calls for it, a month\'s largest payments with their merchants.';
+      'Gemini does not get your database. It asks tools that run on your phone or computer for the figures it needs, and what travels is their answers: your totals by category and by month, what is free until payday, your subscriptions, your savings goal, your accounts with their balances and, when the question calls for it, a month\'s largest payments with their merchants.';
 
   @override
   String get geminiNoteNot =>

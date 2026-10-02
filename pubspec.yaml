@@ -73,6 +73,12 @@ flutter:
   uses-material-design: true
   generate: true
 
+  # iOS and macOS take their plugins, Firebase among them, as Swift packages
+  # rather than CocoaPods. Set here, it holds for this app whatever the
+  # machine's own Flutter setting says.
+  config:
+    enable-swift-package-manager: true
+
   assets:
     # Real Gemini sessions, recorded with tool/record and replayed in the app.
     - assets/traces/
