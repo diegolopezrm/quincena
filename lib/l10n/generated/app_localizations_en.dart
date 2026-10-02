@@ -1048,7 +1048,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get captureIosReady =>
-      'Add the ones you want. They arrive switched off: open each one in Shortcuts and turn on the switch at the top.';
+      'Add the ones you want. They arrive switched off: in Shortcuts, open each one, tap Edit, expand the first block and turn on Automation.';
 
   @override
   String get captureIos26Steps =>
@@ -1062,14 +1062,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get readyBankNotificationsHelp =>
-      'Bancolombia, Nequi and the rest, as they arrive.';
+      'Bancolombia, Nequi and the rest, as they arrive. When you add it, check that your banks\' apps are in it.';
 
   @override
   String get readyBankMessages => 'Your bank\'s texts';
 
   @override
   String get readyBankMessagesHelp =>
-      'Purchase and transfer alerts by text message.';
+      'Purchase and transfer texts that carry an amount with \$.';
 
   @override
   String get readyApplePay => 'Apple Pay payments';
@@ -1082,7 +1082,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get readyScreenshotsHelp =>
-      'When you take a screenshot of a payment, it reads it on the phone.';
+      'When a screenshot shows an amount with \$, it reads it on the phone and leaves it for review.';
 
   @override
   String get captureAndroidTitle => 'On Android, with your notifications';

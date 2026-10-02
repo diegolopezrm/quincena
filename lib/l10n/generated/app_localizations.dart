@@ -1847,7 +1847,7 @@ abstract class AppLocalizations {
   /// No description provided for @captureIosReady.
   ///
   /// In es, this message translates to:
-  /// **'Añade los que quieras. Llegan apagados: ábrelos en Atajos y activa el interruptor de arriba.'**
+  /// **'Añade los que quieras. Llegan apagados: en Atajos, abre cada uno, toca Editar, despliega el primer bloque y activa «Automatización».'**
   String get captureIosReady;
 
   /// No description provided for @captureIos26Steps.
@@ -1871,7 +1871,7 @@ abstract class AppLocalizations {
   /// No description provided for @readyBankNotificationsHelp.
   ///
   /// In es, this message translates to:
-  /// **'Bancolombia, Nequi y los demás, apenas llegan.'**
+  /// **'Bancolombia, Nequi y los demás, apenas llegan. Al añadirlo, revisa que estén las apps de tus bancos.'**
   String get readyBankNotificationsHelp;
 
   /// No description provided for @readyBankMessages.
@@ -1883,7 +1883,7 @@ abstract class AppLocalizations {
   /// No description provided for @readyBankMessagesHelp.
   ///
   /// In es, this message translates to:
-  /// **'Las alertas de compras y transferencias por mensaje.'**
+  /// **'Los mensajes de compras y transferencias que traen un valor con \$.'**
   String get readyBankMessagesHelp;
 
   /// No description provided for @readyApplePay.
@@ -1907,7 +1907,7 @@ abstract class AppLocalizations {
   /// No description provided for @readyScreenshotsHelp.
   ///
   /// In es, this message translates to:
-  /// **'Al tomar una captura de un pago, la lee en el teléfono.'**
+  /// **'Si la captura muestra un valor con \$, la lee en el teléfono y la deja por revisar.'**
   String get readyScreenshotsHelp;
 
   /// No description provided for @captureAndroidTitle.

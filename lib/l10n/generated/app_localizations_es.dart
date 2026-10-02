@@ -1048,7 +1048,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get captureIosReady =>
-      'Añade los que quieras. Llegan apagados: ábrelos en Atajos y activa el interruptor de arriba.';
+      'Añade los que quieras. Llegan apagados: en Atajos, abre cada uno, toca Editar, despliega el primer bloque y activa «Automatización».';
 
   @override
   String get captureIos26Steps =>
@@ -1062,14 +1062,14 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get readyBankNotificationsHelp =>
-      'Bancolombia, Nequi y los demás, apenas llegan.';
+      'Bancolombia, Nequi y los demás, apenas llegan. Al añadirlo, revisa que estén las apps de tus bancos.';
 
   @override
   String get readyBankMessages => 'SMS de tu banco';
 
   @override
   String get readyBankMessagesHelp =>
-      'Las alertas de compras y transferencias por mensaje.';
+      'Los mensajes de compras y transferencias que traen un valor con \$.';
 
   @override
   String get readyApplePay => 'Pagos con Apple Pay';
@@ -1082,7 +1082,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get readyScreenshotsHelp =>
-      'Al tomar una captura de un pago, la lee en el teléfono.';
+      'Si la captura muestra un valor con \$, la lee en el teléfono y la deja por revisar.';
 
   @override
   String get captureAndroidTitle => 'En Android, con tus notificaciones';

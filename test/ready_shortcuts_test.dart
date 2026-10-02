@@ -17,6 +17,17 @@ void main() {
     }
   });
 
+  test('iOS 27 offers every capture, each from its own link', () {
+    final List<ReadyShortcut> ready = ReadyShortcut.forIos(27);
+    expect(ready, <ReadyShortcut>[
+      ReadyShortcut.bankNotifications,
+      ReadyShortcut.bankMessages,
+      ReadyShortcut.applePay,
+      ReadyShortcut.screenshots,
+    ]);
+    expect(ready.map((ReadyShortcut s) => s.link).toSet(), hasLength(4));
+  });
+
   test('a shortcut with no link yet is not offered', () {
     for (final ReadyShortcut s in <ReadyShortcut>[
       ...ReadyShortcut.forIos(27),

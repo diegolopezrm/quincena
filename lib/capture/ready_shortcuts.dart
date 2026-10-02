@@ -15,9 +15,18 @@ enum ReadyShortcut {
     link: 'https://www.icloud.com/shortcuts/547c9b8651934d6f9ecbc92dd773b16e',
     withTrigger: true,
   ),
-  bankMessages(link: '', withTrigger: true),
-  applePay(link: '', withTrigger: true),
-  screenshots(link: '', withTrigger: true),
+  bankMessages(
+    link: 'https://www.icloud.com/shortcuts/0f5b3aeedb2146f18548f4a649440382',
+    withTrigger: true,
+  ),
+  applePay(
+    link: 'https://www.icloud.com/shortcuts/438195ff59434cf5b1706db1c0c16b17',
+    withTrigger: true,
+  ),
+  screenshots(
+    link: 'https://www.icloud.com/shortcuts/d57b944e1be2490e8a49da4e2eb81ff6',
+    withTrigger: true,
+  ),
   bankMessagesForIos26(link: '', withTrigger: false),
   applePayForIos26(link: '', withTrigger: false);
 
