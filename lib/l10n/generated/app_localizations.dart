@@ -1844,6 +1844,72 @@ abstract class AppLocalizations {
   /// **'Abrir Atajos'**
   String get captureOpenShortcuts;
 
+  /// No description provided for @captureIosReady.
+  ///
+  /// In es, this message translates to:
+  /// **'Añade los que quieras. Llegan apagados: ábrelos en Atajos y activa el interruptor de arriba.'**
+  String get captureIosReady;
+
+  /// No description provided for @captureIos26Steps.
+  ///
+  /// In es, this message translates to:
+  /// **'1. Añade el atajo de lo que quieras capturar.\n2. Abre Atajos y ve a Automatización.\n3. Crea una con Wallet y elige tus tarjetas, o con Mensaje y el remitente de tu banco.\n4. Elige el atajo de Quincena que añadiste y «Ejecutar inmediatamente».'**
+  String get captureIos26Steps;
+
+  /// No description provided for @captureAdd.
+  ///
+  /// In es, this message translates to:
+  /// **'Añadir'**
+  String get captureAdd;
+
+  /// No description provided for @readyBankNotifications.
+  ///
+  /// In es, this message translates to:
+  /// **'Notificaciones de tus bancos'**
+  String get readyBankNotifications;
+
+  /// No description provided for @readyBankNotificationsHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Bancolombia, Nequi y los demás, apenas llegan.'**
+  String get readyBankNotificationsHelp;
+
+  /// No description provided for @readyBankMessages.
+  ///
+  /// In es, this message translates to:
+  /// **'SMS de tu banco'**
+  String get readyBankMessages;
+
+  /// No description provided for @readyBankMessagesHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Las alertas de compras y transferencias por mensaje.'**
+  String get readyBankMessagesHelp;
+
+  /// No description provided for @readyApplePay.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagos con Apple Pay'**
+  String get readyApplePay;
+
+  /// No description provided for @readyApplePayHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada compra que pagas con el iPhone.'**
+  String get readyApplePayHelp;
+
+  /// No description provided for @readyScreenshots.
+  ///
+  /// In es, this message translates to:
+  /// **'Capturas de comprobantes'**
+  String get readyScreenshots;
+
+  /// No description provided for @readyScreenshotsHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Al tomar una captura de un pago, la lee en el teléfono.'**
+  String get readyScreenshotsHelp;
+
   /// No description provided for @captureAndroidTitle.
   ///
   /// In es, this message translates to:

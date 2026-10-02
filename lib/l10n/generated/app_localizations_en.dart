@@ -1047,6 +1047,44 @@ class AppLocalizationsEn extends AppLocalizations {
   String get captureOpenShortcuts => 'Open Shortcuts';
 
   @override
+  String get captureIosReady =>
+      'Add the ones you want. They arrive switched off: open each one in Shortcuts and turn on the switch at the top.';
+
+  @override
+  String get captureIos26Steps =>
+      '1. Add the shortcut for what you want to capture.\n2. Open Shortcuts and go to Automation.\n3. Create one with Wallet and pick your cards, or with Message and your bank\'s sender.\n4. Choose the Quincena shortcut you added and \"Run Immediately\".';
+
+  @override
+  String get captureAdd => 'Add';
+
+  @override
+  String get readyBankNotifications => 'Your banks\' notifications';
+
+  @override
+  String get readyBankNotificationsHelp =>
+      'Bancolombia, Nequi and the rest, as they arrive.';
+
+  @override
+  String get readyBankMessages => 'Your bank\'s texts';
+
+  @override
+  String get readyBankMessagesHelp =>
+      'Purchase and transfer alerts by text message.';
+
+  @override
+  String get readyApplePay => 'Apple Pay payments';
+
+  @override
+  String get readyApplePayHelp => 'Every purchase you pay for with the iPhone.';
+
+  @override
+  String get readyScreenshots => 'Receipt screenshots';
+
+  @override
+  String get readyScreenshotsHelp =>
+      'When you take a screenshot of a payment, it reads it on the phone.';
+
+  @override
   String get captureAndroidTitle => 'On Android, with your notifications';
 
   @override

@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../capture/inbox.dart';
 import '../../capture/native_channel.dart';
+import '../../capture/ready_shortcuts.dart';
 import '../../l10n/l10n.dart';
 import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
@@ -134,19 +135,35 @@ class _CaptureSettingsPageState extends State<CaptureSettingsPage>
 
   Widget _platform(AppLocalizations l) {
     if (_ios) {
+      // iOS 27 adds a whole automation from a link; iOS 26 still needs the
+      // person to make it, around one of Quincena's shortcuts.
+      final int major = iosMajorVersion() ?? 0;
+      final List<ReadyShortcut> ready = ReadyShortcut.forIos(major);
+      final bool oneTap = major >= 27 && ready.isNotEmpty;
       return Block(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text(l.captureIosTitle, style: context.type.titleSmall),
             const SizedBox(height: 8),
-            Text(l.captureIosSteps, style: context.type.bodyMedium),
-            const SizedBox(height: 14),
-            FilledButton.icon(
-              onPressed: () => launchUrl(Uri.parse('shortcuts://')),
-              icon: const Icon(Glyph.arrowUpRight, size: 18),
-              label: Text(l.captureOpenShortcuts),
+            Text(
+              oneTap
+                  ? l.captureIosReady
+                  : ready.isEmpty
+                  ? l.captureIosSteps
+                  : l.captureIos26Steps,
+              style: context.type.bodyMedium,
             ),
+            for (final ReadyShortcut shortcut in ready)
+              _ReadyRow(shortcut: shortcut),
+            if (!oneTap) ...<Widget>[
+              const SizedBox(height: 14),
+              FilledButton.icon(
+                onPressed: () => launchUrl(Uri.parse('shortcuts://')),
+                icon: const Icon(Glyph.arrowUpRight, size: 18),
+                label: Text(l.captureOpenShortcuts),
+              ),
+            ],
           ],
         ),
       );
@@ -357,6 +374,66 @@ class _CaptureSettingsPageState extends State<CaptureSettingsPage>
           ),
         );
       },
+    );
+  }
+}
+
+/// One of Quincena's ready shortcuts, and the button that adds it.
+class _ReadyRow extends StatelessWidget {
+  const _ReadyRow({required this.shortcut});
+
+  final ReadyShortcut shortcut;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    final (IconData icon, String title, String help) = switch (shortcut) {
+      ReadyShortcut.bankNotifications => (
+        Glyph.bell,
+        l.readyBankNotifications,
+        l.readyBankNotificationsHelp,
+      ),
+      ReadyShortcut.bankMessages || ReadyShortcut.bankMessagesForIos26 => (
+        Glyph.chatCircleDots,
+        l.readyBankMessages,
+        l.readyBankMessagesHelp,
+      ),
+      ReadyShortcut.applePay || ReadyShortcut.applePayForIos26 => (
+        Glyph.creditCard,
+        l.readyApplePay,
+        l.readyApplePayHelp,
+      ),
+      ReadyShortcut.screenshots => (
+        Glyph.scan,
+        l.readyScreenshots,
+        l.readyScreenshotsHelp,
+      ),
+    };
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Row(
+        children: <Widget>[
+          Icon(icon, size: 22, color: context.colors.inkSoft),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(title, style: context.type.titleSmall),
+                Text(help, style: context.type.bodySmall),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          OutlinedButton(
+            onPressed: () => launchUrl(
+              Uri.parse(shortcut.link),
+              mode: LaunchMode.externalApplication,
+            ),
+            child: Text(l.captureAdd),
+          ),
+        ],
+      ),
     );
   }
 }

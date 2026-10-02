@@ -1047,6 +1047,44 @@ class AppLocalizationsEs extends AppLocalizations {
   String get captureOpenShortcuts => 'Abrir Atajos';
 
   @override
+  String get captureIosReady =>
+      'Añade los que quieras. Llegan apagados: ábrelos en Atajos y activa el interruptor de arriba.';
+
+  @override
+  String get captureIos26Steps =>
+      '1. Añade el atajo de lo que quieras capturar.\n2. Abre Atajos y ve a Automatización.\n3. Crea una con Wallet y elige tus tarjetas, o con Mensaje y el remitente de tu banco.\n4. Elige el atajo de Quincena que añadiste y «Ejecutar inmediatamente».';
+
+  @override
+  String get captureAdd => 'Añadir';
+
+  @override
+  String get readyBankNotifications => 'Notificaciones de tus bancos';
+
+  @override
+  String get readyBankNotificationsHelp =>
+      'Bancolombia, Nequi y los demás, apenas llegan.';
+
+  @override
+  String get readyBankMessages => 'SMS de tu banco';
+
+  @override
+  String get readyBankMessagesHelp =>
+      'Las alertas de compras y transferencias por mensaje.';
+
+  @override
+  String get readyApplePay => 'Pagos con Apple Pay';
+
+  @override
+  String get readyApplePayHelp => 'Cada compra que pagas con el iPhone.';
+
+  @override
+  String get readyScreenshots => 'Capturas de comprobantes';
+
+  @override
+  String get readyScreenshotsHelp =>
+      'Al tomar una captura de un pago, la lee en el teléfono.';
+
+  @override
   String get captureAndroidTitle => 'En Android, con tus notificaciones';
 
   @override
