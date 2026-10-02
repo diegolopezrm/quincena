@@ -130,10 +130,20 @@ changes the next answer.
 
 ## Talk to Gemini
 
-In settings, choose "Gemini en vivo" and paste a key from
-[Google AI Studio](https://aistudio.google.com), on the published demo or a
-local run. The key stays in the tab: it is not saved, and it only travels to
-Google. Then ask anything about the account.
+On an iPhone, an Android phone or a Mac, "Pregúntale a tu plata" asks
+Gemini about your own accounts, with no key. The questions go through
+Quincena's Firebase project with Firebase AI Logic, which only answers the
+real app (App Check: App Attest on Apple devices, Play Integrity on
+Android). Each person signs in anonymously so the project can count their
+requests, with a cap of 20 a minute set on the project and 30 questions a
+day in the app. Gemini gets the numbers from tools that run on the phone,
+the demo's plus every account in its own currency, never the database, and
+"Qué ve Gemini" in the app says what travels in plain words.
+
+For the demo account, settings offers the same Gemini on those platforms, or
+a key of your own from [Google AI Studio](https://aistudio.google.com) on
+any of them, the published web demo included. A key stays in the tab: it
+is not saved, and it only travels to Google.
 
 Gemini gets the catalog through genui's prompt builder, with two of its
 defaults switched off: the chat preset forbids `updateDataModel`, which every
@@ -144,7 +154,14 @@ surface it sends fails validation against the catalog, genui reports why and
 the app sends that back within the same turn, so the person sees the
 corrected answer rather than the broken one.
 
-For a local run you can also pass the key at build time:
+A simulator or an emulator passes App Check with a debug token registered in
+the project, read at build time from a file that is never committed:
+
+```bash
+flutter run --dart-define-from-file=tool/app_check.local.json
+```
+
+For a local run with your own key you can also pass it at build time:
 
 ```bash
 flutter run -d chrome --dart-define=GEMINI_API_KEY=your-key

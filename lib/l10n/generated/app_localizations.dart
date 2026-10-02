@@ -242,6 +242,102 @@ abstract class AppLocalizations {
   /// **'No pude responder esta vez. Prueba de nuevo.'**
   String get problemOther;
 
+  /// No description provided for @problemLimit.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya usaste las preguntas de hoy. Mañana puedes seguir preguntando.'**
+  String get problemLimit;
+
+  /// No description provided for @askTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Pregúntale a tu plata'**
+  String get askTitle;
+
+  /// No description provided for @askYourMoneyLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Pregúntale a tu plata'**
+  String get askYourMoneyLabel;
+
+  /// No description provided for @ownAskFree.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto me queda libre hasta el pago?'**
+  String get ownAskFree;
+
+  /// No description provided for @ownAskMonth.
+  ///
+  /// In es, this message translates to:
+  /// **'¿En qué se me fue la plata este mes?'**
+  String get ownAskMonth;
+
+  /// No description provided for @ownAskAll.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto tengo en total, con dólares y cripto?'**
+  String get ownAskAll;
+
+  /// No description provided for @ownAskCompare.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cómo voy comparado con el mes pasado?'**
+  String get ownAskCompare;
+
+  /// No description provided for @ownAskRecord.
+  ///
+  /// In es, this message translates to:
+  /// **'Quiero anotar un gasto'**
+  String get ownAskRecord;
+
+  /// No description provided for @askOther.
+  ///
+  /// In es, this message translates to:
+  /// **'Otra pregunta'**
+  String get askOther;
+
+  /// No description provided for @askLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Ya no te quedan preguntas hoy} =1{Te queda una pregunta hoy} other{Te quedan {count} preguntas hoy}}'**
+  String askLeft(int count);
+
+  /// No description provided for @askWhatSees.
+  ///
+  /// In es, this message translates to:
+  /// **'Qué ve Gemini'**
+  String get askWhatSees;
+
+  /// No description provided for @geminiNoteHow.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuando le preguntas algo a tu plata, la pregunta va a Gemini, el modelo de Google, a través del proyecto de Quincena en Firebase. No necesitas una key ni una cuenta: Quincena te identifica con un usuario anónimo, solo para contar tus preguntas.'**
+  String get geminiNoteHow;
+
+  /// No description provided for @geminiNoteSends.
+  ///
+  /// In es, this message translates to:
+  /// **'Gemini no recibe tu base de datos. Pide las cifras que necesita a herramientas que corren en tu teléfono, y lo que viaja son sus respuestas: tus totales por categoría y por mes, lo libre hasta el pago, tus suscripciones, tu meta de ahorro, tus cuentas con su saldo y, cuando la pregunta lo pide, los pagos más grandes de un mes con su comercio.'**
+  String get geminiNoteSends;
+
+  /// No description provided for @geminiNoteNot.
+  ///
+  /// In es, this message translates to:
+  /// **'No viajan tus otros movimientos uno por uno, ni tus notas, ni las alertas de tu banco, ni tu ubicación.'**
+  String get geminiNoteNot;
+
+  /// No description provided for @geminiNoteTerms.
+  ///
+  /// In es, this message translates to:
+  /// **'Quincena usa por ahora el nivel gratuito de la API de Gemini. En ese nivel Google puede usar lo que se envía para mejorar sus productos, y personas pueden revisarlo. No escribas en una pregunta nada que no quieras compartir, como un número de cuenta.'**
+  String get geminiNoteTerms;
+
+  /// No description provided for @geminiNoteLimit.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Cada persona tiene una pregunta al día.} other{Cada persona tiene {count} preguntas al día.}} Firebase App Check comprueba que vienen de la app de Quincena y no de otro programa.'**
+  String geminiNoteLimit(int count);
+
   /// No description provided for @whoAnswers.
   ///
   /// In es, this message translates to:
@@ -259,6 +355,24 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Gemini en vivo'**
   String get modeLive;
+
+  /// No description provided for @modeGemini.
+  ///
+  /// In es, this message translates to:
+  /// **'Gemini'**
+  String get modeGemini;
+
+  /// No description provided for @modeOwnKey.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu key'**
+  String get modeOwnKey;
+
+  /// No description provided for @geminiExplain.
+  ///
+  /// In es, this message translates to:
+  /// **'Responde {model} a través de Quincena, sin key. Pregunta lo que quieras sobre la cuenta.'**
+  String geminiExplain(String model);
 
   /// No description provided for @demoExplain.
   ///

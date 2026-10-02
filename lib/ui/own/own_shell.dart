@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app.dart';
 import '../../app_mode.dart';
+import '../../ai/cloud.dart';
 import '../../capture/native_channel.dart';
 import '../../l10n/l10n.dart';
 import '../../own/own_controller.dart';
@@ -10,6 +11,7 @@ import '../icons.dart';
 import '../mark.dart';
 import 'account_sheet.dart';
 import 'accounts_tab.dart';
+import 'ask_page.dart';
 import 'entry_sheet.dart';
 import 'home_tab.dart';
 import 'inbox_page.dart';
@@ -66,6 +68,18 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
     _openInboxIfAsked();
   }
 
+  /// Asking Gemini about the person's money, with [question] already asked
+  /// when they picked one.
+  void _openAsk([String? question]) => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (BuildContext context) => AskPage(
+        own: own,
+        allowance: widget.modes.allowance,
+        question: question,
+      ),
+    ),
+  );
+
   void _openInbox() => Navigator.of(context).push(
     MaterialPageRoute<void>(
       builder: (BuildContext context) => InboxPage(own: own),
@@ -85,7 +99,11 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
   Widget _tabBody() => switch (_tab) {
     1 => MovementsTab(own: own),
     2 => AccountsTab(own: own),
-    _ => OwnHomeTab(own: own, onSeeAll: () => setState(() => _tab = 1)),
+    _ => OwnHomeTab(
+      own: own,
+      onSeeAll: () => setState(() => _tab = 1),
+      onAsk: Cloud.supported ? _openAsk : null,
+    ),
   };
 
   @override

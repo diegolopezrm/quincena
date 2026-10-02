@@ -7,24 +7,29 @@ import 'package:genui/genui.dart';
 import 'package:genui_gen/tracing.dart';
 import 'package:intl/intl.dart';
 
+import 'package:dartantic_ai/dartantic_ai.dart' as dartantic;
+
 import '../agent/catalog.dart';
+import '../agent/firebase_client.dart';
 import '../agent/model_client.dart';
 import '../agent/model_source.dart';
 import '../agent/scripted_source.dart';
 import '../agent/source.dart';
 import '../agent/tools.dart';
+import '../ai/allowance.dart';
 import '../data/ledger.dart';
 import '../data/seed.dart';
 import '../l10n/l10n.dart';
 
-/// Who answers: the script the demo ships with, or a model.
-enum AgentMode { demo, live }
+/// Who answers: the script the demo ships with, Gemini with a key the
+/// person brought, or Gemini through Quincena's own project, with no key.
+enum AgentMode { demo, live, gemini }
 
 /// What the person did on a surface, shown in place of a question.
 enum TurnNote { savedExpense, choseMonthly, askedCancel, askedPayments, other }
 
-/// Why an answer did not arrive.
-enum AnswerProblem { key, busy, other }
+/// Why an answer did not arrive. [limit] is the day's questions used up.
+enum AnswerProblem { key, busy, limit, other }
 
 /// One exchange: what the person asked, and what answered it.
 class Turn {
@@ -46,7 +51,8 @@ class Turn {
   AnswerProblem? error;
 }
 
-/// A conversation with the agent about the demo account.
+/// A conversation with the agent about an account: the demo's, unless
+/// [ledgerOf] gives another.
 ///
 /// Every message the agent sends goes through a [GenUiTraceRecorder] on its
 /// way to the controller, so the whole session can be inspected while it runs
@@ -60,7 +66,12 @@ class Session extends ChangeNotifier {
     String? apiKey,
     String language = 'es',
     this.client,
-  }) {
+    Ledger Function()? ledgerOf,
+    List<dartantic.Tool> Function(Ledger ledger)? toolsFor,
+    this.own = false,
+    this.allowance,
+  }) : _ledgerOf = ledgerOf ?? demoLedger,
+       _toolsFor = toolsFor ?? ledgerTools {
     _mode = mode;
     _apiKey = apiKey;
     _language = language;
@@ -98,6 +109,21 @@ class Session extends ChangeNotifier {
   /// A model to use instead of Gemini, for tests.
   final ModelClient? client;
 
+  /// The account each conversation starts from: a fresh demo one by
+  /// default, or the person's own as it is now.
+  final Ledger Function() _ledgerOf;
+
+  /// What a model can ask the account.
+  final List<dartantic.Tool> Function(Ledger ledger) _toolsFor;
+
+  /// Whether the account is the person's own, which changes what the model
+  /// is told.
+  final bool own;
+
+  /// The day's questions to Gemini through Quincena; null leaves them
+  /// uncounted.
+  final Allowance? allowance;
+
   late AgentMode _mode;
   AgentMode get mode => _mode;
   String? _apiKey;
@@ -131,8 +157,13 @@ class Session extends ChangeNotifier {
   int _corrections = 0;
   static const int _maxCorrections = 2;
 
+  static const String _noSurface =
+      'That answer created no surface, so the person saw only its text. '
+      'Answer the same message again by creating one new surface, as the '
+      'instructions say.';
+
   void _start() {
-    ledger = demoLedger();
+    ledger = _ledgerOf();
     controller = SurfaceController(catalogs: <Catalog>[quincenaCatalog]);
     recorder = GenUiTraceRecorder.attach(
       controller,
@@ -164,11 +195,18 @@ class Session extends ChangeNotifier {
       ),
       AgentMode.live => ModelSource(
         client:
-            client ??
-            GeminiClient(apiKey: _apiKey!, tools: ledgerTools(ledger)),
+            client ?? GeminiClient(apiKey: _apiKey!, tools: _toolsFor(ledger)),
         ledger: ledger,
         sink: sink,
         language: _language,
+        own: own,
+      ),
+      AgentMode.gemini => ModelSource(
+        client: client ?? FirebaseGeminiClient(tools: _toolsFor(ledger)),
+        ledger: ledger,
+        sink: sink,
+        language: _language,
+        own: own,
       ),
     };
     _submissions = controller.onSubmit.listen(_onSubmit);
@@ -203,12 +241,20 @@ class Session extends ChangeNotifier {
     _corrections = 0;
     _errors.clear();
     notifyListeners();
+    // Through Quincena's project, each question counts against the day's.
+    final Allowance? day = allowance;
+    if (_mode == AgentMode.gemini && day != null && !await day.take()) {
+      turn.error = AnswerProblem.limit;
+      _busy = false;
+      notifyListeners();
+      return;
+    }
     try {
       await answer();
       // genui validates each surface against the catalog as it arrives, and
       // reports what fails back through onSubmit for the agent to fix. The
       // model hears about it once it has finished, within the same turn.
-      if (_mode == AgentMode.live) {
+      if (_mode != AgentMode.demo) {
         await Future<void>.delayed(errorWindow);
         while (_errors.isNotEmpty && _corrections < _maxCorrections) {
           _corrections++;
@@ -219,9 +265,23 @@ class Session extends ChangeNotifier {
           );
           await Future<void>.delayed(errorWindow);
         }
+        // An answer in prose alone shows nothing of what the app is for; the
+        // model is reminded once, the way a broken surface is reported.
+        if (turn.surfaceIds.isEmpty && _corrections < _maxCorrections) {
+          _corrections++;
+          await _source.react(
+            const UserAction(
+              name: 'error',
+              context: <String, Object?>{},
+              interaction: _noSurface,
+            ),
+          );
+          await Future<void>.delayed(errorWindow);
+        }
       }
     } on Object catch (error) {
-      turn.error = _explain(error);
+      debugPrint('The answer did not arrive: $error');
+      turn.error = _explain(error, _mode);
     }
     if (!turns.contains(turn)) return;
     // An action the script has no answer for leaves nothing to show.
@@ -272,7 +332,7 @@ class Session extends ChangeNotifier {
   /// finish before it goes back. The scripted agent never sends one; if it
   /// did, the test that rendered it would already have failed.
   void _onError(String interaction, Map<Object?, Object?> error) {
-    if (_mode != AgentMode.live) return;
+    if (_mode == AgentMode.demo) return;
     final Object? surfaceId = error['surfaceId'];
     if (surfaceId is String && turns.isNotEmpty) {
       turns.last.surfaceIds.remove(surfaceId);
@@ -289,9 +349,17 @@ class Session extends ChangeNotifier {
     _ => TurnNote.other,
   };
 
-  /// Why the model could not answer, as far as the error says.
-  static AnswerProblem _explain(Object error) {
+  /// Why the model could not answer, as far as the error says. Without a
+  /// key of the person's, a refusal is the project's, not theirs to fix.
+  static AnswerProblem _explain(Object error, AgentMode mode) {
     final String text = '$error';
+    if (text.contains('429') ||
+        text.contains('RESOURCE_EXHAUSTED') ||
+        text.contains('quota') ||
+        FirebaseGeminiClient.isBusy(error)) {
+      return AnswerProblem.busy;
+    }
+    if (mode == AgentMode.gemini) return AnswerProblem.other;
     if (text.contains('API key') ||
         text.contains('PERMISSION_DENIED') ||
         text.contains('401') ||

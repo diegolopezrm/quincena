@@ -84,11 +84,23 @@ set up the app, record a week of movements and see the right totals, offline.
 
 ### 7. Gemini for everyone
 
-- Firebase AI Logic with App Check and anonymous sign-in, and a daily limit per
-  person.
-- The agent's tools read the database, in the base currency, with each
-  account's own currency where it matters.
-- A plain-language note on what the model sees.
+- Firebase AI Logic in the quincena-dlsoft project, with Gemini 3.8 Flash and
+  no key in the app. App Check is enforced, since Firebase switches AI Logic
+  off without it: App Attest on iOS and macOS (the dev.dlsoft.quincena App
+  ID has the capability), Play Integrity on Android, and debug tokens for
+  simulators and emulators.
+- Anonymous sign-in, a cap of 20 requests a minute per person set on the
+  project, and 30 questions a day counted in the app.
+- The conversation over the person's own accounts: the tools read the
+  database as it is now, in whole units of the base currency, an `accounts`
+  tool gives every account in its own currency, and recording an expense
+  saves it for real.
+- A plain-language note on what Gemini sees.
+- Before inviting people: the paid tier of the Gemini API (the Blaze plan),
+  since on the free one Google may use what is sent to improve its products;
+  Play Integrity once the app is in the Play Console; reCAPTCHA Enterprise
+  for App Check on the web; and Firebase's Apple SDK through Swift Package
+  Manager, since its CocoaPods releases stop after October 2026.
 
 ### 8. Statements, email and exchanges
 

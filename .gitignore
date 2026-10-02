@@ -49,3 +49,8 @@ test_screens/goldens/
 
 # Pictures the recording tool takes of each answer, for review.
 tool/record/out/
+
+# The App Check debug token for simulators and emulators. It lets a debug
+# build past App Check, so it never goes in the repository.
+*.local.json
+firebase-debug.log

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../agent/firebase_client.dart';
 import '../agent/model_client.dart';
+import '../ai/cloud.dart';
 import '../app.dart';
 import '../l10n/l10n.dart';
 import '../session/session.dart';
@@ -71,6 +73,9 @@ class _SettingsState extends State<_Settings> {
     setState(() => _mode = mode);
     if (mode == AgentMode.demo && widget.session.mode != AgentMode.demo) {
       widget.session.use(AgentMode.demo);
+    } else if (mode == AgentMode.gemini &&
+        widget.session.mode != AgentMode.gemini) {
+      widget.session.use(AgentMode.gemini);
     } else if (mode == AgentMode.live &&
         widget.session.canGoLive &&
         widget.session.mode != AgentMode.live) {
@@ -118,9 +123,16 @@ class _SettingsState extends State<_Settings> {
                     value: AgentMode.demo,
                     label: Text(t.modeDemo),
                   ),
+                  // Gemini with no key where Quincena's project serves the
+                  // app; a key of the person's own then stays an option.
+                  if (Cloud.supported)
+                    ButtonSegment<AgentMode>(
+                      value: AgentMode.gemini,
+                      label: Text(t.modeGemini),
+                    ),
                   ButtonSegment<AgentMode>(
                     value: AgentMode.live,
-                    label: Text(t.modeLive),
+                    label: Text(Cloud.supported ? t.modeOwnKey : t.modeLive),
                   ),
                 ],
                 selected: <AgentMode>{_mode},
@@ -135,6 +147,9 @@ class _SettingsState extends State<_Settings> {
                   GeminiClient.defaultModel,
                 ),
                 (AgentMode.live, false) => t.liveNeedsKey,
+                (AgentMode.gemini, _) => t.geminiExplain(
+                  FirebaseGeminiClient.defaultModel,
+                ),
               }, style: context.type.bodySmall),
               if (_mode == AgentMode.live && !live) ...<Widget>[
                 const SizedBox(height: 12),

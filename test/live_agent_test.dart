@@ -35,7 +35,7 @@ class ScriptedModel implements ModelClient {
     required List<ChatMessage> history,
   }) async* {
     prompts.add(prompt);
-    if (fail) throw StateError('Gemini returned 503');
+    if (fail) throw StateError('Gemini returned 500');
     final AgentTurn? turn = prompt.startsWith('{')
         ? _script.react(
             ((jsonDecode(prompt) as Map)['action'] as Map)['name']! as String,

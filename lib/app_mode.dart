@@ -6,6 +6,7 @@ import 'data/clock.dart';
 import 'format/money.dart' as format;
 import 'money/asset.dart';
 import 'money/rate_sources.dart';
+import 'ai/allowance.dart';
 import 'own/own_controller.dart';
 import 'store/store.dart';
 
@@ -49,6 +50,12 @@ class AppModeController extends ChangeNotifier {
 
   /// Null where the build cannot keep a database: the demo is all there is.
   final QuincenaStore? store;
+
+  /// The day's questions to Gemini through Quincena, shared by the sample
+  /// and the person's own accounts. Null without a database to count in.
+  late final Allowance? allowance = store == null
+      ? null
+      : (Allowance(store!, now: now)..load());
 
   /// Open on the demo unless the person already chose their own accounts,
   /// as the published web demo does.

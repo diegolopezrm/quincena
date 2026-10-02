@@ -25,9 +25,15 @@ class ModelSource implements AnswerSource {
     required Ledger ledger,
     required this.sink,
     String language = 'es',
+    bool own = false,
   }) : _history = <ChatMessage>[
          ChatMessage.system(
-           quincenaPrompt(quincenaCatalog, ledger, language: language),
+           quincenaPrompt(
+             quincenaCatalog,
+             ledger,
+             language: language,
+             own: own,
+           ),
          ),
        ] {
     _events = _chunks.stream

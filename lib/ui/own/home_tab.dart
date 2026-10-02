@@ -17,12 +17,21 @@ import 'movement_list.dart';
 /// Where the money stands until payday, the accounts and the last
 /// movements.
 class OwnHomeTab extends StatelessWidget {
-  const OwnHomeTab({super.key, required this.own, required this.onSeeAll});
+  const OwnHomeTab({
+    super.key,
+    required this.own,
+    required this.onSeeAll,
+    this.onAsk,
+  });
 
   final OwnController own;
 
   /// Opens the full list of movements.
   final VoidCallback onSeeAll;
+
+  /// Opens a conversation with Gemini, with a question or without one. Null
+  /// where Quincena's project does not serve the app.
+  final void Function([String? question])? onAsk;
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +66,22 @@ class OwnHomeTab extends StatelessWidget {
             text: l.ratesMissing(missing.map((Asset a) => a.code).join(', ')),
           ),
         ],
+        if (onAsk case final void Function([String? question]) ask) ...<Widget>[
+          const SizedBox(height: 28),
+          SectionLabel(l.askYourMoneyLabel),
+          Panel(
+            children: <Widget>[
+              for (final (IconData icon, String question)
+                  in <(IconData, String)>[
+                    (Glyph.wallet, l.ownAskFree),
+                    (Glyph.chartDonut, l.ownAskMonth),
+                    (Glyph.coins, l.ownAskAll),
+                  ])
+                _AskRow(icon: icon, text: question, onTap: () => ask(question)),
+              _AskRow(icon: Glyph.sparkle, text: l.askOther, onTap: ask),
+            ],
+          ),
+        ],
         const SizedBox(height: 28),
         SectionLabel(l.yourAccounts),
         Panel(
@@ -83,6 +108,23 @@ class OwnHomeTab extends StatelessWidget {
       ],
     );
   }
+}
+
+/// One question to ask, or the way to ask another.
+class _AskRow extends StatelessWidget {
+  const _AskRow({required this.icon, required this.text, required this.onTap});
+
+  final IconData icon;
+  final String text;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    onTap: onTap,
+    leading: Icon(icon, color: context.colors.brand),
+    title: Text(text, style: context.type.bodyMedium),
+    trailing: Icon(Glyph.caretRight, size: 18, color: context.colors.inkFaint),
+  );
 }
 
 class _InboxBanner extends StatelessWidget {

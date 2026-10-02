@@ -90,6 +90,76 @@ class AppLocalizationsEs extends AppLocalizations {
   String get problemOther => 'No pude responder esta vez. Prueba de nuevo.';
 
   @override
+  String get problemLimit =>
+      'Ya usaste las preguntas de hoy. Mañana puedes seguir preguntando.';
+
+  @override
+  String get askTitle => 'Pregúntale a tu plata';
+
+  @override
+  String get askYourMoneyLabel => 'Pregúntale a tu plata';
+
+  @override
+  String get ownAskFree => '¿Cuánto me queda libre hasta el pago?';
+
+  @override
+  String get ownAskMonth => '¿En qué se me fue la plata este mes?';
+
+  @override
+  String get ownAskAll => '¿Cuánto tengo en total, con dólares y cripto?';
+
+  @override
+  String get ownAskCompare => '¿Cómo voy comparado con el mes pasado?';
+
+  @override
+  String get ownAskRecord => 'Quiero anotar un gasto';
+
+  @override
+  String get askOther => 'Otra pregunta';
+
+  @override
+  String askLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Te quedan $count preguntas hoy',
+      one: 'Te queda una pregunta hoy',
+      zero: 'Ya no te quedan preguntas hoy',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get askWhatSees => 'Qué ve Gemini';
+
+  @override
+  String get geminiNoteHow =>
+      'Cuando le preguntas algo a tu plata, la pregunta va a Gemini, el modelo de Google, a través del proyecto de Quincena en Firebase. No necesitas una key ni una cuenta: Quincena te identifica con un usuario anónimo, solo para contar tus preguntas.';
+
+  @override
+  String get geminiNoteSends =>
+      'Gemini no recibe tu base de datos. Pide las cifras que necesita a herramientas que corren en tu teléfono, y lo que viaja son sus respuestas: tus totales por categoría y por mes, lo libre hasta el pago, tus suscripciones, tu meta de ahorro, tus cuentas con su saldo y, cuando la pregunta lo pide, los pagos más grandes de un mes con su comercio.';
+
+  @override
+  String get geminiNoteNot =>
+      'No viajan tus otros movimientos uno por uno, ni tus notas, ni las alertas de tu banco, ni tu ubicación.';
+
+  @override
+  String get geminiNoteTerms =>
+      'Quincena usa por ahora el nivel gratuito de la API de Gemini. En ese nivel Google puede usar lo que se envía para mejorar sus productos, y personas pueden revisarlo. No escribas en una pregunta nada que no quieras compartir, como un número de cuenta.';
+
+  @override
+  String geminiNoteLimit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Cada persona tiene $count preguntas al día.',
+      one: 'Cada persona tiene una pregunta al día.',
+    );
+    return '$_temp0 Firebase App Check comprueba que vienen de la app de Quincena y no de otro programa.';
+  }
+
+  @override
   String get whoAnswers => 'Quién responde';
 
   @override
@@ -97,6 +167,17 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get modeLive => 'Gemini en vivo';
+
+  @override
+  String get modeGemini => 'Gemini';
+
+  @override
+  String get modeOwnKey => 'Tu key';
+
+  @override
+  String geminiExplain(String model) {
+    return 'Responde $model a través de Quincena, sin key. Pregunta lo que quieras sobre la cuenta.';
+  }
 
   @override
   String get demoExplain =>

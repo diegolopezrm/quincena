@@ -82,6 +82,7 @@ class _TurnView extends StatelessWidget {
             _Problem(switch (problem) {
               AnswerProblem.key => context.l10n.problemKey,
               AnswerProblem.busy => context.l10n.problemBusy,
+              AnswerProblem.limit => context.l10n.problemLimit,
               AnswerProblem.other => context.l10n.problemOther,
             })
           else if (waiting)
@@ -216,7 +217,7 @@ class _ThinkingState extends State<_Thinking>
                 ),
               ),
               const SizedBox(width: 8),
-              Text('Revisando tus movimientos', style: context.type.bodyMedium),
+              Text(context.l10n.thinking, style: context.type.bodyMedium),
             ],
           ),
         ),

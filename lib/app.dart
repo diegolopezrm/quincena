@@ -92,6 +92,7 @@ class _QuincenaAppState extends State<QuincenaApp> {
       Session(
         mode: _buildKey.isEmpty ? AgentMode.demo : AgentMode.live,
         apiKey: _buildKey.isEmpty ? null : _buildKey,
+        allowance: _modes?.allowance,
       );
 
   /// Null when a test passed a session: the sample is all there is.

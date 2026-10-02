@@ -137,6 +137,12 @@ class Ledger {
       ? amount
       : amount / math.pow(10, currency.decimals);
 
+  /// [amount] in whole units of [currency] back in its smallest unit: what
+  /// a model or a form says, as the ledger counts it.
+  int minor(num amount) => currency.decimals == 0
+      ? amount.round()
+      : (amount * math.pow(10, currency.decimals)).round();
+
   int get balance {
     var total = openingBalance;
     for (final Movement m in movements) {

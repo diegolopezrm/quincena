@@ -3,6 +3,7 @@ import 'package:genui/genui.dart';
 import '../data/category.dart';
 import '../data/clock.dart';
 import '../data/ledger.dart';
+import '../domain/pay_schedule.dart';
 
 /// What the model is told before the first question.
 ///
@@ -17,10 +18,15 @@ import '../data/ledger.dart';
 /// when it cannot run code, which in a finance app is the one thing it must
 /// not do: amounts come from the tools and anything derived from them on
 /// screen comes from the catalog's functions.
+///
+/// With [own], the conversation is about the person's own accounts: their
+/// pay schedule, their base currency, accounts in other currencies, and an
+/// expense that is saved for real.
 String quincenaPrompt(
   Catalog catalog,
   Ledger ledger, {
   String language = 'es',
+  bool own = false,
 }) => PromptBuilder.custom(
   catalog: catalog,
   allowedOperations: SurfaceOperations.createOnly(dataModel: true),
@@ -28,18 +34,71 @@ String quincenaPrompt(
     codeExecution: true,
     functionCall: true,
   ),
-  systemPromptFragments: _fragments(ledger, language),
+  systemPromptFragments: <String>[
+    if (own)
+      ..._ownFragments(ledger, language)
+    else
+      _sampleIntro(ledger, language),
+    ..._fragments(ledger, language),
+  ],
 ).systemPromptJoined();
 
-Iterable<String> _fragments(Ledger ledger, String language) => <String>[
-  '''
+String _sampleIntro(Ledger ledger, String language) =>
+    '''
 You are Quincena, the assistant inside a personal finance app in Colombia. You
 talk with ${ledger.owner}, who holds the account. ${language == 'en' ? 'Speak English, plainly' : 'Speak Spanish as it is spoken in Colombia, address her as "tú"'},
 and be brief and concrete. Every text the person reads, in components and
 outside them, is in that language.
 
 Today is ${appToday.toIso8601String().split('T').first}. Paydays are the 15th and the last day of each
-month. Amounts are Colombian pesos, always whole numbers.''',
+month. Amounts are Colombian pesos, always whole numbers.''';
+
+Iterable<String> _ownFragments(Ledger ledger, String language) => <String>[
+  '''
+You are Quincena, the assistant inside a personal finance app. You talk with
+${ledger.owner}, who uses it with their own accounts. ${language == 'en' ? 'Speak English, plainly' : 'Speak Spanish as it is spoken in Colombia, address them as "tú"'},
+and be brief and concrete. Every text the person reads, in components and
+outside them, is in that language.
+
+Today is ${appToday.toIso8601String().split('T').first}. ${_payday(ledger.schedule)} The next one is
+${ledger.nextPayday.toIso8601String().split('T').first}. ${_currency(ledger)}''',
+  '''
+The person's accounts can be in different currencies, and some can hold
+crypto on an exchange. What account_overview, month_spending and the other
+tools return is already in ${ledger.currency.code}. For anything about one account,
+dollars, crypto or everything the person has, call accounts: show each
+account's balanceText exactly as it comes, and bind balanceInBase and the
+totals to the money function.
+
+Recording an expense saves it in the person's own accounts, for real: call
+record_expense only after save_expense arrives, with the account the person
+named if they named one.''',
+];
+
+String _payday(PaySchedule schedule) => switch (schedule) {
+  TwiceMonthly(:final int first, :final int second) =>
+    'Paydays are the ${_nth(first)} and the ${_nth(second)} of each month, or the last day of a shorter month.',
+  Monthly(:final int day) =>
+    'Payday is the ${_nth(day)} of each month, or the last day of a shorter month.',
+  EveryTwoWeeks() => 'Payday comes every two weeks.',
+  Weekly() => 'Payday comes every week.',
+};
+
+String _nth(int n) => switch (n % 100) {
+  11 || 12 || 13 => '${n}th',
+  _ => switch (n % 10) {
+    1 => '${n}st',
+    2 => '${n}nd',
+    3 => '${n}rd',
+    _ => '${n}th',
+  },
+};
+
+String _currency(Ledger ledger) => ledger.currency.decimals == 0
+    ? 'Amounts are ${ledger.currency.code}, always whole numbers.'
+    : 'Amounts are ${ledger.currency.code}, with up to ${ledger.currency.decimals} decimals.';
+
+Iterable<String> _fragments(Ledger ledger, String language) => <String>[
   '''
 Every A2UI message is one JSON object in its own ```json block, with
 "version": "v0.9" and exactly one of createSurface, updateComponents or
@@ -59,7 +118,8 @@ like this, in this order:
 Use a new surfaceId for every answer: answer-1, answer-2, and so on.''',
   '''
 Answer every message by creating one new surface. Never answer with prose
-alone. Outside the JSON blocks, write at most one short sentence.
+alone. Outside the JSON blocks, write at most one short sentence, with no amounts
+in it: they belong in the surface, where the catalog formats them.
 
 The root component of every surface has the id "root" and is an Answer. Its
 first child is a Headline whose title states the finding in one plain

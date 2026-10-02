@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 
 import '../capture/capture_service.dart';
@@ -7,7 +8,9 @@ import '../capture/event.dart';
 import '../capture/inbox.dart';
 import '../capture/native_channel.dart';
 import '../capture/native_inbox.dart';
+import '../capture/merchants.dart';
 import '../capture/places.dart';
+import '../agent/tools.dart';
 import '../data/clock.dart';
 import '../data/ledger.dart';
 import '../domain/ledger_builder.dart';
@@ -183,6 +186,65 @@ class OwnController extends ChangeNotifier {
             text: text,
           ),
       ]);
+
+  /// Saves an expense the person confirmed in a conversation, and waits
+  /// until every screen and the next answer count it.
+  ///
+  /// It goes to the account the person named, or else the first one to
+  /// spend from in the base currency. An account in another currency gets
+  /// the amount converted, when there is a rate for it.
+  Future<void> recordExpense(ExpenseToRecord expense) async {
+    final Profile? p = profile;
+    final Ledger? l = ledger;
+    if (p == null || l == null) return;
+    final Money inBase = Money(
+      Decimal.parse('${l.major(expense.amount)}'),
+      p.base,
+    );
+    Account? account = _accountNamed(expense.account);
+    Money amount = inBase;
+    if (account != null && account.asset != p.base) {
+      final Money? converted = rates.convert(inBase, account.asset);
+      if (converted == null) {
+        account = null;
+      } else {
+        amount = converted;
+      }
+    }
+    account ??= _mainAccount(p.base);
+    if (account == null) return;
+    await store.addEntry(
+      accountId: account.id,
+      amount: amount.amount.abs(),
+      kind: EntryKind.expense,
+      date: _now(),
+      category: expense.category.name,
+      payee: expense.note,
+      source: 'gemini',
+    );
+    _pending?.cancel();
+    await _reload();
+  }
+
+  Account? _accountNamed(String? name) {
+    if (name == null || name.trim().isEmpty) return null;
+    final String wanted = normalize(name);
+    for (final Account a in accounts) {
+      final String n = normalize(a.name);
+      if (n == wanted || n.contains(wanted) || wanted.contains(n)) return a;
+    }
+    return null;
+  }
+
+  Account? _mainAccount(Asset base) {
+    for (final Account a in accounts) {
+      if (a.spendable && a.asset == base) return a;
+    }
+    for (final Account a in accounts) {
+      if (a.spendable) return a;
+    }
+    return accounts.firstOrNull;
+  }
 
   /// A message the person pasted or shared.
   Future<IngestReport> ingestText(String text) => capture.ingest(<CaptureEvent>[

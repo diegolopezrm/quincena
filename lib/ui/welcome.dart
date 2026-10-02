@@ -15,10 +15,26 @@ class Welcome extends StatelessWidget {
     required this.ledger,
     required this.onAsk,
     this.onRecordings,
+    this.starters,
+    this.icons,
+    this.standing = true,
+    this.footer,
   });
 
   final Ledger ledger;
   final ValueChanged<String> onAsk;
+
+  /// The questions offered; the scripted agent's five by default.
+  final List<String>? starters;
+
+  /// One per question in [starters].
+  final List<IconData>? icons;
+
+  /// Whether the card with where the money stands goes first.
+  final bool standing;
+
+  /// What goes under the questions.
+  final Widget? footer;
 
   /// Opens the sessions Gemini answered for real; null when there are none.
   final VoidCallback? onRecordings;
@@ -33,14 +49,17 @@ class Welcome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> starters = ScriptedAgent.startersFor(
-      Localizations.localeOf(context).languageCode,
-    );
+    final List<String> starters =
+        this.starters ??
+        ScriptedAgent.startersFor(Localizations.localeOf(context).languageCode);
+    final List<IconData> icons = this.icons ?? _icons;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        StandingCard(ledger: ledger),
-        const SizedBox(height: 28),
+        if (standing) ...<Widget>[
+          StandingCard(ledger: ledger),
+          const SizedBox(height: 28),
+        ],
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 12),
           child: Text(
@@ -63,7 +82,7 @@ class Welcome extends StatelessWidget {
                   SizedBox(
                     width: !two || i == 0 ? box.maxWidth : half,
                     child: _Starter(
-                      icon: _icons[i],
+                      icon: icons[i % icons.length],
                       text: starters[i],
                       onTap: () => onAsk(starters[i]),
                     ),
@@ -72,6 +91,7 @@ class Welcome extends StatelessWidget {
             );
           },
         ),
+        ?footer,
         if (onRecordings case final VoidCallback open) ...<Widget>[
           const SizedBox(height: 18),
           Center(
