@@ -79,6 +79,13 @@ teléfono.
 > cifra muestra de dónde sale. Son estimaciones con lo que tienes
 > programado, nunca una garantía.
 >
+> PLANEA TU QUINCENA
+> Reparte lo que te llega en sobres para el día a día, tus metas y lo que
+> quieras apartar, sin mover plata. Mira cuándo llegas a cada meta, cuántos
+> días cubre tu colchón y qué pasaría si ahorras más, si sube un gasto o si
+> te pagan tarde. Guarda lo que quieres para después y mira qué le haría
+> a tus metas comprarlo.
+>
 > CRIPTO, COMO UN PROFESIONAL
 > Tu portafolio con precios en vivo, lo que te costó cada moneda en pesos y
 > en dólares, la ganancia o pérdida y la gráfica de 24 horas a un año.
@@ -131,6 +138,13 @@ you can touch. Your finances stay on your phone.
 > marked, and the close of each fortnight in three cards. Every figure
 > shows where it comes from. They're estimates from what's scheduled, never
 > a guarantee.
+>
+> PLAN YOUR FORTNIGHT
+> Split what you're paid into envelopes for the day to day, your goals and
+> whatever you want to set aside, without moving money. See when you'll
+> reach each goal, how many days your cushion covers, and what would
+> happen if you saved more, a charge went up or your pay came late. Keep
+> what you want for later and see what buying it would do to your goals.
 >
 > CRYPTO, LIKE A PRO
 > Your portfolio with live prices, what each coin cost you in pesos and

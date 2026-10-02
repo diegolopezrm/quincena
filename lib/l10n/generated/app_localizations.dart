@@ -2084,6 +2084,696 @@ abstract class AppLocalizations {
   /// **'Ábrelo para ver qué cambió y qué viene.'**
   String get reminderBody;
 
+  /// No description provided for @tabPlan.
+  ///
+  /// In es, this message translates to:
+  /// **'Plan'**
+  String get tabPlan;
+
+  /// No description provided for @goalIncomplete.
+  ///
+  /// In es, this message translates to:
+  /// **'Ponle un nombre y cuánto quieres juntar.'**
+  String get goalIncomplete;
+
+  /// No description provided for @goalDeleteTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Borrar «{name}»?'**
+  String goalDeleteTitle(String name);
+
+  /// No description provided for @goalDeleteBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Se borra la meta. Tus cuentas y movimientos no cambian.'**
+  String get goalDeleteBody;
+
+  /// No description provided for @goalDelete.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrar meta'**
+  String get goalDelete;
+
+  /// No description provided for @goalAdd.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar meta'**
+  String get goalAdd;
+
+  /// No description provided for @goalEdit.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar meta'**
+  String get goalEdit;
+
+  /// No description provided for @goalName.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Para qué es?'**
+  String get goalName;
+
+  /// No description provided for @goalTarget.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto quieres juntar?'**
+  String get goalTarget;
+
+  /// No description provided for @goalSaved.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto llevas?'**
+  String get goalSaved;
+
+  /// No description provided for @goalMonthly.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto pones al mes?'**
+  String get goalMonthly;
+
+  /// No description provided for @goalNoDeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin fecha límite'**
+  String get goalNoDeadline;
+
+  /// No description provided for @goalBy.
+  ///
+  /// In es, this message translates to:
+  /// **'Para el {date}'**
+  String goalBy(String date);
+
+  /// No description provided for @goalSavedOf.
+  ///
+  /// In es, this message translates to:
+  /// **'Llevas {saved} de {target}'**
+  String goalSavedOf(String saved, String target);
+
+  /// No description provided for @goalArrives.
+  ///
+  /// In es, this message translates to:
+  /// **'llega en {date}'**
+  String goalArrives(String date);
+
+  /// No description provided for @goalNoMonthly.
+  ///
+  /// In es, this message translates to:
+  /// **'sin aporte al mes, no tiene fecha'**
+  String get goalNoMonthly;
+
+  /// No description provided for @envelopeAside.
+  ///
+  /// In es, this message translates to:
+  /// **'Apartar para algo'**
+  String get envelopeAside;
+
+  /// No description provided for @envelopeAsideHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Regalo, matrícula, viaje…'**
+  String get envelopeAsideHint;
+
+  /// No description provided for @envelopesOverTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Asignas más de lo que hay'**
+  String get envelopesOverTitle;
+
+  /// No description provided for @envelopesOver.
+  ///
+  /// In es, this message translates to:
+  /// **'Los sobres suman {amount} más de lo que tienes para repartir. Puedes guardarlos así, pero esa plata no existe todavía.'**
+  String envelopesOver(String amount);
+
+  /// No description provided for @envelopesFix.
+  ///
+  /// In es, this message translates to:
+  /// **'Ajustar'**
+  String get envelopesFix;
+
+  /// No description provided for @envelopesSaveAnyway.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar así'**
+  String get envelopesSaveAnyway;
+
+  /// No description provided for @envelopesTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Reparte tu quincena'**
+  String get envelopesTitle;
+
+  /// No description provided for @envelopesPeriod.
+  ///
+  /// In es, this message translates to:
+  /// **'Del {from} al {to}.'**
+  String envelopesPeriod(String from, String to);
+
+  /// No description provided for @envelopesToSplit.
+  ///
+  /// In es, this message translates to:
+  /// **'Para repartir'**
+  String get envelopesToSplit;
+
+  /// No description provided for @envelopesToSplitBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que hay para gastar, menos {committed} comprometidos hasta el pago y {cushion} de colchón.'**
+  String envelopesToSplitBody(String committed, String cushion);
+
+  /// No description provided for @envelopeDaily.
+  ///
+  /// In es, this message translates to:
+  /// **'Día a día'**
+  String get envelopeDaily;
+
+  /// No description provided for @envelopeDailyHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Mercado, transporte, salidas: lo que se gasta hasta el pago.'**
+  String get envelopeDailyHelp;
+
+  /// No description provided for @envelopeGoalHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Apartado para tu meta: deja de contar como libre.'**
+  String get envelopeGoalHelp;
+
+  /// No description provided for @envelopeAsideHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Apartado: deja de contar como libre.'**
+  String get envelopeAsideHelp;
+
+  /// No description provided for @envelopeRemove.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar sobre'**
+  String get envelopeRemove;
+
+  /// No description provided for @envelopesOverShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Te pasas por'**
+  String get envelopesOverShort;
+
+  /// No description provided for @envelopesFree.
+  ///
+  /// In es, this message translates to:
+  /// **'Libre sin asignar'**
+  String get envelopesFree;
+
+  /// No description provided for @envelopesOnPaper.
+  ///
+  /// In es, this message translates to:
+  /// **'Los sobres no mueven plata: tu banco no se entera. Solo dicen qué parte de lo que tienes es para qué, y lo apartado sale de lo libre hasta el pago.'**
+  String get envelopesOnPaper;
+
+  /// No description provided for @envelopesSave.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar el reparto'**
+  String get envelopesSave;
+
+  /// No description provided for @cushionDaysTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Colchón en días'**
+  String get cushionDaysTitle;
+
+  /// No description provided for @cushionDaysCovers.
+  ///
+  /// In es, this message translates to:
+  /// **'{days, plural, =1{Cubre un día de gastos esenciales} other{Cubre unos {days} días de gastos esenciales}}'**
+  String cushionDaysCovers(int days);
+
+  /// No description provided for @cushionDaysNoReserve.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige abajo las cuentas donde guardas tu fondo de emergencia.'**
+  String get cushionDaysNoReserve;
+
+  /// No description provided for @cushionDaysShortHistory.
+  ///
+  /// In es, this message translates to:
+  /// **'Con menos de un mes de movimientos todavía no hay un promedio confiable. Vuelve en unas semanas.'**
+  String get cushionDaysShortHistory;
+
+  /// No description provided for @cushionDaysNoEssential.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay gastos en las categorías esenciales que elegiste, así que no se puede contar en días. Revisa las categorías.'**
+  String get cushionDaysNoEssential;
+
+  /// No description provided for @cushionDaysHow.
+  ///
+  /// In es, this message translates to:
+  /// **'{reserve} entre {daily} al día, lo que promediaron tus gastos esenciales del {from} al {to}.'**
+  String cushionDaysHow(String reserve, String daily, String from, String to);
+
+  /// No description provided for @cushionDaysReached.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegaste a los {days} días que te propusiste.'**
+  String cushionDaysReached(int days);
+
+  /// No description provided for @cushionDaysToGo.
+  ///
+  /// In es, this message translates to:
+  /// **'{days, plural, =1{Te falta un día: {amount}.} other{Te faltan {days} días: {amount}.}}'**
+  String cushionDaysToGo(int days, String amount);
+
+  /// No description provided for @cushionDaysEstimate.
+  ///
+  /// In es, this message translates to:
+  /// **'Es un promedio: un mes con gastos distintos cambia la cuenta.'**
+  String get cushionDaysEstimate;
+
+  /// No description provided for @cushionDaysAccounts.
+  ///
+  /// In es, this message translates to:
+  /// **'Dónde está tu colchón'**
+  String get cushionDaysAccounts;
+
+  /// No description provided for @cushionDaysEssentials.
+  ///
+  /// In es, this message translates to:
+  /// **'Qué es esencial para ti'**
+  String get cushionDaysEssentials;
+
+  /// No description provided for @cushionDaysTarget.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuántos días quieres cubrir'**
+  String get cushionDaysTarget;
+
+  /// No description provided for @cushionDaysNoTarget.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin meta'**
+  String get cushionDaysNoTarget;
+
+  /// No description provided for @cushionDaysOption.
+  ///
+  /// In es, this message translates to:
+  /// **'{days} días'**
+  String cushionDaysOption(int days);
+
+  /// No description provided for @cushionDaysTargetNote.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay una cifra correcta para todos: elige la que te dé tranquilidad.'**
+  String get cushionDaysTargetNote;
+
+  /// No description provided for @wishesTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo quiero, pero después'**
+  String get wishesTitle;
+
+  /// No description provided for @wishAdd.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar deseo'**
+  String get wishAdd;
+
+  /// No description provided for @wishesBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que quieres comprar más adelante, con el precio que tú pones. Nada se compra ni se sigue en ninguna tienda.'**
+  String get wishesBody;
+
+  /// No description provided for @wishesEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no hay deseos.'**
+  String get wishesEmpty;
+
+  /// No description provided for @wishPriorityHigh.
+  ///
+  /// In es, this message translates to:
+  /// **'Muy deseado'**
+  String get wishPriorityHigh;
+
+  /// No description provided for @wishPriorityMedium.
+  ///
+  /// In es, this message translates to:
+  /// **'Deseado'**
+  String get wishPriorityMedium;
+
+  /// No description provided for @wishPriorityLow.
+  ///
+  /// In es, this message translates to:
+  /// **'Si sobra'**
+  String get wishPriorityLow;
+
+  /// No description provided for @wishRemove.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar deseo'**
+  String get wishRemove;
+
+  /// No description provided for @wishWaiting.
+  ///
+  /// In es, this message translates to:
+  /// **'Esperas hasta el {date} para decidir.'**
+  String wishWaiting(String date);
+
+  /// No description provided for @wishAgainstGoal.
+  ///
+  /// In es, this message translates to:
+  /// **'Si lo compras, {goal} llegaría en {after} en vez de {before}.'**
+  String wishAgainstGoal(String goal, String after, String before);
+
+  /// No description provided for @wishIncomplete.
+  ///
+  /// In es, this message translates to:
+  /// **'Ponle un nombre y un precio.'**
+  String get wishIncomplete;
+
+  /// No description provided for @wishName.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Qué quieres?'**
+  String get wishName;
+
+  /// No description provided for @wishPrice.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto cuesta?'**
+  String get wishPrice;
+
+  /// No description provided for @wishWait.
+  ///
+  /// In es, this message translates to:
+  /// **'Esperar 30 días antes de decidir'**
+  String get wishWait;
+
+  /// No description provided for @wishWaitHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Si en un mes lo sigues queriendo, decides con calma.'**
+  String get wishWaitHelp;
+
+  /// No description provided for @whatIfTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Y si…?'**
+  String get whatIfTitle;
+
+  /// No description provided for @whatIfSaveMore.
+  ///
+  /// In es, this message translates to:
+  /// **'Ahorro más'**
+  String get whatIfSaveMore;
+
+  /// No description provided for @whatIfChargeUp.
+  ///
+  /// In es, this message translates to:
+  /// **'Sube un gasto'**
+  String get whatIfChargeUp;
+
+  /// No description provided for @whatIfPayLate.
+  ///
+  /// In es, this message translates to:
+  /// **'Pago tarde'**
+  String get whatIfPayLate;
+
+  /// No description provided for @whatIfSaveMoreSaid.
+  ///
+  /// In es, this message translates to:
+  /// **'Apartar {amount} más en cada pago'**
+  String whatIfSaveMoreSaid(String amount);
+
+  /// No description provided for @whatIfChargeUpSaid.
+  ///
+  /// In es, this message translates to:
+  /// **'{charge} sube {amount}'**
+  String whatIfChargeUpSaid(String charge, String amount);
+
+  /// No description provided for @whatIfPayLateSaid.
+  ///
+  /// In es, this message translates to:
+  /// **'{days, plural, =1{El pago llega un día tarde} other{El pago llega {days} días tarde}}'**
+  String whatIfPayLateSaid(int days);
+
+  /// No description provided for @whatIfApplyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Aplicar el cambio?'**
+  String get whatIfApplyTitle;
+
+  /// No description provided for @whatIfApplyCharge.
+  ///
+  /// In es, this message translates to:
+  /// **'{charge} quedará en {amount} desde su próximo cobro. Lo ya registrado no cambia.'**
+  String whatIfApplyCharge(String charge, String amount);
+
+  /// No description provided for @whatIfApplySave.
+  ///
+  /// In es, this message translates to:
+  /// **'Esto cambia tu plan desde ahora.'**
+  String get whatIfApplySave;
+
+  /// No description provided for @whatIfApply.
+  ///
+  /// In es, this message translates to:
+  /// **'Aplicar'**
+  String get whatIfApply;
+
+  /// No description provided for @whatIfNoCharges.
+  ///
+  /// In es, this message translates to:
+  /// **'No tienes cobros programados en las próximas semanas.'**
+  String get whatIfNoCharges;
+
+  /// No description provided for @whatIfSaveMoreAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto más en cada pago?'**
+  String get whatIfSaveMoreAmount;
+
+  /// No description provided for @whatIfChargeUpAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto sube?'**
+  String get whatIfChargeUpAmount;
+
+  /// No description provided for @whatIfNeedsPay.
+  ///
+  /// In es, this message translates to:
+  /// **'Para probar un pago tarde, di en Ajustes cuánto te pagan.'**
+  String get whatIfNeedsPay;
+
+  /// No description provided for @whatIfPayLateDays.
+  ///
+  /// In es, this message translates to:
+  /// **'{days, plural, =1{Un día tarde} other{{days} días tarde}}'**
+  String whatIfPayLateDays(int days);
+
+  /// No description provided for @whatIfFewerDays.
+  ///
+  /// In es, this message translates to:
+  /// **'Menos días'**
+  String get whatIfFewerDays;
+
+  /// No description provided for @whatIfMoreDays.
+  ///
+  /// In es, this message translates to:
+  /// **'Más días'**
+  String get whatIfMoreDays;
+
+  /// No description provided for @whatIfLowest.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo más bajo en 45 días'**
+  String get whatIfLowest;
+
+  /// No description provided for @whatIfTight.
+  ///
+  /// In es, this message translates to:
+  /// **'Primer día bajo tu colchón'**
+  String get whatIfTight;
+
+  /// No description provided for @whatIfNoTight.
+  ///
+  /// In es, this message translates to:
+  /// **'ninguno'**
+  String get whatIfNoTight;
+
+  /// No description provided for @whatIfEnd.
+  ///
+  /// In es, this message translates to:
+  /// **'Al {date}'**
+  String whatIfEnd(String date);
+
+  /// No description provided for @whatIfGoal.
+  ///
+  /// In es, this message translates to:
+  /// **'{goal} llega en'**
+  String whatIfGoal(String goal);
+
+  /// No description provided for @whatIfGoalNever.
+  ///
+  /// In es, this message translates to:
+  /// **'sin fecha'**
+  String get whatIfGoalNever;
+
+  /// No description provided for @whatIfAssumes.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta tu pago esperado y lo programado; nada de esto cambia tus cuentas.'**
+  String get whatIfAssumes;
+
+  /// No description provided for @whatIfSave.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar el escenario'**
+  String get whatIfSave;
+
+  /// No description provided for @whatIfSaved.
+  ///
+  /// In es, this message translates to:
+  /// **'Escenarios guardados'**
+  String get whatIfSaved;
+
+  /// No description provided for @whatIfSavedOutcome.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo más bajo: {amount} el {date}'**
+  String whatIfSavedOutcome(String amount, String date);
+
+  /// No description provided for @whatIfRemove.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar escenario'**
+  String get whatIfRemove;
+
+  /// No description provided for @whatIfToday.
+  ///
+  /// In es, this message translates to:
+  /// **'Hoy'**
+  String get whatIfToday;
+
+  /// No description provided for @whatIfWith.
+  ///
+  /// In es, this message translates to:
+  /// **'Con el cambio'**
+  String get whatIfWith;
+
+  /// No description provided for @planPeriod.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu plata hasta el {date}'**
+  String planPeriod(String date);
+
+  /// No description provided for @planGoals.
+  ///
+  /// In es, this message translates to:
+  /// **'Metas'**
+  String get planGoals;
+
+  /// No description provided for @planNoGoals.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no tienes metas. Una meta con aporte al mes te dice cuándo llegas.'**
+  String get planNoGoals;
+
+  /// No description provided for @planTools.
+  ///
+  /// In es, this message translates to:
+  /// **'Para decidir'**
+  String get planTools;
+
+  /// No description provided for @planCushionChoose.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige dónde está tu fondo de emergencia'**
+  String get planCushionChoose;
+
+  /// No description provided for @planCushionSoon.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no se puede contar en días'**
+  String get planCushionSoon;
+
+  /// No description provided for @planWishesNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Guarda lo que quieres para después'**
+  String get planWishesNone;
+
+  /// No description provided for @planWishes.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Un deseo} other{{count} deseos}}'**
+  String planWishes(int count);
+
+  /// No description provided for @planWhatIf.
+  ///
+  /// In es, this message translates to:
+  /// **'Prueba un cambio sin aplicarlo'**
+  String get planWhatIf;
+
+  /// No description provided for @planComing.
+  ///
+  /// In es, this message translates to:
+  /// **'Los días que vienen, con los apretados marcados'**
+  String get planComing;
+
+  /// No description provided for @planSplitTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Reparte esta quincena'**
+  String get planSplitTitle;
+
+  /// No description provided for @planSplitBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Tienes {amount} para repartir entre el día a día, tus metas y lo que quieras apartar.'**
+  String planSplitBody(String amount);
+
+  /// No description provided for @planSplit.
+  ///
+  /// In es, this message translates to:
+  /// **'Repartir en sobres'**
+  String get planSplit;
+
+  /// No description provided for @planDailySpent.
+  ///
+  /// In es, this message translates to:
+  /// **'Llevas {spent} de {daily}'**
+  String planDailySpent(String spent, String daily);
+
+  /// No description provided for @planDailyOver.
+  ///
+  /// In es, this message translates to:
+  /// **'Te pasaste por {amount}'**
+  String planDailyOver(String amount);
+
+  /// No description provided for @planAdjust.
+  ///
+  /// In es, this message translates to:
+  /// **'Ajustar el reparto'**
+  String get planAdjust;
+
+  /// No description provided for @freeExplainSetAside.
+  ///
+  /// In es, this message translates to:
+  /// **'Apartado en sobres'**
+  String get freeExplainSetAside;
+
+  /// No description provided for @paydayArrived.
+  ///
+  /// In es, this message translates to:
+  /// **'Te llegó la quincena'**
+  String get paydayArrived;
+
+  /// No description provided for @paydayArrivedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'¿La repartes en sobres antes de gastarla?'**
+  String get paydayArrivedBody;
+
   /// No description provided for @freeExplainAction.
   ///
   /// In es, this message translates to:

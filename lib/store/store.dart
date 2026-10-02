@@ -685,6 +685,15 @@ class QuincenaStore {
     );
   }
 
+  /// Changes what a recurring charge costs from now on.
+  Future<void> updateRecurring(String id, {required Money amount}) =>
+      (db.update(db.recurrings)..where((r) => r.id.equals(id))).write(
+        RecurringsCompanion(
+          amount: Value(amount.amount.toString()),
+          asset: Value(amount.asset.code),
+        ),
+      );
+
   Future<void> deleteRecurring(String id) =>
       (db.delete(db.recurrings)..where((r) => r.id.equals(id))).go();
 
@@ -734,6 +743,23 @@ class QuincenaStore {
       deadline: deadline,
     );
   }
+
+  /// Saves [goal] over the one with its id.
+  Future<void> updateGoal(SavingsGoal goal) async {
+    await (db.update(db.goals)..where((g) => g.id.equals(goal.id))).write(
+      GoalsCompanion(
+        name: Value(goal.name.trim()),
+        asset: Value(goal.target.asset.code),
+        target: Value(goal.target.amount.toString()),
+        saved: Value(goal.saved.amount.toString()),
+        monthly: Value(goal.monthly.amount.toString()),
+        deadline: Value(goal.deadline),
+      ),
+    );
+  }
+
+  Future<void> deleteGoal(String id) =>
+      (db.delete(db.goals)..where((g) => g.id.equals(id))).go();
 
   // Rates ---------------------------------------------------------------------
 
@@ -1032,6 +1058,10 @@ class QuincenaStore {
   static const List<String> _exportedSettings = <String>[
     _captureKey,
     'wallets',
+    'plan.envelopes',
+    'plan.wishes',
+    'plan.cushion',
+    'plan.scenarios',
   ];
 
   /// Replaces everything with what [exportJson] wrote, or throws an

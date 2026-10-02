@@ -16,6 +16,7 @@ import '../standing.dart';
 import 'accounts_tab.dart';
 import 'close_page.dart';
 import 'coming_days_page.dart';
+import 'envelopes_page.dart';
 import 'free_explained.dart';
 import 'inbox_page.dart';
 import 'look.dart';
@@ -73,6 +74,10 @@ class OwnHomeTab extends StatelessWidget {
         if (own.pendingInbox.isNotEmpty) ...<Widget>[
           const SizedBox(height: 12),
           _InboxBanner(own: own),
+        ],
+        if (own.paidWithoutPlan) ...<Widget>[
+          const SizedBox(height: 12),
+          _PaydayBanner(own: own),
         ],
         const SizedBox(height: 12),
         _ComingCard(own: own, ledger: ledger),
@@ -369,6 +374,49 @@ class _ComingCard extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The pay arrived and this period has no envelopes yet.
+class _PaydayBanner extends StatelessWidget {
+  const _PaydayBanner({required this.own});
+
+  final OwnController own;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    return Material(
+      color: context.colors.brandSoft,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (BuildContext context) => EnvelopesPage(own: own),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 14, 14, 14),
+          child: Row(
+            children: <Widget>[
+              Icon(Glyph.wallet, color: context.colors.brand),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(l.paydayArrived, style: context.type.titleSmall),
+                    Text(l.paydayArrivedBody, style: context.type.bodySmall),
+                  ],
+                ),
+              ),
+              Icon(Glyph.arrowRight, color: context.colors.inkSoft),
+            ],
+          ),
+        ),
       ),
     );
   }

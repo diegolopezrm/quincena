@@ -29,12 +29,19 @@ class ComingDaysPage extends StatefulWidget {
     super.key,
     required this.own,
     this.tryPurchase = false,
+    this.price,
+    this.label,
   });
 
   final OwnController own;
 
   /// Opens with the purchase to try, as "¿Me alcanza?" does.
   final bool tryPurchase;
+
+  /// A purchase already known, as a wish is: its price in the ledger's
+  /// unit, and what it is.
+  final int? price;
+  final String? label;
 
   @override
   State<ComingDaysPage> createState() => _ComingDaysPageState();
@@ -53,6 +60,21 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
   int _selected = 0;
 
   OwnController get own => widget.own;
+
+  @override
+  void initState() {
+    super.initState();
+    final int? price = widget.price;
+    final Ledger? ledger = own.ledger;
+    if (price != null && ledger != null) {
+      _price.text = formatDecimal(
+        Decimal.parse(ledger.major(price).toString()),
+        decimals: ledger.currency.decimals,
+        trim: true,
+      );
+    }
+    _what.text = widget.label ?? '';
+  }
 
   @override
   void dispose() {

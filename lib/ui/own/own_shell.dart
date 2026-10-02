@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../ai/cloud.dart';
 import '../../app.dart';
 import '../../app_mode.dart';
-import '../../ai/cloud.dart';
 import '../../capture/native_channel.dart';
 import '../../l10n/l10n.dart';
 import '../../own/own_controller.dart';
@@ -13,9 +13,11 @@ import 'account_sheet.dart';
 import 'accounts_tab.dart';
 import 'ask_page.dart';
 import 'entry_sheet.dart';
+import 'goal_sheet.dart';
 import 'home_tab.dart';
 import 'inbox_page.dart';
 import 'own_settings_page.dart';
+import 'plan_tab.dart';
 
 /// The person's own accounts: home, movements and accounts, a tap apart.
 class OwnShell extends StatefulWidget {
@@ -99,6 +101,7 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
   Widget _tabBody() => switch (_tab) {
     1 => MovementsTab(own: own),
     2 => AccountsTab(own: own),
+    3 => PlanTab(own: own),
     _ => OwnHomeTab(
       own: own,
       onSeeAll: () => setState(() => _tab = 1),
@@ -114,6 +117,7 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
       (Glyph.house, l.tabHome),
       (Glyph.listBullets, l.tabMovements),
       (Glyph.bank, l.tabAccounts),
+      (Glyph.piggyBank, l.tabPlan),
     ];
     final Widget content = ListenableBuilder(
       listenable: own,
@@ -143,6 +147,12 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
             onPressed: () => showAccountSheet(context, own: own),
             icon: const Icon(Glyph.plus),
             label: Text(l.addAccount),
+          )
+        : _tab == 3
+        ? FloatingActionButton.extended(
+            onPressed: () => showGoalSheet(context, own: own),
+            icon: const Icon(Glyph.plus),
+            label: Text(l.goalAdd),
           )
         : FloatingActionButton(
             tooltip: l.addMovement,

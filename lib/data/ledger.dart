@@ -108,6 +108,7 @@ class Ledger {
     this.currency = Asset.cop,
     List<Movement> upcoming = const <Movement>[],
     this.cushion = 0,
+    this.setAside = 0,
     this.pay,
   }) : movements = List<Movement>.of(movements)
          ..sort((Movement a, Movement b) => a.date.compareTo(b.date)),
@@ -136,6 +137,10 @@ class Ledger {
 
   /// What the person keeps untouched, left out of the free amount.
   final int cushion;
+
+  /// What this period's envelopes set aside for goals and other things:
+  /// still in the accounts, but not free to spend.
+  final int setAside;
 
   /// What arrives each payday, when the person said; expected, not counted
   /// as money until it is there.
@@ -187,8 +192,9 @@ class Ledger {
       committed.fold(0, (int total, Movement m) => total + m.amount);
 
   /// What can be spent until the next payday without touching what is
-  /// already committed or the cushion.
-  int get freeUntilPayday => balance - committedUntilPayday - cushion;
+  /// already committed, the cushion, or what the envelopes set aside.
+  int get freeUntilPayday =>
+      balance - committedUntilPayday - cushion - setAside;
 
   Iterable<Movement> expensesIn(int year, int month) => movements.where(
     (Movement m) =>

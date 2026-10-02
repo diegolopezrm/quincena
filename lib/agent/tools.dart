@@ -78,6 +78,8 @@ List<Tool> accountTools(
         'balance': ledger.major(ledger.balance),
         'committedUntilPayday': ledger.major(ledger.committedUntilPayday),
         'cushion': ledger.major(ledger.cushion),
+        if (ledger.setAside > 0)
+          'setAsideInEnvelopes': ledger.major(ledger.setAside),
         'freeUntilPayday': ledger.major(ledger.freeUntilPayday),
         'nextPayday': _day(ledger.nextPayday),
         if (ledger.pay case final int pay) 'expectedPay': ledger.major(pay),

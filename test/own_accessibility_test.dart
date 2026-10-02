@@ -22,11 +22,16 @@ import 'package:quincena/ui/own/binance_page.dart';
 import 'package:quincena/ui/own/capture_settings_page.dart';
 import 'package:quincena/ui/own/close_page.dart';
 import 'package:quincena/ui/own/coming_days_page.dart';
+import 'package:quincena/ui/own/cushion_page.dart';
+import 'package:quincena/ui/own/envelopes_page.dart';
 import 'package:quincena/ui/own/home_tab.dart';
 import 'package:quincena/ui/own/inbox_page.dart';
+import 'package:quincena/ui/own/plan_tab.dart';
 import 'package:quincena/ui/own/portfolio_page.dart';
 import 'package:quincena/ui/own/statement_page.dart';
 import 'package:quincena/ui/own/wallets_page.dart';
+import 'package:quincena/ui/own/what_if_page.dart';
+import 'package:quincena/ui/own/wishes_page.dart';
 
 import '../test_screens/store_screens_test.dart' show ExampleMarket, example;
 import 'fonts.dart';
@@ -105,6 +110,11 @@ void main() {
         'can I afford it': (OwnController own) =>
             ComingDaysPage(own: own, tryPurchase: true),
         'the close': (OwnController own) => ClosePage(own: own),
+        'plan': (OwnController own) => tab(PlanTab(own: own)),
+        'envelopes': (OwnController own) => EnvelopesPage(own: own),
+        'the cushion in days': (OwnController own) => CushionPage(own: own),
+        'wishes': (OwnController own) => WishesPage(own: own),
+        'what if': (OwnController own) => WhatIfPage(own: own),
         'automatic capture': (OwnController own) =>
             CaptureSettingsPage(own: own),
       };

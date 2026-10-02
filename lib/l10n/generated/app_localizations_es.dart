@@ -1276,6 +1276,450 @@ class AppLocalizationsEs extends AppLocalizations {
   String get reminderBody => 'Ábrelo para ver qué cambió y qué viene.';
 
   @override
+  String get tabPlan => 'Plan';
+
+  @override
+  String get goalIncomplete => 'Ponle un nombre y cuánto quieres juntar.';
+
+  @override
+  String goalDeleteTitle(String name) {
+    return '¿Borrar «$name»?';
+  }
+
+  @override
+  String get goalDeleteBody =>
+      'Se borra la meta. Tus cuentas y movimientos no cambian.';
+
+  @override
+  String get goalDelete => 'Borrar meta';
+
+  @override
+  String get goalAdd => 'Agregar meta';
+
+  @override
+  String get goalEdit => 'Editar meta';
+
+  @override
+  String get goalName => '¿Para qué es?';
+
+  @override
+  String get goalTarget => '¿Cuánto quieres juntar?';
+
+  @override
+  String get goalSaved => '¿Cuánto llevas?';
+
+  @override
+  String get goalMonthly => '¿Cuánto pones al mes?';
+
+  @override
+  String get goalNoDeadline => 'Sin fecha límite';
+
+  @override
+  String goalBy(String date) {
+    return 'Para el $date';
+  }
+
+  @override
+  String goalSavedOf(String saved, String target) {
+    return 'Llevas $saved de $target';
+  }
+
+  @override
+  String goalArrives(String date) {
+    return 'llega en $date';
+  }
+
+  @override
+  String get goalNoMonthly => 'sin aporte al mes, no tiene fecha';
+
+  @override
+  String get envelopeAside => 'Apartar para algo';
+
+  @override
+  String get envelopeAsideHint => 'Regalo, matrícula, viaje…';
+
+  @override
+  String get envelopesOverTitle => 'Asignas más de lo que hay';
+
+  @override
+  String envelopesOver(String amount) {
+    return 'Los sobres suman $amount más de lo que tienes para repartir. Puedes guardarlos así, pero esa plata no existe todavía.';
+  }
+
+  @override
+  String get envelopesFix => 'Ajustar';
+
+  @override
+  String get envelopesSaveAnyway => 'Guardar así';
+
+  @override
+  String get envelopesTitle => 'Reparte tu quincena';
+
+  @override
+  String envelopesPeriod(String from, String to) {
+    return 'Del $from al $to.';
+  }
+
+  @override
+  String get envelopesToSplit => 'Para repartir';
+
+  @override
+  String envelopesToSplitBody(String committed, String cushion) {
+    return 'Lo que hay para gastar, menos $committed comprometidos hasta el pago y $cushion de colchón.';
+  }
+
+  @override
+  String get envelopeDaily => 'Día a día';
+
+  @override
+  String get envelopeDailyHelp =>
+      'Mercado, transporte, salidas: lo que se gasta hasta el pago.';
+
+  @override
+  String get envelopeGoalHelp =>
+      'Apartado para tu meta: deja de contar como libre.';
+
+  @override
+  String get envelopeAsideHelp => 'Apartado: deja de contar como libre.';
+
+  @override
+  String get envelopeRemove => 'Quitar sobre';
+
+  @override
+  String get envelopesOverShort => 'Te pasas por';
+
+  @override
+  String get envelopesFree => 'Libre sin asignar';
+
+  @override
+  String get envelopesOnPaper =>
+      'Los sobres no mueven plata: tu banco no se entera. Solo dicen qué parte de lo que tienes es para qué, y lo apartado sale de lo libre hasta el pago.';
+
+  @override
+  String get envelopesSave => 'Guardar el reparto';
+
+  @override
+  String get cushionDaysTitle => 'Colchón en días';
+
+  @override
+  String cushionDaysCovers(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Cubre unos $days días de gastos esenciales',
+      one: 'Cubre un día de gastos esenciales',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get cushionDaysNoReserve =>
+      'Elige abajo las cuentas donde guardas tu fondo de emergencia.';
+
+  @override
+  String get cushionDaysShortHistory =>
+      'Con menos de un mes de movimientos todavía no hay un promedio confiable. Vuelve en unas semanas.';
+
+  @override
+  String get cushionDaysNoEssential =>
+      'No hay gastos en las categorías esenciales que elegiste, así que no se puede contar en días. Revisa las categorías.';
+
+  @override
+  String cushionDaysHow(String reserve, String daily, String from, String to) {
+    return '$reserve entre $daily al día, lo que promediaron tus gastos esenciales del $from al $to.';
+  }
+
+  @override
+  String cushionDaysReached(int days) {
+    return 'Llegaste a los $days días que te propusiste.';
+  }
+
+  @override
+  String cushionDaysToGo(int days, String amount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Te faltan $days días: $amount.',
+      one: 'Te falta un día: $amount.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get cushionDaysEstimate =>
+      'Es un promedio: un mes con gastos distintos cambia la cuenta.';
+
+  @override
+  String get cushionDaysAccounts => 'Dónde está tu colchón';
+
+  @override
+  String get cushionDaysEssentials => 'Qué es esencial para ti';
+
+  @override
+  String get cushionDaysTarget => 'Cuántos días quieres cubrir';
+
+  @override
+  String get cushionDaysNoTarget => 'Sin meta';
+
+  @override
+  String cushionDaysOption(int days) {
+    return '$days días';
+  }
+
+  @override
+  String get cushionDaysTargetNote =>
+      'No hay una cifra correcta para todos: elige la que te dé tranquilidad.';
+
+  @override
+  String get wishesTitle => 'Lo quiero, pero después';
+
+  @override
+  String get wishAdd => 'Agregar deseo';
+
+  @override
+  String get wishesBody =>
+      'Lo que quieres comprar más adelante, con el precio que tú pones. Nada se compra ni se sigue en ninguna tienda.';
+
+  @override
+  String get wishesEmpty => 'Todavía no hay deseos.';
+
+  @override
+  String get wishPriorityHigh => 'Muy deseado';
+
+  @override
+  String get wishPriorityMedium => 'Deseado';
+
+  @override
+  String get wishPriorityLow => 'Si sobra';
+
+  @override
+  String get wishRemove => 'Quitar deseo';
+
+  @override
+  String wishWaiting(String date) {
+    return 'Esperas hasta el $date para decidir.';
+  }
+
+  @override
+  String wishAgainstGoal(String goal, String after, String before) {
+    return 'Si lo compras, $goal llegaría en $after en vez de $before.';
+  }
+
+  @override
+  String get wishIncomplete => 'Ponle un nombre y un precio.';
+
+  @override
+  String get wishName => '¿Qué quieres?';
+
+  @override
+  String get wishPrice => '¿Cuánto cuesta?';
+
+  @override
+  String get wishWait => 'Esperar 30 días antes de decidir';
+
+  @override
+  String get wishWaitHelp =>
+      'Si en un mes lo sigues queriendo, decides con calma.';
+
+  @override
+  String get whatIfTitle => '¿Y si…?';
+
+  @override
+  String get whatIfSaveMore => 'Ahorro más';
+
+  @override
+  String get whatIfChargeUp => 'Sube un gasto';
+
+  @override
+  String get whatIfPayLate => 'Pago tarde';
+
+  @override
+  String whatIfSaveMoreSaid(String amount) {
+    return 'Apartar $amount más en cada pago';
+  }
+
+  @override
+  String whatIfChargeUpSaid(String charge, String amount) {
+    return '$charge sube $amount';
+  }
+
+  @override
+  String whatIfPayLateSaid(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'El pago llega $days días tarde',
+      one: 'El pago llega un día tarde',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get whatIfApplyTitle => '¿Aplicar el cambio?';
+
+  @override
+  String whatIfApplyCharge(String charge, String amount) {
+    return '$charge quedará en $amount desde su próximo cobro. Lo ya registrado no cambia.';
+  }
+
+  @override
+  String get whatIfApplySave => 'Esto cambia tu plan desde ahora.';
+
+  @override
+  String get whatIfApply => 'Aplicar';
+
+  @override
+  String get whatIfNoCharges =>
+      'No tienes cobros programados en las próximas semanas.';
+
+  @override
+  String get whatIfSaveMoreAmount => '¿Cuánto más en cada pago?';
+
+  @override
+  String get whatIfChargeUpAmount => '¿Cuánto sube?';
+
+  @override
+  String get whatIfNeedsPay =>
+      'Para probar un pago tarde, di en Ajustes cuánto te pagan.';
+
+  @override
+  String whatIfPayLateDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days días tarde',
+      one: 'Un día tarde',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get whatIfFewerDays => 'Menos días';
+
+  @override
+  String get whatIfMoreDays => 'Más días';
+
+  @override
+  String get whatIfLowest => 'Lo más bajo en 45 días';
+
+  @override
+  String get whatIfTight => 'Primer día bajo tu colchón';
+
+  @override
+  String get whatIfNoTight => 'ninguno';
+
+  @override
+  String whatIfEnd(String date) {
+    return 'Al $date';
+  }
+
+  @override
+  String whatIfGoal(String goal) {
+    return '$goal llega en';
+  }
+
+  @override
+  String get whatIfGoalNever => 'sin fecha';
+
+  @override
+  String get whatIfAssumes =>
+      'Cuenta tu pago esperado y lo programado; nada de esto cambia tus cuentas.';
+
+  @override
+  String get whatIfSave => 'Guardar el escenario';
+
+  @override
+  String get whatIfSaved => 'Escenarios guardados';
+
+  @override
+  String whatIfSavedOutcome(String amount, String date) {
+    return 'Lo más bajo: $amount el $date';
+  }
+
+  @override
+  String get whatIfRemove => 'Quitar escenario';
+
+  @override
+  String get whatIfToday => 'Hoy';
+
+  @override
+  String get whatIfWith => 'Con el cambio';
+
+  @override
+  String planPeriod(String date) {
+    return 'Tu plata hasta el $date';
+  }
+
+  @override
+  String get planGoals => 'Metas';
+
+  @override
+  String get planNoGoals =>
+      'Todavía no tienes metas. Una meta con aporte al mes te dice cuándo llegas.';
+
+  @override
+  String get planTools => 'Para decidir';
+
+  @override
+  String get planCushionChoose => 'Elige dónde está tu fondo de emergencia';
+
+  @override
+  String get planCushionSoon => 'Todavía no se puede contar en días';
+
+  @override
+  String get planWishesNone => 'Guarda lo que quieres para después';
+
+  @override
+  String planWishes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count deseos',
+      one: 'Un deseo',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get planWhatIf => 'Prueba un cambio sin aplicarlo';
+
+  @override
+  String get planComing => 'Los días que vienen, con los apretados marcados';
+
+  @override
+  String get planSplitTitle => 'Reparte esta quincena';
+
+  @override
+  String planSplitBody(String amount) {
+    return 'Tienes $amount para repartir entre el día a día, tus metas y lo que quieras apartar.';
+  }
+
+  @override
+  String get planSplit => 'Repartir en sobres';
+
+  @override
+  String planDailySpent(String spent, String daily) {
+    return 'Llevas $spent de $daily';
+  }
+
+  @override
+  String planDailyOver(String amount) {
+    return 'Te pasaste por $amount';
+  }
+
+  @override
+  String get planAdjust => 'Ajustar el reparto';
+
+  @override
+  String get freeExplainSetAside => 'Apartado en sobres';
+
+  @override
+  String get paydayArrived => 'Te llegó la quincena';
+
+  @override
+  String get paydayArrivedBody => '¿La repartes en sobres antes de gastarla?';
+
+  @override
   String get freeExplainAction => '¿De dónde sale?';
 
   @override

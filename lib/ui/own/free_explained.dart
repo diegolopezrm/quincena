@@ -84,6 +84,11 @@ class FreeExplained extends StatelessWidget {
                     label: l.freeExplainCushion,
                     value: amount(-ledger.cushion),
                   ),
+                if (ledger.setAside > 0)
+                  ExplainSum(
+                    label: l.freeExplainSetAside,
+                    value: amount(-ledger.setAside),
+                  ),
                 Divider(color: context.colors.line, height: 20),
                 ExplainSum(
                   label: l.freeUntil(dayMonth(ledger.nextPayday)),

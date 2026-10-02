@@ -16,7 +16,14 @@ import 'records.dart';
 /// without counting as spending or income. Every amount is converted to the
 /// base currency with the latest rates; one that cannot be converted is left
 /// out, and [LedgerBuild.unconverted] says which assets those were.
-LedgerBuild buildLedger(StoreSnapshot s, {required DateTime today}) {
+///
+/// [setAside] is what this period's envelopes keep apart, in the base
+/// currency's smallest unit.
+LedgerBuild buildLedger(
+  StoreSnapshot s, {
+  required DateTime today,
+  int setAside = 0,
+}) {
   final Asset base = s.profile.base;
   final RateTable rates = RateTable(s.rates);
   final Set<Asset> unconverted = <Asset>{};
@@ -150,6 +157,7 @@ LedgerBuild buildLedger(StoreSnapshot s, {required DateTime today}) {
       final Decimal c when c > Decimal.zero => inBase(Money(c, base)),
       _ => 0,
     },
+    setAside: setAside,
     pay: switch (s.profile.pay) {
       final Decimal p when p > Decimal.zero => inBase(Money(p, base)),
       _ => null,

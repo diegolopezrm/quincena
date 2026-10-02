@@ -15,6 +15,7 @@ import '../agent/tools.dart';
 import '../data/clock.dart';
 import '../data/ledger.dart';
 import '../domain/ledger_builder.dart';
+import '../domain/plan.dart';
 import '../domain/projection.dart';
 import '../domain/records.dart';
 import '../format/money.dart' as format;
@@ -89,6 +90,15 @@ class OwnController extends ChangeNotifier {
   List<InboxItem> _inbox = const <InboxItem>[];
   List<InboxItem> _automatic = const <InboxItem>[];
 
+  /// The envelopes last saved, of this period or one before.
+  EnvelopePlan? _plan;
+  List<Wish> _wishes = const <Wish>[];
+  List<Scenario> _scenarios = const <Scenario>[];
+
+  /// The accounts that hold the emergency fund, the categories that are
+  /// essential, and how many days the person wants it to cover.
+  CushionSettings _cushion = const CushionSettings();
+
   /// The reminder's words as saved when it was turned on, or null when it
   /// is off.
   Map<String, String>? _reminder;
@@ -110,6 +120,81 @@ class OwnController extends ChangeNotifier {
   /// What was recorded without asking in the last two weeks, newest first,
   /// to undo or correct.
   List<InboxItem> get recentAutomatic => _automatic;
+
+  /// This period's envelopes, or null when it has none yet.
+  EnvelopePlan? get plan {
+    final Ledger? l = ledger;
+    final EnvelopePlan? p = _plan;
+    if (l == null || p == null || p.period != periodStart(l)) return null;
+    return p;
+  }
+
+  /// Whether a pay arrived in this period, an income filed as salary since
+  /// the payday that started it, and the period has no envelopes yet.
+  bool get paidWithoutPlan {
+    final Ledger? l = ledger;
+    final StoreSnapshot? s = _snapshot;
+    if (l == null || s == null || plan != null) return false;
+    final DateTime start = periodStart(l);
+    return s.entries.any(
+      (Entry e) =>
+          e.kind == EntryKind.income &&
+          e.category == 'salary' &&
+          !DateTime(e.date.year, e.date.month, e.date.day).isBefore(start) &&
+          !e.date.isAfter(endOfDay(l.today)),
+    );
+  }
+
+  /// The envelopes last saved, whatever their period: the next plan starts
+  /// from them.
+  EnvelopePlan? get lastPlan => _plan;
+
+  List<Wish> get wishes => _wishes;
+  List<Scenario> get scenarios => _scenarios;
+  CushionSettings get cushionSettings => _cushion;
+
+  /// The goals in the base currency's smallest unit, for planning.
+  List<GoalShare> get goalShares {
+    final Ledger? l = ledger;
+    final Asset? base = profile?.base;
+    if (l == null || base == null) return const <GoalShare>[];
+    int inUnit(Money m) {
+      final Money? converted = inBase(m);
+      return converted == null ? 0 : l.minor(converted.amount.toDouble());
+    }
+
+    return <GoalShare>[
+      for (final SavingsGoal g in _snapshot?.goals ?? const <SavingsGoal>[])
+        GoalShare(
+          id: g.id,
+          name: g.name,
+          target: inUnit(g.target),
+          saved: inUnit(g.saved),
+          monthly: inUnit(g.monthly),
+        ),
+    ];
+  }
+
+  Future<void> savePlan(EnvelopePlan plan) =>
+      store.setSetting(_planKey, jsonEncode(plan.toJson()));
+
+  Future<void> saveWishes(List<Wish> wishes) => store.setSetting(
+    _wishesKey,
+    jsonEncode(<Object?>[for (final Wish w in wishes) w.toJson()]),
+  );
+
+  Future<void> saveScenarios(List<Scenario> scenarios) => store.setSetting(
+    _scenariosKey,
+    jsonEncode(<Object?>[for (final Scenario x in scenarios) x.toJson()]),
+  );
+
+  Future<void> saveCushionSettings(CushionSettings settings) =>
+      store.setSetting(_cushionKey, jsonEncode(settings.toJson()));
+
+  static const String _planKey = 'plan.envelopes';
+  static const String _wishesKey = 'plan.wishes';
+  static const String _scenariosKey = 'plan.scenarios';
+  static const String _cushionKey = 'plan.cushion';
 
   /// Whether the close of each fortnight is reminded on payday.
   bool get remindsClose => _reminder != null;
@@ -138,6 +223,11 @@ class OwnController extends ChangeNotifier {
   }
 
   static const String _reminderKey = 'reminders.close';
+
+  static List<Object?> _list(String? text) => switch (_json(text)) {
+    final List<Object?> list => list,
+    _ => const <Object?>[],
+  };
 
   static Object? _json(String? text) {
     if (text == null || text.isEmpty) return null;
@@ -400,6 +490,19 @@ class OwnController extends ChangeNotifier {
         if (i.automatic) i,
     ];
     _captureSettings = await store.captureSettings();
+    _plan = EnvelopePlan.fromJson(_json(await store.setting(_planKey)));
+    _wishes = <Wish>[
+      for (final Object? w in _list(await store.setting(_wishesKey)))
+        ?Wish.fromJson(w),
+    ];
+    _scenarios = <Scenario>[
+      for (final Object? x in _list(await store.setting(_scenariosKey)))
+        ?Scenario.fromJson(x),
+    ];
+
+    _cushion = CushionSettings.fromJson(
+      _json(await store.setting(_cushionKey)),
+    );
     _reminder = switch (_json(await store.setting(_reminderKey))) {
       final Map<Object?, Object?> m => <String, String>{
         for (final MapEntry<Object?, Object?> e in m.entries)
@@ -414,7 +517,18 @@ class OwnController extends ChangeNotifier {
       final DateTime day = today;
       appToday = day;
       format.baseCurrency = s.profile.base;
-      _build = buildLedger(s, today: day);
+      final DateTime started = s.profile.schedule.lastOnOrBefore(day);
+      final EnvelopePlan? plan = _plan;
+      _build = buildLedger(
+        s,
+        today: day,
+        setAside:
+            plan != null &&
+                plan.period ==
+                    DateTime(started.year, started.month, started.day)
+            ? plan.setAside
+            : 0,
+      );
       _balances = balancesOf(s.accounts, s.entries, day);
     } else {
       _build = null;

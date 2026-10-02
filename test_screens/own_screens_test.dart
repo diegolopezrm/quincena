@@ -392,6 +392,26 @@ void main() {
     await shoot('close');
   });
 
+  testWidgets('plan', (tester) async {
+    final QuincenaStore store = (await tester.runAsync(() async {
+      final QuincenaStore store = await seeded();
+      await store.addGoal(
+        name: 'Viaje a Cartagena',
+        target: Money(Decimal.parse('2400000'), Asset.cop),
+        saved: Money(Decimal.parse('650000'), Asset.cop),
+        monthly: Money(Decimal.parse('300000'), Asset.cop),
+      );
+      return store;
+    }))!;
+    await open(tester, store, phone, Brightness.light);
+    await tester.tap(find.text('Plan'));
+    await settle(tester);
+    await shoot('plan');
+    await tester.tap(find.text('Repartir en sobres'));
+    await settle(tester);
+    await shoot('envelopes');
+  });
+
   testWidgets('explained', (tester) async {
     final QuincenaStore store = (await tester.runAsync(seeded))!;
     await open(tester, store, phone, Brightness.light);
