@@ -516,6 +516,8 @@ demo empiezan por su conclusión.
 
 ### 18. Pulido
 
+**Estado:** construida, build 16 (1.1.0).
+
 - El verde queda para la acción principal y lo positivo; las acciones
   secundarias, en neutro.
 - Menos tarjetas y menos relleno: métricas y encabezados sin borde,

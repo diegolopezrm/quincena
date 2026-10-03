@@ -4664,4 +4664,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loanIncomplete => 'Who, or the amount, is missing.';
+
+  @override
+  String get statementImporting => 'Importing…';
 }

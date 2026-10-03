@@ -7392,6 +7392,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Falta a quién o el monto.'**
   String get loanIncomplete;
+
+  /// No description provided for @statementImporting.
+  ///
+  /// In es, this message translates to:
+  /// **'Importando…'**
+  String get statementImporting;
 }
 
 class _AppLocalizationsDelegate

@@ -236,52 +236,47 @@ class RatesSummary extends StatelessWidget {
     }.toList();
     if (held.isEmpty) return const SizedBox.shrink();
     final RateTable table = own.rates;
+    // A plain section: rates are reference, not something to tap first.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         SectionLabel(l.ratesTitle),
-        Panel(
-          indent: 16,
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Wrap(
+                spacing: 18,
+                runSpacing: 6,
                 children: <Widget>[
-                  Wrap(
-                    spacing: 18,
-                    runSpacing: 6,
-                    children: <Widget>[
-                      for (final Asset a in held)
-                        Figures(
-                          '${a.code} ${shortRate(table.rate(a, base), base) ?? '—'}',
-                          style: context.type.bodyMedium?.copyWith(
-                            color: table.rate(a, base) == null
-                                ? context.colors.caution
-                                : context.colors.ink,
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(ratesStatus(l, own), style: context.type.bodySmall),
+                  for (final Asset a in held)
+                    Figures(
+                      '${a.code} ${shortRate(table.rate(a, base), base) ?? '—'}',
+                      style: context.type.bodyMedium?.copyWith(
+                        color: table.rate(a, base) == null
+                            ? context.colors.caution
+                            : context.colors.ink,
+                      ),
+                    ),
                 ],
               ),
-            ),
-            ListTile(
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (BuildContext context) => RatesPage(own: own),
-                ),
+              const SizedBox(height: 4),
+              Text(ratesStatus(l, own), style: context.type.bodySmall),
+            ],
+          ),
+        ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (BuildContext context) => RatesPage(own: own),
               ),
-              title: Text(l.ratesSeeAll, style: context.type.bodyMedium),
-              trailing: Icon(
-                Glyph.caretRight,
-                size: 18,
-                color: context.colors.inkFaint,
-              ),
             ),
-          ],
+            icon: const Icon(Glyph.arrowRight, size: 18),
+            label: Text(l.ratesSeeAll),
+          ),
         ),
       ],
     );

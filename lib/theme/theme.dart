@@ -46,16 +46,16 @@ TextTheme _textTheme(QuincenaColors c) {
       _face(_display, 40, 700, height: 1.05, spacing: -1.1, opticalSize: 48),
     ),
     displaySmall: ink(
-      _face(_display, 30, 680, height: 1.1, spacing: -0.6, opticalSize: 36),
+      _face(_display, 30, 660, height: 1.1, spacing: -0.6, opticalSize: 36),
     ),
     headlineLarge: ink(
-      _face(_display, 28, 680, height: 1.15, spacing: -0.5, opticalSize: 36),
+      _face(_display, 28, 650, height: 1.15, spacing: -0.5, opticalSize: 36),
     ),
     headlineMedium: ink(
-      _face(_display, 23, 660, height: 1.2, spacing: -0.3, opticalSize: 24),
+      _face(_display, 23, 630, height: 1.2, spacing: -0.3, opticalSize: 24),
     ),
     headlineSmall: ink(
-      _face(_display, 19, 640, height: 1.25, spacing: -0.2, opticalSize: 24),
+      _face(_display, 19, 610, height: 1.25, spacing: -0.2, opticalSize: 24),
     ),
     titleLarge: ink(_face(_text, 18, 600, height: 1.3, spacing: -0.2)),
     titleMedium: ink(_face(_text, 16, 600, height: 1.35, spacing: -0.1)),
@@ -63,7 +63,7 @@ TextTheme _textTheme(QuincenaColors c) {
     bodyLarge: ink(_face(_text, 16, 420, height: 1.5)),
     bodyMedium: ink(_face(_text, 15, 420, height: 1.5), c.inkSoft),
     bodySmall: ink(_face(_text, 13, 420, height: 1.45), c.inkFaint),
-    labelLarge: ink(_face(_text, 15, 560, height: 1.2)),
+    labelLarge: ink(_face(_text, 15, 540, height: 1.2)),
     labelMedium: ink(
       _face(_text, 13, 540, height: 1.2, spacing: 0.1),
       c.inkSoft,
@@ -148,9 +148,12 @@ ThemeData quincenaTheme(Brightness brightness) {
         shape: const StadiumBorder(),
       ),
     ),
+    // Green is for the main action and for money coming in; a secondary
+    // action is ink, with its icon in the brand's color to say it acts.
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: c.brand,
+        foregroundColor: c.ink,
+        iconColor: c.brand,
         textStyle: text.labelLarge,
       ),
     ),

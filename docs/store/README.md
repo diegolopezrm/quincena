@@ -368,3 +368,33 @@ link: https://drive.google.com/file/d/1xdb85_mDkdhPHvFe85GKVF-SWqFoob4N/view
 Play declaration, but the listing and the in-app explanation say what it
 reads: notifications with an amount next to a currency, from apps the
 person does not mute; never security codes.
+
+## Version 1.1.0
+
+Not submitted yet. What goes to both stores when it is.
+
+**Promotional text** (App Store, 170): Quincena sabe cuánto puedes gastar
+sin dañar tus planes. Pregúntale a tu plata y recibe la respuesta como una
+herramienta que puedes tocar. / Quincena knows how much you can spend
+without hurting your plans. Ask your money and get the answer as a tool you
+can touch.
+
+**What's new** (es):
+
+> Ahora ves en grande lo que puedes gastar hasta el pago, con su cuenta
+> debajo, y lo que viene día a día. Las tarjetas de crédito aparecen como lo
+> que debes, «Por revisar» pide una sola decisión por movimiento y pregunta
+> si una plata que llega viene de otra cuenta tuya. Las respuestas empiezan
+> por la conclusión, y puedes reportar una respuesta de Gemini.
+
+**What's new** (en):
+
+> What you can spend until payday now comes first, with the sum under it,
+> and what is coming day by day. Credit cards show what you owe, "To
+> review" asks for one decision per movement and whether money that
+> arrives comes from another account of yours. Answers start with their
+> conclusion, and you can report a Gemini answer.
+
+The screenshots are rendered again from `test_screens/store_screens_test.dart`
+before submitting: the 1.0 ones in `screenshots/` are what the stores show
+today.

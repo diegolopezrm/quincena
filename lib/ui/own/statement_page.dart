@@ -509,7 +509,19 @@ class _StatementPageState extends State<StatementPage> {
               width: double.infinity,
               child: FilledButton(
                 onPressed: _chosen.isEmpty || _saving ? null : _import,
-                child: Text(l.statementImport(_chosen.length)),
+                child: _saving
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          const SizedBox.square(
+                            dimension: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(l.statementImporting),
+                        ],
+                      )
+                    : Text(l.statementImport(_chosen.length)),
               ),
             ),
           ),

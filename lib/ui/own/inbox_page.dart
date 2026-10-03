@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,6 +16,7 @@ import '../../money/money.dart';
 import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
+import '../exit_list.dart';
 import '../kit.dart';
 import 'capture_reasons.dart';
 import 'entry_sheet.dart';
@@ -97,10 +100,12 @@ class InboxPage extends StatelessWidget {
                       ),
                     )
                   else
-                    for (final InboxItem item in pending) ...<Widget>[
-                      InboxCard(own: own, item: item),
-                      const SizedBox(height: 12),
-                    ],
+                    ExitList<InboxItem>(
+                      items: pending,
+                      keyOf: (InboxItem i) => i.id,
+                      builder: (BuildContext context, InboxItem item) =>
+                          InboxCard(own: own, item: item),
+                    ),
                   if (repeats.isNotEmpty) ...<Widget>[
                     const SizedBox(height: 16),
                     SectionLabel(l.possibleDuplicates),
@@ -181,6 +186,7 @@ class _InboxCardState extends State<InboxCard> {
     if (account == null) return _edit();
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     setState(() => _busy = true);
+    unawaited(HapticFeedback.lightImpact());
     final Accepted done = await own.capture.accept(
       item,
       accountId: account.id,

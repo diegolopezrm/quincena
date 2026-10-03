@@ -4663,4 +4663,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get loanIncomplete => 'Falta a quién o el monto.';
+
+  @override
+  String get statementImporting => 'Importando…';
 }

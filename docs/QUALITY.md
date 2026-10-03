@@ -26,7 +26,7 @@ Checked against each provider's published requirements on 2 October 2026.
 
 ## Automated checks
 
-`flutter test` runs 406 tests, the same that CI runs on every push,
+`flutter test` runs 409 tests, the same that CI runs on every push,
 with `dart format`, `flutter analyze --fatal-infos` and a check that the
 generated catalog is current.
 
@@ -79,6 +79,9 @@ generated catalog is current.
   to questions the account can answer and holds still while the person
   types, and that money lent from an account is owed to the person and
   not counted as spending.
+- **Motion that explains.** `test/exit_list_test.dart` checks that a
+  confirmed capture folds away where it was before it goes, that it simply
+  goes with animations turned down, and that one that comes back stays.
 - **Reporting an answer.** `test/report_test.dart` reports a Gemini
   answer from the conversation: the reason, the comment and the answer go
   to Firestore with App Check's token; the sheet stays open with an error

@@ -1477,5 +1477,6 @@
   "loanNoAccount": "No salió de mis cuentas",
   "loanLentNote": "Queda como plata que te deben, no como gasto. Cuando te la devuelvan, regístralo en el grupo.",
   "loanBorrowedNote": "Queda como plata que debes. Cuando la pagues, regístralo en el grupo.",
-  "loanIncomplete": "Falta a quién o el monto."
+  "loanIncomplete": "Falta a quién o el monto.",
+  "statementImporting": "Importando…"
 }

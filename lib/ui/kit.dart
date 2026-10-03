@@ -101,7 +101,7 @@ class Block extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     width: double.infinity,
-    padding: padding ?? const EdgeInsets.all(18),
+    padding: padding ?? const EdgeInsets.all(16),
     decoration: BoxDecoration(
       color: color ?? context.colors.surface,
       borderRadius: BorderRadius.circular(18),

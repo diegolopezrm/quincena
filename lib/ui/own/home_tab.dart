@@ -101,7 +101,7 @@ class OwnHomeTab extends StatelessWidget {
           ),
         ],
         if (onAsk case final void Function([String? question]) ask) ...<Widget>[
-          const SizedBox(height: 28),
+          const SizedBox(height: 24),
           SectionLabel(l.askYourMoneyLabel),
           Panel(
             children: <Widget>[
@@ -116,7 +116,7 @@ class OwnHomeTab extends StatelessWidget {
             ],
           ),
         ],
-        const SizedBox(height: 28),
+        const SizedBox(height: 24),
         SectionLabel(l.yourAccounts),
         Panel(
           children: <Widget>[
@@ -124,7 +124,7 @@ class OwnHomeTab extends StatelessWidget {
               AccountRow(own: own, account: a),
           ],
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 24),
         SectionLabel(
           l.recentMovements,
           trailing: recent.isEmpty

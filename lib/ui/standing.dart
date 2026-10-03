@@ -59,7 +59,7 @@ class StandingCard extends StatelessWidget {
     final Color heldColor = context.colors.inkFaint.withValues(alpha: 0.35);
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(22, 20, 22, 16),
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
       decoration: BoxDecoration(
         color: context.colors.surface,
         borderRadius: BorderRadius.circular(24),
@@ -92,10 +92,20 @@ class StandingCard extends StatelessWidget {
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
-                  child: Figures(
-                    figure,
-                    style: context.type.displayLarge?.copyWith(
-                      color: short ? context.colors.negative : null,
+                  // A new figure counts its way there from the one before,
+                  // so a change reads as a change; at once with animations
+                  // turned down.
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween<double>(end: free.abs().toDouble()),
+                    duration: MediaQuery.disableAnimationsOf(context)
+                        ? Duration.zero
+                        : const Duration(milliseconds: 450),
+                    curve: Curves.easeOutCubic,
+                    builder: (BuildContext context, double value, _) => Figures(
+                      pesos(ledger.major(value.round())),
+                      style: context.type.displayLarge?.copyWith(
+                        color: short ? context.colors.negative : null,
+                      ),
                     ),
                   ),
                 ),

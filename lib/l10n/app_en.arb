@@ -1221,5 +1221,6 @@
   "loanNoAccount": "Not from my accounts",
   "loanLentNote": "It counts as money owed to you, not as spending. When they pay it back, record it in the group.",
   "loanBorrowedNote": "It counts as money you owe. When you pay it, record it in the group.",
-  "loanIncomplete": "Who, or the amount, is missing."
+  "loanIncomplete": "Who, or the amount, is missing.",
+  "statementImporting": "Importing…"
 }
