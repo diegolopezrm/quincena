@@ -133,36 +133,70 @@ class TotalExplained extends StatelessWidget {
       for (final Account a in own.accounts)
         if (own.partOfTotal(a) == null) a,
     ];
+    // What the person has, and what they owe: an account below zero, a
+    // credit card's debt.
+    final List<(Account, Money)> have = <(Account, Money)>[];
+    final List<(Account, Money)> owe = <(Account, Money)>[];
+    for (final Account a in own.accounts) {
+      if (own.partOfTotal(a) case final Money part) {
+        (part.isNegative ? owe : have).add((a, part));
+      }
+    }
+    Money sum(List<(Account, Money)> parts) => parts.fold(
+      Money.zero(base),
+      (Money total, (Account, Money) p) => total + p.$2,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Text(l.totalExplainTitle, style: context.type.headlineMedium),
         const SizedBox(height: 16),
-        Panel(
-          children: <Widget>[
-            for (final Account a in own.accounts)
-              if (own.partOfTotal(a) case final Money part)
-                ExplainLine(
-                  title: a.name,
-                  detail: a.asset == base
-                      ? null
-                      : conversionDetail(
-                          l,
-                          own.rates,
-                          own.balances[a.id] ?? a.openingMoney,
-                          base,
-                        ),
-                  value: moneyText(part, base: base),
-                ),
+        for (final (String title, List<(Account, Money)> parts)
+            in <(String, List<(Account, Money)>)>[
+              (l.totalExplainHave, have),
+              (l.totalExplainOwe, owe),
+            ])
+          if (parts.isNotEmpty) ...<Widget>[
+            SectionLabel(title),
+            Panel(
+              children: <Widget>[
+                for (final (Account a, Money part) in parts)
+                  ExplainLine(
+                    title: a.name,
+                    detail: a.asset == base
+                        ? null
+                        : conversionDetail(
+                            l,
+                            own.rates,
+                            own.balances[a.id] ?? a.openingMoney,
+                            base,
+                          ),
+                    value: moneyText(part, base: base),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
           ],
-        ),
-        const SizedBox(height: 12),
         Block(
           padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
-          child: ExplainSum(
-            label: l.netWorth,
-            value: moneyText(own.total(), base: base),
-            strong: true,
+          child: Column(
+            children: <Widget>[
+              if (owe.isNotEmpty) ...<Widget>[
+                ExplainSum(
+                  label: l.totalExplainHave,
+                  value: moneyText(sum(have), base: base),
+                ),
+                ExplainSum(
+                  label: l.totalExplainOwe,
+                  value: moneyText(sum(owe), base: base),
+                ),
+              ],
+              ExplainSum(
+                label: l.netWorth,
+                value: moneyText(own.total(), base: base),
+                strong: true,
+              ),
+            ],
           ),
         ),
         if (unpriced.isNotEmpty) ...<Widget>[

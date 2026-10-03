@@ -21,6 +21,7 @@ import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
 import 'look.dart';
+import 'movement_list.dart';
 
 /// Brings a bank's statement into one of the person's accounts: picked as
 /// a file, read on the device, and reviewed line by line before anything
@@ -50,7 +51,7 @@ class StatementPage extends StatefulWidget {
   State<StatementPage> createState() => _StatementPageState();
 }
 
-enum _Stage { pick, reading, nothing, review }
+enum _Stage { pick, reading, nothing, review, done }
 
 class _StatementPageState extends State<StatementPage> {
   _Stage _stage = _Stage.pick;
@@ -64,6 +65,11 @@ class _StatementPageState extends State<StatementPage> {
   List<ImportCandidate> _candidates = const <ImportCandidate>[];
   final Set<int> _chosen = <int>{};
   bool _saving = false;
+
+  /// What the import recorded: how many, and the statement references of
+  /// those that came without a category, to give them one before leaving.
+  int _imported = 0;
+  Set<String> _uncategorized = const <String>{};
 
   OwnController get own => widget.own;
 
@@ -217,10 +223,17 @@ class _StatementPageState extends State<StatementPage> {
     final int n = await StatementImporter(own.store).record(account, chosen);
     await own.joinTransfers();
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(context.l10n.statementDone(n))));
-    Navigator.of(context).pop();
+    // The person checks the exceptions, not every line: what came without
+    // a category is what is left to look at.
+    setState(() {
+      _imported = n;
+      _uncategorized = <String>{
+        for (final ImportCandidate c in chosen)
+          if (c.category == null) c.ref,
+      };
+      _saving = false;
+      _stage = _Stage.done;
+    });
   }
 
   @override
@@ -257,6 +270,10 @@ class _StatementPageState extends State<StatementPage> {
             ),
             _Stage.nothing => _nothingView(l),
             _Stage.review => _reviewView(l),
+            _Stage.done => ListenableBuilder(
+              listenable: own,
+              builder: (BuildContext context, _) => _doneView(l),
+            ),
           },
         ),
       ),
@@ -328,6 +345,56 @@ class _StatementPageState extends State<StatementPage> {
     );
   }
 
+  /// What the import left: how many came in, and the ones without a
+  /// category, each a tap away from getting one.
+  Widget _doneView(AppLocalizations l) {
+    final List<Entry> unsorted = <Entry>[
+      for (final Entry e in own.snapshot?.entries ?? const <Entry>[])
+        if (e.sourceRef != null &&
+            _uncategorized.contains(e.sourceRef) &&
+            (e.category == 'other' || e.category == 'other_income'))
+          e,
+    ];
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Icon(Glyph.checkCircle, color: context.colors.brand, size: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                l.statementDone(_imported),
+                style: context.type.titleMedium,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          unsorted.isEmpty
+              ? l.statementDoneSorted
+              : l.statementDoneUnsorted(unsorted.length),
+          style: context.type.bodyMedium,
+        ),
+        if (unsorted.isNotEmpty) ...<Widget>[
+          const SizedBox(height: 20),
+          SectionLabel(l.statementGiveCategory),
+          Panel(
+            children: <Widget>[
+              for (final Entry e in unsorted) MovementRow(own: own, entry: e),
+            ],
+          ),
+        ],
+        const SizedBox(height: 24),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l.statementFinish),
+        ),
+      ],
+    );
+  }
+
   Widget _reviewView(AppLocalizations l) {
     final List<ImportCandidate> all = _candidates;
     final List<DateTime> dates =
@@ -335,6 +402,11 @@ class _StatementPageState extends State<StatementPage> {
     final int recorded = all
         .where((ImportCandidate c) => c.recorded || c.importedBefore)
         .length;
+    final int fresh = all.where((ImportCandidate c) => c.proposed).length;
+    final int unsorted = all
+        .where((ImportCandidate c) => c.proposed && c.category == null)
+        .length;
+    final bool everything = _chosen.length == all.length;
     final Account? account = _account;
     return Column(
       children: <Widget>[
@@ -372,10 +444,20 @@ class _StatementPageState extends State<StatementPage> {
                   ),
                   style: context.type.titleSmall,
                 ),
+              const SizedBox(height: 4),
               Text(
-                l.statementRecordedCount(recorded),
-                style: context.type.bodySmall,
+                <String>[
+                  l.statementNew(fresh),
+                  l.statementAlready(recorded),
+                  if (unsorted > 0) l.statementUnsorted(unsorted),
+                ].join(' · '),
+                style: context.type.bodyMedium,
               ),
+              if (recorded > 0)
+                Text(
+                  l.statementAlreadyUnchecked,
+                  style: context.type.bodySmall,
+                ),
               if (_read?.source == StatementSource.gemini) ...<Widget>[
                 const SizedBox(height: 6),
                 Text(
@@ -385,7 +467,22 @@ class _StatementPageState extends State<StatementPage> {
                   ),
                 ),
               ],
-              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => setState(() {
+                    _chosen.clear();
+                    if (!everything) {
+                      _chosen.addAll(<int>[
+                        for (var i = 0; i < all.length; i++) i,
+                      ]);
+                    }
+                  }),
+                  child: Text(
+                    everything ? l.statementSelectNone : l.statementSelectAll,
+                  ),
+                ),
+              ),
               Panel(
                 indent: 56,
                 children: <Widget>[

@@ -28,7 +28,7 @@ class StatTile extends StatelessWidget {
   /// What the figure is, in two or three words.
   final String label;
 
-  /// The figure, already formatted, such as "$ 589.300" or "+67 %".
+  /// The figure, already formatted, such as "$589.300" or "+67 %".
   final String value;
 
   /// A short line under the figure, such as "contra $ 353.600 en agosto".

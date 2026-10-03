@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/ledger.dart';
 import '../../domain/decisions.dart';
+import '../../domain/pay_schedule.dart';
 import '../../domain/projection.dart';
 import '../../domain/records.dart';
 import '../../format/dates.dart';
@@ -54,32 +55,38 @@ class OwnHomeTab extends StatelessWidget {
         StandingCard(
           ledger: ledger,
           onExplain: () => showFreeExplained(context, own),
-          balanceLabel: l.groupSpendable,
-          detail: <String>[
-            l.standingDaysLeft(
-              ledger.nextPayday.difference(ledger.today).inDays,
-            ),
-            if (ledger.committedUntilPayday > 0)
-              l.standingCommittedOwn(
-                pesos(ledger.major(ledger.committedUntilPayday)),
-              ),
-            if (ledger.cushion > 0)
-              l.standingCushion(pesos(ledger.major(ledger.cushion))),
-          ].join(' '),
         ),
         if (own.projection?.latePay case final DateTime late) ...<Widget>[
           const SizedBox(height: 12),
           _Notice(text: l.payLate(dayMonth(late))),
         ],
-        if (own.pendingInbox.isNotEmpty) ...<Widget>[
-          const SizedBox(height: 12),
-          _InboxBanner(own: own),
+        if (own.pendingInbox.isNotEmpty || own.paidWithoutPlan) ...<Widget>[
+          const SizedBox(height: 24),
+          SectionLabel(l.homeTodo),
+          Panel(
+            children: <Widget>[
+              if (own.pendingInbox.isNotEmpty)
+                _TodoRow(
+                  icon: Glyph.tray,
+                  title: l.inboxBanner(own.pendingInbox.length),
+                  body: l.inboxBannerBody,
+                  action: l.todoReview,
+                  open: (_) => InboxPage(own: own),
+                ),
+              if (own.paidWithoutPlan)
+                _TodoRow(
+                  icon: Glyph.wallet,
+                  title: ledger.schedule is TwiceMonthly
+                      ? l.paydayArrived
+                      : l.paydayArrivedPay,
+                  body: l.paydayArrivedBody,
+                  action: l.todoSplit,
+                  open: (_) => EnvelopesPage(own: own),
+                ),
+            ],
+          ),
         ],
-        if (own.paidWithoutPlan) ...<Widget>[
-          const SizedBox(height: 12),
-          _PaydayBanner(own: own),
-        ],
-        const SizedBox(height: 12),
+        const SizedBox(height: 24),
         _ComingCard(own: own, ledger: ledger),
         if (missing.isNotEmpty) ...<Widget>[
           const SizedBox(height: 12),
@@ -148,49 +155,54 @@ class _AskRow extends StatelessWidget {
   );
 }
 
-class _InboxBanner extends StatelessWidget {
-  const _InboxBanner({required this.own});
+/// Something to do now, with what doing it is called: the whole row opens
+/// it, and the word at its end says what that is.
+class _TodoRow extends StatelessWidget {
+  const _TodoRow({
+    required this.icon,
+    required this.title,
+    required this.body,
+    required this.action,
+    required this.open,
+  });
 
-  final OwnController own;
+  final IconData icon;
+  final String title;
+  final String body;
+  final String action;
+  final WidgetBuilder open;
 
   @override
-  Widget build(BuildContext context) {
-    final AppLocalizations l = context.l10n;
-    return Material(
-      color: context.colors.brandSoft,
-      borderRadius: BorderRadius.circular(18),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (BuildContext context) => InboxPage(own: own),
+  Widget build(BuildContext context) => InkWell(
+    onTap: () =>
+        Navigator.of(context).push(MaterialPageRoute<void>(builder: open)),
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+      child: Row(
+        children: <Widget>[
+          Icon(icon, size: 24, color: context.colors.brand),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(title, style: context.type.titleSmall),
+                Text(body, style: context.type.bodySmall),
+              ],
+            ),
           ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: <Widget>[
-              Icon(Glyph.tray, size: 24, color: context.colors.brand),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      l.inboxBanner(own.pendingInbox.length),
-                      style: context.type.titleSmall,
-                    ),
-                    Text(l.inboxBannerBody, style: context.type.bodySmall),
-                  ],
-                ),
-              ),
-              Icon(Glyph.arrowRight, size: 18, color: context.colors.inkSoft),
-            ],
+          const SizedBox(width: 8),
+          Text(
+            action,
+            style: context.type.labelLarge?.copyWith(
+              color: context.colors.brand,
+            ),
           ),
-        ),
+          Icon(Glyph.caretRight, size: 16, color: context.colors.brand),
+        ],
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _Notice extends StatelessWidget {
@@ -374,49 +386,6 @@ class _ComingCard extends StatelessWidget {
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// The pay arrived and this period has no envelopes yet.
-class _PaydayBanner extends StatelessWidget {
-  const _PaydayBanner({required this.own});
-
-  final OwnController own;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations l = context.l10n;
-    return Material(
-      color: context.colors.brandSoft,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (BuildContext context) => EnvelopesPage(own: own),
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 14, 14, 14),
-          child: Row(
-            children: <Widget>[
-              Icon(Glyph.wallet, color: context.colors.brand),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(l.paydayArrived, style: context.type.titleSmall),
-                    Text(l.paydayArrivedBody, style: context.type.bodySmall),
-                  ],
-                ),
-              ),
-              Icon(Glyph.arrowRight, color: context.colors.inkSoft),
-            ],
-          ),
-        ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/ledger.dart';
+import '../domain/pay_schedule.dart';
 import '../format/dates.dart';
 import '../format/money.dart';
 import '../l10n/l10n.dart';
@@ -8,41 +9,57 @@ import '../theme/tokens.dart';
 import 'icons.dart';
 import 'kit.dart';
 
-/// Where the money stands until payday: what is free, what is already
-/// committed, and what is there in all.
+/// [text] with its first letter in capitals, for a phrase that starts a
+/// line here and sits mid-sentence elsewhere.
+String sentence(String text) =>
+    text.isEmpty ? text : '${text[0].toUpperCase()}${text.substring(1)}';
+
+/// Where the money stands until payday: the one figure that can be spent,
+/// until when, and the sum behind it.
+///
+/// Only one amount on the card reads as spendable. What the accounts hold
+/// today is the first line of the sum, not a second figure beside it, and
+/// each thing held back from it has its own line, so the figure is
+/// explained before anyone has to ask.
 class StandingCard extends StatelessWidget {
-  const StandingCard({
-    super.key,
-    required this.ledger,
-    this.balanceLabel,
-    this.detail,
-    this.onExplain,
-  });
+  const StandingCard({super.key, required this.ledger, this.onExplain});
 
   final Ledger ledger;
 
-  /// What the last line calls the balance: "In the account" by default.
-  final String? balanceLabel;
-
-  /// The line under the figure. The demo's tells Valentina's story; someone's
-  /// own accounts get one that only states what is committed.
-  final String? detail;
-
-  /// Shows how the free amount is worked out. Without it the card has no
-  /// way to ask.
+  /// Shows the sum account by account. Without it the card has no way to
+  /// ask.
   final VoidCallback? onExplain;
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
     final int free = ledger.freeUntilPayday;
-    final int committed = ledger.committedUntilPayday;
     final int balance = ledger.balance;
     final DateTime payday = ledger.nextPayday;
     final int days = payday.difference(ledger.today).inDays;
+    final bool short = free < 0;
     final double share = balance <= 0 ? 0 : (free / balance).clamp(0, 1);
+    final String when = ledger.schedule is TwiceMonthly
+        ? l.standingNextFortnight(days)
+        : l.standingNextPay(days);
+    final String figure = pesos(ledger.major(free.abs()));
+    final String until = short
+        ? l.standingShortUntil(dayMonth(payday))
+        : l.standingUntil(dayMonth(payday));
+    // What is held back from what is there, each only when there is some.
+    final List<(String, int)> held = <(String, int)>[
+      (
+        l.standingPaymentsBefore(dayShortMonth(payday)),
+        ledger.committedUntilPayday,
+      ),
+      (l.standingCushionLine, ledger.cushion),
+      (l.standingEnvelopesLine, ledger.setAside),
+      (l.standingReserveLine, ledger.reserved),
+    ].where(((String, int) h) => h.$2 > 0).toList();
+    final Color heldColor = context.colors.inkFaint.withValues(alpha: 0.35);
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
+      padding: const EdgeInsets.fromLTRB(22, 20, 22, 16),
       decoration: BoxDecoration(
         color: context.colors.surface,
         borderRadius: BorderRadius.circular(24),
@@ -53,118 +70,93 @@ class StandingCard extends StatelessWidget {
         children: <Widget>[
           Semantics(
             container: true,
-            label: context.l10n.standingSemantics(
-              dayMonth(payday),
-              pesos(ledger.major(free)),
-              days,
-              pesos(ledger.major(balance)),
-            ),
+            label: short
+                ? l.standingShortSemantics(figure, dayMonth(payday), when)
+                : l.standingSemantics(figure, dayMonth(payday), when),
             excludeSemantics: true,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  context.l10n.greeting(ledger.owner),
+                  l.greeting(ledger.owner),
                   style: context.type.titleMedium?.copyWith(
                     color: context.colors.inkSoft,
                   ),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 14),
                 Text(
-                  context.l10n.freeUntil(dayMonth(payday)),
+                  short ? l.standingShort : l.standingCanSpend,
                   style: context.type.labelMedium,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: Figures(
-                    pesos(ledger.major(free)),
-                    style: context.type.displayLarge,
+                    figure,
+                    style: context.type.displayLarge?.copyWith(
+                      color: short ? context.colors.negative : null,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 2),
                 Text(
-                  detail ??
-                      context.l10n.standingDetail(
-                        days,
-                        pesos(ledger.major(committed)),
-                      ),
-                  style: context.type.bodyMedium,
-                ),
-                const SizedBox(height: 18),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(99),
-                  child: SizedBox(
-                    height: 10,
-                    child: Row(
-                      // An empty ColoredBox takes the smallest height it is
-                      // allowed, which in a Row is none.
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        Expanded(
-                          flex: (share * 1000).round(),
-                          child: ColoredBox(color: context.colors.brand),
-                        ),
-                        const SizedBox(width: 3),
-                        Expanded(
-                          flex: ((1 - share) * 1000).round(),
-                          child: ColoredBox(
-                            color: context.colors.inkFaint.withValues(
-                              alpha: 0.35,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  until,
+                  style: context.type.bodyLarge?.copyWith(
+                    color: context.colors.ink,
                   ),
                 ),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 6,
-                  children: <Widget>[
-                    _Key(
-                      color: context.colors.brand,
-                      label: context.l10n.legendFree,
-                    ),
-                    _Key(
-                      color: context.colors.inkFaint.withValues(alpha: 0.35),
-                      label: context.l10n.legendCommitted,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Divider(color: context.colors.line, height: 1),
-                const SizedBox(height: 12),
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: Text(
-                        balanceLabel ?? context.l10n.inTheAccount,
-                        style: context.type.bodySmall,
-                      ),
-                    ),
-                    Figures(
-                      pesos(ledger.major(balance)),
-                      style: context.type.bodySmall?.copyWith(
-                        color: context.colors.inkSoft,
-                      ),
-                    ),
-                  ],
-                ),
+                const SizedBox(height: 2),
+                Text(sentence(when), style: context.type.bodySmall),
               ],
             ),
           ),
+          const SizedBox(height: 16),
+          ExcludeSemantics(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(99),
+              child: SizedBox(
+                height: 10,
+                child: Row(
+                  // An empty ColoredBox takes the smallest height it is
+                  // allowed, which in a Row is none.
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Expanded(
+                      flex: (share * 1000).round(),
+                      child: ColoredBox(color: context.colors.brand),
+                    ),
+                    const SizedBox(width: 3),
+                    Expanded(
+                      flex: ((1 - share) * 1000).round(),
+                      child: ColoredBox(color: heldColor),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _Line(
+            label: l.standingAvailable,
+            value: pesos(ledger.major(balance)),
+          ),
+          for (final (String label, int amount) in held)
+            _Line(
+              label: label,
+              value: pesos(-ledger.major(amount)),
+              key: ValueKey<String>(label),
+              swatch: heldColor,
+            ),
           if (onExplain case final VoidCallback explain) ...<Widget>[
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
             TextButton.icon(
               onPressed: explain,
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
               ),
               icon: const Icon(Glyph.info, size: 18),
-              label: Text(context.l10n.freeExplainAction),
+              label: Text(l.freeExplainAction),
             ),
           ],
         ],
@@ -173,26 +165,45 @@ class StandingCard extends StatelessWidget {
   }
 }
 
-class _Key extends StatelessWidget {
-  const _Key({required this.color, required this.label});
+/// One line of the sum under the figure: what it is and how much, with
+/// the bar's color beside what the bar shows held back.
+class _Line extends StatelessWidget {
+  const _Line({
+    super.key,
+    required this.label,
+    required this.value,
+    this.swatch,
+  });
 
-  final Color color;
   final String label;
+  final String value;
+  final Color? swatch;
 
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: <Widget>[
-      Container(
-        width: 8,
-        height: 8,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(2),
+  Widget build(BuildContext context) {
+    final TextStyle? style = context.type.bodyMedium;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: MergeSemantics(
+        child: Row(
+          children: <Widget>[
+            if (swatch case final Color color) ...<Widget>[
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
+            Expanded(child: Text(label, style: style)),
+            const SizedBox(width: 12),
+            Figures(value, style: style),
+          ],
         ),
       ),
-      const SizedBox(width: 6),
-      Text(label, style: context.type.bodySmall),
-    ],
-  );
+    );
+  }
 }

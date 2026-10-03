@@ -15,10 +15,9 @@ final ClientFunction moneyGenUiFunction = GenUiClientFunction(
   name: 'money',
   description:
       'Formats an amount of pesos the way it is written in '
-      'Colombia, such as "\$ 1.650.000", or in the short spoken '
-      'form, such as "\$ 4,7 M", when `short` is true. Use it for '
-      'any money shown as text, rather than writing the digits '
-      'yourself.',
+      'Colombia, such as "\$1.650.000", or in the short spoken form, '
+      'such as "\$4,7 M", when `short` is true. Use it for any money '
+      'shown as text, rather than writing the digits yourself.',
   argumentSchema: S.object(
     properties: {
       'amount': A2uiSchemas.numberReference(),

@@ -19,6 +19,7 @@ import '../../sync/sync_service.dart' show SecureKeyStore;
 import '../../reminders/reminders.dart';
 import '../../store/store.dart';
 import '../../theme/tokens.dart';
+import '../../version.dart';
 import '../icons.dart';
 import 'amount_input.dart';
 import 'binance_page.dart';
@@ -622,6 +623,17 @@ class OwnSettingsPage extends StatelessWidget {
                                 : 'https://diegolopezrm.github.io/quincena/soporte/',
                           ),
                           mode: LaunchMode.externalApplication,
+                        ),
+                      ),
+                      _row(
+                        context,
+                        icon: Glyph.fileText,
+                        title: l.licensesTitle,
+                        onTap: () => showLicensePage(
+                          context: context,
+                          applicationName: 'Quincena',
+                          applicationVersion: appVersion,
+                          applicationLegalese: l.licensesLegalese,
                         ),
                       ),
                     ],

@@ -107,38 +107,14 @@ abstract class AppLocalizations {
   /// No description provided for @freeUntil.
   ///
   /// In es, this message translates to:
-  /// **'Libre hasta el {date}'**
+  /// **'Puedes gastar hasta el {date}'**
   String freeUntil(String date);
-
-  /// No description provided for @standingDetail.
-  ///
-  /// In es, this message translates to:
-  /// **'Faltan {days} días. Ya separé {committed} para el arriendo, el crédito y los pagos fijos.'**
-  String standingDetail(int days, String committed);
 
   /// No description provided for @standingSemantics.
   ///
   /// In es, this message translates to:
-  /// **'Libre hasta el {date}: {free}. Faltan {days} días. En la cuenta hay {balance}.'**
-  String standingSemantics(String date, String free, int days, String balance);
-
-  /// No description provided for @legendFree.
-  ///
-  /// In es, this message translates to:
-  /// **'Libre'**
-  String get legendFree;
-
-  /// No description provided for @legendCommitted.
-  ///
-  /// In es, this message translates to:
-  /// **'Comprometido'**
-  String get legendCommitted;
-
-  /// No description provided for @inTheAccount.
-  ///
-  /// In es, this message translates to:
-  /// **'En la cuenta'**
-  String get inTheAccount;
+  /// **'Puedes gastar {free} hasta el {date}; {when}.'**
+  String standingSemantics(String free, String date, String when);
 
   /// No description provided for @askYourMoney.
   ///
@@ -1061,7 +1037,7 @@ abstract class AppLocalizations {
   /// No description provided for @netWorth.
   ///
   /// In es, this message translates to:
-  /// **'Todo lo que tienes'**
+  /// **'Patrimonio'**
   String get netWorth;
 
   /// No description provided for @noAccounts.
@@ -1484,12 +1460,6 @@ abstract class AppLocalizations {
   /// **'Tu pago del {date} todavía no aparece. Si ya llegó, regístralo.'**
   String payLate(String date);
 
-  /// No description provided for @standingCushion.
-  ///
-  /// In es, this message translates to:
-  /// **'Guardas {amount} de colchón.'**
-  String standingCushion(String amount);
-
   /// No description provided for @accountExplainTitle.
   ///
   /// In es, this message translates to:
@@ -1559,7 +1529,7 @@ abstract class AppLocalizations {
   /// No description provided for @totalExplainTitle.
   ///
   /// In es, this message translates to:
-  /// **'Así se suma tu patrimonio'**
+  /// **'Así se calcula tu patrimonio'**
   String get totalExplainTitle;
 
   /// No description provided for @totalExplainUnpriced.
@@ -2771,7 +2741,7 @@ abstract class AppLocalizations {
   /// No description provided for @paydayArrivedBody.
   ///
   /// In es, this message translates to:
-  /// **'¿La repartes en sobres antes de gastarla?'**
+  /// **'Ponle a cada parte su sobre antes de gastar.'**
   String get paydayArrivedBody;
 
   /// No description provided for @freeExplainAction.
@@ -2783,26 +2753,26 @@ abstract class AppLocalizations {
   /// No description provided for @freeExplainTitle.
   ///
   /// In es, this message translates to:
-  /// **'Así se calcula lo libre'**
+  /// **'Así se calcula lo que puedes gastar'**
   String get freeExplainTitle;
 
   /// No description provided for @freeExplainSpendable.
   ///
   /// In es, this message translates to:
-  /// **'Para gastar hoy'**
+  /// **'Disponible hoy'**
   String get freeExplainSpendable;
 
   /// No description provided for @freeExplainCommitted.
   ///
   /// In es, this message translates to:
-  /// **'Comprometido antes del pago'**
-  String get freeExplainCommitted;
+  /// **'Pagos antes del {date}'**
+  String freeExplainCommitted(String date);
 
   /// No description provided for @freeExplainNothingCommitted.
   ///
   /// In es, this message translates to:
-  /// **'Nada programado antes del pago.'**
-  String get freeExplainNothingCommitted;
+  /// **'Nada programado antes del {date}.'**
+  String freeExplainNothingCommitted(String date);
 
   /// No description provided for @freeExplainLeftOut.
   ///
@@ -2942,18 +2912,6 @@ abstract class AppLocalizations {
   /// **'Ajustes'**
   String get settingsTitle;
 
-  /// No description provided for @standingDaysLeft.
-  ///
-  /// In es, this message translates to:
-  /// **'{days, plural, =0{Hoy es día de pago.} =1{Falta un día para el próximo pago.} other{Faltan {days} días para el próximo pago.}}'**
-  String standingDaysLeft(int days);
-
-  /// No description provided for @standingCommittedOwn.
-  ///
-  /// In es, this message translates to:
-  /// **'{committed} ya están comprometidos en pagos programados.'**
-  String standingCommittedOwn(String committed);
-
   /// No description provided for @inboxTitle.
   ///
   /// In es, this message translates to:
@@ -3011,7 +2969,7 @@ abstract class AppLocalizations {
   /// No description provided for @chooseAccount.
   ///
   /// In es, this message translates to:
-  /// **'Elige la cuenta'**
+  /// **'Elegir la cuenta'**
   String get chooseAccount;
 
   /// No description provided for @noMerchant.
@@ -3059,7 +3017,7 @@ abstract class AppLocalizations {
   /// No description provided for @nearbyPlace.
   ///
   /// In es, this message translates to:
-  /// **'Cerca: {name}, a {metres} m'**
+  /// **'Cerca: {name}, a {metres} m · © colaboradores de OpenStreetMap'**
   String nearbyPlace(String name, int metres);
 
   /// No description provided for @possibleDuplicates.
@@ -3083,7 +3041,7 @@ abstract class AppLocalizations {
   /// No description provided for @whyLabel.
   ///
   /// In es, this message translates to:
-  /// **'Por qué: {reasons}'**
+  /// **'Sugerido porque {reasons}.'**
   String whyLabel(String reasons);
 
   /// No description provided for @whyCard.
@@ -3101,7 +3059,7 @@ abstract class AppLocalizations {
   /// No description provided for @whyInstitutionSame.
   ///
   /// In es, this message translates to:
-  /// **'es tu cuenta de {institution}'**
+  /// **'llegó de tu cuenta de {institution}'**
   String whyInstitutionSame(String institution);
 
   /// No description provided for @whyCurrency.
@@ -3119,13 +3077,13 @@ abstract class AppLocalizations {
   /// No description provided for @whyLearned.
   ///
   /// In es, this message translates to:
-  /// **'tu regla para «{merchant}»'**
+  /// **'así registraste {merchant} antes'**
   String whyLearned(String merchant);
 
   /// No description provided for @whyMerchant.
   ///
   /// In es, this message translates to:
-  /// **'{merchant} es un comercio conocido'**
+  /// **'reconocimos {merchant}'**
   String whyMerchant(String merchant);
 
   /// No description provided for @whyWords.
@@ -3377,7 +3335,7 @@ abstract class AppLocalizations {
   /// No description provided for @captureLocationHelp.
   ///
   /// In es, this message translates to:
-  /// **'Cuando la alerta no dice dónde fue, Quincena busca los comercios a unos metros de donde estaba el teléfono. La ubicación se guarda solo aquí; para buscar los comercios se envían únicamente las coordenadas a OpenStreetMap, a través de Photon.'**
+  /// **'Cuando la alerta no dice dónde fue, Quincena busca los comercios a unos metros de donde estaba el teléfono. La ubicación se guarda solo aquí; para buscar los comercios se envían únicamente las coordenadas a OpenStreetMap, a través de Photon. Los datos de los comercios son © colaboradores de OpenStreetMap, con licencia ODbL.'**
   String get captureLocationHelp;
 
   /// No description provided for @captureLocationDenied.
@@ -3401,7 +3359,7 @@ abstract class AppLocalizations {
   /// No description provided for @captureAlwaysBody.
   ///
   /// In es, this message translates to:
-  /// **'Los pagos casi siempre llegan con Quincena cerrada. Para saber dónde estabas en ese momento, Android pide elegir «Permitir todo el tiempo». Quincena solo mira la ubicación cuando llega una notificación de pago.'**
+  /// **'Quincena recoge datos de ubicación para sugerir el comercio de un pago, incluso cuando la app está cerrada o no se usa. Solo mira la ubicación cuando llega una notificación de pago, la guarda en este teléfono y, para encontrar el comercio, envía únicamente las coordenadas a OpenStreetMap a través de Photon. Android te pedirá elegir «Permitir todo el tiempo».'**
   String get captureAlwaysBody;
 
   /// No description provided for @captureLocationOnlyOpen.
@@ -4201,12 +4159,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{count, plural, =1{Un movimiento} other{{count} movimientos}}, del {from} al {to}'**
   String statementSummary(int count, String from, String to);
-
-  /// No description provided for @statementRecordedCount.
-  ///
-  /// In es, this message translates to:
-  /// **'{count, plural, =0{Ninguno estaba registrado.} =1{Uno ya estaba registrado y quedó sin marcar.} other{{count} ya estaban registrados y quedaron sin marcar.}}'**
-  String statementRecordedCount(int count);
 
   /// No description provided for @statementRecorded.
   ///
@@ -6906,6 +6858,264 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Gracias. Vamos a revisar esta respuesta.'**
   String get reportThanks;
+
+  /// No description provided for @standingCanSpend.
+  ///
+  /// In es, this message translates to:
+  /// **'Puedes gastar'**
+  String get standingCanSpend;
+
+  /// No description provided for @standingShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Te faltan'**
+  String get standingShort;
+
+  /// No description provided for @standingUntil.
+  ///
+  /// In es, this message translates to:
+  /// **'hasta el {date}'**
+  String standingUntil(String date);
+
+  /// No description provided for @standingShortUntil.
+  ///
+  /// In es, this message translates to:
+  /// **'para llegar al {date}'**
+  String standingShortUntil(String date);
+
+  /// No description provided for @standingNextFortnight.
+  ///
+  /// In es, this message translates to:
+  /// **'{days, plural, =0{hoy llega tu quincena} =1{tu quincena llega mañana} other{tu quincena llega en {days} días}}'**
+  String standingNextFortnight(int days);
+
+  /// No description provided for @standingNextPay.
+  ///
+  /// In es, this message translates to:
+  /// **'{days, plural, =0{hoy llega tu pago} =1{tu próximo pago llega mañana} other{tu próximo pago llega en {days} días}}'**
+  String standingNextPay(int days);
+
+  /// No description provided for @standingAvailable.
+  ///
+  /// In es, this message translates to:
+  /// **'Disponible hoy'**
+  String get standingAvailable;
+
+  /// No description provided for @standingPaymentsBefore.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagos antes del {date}'**
+  String standingPaymentsBefore(String date);
+
+  /// No description provided for @standingCushionLine.
+  ///
+  /// In es, this message translates to:
+  /// **'Colchón'**
+  String get standingCushionLine;
+
+  /// No description provided for @standingEnvelopesLine.
+  ///
+  /// In es, this message translates to:
+  /// **'Apartado en sobres'**
+  String get standingEnvelopesLine;
+
+  /// No description provided for @standingReserveLine.
+  ///
+  /// In es, this message translates to:
+  /// **'Reserva de ingresos variables'**
+  String get standingReserveLine;
+
+  /// No description provided for @standingShortSemantics.
+  ///
+  /// In es, this message translates to:
+  /// **'Te faltan {free} para llegar al {date}; {when}.'**
+  String standingShortSemantics(String free, String date, String when);
+
+  /// No description provided for @homeTodo.
+  ///
+  /// In es, this message translates to:
+  /// **'Por hacer'**
+  String get homeTodo;
+
+  /// No description provided for @todoReview.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisar'**
+  String get todoReview;
+
+  /// No description provided for @todoSplit.
+  ///
+  /// In es, this message translates to:
+  /// **'Repartir'**
+  String get todoSplit;
+
+  /// No description provided for @paydayArrivedPay.
+  ///
+  /// In es, this message translates to:
+  /// **'Te llegó el pago'**
+  String get paydayArrivedPay;
+
+  /// No description provided for @netWorthDetail.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que tienes menos lo que debes'**
+  String get netWorthDetail;
+
+  /// No description provided for @groupCards.
+  ///
+  /// In es, this message translates to:
+  /// **'Tarjetas de crédito'**
+  String get groupCards;
+
+  /// No description provided for @cardOwed.
+  ///
+  /// In es, this message translates to:
+  /// **'Debes {amount}'**
+  String cardOwed(String amount);
+
+  /// No description provided for @cardInFavor.
+  ///
+  /// In es, this message translates to:
+  /// **'A favor {amount}'**
+  String cardInFavor(String amount);
+
+  /// No description provided for @cardClear.
+  ///
+  /// In es, this message translates to:
+  /// **'Al día'**
+  String get cardClear;
+
+  /// No description provided for @totalExplainHave.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que tienes'**
+  String get totalExplainHave;
+
+  /// No description provided for @totalExplainOwe.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que debes'**
+  String get totalExplainOwe;
+
+  /// No description provided for @ratesSeeAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver de dónde sale cada tasa o cambiarla'**
+  String get ratesSeeAll;
+
+  /// No description provided for @cardOwedLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Debes'**
+  String get cardOwedLabel;
+
+  /// No description provided for @cardInFavorLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'A favor'**
+  String get cardInFavorLabel;
+
+  /// No description provided for @whichAccountIn.
+  ///
+  /// In es, this message translates to:
+  /// **'No sabemos a qué cuenta llegó.'**
+  String get whichAccountIn;
+
+  /// No description provided for @whichAccountOut.
+  ///
+  /// In es, this message translates to:
+  /// **'No sabemos de qué cuenta salió.'**
+  String get whichAccountOut;
+
+  /// No description provided for @fromOwnAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Viene de otra cuenta tuya?'**
+  String get fromOwnAccount;
+
+  /// No description provided for @moreActions.
+  ///
+  /// In es, this message translates to:
+  /// **'Más acciones'**
+  String get moreActions;
+
+  /// No description provided for @hideOriginal.
+  ///
+  /// In es, this message translates to:
+  /// **'Ocultar el mensaje'**
+  String get hideOriginal;
+
+  /// No description provided for @statementNew.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Ninguno nuevo} =1{1 nuevo} other{{count} nuevos}}'**
+  String statementNew(int count);
+
+  /// No description provided for @statementAlready.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{ninguno repetido} =1{1 ya estaba} other{{count} ya estaban}}'**
+  String statementAlready(int count);
+
+  /// No description provided for @statementUnsorted.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{1 sin categoría} other{{count} sin categoría}}'**
+  String statementUnsorted(int count);
+
+  /// No description provided for @statementAlreadyUnchecked.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que ya estaba quedó sin marcar, para no contarlo dos veces.'**
+  String get statementAlreadyUnchecked;
+
+  /// No description provided for @statementSelectAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Seleccionar todos'**
+  String get statementSelectAll;
+
+  /// No description provided for @statementSelectNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar todos'**
+  String get statementSelectNone;
+
+  /// No description provided for @statementDoneSorted.
+  ///
+  /// In es, this message translates to:
+  /// **'Todos quedaron con su categoría.'**
+  String get statementDoneSorted;
+
+  /// No description provided for @statementDoneUnsorted.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Uno quedó sin categoría: tócalo para ponérsela.} other{{count} quedaron sin categoría: tócalos para ponérsela.}}'**
+  String statementDoneUnsorted(int count);
+
+  /// No description provided for @statementGiveCategory.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin categoría'**
+  String get statementGiveCategory;
+
+  /// No description provided for @statementFinish.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo'**
+  String get statementFinish;
+
+  /// No description provided for @licensesTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Licencias y créditos'**
+  String get licensesTitle;
+
+  /// No description provided for @licensesLegalese.
+  ///
+  /// In es, this message translates to:
+  /// **'© 2026 DL SOFT TECHNOLOGIES SAS. Los comercios cercanos vienen de © colaboradores de OpenStreetMap (ODbL).'**
+  String get licensesLegalese;
 }
 
 class _AppLocalizationsDelegate

@@ -444,6 +444,8 @@ commit en `main` y una build en TestFlight.
 
 ### 16. Que el dinero se entienda solo
 
+**Estado:** construida, build 14 (1.1.0).
+
 **Objetivo:** que nadie tenga que preguntarse cuánto tiene, cuánto puede
 gastar y hasta cuándo.
 

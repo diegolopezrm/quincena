@@ -130,15 +130,16 @@ void main() {
     await tester.ensureVisible(find.text('Guardar'));
     await tester.tap(find.text('Guardar'));
     await settle(tester);
-    expect(screen(tester), contains(r'$ 1.500.000'));
+    expect(screen(tester), contains(r'$1.500.000'));
     expect(screen(tester), contains('100 USDT'));
 
     await tester.tap(find.text('Empezar'));
     await settle(tester);
 
     // Home: Binance is not money to spend, so only the pesos count here.
-    expect(screen(tester), contains('Libre hasta el 15 de octubre'));
-    expect(screen(tester), contains(r'$ 1.500.000'));
+    expect(screen(tester), contains('Puedes gastar'));
+    expect(screen(tester), contains('hasta el 15 de octubre'));
+    expect(screen(tester), contains(r'$1.500.000'));
     expect(screen(tester), contains('Aún no hay movimientos.'));
 
     // A payment at the supermarket.
@@ -156,15 +157,15 @@ void main() {
     await settle(tester);
 
     expect(screen(tester), contains('Éxito'));
-    expect(screen(tester), contains(r'−$ 45.900'));
-    expect(screen(tester), contains(r'$ 1.454.100'));
+    expect(screen(tester), contains(r'−$45.900'));
+    expect(screen(tester), contains(r'$1.454.100'));
 
     // Accounts: everything together, tether at 4.000 pesos a dollar.
     await tester.tap(find.text('Cuentas'));
     await settle(tester);
-    expect(screen(tester), contains('Todo lo que tienes'));
-    expect(screen(tester), contains(r'$ 1.854.100'));
-    expect(screen(tester), contains(r'1 USDT = $ 4.000'));
+    expect(screen(tester), contains('Patrimonio'));
+    expect(screen(tester), contains(r'$1.854.100'));
+    expect(screen(tester), contains(r'USDT $4.000'));
   });
 
   testWidgets(
@@ -224,7 +225,7 @@ void main() {
       await settle(tester);
       expect(screen(tester), contains('Exito Laureles'));
       expect(screen(tester), contains('Mercado · Bancolombia'));
-      expect(screen(tester), contains(r'−$ 45.900'));
+      expect(screen(tester), contains(r'−$45.900'));
 
       await tester.tap(find.text('Confirmar'));
       await settle(tester);
@@ -233,7 +234,7 @@ void main() {
       await tester.tap(find.byTooltip('Atrás'));
       await settle(tester);
       expect(screen(tester), isNot(contains('por revisar')));
-      expect(screen(tester), contains(r'$ 954.100'));
+      expect(screen(tester), contains(r'$954.100'));
     },
   );
 

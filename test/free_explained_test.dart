@@ -136,7 +136,10 @@ void main() {
     Finder inSheet(Finder f) =>
         find.descendant(of: find.byType(FreeExplained), matching: f);
 
-    expect(inSheet(find.text('Así se calcula lo libre')), findsOneWidget);
+    expect(
+      inSheet(find.text('Así se calcula lo que puedes gastar')),
+      findsOneWidget,
+    );
     // The sum, on top and again as its parts.
     expect(inSheet(find.text(pesos(2200000))), findsOneWidget);
     expect(inSheet(find.text(pesos(-26900))), findsNWidgets(2));

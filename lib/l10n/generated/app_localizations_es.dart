@@ -15,27 +15,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String freeUntil(String date) {
-    return 'Libre hasta el $date';
+    return 'Puedes gastar hasta el $date';
   }
 
   @override
-  String standingDetail(int days, String committed) {
-    return 'Faltan $days días. Ya separé $committed para el arriendo, el crédito y los pagos fijos.';
+  String standingSemantics(String free, String date, String when) {
+    return 'Puedes gastar $free hasta el $date; $when.';
   }
-
-  @override
-  String standingSemantics(String date, String free, int days, String balance) {
-    return 'Libre hasta el $date: $free. Faltan $days días. En la cuenta hay $balance.';
-  }
-
-  @override
-  String get legendFree => 'Libre';
-
-  @override
-  String get legendCommitted => 'Comprometido';
-
-  @override
-  String get inTheAccount => 'En la cuenta';
 
   @override
   String get askYourMoney => 'PREGÚNTALE A TU PLATA';
@@ -596,7 +582,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get groupSaved => 'Ahorros, inversiones y cripto';
 
   @override
-  String get netWorth => 'Todo lo que tienes';
+  String get netWorth => 'Patrimonio';
 
   @override
   String get noAccounts => 'Aún no tienes cuentas.';
@@ -832,11 +818,6 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String standingCushion(String amount) {
-    return 'Guardas $amount de colchón.';
-  }
-
-  @override
   String get accountExplainTitle => 'Así se llega al saldo';
 
   @override
@@ -935,7 +916,7 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get totalExplainTitle => 'Así se suma tu patrimonio';
+  String get totalExplainTitle => 'Así se calcula tu patrimonio';
 
   @override
   String totalExplainUnpriced(String names) {
@@ -1717,22 +1698,27 @@ class AppLocalizationsEs extends AppLocalizations {
   String get paydayArrived => 'Te llegó la quincena';
 
   @override
-  String get paydayArrivedBody => '¿La repartes en sobres antes de gastarla?';
+  String get paydayArrivedBody =>
+      'Ponle a cada parte su sobre antes de gastar.';
 
   @override
   String get freeExplainAction => '¿De dónde sale?';
 
   @override
-  String get freeExplainTitle => 'Así se calcula lo libre';
+  String get freeExplainTitle => 'Así se calcula lo que puedes gastar';
 
   @override
-  String get freeExplainSpendable => 'Para gastar hoy';
+  String get freeExplainSpendable => 'Disponible hoy';
 
   @override
-  String get freeExplainCommitted => 'Comprometido antes del pago';
+  String freeExplainCommitted(String date) {
+    return 'Pagos antes del $date';
+  }
 
   @override
-  String get freeExplainNothingCommitted => 'Nada programado antes del pago.';
+  String freeExplainNothingCommitted(String date) {
+    return 'Nada programado antes del $date.';
+  }
 
   @override
   String get freeExplainLeftOut => 'No cuentan';
@@ -1819,23 +1805,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsTitle => 'Ajustes';
 
   @override
-  String standingDaysLeft(int days) {
-    String _temp0 = intl.Intl.pluralLogic(
-      days,
-      locale: localeName,
-      other: 'Faltan $days días para el próximo pago.',
-      one: 'Falta un día para el próximo pago.',
-      zero: 'Hoy es día de pago.',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String standingCommittedOwn(String committed) {
-    return '$committed ya están comprometidos en pagos programados.';
-  }
-
-  @override
   String get inboxTitle => 'Por revisar';
 
   @override
@@ -1874,7 +1843,7 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get chooseAccount => 'Elige la cuenta';
+  String get chooseAccount => 'Elegir la cuenta';
 
   @override
   String get noMerchant => 'Sin comercio';
@@ -1899,7 +1868,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String nearbyPlace(String name, int metres) {
-    return 'Cerca: $name, a $metres m';
+    return 'Cerca: $name, a $metres m · © colaboradores de OpenStreetMap';
   }
 
   @override
@@ -1913,7 +1882,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String whyLabel(String reasons) {
-    return 'Por qué: $reasons';
+    return 'Sugerido porque $reasons.';
   }
 
   @override
@@ -1928,7 +1897,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String whyInstitutionSame(String institution) {
-    return 'es tu cuenta de $institution';
+    return 'llegó de tu cuenta de $institution';
   }
 
   @override
@@ -1943,12 +1912,12 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String whyLearned(String merchant) {
-    return 'tu regla para «$merchant»';
+    return 'así registraste $merchant antes';
   }
 
   @override
   String whyMerchant(String merchant) {
-    return '$merchant es un comercio conocido';
+    return 'reconocimos $merchant';
   }
 
   @override
@@ -2115,7 +2084,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get captureLocationHelp =>
-      'Cuando la alerta no dice dónde fue, Quincena busca los comercios a unos metros de donde estaba el teléfono. La ubicación se guarda solo aquí; para buscar los comercios se envían únicamente las coordenadas a OpenStreetMap, a través de Photon.';
+      'Cuando la alerta no dice dónde fue, Quincena busca los comercios a unos metros de donde estaba el teléfono. La ubicación se guarda solo aquí; para buscar los comercios se envían únicamente las coordenadas a OpenStreetMap, a través de Photon. Los datos de los comercios son © colaboradores de OpenStreetMap, con licencia ODbL.';
 
   @override
   String get captureLocationDenied =>
@@ -2129,7 +2098,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get captureAlwaysBody =>
-      'Los pagos casi siempre llegan con Quincena cerrada. Para saber dónde estabas en ese momento, Android pide elegir «Permitir todo el tiempo». Quincena solo mira la ubicación cuando llega una notificación de pago.';
+      'Quincena recoge datos de ubicación para sugerir el comercio de un pago, incluso cuando la app está cerrada o no se usa. Solo mira la ubicación cuando llega una notificación de pago, la guarda en este teléfono y, para encontrar el comercio, envía únicamente las coordenadas a OpenStreetMap a través de Photon. Android te pedirá elegir «Permitir todo el tiempo».';
 
   @override
   String get captureLocationOnlyOpen =>
@@ -2609,18 +2578,6 @@ class AppLocalizationsEs extends AppLocalizations {
       one: 'Un movimiento',
     );
     return '$_temp0, del $from al $to';
-  }
-
-  @override
-  String statementRecordedCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count ya estaban registrados y quedaron sin marcar.',
-      one: 'Uno ya estaba registrado y quedó sin marcar.',
-      zero: 'Ninguno estaba registrado.',
-    );
-    return '$_temp0';
   }
 
   @override
@@ -4342,4 +4299,199 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get reportThanks => 'Gracias. Vamos a revisar esta respuesta.';
+
+  @override
+  String get standingCanSpend => 'Puedes gastar';
+
+  @override
+  String get standingShort => 'Te faltan';
+
+  @override
+  String standingUntil(String date) {
+    return 'hasta el $date';
+  }
+
+  @override
+  String standingShortUntil(String date) {
+    return 'para llegar al $date';
+  }
+
+  @override
+  String standingNextFortnight(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'tu quincena llega en $days días',
+      one: 'tu quincena llega mañana',
+      zero: 'hoy llega tu quincena',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String standingNextPay(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'tu próximo pago llega en $days días',
+      one: 'tu próximo pago llega mañana',
+      zero: 'hoy llega tu pago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get standingAvailable => 'Disponible hoy';
+
+  @override
+  String standingPaymentsBefore(String date) {
+    return 'Pagos antes del $date';
+  }
+
+  @override
+  String get standingCushionLine => 'Colchón';
+
+  @override
+  String get standingEnvelopesLine => 'Apartado en sobres';
+
+  @override
+  String get standingReserveLine => 'Reserva de ingresos variables';
+
+  @override
+  String standingShortSemantics(String free, String date, String when) {
+    return 'Te faltan $free para llegar al $date; $when.';
+  }
+
+  @override
+  String get homeTodo => 'Por hacer';
+
+  @override
+  String get todoReview => 'Revisar';
+
+  @override
+  String get todoSplit => 'Repartir';
+
+  @override
+  String get paydayArrivedPay => 'Te llegó el pago';
+
+  @override
+  String get netWorthDetail => 'Lo que tienes menos lo que debes';
+
+  @override
+  String get groupCards => 'Tarjetas de crédito';
+
+  @override
+  String cardOwed(String amount) {
+    return 'Debes $amount';
+  }
+
+  @override
+  String cardInFavor(String amount) {
+    return 'A favor $amount';
+  }
+
+  @override
+  String get cardClear => 'Al día';
+
+  @override
+  String get totalExplainHave => 'Lo que tienes';
+
+  @override
+  String get totalExplainOwe => 'Lo que debes';
+
+  @override
+  String get ratesSeeAll => 'Ver de dónde sale cada tasa o cambiarla';
+
+  @override
+  String get cardOwedLabel => 'Debes';
+
+  @override
+  String get cardInFavorLabel => 'A favor';
+
+  @override
+  String get whichAccountIn => 'No sabemos a qué cuenta llegó.';
+
+  @override
+  String get whichAccountOut => 'No sabemos de qué cuenta salió.';
+
+  @override
+  String get fromOwnAccount => '¿Viene de otra cuenta tuya?';
+
+  @override
+  String get moreActions => 'Más acciones';
+
+  @override
+  String get hideOriginal => 'Ocultar el mensaje';
+
+  @override
+  String statementNew(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nuevos',
+      one: '1 nuevo',
+      zero: 'Ninguno nuevo',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String statementAlready(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ya estaban',
+      one: '1 ya estaba',
+      zero: 'ninguno repetido',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String statementUnsorted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sin categoría',
+      one: '1 sin categoría',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get statementAlreadyUnchecked =>
+      'Lo que ya estaba quedó sin marcar, para no contarlo dos veces.';
+
+  @override
+  String get statementSelectAll => 'Seleccionar todos';
+
+  @override
+  String get statementSelectNone => 'Quitar todos';
+
+  @override
+  String get statementDoneSorted => 'Todos quedaron con su categoría.';
+
+  @override
+  String statementDoneUnsorted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count quedaron sin categoría: tócalos para ponérsela.',
+      one: 'Uno quedó sin categoría: tócalo para ponérsela.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get statementGiveCategory => 'Sin categoría';
+
+  @override
+  String get statementFinish => 'Listo';
+
+  @override
+  String get licensesTitle => 'Licencias y créditos';
+
+  @override
+  String get licensesLegalese =>
+      '© 2026 DL SOFT TECHNOLOGIES SAS. Los comercios cercanos vienen de © colaboradores de OpenStreetMap (ODbL).';
 }

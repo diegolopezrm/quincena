@@ -92,7 +92,7 @@ void main() {
     );
     await settle(tester);
     // The account comes from Nequi's alerts going to the only Nequi account.
-    expect(find.textContaining('Por qué:'), findsOneWidget);
+    expect(find.textContaining('Sugerido porque'), findsOneWidget);
 
     await tester.tap(find.text('Confirmar'));
     await settle(tester);
@@ -137,7 +137,7 @@ void main() {
 
     expect(find.text('REGISTRADO AUTOMÁTICAMENTE'), findsOneWidget);
     expect(
-      find.textContaining('tu regla para «Panaderia la Espiga»'),
+      find.textContaining('así registraste Panaderia la Espiga antes'),
       findsOneWidget,
     );
     expect((await tester.runAsync(store.entries))!, hasLength(2));

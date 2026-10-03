@@ -25,7 +25,7 @@ final CatalogItem statTileCatalogItem = CatalogItem(
       ),
       'value': A2uiSchemas.stringReference(
         description:
-            'The figure, already formatted, such as "\$ 589.300" or "+67 '
+            'The figure, already formatted, such as "\$589.300" or "+67 '
             '%".',
       ),
       'caption': A2uiSchemas.stringReference(

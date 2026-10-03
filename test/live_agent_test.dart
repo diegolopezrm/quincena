@@ -209,7 +209,7 @@ void main() {
       expect(action['name'], 'save_goal_plan');
       // The context arrives resolved: the amount on the slider, not a path.
       expect((action['context']! as Map)['monthly'], 250000);
-      expect(screen(tester), contains(r'Cada día 16 aparto $ 250.000'));
+      expect(screen(tester), contains(r'Cada día 16 aparto $250.000'));
     });
 
     testWidgets('a surface the catalog rejects goes back to be fixed', (

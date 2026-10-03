@@ -187,7 +187,7 @@ void main() {
     await settle(tester);
     Finder inSheet(Finder f) =>
         find.descendant(of: find.byType(TotalExplained), matching: f);
-    expect(inSheet(find.text('Así se suma tu patrimonio')), findsOneWidget);
+    expect(inSheet(find.text('Así se calcula tu patrimonio')), findsOneWidget);
     expect(
       inSheet(find.text(moneyText(bankPart, base: Asset.cop))),
       findsOneWidget,

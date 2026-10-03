@@ -48,7 +48,8 @@ void main() {
     final Session session = await open(tester);
 
     expect(session.language, 'en');
-    expect(screen(tester), contains('Free until October 15'));
+    expect(screen(tester), contains('You can spend'));
+    expect(screen(tester), contains('until October 15'));
     expect(screen(tester), contains(r'$1,369,300'));
     for (final String question in ScriptedAgent.startersEn) {
       expect(find.text(question), findsOneWidget);

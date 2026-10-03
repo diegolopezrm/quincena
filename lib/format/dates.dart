@@ -65,9 +65,11 @@ String shortDate(DateTime date) =>
 String weekdayName(int weekday) =>
     _format('EEEE', 'EEEE').format(DateTime(2026, 9, 28 + weekday - 1));
 
-/// `1 oct, 9:30` or `Oct 1, 9:30 AM`: when something was last done.
+/// `1 oct · 9:30 a. m.` or `Oct 1 · 9:30 AM`: when something happened or
+/// was last done.
 String dayAndTime(DateTime moment) =>
-    _format('d MMM, H:mm', 'MMM d, h:mm a').format(moment).replaceAll('.', '');
+    '${dayShortMonth(moment)} · ${timeOfDay(moment)}';
 
-/// `14:05` or `2:05 PM`: the time of something that happened today.
-String timeOfDay(DateTime moment) => _format('H:mm', 'h:mm a').format(moment);
+/// `2:05 p. m.` or `2:05 PM`: the time of something that happened today,
+/// on the twelve-hour clock people in Colombia read.
+String timeOfDay(DateTime moment) => _format('h:mm a', 'h:mm a').format(moment);

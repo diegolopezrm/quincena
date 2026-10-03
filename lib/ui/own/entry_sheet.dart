@@ -25,6 +25,7 @@ Future<void> showEntrySheet(
   Entry? entry,
   String? accountId,
   InboxItem? fromInbox,
+  bool ownTransfer = false,
 }) {
   if (own.accounts.isEmpty) {
     ScaffoldMessenger.of(
@@ -44,6 +45,7 @@ Future<void> showEntrySheet(
       entry: entry,
       accountId: accountId,
       fromInbox: fromInbox,
+      ownTransfer: ownTransfer,
     ),
   );
 }
@@ -54,6 +56,7 @@ class _EntryForm extends StatefulWidget {
     this.entry,
     this.accountId,
     this.fromInbox,
+    this.ownTransfer = false,
   });
 
   final OwnController own;
@@ -63,6 +66,12 @@ class _EntryForm extends StatefulWidget {
   /// A capture being confirmed: its reading fills the form, and saving it
   /// records it through the inbox, so the app learns from what changed.
   final InboxItem? fromInbox;
+
+  /// [fromInbox] is money the person moved between their own accounts: the
+  /// form opens as a transfer, with the capture's account on its side,
+  /// where the money arrived for an income and where it left otherwise.
+  /// Recorded that way, it is neither income nor spending.
+  final bool ownTransfer;
 
   @override
   State<_EntryForm> createState() => _EntryFormState();
@@ -78,7 +87,9 @@ class _EntryFormState extends State<_EntryForm> {
 
   InboxItem? get _capture => widget.fromInbox;
 
-  late EntryKind _kind = _capture != null
+  late EntryKind _kind = widget.ownTransfer
+      ? EntryKind.transfer
+      : _capture != null
       ? (_capture!.parsed.kind ?? EntryKind.expense)
       : _editing?.kind == EntryKind.transfer
       ? EntryKind.transfer
@@ -86,13 +97,23 @@ class _EntryFormState extends State<_EntryForm> {
       ? EntryKind.expense
       : EntryKind.income;
 
-  late String _accountId =
-      _legs?.$1.accountId ??
-      _editing?.accountId ??
-      _capture?.suggestion.accountId ??
-      widget.accountId ??
-      own.accounts.first.id;
-  late String? _toAccountId = _legs?.$2.accountId ?? _secondAccount();
+  /// An income moved in from another of the person's accounts arrived in
+  /// the capture's account: that one is where the transfer goes.
+  late final bool _arrived =
+      widget.ownTransfer && _capture?.parsed.kind == EntryKind.income;
+
+  late String _accountId = _arrived
+      ? _otherThan(_capture?.suggestion.accountId)
+      : _legs?.$1.accountId ??
+            _editing?.accountId ??
+            _capture?.suggestion.accountId ??
+            widget.accountId ??
+            own.accounts.first.id;
+  late String? _toAccountId = _arrived
+      ? (_capture?.suggestion.accountId ?? _secondAccount())
+      : widget.ownTransfer
+      ? _otherThan(_accountId)
+      : _legs?.$2.accountId ?? _secondAccount();
   late final TextEditingController _amount = TextEditingController(
     text: _capture?.parsed.amount != null
         ? _decimalText(_capture!.parsed.amount!, _assetOf(_accountId))
@@ -136,6 +157,18 @@ class _EntryFormState extends State<_EntryForm> {
     return legs[0].amount < Decimal.zero
         ? (legs[0], legs[1])
         : (legs[1], legs[0]);
+  }
+
+  /// Another account than [id], one to spend from if there is one.
+  String _otherThan(String? id) {
+    final List<Account> others = <Account>[
+      for (final Account a in own.accounts)
+        if (a.id != id) a,
+    ];
+    if (others.isEmpty) return own.accounts.first.id;
+    return (others.where((Account a) => a.spendable).firstOrNull ??
+            others.first)
+        .id;
   }
 
   String? _secondAccount() {

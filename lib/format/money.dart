@@ -18,8 +18,9 @@ NumberFormat get _whole => englishFormatting ? _wholeEn : _wholeEs;
 NumberFormat get _oneDecimal =>
     englishFormatting ? _oneDecimalEn : _oneDecimalEs;
 
-/// Pesos as they are written in the interface language: `$ 1.650.000` in
-/// Spanish, `$1,650,000` in English.
+/// Pesos as they are written in the interface language: `$1.650.000` in
+/// Spanish, `$1,650,000` in English: no space after the sign, as Colombians
+/// write it, and the minus sign of print for what goes out.
 ///
 /// Built by hand rather than with `NumberFormat.currency`, whose `es_CO`
 /// pattern puts the symbol after the number.
@@ -33,11 +34,12 @@ String pesos(num amount) {
   }
   final String digits = _whole.format(amount.abs().round());
   final String sign = amount < 0 ? '−' : '';
-  return englishFormatting ? '$sign\$$digits' : '$sign\$ $digits';
+  return '$sign\$$digits';
 }
 
-/// Pesos in the short form people say out loud: `$ 4,7 M` and `$ 589 mil` in
-/// Spanish, `$4.7M` and `$589K` in English.
+/// Pesos in the short form people say out loud: `$4,7 M` and `$589 mil` in
+/// Spanish, `$4.7M` and `$589K` in English. The space before `M` and `mil`
+/// never breaks a line.
 String pesosShort(num amount) {
   final num value = amount.abs();
   final String sign = amount < 0 ? '−' : '';
@@ -57,11 +59,11 @@ String pesosShort(num amount) {
   }
   if (value >= 1000000) {
     final String n = _oneDecimal.format(value / 1000000);
-    return en ? '$sign\$${n}M' : '$sign\$ $n M';
+    return en ? '$sign\$${n}M' : '$sign\$$n M';
   }
   if (value >= 1000) {
     final String n = _whole.format((value / 1000).round());
-    return en ? '$sign\$${n}K' : '$sign\$ $n mil';
+    return en ? '$sign\$${n}K' : '$sign\$$n mil';
   }
   return '$sign${pesos(value)}';
 }

@@ -212,12 +212,22 @@ class _InboxCardState extends State<InboxCard> {
     await own.capture.dismiss(item, muteApp: mute);
   }
 
-  String _who(AppLocalizations l) {
-    final String source = sourceLabel(l, item.event.source);
-    final String? from =
-        item.parsed.institution ?? item.event.sender ?? item.event.appName;
-    return from == null ? source : '$source · $from';
-  }
+  /// Who sent it, as the person knows them; how it arrived when there is
+  /// no name. The icon beside it says how.
+  String _who(AppLocalizations l) =>
+      item.parsed.institution ??
+      item.event.sender ??
+      item.event.appName ??
+      sourceLabel(l, item.event.source);
+
+  Future<void> _ownTransfer() =>
+      showEntrySheet(context, own: own, fromInbox: item, ownTransfer: true);
+
+  void _more(_More choice) => switch (choice) {
+    _More.message => setState(() => _original = !_original),
+    _More.dismiss => _dismiss(),
+    _More.mute => _dismiss(mute: true),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -262,13 +272,16 @@ class _InboxCardState extends State<InboxCard> {
                 ),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: Text(
-                    // When the payment happened, as the receipt says, not
-                    // when it was shared.
-                    '${_who(l)} · ${dayAndTime(i.parsed.when ?? i.event.at)}',
-                    style: context.type.bodySmall,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: Semantics(
+                    label: sourceLabel(l, i.event.source),
+                    child: Text(
+                      // When the payment happened, as the receipt says, not
+                      // when it was shared.
+                      '${_who(l)} · ${dayAndTime(i.parsed.when ?? i.event.at)}',
+                      style: context.type.bodySmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
               ],
@@ -288,20 +301,22 @@ class _InboxCardState extends State<InboxCard> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      Text(
-                        <String>[
-                          if (category != null)
-                            categoryNameFor(context, category, own.categories),
-                          account?.name ?? l.chooseAccount,
-                        ].join(' · '),
-                        style: context.type.bodySmall?.copyWith(
-                          color: account == null
-                              ? context.colors.caution
-                              : null,
+                      if (<String>[
+                            if (category != null)
+                              categoryNameFor(
+                                context,
+                                category,
+                                own.categories,
+                              ),
+                            ?account?.name,
+                          ]
+                          case final List<String> parts when parts.isNotEmpty)
+                        Text(
+                          parts.join(' · '),
+                          style: context.type.bodySmall,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
                     ],
                   ),
                 ),
@@ -316,10 +331,34 @@ class _InboxCardState extends State<InboxCard> {
                 ),
               ],
             ),
+            if (account == null && !recorded) ...<Widget>[
+              const SizedBox(height: 8),
+              Text(
+                income ? l.whichAccountIn : l.whichAccountOut,
+                style: context.type.bodySmall?.copyWith(
+                  color: context.colors.caution,
+                ),
+              ),
+            ],
             if (reasonsText(context, own, i) case final String why) ...<Widget>[
               const SizedBox(height: 8),
               Text(why, style: context.type.bodySmall),
             ],
+            // Money that arrived may be the person's own, moved from another
+            // account: recorded as income, it would count twice.
+            if (income && !recorded && !repeat && own.accounts.length > 1)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: _busy ? null : _ownTransfer,
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    foregroundColor: context.colors.inkSoft,
+                  ),
+                  icon: const Icon(Glyph.arrowsLeftRight, size: 16),
+                  label: Text(l.fromOwnAccount),
+                ),
+              ),
             if (i.suggestion.place case final place?) ...<Widget>[
               const SizedBox(height: 8),
               Row(
@@ -359,52 +398,73 @@ class _InboxCardState extends State<InboxCard> {
               ),
             ],
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              crossAxisAlignment: WrapCrossAlignment.center,
+            Row(
               children: <Widget>[
-                if (recorded) ...<Widget>[
-                  OutlinedButton(
-                    onPressed: _busy ? null : _undo,
-                    child: Text(l.undo),
+                Expanded(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: <Widget>[
+                      if (recorded) ...<Widget>[
+                        OutlinedButton(
+                          onPressed: _busy ? null : _undo,
+                          child: Text(l.undo),
+                        ),
+                        TextButton(
+                          onPressed: _busy ? null : _fix,
+                          style: TextButton.styleFrom(
+                            foregroundColor: context.colors.ink,
+                          ),
+                          child: Text(l.fixMovement),
+                        ),
+                      ] else if (repeat)
+                        OutlinedButton(
+                          onPressed: _busy
+                              ? null
+                              : () => own.capture.notDuplicate(i),
+                          child: Text(l.notDuplicate),
+                        )
+                      else ...<Widget>[
+                        FilledButton(
+                          onPressed: _busy || amount == null ? null : _confirm,
+                          child: Text(
+                            account == null ? l.chooseAccount : l.confirm,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _busy ? null : _edit,
+                          style: TextButton.styleFrom(
+                            foregroundColor: context.colors.ink,
+                          ),
+                          child: Text(l.edit),
+                        ),
+                      ],
+                    ],
                   ),
-                  OutlinedButton(
-                    onPressed: _busy ? null : _fix,
-                    child: Text(l.fixMovement),
+                ),
+                PopupMenuButton<_More>(
+                  tooltip: l.moreActions,
+                  icon: Icon(
+                    Glyph.dotsThreeVertical,
+                    color: context.colors.inkSoft,
                   ),
-                ] else if (repeat)
-                  OutlinedButton(
-                    onPressed: _busy ? null : () => own.capture.notDuplicate(i),
-                    child: Text(l.notDuplicate),
-                  )
-                else ...<Widget>[
-                  FilledButton(
-                    onPressed: _busy || amount == null ? null : _confirm,
-                    child: Text(account == null ? l.chooseAccount : l.confirm),
-                  ),
-                  OutlinedButton(
-                    onPressed: _busy ? null : _edit,
-                    child: Text(l.edit),
-                  ),
-                ],
-                if (!recorded)
-                  PopupMenuButton<bool>(
-                    tooltip: l.dismiss,
-                    icon: Icon(
-                      Glyph.dotsThreeVertical,
-                      color: context.colors.inkSoft,
-                    ),
-                    onSelected: (bool mute) => _dismiss(mute: mute),
-                    itemBuilder: (BuildContext context) =>
-                        <PopupMenuEntry<bool>>[
-                          PopupMenuItem<bool>(
-                            value: false,
+                  onSelected: _more,
+                  itemBuilder: (BuildContext context) =>
+                      <PopupMenuEntry<_More>>[
+                        PopupMenuItem<_More>(
+                          value: _More.message,
+                          child: Text(
+                            _original ? l.hideOriginal : l.showOriginal,
+                          ),
+                        ),
+                        if (!recorded) ...<PopupMenuEntry<_More>>[
+                          PopupMenuItem<_More>(
+                            value: _More.dismiss,
                             child: Text(l.dismiss),
                           ),
                           if (i.event.app case final String app)
-                            PopupMenuItem<bool>(
-                              value: true,
+                            PopupMenuItem<_More>(
+                              value: _More.mute,
                               child: Text(
                                 l.dismissAndMute(
                                   i.parsed.institution ??
@@ -414,10 +474,7 @@ class _InboxCardState extends State<InboxCard> {
                               ),
                             ),
                         ],
-                  ),
-                TextButton(
-                  onPressed: () => setState(() => _original = !_original),
-                  child: Text(l.showOriginal),
+                      ],
                 ),
               ],
             ),
@@ -427,6 +484,10 @@ class _InboxCardState extends State<InboxCard> {
     );
   }
 }
+
+/// What the card's menu holds: the message itself, and ways to set the
+/// capture aside.
+enum _More { message, dismiss, mute }
 
 /// Reads a message the person pastes, as if it had arrived on its own.
 Future<void> showPasteDialog(BuildContext context, OwnController own) async {

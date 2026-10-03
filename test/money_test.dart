@@ -20,18 +20,18 @@ void main() {
   group('amounts as the interface writes them', () {
     test('Spanish keeps the bare symbol for the person\'s own currency', () {
       Intl.defaultLocale = 'es_CO';
-      expect(plain(formatAmount(d('45900'), Asset.cop)), r'$ 45.900');
+      expect(plain(formatAmount(d('45900'), Asset.cop)), r'$45.900');
       expect(
         plain(formatAmount(d('1250.5'), Asset.usd, base: Asset.cop)),
-        r'US$ 1.250,50',
+        r'US$1.250,50',
       );
       expect(
         plain(formatAmount(d('-4719400'), Asset.cop, base: Asset.cop)),
-        r'−$ 4.719.400',
+        r'−$4.719.400',
       );
       expect(
         plain(formatAmount(d('12'), Asset.eur, base: Asset.cop, signed: true)),
-        '+€ 12,00',
+        '+€12,00',
       );
     });
 

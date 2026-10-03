@@ -65,8 +65,9 @@ void main() {
   ) async {
     await open(tester);
 
-    expect(screen(tester), contains('Libre hasta el 15 de octubre'));
-    expect(screen(tester), contains(r'$ 1.369.300'));
+    expect(screen(tester), contains('Puedes gastar'));
+    expect(screen(tester), contains('hasta el 15 de octubre'));
+    expect(screen(tester), contains(r'$1.369.300'));
     for (final String question in ScriptedAgent.starters) {
       expect(find.text(question), findsOneWidget);
     }
@@ -84,7 +85,7 @@ void main() {
     expect(text, contains('Mercado bajó 12 %'));
     expect(text, isNot(contains('Compras subió')));
     // The tiles are formatted on the device by catalog functions.
-    expect(text, contains(r'$ 4.719.400'));
+    expect(text, contains(r'$4.719.400'));
     expect(text, contains('+11 %'));
   });
 
@@ -98,7 +99,7 @@ void main() {
     expect(screen(tester), contains('después del 20 de diciembre'));
     final int recorded = session.recorder.build().steps.length;
 
-    // Drag to the right end: $ 800.000 a month.
+    // Drag to the right end: $800.000 a month.
     final Finder slider = find.byType(Slider);
     await tester.ensureVisible(slider);
     await tester.drag(slider, const Offset(600, 0));
@@ -122,10 +123,10 @@ void main() {
     await ask(tester, session, ScriptedAgent.starters[2]);
 
     // The two nobody has used in a month start switched off.
-    expect(screen(tester), contains(r'$ 153.900 al mes'));
+    expect(screen(tester), contains(r'$153.900 al mes'));
 
     // Switch off one more: the row after the two stale ones is Cineplus,
-    // which costs $ 38.900.
+    // which costs $38.900.
     final Finder on = find.byWidgetPredicate(
       (Widget w) => w is Switch && w.value,
     );
@@ -133,7 +134,7 @@ void main() {
     await tester.tap(on.first);
     await settle(tester);
 
-    expect(screen(tester), contains(r'$ 192.800 al mes'));
+    expect(screen(tester), contains(r'$192.800 al mes'));
   });
 
   testWidgets('the expense form checks the amount before saving', (
@@ -142,7 +143,7 @@ void main() {
     final Session session = await open(tester);
     await ask(tester, session, ScriptedAgent.starters[4]);
 
-    expect(screen(tester), contains(r'Anoto $ 45.000 en mercado'));
+    expect(screen(tester), contains(r'Anoto $45.000 en mercado'));
     expect(find.text('Escribe un monto mayor que cero.'), findsNothing);
 
     // Clear the amount: the agent's own rule says why that is wrong.
@@ -159,16 +160,16 @@ void main() {
     await tester.tap(find.text('Guardar gasto'));
     await settle(tester);
 
-    expect(screen(tester), contains(r'Listo: $ 52.000 en mercado'));
+    expect(screen(tester), contains(r'Listo: $52.000 en mercado'));
     // And the money it took is no longer free.
-    expect(screen(tester), contains(r'$ 1.317.300 libres'));
+    expect(screen(tester), contains(r'$1.317.300 libres'));
   });
 
   testWidgets('against last month: bars and what moved', (tester) async {
     final Session session = await open(tester);
     await ask(tester, session, ScriptedAgent.starters[3]);
 
-    expect(screen(tester), contains(r'Gastaste $ 480.500 más que en agosto'));
+    expect(screen(tester), contains(r'Gastaste $480.500 más que en agosto'));
     expect(screen(tester), contains('Lo que más cambió'));
   });
 

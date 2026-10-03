@@ -76,7 +76,9 @@ class FreeExplained extends StatelessWidget {
                   value: amount(ledger.balance),
                 ),
                 ExplainSum(
-                  label: l.freeExplainCommitted,
+                  label: l.freeExplainCommitted(
+                    dayShortMonth(ledger.nextPayday),
+                  ),
                   value: amount(-ledger.committedUntilPayday),
                 ),
                 if (ledger.cushion > 0)
@@ -117,9 +119,14 @@ class FreeExplained extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 24),
-          SectionLabel(l.freeExplainCommitted),
+          SectionLabel(
+            l.freeExplainCommitted(dayShortMonth(ledger.nextPayday)),
+          ),
           if (committed.isEmpty)
-            Text(l.freeExplainNothingCommitted, style: context.type.bodyMedium)
+            Text(
+              l.freeExplainNothingCommitted(dayShortMonth(ledger.nextPayday)),
+              style: context.type.bodyMedium,
+            )
           else
             Panel(
               children: <Widget>[

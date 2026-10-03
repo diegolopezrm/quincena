@@ -67,7 +67,8 @@ void main() {
         'Fecha;Descripción;Valor\n'
         '01/09/2026;COMPRA EN EXITO LAURELES;-45.900\n'
         '02/09/2026;ABONO NOMINA DL SOFT;2.500.000\n'
-        '03/09/2026;PAGO PSE COMCEL;-89.900\n',
+        '03/09/2026;PAGO PSE COMCEL;-89.900\n'
+        '04/09/2026;PAGO A JUAN PEREZ;-30.000\n',
       ),
     );
     await tester.pumpWidget(
@@ -99,27 +100,59 @@ void main() {
     // The bank the statement names is the account it goes to.
     expect(find.text('Bancolombia · COP'), findsOneWidget);
     expect(
-      find.text('3 movimientos, del 1 sept 2026 al 3 sept 2026'),
+      find.text('4 movimientos, del 1 sept 2026 al 4 sept 2026'),
+      findsOneWidget,
+    );
+    // Before importing: what is new, what was already there, and what
+    // comes without a category.
+    expect(
+      find.text('3 nuevos · 1 ya estaba · 1 sin categoría'),
       findsOneWidget,
     );
     expect(find.text('Exito Laureles'), findsOneWidget);
     expect(find.textContaining('Ya registrado'), findsOneWidget);
-    expect(find.text('Importar 2 movimientos'), findsOneWidget);
+    expect(find.text('Importar 3 movimientos'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.text('Importar 2 movimientos'));
+    // All of them, then back to what was proposed.
+    await tester.tap(find.text('Seleccionar todos'));
+    await settle(tester);
+    expect(find.text('Importar 4 movimientos'), findsOneWidget);
+    await tester.tap(find.text('Quitar todos'));
+    await settle(tester);
+    expect(find.text('Nada para importar'), findsOneWidget);
+    await tester.tap(find.text('Seleccionar todos'));
+    await settle(tester);
+    await tester.tap(find.textContaining('Ya registrado'));
+    await settle(tester);
+
+    await tester.tap(find.text('Importar 3 movimientos'));
     await settle(tester);
     final List<Entry> entries =
         await tester.runAsync(() => store.entries(accountId: bank.id)) ??
         const <Entry>[];
-    expect(entries.length, 3);
+    expect(entries.length, 4);
     expect(
       entries
           .where((Entry e) => e.source == 'statement')
           .map((Entry e) => e.payee),
-      unorderedEquals(<String>['Exito Laureles', 'Nomina DL Soft']),
+      unorderedEquals(<String>[
+        'Exito Laureles',
+        'Nomina DL Soft',
+        'Juan Perez',
+      ]),
     );
-    expect(find.text('Se importaron 2 movimientos.'), findsOneWidget);
+    // It ends on what is left to check, not on the list it came from.
+    expect(find.text('Se importaron 3 movimientos.'), findsOneWidget);
+    expect(
+      find.text('Uno quedó sin categoría: tócalo para ponérsela.'),
+      findsOneWidget,
+    );
+    expect(find.text('SIN CATEGORÍA'), findsOneWidget);
+    expect(find.text('Juan Perez'), findsOneWidget);
+    await tester.tap(find.text('Listo'));
+    await settle(tester);
+    expect(find.text('abrir'), findsOneWidget);
   });
 }
 

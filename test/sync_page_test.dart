@@ -125,7 +125,7 @@ void main() {
     addTearDown(() => tester.runAsync(other.close));
     expect(find.text('PARA REVISAR'), findsOneWidget);
     await reveal(tester, find.text('Traer de vuelta'));
-    expect(find.text('Almuerzo con Juan · −\$\u00a030.000'), findsOneWidget);
+    expect(find.text('Almuerzo con Juan · −\$30.000'), findsOneWidget);
     Entry lunch() => own.snapshot!.entries.firstWhere(
       (Entry e) => e.category == 'restaurants',
     );

@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+13
+version: 1.1.0+14
 
 environment:
   sdk: ^3.12.2
@@ -88,6 +88,10 @@ flutter:
   assets:
     # Real Gemini sessions, recorded with tool/record and replayed in the app.
     - assets/traces/
+    # The fonts' and icons' licenses travel with them, for the licenses page.
+    - assets/fonts/OFL-BricolageGrotesque.txt
+    - assets/fonts/OFL-Geist.txt
+    - assets/icons/LICENSE-Phosphor.txt
 
   fonts:
     # Both are variable fonts under the SIL Open Font License; the licenses

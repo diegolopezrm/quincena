@@ -115,9 +115,13 @@ class CoinMark extends StatelessWidget {
 /// What the person's crypto is worth now: in the Accounts tab, above the
 /// accounts, and a tap away from the whole portfolio.
 class PortfolioCard extends StatefulWidget {
-  const PortfolioCard({super.key, required this.own});
+  const PortfolioCard({super.key, required this.own, this.compact = false});
 
   final OwnController own;
+
+  /// A row among the other accounts rather than a card of its own, with
+  /// the total gain and not the day's change, which is the page's to show.
+  final bool compact;
 
   @override
   State<PortfolioCard> createState() => _PortfolioCardState();
@@ -148,6 +152,50 @@ class _PortfolioCardState extends State<PortfolioCard> {
       final Asset base = p.base;
       final double? day = p.change24h;
       final double? gain = p.gainRatio;
+      void open() => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (BuildContext context) => PortfolioPage(own: widget.own),
+        ),
+      );
+      if (widget.compact) {
+        return InkWell(
+          onTap: open,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: <Widget>[
+                _Stack(
+                  assets: <Asset>[
+                    for (final (Asset a, Pair _) in p.allocation.take(3)) a,
+                  ],
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(l.portfolioTitle, style: context.type.titleSmall),
+                      if (gain != null)
+                        Text(
+                          '${gain >= 0 ? l.portfolioGain : l.portfolioLoss} '
+                          '${percentText(gain)}',
+                          style: context.type.bodySmall?.copyWith(
+                            color: changeColor(context, gain),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Figures(
+                  moneyText(Money(p.value.base, base), base: base),
+                  style: context.type.titleSmall,
+                ),
+              ],
+            ),
+          ),
+        );
+      }
       return Material(
         color: context.colors.surface,
         shape: RoundedRectangleBorder(
@@ -156,11 +204,7 @@ class _PortfolioCardState extends State<PortfolioCard> {
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (BuildContext context) => PortfolioPage(own: widget.own),
-            ),
-          ),
+          onTap: open,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(18, 16, 14, 16),
             child: Row(

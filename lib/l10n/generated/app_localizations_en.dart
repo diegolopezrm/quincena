@@ -15,27 +15,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String freeUntil(String date) {
-    return 'Free until $date';
+    return 'You can spend until $date';
   }
 
   @override
-  String standingDetail(int days, String committed) {
-    return '$days days to go. $committed is already set aside for rent, the loan and the fixed bills.';
+  String standingSemantics(String free, String date, String when) {
+    return 'You can spend $free until $date; $when.';
   }
-
-  @override
-  String standingSemantics(String date, String free, int days, String balance) {
-    return 'Free until $date: $free. $days days to go. $balance in the account.';
-  }
-
-  @override
-  String get legendFree => 'Free';
-
-  @override
-  String get legendCommitted => 'Committed';
-
-  @override
-  String get inTheAccount => 'In the account';
 
   @override
   String get askYourMoney => 'ASK YOUR MONEY';
@@ -595,7 +581,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get groupSaved => 'Savings, investments and crypto';
 
   @override
-  String get netWorth => 'Everything you have';
+  String get netWorth => 'Net worth';
 
   @override
   String get noAccounts => 'No accounts yet.';
@@ -830,11 +816,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String standingCushion(String amount) {
-    return 'You keep $amount as a cushion.';
-  }
-
-  @override
   String get accountExplainTitle => 'How the balance adds up';
 
   @override
@@ -932,7 +913,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get totalExplainTitle => 'How your net worth adds up';
+  String get totalExplainTitle => 'How your net worth is worked out';
 
   @override
   String totalExplainUnpriced(String names) {
@@ -1714,22 +1695,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paydayArrivedBody =>
-      'Split it into envelopes before you spend it?';
+      'Give each part its envelope before you spend.';
 
   @override
   String get freeExplainAction => 'Where does this come from?';
 
   @override
-  String get freeExplainTitle => 'How the free amount is worked out';
+  String get freeExplainTitle => 'How what you can spend is worked out';
 
   @override
-  String get freeExplainSpendable => 'To spend today';
+  String get freeExplainSpendable => 'Available today';
 
   @override
-  String get freeExplainCommitted => 'Committed before payday';
+  String freeExplainCommitted(String date) {
+    return 'Payments before $date';
+  }
 
   @override
-  String get freeExplainNothingCommitted => 'Nothing scheduled before payday.';
+  String freeExplainNothingCommitted(String date) {
+    return 'Nothing scheduled before $date.';
+  }
 
   @override
   String get freeExplainLeftOut => 'Left out';
@@ -1816,23 +1801,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTitle => 'Settings';
 
   @override
-  String standingDaysLeft(int days) {
-    String _temp0 = intl.Intl.pluralLogic(
-      days,
-      locale: localeName,
-      other: '$days days until payday.',
-      one: 'One day until payday.',
-      zero: 'Today is payday.',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String standingCommittedOwn(String committed) {
-    return '$committed is already committed to scheduled payments.';
-  }
-
-  @override
   String get inboxTitle => 'To review';
 
   @override
@@ -1872,7 +1840,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get chooseAccount => 'Choose the account';
+  String get chooseAccount => 'Choose account';
 
   @override
   String get noMerchant => 'No merchant';
@@ -1897,7 +1865,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String nearbyPlace(String name, int metres) {
-    return 'Nearby: $name, $metres m away';
+    return 'Nearby: $name, $metres m away · © OpenStreetMap contributors';
   }
 
   @override
@@ -1911,7 +1879,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String whyLabel(String reasons) {
-    return 'Why: $reasons';
+    return 'Suggested because $reasons.';
   }
 
   @override
@@ -1926,7 +1894,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String whyInstitutionSame(String institution) {
-    return 'it\'s your $institution account';
+    return 'it came from your $institution account';
   }
 
   @override
@@ -1941,12 +1909,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String whyLearned(String merchant) {
-    return 'your rule for \"$merchant\"';
+    return 'that\'s how you recorded $merchant before';
   }
 
   @override
   String whyMerchant(String merchant) {
-    return '$merchant is a known shop';
+    return 'we recognized $merchant';
   }
 
   @override
@@ -2114,7 +2082,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get captureLocationHelp =>
-      'When the alert does not say where, Quincena looks up the shops a few metres from where the phone was. The location stays here; only the coordinates go to OpenStreetMap, through Photon, to find the shops.';
+      'When the alert doesn\'t say where, Quincena looks up the shops a few metres from where the phone was. The location stays here; only the coordinates go to OpenStreetMap, through Photon, to find the shops. Shop data is © OpenStreetMap contributors, under the ODbL.';
 
   @override
   String get captureLocationDenied =>
@@ -2128,7 +2096,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get captureAlwaysBody =>
-      'Payments almost always arrive while Quincena is closed. To know where you were at that moment, Android asks you to choose \"Allow all the time\". Quincena only looks at the location when a payment notification arrives.';
+      'Quincena collects location data to suggest the shop of a payment, even when the app is closed or not in use. It only looks at the location when a payment notification arrives, keeps it on this phone, and sends just the coordinates to OpenStreetMap, through Photon, to find the shop. Android will ask you to choose \"Allow all the time\".';
 
   @override
   String get captureLocationOnlyOpen =>
@@ -2609,18 +2577,6 @@ class AppLocalizationsEn extends AppLocalizations {
       one: 'One movement',
     );
     return '$_temp0, from $from to $to';
-  }
-
-  @override
-  String statementRecordedCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count were already recorded and are left unchecked.',
-      one: 'One was already recorded and is left unchecked.',
-      zero: 'None was recorded yet.',
-    );
-    return '$_temp0';
   }
 
   @override
@@ -4344,4 +4300,199 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportThanks => 'Thanks. We\'ll look into this answer.';
+
+  @override
+  String get standingCanSpend => 'You can spend';
+
+  @override
+  String get standingShort => 'You\'re short';
+
+  @override
+  String standingUntil(String date) {
+    return 'until $date';
+  }
+
+  @override
+  String standingShortUntil(String date) {
+    return 'to reach $date';
+  }
+
+  @override
+  String standingNextFortnight(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'your pay arrives in $days days',
+      one: 'your pay arrives tomorrow',
+      zero: 'your pay arrives today',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String standingNextPay(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'your next pay arrives in $days days',
+      one: 'your next pay arrives tomorrow',
+      zero: 'your pay arrives today',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get standingAvailable => 'Available today';
+
+  @override
+  String standingPaymentsBefore(String date) {
+    return 'Payments before $date';
+  }
+
+  @override
+  String get standingCushionLine => 'Cushion';
+
+  @override
+  String get standingEnvelopesLine => 'Set aside in envelopes';
+
+  @override
+  String get standingReserveLine => 'Kept from variable income';
+
+  @override
+  String standingShortSemantics(String free, String date, String when) {
+    return 'You\'re $free short of $date; $when.';
+  }
+
+  @override
+  String get homeTodo => 'To do';
+
+  @override
+  String get todoReview => 'Review';
+
+  @override
+  String get todoSplit => 'Split it';
+
+  @override
+  String get paydayArrivedPay => 'Your pay arrived';
+
+  @override
+  String get netWorthDetail => 'What you have minus what you owe';
+
+  @override
+  String get groupCards => 'Credit cards';
+
+  @override
+  String cardOwed(String amount) {
+    return 'You owe $amount';
+  }
+
+  @override
+  String cardInFavor(String amount) {
+    return '$amount in your favor';
+  }
+
+  @override
+  String get cardClear => 'Paid off';
+
+  @override
+  String get totalExplainHave => 'What you have';
+
+  @override
+  String get totalExplainOwe => 'What you owe';
+
+  @override
+  String get ratesSeeAll => 'See where each rate comes from, or change it';
+
+  @override
+  String get cardOwedLabel => 'You owe';
+
+  @override
+  String get cardInFavorLabel => 'In your favor';
+
+  @override
+  String get whichAccountIn => 'We don\'t know which account it reached.';
+
+  @override
+  String get whichAccountOut => 'We don\'t know which account it left.';
+
+  @override
+  String get fromOwnAccount => 'Is it from another account of yours?';
+
+  @override
+  String get moreActions => 'More actions';
+
+  @override
+  String get hideOriginal => 'Hide the message';
+
+  @override
+  String statementNew(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count new',
+      one: '1 new',
+      zero: 'None new',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String statementAlready(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count already there',
+      one: '1 already there',
+      zero: 'no repeats',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String statementUnsorted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count without a category',
+      one: '1 without a category',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get statementAlreadyUnchecked =>
+      'What was already there is unchecked, so it isn\'t counted twice.';
+
+  @override
+  String get statementSelectAll => 'Select all';
+
+  @override
+  String get statementSelectNone => 'Clear all';
+
+  @override
+  String get statementDoneSorted => 'Each one got its category.';
+
+  @override
+  String statementDoneUnsorted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count came without a category: tap them to give them one.',
+      one: 'One came without a category: tap it to give it one.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get statementGiveCategory => 'Without a category';
+
+  @override
+  String get statementFinish => 'Done';
+
+  @override
+  String get licensesTitle => 'Licenses and credits';
+
+  @override
+  String get licensesLegalese =>
+      '© 2026 DL SOFT TECHNOLOGIES SAS. Nearby shops come from © OpenStreetMap contributors (ODbL).';
 }

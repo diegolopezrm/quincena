@@ -64,7 +64,7 @@ const String _nbsp = ' ';
 
 /// [amount] of [asset] as the interface language writes it.
 ///
-/// Spanish: `$ 45.900`, `US$ 1.250,00`, `0,0042 BTC`. English: `$45,900`,
+/// Spanish: `$45.900`, `US$1.250,00`, `0,0042 BTC`. English: `$45,900`,
 /// `US$1,250.00`, `0.0042 BTC`. The bare local symbol (`$`) is kept for
 /// [base], the person's own currency; every other currency carries one that
 /// cannot be mistaken for it, so pesos and dollars side by side stay apart.
@@ -76,7 +76,6 @@ String formatAmount(
   bool signed = false,
   int? decimals,
 }) {
-  final bool en = englishFormatting;
   final String sign = amount < Decimal.zero
       ? '−'
       : (signed && amount > Decimal.zero ? '+' : '');
@@ -89,7 +88,7 @@ String formatAmount(
   final String symbol =
       (asset == (base ?? asset) ? asset.localSymbol : asset.symbol) ??
       asset.code;
-  return en ? '$sign$symbol$digits' : '$sign$symbol$_nbsp$digits';
+  return '$sign$symbol$digits';
 }
 
 /// [value] with the interface language's separators: `1.250,5` in Spanish,

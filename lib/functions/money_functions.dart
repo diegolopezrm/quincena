@@ -32,7 +32,7 @@ DateTime? _arrival(double target, double saved, double monthly) {
 @GenUiFunction(
   description:
       'Formats an amount of pesos the way it is written in Colombia, such as '
-      '"\$ 1.650.000", or in the short spoken form, such as "\$ 4,7 M", when '
+      '"\$1.650.000", or in the short spoken form, such as "\$4,7 M", when '
       '`short` is true. Use it for any money shown as text, rather than '
       'writing the digits yourself.',
 )

@@ -26,7 +26,7 @@ Checked against each provider's published requirements on 2 October 2026.
 
 ## Automated checks
 
-`flutter test` runs 392 tests, the same that CI runs on every push,
+`flutter test` runs 400 tests, the same that CI runs on every push,
 with `dart format`, `flutter analyze --fatal-infos` and a check that the
 generated catalog is current.
 
@@ -60,6 +60,17 @@ generated catalog is current.
   and files that are tampered with, cut, from another vault or of a newer
   format. The design and its two security review passes are in
   `docs/SYNC.md`.
+- **Money that reads by itself.** `test/money_clarity_test.dart` holds
+  the home card to one figure to spend, with what is there today and each
+  thing held back as its own line, "Te faltan" when the period falls short,
+  and the next pay named as a quincena only for those paid twice a month.
+  It checks that a credit card shows what is owed and the net worth splits
+  into what is had and what is owed, that money arriving from another of
+  the person's accounts is recorded as a transfer and not as income, that
+  the licenses page credits OpenStreetMap and the fonts, and that amounts
+  are written one way. `test/statement_page_test.dart` follows an import
+  from its summary (new, already there, without a category) to the
+  movements left to categorize.
 - **Reporting an answer.** `test/report_test.dart` reports a Gemini
   answer from the conversation: the reason, the comment and the answer go
   to Firestore with App Check's token; the sheet stays open with an error

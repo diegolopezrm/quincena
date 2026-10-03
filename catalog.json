@@ -899,7 +899,7 @@
               "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicString"
             },
             "value": {
-              "description": "The figure, already formatted, such as \"$ 589.300\" or \"+67 %\".",
+              "description": "The figure, already formatted, such as \"$589.300\" or \"+67 %\".",
               "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicString"
             },
             "caption": {
@@ -1327,7 +1327,7 @@
     },
     "money": {
       "type": "object",
-      "description": "Formats an amount of pesos the way it is written in Colombia, such as \"$ 1.650.000\", or in the short spoken form, such as \"$ 4,7 M\", when `short` is true. Use it for any money shown as text, rather than writing the digits yourself.",
+      "description": "Formats an amount of pesos the way it is written in Colombia, such as \"$1.650.000\", or in the short spoken form, such as \"$4,7 M\", when `short` is true. Use it for any money shown as text, rather than writing the digits yourself.",
       "properties": {
         "call": {
           "const": "money"
