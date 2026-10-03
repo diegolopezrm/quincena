@@ -225,6 +225,11 @@ Everything else (accounts, movements, contacts, health, browsing,
 diagnostics, usage data) is not collected: it stays on the device or is
 not handled at all. No tracking, no ads, no third-party analytics.
 
+Build 12, in review, cannot report an answer. A report (from build 13)
+carries the same types: the question, the answer's figures and the
+person's comment, for App Functionality, nothing linked to the person.
+So the answers above hold when an iOS build with reports ships.
+
 ### Age rating
 
 4+ for content. The rating's questions on AI assistants: Gemini answers
@@ -274,15 +279,16 @@ which on Android reads:
 
 ### Data safety
 
-Submitted on 2 October 2026. None of it is processed ephemerally, and
-none is shared: Google and Photon receive it as service providers.
+Submitted on 2 October 2026 and updated on 3 October for reports about
+answers. None of it is processed ephemerally, and none is shared: Google
+and Photon receive it as service providers.
 
 | Data | Collected | Shared | Purpose | Optional |
 | --- | --- | --- | --- | --- |
 | Device or other IDs (Firebase's anonymous ID, made only when the person asks Gemini) | Yes | No | App functionality; fraud prevention, security and compliance | Yes |
-| Financial info: purchase history (the payments of a category in a month, in a question to Gemini) | Yes | No | App functionality | Yes |
-| Financial info: other (figures in a question to Gemini) | Yes | No | App functionality | Yes |
-| Messages: other in-app messages (a question's text) | Yes | No | App functionality | Yes |
+| Financial info: purchase history (the payments of a category in a month, in a question to Gemini or a reported answer) | Yes | No | App functionality; fraud prevention, security and compliance | Yes |
+| Financial info: other (figures in a question to Gemini or a reported answer) | Yes | No | App functionality; fraud prevention, security and compliance | Yes |
+| Messages: other in-app messages (a question's text, a report's comment) | Yes | No | App functionality; fraud prevention, security and compliance | Yes |
 | Files and docs (a statement read with Gemini) | Yes | No | App functionality | Yes |
 | Location: precise | Yes | No | App functionality | Yes |
 
@@ -307,6 +313,25 @@ admin@dlsoft.dev and the marketing site; no phone.
 1.0.0 (12) went to internal testing on 2 October 2026: a 19.5 MB download
 from a 92.6 MB bundle, with Play App Signing. The track has no testers
 yet; they go under Testing, Internal testing, Testers.
+
+1.0.0 (13), with reports about answers, replaced it there on 3 October
+and was promoted to production the same day: a full rollout to 176
+countries and regions and the rest of the world, without France, for
+the same encryption declaration as on the App Store. A first submission
+sends everything together, so the 12 changes went to review at once:
+the release, the countries, both listings, the rating, the audience,
+the privacy policy, ads, Data safety, health apps and the category, with
+the location and sign-in declarations. Managed publishing is off, so
+Google's approval publishes the app; Play says reviews usually take up
+to 7 days.
+
+### AI-generated content
+
+Google Play asks apps whose AI chat is a central feature, as "Pregúntale
+a tu plata" is in this listing, to let people report offensive output
+without leaving the app. From build 13 every answer a model wrote has
+"Reportar"; where reports go and how long they stay is in
+`docs/PRODUCTION.md`.
 
 ### Permission declarations
 

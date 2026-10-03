@@ -1,8 +1,9 @@
 # Production
 
 Where Quincena's Firebase project stands before real people and real money
-go through it. Checked on 2 October 2026, when version 1.0 went to App Review
-and to Google Play's internal testing. The web demo deploys from `main`.
+go through it. Checked on 3 October 2026: version 1.0 is in App Review with
+build 12, and 1.0.0 (13) in Google Play's review for production. The web
+demo deploys from `main`.
 
 ## What is set up
 
