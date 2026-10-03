@@ -311,8 +311,10 @@ the six phone screenshots per language. Category Finance; contact
 admin@dlsoft.dev and the marketing site; no phone.
 
 1.0.0 (12) went to internal testing on 2 October 2026: a 19.5 MB download
-from a 92.6 MB bundle, with Play App Signing. The track has no testers
-yet; they go under Testing, Internal testing, Testers.
+from a 92.6 MB bundle, with Play App Signing. Its testers are the
+"Quincena internos" list, with Diego's account, since 3 October; a tester
+joins at https://play.google.com/apps/internaltest/4700567245405439080
+and installs from there.
 
 1.0.0 (13), with reports about answers, replaced it there on 3 October
 and was promoted to production the same day: a full rollout to 176
