@@ -149,23 +149,36 @@ Sources: [Agent Platform zero data retention](https://docs.cloud.google.com/gemi
 
 ## What a question costs
 
-The system prompt is about 77,000 characters, some 19,000 tokens on Agent
-Platform. Most of it is the catalog. Every round of an answer sends it again:
-the model asks for the tools it needs, gets their answers, and writes the
-surface. The prompt now asks for every tool at once, which brought the
-spending question from six rounds to four; simpler ones take two. The last
-round writes about 1,100 tokens and thinks another 2,000 to 3,500, even at
-the low thinking level, the lowest 3.8 Flash takes.
+The system prompt is about 49,000 characters, 11,822 tokens counted by the
+model itself (`countTokens`, through Firebase AI Logic) on 3 October 2026.
+Most of it is the catalog. genui writes its three JSON schemas indented, one
+key per line; the app sends the same JSON on one line, which the model reads
+the same way and which took the prompt from 19,080 tokens to 11,822. Every
+round of an answer sends it again: the model asks for the tools it needs,
+gets their answers, and writes the surface. The prompt asks for every tool
+at once, so most questions take two rounds and the longest three or four.
+`flutter test tool/prompt` writes the prompt as sent, by part.
 
-At 3.8 Flash's prices until 31 December 2026, US$0.75 per million input
-tokens and US$3.75 per million output tokens, with the cache off, a question
-costs about US$0.04 to US$0.08. From January 2027 the prices double. COP
-100,000 a month covers some 400 to 750 questions. An answer takes 25 to 60
-seconds, most of it that last round.
+Measured live the same day, with 3.8 Flash through Firebase AI Logic:
 
-The prompt cache would make every round after the first far cheaper, at the
-price of Google keeping the prompt in memory for up to 24 hours. A shorter
-catalog description would save on every round either way.
+| Question | Rounds | Prompt tokens | Written | Thinking | Cost | With the old prompt |
+| --- | --- | --- | --- | --- | --- | --- |
+| ¿En qué se me fue la plata en septiembre? | 2 | 26,252 | 1,216 | 0 | US$0.024 | US$0.035 |
+| ¿Me alcanza para ir a Cartagena en diciembre? | 2 | 26,075 | 1,484 | 4,322 | US$0.041 | US$0.052 |
+
+That is at 3.8 Flash's prices until 31 December 2026, US$0.75 per million
+input tokens and US$3.75 per million output tokens (thinking included), with
+the cache off: a question costs about US$0.02 to US$0.05, and COP 100,000 a
+month covers some 600 to 1,200 of them. From January 2027 the prices double.
+What the model thinks now weighs nearly as much as the whole prompt: in
+the second question its 4,322 tokens of thought cost US$0.016 and the
+26,075 it read US$0.020, at the low thinking level, the lowest 3.8 Flash
+takes. An answer takes 20 to 60 seconds, most of it the
+last round.
+
+The prompt cache would make every round after the first cheaper still, at
+the price of Google keeping the prompt in memory for up to 24 hours. That
+is DL SOFT's decision.
 
 ## Pending
 

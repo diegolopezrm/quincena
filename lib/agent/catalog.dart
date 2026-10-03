@@ -9,7 +9,13 @@ import '../genui_catalog.g.dart';
 /// genui's `Text`, for the odd line no component covers, and genui's basic
 /// functions, because the `checks` an agent writes call `required` and
 /// `numeric`, and those live there.
+///
+/// All but `formatCurrency`, which writes amounts the locale's way
+/// (`$ 4.800.000,00`): an amount in a sentence goes through `money`, in the
+/// app's one format.
 final Catalog quincenaCatalog = genUiCatalog.copyWith(
   newItems: <CatalogItem>[BasicCatalogItems.text],
-  newFunctions: BasicCatalogItems.asCatalog().functions.toList(),
+  newFunctions: BasicCatalogItems.asCatalog().functions
+      .where((f) => f.name != 'formatCurrency')
+      .toList(),
 );

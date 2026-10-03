@@ -47,6 +47,17 @@ void main() {
     );
   });
 
+  test('amounts in a sentence have one way to be written', () {
+    final Set<String> functions = <String>{
+      for (final f in quincenaCatalog.functions) f.name,
+    };
+    expect(functions, contains('money'));
+    // genui's own writes them the locale's way, with a space after the sign.
+    expect(functions, isNot(contains('formatCurrency')));
+    // The checks an agent writes still have theirs.
+    expect(functions, containsAll(<String>['required', 'numeric']));
+  });
+
   testWidgets('nothing the schema allows breaks a component', (tester) async {
     // The fuzzer brings its own app and plain Material theme, which is the
     // point: a component has to survive being drawn somewhere new.

@@ -304,6 +304,38 @@ void main() {
       expect(prompt, contains('Today is 2026-10-01'));
       expect(prompt, contains('Valentina'));
     });
+
+    test('its schemas are the same JSON, without the spaces', () {
+      // Each round sends the whole prompt: 19,080 tokens as genui writes
+      // it, 11,886 like this, counted by the model on 3 October 2026.
+      final RegExp fenced = RegExp(
+        r'-----([A-Z_]+_SCHEMA|COMMON_TYPES)_START-----\n(.*)\n-----\1_END-----',
+      );
+      final List<RegExpMatch> schemas = fenced.allMatches(prompt).toList();
+      expect(schemas.map((RegExpMatch m) => m[1]), <String>[
+        'COMMON_TYPES',
+        'CATALOG_SCHEMA',
+        'MESSAGE_SCHEMA',
+      ]);
+      for (final RegExpMatch m in schemas) {
+        // One line each, and it reads back as JSON.
+        expect(m[2], isNot(contains('\n')));
+        expect(jsonDecode(m[2]!), isA<Map<String, Object?>>());
+      }
+      // The words around them are as they were.
+      expect(prompt, contains('-----CONTROLLING_THE_UI_START-----\n'));
+      expect(compactSchemas(prompt), prompt);
+      final String pretty =
+          '-----X_SCHEMA_START-----\n'
+          '${const JsonEncoder.withIndent('  ').convert(<String, Object?>{
+            'a': <int>[1, 2],
+            'b': 'ñandú',
+          })}\n-----X_SCHEMA_END-----';
+      expect(
+        compactSchemas(pretty),
+        '-----X_SCHEMA_START-----\n{"a":[1,2],"b":"ñandú"}\n-----X_SCHEMA_END-----',
+      );
+    });
   });
 
   group('a call written out as text', () {

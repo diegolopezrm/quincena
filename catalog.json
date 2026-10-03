@@ -1728,34 +1728,6 @@
       ],
       "unevaluatedProperties": false
     },
-    "formatCurrency": {
-      "type": "object",
-      "description": "Formats a number as a currency string.",
-      "properties": {
-        "call": {
-          "const": "formatCurrency"
-        },
-        "args": {
-          "type": "object",
-          "properties": {
-            "value": {
-              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicNumber"
-            },
-            "currencyCode": {
-              "type": "string"
-            }
-          }
-        },
-        "returnType": {
-          "const": "string"
-        }
-      },
-      "required": [
-        "call",
-        "args"
-      ],
-      "unevaluatedProperties": false
-    },
     "formatDate": {
       "type": "object",
       "description": "Formats a timestamp into a string using a pattern.",
@@ -2047,9 +2019,6 @@
         },
         {
           "$ref": "#/functions/formatNumber"
-        },
-        {
-          "$ref": "#/functions/formatCurrency"
         },
         {
           "$ref": "#/functions/formatDate"
