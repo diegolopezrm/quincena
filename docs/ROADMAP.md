@@ -7,7 +7,8 @@ las lleva todas. Las fases 10 a 14 incorporan las 15 propuestas
 del [registro de ideación](IDEAS_PRODUCTO.md), y la 15 es la sincronización
 entre dispositivos. Construida no quiere decir validada: lo que falta probar
 en dispositivos reales y con personas está en la puerta de calidad de abajo y
-en [`QUALITY.md`](QUALITY.md). No hay fechas comprometidas.
+en [`QUALITY.md`](QUALITY.md). No hay fechas comprometidas. La versión
+1.1.0, en curso, son las fases 16 a 19.
 
 **Visión:** Quincena ayuda a decidir antes de gastar, además de explicar en qué
 se fue la plata. Cada respuesta debe poder convertirse en una herramienta
@@ -426,6 +427,118 @@ pero requiere diseño y revisión de seguridad antes de implementarse.
 conexión; pruebas de conflictos, restauración, revocación y borrado pasan;
 revisión de seguridad completada y ninguna clave secreta expuesta al servidor.
 No confundir sincronización con copia de seguridad: documentar ambas garantías.
+
+## Versión 1.1.0
+
+La 1.0 salió a revisión en las dos tiendas el 2 y el 3 de octubre de 2026.
+La 1.1.0 junta dos fuentes: lo que quedó abierto al publicar (cumplimiento,
+costos de Gemini, respaldo y validación) y una revisión externa de
+experiencia sobre las pantallas de la 1.0. Su conclusión, que esta versión
+adopta como principio: **cada pantalla debe decir qué significa el dinero y
+cuál es la siguiente decisión útil, sin obligar a interpretar números.**
+
+Las prioridades de esa revisión ordenan las fases: la 16 es lo que debe
+estar antes de mostrarla a más personas, la 17 lo que la hace sentir buena y
+la 18 el pulido. La 19 recoge lo demás. Cada fase cierra con pruebas, un
+commit en `main` y una build en TestFlight.
+
+### 16. Que el dinero se entienda solo
+
+**Objetivo:** que nadie tenga que preguntarse cuánto tiene, cuánto puede
+gastar y hasta cuándo.
+
+- Un solo formato: `$299.900` sin espacio, `+$85.000` y `−$63.200` con el
+  signo menos de verdad, `+6,98 %` y `3 oct · 9:40 a. m.`; en inglés, sus
+  equivalentes. Una sola función por tipo de dato, sin excepciones sueltas.
+- Inicio: una sola cifra para gastar, "Puedes gastar $299.900 hasta el 15
+  de octubre", con su cuenta debajo (disponible hoy, pagos antes del pago,
+  colchón y sobres si los hay) en lugar de "Para gastar" compitiendo con
+  ella. La barra dice sus valores ("$299.900 libres · $26.900
+  comprometidos"). "Tu próxima quincena llega en 12 días" cuando a la
+  persona le pagan por quincena; "tu próximo pago" en los demás casos.
+- "Por hacer": los avisos de Inicio (movimientos por revisar, llegó la
+  quincena) como una sección de filas con su acción escrita ("Revisar",
+  "Organizarla"), no como tarjetas que compiten.
+- Cuentas: patrimonio como activos menos deudas, lo disponible para gastar
+  aparte, y las tarjetas de crédito como deudas ("Debes $480.000", y el
+  cupo disponible si la persona lo dio). Las tasas, en una línea por moneda
+  con "Ver todas"; la edición, en su propia pantalla.
+- Por revisar: una acción principal por tarjeta, "Editar" y un menú para lo
+  demás; "Sugerencia: Mercado, porque ya registraste Éxito Laureles" en vez
+  de "Por qué"; y ante un ingreso, la pregunta "¿Es plata tuya que viene de
+  otra cuenta?", para no contar como ingreso una transferencia propia.
+- Importar extracto: cuántos movimientos son nuevos, cuántos parecen
+  repetidos y cuántos necesitan revisión antes de importar; "Seleccionar
+  todos"; y al terminar, qué quedó y un enlace a lo que falta revisar.
+- Crédito a OpenStreetMap donde aparece un comercio sugerido por ubicación,
+  y el aviso de ubicación con la frase que pide Google ("incluso cuando la
+  app está cerrada o no se usa").
+
+**Criterios de terminado:** las capturas de Inicio, Cuentas y Por revisar
+en los dos idiomas pasan la prueba de accesibilidad; una prueba recorre
+cada pantalla buscando montos con otro formato; lo libre, lo disponible y
+el patrimonio cuadran en "¿De dónde sale?".
+
+### 17. Decidir antes de gastar
+
+**Objetivo:** que Inicio sea un resumen del día y que las respuestas
+empiecen por la conclusión.
+
+- "Próximos días" en Inicio: hoy, cada cobro y el próximo pago en una línea
+  de tiempo, con "Tu punto más bajo será $299.900 el 12 de octubre".
+- "¿Me alcanza para…?" visible en Inicio, con el precio a la mano.
+- Respuestas de Gemini: primero la conclusión ("No con tu ahorro actual: te
+  faltan $350.000 al mes para el 20 de diciembre"); la meta muestra lo que
+  falta además del porcentaje; el control de ahorro dice en vivo cuándo se
+  llega, marca el monto necesario y se detiene ahí con una vibración leve;
+  las oportunidades de ahorro dicen "Podrías liberar hasta $409.200" con su
+  desglose, sin dar por hecho que la persona quiera cancelar algo.
+- Preguntas sugeridas en la barra de Gemini, según lo que hay en la cuenta.
+- Cripto: "Hoy" y "Ganancia total" separados; la gráfica muestra el
+  rendimiento (solo el precio) por defecto y el valor del portafolio como
+  segunda vista; la conexión con Binance dice en palabras simples que solo
+  lee y nunca mueve fondos.
+- Estados vacíos, de carga (esqueletos y los datos anteriores visibles con
+  "Actualizando…") y de error que dicen qué falló y de cuándo son los
+  datos que se ven.
+- El botón de agregar dice qué agrega ("Movimiento") y "Le presté / Me
+  prestaron" en gastos compartidos, sin pasar por "tu parte en 0".
+
+**Criterios de terminado:** pruebas de widget del control de ahorro, la
+línea de tiempo y los estados vacío y de error; las cinco respuestas de la
+demo empiezan por su conclusión.
+
+### 18. Pulido
+
+- El verde queda para la acción principal y lo positivo; las acciones
+  secundarias, en neutro.
+- Menos tarjetas y menos relleno: métricas y encabezados sin borde,
+  tarjetas solo para lo que se toca o se agrupa, unos 20 % menos de espacio
+  vertical.
+- Tipografía más liviana: cifras grandes en 700 a 800, títulos en 600 a
+  700, texto en 400 a 500.
+- Animaciones que explican un cambio (confirmar un movimiento, mover el
+  control de ahorro, importar), háptica leve y respeto por "reducir
+  movimiento".
+- La frase que ordena el producto en fichas y web: "Quincena sabe cuánto
+  puedes gastar sin dañar tus planes".
+
+### 19. Respaldo, costos y alcance
+
+- Respaldo cifrado: exportar con un código, como el de la sincronización,
+  en lugar de un JSON legible.
+- Widget de "Puedes gastar" en iOS y Android, con opción de ocultar montos.
+- Gemini más barato antes de que se duplique su precio en enero de 2027:
+  un prompt más corto, medido con las trazas grabadas. La caché de prompts
+  queda a decisión de Diego.
+- Límite diario en el servidor: hoy las 30 preguntas se cuentan en el
+  teléfono. Contarlas en el servidor necesita una función propia delante de
+  Gemini; se diseña aquí y se decide antes de construirla.
+- Validación: pruebas en dispositivos reales de [`QUALITY.md`](QUALITY.md)
+  y una prueba cerrada con personas durante dos quincenas.
+- En la web, lo que depende del teléfono sigue fuera por diseño: captura
+  automática, leer fotos en el dispositivo, Binance, sincronización y
+  recordatorios.
 
 ## Trazabilidad de las 15 ideas
 

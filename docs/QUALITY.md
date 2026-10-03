@@ -145,10 +145,7 @@ TestFlight build 5 and an Android phone, before the stores' review:
 
 ## Left for the developer account
 
-- App Store Connect: submit 1.0.0 with the listing, App Privacy answers and
-  review notes in `docs/store/README.md`, and answer the age rating.
-- Google Play Console: create the app, make the upload key
-  (`docs/PRODUCTION.md`), fill Data safety, and record the background
-  location declaration's video.
-- The privacy policy still needs DL SOFT's address and phone, which Decreto
-  1074 de 2015 asks a data controller's policy to include.
+Nothing. Version 1.0 went to App Review on 2 October 2026 with build 12,
+and 1.0.0 (13) to Google Play's review for production on 3 October, with
+Play Integrity linked and the privacy policy naming DL SOFT's NIT,
+address and phone. `docs/store/README.md` has what each store was told.
