@@ -589,7 +589,10 @@ class BinanceSync {
           date: now,
           payee: labels.adjustment,
           source: 'binance',
-          sourceRef: '${prefix}balance:${s.key}:${now.millisecondsSinceEpoch}',
+          // Numbered, not timed: two devices that see the same change
+          // number it alike, and syncing keeps one.
+          sourceRef:
+              '${prefix}balance:${s.key}:${entries.where((Entry e) => e.accountId == a.id && e.kind == EntryKind.adjustment).length + 1}',
         );
         adjusted++;
       }

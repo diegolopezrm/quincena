@@ -6516,6 +6516,318 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Falta el valor o la tasa.'**
   String get tripExpenseIncomplete;
+
+  /// No description provided for @syncTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Varios dispositivos'**
+  String get syncTitle;
+
+  /// No description provided for @syncRow.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus datos en otro teléfono o computador, cifrados'**
+  String get syncRow;
+
+  /// No description provided for @syncBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Usa Quincena en más de un dispositivo con los mismos datos. Los cambios viajan en un archivo cifrado que mueves tú, por AirDrop, Archivos o un chat contigo: solo tus dispositivos lo pueden abrir, y Quincena no lo recibe.'**
+  String get syncBody;
+
+  /// No description provided for @syncNotBackup.
+  ///
+  /// In es, this message translates to:
+  /// **'Sincronizar no es un respaldo: une los cambios de tus dispositivos. Para guardar una copia de todo, usa Exportar en Ajustes.'**
+  String get syncNotBackup;
+
+  /// No description provided for @syncNotOnWeb.
+  ///
+  /// In es, this message translates to:
+  /// **'La sincronización está en la app del teléfono y del computador.'**
+  String get syncNotOnWeb;
+
+  /// No description provided for @syncStart.
+  ///
+  /// In es, this message translates to:
+  /// **'Empezar en este dispositivo'**
+  String get syncStart;
+
+  /// No description provided for @syncJoin.
+  ///
+  /// In es, this message translates to:
+  /// **'Unir este dispositivo'**
+  String get syncJoin;
+
+  /// No description provided for @syncHow.
+  ///
+  /// In es, this message translates to:
+  /// **'Empieza en el dispositivo que ya tiene tus datos. En el otro, toca «Unir este dispositivo» y escribe el código.'**
+  String get syncHow;
+
+  /// No description provided for @syncYourCode.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu código'**
+  String get syncYourCode;
+
+  /// No description provided for @syncNewCode.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu código nuevo'**
+  String get syncNewCode;
+
+  /// No description provided for @syncCodeKeep.
+  ///
+  /// In es, this message translates to:
+  /// **'Con este código unes tus otros dispositivos. Guárdalo donde guardas tus contraseñas: si pierdes todos tus dispositivos y el código, nadie podrá abrir los archivos, ni siquiera Quincena.'**
+  String get syncCodeKeep;
+
+  /// No description provided for @syncCopyCode.
+  ///
+  /// In es, this message translates to:
+  /// **'Copiar el código'**
+  String get syncCopyCode;
+
+  /// No description provided for @syncCodeCopied.
+  ///
+  /// In es, this message translates to:
+  /// **'Código copiado.'**
+  String get syncCodeCopied;
+
+  /// No description provided for @syncDone.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo'**
+  String get syncDone;
+
+  /// No description provided for @syncJoinBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe el código que muestra tu otro dispositivo en Ajustes, Varios dispositivos. Los guiones no importan.'**
+  String get syncJoinBody;
+
+  /// No description provided for @syncCodeField.
+  ///
+  /// In es, this message translates to:
+  /// **'Código'**
+  String get syncCodeField;
+
+  /// No description provided for @syncJoinAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Unir'**
+  String get syncJoinAction;
+
+  /// No description provided for @syncCodeLength.
+  ///
+  /// In es, this message translates to:
+  /// **'Al código le sobran o le faltan caracteres: son 54.'**
+  String get syncCodeLength;
+
+  /// No description provided for @syncCodeCharacter.
+  ///
+  /// In es, this message translates to:
+  /// **'Hay un carácter que el código no usa. Revisa que no sea una U.'**
+  String get syncCodeCharacter;
+
+  /// No description provided for @syncCodeCheck.
+  ///
+  /// In es, this message translates to:
+  /// **'El código no cuadra: revisa si hay un carácter cambiado.'**
+  String get syncCodeCheck;
+
+  /// No description provided for @syncJoined.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo. Ahora abre un archivo de tu otro dispositivo para traer tus datos.'**
+  String get syncJoined;
+
+  /// No description provided for @syncSend.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar mis cambios en un archivo'**
+  String get syncSend;
+
+  /// No description provided for @syncOpen.
+  ///
+  /// In es, this message translates to:
+  /// **'Abrir un archivo de otro dispositivo'**
+  String get syncOpen;
+
+  /// No description provided for @syncSendHow.
+  ///
+  /// In es, this message translates to:
+  /// **'Guarda el archivo donde tu otro dispositivo lo encuentre, o envíatelo, y ábrelo allá. Cada archivo lleva todo, así que el más reciente basta.'**
+  String get syncSendHow;
+
+  /// No description provided for @syncSaved.
+  ///
+  /// In es, this message translates to:
+  /// **'Archivo guardado. Ábrelo en tu otro dispositivo.'**
+  String get syncSaved;
+
+  /// No description provided for @syncMerged.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Ya estaba todo al día.} =1{Listo: un cambio.} other{Listo: {count} cambios.}}'**
+  String syncMerged(int count);
+
+  /// No description provided for @syncMergedWaiting.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Un cambio} other{{count} cambios}}; {waiting, plural, =1{uno espera} other{{waiting} esperan}} a que lo revises.'**
+  String syncMergedWaiting(int count, int waiting);
+
+  /// No description provided for @syncNotSync.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese no es un archivo de sincronización de Quincena.'**
+  String get syncNotSync;
+
+  /// No description provided for @syncOtherVault.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese archivo se hizo con otro código. Abre uno de un dispositivo unido con este código.'**
+  String get syncOtherVault;
+
+  /// No description provided for @syncNewer.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese archivo es de una versión más nueva de Quincena: actualiza la app.'**
+  String get syncNewer;
+
+  /// No description provided for @syncDamaged.
+  ///
+  /// In es, this message translates to:
+  /// **'El archivo está dañado o se cortó: guárdalo de nuevo en el otro dispositivo. No cambió nada.'**
+  String get syncDamaged;
+
+  /// No description provided for @syncWaiting.
+  ///
+  /// In es, this message translates to:
+  /// **'Para revisar'**
+  String get syncWaiting;
+
+  /// No description provided for @syncWaitingBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambios que no quedaron porque otro dispositivo cambió lo mismo. Nada se perdió: puedes traerlos de vuelta.'**
+  String get syncWaitingBody;
+
+  /// No description provided for @syncWhyEditedBoth.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiado aquí y en otro dispositivo; quedó el más reciente.'**
+  String get syncWhyEditedBoth;
+
+  /// No description provided for @syncWhyDeletedElsewhere.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo cambiaste aquí, pero se borró en otro dispositivo.'**
+  String get syncWhyDeletedElsewhere;
+
+  /// No description provided for @syncWhyDeletedHere.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo borraste aquí; así lo habían cambiado en otro dispositivo.'**
+  String get syncWhyDeletedHere;
+
+  /// No description provided for @syncWhyWithAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Su cuenta se borró en un dispositivo.'**
+  String get syncWhyWithAccount;
+
+  /// No description provided for @syncWhatProfile.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu perfil'**
+  String get syncWhatProfile;
+
+  /// No description provided for @syncWhatSetting.
+  ///
+  /// In es, this message translates to:
+  /// **'Un ajuste'**
+  String get syncWhatSetting;
+
+  /// No description provided for @syncRestore.
+  ///
+  /// In es, this message translates to:
+  /// **'Traer de vuelta'**
+  String get syncRestore;
+
+  /// No description provided for @syncDismiss.
+  ///
+  /// In es, this message translates to:
+  /// **'Descartar'**
+  String get syncDismiss;
+
+  /// No description provided for @syncRestored.
+  ///
+  /// In es, this message translates to:
+  /// **'De vuelta. Tus otros dispositivos lo reciben con el próximo archivo.'**
+  String get syncRestored;
+
+  /// No description provided for @syncThisDevice.
+  ///
+  /// In es, this message translates to:
+  /// **'Este dispositivo'**
+  String get syncThisDevice;
+
+  /// No description provided for @syncShowCode.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver el código'**
+  String get syncShowCode;
+
+  /// No description provided for @syncChange.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar el código'**
+  String get syncChange;
+
+  /// No description provided for @syncChangeTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cambiar el código?'**
+  String get syncChangeTitle;
+
+  /// No description provided for @syncChangeBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Los archivos que guardes desde ahora solo se abren con el código nuevo; une con él los dispositivos que quieras conservar. Los archivos que ya enviaste se siguen abriendo con el anterior.'**
+  String get syncChangeBody;
+
+  /// No description provided for @syncStop.
+  ///
+  /// In es, this message translates to:
+  /// **'Dejar de sincronizar'**
+  String get syncStop;
+
+  /// No description provided for @syncStopTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Dejar de sincronizar aquí?'**
+  String get syncStopTitle;
+
+  /// No description provided for @syncStopBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Este dispositivo olvida el código. Tus datos se quedan aquí.'**
+  String get syncStopBody;
+
+  /// No description provided for @syncWhyReplaced.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que había antes de traer de vuelta otra versión.'**
+  String get syncWhyReplaced;
+
+  /// No description provided for @syncWhyDuplicate.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegó dos veces del mismo extracto o de Binance; quedó una.'**
+  String get syncWhyDuplicate;
 }
 
 class _AppLocalizationsDelegate

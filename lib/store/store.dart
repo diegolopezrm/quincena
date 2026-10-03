@@ -9,6 +9,7 @@ import '../capture/event.dart';
 import '../capture/inbox.dart';
 import '../domain/categories.dart';
 import '../domain/records.dart';
+import '../sync/merge.dart' show SyncRecord;
 import '../money/asset.dart';
 import '../money/money.dart';
 import '../money/rates.dart';
@@ -1069,6 +1070,320 @@ class QuincenaStore {
           if (await setting(key) case final String value) key: value,
       },
     };
+  }
+
+  // Sync between devices ----------------------------------------------------
+
+  /// The settings that sync: the profile and what an export carries.
+  static const List<String> syncedSettings = <String>[
+    _profileKey,
+    ..._exportedSettings,
+  ];
+
+  /// Settings that hold a list of things with ids made at random, and the
+  /// field the list is in ('' when the setting is the list). Each thing
+  /// syncs apart, so changes to two of them on two devices both stay; one
+  /// deleted stays deleted.
+  static const Map<String, String> listSettings = <String, String>{
+    'shared.groups': '',
+    'trips': '',
+    'commitments.instalments': '',
+    'plan.wishes': '',
+    'freelance': 'incomes',
+  };
+
+  /// Lists whose things are named by what they are, a scenario by its
+  /// change: one saved again after being removed is the same thing, so the
+  /// latest of them wins.
+  static const Map<String, String> namedListSettings = <String, String>{
+    'plan.scenarios': '',
+  };
+
+  /// Where the list of [key] is, if it is one.
+  static String? listField(String key) =>
+      listSettings[key] ?? namedListSettings[key];
+
+  /// The setting a synced item belongs to, by the start of its id.
+  static String? settingOfItem(String id) {
+    for (final String key in syncedSettings) {
+      if (id.startsWith('$key/')) return key;
+    }
+    return null;
+  }
+
+  /// Settings that map an id to something: each entry syncs apart.
+  static const Set<String> mapSettings = <String>{'commitments.memories'};
+
+  /// Every record that syncs between the person's devices, as stored.
+  /// Captures waiting for review, fetched rates and what belongs to this
+  /// device stay out.
+  Future<List<SyncRecord>> syncRecords() async => <SyncRecord>[
+    for (final AccountRow r in await db.select(db.accounts).get())
+      SyncRecord('accounts', r.id, r.toJson()),
+    for (final CategoryRow r in await db.select(db.categories).get())
+      SyncRecord('categories', r.key, r.toJson()),
+    for (final EntryRow r in await db.select(db.entries).get())
+      SyncRecord('entries', r.id, r.toJson()),
+    for (final RecurringRow r in await db.select(db.recurrings).get())
+      SyncRecord('recurring', r.id, r.toJson()),
+    for (final GoalRow r in await db.select(db.goals).get())
+      SyncRecord('goals', r.id, r.toJson()),
+    for (final BudgetRow r in await db.select(db.budgets).get())
+      SyncRecord('budgets', r.category, r.toJson()),
+    for (final RateRow r in await db.select(db.rates).get())
+      if (r.manual) SyncRecord('rates', '${r.asset}/${r.quote}', r.toJson()),
+    for (final String key in syncedSettings)
+      ..._settingRecords(key, await setting(key)),
+  ];
+
+  /// A setting as records: the whole of it, or one per thing it lists, and
+  /// what is left apart from the list.
+  static List<SyncRecord> _settingRecords(String key, String? value) {
+    if (value == null || value.isEmpty) return const <SyncRecord>[];
+    final Object? json;
+    try {
+      json = jsonDecode(value);
+    } on FormatException {
+      return <SyncRecord>[
+        SyncRecord('settings', key, <String, Object?>{'value': value}),
+      ];
+    }
+    if (listField(key) case final String field) {
+      final Object? list = field.isEmpty
+          ? json
+          : (json is Map ? json[field] : null);
+      final String table = listSettings.containsKey(key) ? 'list' : 'item';
+      return <SyncRecord>[
+        if (list is List)
+          for (final Object? item in list)
+            if (item is Map && item['id'] is String)
+              SyncRecord(
+                table,
+                '$key/${item['id']}',
+                item.cast<String, Object?>(),
+              ),
+        if (field.isNotEmpty && json is Map)
+          SyncRecord('settings', key, <String, Object?>{
+            'json': <String, Object?>{
+              for (final MapEntry<Object?, Object?> e in json.entries)
+                if (e.key != field) '${e.key}': e.value,
+            },
+          }),
+      ];
+    }
+    if (mapSettings.contains(key) && json is Map) {
+      return <SyncRecord>[
+        for (final MapEntry<Object?, Object?> e in json.entries)
+          SyncRecord('map', '$key/${e.key}', <String, Object?>{'v': e.value}),
+      ];
+    }
+    return <SyncRecord>[
+      SyncRecord('settings', key, <String, Object?>{'json': json}),
+    ];
+  }
+
+  /// Writes what a sync merge decided and [settings] alongside, all of it or
+  /// nothing: deletions first, movements before their accounts; then the
+  /// rest, accounts before their movements.
+  Future<void> applySync({
+    required List<SyncRecord> upserts,
+    required List<SyncRecord> deletes,
+    Map<String, String> settings = const <String, String>{},
+  }) => db.transaction(() async {
+    Iterable<SyncRecord> of(List<SyncRecord> list, String table) =>
+        list.where((SyncRecord r) => r.table == table);
+    for (final String table in <String>[
+      'entries',
+      'recurring',
+      'goals',
+      'budgets',
+      'rates',
+      'categories',
+      'accounts',
+    ]) {
+      for (final SyncRecord r in of(deletes, table)) {
+        await _deleteSynced(r);
+      }
+    }
+    for (final String table in <String>[
+      'categories',
+      'accounts',
+      'recurring',
+      'goals',
+      'budgets',
+      'rates',
+      'entries',
+    ]) {
+      for (final SyncRecord r in of(upserts, table)) {
+        await _upsertSynced(r);
+      }
+    }
+    bool aSetting(SyncRecord r) =>
+        const <String>{'settings', 'list', 'item', 'map'}.contains(r.table);
+    await _applySettings(
+      upserts: <SyncRecord>[
+        for (final SyncRecord r in upserts)
+          if (aSetting(r)) r,
+      ],
+      deletes: <SyncRecord>[
+        for (final SyncRecord r in deletes)
+          if (aSetting(r)) r,
+      ],
+    );
+    for (final MapEntry<String, String> e in settings.entries) {
+      await setSetting(e.key, e.value);
+    }
+  });
+
+  Future<void> _applySettings({
+    required List<SyncRecord> upserts,
+    required List<SyncRecord> deletes,
+  }) async {
+    final Set<String> touched = <String>{
+      for (final SyncRecord r in <SyncRecord>[...upserts, ...deletes])
+        if (r.table == 'settings') r.id else ?settingOfItem(r.id),
+    };
+    for (final String key in touched) {
+      if (!syncedSettings.contains(key)) continue;
+      SyncRecord? whole;
+      final Map<String, SyncRecord?> items = <String, SyncRecord?>{};
+      var dropWhole = false;
+      for (final SyncRecord r in deletes) {
+        if (r.table == 'settings' && r.id == key) dropWhole = true;
+        if (r.table != 'settings' && r.id.startsWith('$key/')) {
+          items[r.id.substring(key.length + 1)] = null;
+        }
+      }
+      for (final SyncRecord r in upserts) {
+        if (r.table == 'settings' && r.id == key) whole = r;
+        if (r.table != 'settings' && r.id.startsWith('$key/')) {
+          items[r.id.substring(key.length + 1)] = r;
+        }
+      }
+      final String? current = await setting(key);
+      Object? json;
+      try {
+        json = current == null || current.isEmpty ? null : jsonDecode(current);
+      } on FormatException {
+        json = null;
+      }
+      if (listField(key) case final String field) {
+        final List<Object?> list = <Object?>[
+          if ((field.isEmpty ? json : (json is Map ? json[field] : null))
+              case final List<Object?> l)
+            ...l,
+        ];
+        final Map<String, int> at = <String, int>{
+          for (var i = 0; i < list.length; i++)
+            if (list[i] case final Map<Object?, Object?> m
+                when m['id'] is String)
+              m['id']! as String: i,
+        };
+        final List<Object?> next = <Object?>[
+          for (final Object? item in list)
+            if (!(item is Map && items.containsKey(item['id'])))
+              item
+            else if (items[item['id']] case final SyncRecord r)
+              r.data,
+          for (final MapEntry<String, SyncRecord?> e in items.entries)
+            if (!at.containsKey(e.key) && e.value != null) e.value!.data,
+        ];
+        if (field.isEmpty) {
+          await setSetting(key, jsonEncode(next));
+        } else {
+          final Map<String, Object?> rest = switch (whole?.data?['json']) {
+            final Map<Object?, Object?> m => m.cast<String, Object?>(),
+            _ =>
+              json is Map ? json.cast<String, Object?>() : <String, Object?>{},
+          };
+          await setSetting(
+            key,
+            jsonEncode(<String, Object?>{
+              for (final MapEntry<String, Object?> e in rest.entries)
+                if (e.key != field) e.key: e.value,
+              field: next,
+            }),
+          );
+        }
+        continue;
+      }
+      if (mapSettings.contains(key)) {
+        final Map<String, Object?> map = <String, Object?>{
+          if (json is Map)
+            for (final MapEntry<Object?, Object?> e in json.entries)
+              '${e.key}': e.value,
+        };
+        for (final MapEntry<String, SyncRecord?> e in items.entries) {
+          if (e.value == null) {
+            map.remove(e.key);
+          } else {
+            map[e.key] = e.value!.data!['v'];
+          }
+        }
+        await setSetting(key, jsonEncode(map));
+        continue;
+      }
+      if (dropWhole && whole == null) {
+        await (db.delete(db.settings)..where((t) => t.key.equals(key))).go();
+      } else if (whole?.data case final Map<String, Object?> d) {
+        await setSetting(
+          key,
+          d.containsKey('json') ? jsonEncode(d['json']) : '${d['value']}',
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteSynced(SyncRecord r) async {
+    switch (r.table) {
+      case 'accounts':
+        await (db.delete(db.accounts)..where((t) => t.id.equals(r.id))).go();
+      case 'categories':
+        await (db.delete(db.categories)..where((t) => t.key.equals(r.id))).go();
+      case 'entries':
+        await (db.delete(db.entries)..where((t) => t.id.equals(r.id))).go();
+      case 'recurring':
+        await (db.delete(db.recurrings)..where((t) => t.id.equals(r.id))).go();
+      case 'goals':
+        await (db.delete(db.goals)..where((t) => t.id.equals(r.id))).go();
+      case 'budgets':
+        await (db.delete(
+          db.budgets,
+        )..where((t) => t.category.equals(r.id))).go();
+      case 'rates':
+        final List<String> pair = r.id.split('/');
+        if (pair.length != 2) return;
+        await (db.delete(db.rates)
+              ..where((t) => t.asset.equals(pair[0]) & t.quote.equals(pair[1])))
+            .go();
+    }
+  }
+
+  Future<void> _upsertSynced(SyncRecord r) async {
+    final Map<String, Object?>? d = r.data;
+    if (d == null) return;
+    switch (r.table) {
+      case 'accounts':
+        await db
+            .into(db.accounts)
+            .insertOnConflictUpdate(AccountRow.fromJson(d));
+      case 'categories':
+        await db
+            .into(db.categories)
+            .insertOnConflictUpdate(CategoryRow.fromJson(d));
+      case 'entries':
+        await db.into(db.entries).insertOnConflictUpdate(EntryRow.fromJson(d));
+      case 'recurring':
+        await db
+            .into(db.recurrings)
+            .insertOnConflictUpdate(RecurringRow.fromJson(d));
+      case 'goals':
+        await db.into(db.goals).insertOnConflictUpdate(GoalRow.fromJson(d));
+      case 'budgets':
+        await db.into(db.budgets).insertOnConflictUpdate(BudgetRow.fromJson(d));
+      case 'rates':
+        await db.into(db.rates).insertOnConflictUpdate(RateRow.fromJson(d));
+    }
   }
 
   /// The settings an export carries.

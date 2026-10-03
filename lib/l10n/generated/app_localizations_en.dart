@@ -4103,4 +4103,204 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripExpenseIncomplete => 'The amount or the rate is missing.';
+
+  @override
+  String get syncTitle => 'More than one device';
+
+  @override
+  String get syncRow => 'Your data on another phone or computer, encrypted';
+
+  @override
+  String get syncBody =>
+      'Use Quincena on more than one device with the same data. Changes travel in an encrypted file you move yourself, by AirDrop, Files or a chat with yourself: only your devices can open it, and Quincena never receives it.';
+
+  @override
+  String get syncNotBackup =>
+      'Syncing isn\'t a backup: it brings your devices\' changes together. To keep a copy of everything, use Export in Settings.';
+
+  @override
+  String get syncNotOnWeb => 'Syncing is in the phone and computer apps.';
+
+  @override
+  String get syncStart => 'Start on this device';
+
+  @override
+  String get syncJoin => 'Join this device';
+
+  @override
+  String get syncHow =>
+      'Start on the device that already has your data. On the other, tap \"Join this device\" and type the code.';
+
+  @override
+  String get syncYourCode => 'Your code';
+
+  @override
+  String get syncNewCode => 'Your new code';
+
+  @override
+  String get syncCodeKeep =>
+      'With this code you join your other devices. Keep it where you keep your passwords: if you lose every device and the code, no one can open the files, not even Quincena.';
+
+  @override
+  String get syncCopyCode => 'Copy the code';
+
+  @override
+  String get syncCodeCopied => 'Code copied.';
+
+  @override
+  String get syncDone => 'Done';
+
+  @override
+  String get syncJoinBody =>
+      'Type the code your other device shows in Settings, More than one device. Dashes do not matter.';
+
+  @override
+  String get syncCodeField => 'Code';
+
+  @override
+  String get syncJoinAction => 'Join';
+
+  @override
+  String get syncCodeLength =>
+      'The code has too many or too few characters: it has 54.';
+
+  @override
+  String get syncCodeCharacter =>
+      'There is a character the code doesn\'t use. Check it isn\'t a U.';
+
+  @override
+  String get syncCodeCheck =>
+      'The code doesn\'t check out: look for a mistyped character.';
+
+  @override
+  String get syncJoined =>
+      'Done. Now open a file from your other device to bring your data.';
+
+  @override
+  String get syncSend => 'Save my changes in a file';
+
+  @override
+  String get syncOpen => 'Open a file from another device';
+
+  @override
+  String get syncSendHow =>
+      'Save the file where your other device can find it, or send it to yourself, and open it there. Each file carries everything, so the latest is enough.';
+
+  @override
+  String get syncSaved => 'File saved. Open it on your other device.';
+
+  @override
+  String syncMerged(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Done: $count changes.',
+      one: 'Done: one change.',
+      zero: 'Everything was already up to date.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String syncMergedWaiting(int count, int waiting) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count changes',
+      one: 'One change',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      waiting,
+      locale: localeName,
+      other: '$waiting wait',
+      one: 'one waits',
+    );
+    return '$_temp0; $_temp1 for you to review.';
+  }
+
+  @override
+  String get syncNotSync => 'That isn\'t a Quincena sync file.';
+
+  @override
+  String get syncOtherVault =>
+      'That file was made with another code. Open one from a device joined with this code.';
+
+  @override
+  String get syncNewer => 'That file is from a newer Quincena: update the app.';
+
+  @override
+  String get syncDamaged =>
+      'The file is damaged or cut: save it again on the other device. Nothing changed.';
+
+  @override
+  String get syncWaiting => 'To review';
+
+  @override
+  String get syncWaitingBody =>
+      'Changes that didn\'t stay because another device changed the same thing. Nothing was lost: you can bring them back.';
+
+  @override
+  String get syncWhyEditedBoth =>
+      'Changed here and on another device; the latest stayed.';
+
+  @override
+  String get syncWhyDeletedElsewhere =>
+      'You changed it here, but it was deleted on another device.';
+
+  @override
+  String get syncWhyDeletedHere =>
+      'You deleted it here; this is how another device had changed it.';
+
+  @override
+  String get syncWhyWithAccount => 'Its account was deleted on a device.';
+
+  @override
+  String get syncWhatProfile => 'Your profile';
+
+  @override
+  String get syncWhatSetting => 'A setting';
+
+  @override
+  String get syncRestore => 'Bring back';
+
+  @override
+  String get syncDismiss => 'Dismiss';
+
+  @override
+  String get syncRestored =>
+      'Back. Your other devices get it with the next file.';
+
+  @override
+  String get syncThisDevice => 'This device';
+
+  @override
+  String get syncShowCode => 'Show the code';
+
+  @override
+  String get syncChange => 'Change the code';
+
+  @override
+  String get syncChangeTitle => 'Change the code?';
+
+  @override
+  String get syncChangeBody =>
+      'Files you save from now on open only with the new code; join the devices you want to keep with it. Files you already sent still open with the old one.';
+
+  @override
+  String get syncStop => 'Stop syncing';
+
+  @override
+  String get syncStopTitle => 'Stop syncing here?';
+
+  @override
+  String get syncStopBody =>
+      'This device forgets the code. Your data stays here.';
+
+  @override
+  String get syncWhyReplaced =>
+      'What was there before you brought another version back.';
+
+  @override
+  String get syncWhyDuplicate =>
+      'It arrived twice from the same statement or from Binance; one stayed.';
 }

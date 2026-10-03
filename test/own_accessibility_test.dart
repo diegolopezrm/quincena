@@ -15,6 +15,7 @@ import 'package:quincena/money/asset.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/portfolio/market.dart';
 import 'package:quincena/statements/tables.dart';
+import 'package:quincena/sync/sync_service.dart';
 import 'package:quincena/store/store.dart';
 import 'package:quincena/theme/theme.dart';
 import 'package:quincena/ui/own/accounts_tab.dart';
@@ -34,6 +35,7 @@ import 'package:quincena/ui/own/plan_tab.dart';
 import 'package:quincena/ui/own/portfolio_page.dart';
 import 'package:quincena/ui/own/shared_page.dart';
 import 'package:quincena/ui/own/statement_page.dart';
+import 'package:quincena/ui/own/sync_page.dart';
 import 'package:quincena/ui/own/trips_page.dart';
 import 'package:quincena/ui/own/wallets_page.dart';
 import 'package:quincena/ui/own/what_if_page.dart';
@@ -135,6 +137,8 @@ void main() {
         'variable income': (OwnController own) => FreelancePage(own: own),
         'trips': (OwnController own) => TripsPage(own: own),
         'a trip': (OwnController own) => TripPage(own: own, id: newYork),
+        'more than one device': (OwnController own) =>
+            SyncPage(own: own, keys: MemoryKeyStore()),
       };
 
   for (final MapEntry<String, Widget Function(OwnController)> screen

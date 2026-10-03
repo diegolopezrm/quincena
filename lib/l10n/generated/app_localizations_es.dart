@@ -4098,4 +4098,207 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get tripExpenseIncomplete => 'Falta el valor o la tasa.';
+
+  @override
+  String get syncTitle => 'Varios dispositivos';
+
+  @override
+  String get syncRow => 'Tus datos en otro teléfono o computador, cifrados';
+
+  @override
+  String get syncBody =>
+      'Usa Quincena en más de un dispositivo con los mismos datos. Los cambios viajan en un archivo cifrado que mueves tú, por AirDrop, Archivos o un chat contigo: solo tus dispositivos lo pueden abrir, y Quincena no lo recibe.';
+
+  @override
+  String get syncNotBackup =>
+      'Sincronizar no es un respaldo: une los cambios de tus dispositivos. Para guardar una copia de todo, usa Exportar en Ajustes.';
+
+  @override
+  String get syncNotOnWeb =>
+      'La sincronización está en la app del teléfono y del computador.';
+
+  @override
+  String get syncStart => 'Empezar en este dispositivo';
+
+  @override
+  String get syncJoin => 'Unir este dispositivo';
+
+  @override
+  String get syncHow =>
+      'Empieza en el dispositivo que ya tiene tus datos. En el otro, toca «Unir este dispositivo» y escribe el código.';
+
+  @override
+  String get syncYourCode => 'Tu código';
+
+  @override
+  String get syncNewCode => 'Tu código nuevo';
+
+  @override
+  String get syncCodeKeep =>
+      'Con este código unes tus otros dispositivos. Guárdalo donde guardas tus contraseñas: si pierdes todos tus dispositivos y el código, nadie podrá abrir los archivos, ni siquiera Quincena.';
+
+  @override
+  String get syncCopyCode => 'Copiar el código';
+
+  @override
+  String get syncCodeCopied => 'Código copiado.';
+
+  @override
+  String get syncDone => 'Listo';
+
+  @override
+  String get syncJoinBody =>
+      'Escribe el código que muestra tu otro dispositivo en Ajustes, Varios dispositivos. Los guiones no importan.';
+
+  @override
+  String get syncCodeField => 'Código';
+
+  @override
+  String get syncJoinAction => 'Unir';
+
+  @override
+  String get syncCodeLength =>
+      'Al código le sobran o le faltan caracteres: son 54.';
+
+  @override
+  String get syncCodeCharacter =>
+      'Hay un carácter que el código no usa. Revisa que no sea una U.';
+
+  @override
+  String get syncCodeCheck =>
+      'El código no cuadra: revisa si hay un carácter cambiado.';
+
+  @override
+  String get syncJoined =>
+      'Listo. Ahora abre un archivo de tu otro dispositivo para traer tus datos.';
+
+  @override
+  String get syncSend => 'Guardar mis cambios en un archivo';
+
+  @override
+  String get syncOpen => 'Abrir un archivo de otro dispositivo';
+
+  @override
+  String get syncSendHow =>
+      'Guarda el archivo donde tu otro dispositivo lo encuentre, o envíatelo, y ábrelo allá. Cada archivo lleva todo, así que el más reciente basta.';
+
+  @override
+  String get syncSaved => 'Archivo guardado. Ábrelo en tu otro dispositivo.';
+
+  @override
+  String syncMerged(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Listo: $count cambios.',
+      one: 'Listo: un cambio.',
+      zero: 'Ya estaba todo al día.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String syncMergedWaiting(int count, int waiting) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cambios',
+      one: 'Un cambio',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      waiting,
+      locale: localeName,
+      other: '$waiting esperan',
+      one: 'uno espera',
+    );
+    return '$_temp0; $_temp1 a que lo revises.';
+  }
+
+  @override
+  String get syncNotSync =>
+      'Ese no es un archivo de sincronización de Quincena.';
+
+  @override
+  String get syncOtherVault =>
+      'Ese archivo se hizo con otro código. Abre uno de un dispositivo unido con este código.';
+
+  @override
+  String get syncNewer =>
+      'Ese archivo es de una versión más nueva de Quincena: actualiza la app.';
+
+  @override
+  String get syncDamaged =>
+      'El archivo está dañado o se cortó: guárdalo de nuevo en el otro dispositivo. No cambió nada.';
+
+  @override
+  String get syncWaiting => 'Para revisar';
+
+  @override
+  String get syncWaitingBody =>
+      'Cambios que no quedaron porque otro dispositivo cambió lo mismo. Nada se perdió: puedes traerlos de vuelta.';
+
+  @override
+  String get syncWhyEditedBoth =>
+      'Cambiado aquí y en otro dispositivo; quedó el más reciente.';
+
+  @override
+  String get syncWhyDeletedElsewhere =>
+      'Lo cambiaste aquí, pero se borró en otro dispositivo.';
+
+  @override
+  String get syncWhyDeletedHere =>
+      'Lo borraste aquí; así lo habían cambiado en otro dispositivo.';
+
+  @override
+  String get syncWhyWithAccount => 'Su cuenta se borró en un dispositivo.';
+
+  @override
+  String get syncWhatProfile => 'Tu perfil';
+
+  @override
+  String get syncWhatSetting => 'Un ajuste';
+
+  @override
+  String get syncRestore => 'Traer de vuelta';
+
+  @override
+  String get syncDismiss => 'Descartar';
+
+  @override
+  String get syncRestored =>
+      'De vuelta. Tus otros dispositivos lo reciben con el próximo archivo.';
+
+  @override
+  String get syncThisDevice => 'Este dispositivo';
+
+  @override
+  String get syncShowCode => 'Ver el código';
+
+  @override
+  String get syncChange => 'Cambiar el código';
+
+  @override
+  String get syncChangeTitle => '¿Cambiar el código?';
+
+  @override
+  String get syncChangeBody =>
+      'Los archivos que guardes desde ahora solo se abren con el código nuevo; une con él los dispositivos que quieras conservar. Los archivos que ya enviaste se siguen abriendo con el anterior.';
+
+  @override
+  String get syncStop => 'Dejar de sincronizar';
+
+  @override
+  String get syncStopTitle => '¿Dejar de sincronizar aquí?';
+
+  @override
+  String get syncStopBody =>
+      'Este dispositivo olvida el código. Tus datos se quedan aquí.';
+
+  @override
+  String get syncWhyReplaced =>
+      'Lo que había antes de traer de vuelta otra versión.';
+
+  @override
+  String get syncWhyDuplicate =>
+      'Llegó dos veces del mismo extracto o de Binance; quedó una.';
 }

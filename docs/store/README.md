@@ -111,7 +111,9 @@ teléfono.
 >
 > PRIVADA POR DISEÑO
 > Tus cuentas y movimientos se guardan solo en tu teléfono. Sin publicidad,
-> sin venta de datos. Exporta todo cuando quieras.
+> sin venta de datos. Exporta todo cuando quieras. Si usas Quincena en más
+> de un dispositivo, los cambios viajan en un archivo cifrado que solo tus
+> dispositivos pueden abrir.
 >
 > Quincena no da asesoría financiera ni de inversión.
 
@@ -188,7 +190,9 @@ you can touch. Your finances stay on your phone.
 >
 > PRIVATE BY DESIGN
 > Your accounts and movements are kept only on your phone. No ads, no
-> selling of data. Export everything whenever you want.
+> selling of data. Export everything whenever you want. If you use Quincena
+> on more than one device, changes travel in an encrypted file only your
+> devices can open.
 >
 > Quincena does not give financial or investment advice.
 

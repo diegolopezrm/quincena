@@ -294,6 +294,14 @@ class WalletSync {
       final Money kept = balancesOf(<Account>[known], entries, now)[known.id]!;
       final Decimal gap = real - kept.amount;
       if (gap == Decimal.zero) continue;
+      // Numbered, not timed: two devices that see the same change number
+      // it alike, and syncing keeps one.
+      final int made = entries
+          .where(
+            (Entry e) =>
+                e.accountId == known.id && e.kind == EntryKind.adjustment,
+          )
+          .length;
       await store.addEntry(
         accountId: known.id,
         amount: gap,
@@ -301,7 +309,7 @@ class WalletSync {
         date: now,
         payee: adjustment,
         source: 'wallet',
-        sourceRef: '${wallet.syncRef(asset)}:${now.millisecondsSinceEpoch}',
+        sourceRef: '${wallet.syncRef(asset)}:adjust:${made + 1}',
       );
     }
     return created;

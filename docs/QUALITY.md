@@ -26,17 +26,17 @@ Checked against each provider's published requirements on 2 October 2026.
 
 ## Automated checks
 
-`flutter test` runs 357 tests, the same that CI runs on every push,
+`flutter test` runs 382 tests, the same that CI runs on every push,
 with `dart format`, `flutter analyze --fatal-infos` and a check that the
 generated catalog is current.
 
-- **Accessibility.** `test/own_accessibility_test.dart` opens 26 screens
+- **Accessibility.** `test/own_accessibility_test.dart` opens 27 screens
   of someone's own money (home, movements, accounts, crypto, Binance,
   wallets, a statement, "Por revisar", automatic capture, the next 30 days,
   "¿Me alcanza?", the close, Plan, envelopes, the cushion in days, wishes,
   what if, fixed payments, purchases in instalments, one of them, the
-  charges to check, shared expenses, a group, variable income, trips and
-  one trip) on a 360-point
+  charges to check, shared expenses, a group, variable income, trips, one
+  trip, and more than one device) on a 360-point
   phone with the system text at twice its size, in both themes, and holds
   each to Flutter's guidelines: every tap target labeled, 48 by 48 on
   Android and 44 by 44 on iOS, and text contrast of at least 4.5:1. It
@@ -47,6 +47,19 @@ generated catalog is current.
   component tells a screen reader.
 - **No signal by color alone.** Gains and losses carry a sign, the free and
   committed bar has a legend, and categories are named next to their color.
+- **Sync between devices.** `test/sync_test.dart` runs two and three
+  devices on their own databases: offline edits that converge in any order
+  of files, a file merged twice, the same record changed on two devices,
+  deleted on one and edited on another, deleted and brought back, an
+  account deleted with a movement added elsewhere, a backup that carried
+  another device's versions, list items changed on two devices, the same
+  statement line imported on both, a wallet followed on both, something
+  written again under a deleted id, the same version brought back on two
+  devices, a device restored from an older backup of itself, a new code
+  that leaves old devices out, every single-character typo in the code,
+  and files that are tampered with, cut, from another vault or of a newer
+  format. The design and its two security review passes are in
+  `docs/SYNC.md`.
 - **Migrations and restore.** `test/migration_test.dart` upgrades a version
   1 database to version 2 with drift's schema verifier. `test/store_test.dart`
   restores an export from version 1, refuses a file from elsewhere or from
@@ -117,6 +130,8 @@ TestFlight build 5 and an Android phone, before the stores' review:
   trial, at nine, with no amount, after restarting the phone too.
 - Sharing a reminder on Android: the system's chooser opens with the
   message, and nothing is sent until the person picks where.
+- Sync between a phone and a Mac or a second phone: save a file, carry it
+  by AirDrop or Files, open it on the other, and back.
 
 ## Left for the developer account
 

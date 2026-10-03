@@ -15,6 +15,7 @@ import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
 import '../../own/own_controller.dart';
+import '../../sync/sync_service.dart' show SecureKeyStore;
 import '../../reminders/reminders.dart';
 import '../../store/store.dart';
 import '../../theme/tokens.dart';
@@ -25,6 +26,7 @@ import 'capture_settings_page.dart';
 import 'look.dart';
 import 'pay_schedule_editor.dart';
 import 'statement_page.dart';
+import 'sync_page.dart';
 import 'wallets_page.dart';
 
 /// The person's profile, appearance, and what they can do with their data.
@@ -227,6 +229,12 @@ class OwnSettingsPage extends StatelessWidget {
     );
     if (sure != true) return;
     await own.store.wipe();
+    // The sync key lives in the keychain, apart from the data: it goes too.
+    try {
+      await SecureKeyStore().delete();
+    } on Object {
+      // No keychain here, so no key either.
+    }
     navigator.popUntil((Route<void> r) => r.isFirst);
     await modes.wiped();
   }
@@ -533,6 +541,18 @@ class OwnSettingsPage extends StatelessWidget {
                               own: own,
                               allowance: modes.allowance,
                             ),
+                          ),
+                        ),
+                      ),
+                      _row(
+                        context,
+                        icon: Glyph.deviceMobile,
+                        title: l.syncTitle,
+                        value: l.syncRow,
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (BuildContext context) =>
+                                SyncPage(own: own),
                           ),
                         ),
                       ),
