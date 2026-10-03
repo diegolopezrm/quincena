@@ -161,7 +161,11 @@ Waiting on the owner:
    flags it, for up to 90 days in the project's location, and never used
    for training.
 2. Play Integrity:
-   1. Create the upload key and point `android/key.properties` at it:
+   1. Create the upload key and point `android/key.properties` at it. Done
+      on 2 October 2026: its certificate's SHA-1 is
+      `34:0F:1E:BB:0C:3A:16:07:CB:5A:B1:48:DB:F6:B5:56:30:67:38:A0` and its
+      SHA-256
+      `62:EA:79:93:1E:A3:A1:9D:F4:C1:CA:CE:39:C9:06:67:18:05:36:B6:5C:02:E6:54:76:D1:D5:FF:48:FD:C9:28`.
 
       ```bash
       keytool -genkey -v -keystore ~/keys/quincena-upload.jks \

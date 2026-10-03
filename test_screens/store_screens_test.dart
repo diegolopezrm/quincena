@@ -42,11 +42,13 @@ import '../test/own_flow_test.dart' show fakeRates, settle;
 final DateTime _now = DateTime(2026, 10, 3, 10);
 Decimal d(String s) => Decimal.parse(s);
 
-/// The stores' phone sizes: the App Store's 6.9-inch iPhone, 1320 by 2868,
-/// and Google Play's 1080 by 2400.
-const Map<String, Size> stores = <String, Size>{
-  'appstore': Size(440, 956),
-  'play': Size(360, 800),
+/// The stores' sizes, in logical pixels and the ratio that makes them: the
+/// App Store's 6.9-inch iPhone, 1320 by 2868, and 13-inch iPad, 2064 by
+/// 2752, and Google Play's phone, 1080 by 2400.
+const Map<String, (Size, double)> stores = <String, (Size, double)>{
+  'appstore': (Size(440, 956), 3),
+  'appstore-ipad': (Size(1032, 1376), 2),
+  'play': (Size(360, 800), 3),
 };
 
 /// Market data for the screenshots: prices that moved a little over the
@@ -278,9 +280,10 @@ void main() {
     format.baseCurrency = Asset.cop;
   });
 
-  void device(WidgetTester tester, Size size, String language) {
-    tester.view.physicalSize = size * 3;
-    tester.view.devicePixelRatio = 3;
+  void device(WidgetTester tester, (Size, double) screen, String language) {
+    final (Size size, double ratio) = screen;
+    tester.view.physicalSize = size * ratio;
+    tester.view.devicePixelRatio = ratio;
     addTearDown(tester.view.reset);
     tester.platformDispatcher.localesTestValue = <Locale>[Locale(language)];
     tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
@@ -294,7 +297,7 @@ void main() {
     matchesGoldenFile('../docs/store/screenshots/$store/$language/$name.png'),
   );
 
-  for (final MapEntry<String, Size> s in stores.entries) {
+  for (final MapEntry<String, (Size, double)> s in stores.entries) {
     for (final String language in <String>['es', 'en']) {
       final String tag = '${s.key} $language';
 

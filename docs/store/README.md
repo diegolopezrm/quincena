@@ -14,6 +14,7 @@ which writes them straight into `screenshots/`.
 | Store | Size | Folder |
 | --- | --- | --- |
 | App Store, 6.9-inch iPhone | 1320 × 2868 | `screenshots/appstore/{es,en}` |
+| App Store, 13-inch iPad | 2064 × 2752 | `screenshots/appstore-ipad/{es,en}` |
 | Google Play, phone | 1080 × 2400 | `screenshots/play/{es,en}` |
 
 Their order: a generative answer, the home screen, what was caught to
@@ -34,7 +35,14 @@ admin@dlsoft.dev for requests.
 
 App Store Connect: "Quincena: tu plata", ID 6818576351, primary language
 Spanish (Mexico), adding English (U.S.). Category Finance; secondary,
-Productivity.
+Productivity. Free, in every country but France.
+
+**Encryption.** Sync files are sealed with XChaCha20-Poly1305 from a Dart
+library: a standard algorithm, not the one in Apple's operating system. In
+App Store Connect's terms that needs no documentation, except a French
+encryption declaration to be offered in France, which is why France is left
+out for now. `Info.plist` carries no `ITSAppUsesNonExemptEncryption`, so each
+build answers the encryption questions in App Store Connect.
 
 ### Spanish
 
