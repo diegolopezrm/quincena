@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:genui/genui.dart';
 
+import '../ai/reports.dart';
 import '../session/session.dart';
 import '../l10n/l10n.dart';
 import '../theme/tokens.dart';
 import 'computed_sheet.dart';
 import 'icons.dart';
 import 'mark.dart';
+import 'report_sheet.dart';
 
 /// The exchange so far: each question and the surface that answered it.
 class Conversation extends StatelessWidget {
@@ -15,6 +17,7 @@ class Conversation extends StatelessWidget {
     required this.session,
     required this.latest,
     this.onExplainFree,
+    this.reports,
   });
 
   final Session session;
@@ -25,9 +28,14 @@ class Conversation extends StatelessWidget {
   /// Shows how the free amount is worked out, where there is one to show.
   final VoidCallback? onExplainFree;
 
+  /// Where reports about a model's answers go: Quincena's project unless
+  /// another is given, and none where there is no Firebase app.
+  final AnswerReports? reports;
+
   @override
   Widget build(BuildContext context) {
     final List<Turn> turns = session.turns;
+    final AnswerReports? reports = this.reports ?? AnswerReports.standard;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -39,6 +47,7 @@ class Conversation extends StatelessWidget {
               session: session,
               waiting: session.busy && i == turns.length - 1,
               onExplainFree: onExplainFree,
+              reports: reports,
             ),
           ),
       ],
@@ -52,15 +61,23 @@ class _TurnView extends StatelessWidget {
     required this.session,
     required this.waiting,
     this.onExplainFree,
+    this.reports,
   });
 
   final Turn turn;
   final Session session;
   final bool waiting;
   final VoidCallback? onExplainFree;
+  final AnswerReports? reports;
 
   @override
   Widget build(BuildContext context) {
+    final bool explain =
+        !waiting && turn.error == null && turn.computed.isNotEmpty;
+    // Only a model's finished answer can be reported.
+    final AnswerReports? reports = !waiting && session.canReport(turn)
+        ? this.reports
+        : null;
     return Padding(
       padding: const EdgeInsets.only(top: 12, bottom: 16),
       child: Column(
@@ -90,21 +107,47 @@ class _TurnView extends StatelessWidget {
             ),
             const SizedBox(height: 12),
           ],
-          if (!waiting && turn.error == null && turn.computed.isNotEmpty)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: () => showComputed(
-                  context,
-                  turn.computed,
-                  onExplainFree: onExplainFree,
-                ),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                ),
-                icon: const Icon(Glyph.info, size: 18),
-                label: Text(context.l10n.computedOnPhone),
-              ),
+          if (explain || reports != null)
+            Wrap(
+              spacing: 8,
+              children: <Widget>[
+                if (explain)
+                  TextButton.icon(
+                    onPressed: () => showComputed(
+                      context,
+                      turn.computed,
+                      onExplainFree: onExplainFree,
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                    ),
+                    icon: const Icon(Glyph.info, size: 18),
+                    label: Text(context.l10n.computedOnPhone),
+                  ),
+                if (reports != null)
+                  TextButton.icon(
+                    onPressed: turn.reported
+                        ? null
+                        : () => showReportSheet(
+                            context,
+                            session: session,
+                            turn: turn,
+                            reports: reports,
+                          ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                    ),
+                    icon: Icon(
+                      turn.reported ? Glyph.check : Glyph.flag,
+                      size: 18,
+                    ),
+                    label: Text(
+                      turn.reported
+                          ? context.l10n.reportSent
+                          : context.l10n.reportAnswer,
+                    ),
+                  ),
+              ],
             ),
           if (turn.error case final AnswerProblem problem)
             _Problem(switch (problem) {

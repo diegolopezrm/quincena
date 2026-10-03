@@ -23,6 +23,7 @@ abstract final class Glyph {
   static const IconData info = IconData(0xe2ce, fontFamily: _family);
   static const IconData checkCircle = IconData(0xe184, fontFamily: _family);
   static const IconData warningCircle = IconData(0xe4e2, fontFamily: _family);
+  static const IconData flag = IconData(0xe244, fontFamily: _family);
   static const IconData arrowRight = IconData(0xe06c, fontFamily: _family);
   static const IconData airplaneTilt = IconData(0xe5d6, fontFamily: _family);
   static const IconData calendarBlank = IconData(0xe10a, fontFamily: _family);

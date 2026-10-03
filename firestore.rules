@@ -1,0 +1,39 @@
+rules_version = '2';
+
+// Quincena keeps no one's finances on a server. The one thing the app
+// writes here is a report about one of Gemini's answers, which the person
+// chooses to send (lib/ai/reports.dart). The app can add a report and do
+// nothing else: not read one, not change one, not delete one. DL SOFT
+// reads them in the console.
+//
+// App Check is enforced for Firestore, so only the app gets this far, and
+// a TTL policy on expireAt deletes each report 90 days after it is made.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /reports/{report} {
+      allow create: if isReport(request.resource.data);
+    }
+
+    function isReport(data) {
+      let fields = ['reason', 'question', 'answer', 'comment', 'language',
+                    'mode', 'platform', 'version', 'expireAt'];
+      return data.keys().hasOnly(fields)
+          && data.keys().hasAll(fields)
+          && data.reason in ['offensive', 'wrong', 'other']
+          && isText(data.question, 2000)
+          && isText(data.answer, 40000)
+          && isText(data.comment, 1000)
+          && data.language in ['es', 'en']
+          && data.mode in ['gemini', 'live']
+          && data.platform in ['android', 'ios', 'macos', 'web']
+          && isText(data.version, 32)
+          && data.expireAt is timestamp
+          && data.expireAt > request.time + duration.value(85, 'd')
+          && data.expireAt < request.time + duration.value(95, 'd');
+    }
+
+    function isText(value, max) {
+      return value is string && value.size() <= max;
+    }
+  }
+}

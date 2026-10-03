@@ -1127,5 +1127,18 @@
   "syncStopTitle": "Stop syncing here?",
   "syncStopBody": "This device forgets the code. Your data stays here.",
   "syncWhyReplaced": "What was there before you brought another version back.",
-  "syncWhyDuplicate": "It arrived twice from the same statement or from Binance; one stayed."
+  "syncWhyDuplicate": "It arrived twice from the same statement or from Binance; one stayed.",
+  "reportAnswer": "Report",
+  "reportSent": "Reported",
+  "reportTitle": "Report this answer",
+  "reportWhy": "What's wrong with it?",
+  "reportOffensive": "It's offensive or inappropriate",
+  "reportWrong": "It's wrong or misleading",
+  "reportOther": "Something else",
+  "reportComment": "Tell us more (optional)",
+  "reportWhat": "DL SOFT receives your question, this answer with its figures, and what you write here; nothing else from your account, and no identifier of yours. Reports are deleted after 90 days.",
+  "reportSend": "Send report",
+  "reportSending": "Sending…",
+  "reportFailed": "It couldn't be sent. Check your connection and try again.",
+  "reportThanks": "Thanks. We'll look into this answer."
 }

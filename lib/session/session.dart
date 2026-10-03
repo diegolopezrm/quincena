@@ -63,6 +63,9 @@ class Turn {
   /// What the phone worked out for the answer, in order: every figure in
   /// it comes from one of these.
   final List<Computed> computed = <Computed>[];
+
+  /// Whether the person reported the answer to DL SOFT.
+  bool reported = false;
 }
 
 /// A conversation with the agent about an account: the demo's, unless
@@ -457,6 +460,56 @@ class Session extends ChangeNotifier {
       turns.last.surfaceIds.remove(surfaceId);
     }
     _errors.add(interaction);
+    notifyListeners();
+  }
+
+  /// Whether [turn]'s answer can be reported: one a model wrote, finished,
+  /// with something to show.
+  bool canReport(Turn turn) =>
+      _mode != AgentMode.demo &&
+      turn.error == null &&
+      !(_busy && identical(turn, turns.lastOrNull)) &&
+      (turn.surfaceIds.isNotEmpty || turn.text.isNotEmpty);
+
+  /// [turn]'s answer as the model sent it, for a report: its text, the
+  /// messages that built its surfaces, and each surface's data as it last
+  /// stood. What the person types into a form stays out, as it does from a
+  /// recording.
+  String answerOf(Turn turn) {
+    final Set<String> ids = turn.surfaceIds.toSet();
+    final List<Object?> messages = <Object?>[];
+    final Map<String, Object?> data = <String, Object?>{};
+    for (final GenUiTraceStep step in recorder.build().steps) {
+      switch (step) {
+        case GenUiMessageStep(:final message)
+            when ids.contains(_surfaceOf(message)):
+          messages.add(message);
+        case GenUiDataStep(:final surfaceId, data: final Object? value)
+            when ids.contains(surfaceId):
+          data[surfaceId] = value;
+        default:
+      }
+    }
+    return jsonEncode(<String, Object?>{
+      'text': turn.text.toString().trim(),
+      'messages': messages,
+      'data': data,
+    });
+  }
+
+  /// The surface an A2UI message is about, whichever kind it is.
+  static String? _surfaceOf(Map<String, Object?> message) {
+    for (final Object? body in message.values) {
+      if (body is Map && body['surfaceId'] is String) {
+        return body['surfaceId'] as String;
+      }
+    }
+    return null;
+  }
+
+  /// Notes that [turn]'s answer was reported, so it is not sent twice.
+  void markReported(Turn turn) {
+    turn.reported = true;
     notifyListeners();
   }
 

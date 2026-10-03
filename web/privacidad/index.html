@@ -66,7 +66,7 @@
   </header>
 
   <h1>Política de privacidad y tratamiento de datos personales</h1>
-  <p class="updated">Vigente desde el 2 de octubre de 2026.</p>
+  <p class="updated">Vigente desde el 3 de octubre de 2026.</p>
 
   <p class="lead">Tus finanzas se quedan en tu dispositivo. Quincena no tiene un servidor con tus cuentas ni tus movimientos, no muestra publicidad y no vende ni comparte tus datos para analítica.</p>
 
@@ -83,7 +83,8 @@
       <tr><td data-label="Dato">Ubicación del pago, si activas esa opción (viene apagada).</td><td data-label="Dónde queda">En tu dispositivo.</td><td data-label="Quién más lo recibe">Solo las coordenadas van a Photon (OpenStreetMap, operado por Komoot) para encontrar el comercio cercano.</td></tr>
       <tr><td data-label="Dato">Tus preguntas a Gemini y las cifras que la app calcula para responderlas.</td><td data-label="Dónde queda">No se guardan en ningún servidor de Quincena.</td><td data-label="Quién más lo recibe">Google, a través de Firebase AI Logic y Gemini en Agent Platform de Google Cloud. Google no las usa para entrenar sus modelos; solo las conserva hasta 90 días si un sistema de seguridad las marca como posible abuso.</td></tr>
       <tr><td data-label="Dato">Un extracto que pides leer con Gemini.</td><td data-label="Dónde queda">En tu dispositivo.</td><td data-label="Quién más lo recibe">Google, en las mismas condiciones de las preguntas, solo cuando tú lo pides.</td></tr>
-      <tr><td data-label="Dato">Un identificador anónimo y la verificación de la app.</td><td data-label="Dónde queda">En tu dispositivo.</td><td data-label="Quién más lo recibe">Firebase Authentication (cuenta anónima, que se borra a los 30 días) y Firebase App Check, que usa App Attest y DeviceCheck de Apple, Play Integrity de Google o reCAPTCHA Enterprise en la web para comprobar que las preguntas vienen de Quincena.</td></tr>
+      <tr><td data-label="Dato">Una respuesta de Gemini que decides reportar: tu pregunta, la respuesta con sus cifras, el motivo y lo que escribas.</td><td data-label="Dónde queda">En Cloud Firestore, la base de datos de Firebase de DL SOFT, sin tu nombre ni un identificador tuyo. Se borra a los 90 días.</td><td data-label="Quién más lo recibe">DL SOFT, que la revisa. Google la guarda como proveedor de Firebase.</td></tr>
+      <tr><td data-label="Dato">Un identificador anónimo y la verificación de la app.</td><td data-label="Dónde queda">En tu dispositivo.</td><td data-label="Quién más lo recibe">Firebase Authentication (cuenta anónima, que se borra a los 30 días) y Firebase App Check, que usa App Attest y DeviceCheck de Apple, Play Integrity de Google o reCAPTCHA Enterprise en la web para comprobar que las preguntas y los reportes vienen de Quincena.</td></tr>
       <tr><td data-label="Dato">La llave de solo lectura de Binance, si conectas tu cuenta.</td><td data-label="Dónde queda">En el llavero de tu dispositivo, nunca en la base de datos ni en lo que exportas.</td><td data-label="Quién más lo recibe">Binance, que recibe las solicitudes firmadas directamente desde tu dispositivo.</td></tr>
       <tr><td data-label="Dato">Un archivo de sincronización, si usas Quincena en más de un dispositivo.</td><td data-label="Dónde queda">Donde tú lo guardes o lo envíes. Va cifrado de extremo a extremo con un código que solo tienen tus dispositivos.</td><td data-label="Quién más lo recibe">Nadie más lo puede leer. Quien lo guarde o lo transporte, por ejemplo iCloud o el chat que uses, solo ve un archivo cifrado. Quincena no lo recibe.</td></tr>
       <tr><td data-label="Dato">Direcciones públicas de billeteras que decides seguir.</td><td data-label="Dónde queda">En tu dispositivo.</td><td data-label="Quién más lo recibe">mempool.space, un nodo público de Ethereum (PublicNode) y TronGrid, que ven la dirección consultada.</td></tr>
@@ -96,7 +97,8 @@
   <ul>
     <li>Mostrarte tus cuentas, movimientos, saldos y proyecciones, y registrar lo que capturas o importas.</li>
     <li>Responder las preguntas que le haces a Gemini.</li>
-    <li>Comprobar que las solicitudes a Gemini vienen de la app y limitar el abuso.</li>
+    <li>Revisar las respuestas de Gemini que reportas, para corregirlas y filtrar las siguientes.</li>
+    <li>Comprobar que las solicitudes a Gemini y los reportes vienen de la app y limitar el abuso.</li>
     <li>Leer precios, tasas y saldos de las fuentes que tú conectas.</li>
   </ul>
   <p>Quincena no usa tus datos para publicidad, perfiles comerciales ni analítica, y no los vende.</p>
@@ -106,7 +108,7 @@
   <p>Como tus datos financieros están en tu dispositivo, puedes ejercer la mayoría de estos derechos directamente en la app: ver y corregir cualquier movimiento, exportar todo a un archivo, apagar cada función opcional, desconectar Binance y borrar todo desde Ajustes. Para lo demás escribe a <a href="mailto:admin@dlsoft.dev">admin@dlsoft.dev</a>. Las consultas se responden en un máximo de diez días hábiles y los reclamos en un máximo de quince, como dice la ley.</p>
 
   <h2>5. Autorización</h2>
-  <p>Al usar Quincena autorizas el tratamiento descrito aquí. Cada función opcional pide tu permiso por separado antes de activarse: notificaciones, ubicación, Gemini, Binance, billeteras y la sincronización entre tus dispositivos. Puedes apagarla cuando quieras.</p>
+  <p>Al usar Quincena autorizas el tratamiento descrito aquí. Cada función opcional pide tu permiso por separado antes de activarse: notificaciones, ubicación, Gemini, Binance, billeteras y la sincronización entre tus dispositivos. Puedes apagarla cuando quieras. Un reporte sobre una respuesta sale solo cuando lo envías.</p>
 
   <h2>6. Menores de edad y datos sensibles</h2>
   <p>Quincena no está dirigida a menores de 18 años y no pide datos sensibles.</p>
@@ -115,7 +117,7 @@
   <p>Algunos de los proveedores mencionados procesan datos fuera de Colombia, principalmente en los Estados Unidos. Solo reciben lo que aparece en la tabla de la sección 2, cuando usas la función que los necesita.</p>
 
   <h2>8. Seguridad y conservación</h2>
-  <p>Los datos de la app viven en tu dispositivo y los protege su propio sistema; la llave de Binance y el código de sincronización se guardan en el llavero; toda conexión y todo archivo de sincronización van cifrados. Los datos se conservan hasta que los borres o desinstales la app. La cuenta anónima de Firebase se elimina a los 30 días.</p>
+  <p>Los datos de la app viven en tu dispositivo y los protege su propio sistema; la llave de Binance y el código de sincronización se guardan en el llavero; toda conexión y todo archivo de sincronización van cifrados. Los datos se conservan hasta que los borres o desinstales la app. La cuenta anónima de Firebase se elimina a los 30 días y los reportes de respuestas, a los 90.</p>
 
   <h2>9. Cambios</h2>
   <p>Si esta política cambia, la nueva versión se publica en esta misma página con su fecha de vigencia.</p>

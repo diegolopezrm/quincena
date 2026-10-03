@@ -26,7 +26,7 @@ Checked against each provider's published requirements on 2 October 2026.
 
 ## Automated checks
 
-`flutter test` runs 382 tests, the same that CI runs on every push,
+`flutter test` runs 392 tests, the same that CI runs on every push,
 with `dart format`, `flutter analyze --fatal-infos` and a check that the
 generated catalog is current.
 
@@ -60,6 +60,16 @@ generated catalog is current.
   and files that are tampered with, cut, from another vault or of a newer
   format. The design and its two security review passes are in
   `docs/SYNC.md`.
+- **Reporting an answer.** `test/report_test.dart` reports a Gemini
+  answer from the conversation: the reason, the comment and the answer go
+  to Firestore with App Check's token; the sheet stays open with an error
+  when the report does not arrive; the demo's scripted answers cannot be
+  reported; and what the person types into a form stays out of the
+  report. `firestore.rules` was tried against the live database on 3
+  October 2026: a report missing a field or with one more, with an
+  unknown reason or platform, longer than the limits, or kept for less
+  than 85 days or more than 95 is refused. Firestore measures a string in
+  UTF-16 code units, as Dart does, so the app cuts to the same limits.
 - **Migrations and restore.** `test/migration_test.dart` upgrades a version
   1 database to version 2 with drift's schema verifier. `test/store_test.dart`
   restores an export from version 1, refuses a file from elsewhere or from

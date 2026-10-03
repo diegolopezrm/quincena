@@ -4301,4 +4301,45 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get syncWhyDuplicate =>
       'Llegó dos veces del mismo extracto o de Binance; quedó una.';
+
+  @override
+  String get reportAnswer => 'Reportar';
+
+  @override
+  String get reportSent => 'Reportada';
+
+  @override
+  String get reportTitle => 'Reportar esta respuesta';
+
+  @override
+  String get reportWhy => '¿Qué tiene de malo?';
+
+  @override
+  String get reportOffensive => 'Es ofensiva o inapropiada';
+
+  @override
+  String get reportWrong => 'Es incorrecta o engañosa';
+
+  @override
+  String get reportOther => 'Otra cosa';
+
+  @override
+  String get reportComment => 'Cuéntanos más (opcional)';
+
+  @override
+  String get reportWhat =>
+      'A DL SOFT le llegan tu pregunta, esta respuesta con sus cifras y lo que escribas aquí; nada más de tu cuenta, ni un identificador tuyo. Los reportes se borran a los 90 días.';
+
+  @override
+  String get reportSend => 'Enviar reporte';
+
+  @override
+  String get reportSending => 'Enviando…';
+
+  @override
+  String get reportFailed =>
+      'No se pudo enviar. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get reportThanks => 'Gracias. Vamos a revisar esta respuesta.';
 }

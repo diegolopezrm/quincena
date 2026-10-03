@@ -6828,6 +6828,84 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Llegó dos veces del mismo extracto o de Binance; quedó una.'**
   String get syncWhyDuplicate;
+
+  /// No description provided for @reportAnswer.
+  ///
+  /// In es, this message translates to:
+  /// **'Reportar'**
+  String get reportAnswer;
+
+  /// No description provided for @reportSent.
+  ///
+  /// In es, this message translates to:
+  /// **'Reportada'**
+  String get reportSent;
+
+  /// No description provided for @reportTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Reportar esta respuesta'**
+  String get reportTitle;
+
+  /// No description provided for @reportWhy.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Qué tiene de malo?'**
+  String get reportWhy;
+
+  /// No description provided for @reportOffensive.
+  ///
+  /// In es, this message translates to:
+  /// **'Es ofensiva o inapropiada'**
+  String get reportOffensive;
+
+  /// No description provided for @reportWrong.
+  ///
+  /// In es, this message translates to:
+  /// **'Es incorrecta o engañosa'**
+  String get reportWrong;
+
+  /// No description provided for @reportOther.
+  ///
+  /// In es, this message translates to:
+  /// **'Otra cosa'**
+  String get reportOther;
+
+  /// No description provided for @reportComment.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuéntanos más (opcional)'**
+  String get reportComment;
+
+  /// No description provided for @reportWhat.
+  ///
+  /// In es, this message translates to:
+  /// **'A DL SOFT le llegan tu pregunta, esta respuesta con sus cifras y lo que escribas aquí; nada más de tu cuenta, ni un identificador tuyo. Los reportes se borran a los 90 días.'**
+  String get reportWhat;
+
+  /// No description provided for @reportSend.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar reporte'**
+  String get reportSend;
+
+  /// No description provided for @reportSending.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviando…'**
+  String get reportSending;
+
+  /// No description provided for @reportFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo enviar. Revisa tu conexión e inténtalo de nuevo.'**
+  String get reportFailed;
+
+  /// No description provided for @reportThanks.
+  ///
+  /// In es, this message translates to:
+  /// **'Gracias. Vamos a revisar esta respuesta.'**
+  String get reportThanks;
 }
 
 class _AppLocalizationsDelegate

@@ -1365,5 +1365,18 @@
   "syncStopTitle": "¿Dejar de sincronizar aquí?",
   "syncStopBody": "Este dispositivo olvida el código. Tus datos se quedan aquí.",
   "syncWhyReplaced": "Lo que había antes de traer de vuelta otra versión.",
-  "syncWhyDuplicate": "Llegó dos veces del mismo extracto o de Binance; quedó una."
+  "syncWhyDuplicate": "Llegó dos veces del mismo extracto o de Binance; quedó una.",
+  "reportAnswer": "Reportar",
+  "reportSent": "Reportada",
+  "reportTitle": "Reportar esta respuesta",
+  "reportWhy": "¿Qué tiene de malo?",
+  "reportOffensive": "Es ofensiva o inapropiada",
+  "reportWrong": "Es incorrecta o engañosa",
+  "reportOther": "Otra cosa",
+  "reportComment": "Cuéntanos más (opcional)",
+  "reportWhat": "A DL SOFT le llegan tu pregunta, esta respuesta con sus cifras y lo que escribas aquí; nada más de tu cuenta, ni un identificador tuyo. Los reportes se borran a los 90 días.",
+  "reportSend": "Enviar reporte",
+  "reportSending": "Enviando…",
+  "reportFailed": "No se pudo enviar. Revisa tu conexión e inténtalo de nuevo.",
+  "reportThanks": "Gracias. Vamos a revisar esta respuesta."
 }

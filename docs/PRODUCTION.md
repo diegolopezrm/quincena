@@ -14,10 +14,11 @@ account, with three apps: Android, Apple (iOS and macOS share the bundle ID
   the `global` location, through Firebase AI Logic. The project's prompt
   cache is off. The Gemini Developer API, which the app used before, is
   closed: every one of its quotas is at zero.
-- **App Check** is enforced for Firebase AI Logic. Every request needs a token
-  from App Attest (with DeviceCheck as fallback) on Apple devices, Play
-  Integrity on Android, or reCAPTCHA Enterprise on the web. The reCAPTCHA key
-  is score based and only works on `diegolopezrm.github.io`. Simulators,
+- **App Check** is enforced for Firebase AI Logic and Cloud Firestore. Every
+  request needs a token from App Attest (with DeviceCheck as fallback) on
+  Apple devices, Play Integrity on Android, or reCAPTCHA Enterprise on the
+  web. The reCAPTCHA key is score based and only works on
+  `diegolopezrm.github.io`. Simulators,
   emulators and local web builds use a debug token that never enters the
   repository. From 2 November 2026 Firebase requires App Check for AI Logic
   anyway.
@@ -31,6 +32,16 @@ account, with three apps: Android, Apple (iOS and macOS share the bundle ID
   key or Play's app signing key. GitHub flags all three as
   secrets; they ship in every build by design, and those alerts are closed
   as such.
+- **Reports about answers** (`lib/ai/reports.dart`) go to Cloud Firestore,
+  the `(default)` database in `nam5`, into `reports`. `firestore.rules` lets
+  the app create a report with nine fields of fixed sizes and nothing else:
+  no reads, changes or deletes. A TTL policy on `expireAt` deletes each
+  report 90 days after it is made, and none carries an account or device
+  identifier. DL SOFT reads them in the Firebase console, under Firestore,
+  to correct the prompt and what it filters. Google Play asks apps whose AI
+  chat is a central feature to let people report offensive output without
+  leaving the app. The rules deploy with
+  `firebase deploy --only firestore:rules --project quincena-dlsoft`.
 - **Logs**: prompts and answers are kept out of Cloud Logging by an exclusion
   on the `_Default` sink, in case AI monitoring is ever turned on. Out of the
   box it stores them, personal data included.
