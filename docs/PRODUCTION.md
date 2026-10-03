@@ -188,10 +188,9 @@ Waiting on the owner:
       `D3:1F:CE:28:1F:4D:84:B5:54:13:C3:0E:A7:8F:EA:CB:24:CF:5C:6F:01:5D:59:68:A7:0F:4C:E9:19:5A:27:F0`.
    3. Link `quincena-dlsoft` under Protected with Play > Play Integrity API.
       This needs a direct Owner of the project, and linking accepts the
-      Play Integrity API's terms of service for DL SOFT. Still to do. The
-      API is already on in the project, and App Check asks for tokens with
-      the project's number, so tokens may work before the link. Linking is
-      what Google documents for apps on Google Play.
+      Play Integrity API's terms of service for DL SOFT. Done on 2 October
+      2026, with Diego's approval: 10,000 requests a day, and the default
+      verdicts on (licensing, app integrity, device integrity).
    4. Add the SHA-256 of Play's app signing certificate to the Android app in
       Firebase, and register Play Integrity in App Check. Done: Firebase has
       the SHA-1 and SHA-256 of both certificates, and App Check shows Play
