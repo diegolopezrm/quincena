@@ -4666,4 +4666,72 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get statementImporting => 'Importando…';
+
+  @override
+  String get exportBody =>
+      'Un archivo con todo lo que tienes en Quincena: cuentas, movimientos, planes y ajustes. Sirve para pasarlo a otro teléfono o guardar una copia.';
+
+  @override
+  String get exportSealed => 'Cifrado (recomendado)';
+
+  @override
+  String get exportSealedBody =>
+      'Solo se abre en Quincena con tu código de respaldo. Puedes guardarlo en la nube o mandártelo sin que nadie más lo lea.';
+
+  @override
+  String get exportPlain => 'Sin cifrar (JSON)';
+
+  @override
+  String get exportPlainBody =>
+      'Cualquiera que tenga el archivo puede leer tus finanzas. Sirve para llevarlas a otra herramienta.';
+
+  @override
+  String get exportAction => 'Exportar';
+
+  @override
+  String get backupShowCode => 'Ver mi código de respaldo';
+
+  @override
+  String get backupYourCode => 'Tu código de respaldo';
+
+  @override
+  String get backupCodeKeep =>
+      'Con este código abres tus respaldos cifrados, en este teléfono o en otro. Guárdalo donde guardas tus contraseñas: sin él nadie podrá abrirlos, ni siquiera Quincena.';
+
+  @override
+  String get backupCodeKept => 'Ya lo guardé';
+
+  @override
+  String get backupCodeTitle => 'Respaldo cifrado';
+
+  @override
+  String get backupCodeBody =>
+      'Escribe el código de respaldo que Quincena te mostró la primera vez que exportaste cifrado.';
+
+  @override
+  String get backupOpen => 'Abrir';
+
+  @override
+  String get backupWrongCode =>
+      'Ese código no abre este respaldo. Si es el de sincronización, el de respaldo es otro.';
+
+  @override
+  String get backupIsSync =>
+      'Ese es un archivo de sincronización: se abre en Ajustes, Varios dispositivos. No se cambió nada.';
+
+  @override
+  String get backupChangeCode => 'Cambiar el código';
+
+  @override
+  String get backupChangeTitle => '¿Cambiar el código de respaldo?';
+
+  @override
+  String get backupChangeBody =>
+      'Los respaldos que ya hiciste se siguen abriendo con el código de antes; los nuevos, con el nuevo. Guarda los dos mientras tengas respaldos viejos.';
+
+  @override
+  String get backupChange => 'Cambiar';
+
+  @override
+  String get backupNewCode => 'Tu nuevo código de respaldo';
 }

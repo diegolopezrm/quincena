@@ -7398,6 +7398,126 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Importando…'**
   String get statementImporting;
+
+  /// No description provided for @exportBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Un archivo con todo lo que tienes en Quincena: cuentas, movimientos, planes y ajustes. Sirve para pasarlo a otro teléfono o guardar una copia.'**
+  String get exportBody;
+
+  /// No description provided for @exportSealed.
+  ///
+  /// In es, this message translates to:
+  /// **'Cifrado (recomendado)'**
+  String get exportSealed;
+
+  /// No description provided for @exportSealedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo se abre en Quincena con tu código de respaldo. Puedes guardarlo en la nube o mandártelo sin que nadie más lo lea.'**
+  String get exportSealedBody;
+
+  /// No description provided for @exportPlain.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin cifrar (JSON)'**
+  String get exportPlain;
+
+  /// No description provided for @exportPlainBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Cualquiera que tenga el archivo puede leer tus finanzas. Sirve para llevarlas a otra herramienta.'**
+  String get exportPlainBody;
+
+  /// No description provided for @exportAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Exportar'**
+  String get exportAction;
+
+  /// No description provided for @backupShowCode.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver mi código de respaldo'**
+  String get backupShowCode;
+
+  /// No description provided for @backupYourCode.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu código de respaldo'**
+  String get backupYourCode;
+
+  /// No description provided for @backupCodeKeep.
+  ///
+  /// In es, this message translates to:
+  /// **'Con este código abres tus respaldos cifrados, en este teléfono o en otro. Guárdalo donde guardas tus contraseñas: sin él nadie podrá abrirlos, ni siquiera Quincena.'**
+  String get backupCodeKeep;
+
+  /// No description provided for @backupCodeKept.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya lo guardé'**
+  String get backupCodeKept;
+
+  /// No description provided for @backupCodeTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Respaldo cifrado'**
+  String get backupCodeTitle;
+
+  /// No description provided for @backupCodeBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe el código de respaldo que Quincena te mostró la primera vez que exportaste cifrado.'**
+  String get backupCodeBody;
+
+  /// No description provided for @backupOpen.
+  ///
+  /// In es, this message translates to:
+  /// **'Abrir'**
+  String get backupOpen;
+
+  /// No description provided for @backupWrongCode.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese código no abre este respaldo. Si es el de sincronización, el de respaldo es otro.'**
+  String get backupWrongCode;
+
+  /// No description provided for @backupIsSync.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese es un archivo de sincronización: se abre en Ajustes, Varios dispositivos. No se cambió nada.'**
+  String get backupIsSync;
+
+  /// No description provided for @backupChangeCode.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar el código'**
+  String get backupChangeCode;
+
+  /// No description provided for @backupChangeTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cambiar el código de respaldo?'**
+  String get backupChangeTitle;
+
+  /// No description provided for @backupChangeBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Los respaldos que ya hiciste se siguen abriendo con el código de antes; los nuevos, con el nuevo. Guarda los dos mientras tengas respaldos viejos.'**
+  String get backupChangeBody;
+
+  /// No description provided for @backupChange.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar'**
+  String get backupChange;
+
+  /// No description provided for @backupNewCode.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu nuevo código de respaldo'**
+  String get backupNewCode;
 }
 
 class _AppLocalizationsDelegate

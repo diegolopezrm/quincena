@@ -1406,6 +1406,17 @@ class QuincenaStore {
   /// [ImportException] and changes nothing: a file that breaks halfway is
   /// rolled back with the rest.
   Future<void> importJson(Map<String, Object?> json) async {
+    checkExport(json);
+    try {
+      await _replaceWith(json);
+    } on Object catch (e) {
+      throw ImportException(ImportProblem.damaged, '$e');
+    }
+  }
+
+  /// Throws an [ImportException] when [json] is not an export this app can
+  /// read, before anyone is asked whether to replace what is here.
+  static void checkExport(Map<String, Object?> json) {
     if (json['app'] != 'quincena') {
       throw const ImportException(
         ImportProblem.notQuincena,
@@ -1421,11 +1432,6 @@ class QuincenaStore {
         ImportProblem.newer,
         'Export version $version is newer than this app.',
       );
-    }
-    try {
-      await _replaceWith(json);
-    } on Object catch (e) {
-      throw ImportException(ImportProblem.damaged, '$e');
     }
   }
 

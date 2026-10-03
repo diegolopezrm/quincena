@@ -1,13 +1,11 @@
-import 'dart:convert';
-
 import 'package:decimal/decimal.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app.dart';
 import '../../app_mode.dart';
+import '../../backup/backup.dart';
 import '../../domain/pay_schedule.dart';
 import '../../domain/records.dart';
 import '../../exchanges/binance_link.dart';
@@ -17,11 +15,11 @@ import '../../money/money.dart';
 import '../../own/own_controller.dart';
 import '../../sync/sync_service.dart' show SecureKeyStore;
 import '../../reminders/reminders.dart';
-import '../../store/store.dart';
 import '../../theme/tokens.dart';
 import '../../version.dart';
 import '../icons.dart';
 import 'amount_input.dart';
+import 'backup_flow.dart';
 import 'binance_page.dart';
 import 'capture_settings_page.dart';
 import 'look.dart';
@@ -166,56 +164,22 @@ class OwnSettingsPage extends StatelessWidget {
     await own.store.saveProfile(p.copyWith(schedule: picked));
   }
 
-  Future<void> _export(BuildContext context) async {
-    final AppLocalizations l = context.l10n;
-    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
-    final Map<String, Object?> data = await own.store.exportJson();
-    final String day = own.today.toIso8601String().substring(0, 10);
-    final Uri? saved = await FilePicker.saveFile(
-      fileName: 'quincena-$day.json',
-      bytes: Uint8List.fromList(
-        utf8.encode(const JsonEncoder.withIndent('  ').convert(data)),
-      ),
-      mimeType: 'application/json',
-      allowedExtensions: <String>['json'],
-    );
-    if (saved != null) {
-      messenger.showSnackBar(SnackBar(content: Text(l.exportDone)));
-    }
-  }
+  Future<void> _export(BuildContext context) =>
+      exportData(context, backups: Backups(own.store), today: own.today);
 
-  Future<void> _import(BuildContext context) async {
+  Future<void> _import(BuildContext context) {
     final AppLocalizations l = context.l10n;
-    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
-    final List<PlatformFile> files = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: <String>['json'],
-    );
-    if (files.isEmpty || !context.mounted) return;
-    final bool? sure = await _confirm(
+    return importData(
       context,
-      title: l.importConfirmTitle,
-      body: l.importConfirmBody,
-      action: l.importConfirm,
+      backups: Backups(own.store),
+      confirm: () => _confirm(
+        context,
+        title: l.importConfirmTitle,
+        body: l.importConfirmBody,
+        action: l.importConfirm,
+      ),
+      after: () => own.refreshRates(force: true),
     );
-    if (sure != true) return;
-    try {
-      final String text = await files.first.xFile.readAsString();
-      await own.store.importJson(jsonDecode(text) as Map<String, Object?>);
-      await own.refreshRates(force: true);
-      messenger.showSnackBar(SnackBar(content: Text(l.importDone)));
-    } on Object catch (e) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(switch (e) {
-            ImportException(problem: ImportProblem.notQuincena) =>
-              l.importNotQuincena,
-            ImportException(problem: ImportProblem.newer) => l.importNewer,
-            _ => l.importDamaged,
-          }),
-        ),
-      );
-    }
   }
 
   Future<void> _deleteAll(BuildContext context) async {
@@ -230,12 +194,14 @@ class OwnSettingsPage extends StatelessWidget {
     );
     if (sure != true) return;
     await own.store.wipe();
-    // The sync key lives in the keychain, apart from the data: it goes too.
+    // The sync and backup keys live in the keychain, apart from the data:
+    // they go too. Backups already made still open with their code.
     try {
       await SecureKeyStore().delete();
     } on Object {
       // No keychain here, so no key either.
     }
+    await Backups(own.store).forget();
     navigator.popUntil((Route<void> r) => r.isFirst);
     await modes.wiped();
   }

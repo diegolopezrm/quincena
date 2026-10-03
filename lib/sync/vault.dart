@@ -29,6 +29,9 @@ class CodeException implements Exception {
 /// The key a person's devices share. Everything that crosses between them
 /// is sealed with keys derived from it, and it never leaves a device but
 /// as the code the person types on another.
+///
+/// A backup's key has the same shape and its own code: 256 bits the person
+/// keeps, under labels of its own so neither key opens the other's files.
 class VaultKey {
   VaultKey(List<int> bytes) : bytes = Uint8List.fromList(bytes) {
     if (bytes.length != length) {
@@ -157,17 +160,21 @@ class VaultKey {
     return Uint8List.fromList(key.bytes.sublist(0, length));
   }
 
-  /// The key files are sealed with.
-  Future<SecretKey> encryptionKey() async =>
-      SecretKeyData(await _derive('quincena/sync/encrypt/v1', 32));
+  /// The key files are sealed with, derived under [label].
+  Future<SecretKey> encryptionKey([
+    String label = 'quincena/sync/encrypt/v1',
+  ]) async => SecretKeyData(await _derive(label, 32));
 
   /// What a file's header carries to say which vault made it, without
   /// naming the vault: a keyed hash of a salt new in every file, so no two
   /// files of a vault look alike.
-  Future<Uint8List> fileTag(List<int> salt) async {
+  Future<Uint8List> fileTag(
+    List<int> salt, [
+    String label = 'quincena/sync/file-tag/v1',
+  ]) async {
     final Mac mac = await Hmac.sha256().calculateMac(
       salt,
-      secretKey: SecretKeyData(await _derive('quincena/sync/file-tag/v1', 32)),
+      secretKey: SecretKeyData(await _derive(label, 32)),
     );
     return Uint8List.fromList(mac.bytes.sublist(0, 16));
   }

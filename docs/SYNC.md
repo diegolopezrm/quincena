@@ -10,7 +10,7 @@ page is the design as built, the review, and what is left out on purpose.
 | | Backup (Ajustes, Exportar) | Sync (Ajustes, Varios dispositivos) |
 | --- | --- | --- |
 | What it is | Everything at one moment, in a file | Each device's changes, merged into the others |
-| Readable by | Anyone with the file: it is plain JSON | Only devices that have the vault's code |
+| Readable by | Only with the backup's own code; anyone, if the person chooses JSON | Only devices that have the vault's code |
 | Restoring | Replaces everything on the device | Adds and updates; never wipes what is there |
 | Something edited on both sides | Not a question: one file wins whole | The later edit shows; the other waits in "Para revisar" |
 | Deleted things | Gone from the file | Stay deleted on every device; an edit made meanwhile elsewhere waits to be brought back |
@@ -84,6 +84,41 @@ the sync files, not those backups.
   bytes and the `.qsync` name), the format version, and its size rounded
   up to 16 KiB. Whatever carries the file adds its own dates and names; the
   app names files `quincena-<date>.qsync`.
+
+## Backups
+
+Exportar in Ajustes offers two files. The first, chosen unless the person
+picks the other, is sealed: it can sit in iCloud Drive or a chat with
+themselves and no one reads it. The second is the export as JSON, readable
+by anyone who has it, for taking the data to another tool.
+
+- **Its own key.** The first sealed backup makes a 256-bit key with the
+  system's secure generator and shows it as a code of the same form as the
+  vault's, once, with the warning that without it no one can open the
+  backups, DL SOFT included. Every later backup uses the same key, so one
+  code opens them all; "Ver mi código de respaldo" shows it again. The key
+  lives in the keychain like the vault's (`quincena.backup.key`), never in
+  the database or an export.
+- **The same file, another kind.** `"QBACK"` instead of `"QSYNC"`, the
+  same format otherwise, with keys derived under labels of its own
+  (`quincena/backup/encrypt/v1`, `quincena/backup/file-tag/v1`). A sync
+  code never opens a backup nor a backup's code a sync file, even with the
+  first bytes changed: the tag is made under the other label and fails.
+  The body is the export, the same JSON the other choice writes.
+- **Restoring.** On the phone that made it, the backup opens with nothing
+  to type. On another, the app asks for the code; a code typed there stays
+  as that phone's backup code if it had none, so its next backups open
+  with the same one. The file is opened and checked whole before the
+  person is asked whether to replace everything, and a sync file brought
+  here is pointed to "Varios dispositivos". Restoring replaces everything
+  in one transaction, as an import always has.
+- **Deleting everything** forgets the key with the vault's. Backups made
+  with it still open with its code.
+- **No keychain.** Where the keychain fails, a sealed backup still goes
+  out with a new key, and its code is shown every time.
+- **Changing the code** makes a new key for the backups to come, and
+  shows its code. Those made before still open with the old code, which
+  the app says before changing it.
 
 ## What syncs
 

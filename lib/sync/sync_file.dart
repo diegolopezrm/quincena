@@ -7,15 +7,15 @@ import 'package:cryptography/cryptography.dart';
 
 import 'vault.dart';
 
-/// Why a sync file could not be opened.
+/// Why a sealed file could not be opened.
 enum SyncFileProblem {
-  /// Not a Quincena sync file.
+  /// Not a file of the kind asked for.
   notSync,
 
   /// Made by a newer Quincena.
   newer,
 
-  /// From another vault: made with another code.
+  /// Sealed with another key: made with another code.
   otherVault,
 
   /// Changed or cut since it was made.
@@ -35,21 +35,63 @@ class SyncFileException implements Exception {
 ///
 /// `"QSYNC" | format (1) | salt (16) | tag (16) | nonce (24) | sealed body`
 ///
+/// It is a [SealedFile] of the sync kind.
+abstract final class SyncFile {
+  static const int format = SealedFile.format;
+
+  static Future<Uint8List> seal(
+    VaultKey key,
+    Map<String, Object?> body, {
+    Random? random,
+  }) => SealedFile.sync.seal(key, body, random: random);
+
+  /// The body of [file], or a [SyncFileException] and nothing else.
+  static Future<Map<String, Object?>> open(VaultKey key, List<int> file) =>
+      SealedFile.sync.open(key, file);
+}
+
+/// A file sealed with a key the person holds as a code:
+///
+/// `magic (5) | format (1) | salt (16) | tag (16) | nonce (24) | sealed body`
+///
 /// The body is its own length, the JSON gzipped, and zeros to a multiple of
 /// 16 KiB, sealed with XChaCha20-Poly1305 under a key derived from the
-/// vault's. The tag, a keyed hash of a salt new in every file, tells a file
-/// of another vault from a damaged one with nothing common to two files.
+/// person's. The tag, a keyed hash of a salt new in every file, tells a file
+/// of another key from a damaged one with nothing common to two files.
 /// Every clear byte before the body goes in as associated data, so nothing
 /// in the header can change unnoticed.
-abstract final class SyncFile {
-  static final List<int> _magic = ascii.encode('QSYNC');
+///
+/// Each kind has its own magic and derives its keys under its own labels:
+/// a sync code never opens a backup, nor a backup's code a sync file.
+final class SealedFile {
+  const SealedFile._(this._magicText, this._encryptLabel, this._tagLabel);
+
+  /// What devices pass each other to stay in step.
+  static const SealedFile sync = SealedFile._(
+    'QSYNC',
+    'quincena/sync/encrypt/v1',
+    'quincena/sync/file-tag/v1',
+  );
+
+  /// Everything at one moment, for the day a phone is lost.
+  static const SealedFile backup = SealedFile._(
+    'QBACK',
+    'quincena/backup/encrypt/v1',
+    'quincena/backup/file-tag/v1',
+  );
+
+  final String _magicText;
+  final String _encryptLabel;
+  final String _tagLabel;
+
+  List<int> get _magic => ascii.encode(_magicText);
   static const int format = 1;
   static const int _saltLength = 16;
   static const int _tagLength = 16;
   static const int _nonceLength = 24;
   static const int _macLength = 16;
   static const int _block = 16 * 1024;
-  static int get _headerLength =>
+  int get _headerLength =>
       _magic.length + 1 + _saltLength + _tagLength + _nonceLength;
 
   /// What a body may grow to once uncompressed.
@@ -57,7 +99,18 @@ abstract final class SyncFile {
 
   static final Xchacha20 _cipher = Xchacha20.poly1305Aead();
 
-  static Future<Uint8List> seal(
+  /// Whether [file] says it is of this kind. Only opening it says whether
+  /// it is whole.
+  bool marks(List<int> file) {
+    final List<int> magic = _magic;
+    if (file.length < magic.length) return false;
+    for (var i = 0; i < magic.length; i++) {
+      if (file[i] != magic[i]) return false;
+    }
+    return true;
+  }
+
+  Future<Uint8List> seal(
     VaultKey key,
     Map<String, Object?> body, {
     Random? random,
@@ -70,7 +123,7 @@ abstract final class SyncFile {
       ..._magic,
       format,
       ...salt,
-      ...await key.fileTag(salt),
+      ...await key.fileTag(salt, _tagLabel),
       ...nonce,
     ]);
     final List<int> packed = GZipEncoder().encodeBytes(
@@ -84,7 +137,7 @@ abstract final class SyncFile {
       ..setRange(4, size, packed);
     final SecretBox box = await _cipher.encrypt(
       padded,
-      secretKey: await key.encryptionKey(),
+      secretKey: await key.encryptionKey(_encryptLabel),
       nonce: nonce,
       aad: header,
     );
@@ -96,8 +149,8 @@ abstract final class SyncFile {
   }
 
   /// The body of [file], or a [SyncFileException] and nothing else.
-  static Future<Map<String, Object?>> open(VaultKey key, List<int> file) async {
-    if (file.length < _headerLength + _macLength || !_startsWithMagic(file)) {
+  Future<Map<String, Object?>> open(VaultKey key, List<int> file) async {
+    if (file.length < _headerLength + _macLength || !marks(file)) {
       throw const SyncFileException(SyncFileProblem.notSync);
     }
     final int version = file[_magic.length];
@@ -113,7 +166,7 @@ abstract final class SyncFile {
       at + _saltLength,
       at + _saltLength + _tagLength,
     );
-    if (!_same(tag, await key.fileTag(salt))) {
+    if (!_same(tag, await key.fileTag(salt, _tagLabel))) {
       throw const SyncFileException(SyncFileProblem.otherVault);
     }
     final List<int> header = file.sublist(0, _headerLength);
@@ -130,7 +183,7 @@ abstract final class SyncFile {
     try {
       padded = await _cipher.decrypt(
         SecretBox(sealed, nonce: nonce, mac: Mac(mac)),
-        secretKey: await key.encryptionKey(),
+        secretKey: await key.encryptionKey(_encryptLabel),
         aad: header,
       );
     } on SecretBoxAuthenticationError {
@@ -165,13 +218,6 @@ abstract final class SyncFile {
     } on Object {
       throw const SyncFileException(SyncFileProblem.damaged);
     }
-  }
-
-  static bool _startsWithMagic(List<int> file) {
-    for (var i = 0; i < _magic.length; i++) {
-      if (file[i] != _magic[i]) return false;
-    }
-    return true;
   }
 
   static bool _same(List<int> a, List<int> b) {

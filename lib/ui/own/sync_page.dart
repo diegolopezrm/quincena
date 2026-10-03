@@ -2,7 +2,6 @@ import 'package:decimal/decimal.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../format/dates.dart';
 import '../../l10n/l10n.dart';
@@ -12,10 +11,10 @@ import '../../own/own_controller.dart';
 import '../../sync/merge.dart';
 import '../../sync/sync_file.dart';
 import '../../sync/sync_service.dart';
-import '../../sync/vault.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import 'code_dialogs.dart';
 import 'look.dart';
 
 /// Using Quincena on more than one device: the vault's code, the files
@@ -63,60 +62,12 @@ class _SyncPageState extends State<SyncPage> {
   void _say(String text) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
 
-  Future<void> _showCode(String code, {required String title}) =>
-      showDialog<void>(
-        context: context,
-        builder: (BuildContext context) {
-          final AppLocalizations l = context.l10n;
-          return AlertDialog(
-            title: Text(title),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                // Groups of four that never break in the middle.
-                Semantics(
-                  label: code,
-                  child: ExcludeSemantics(
-                    child: Wrap(
-                      spacing: 10,
-                      runSpacing: 6,
-                      children: <Widget>[
-                        for (final String group in code.split('-'))
-                          Text(
-                            group,
-                            style: context.type.titleMedium?.copyWith(
-                              fontFeatures: const <FontFeature>[
-                                FontFeature.tabularFigures(),
-                              ],
-                              letterSpacing: 1.5,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(l.syncCodeKeep, style: context.type.bodySmall),
-              ],
-            ),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () async {
-                  await Clipboard.setData(ClipboardData(text: code));
-                  if (context.mounted) Navigator.of(context).pop();
-                  _say(l.syncCodeCopied);
-                },
-                child: Text(l.syncCopyCode),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(l.syncDone),
-              ),
-            ],
-          );
-        },
-      );
+  Future<void> _showCode(String code, {required String title}) => showCode(
+    context,
+    code: code,
+    title: title,
+    keep: context.l10n.syncCodeKeep,
+  );
 
   Future<void> _start() async {
     final String code = await _sync.start();
@@ -127,11 +78,17 @@ class _SyncPageState extends State<SyncPage> {
 
   Future<void> _join() async {
     final AppLocalizations l = context.l10n;
-    final bool? joined = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) => _JoinDialog(sync: _sync),
+    final bool joined = await askForCode(
+      context,
+      title: l.syncJoin,
+      body: l.syncJoinBody,
+      action: l.syncJoinAction,
+      use: (String code) async {
+        await _sync.join(code);
+        return null;
+      },
     );
-    if (joined != true) return;
+    if (!joined) return;
     await _refresh();
     _say(l.syncJoined);
   }
@@ -349,80 +306,6 @@ class _SyncPageState extends State<SyncPage> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _JoinDialog extends StatefulWidget {
-  const _JoinDialog({required this.sync});
-
-  final SyncService sync;
-
-  @override
-  State<_JoinDialog> createState() => _JoinDialogState();
-}
-
-class _JoinDialogState extends State<_JoinDialog> {
-  final TextEditingController _code = TextEditingController();
-  String? _error;
-
-  @override
-  void dispose() {
-    _code.dispose();
-    super.dispose();
-  }
-
-  Future<void> _join() async {
-    final AppLocalizations l = context.l10n;
-    final NavigatorState navigator = Navigator.of(context);
-    try {
-      await widget.sync.join(_code.text);
-      navigator.pop(true);
-    } on CodeException catch (e) {
-      setState(
-        () => _error = switch (e.problem) {
-          CodeProblem.length => l.syncCodeLength,
-          CodeProblem.character => l.syncCodeCharacter,
-          CodeProblem.check => l.syncCodeCheck,
-        },
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations l = context.l10n;
-    return AlertDialog(
-      title: Text(l.syncJoin),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(l.syncJoinBody, style: context.type.bodySmall),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _code,
-            autofocus: true,
-            textCapitalization: TextCapitalization.characters,
-            autocorrect: false,
-            enableSuggestions: false,
-            maxLines: 3,
-            minLines: 2,
-            decoration: InputDecoration(
-              labelText: l.syncCodeField,
-              errorText: _error,
-              errorMaxLines: 3,
-            ),
-          ),
-        ],
-      ),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: Text(l.cancel),
-        ),
-        TextButton(onPressed: _join, child: Text(l.syncJoinAction)),
-      ],
     );
   }
 }

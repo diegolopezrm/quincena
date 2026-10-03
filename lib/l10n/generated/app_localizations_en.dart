@@ -4667,4 +4667,72 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statementImporting => 'Importing…';
+
+  @override
+  String get exportBody =>
+      'One file with everything you have in Quincena: accounts, transactions, plans and settings. Use it to move to another phone or keep a copy.';
+
+  @override
+  String get exportSealed => 'Encrypted (recommended)';
+
+  @override
+  String get exportSealedBody =>
+      'Opens only in Quincena with your backup code. You can keep it in the cloud or send it to yourself and no one else can read it.';
+
+  @override
+  String get exportPlain => 'Unencrypted (JSON)';
+
+  @override
+  String get exportPlainBody =>
+      'Anyone who has the file can read your finances. Use it to take them to another tool.';
+
+  @override
+  String get exportAction => 'Export';
+
+  @override
+  String get backupShowCode => 'Show my backup code';
+
+  @override
+  String get backupYourCode => 'Your backup code';
+
+  @override
+  String get backupCodeKeep =>
+      'This code opens your encrypted backups, on this phone or another. Keep it where you keep your passwords: without it no one can open them, not even Quincena.';
+
+  @override
+  String get backupCodeKept => 'I saved it';
+
+  @override
+  String get backupCodeTitle => 'Encrypted backup';
+
+  @override
+  String get backupCodeBody =>
+      'Type the backup code Quincena showed you the first time you exported encrypted.';
+
+  @override
+  String get backupOpen => 'Open';
+
+  @override
+  String get backupWrongCode =>
+      'That code doesn\'t open this backup. If it\'s your sync code, the backup code is a different one.';
+
+  @override
+  String get backupIsSync =>
+      'That\'s a sync file: it opens in Settings, More than one device. Nothing was changed.';
+
+  @override
+  String get backupChangeCode => 'Change the code';
+
+  @override
+  String get backupChangeTitle => 'Change the backup code?';
+
+  @override
+  String get backupChangeBody =>
+      'Backups you already made still open with the old code; new ones use the new one. Keep both while you have old backups.';
+
+  @override
+  String get backupChange => 'Change';
+
+  @override
+  String get backupNewCode => 'Your new backup code';
 }

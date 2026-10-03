@@ -60,6 +60,16 @@ generated catalog is current.
   and files that are tampered with, cut, from another vault or of a newer
   format. The design and its two security review passes are in
   `docs/SYNC.md`.
+- **Sealed backups.** `test/backup_test.dart` restores a sealed backup on
+  the phone that made it with nothing to type and on another with its
+  code, typed as people type it, and keeps that code there. It checks that
+  no other code opens it, that a sync file is not taken for a backup nor a
+  backup for a sync file, even with its first bytes changed, that a file
+  cut, changed, of a newer format or from another app changes nothing, that
+  a new code leaves older backups to the old one, that a phone without a
+  keychain still seals each backup with a code of its own, and that the
+  person sees the code before choosing where to keep the file and is
+  asked to replace everything only once the file has opened.
 - **Money that reads by itself.** `test/money_clarity_test.dart` holds
   the home card to one figure to spend, with what is there today and each
   thing held back as its own line, "Te faltan" when the period falls short,
