@@ -306,6 +306,20 @@ void main() {
       expect(held['change24hPercent'], 2.04);
     });
 
+    test('a screen that starts watching is not told while it is built', () {
+      var told = 0;
+      void count() => told++;
+      own.portfolio.addListener(count);
+      addTearDown(() => own.portfolio.removeListener(count));
+      // Screens call this from initState, in the middle of a build.
+      own.portfolio.watch();
+      addTearDown(own.portfolio.unwatch);
+      expect(told, 0);
+      return Future<void>.delayed(Duration.zero, () {
+        expect(told, greaterThan(0));
+      });
+    });
+
     test('prices read a moment ago are not read again', () async {
       await own.portfolio.refreshIfOlder(const Duration(minutes: 1));
       await own.portfolio.refreshIfOlder(const Duration(minutes: 1));

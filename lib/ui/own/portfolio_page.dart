@@ -357,11 +357,16 @@ class _PortfolioPageState extends State<PortfolioPage> {
   void initState() {
     super.initState();
     _controller.watch();
-    _controller.loadChart(_range);
-    if (BinanceLink.available) {
-      widget.own.binance.syncIfOlder(const Duration(minutes: 30));
-    }
-    widget.own.wallets.syncIfOlder(const Duration(minutes: 30));
+    // Each of these tells its listeners as it starts: once this page is
+    // built, not while it is.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _controller.loadChart(_range);
+      if (BinanceLink.available) {
+        widget.own.binance.syncIfOlder(const Duration(minutes: 30));
+      }
+      widget.own.wallets.syncIfOlder(const Duration(minutes: 30));
+    });
   }
 
   @override

@@ -123,7 +123,9 @@ class PortfolioController extends ChangeNotifier {
   void watch() {
     _watchers++;
     if (_watchers > 1) return;
-    unawaited(refresh());
+    // Screens call this while they are being built: the first read starts
+    // once that is over, so no one is told of it mid-build.
+    unawaited(Future<void>.microtask(refresh));
     _timer = Timer.periodic(every, (_) => refresh());
   }
 

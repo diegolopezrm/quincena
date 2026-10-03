@@ -143,6 +143,17 @@ generated catalog is current.
 
 ## On a simulator and an emulator
 
+- **Every screen, on an iPhone.** `tool/tour/run.sh` plays
+  `integration_test/tour.dart` on an iPhone 17 Pro simulator made for the
+  run and deleted after it: 17 scenes, from the first launch to the
+  sample's five answers, through every tab, every page of the plan,
+  settings, sync, backups, dark mode and English, each screen scrolled
+  from top to bottom. The simulator's own screenshots, status bar
+  included, land in `capturas/ios` with an `index.html` that shows them by
+  section. `test_screens/tour_check_test.dart` walks the same tour without
+  a simulator, as iOS, to check every step still finds its way. The first
+  run, on 3 October 2026, found that opening Cripto told its listeners in
+  the middle of a build; it no longer does.
 - **iOS share extension**, iPhone 17 Pro simulator, iOS 26.1: a receipt
   shared from Photos to Quincena was read on the device ("Quedó en Por
   revisar") and, after onboarding, waited in "Por revisar" as Ana Gomez,

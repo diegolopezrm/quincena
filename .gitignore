@@ -55,3 +55,6 @@ tool/prompt/out/
 # build past App Check, so it never goes in the repository.
 *.local.json
 firebase-debug.log
+
+# Pictures tool/tour/run.sh takes of every screen, for review.
+capturas/
