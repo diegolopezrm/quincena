@@ -28,7 +28,8 @@ review, crypto, a statement being imported, and the accounts.
 | Support | https://diegolopezrm.github.io/quincena/soporte/ | https://diegolopezrm.github.io/quincena/support/ |
 | Marketing | https://diegolopezrm.github.io/quincena/ | the same |
 
-The party responsible for the data is DL SOFT TECHNOLOGIES SAS, with
+The party responsible for the data is DL SOFT TECHNOLOGIES SAS, NIT
+902024441-0, Carrera 28 # 54-28, Bucaramanga, phone +57 316 605 0934, with
 admin@dlsoft.dev for requests.
 
 ## App Store
