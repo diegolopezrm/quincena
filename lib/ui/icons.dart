@@ -105,4 +105,9 @@ abstract final class Glyph {
   static const IconData play = IconData(0xe3d0, fontFamily: _family);
   static const IconData bellSlash = IconData(0xe0d4, fontFamily: _family);
   static const IconData hourglass = IconData(0xe2b2, fontFamily: _family);
+  static const IconData usersThree = IconData(0xe68e, fontFamily: _family);
+  static const IconData handshake = IconData(0xe582, fontFamily: _family);
+  static const IconData suitcaseRolling = IconData(0xe9b0, fontFamily: _family);
+  static const IconData shareNetwork = IconData(0xe408, fontFamily: _family);
+  static const IconData minusCircle = IconData(0xe32c, fontFamily: _family);
 }

@@ -31,6 +31,9 @@ enum ProjectedKind {
   /// A payday that passed without the pay arriving.
   latePay,
 
+  /// A payment a client is expected to make.
+  income,
+
   /// Something the person is trying out.
   tryOut,
 }
@@ -139,6 +142,19 @@ class Projection {
             category: e.category,
           ),
     ];
+
+    for (final Movement m in ledger.expected) {
+      if (!ahead(_day(m.date))) continue;
+      events.add(
+        ProjectedEvent(
+          date: _day(m.date),
+          amount: m.amount,
+          certainty: Certainty.expected,
+          kind: ProjectedKind.income,
+          label: m.merchant,
+        ),
+      );
+    }
 
     final DateTime? late = _latePay(ledger);
     final int? pay = ledger.pay;

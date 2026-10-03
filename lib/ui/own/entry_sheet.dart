@@ -15,6 +15,7 @@ import '../icons.dart';
 import 'amount_input.dart';
 import 'capture_reasons.dart';
 import 'look.dart';
+import 'split_sheet.dart';
 
 /// Records a movement, or edits [entry]. A transfer is edited as one move,
 /// whichever of its legs was tapped.
@@ -575,6 +576,23 @@ class _EntryFormState extends State<_EntryForm> {
               onPressed: _saving ? null : _save,
               child: Text(l.save),
             ),
+            if (_editing case final Entry editing
+                when editing.kind == EntryKind.expense &&
+                    !editing.isTrade &&
+                    !editing.isTransfer) ...<Widget>[
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () {
+                  // The split opens over the page this sheet came from.
+                  final NavigatorState navigator = Navigator.of(context)..pop();
+                  showSplitSheet(navigator.context, own: own, entry: editing);
+                },
+                icon: const Icon(Glyph.usersThree, size: 18),
+                label: Text(
+                  own.splitOf(editing.id) == null ? l.splitThis : l.splitChange,
+                ),
+              ),
+            ],
             if (_editing != null) ...<Widget>[
               const SizedBox(height: 8),
               TextButton.icon(

@@ -1082,6 +1082,9 @@ class QuincenaStore {
     'commitments.memories',
     'commitments.instalments',
     'commitments.detective',
+    'shared.groups',
+    'freelance',
+    'trips',
   ];
 
   /// Replaces everything with what [exportJson] wrote, or throws an

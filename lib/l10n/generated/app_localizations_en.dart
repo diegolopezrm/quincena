@@ -3399,4 +3399,708 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get computedCommitments =>
       'What\'s already committed in the next 30 days';
+
+  @override
+  String comingIncome(String client) {
+    return 'Expected payment: $client';
+  }
+
+  @override
+  String get computedOwed =>
+      'What you\'re owed, your clients\' payments and your trips';
+
+  @override
+  String get freeExplainReserved => 'Reserve from your payments';
+
+  @override
+  String get messageCopied =>
+      'Message copied: paste it wherever you want to send it.';
+
+  @override
+  String get rateSourceManual => 'your rate';
+
+  @override
+  String get planOptional => 'If it helps';
+
+  @override
+  String get planSharedNone =>
+      'Split a bill and keep track of what you\'re owed';
+
+  @override
+  String planShared(String owed, String owing) {
+    return 'You\'re owed $owed · you owe $owing';
+  }
+
+  @override
+  String get planFreelanceNone =>
+      'Pending and estimated payments, and a reserve';
+
+  @override
+  String planFreelance(String amount) {
+    return '$amount to collect';
+  }
+
+  @override
+  String planFreelanceLate(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count late payments',
+      one: 'One late payment',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get planTripsNone => 'A budget in the trip\'s currency';
+
+  @override
+  String planTripLeft(String trip, String amount) {
+    return '$trip: $amount left';
+  }
+
+  @override
+  String get splitTitle => 'Split an expense';
+
+  @override
+  String get splitBody =>
+      'Nobody else needs the app: type their names. What you\'re owed doesn\'t count as money to spend until it\'s paid.';
+
+  @override
+  String get splitGroup => 'Group';
+
+  @override
+  String get splitNewGroup => 'A new group';
+
+  @override
+  String get splitWithWhom => 'Who are you splitting with?';
+
+  @override
+  String get splitWithWhomHelp => 'Names separated by commas: Ana, Juan';
+
+  @override
+  String get splitGroupName => 'Group name';
+
+  @override
+  String get splitWhat => 'What was it?';
+
+  @override
+  String get splitAmount => 'Total amount';
+
+  @override
+  String get splitFromEntry => 'The movement\'s: it doesn\'t change.';
+
+  @override
+  String get splitPaidBy => 'Who paid?';
+
+  @override
+  String get splitEven => 'Evenly';
+
+  @override
+  String get splitCustom => 'By amounts';
+
+  @override
+  String splitPartOf(String name) {
+    return '$name\'s part';
+  }
+
+  @override
+  String splitRest(String amount, String name) {
+    return 'So the total adds up, the $amount left by rounding goes to $name\'s part.';
+  }
+
+  @override
+  String splitRestYou(String amount) {
+    return 'So the total adds up, the $amount left by rounding goes to your part.';
+  }
+
+  @override
+  String get splitPartYou => 'Your part';
+
+  @override
+  String splitMissing(String amount) {
+    return '$amount short of the total';
+  }
+
+  @override
+  String splitOver(String amount) {
+    return '$amount over the total';
+  }
+
+  @override
+  String splitYourPart(String mine, String others) {
+    return 'Your part is $mine; you\'re owed $others.';
+  }
+
+  @override
+  String get splitIncomplete => 'The amount or who to split with is missing.';
+
+  @override
+  String get splitDoesNotAddUp => 'The parts don\'t add up to the total.';
+
+  @override
+  String get splitNeedsSomeone => 'Add at least one more person.';
+
+  @override
+  String get splitRemove => 'Remove the split';
+
+  @override
+  String get splitThis => 'Split this expense';
+
+  @override
+  String get splitChange => 'Change the split';
+
+  @override
+  String splitYours(String amount) {
+    return 'Split: your part $amount';
+  }
+
+  @override
+  String get sharedTitle => 'Shared expenses';
+
+  @override
+  String get sharedBody =>
+      'Split expenses with anyone, no app needed on their side. What you\'re owed isn\'t money to spend: it is again once they pay you.';
+
+  @override
+  String get sharedEmpty =>
+      'No shared expenses yet. Create a group, or open an expense in Movements and tap \"Split this expense\".';
+
+  @override
+  String get sharedNewGroup => 'New group';
+
+  @override
+  String get sharedEditGroup => 'Edit group';
+
+  @override
+  String get sharedGroupName => 'Group name';
+
+  @override
+  String get sharedAddPeople => 'Add people';
+
+  @override
+  String get sharedGroupIncomplete =>
+      'The name or someone else in the group is missing.';
+
+  @override
+  String get sharedOwedToYou => 'You\'re owed';
+
+  @override
+  String get sharedYouOwe => 'You owe';
+
+  @override
+  String get sharedNotCash =>
+      'What you\'re owed isn\'t added to your free money until it arrives.';
+
+  @override
+  String get sharedGroups => 'Groups';
+
+  @override
+  String sharedOwesYouShort(String amount) {
+    return 'You\'re owed $amount';
+  }
+
+  @override
+  String sharedYouOweShort(String amount) {
+    return 'You owe $amount';
+  }
+
+  @override
+  String get sharedEven => 'All even';
+
+  @override
+  String get sharedYou => 'You';
+
+  @override
+  String get sharedDelete => 'Delete group';
+
+  @override
+  String sharedDeleteTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get sharedDeleteBody =>
+      'The group, its expenses and its payments are deleted here. Your movements stay as they are.';
+
+  @override
+  String get sharedAddExpense => 'Add expense';
+
+  @override
+  String sharedOwedToYouIn(String amount) {
+    return 'In this group you\'re owed $amount';
+  }
+
+  @override
+  String sharedYouOweIn(String amount) {
+    return 'In this group you owe $amount';
+  }
+
+  @override
+  String get sharedAllEven => 'Everyone is even';
+
+  @override
+  String get sharedToSettle => 'To settle up';
+
+  @override
+  String sharedPaysYou(String name, String amount) {
+    return '$name pays you $amount';
+  }
+
+  @override
+  String sharedYouPay(String name, String amount) {
+    return 'You pay $name $amount';
+  }
+
+  @override
+  String sharedPays(String from, String to, String amount) {
+    return '$from pays $to $amount';
+  }
+
+  @override
+  String get sharedRemind => 'Remind';
+
+  @override
+  String sharedReminderMessage(String name, String amount, String group) {
+    return 'Hi $name, about the $amount for $group. Whenever you can, send it my way. Thanks!';
+  }
+
+  @override
+  String get sharedRecordPayment => 'Record payment';
+
+  @override
+  String get sharedExpenses => 'Expenses';
+
+  @override
+  String get sharedNoExpenses => 'No expenses in this group yet.';
+
+  @override
+  String sharedPaidBy(String name) {
+    return 'paid by $name';
+  }
+
+  @override
+  String get sharedPaidByYou => 'paid by you';
+
+  @override
+  String sharedYourShare(String amount) {
+    return 'your part $amount';
+  }
+
+  @override
+  String get sharedPayments => 'Payments';
+
+  @override
+  String sharedPaid(String from, String to) {
+    return '$from paid $to';
+  }
+
+  @override
+  String sharedPaidYou(String from) {
+    return '$from paid you';
+  }
+
+  @override
+  String sharedYouPaid(String to) {
+    return 'You paid $to';
+  }
+
+  @override
+  String get sharedLinked => 'came into your account';
+
+  @override
+  String get sharedRemovePayment => 'Remove this payment';
+
+  @override
+  String get sharedLedgerNote =>
+      'Of an expense you paid for others, only your part counts as spending; the rest is money lent. When it comes back it isn\'t income: it\'s money returning.';
+
+  @override
+  String get sharedArrivedAs => 'Did it reach one of your accounts?';
+
+  @override
+  String get sharedNotRecorded => 'No, or it isn\'t in Quincena';
+
+  @override
+  String get sharedArrivedAsHelp =>
+      'If you pick the movement, it counts as money returning, not as income.';
+
+  @override
+  String get freelanceTitle => 'Variable income';
+
+  @override
+  String get freelanceBody =>
+      'For when your income changes from month to month. It keeps collected, pending and estimated apart. Quincena doesn\'t work out taxes: you decide the reserve.';
+
+  @override
+  String get freelanceAdd => 'Add payment';
+
+  @override
+  String get freelanceEdit => 'Payment';
+
+  @override
+  String get freelancePending => 'To collect';
+
+  @override
+  String get freelanceEstimated => 'Estimated';
+
+  @override
+  String get freelanceReserve => 'Reserve';
+
+  @override
+  String freelanceOverdueNote(int count, String amount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count late payments of $amount.',
+      one: 'One late payment of $amount.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get freelanceOverdue => 'Late';
+
+  @override
+  String get freelancePendingList => 'Pending';
+
+  @override
+  String get freelanceEstimatedList => 'Estimated';
+
+  @override
+  String get freelanceCollectedList => 'Collected';
+
+  @override
+  String get freelanceScenario => 'What to count in the days ahead';
+
+  @override
+  String get scenarioCollected => 'Collected';
+
+  @override
+  String get scenarioPending => 'Billed';
+
+  @override
+  String get scenarioEstimated => 'All';
+
+  @override
+  String get scenarioCollectedBody =>
+      'Only the money you already have. The most careful choice for a hard month.';
+
+  @override
+  String get scenarioPendingBody =>
+      'Also what\'s billed, on the day you expect it. If it\'s late it moves to the next day, and it never counts as free until it arrives.';
+
+  @override
+  String get scenarioEstimatedBody =>
+      'Also what you think will come without billing it yet. The least careful choice: use it with care.';
+
+  @override
+  String get freelanceReservePercent => 'Keep from each payment';
+
+  @override
+  String get freelanceNoReserve => 'Nothing';
+
+  @override
+  String freelanceReserveNow(String amount, String date) {
+    return 'You\'ve kept $amount since $date. It doesn\'t count as free, but it stays in your accounts.';
+  }
+
+  @override
+  String get freelanceReserveOff =>
+      'No reserve: everything you collect counts as free.';
+
+  @override
+  String get freelanceNoTax =>
+      'Quincena doesn\'t work out taxes or know what you owe: the percentage is yours.';
+
+  @override
+  String get freelanceUse => 'I used some of the reserve';
+
+  @override
+  String get freelanceUseAmount => 'How much did you use?';
+
+  @override
+  String get freelanceUseHelp =>
+      'For example, what you paid in taxes or social security.';
+
+  @override
+  String freelanceExpectedOn(String date) {
+    return 'Expected on $date';
+  }
+
+  @override
+  String freelanceCollectedOn(String date) {
+    return 'Collected on $date';
+  }
+
+  @override
+  String freelanceLate(int days, String date) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days late: due on $date',
+      one: 'One day late: due on $date',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get freelanceClient => 'Who pays you?';
+
+  @override
+  String get freelanceAmount => 'Amount';
+
+  @override
+  String get incomeEstimated => 'Estimated';
+
+  @override
+  String get incomePending => 'Billed';
+
+  @override
+  String get incomeCollected => 'Collected';
+
+  @override
+  String get incomeEstimatedHelp =>
+      'You think it will come, but you haven\'t billed it yet.';
+
+  @override
+  String get incomePendingHelp => 'You\'ve billed it and expect the payment.';
+
+  @override
+  String get incomeCollectedHelp => 'The money arrived.';
+
+  @override
+  String get freelanceArrivedAs => 'Which movement did it arrive as?';
+
+  @override
+  String get freelanceNote => 'Note';
+
+  @override
+  String get freelanceIncomplete => 'Who pays you or the amount is missing.';
+
+  @override
+  String get freelanceRemind => 'Remind the client';
+
+  @override
+  String freelanceReminderMessage(String client, String amount, String date) {
+    return 'Hi $client, about the $amount payment I expected on $date. Could you confirm when you can make it? Thanks!';
+  }
+
+  @override
+  String get freelanceDelete => 'Delete payment';
+
+  @override
+  String get tripsTitle => 'Trips';
+
+  @override
+  String get tripsBody =>
+      'A budget in the trip\'s currency, counted from your own movements: nothing is copied.';
+
+  @override
+  String get tripsEmpty => 'No trips yet.';
+
+  @override
+  String get tripsNew => 'New trip';
+
+  @override
+  String get tripEdit => 'Edit trip';
+
+  @override
+  String get tripDelete => 'Delete trip';
+
+  @override
+  String tripDeleteTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get tripDeleteBody =>
+      'The trip is deleted here. Its expenses stay in your accounts.';
+
+  @override
+  String tripLeftShort(String amount) {
+    return '$amount left';
+  }
+
+  @override
+  String tripSpentShort(String amount) {
+    return 'Spent $amount';
+  }
+
+  @override
+  String get tripSpent => 'You spent';
+
+  @override
+  String get tripLeft => 'You have left';
+
+  @override
+  String tripOf(String amount) {
+    return 'of $amount';
+  }
+
+  @override
+  String tripPerDay(String amount, int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'You can spend $amount a day for the $days days left.',
+      one: 'You can spend $amount today, the last day.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String tripAverage(String amount) {
+    return 'You\'re spending $amount a day on average.';
+  }
+
+  @override
+  String get tripOver => 'The trip is over.';
+
+  @override
+  String tripUnconverted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count expenses have no rate to convert them and aren\'t counted.',
+      one: 'One expense has no rate to convert it and isn\'t counted.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tripShared => 'The trip\'s shared expenses';
+
+  @override
+  String get tripShare => 'Split the trip\'s expenses with someone';
+
+  @override
+  String get tripExpenses => 'The trip\'s expenses';
+
+  @override
+  String get tripNoExpenses =>
+      'Expenses on the trip\'s dates show up here on their own. Add the ones you paid there in its currency.';
+
+  @override
+  String get tripIncludeEarlier => 'Include an expense from before';
+
+  @override
+  String get tripIncludeEarlierBody =>
+      'The flight or the hotel you paid before leaving.';
+
+  @override
+  String get tripNothingEarlier =>
+      'No expenses in the 120 days before the trip.';
+
+  @override
+  String get tripSameMovements =>
+      'A trip uses your own movements: changing one here changes it in your account.';
+
+  @override
+  String get tripNoRate => 'No rate';
+
+  @override
+  String get tripExclude => 'Not part of the trip';
+
+  @override
+  String tripForeign(
+    String amount,
+    String rate,
+    String date,
+    String fee,
+    String estimate,
+  ) {
+    return '$amount at $rate ($date) plus $fee from the card: $estimate estimated';
+  }
+
+  @override
+  String tripForeignNoFee(
+    String amount,
+    String rate,
+    String date,
+    String estimate,
+  ) {
+    return '$amount at $rate ($date): $estimate estimated';
+  }
+
+  @override
+  String tripConverted(String amount, String source, String date) {
+    return '$amount, converted with $source of $date';
+  }
+
+  @override
+  String tripChargedMore(String charged, String difference) {
+    return 'The bank charged $charged: $difference more than estimated';
+  }
+
+  @override
+  String tripChargedLess(String charged, String difference) {
+    return 'The bank charged $charged: $difference less than estimated';
+  }
+
+  @override
+  String get tripAdjust => 'Set to the real charge';
+
+  @override
+  String get tripCharged => 'How much did the bank charge?';
+
+  @override
+  String get tripAdjustHelp =>
+      'The movement changes to what the statement says, and the difference from the estimate is kept.';
+
+  @override
+  String get tripName => 'Where are you going?';
+
+  @override
+  String get tripCurrency => 'The trip\'s currency';
+
+  @override
+  String get tripBudget => 'Budget';
+
+  @override
+  String get tripFee => 'Your card\'s fee abroad';
+
+  @override
+  String get tripFeeHelp =>
+      'If you know it: it\'s added when estimating what you\'ll be charged.';
+
+  @override
+  String get tripFeeShort => 'Fee';
+
+  @override
+  String get tripIncomplete => 'Where you are going is missing.';
+
+  @override
+  String get tripAddExpense => 'Add trip expense';
+
+  @override
+  String get tripWhat => 'What for?';
+
+  @override
+  String get tripAmount => 'Amount';
+
+  @override
+  String get tripPaidWith => 'Paid with';
+
+  @override
+  String tripRate(String from, String to) {
+    return '1 $from in $to';
+  }
+
+  @override
+  String get tripRateNone => 'No saved rate: type the one you saw.';
+
+  @override
+  String tripRateFrom(String source, String date) {
+    return '$source of $date';
+  }
+
+  @override
+  String tripWillRecord(String amount, String account) {
+    return '$amount is recorded in $account, estimated until the real charge arrives.';
+  }
+
+  @override
+  String get tripExpenseIncomplete => 'The amount or the rate is missing.';
 }

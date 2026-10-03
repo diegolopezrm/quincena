@@ -614,6 +614,7 @@ class _DayDetail extends StatelessWidget {
   String _label(AppLocalizations l, ProjectedEvent e) => switch (e.kind) {
     ProjectedKind.pay => l.comingPay,
     ProjectedKind.latePay => l.comingLatePay,
+    ProjectedKind.income => l.comingIncome(e.label),
     ProjectedKind.tryOut when e.label.isEmpty => l.comingTryOut,
     _ => e.label,
   };

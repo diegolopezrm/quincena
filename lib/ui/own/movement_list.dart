@@ -2,7 +2,9 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 
 import '../../domain/records.dart';
+import '../../domain/shared.dart';
 import '../../format/dates.dart';
+import '../../format/money.dart';
 import '../../l10n/l10n.dart';
 import '../../money/money.dart';
 import '../../own/own_controller.dart';
@@ -85,6 +87,11 @@ class MovementRow extends StatelessWidget {
         categoryName,
       if (!inAccount && !transfer) account.name,
       if (entry.date.isAfter(endOfToday(own.today))) l.scheduled,
+      if (own.splitOf(entry.id) case (
+        _,
+        final SharedExpense split,
+      ) when own.ledger != null)
+        l.splitYours(pesos(own.ledger!.major(split.shares[meId] ?? 0))),
     ]..removeWhere((String s) => s.isEmpty);
 
     final Money money = Money(entry.amount, account.asset);

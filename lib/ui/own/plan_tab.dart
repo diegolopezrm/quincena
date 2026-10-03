@@ -1,12 +1,16 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/ledger.dart';
 import '../../domain/commitments.dart';
+import '../../domain/freelance.dart';
 import '../../domain/plan.dart';
 import '../../domain/records.dart';
+import '../../domain/trips.dart';
 import '../../format/dates.dart';
 import '../../format/money.dart';
 import '../../l10n/l10n.dart';
+import '../../money/money.dart';
 import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
@@ -16,9 +20,12 @@ import 'commitments_page.dart';
 import 'cushion_page.dart';
 import 'detective_page.dart';
 import 'envelopes_page.dart';
+import 'freelance_page.dart';
 import 'goal_sheet.dart';
 import 'instalments_page.dart';
 import 'look.dart';
+import 'shared_page.dart';
+import 'trips_page.dart';
 import 'what_if_page.dart';
 import 'wishes_page.dart';
 
@@ -66,6 +73,9 @@ class PlanTab extends StatelessWidget {
         const SizedBox(height: 28),
         SectionLabel(l.planCommitments),
         _CommitmentsPanel(own: own, ledger: ledger, open: _open),
+        const SizedBox(height: 28),
+        SectionLabel(l.planOptional),
+        _OptionalPanel(own: own, ledger: ledger, open: _open),
         const SizedBox(height: 28),
         SectionLabel(l.planTools),
         Panel(
@@ -170,6 +180,79 @@ class _CommitmentsPanel extends StatelessWidget {
           title: l.detectiveTitle,
           detail: alerts == 0 ? l.planDetectiveNone : l.planDetective(alerts),
           onTap: () => open(context, DetectivePage(own: own)),
+        ),
+      ],
+    );
+  }
+}
+
+/// What some lives need and others never will: expenses shared with
+/// others, income that varies, a trip. Each can be left alone.
+class _OptionalPanel extends StatelessWidget {
+  const _OptionalPanel({
+    required this.own,
+    required this.ledger,
+    required this.open,
+  });
+
+  final OwnController own;
+  final Ledger ledger;
+  final void Function(BuildContext context, Widget page) open;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    String amount(int minor) => pesos(ledger.major(minor));
+    final (int owed, int owing) = own.sharedBalance;
+    final FreelancePlan freelance = own.freelance;
+    final DateTime today = own.today;
+    final List<ExpectedIncome> pending = <ExpectedIncome>[
+      ...freelance.by(IncomeStatus.pending),
+    ];
+    final int late = pending
+        .where((ExpectedIncome i) => i.overdue(today))
+        .length;
+    final Trip? trip = own.trips
+        .where((Trip t) => t.daysLeft(today) > 0)
+        .lastOrNull;
+    return Panel(
+      children: <Widget>[
+        _ToolRow(
+          icon: Glyph.usersThree,
+          title: l.sharedTitle,
+          detail: own.groups.isEmpty
+              ? l.planSharedNone
+              : l.planShared(amount(owed), amount(owing)),
+          onTap: () => open(context, SharedPage(own: own)),
+        ),
+        _ToolRow(
+          icon: Glyph.briefcase,
+          title: l.freelanceTitle,
+          detail: freelance.isEmpty
+              ? l.planFreelanceNone
+              : late > 0
+              ? l.planFreelanceLate(late)
+              : l.planFreelance(
+                  amount(
+                    pending.fold(0, (int s, ExpectedIncome i) => s + i.amount),
+                  ),
+                ),
+          onTap: () => open(context, FreelancePage(own: own)),
+        ),
+        _ToolRow(
+          icon: Glyph.airplaneTilt,
+          title: l.tripsTitle,
+          detail: switch (trip) {
+            null => l.planTripsNone,
+            final Trip t => switch (own.tripSummary(t).left) {
+              final Decimal left => l.planTripLeft(
+                t.name,
+                moneyText(Money(left, t.asset), base: own.profile?.base),
+              ),
+              null => t.name,
+            },
+          },
+          onTap: () => open(context, TripsPage(own: own)),
         ),
       ],
     );

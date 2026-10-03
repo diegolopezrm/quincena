@@ -3399,4 +3399,703 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get computedCommitments =>
       'Lo ya comprometido en los próximos 30 días';
+
+  @override
+  String comingIncome(String client) {
+    return 'Cobro esperado: $client';
+  }
+
+  @override
+  String get computedOwed => 'Lo que te deben, tus cobros y tus viajes';
+
+  @override
+  String get freeExplainReserved => 'Reserva de tus cobros';
+
+  @override
+  String get messageCopied => 'Mensaje copiado: pégalo donde quieras enviarlo.';
+
+  @override
+  String get rateSourceManual => 'tu tasa';
+
+  @override
+  String get planOptional => 'Si te sirve';
+
+  @override
+  String get planSharedNone => 'Divide una cuenta y lleva lo que te deben';
+
+  @override
+  String planShared(String owed, String owing) {
+    return 'Te deben $owed · debes $owing';
+  }
+
+  @override
+  String get planFreelanceNone => 'Cobros pendientes, estimados y una reserva';
+
+  @override
+  String planFreelance(String amount) {
+    return '$amount por cobrar';
+  }
+
+  @override
+  String planFreelanceLate(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cobros vencidos',
+      one: 'Un cobro vencido',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get planTripsNone => 'Un presupuesto en la moneda del viaje';
+
+  @override
+  String planTripLeft(String trip, String amount) {
+    return '$trip: te quedan $amount';
+  }
+
+  @override
+  String get splitTitle => 'Dividir un gasto';
+
+  @override
+  String get splitBody =>
+      'Nadie más necesita la app: escribe los nombres. Lo que te deben no cuenta como plata disponible hasta que te paguen.';
+
+  @override
+  String get splitGroup => 'Grupo';
+
+  @override
+  String get splitNewGroup => 'Un grupo nuevo';
+
+  @override
+  String get splitWithWhom => '¿Con quién lo divides?';
+
+  @override
+  String get splitWithWhomHelp => 'Nombres separados por comas: Ana, Juan';
+
+  @override
+  String get splitGroupName => 'Nombre del grupo';
+
+  @override
+  String get splitWhat => '¿Qué fue?';
+
+  @override
+  String get splitAmount => 'Valor total';
+
+  @override
+  String get splitFromEntry => 'El del movimiento: no se cambia.';
+
+  @override
+  String get splitPaidBy => '¿Quién pagó?';
+
+  @override
+  String get splitEven => 'En partes iguales';
+
+  @override
+  String get splitCustom => 'Por montos';
+
+  @override
+  String splitPartOf(String name) {
+    return 'Parte de $name';
+  }
+
+  @override
+  String splitRest(String amount, String name) {
+    return 'Para que el total cuadre, los $amount del redondeo quedan en la parte de $name.';
+  }
+
+  @override
+  String splitRestYou(String amount) {
+    return 'Para que el total cuadre, los $amount del redondeo quedan en tu parte.';
+  }
+
+  @override
+  String get splitPartYou => 'Tu parte';
+
+  @override
+  String splitMissing(String amount) {
+    return 'Faltan $amount para el total';
+  }
+
+  @override
+  String splitOver(String amount) {
+    return 'Sobran $amount sobre el total';
+  }
+
+  @override
+  String splitYourPart(String mine, String others) {
+    return 'Tu parte es $mine; $others te los deben.';
+  }
+
+  @override
+  String get splitIncomplete => 'Falta el valor o con quién dividirlo.';
+
+  @override
+  String get splitDoesNotAddUp => 'Las partes no suman el total.';
+
+  @override
+  String get splitNeedsSomeone => 'Agrega al menos a una persona más.';
+
+  @override
+  String get splitRemove => 'Quitar la división';
+
+  @override
+  String get splitThis => 'Dividir este gasto';
+
+  @override
+  String get splitChange => 'Cambiar la división';
+
+  @override
+  String splitYours(String amount) {
+    return 'Dividido: tu parte $amount';
+  }
+
+  @override
+  String get sharedTitle => 'Gastos compartidos';
+
+  @override
+  String get sharedBody =>
+      'Divide gastos con quien sea, sin que tenga la app. Lo que te deben no es plata disponible: vuelve a serlo cuando te pagan.';
+
+  @override
+  String get sharedEmpty =>
+      'Aún no divides gastos. Crea un grupo, o abre un gasto en Movimientos y toca «Dividir este gasto».';
+
+  @override
+  String get sharedNewGroup => 'Nuevo grupo';
+
+  @override
+  String get sharedEditGroup => 'Editar grupo';
+
+  @override
+  String get sharedGroupName => 'Nombre del grupo';
+
+  @override
+  String get sharedAddPeople => 'Agregar personas';
+
+  @override
+  String get sharedGroupIncomplete =>
+      'Falta el nombre o alguien más en el grupo.';
+
+  @override
+  String get sharedOwedToYou => 'Te deben';
+
+  @override
+  String get sharedYouOwe => 'Debes';
+
+  @override
+  String get sharedNotCash =>
+      'Lo que te deben no se suma a lo libre hasta que llega.';
+
+  @override
+  String get sharedGroups => 'Grupos';
+
+  @override
+  String sharedOwesYouShort(String amount) {
+    return 'Te deben $amount';
+  }
+
+  @override
+  String sharedYouOweShort(String amount) {
+    return 'Debes $amount';
+  }
+
+  @override
+  String get sharedEven => 'A paz y salvo';
+
+  @override
+  String get sharedYou => 'Tú';
+
+  @override
+  String get sharedDelete => 'Borrar grupo';
+
+  @override
+  String sharedDeleteTitle(String name) {
+    return '¿Borrar $name?';
+  }
+
+  @override
+  String get sharedDeleteBody =>
+      'Se borran el grupo, sus gastos y sus pagos aquí. Tus movimientos no se tocan.';
+
+  @override
+  String get sharedAddExpense => 'Agregar gasto';
+
+  @override
+  String sharedOwedToYouIn(String amount) {
+    return 'En este grupo te deben $amount';
+  }
+
+  @override
+  String sharedYouOweIn(String amount) {
+    return 'En este grupo debes $amount';
+  }
+
+  @override
+  String get sharedAllEven => 'Todos están a paz y salvo';
+
+  @override
+  String get sharedToSettle => 'Para quedar a paz y salvo';
+
+  @override
+  String sharedPaysYou(String name, String amount) {
+    return '$name te paga $amount';
+  }
+
+  @override
+  String sharedYouPay(String name, String amount) {
+    return 'Le pagas a $name $amount';
+  }
+
+  @override
+  String sharedPays(String from, String to, String amount) {
+    return '$from le paga a $to $amount';
+  }
+
+  @override
+  String get sharedRemind => 'Recordar';
+
+  @override
+  String sharedReminderMessage(String name, String amount, String group) {
+    return 'Hola, $name. Te escribo por los $amount de $group. Cuando puedas me los pasas. ¡Gracias!';
+  }
+
+  @override
+  String get sharedRecordPayment => 'Registrar pago';
+
+  @override
+  String get sharedExpenses => 'Gastos';
+
+  @override
+  String get sharedNoExpenses => 'Aún no hay gastos en este grupo.';
+
+  @override
+  String sharedPaidBy(String name) {
+    return 'pagó $name';
+  }
+
+  @override
+  String get sharedPaidByYou => 'pagaste tú';
+
+  @override
+  String sharedYourShare(String amount) {
+    return 'tu parte $amount';
+  }
+
+  @override
+  String get sharedPayments => 'Pagos';
+
+  @override
+  String sharedPaid(String from, String to) {
+    return '$from le pagó a $to';
+  }
+
+  @override
+  String sharedPaidYou(String from) {
+    return '$from te pagó';
+  }
+
+  @override
+  String sharedYouPaid(String to) {
+    return 'Le pagaste a $to';
+  }
+
+  @override
+  String get sharedLinked => 'llegó a tu cuenta';
+
+  @override
+  String get sharedRemovePayment => 'Quitar este pago';
+
+  @override
+  String get sharedLedgerNote =>
+      'De un gasto que pagaste por otros, solo tu parte cuenta como gasto; el resto es plata prestada. Cuando te la devuelven no es un ingreso: es plata que vuelve.';
+
+  @override
+  String get sharedArrivedAs => '¿Llegó a una de tus cuentas?';
+
+  @override
+  String get sharedNotRecorded => 'No, o no está en Quincena';
+
+  @override
+  String get sharedArrivedAsHelp =>
+      'Si eliges el movimiento, cuenta como plata que vuelve y no como ingreso.';
+
+  @override
+  String get freelanceTitle => 'Ingresos variables';
+
+  @override
+  String get freelanceBody =>
+      'Para cuando tus ingresos cambian de un mes a otro. Separa lo cobrado, lo pendiente y lo estimado. Quincena no calcula impuestos: la reserva la decides tú.';
+
+  @override
+  String get freelanceAdd => 'Agregar cobro';
+
+  @override
+  String get freelanceEdit => 'Cobro';
+
+  @override
+  String get freelancePending => 'Por cobrar';
+
+  @override
+  String get freelanceEstimated => 'Estimado';
+
+  @override
+  String get freelanceReserve => 'Reserva';
+
+  @override
+  String freelanceOverdueNote(int count, String amount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cobros vencidos por $amount.',
+      one: 'Un cobro vencido por $amount.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get freelanceOverdue => 'Vencidos';
+
+  @override
+  String get freelancePendingList => 'Pendientes';
+
+  @override
+  String get freelanceEstimatedList => 'Estimados';
+
+  @override
+  String get freelanceCollectedList => 'Cobrados';
+
+  @override
+  String get freelanceScenario => 'Qué contar en los próximos días';
+
+  @override
+  String get scenarioCollected => 'Lo cobrado';
+
+  @override
+  String get scenarioPending => 'Lo facturado';
+
+  @override
+  String get scenarioEstimated => 'Todo';
+
+  @override
+  String get scenarioCollectedBody =>
+      'Solo la plata que ya tienes. Lo más prudente para un mes difícil.';
+
+  @override
+  String get scenarioPendingBody =>
+      'También lo facturado, el día que lo esperas. Si se atrasa, se corre al día siguiente, y nunca cuenta en lo libre hasta que llega.';
+
+  @override
+  String get scenarioEstimatedBody =>
+      'También lo que crees que vendrá sin haberlo facturado. Lo menos prudente: úsalo con cuidado.';
+
+  @override
+  String get freelanceReservePercent => 'Apartar de cada cobro';
+
+  @override
+  String get freelanceNoReserve => 'Nada';
+
+  @override
+  String freelanceReserveNow(String amount, String date) {
+    return 'Tienes apartados $amount desde el $date. No cuentan en lo libre, pero siguen en tus cuentas.';
+  }
+
+  @override
+  String get freelanceReserveOff =>
+      'Sin reserva: todo lo que cobras cuenta como libre.';
+
+  @override
+  String get freelanceNoTax =>
+      'Quincena no calcula impuestos ni sabe cuánto te toca pagar: el porcentaje es tuyo.';
+
+  @override
+  String get freelanceUse => 'Usé de la reserva';
+
+  @override
+  String get freelanceUseAmount => '¿Cuánto usaste?';
+
+  @override
+  String get freelanceUseHelp =>
+      'Por ejemplo, lo que pagaste de impuestos o seguridad social.';
+
+  @override
+  String freelanceExpectedOn(String date) {
+    return 'Esperado el $date';
+  }
+
+  @override
+  String freelanceCollectedOn(String date) {
+    return 'Cobrado el $date';
+  }
+
+  @override
+  String freelanceLate(int days, String date) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Vencido hace $days días: era el $date',
+      one: 'Vencido hace un día: era el $date',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get freelanceClient => '¿Quién te paga?';
+
+  @override
+  String get freelanceAmount => 'Valor';
+
+  @override
+  String get incomeEstimated => 'Estimado';
+
+  @override
+  String get incomePending => 'Facturado';
+
+  @override
+  String get incomeCollected => 'Cobrado';
+
+  @override
+  String get incomeEstimatedHelp =>
+      'Crees que vendrá, pero aún no lo facturas.';
+
+  @override
+  String get incomePendingHelp => 'Ya lo facturaste y esperas el pago.';
+
+  @override
+  String get incomeCollectedHelp => 'La plata ya llegó.';
+
+  @override
+  String get freelanceArrivedAs => '¿Con qué movimiento llegó?';
+
+  @override
+  String get freelanceNote => 'Nota';
+
+  @override
+  String get freelanceIncomplete => 'Falta quién te paga o el valor.';
+
+  @override
+  String get freelanceRemind => 'Recordar al cliente';
+
+  @override
+  String freelanceReminderMessage(String client, String amount, String date) {
+    return 'Hola, $client. Te escribo por el pago de $amount que esperaba el $date. ¿Me confirmas cuándo lo puedes hacer? ¡Gracias!';
+  }
+
+  @override
+  String get freelanceDelete => 'Borrar cobro';
+
+  @override
+  String get tripsTitle => 'Viajes';
+
+  @override
+  String get tripsBody =>
+      'Un presupuesto en la moneda del viaje, contado con tus mismos movimientos: nada se copia.';
+
+  @override
+  String get tripsEmpty => 'Aún no tienes viajes.';
+
+  @override
+  String get tripsNew => 'Nuevo viaje';
+
+  @override
+  String get tripEdit => 'Editar viaje';
+
+  @override
+  String get tripDelete => 'Borrar viaje';
+
+  @override
+  String tripDeleteTitle(String name) {
+    return '¿Borrar $name?';
+  }
+
+  @override
+  String get tripDeleteBody =>
+      'Se borra el viaje aquí. Sus gastos siguen en tus cuentas.';
+
+  @override
+  String tripLeftShort(String amount) {
+    return 'Quedan $amount';
+  }
+
+  @override
+  String tripSpentShort(String amount) {
+    return 'Gastaste $amount';
+  }
+
+  @override
+  String get tripSpent => 'Gastaste';
+
+  @override
+  String get tripLeft => 'Te quedan';
+
+  @override
+  String tripOf(String amount) {
+    return 'de $amount';
+  }
+
+  @override
+  String tripPerDay(String amount, int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Puedes gastar $amount al día los $days días que quedan.',
+      one: 'Puedes gastar $amount hoy, el último día.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String tripAverage(String amount) {
+    return 'Llevas $amount al día en promedio.';
+  }
+
+  @override
+  String get tripOver => 'El viaje terminó.';
+
+  @override
+  String tripUnconverted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count gastos no tienen tasa para convertirlos y no cuentan.',
+      one: 'Un gasto no tiene tasa para convertirlo y no cuenta.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tripShared => 'Gastos compartidos del viaje';
+
+  @override
+  String get tripShare => 'Dividir gastos del viaje con alguien';
+
+  @override
+  String get tripExpenses => 'Gastos del viaje';
+
+  @override
+  String get tripNoExpenses =>
+      'Los gastos de las fechas del viaje aparecen aquí solos. Agrega los que pagaste allá en su moneda.';
+
+  @override
+  String get tripIncludeEarlier => 'Incluir un gasto de antes';
+
+  @override
+  String get tripIncludeEarlierBody =>
+      'El vuelo o el hotel que pagaste antes de salir.';
+
+  @override
+  String get tripNothingEarlier =>
+      'No hay gastos en los 120 días antes del viaje.';
+
+  @override
+  String get tripSameMovements =>
+      'Un viaje usa tus mismos movimientos: cambiar uno aquí lo cambia en tu cuenta.';
+
+  @override
+  String get tripNoRate => 'Sin tasa';
+
+  @override
+  String get tripExclude => 'No es del viaje';
+
+  @override
+  String tripForeign(
+    String amount,
+    String rate,
+    String date,
+    String fee,
+    String estimate,
+  ) {
+    return '$amount a $rate ($date) más $fee de la tarjeta: $estimate estimado';
+  }
+
+  @override
+  String tripForeignNoFee(
+    String amount,
+    String rate,
+    String date,
+    String estimate,
+  ) {
+    return '$amount a $rate ($date): $estimate estimado';
+  }
+
+  @override
+  String tripConverted(String amount, String source, String date) {
+    return '$amount, convertido con $source del $date';
+  }
+
+  @override
+  String tripChargedMore(String charged, String difference) {
+    return 'El banco cobró $charged: $difference más que el estimado';
+  }
+
+  @override
+  String tripChargedLess(String charged, String difference) {
+    return 'El banco cobró $charged: $difference menos que el estimado';
+  }
+
+  @override
+  String get tripAdjust => 'Ajustar al cargo real';
+
+  @override
+  String get tripCharged => '¿Cuánto te cobró el banco?';
+
+  @override
+  String get tripAdjustHelp =>
+      'Cambia el movimiento a lo que dice el extracto, y queda la diferencia con el estimado.';
+
+  @override
+  String get tripName => '¿A dónde vas?';
+
+  @override
+  String get tripCurrency => 'Moneda del viaje';
+
+  @override
+  String get tripBudget => 'Presupuesto';
+
+  @override
+  String get tripFee => 'Comisión de tu tarjeta en el exterior';
+
+  @override
+  String get tripFeeHelp =>
+      'Si la sabes: se suma al estimar lo que te cobrarán en pesos.';
+
+  @override
+  String get tripFeeShort => 'Comisión';
+
+  @override
+  String get tripIncomplete => 'Falta a dónde vas.';
+
+  @override
+  String get tripAddExpense => 'Agregar gasto del viaje';
+
+  @override
+  String get tripWhat => '¿En qué?';
+
+  @override
+  String get tripAmount => 'Valor';
+
+  @override
+  String get tripPaidWith => 'Pagaste con';
+
+  @override
+  String tripRate(String from, String to) {
+    return '1 $from en $to';
+  }
+
+  @override
+  String get tripRateNone => 'Sin tasa guardada: escribe la que viste.';
+
+  @override
+  String tripRateFrom(String source, String date) {
+    return '$source del $date';
+  }
+
+  @override
+  String tripWillRecord(String amount, String account) {
+    return 'Se registran $amount en $account, estimado hasta que llegue el cargo real.';
+  }
+
+  @override
+  String get tripExpenseIncomplete => 'Falta el valor o la tasa.';
 }

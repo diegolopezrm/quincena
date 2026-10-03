@@ -143,10 +143,14 @@ DateTime periodStart(Ledger ledger) =>
     _day(ledger.schedule.lastOnOrBefore(_day(ledger.today)));
 
 /// The money a plan can split: what is there to spend, less what is
-/// committed until payday and the cushion. Nothing set aside is taken out:
-/// the envelopes are what set it aside.
+/// committed until payday, the cushion and the reserve kept from variable
+/// payments. Nothing set aside is taken out: the envelopes are what set it
+/// aside.
 int allocatable(Ledger ledger) =>
-    ledger.balance - ledger.committedUntilPayday - ledger.cushion;
+    ledger.balance -
+    ledger.committedUntilPayday -
+    ledger.cushion -
+    ledger.reserved;
 
 /// A goal, in the ledger's unit, for planning.
 @immutable

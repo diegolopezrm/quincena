@@ -26,16 +26,17 @@ Checked against each provider's published requirements on 2 October 2026.
 
 ## Automated checks
 
-`flutter test` runs 333 tests, the same that CI runs on every push,
+`flutter test` runs 357 tests, the same that CI runs on every push,
 with `dart format`, `flutter analyze --fatal-infos` and a check that the
 generated catalog is current.
 
-- **Accessibility.** `test/own_accessibility_test.dart` opens 21 screens
+- **Accessibility.** `test/own_accessibility_test.dart` opens 26 screens
   of someone's own money (home, movements, accounts, crypto, Binance,
   wallets, a statement, "Por revisar", automatic capture, the next 30 days,
   "¿Me alcanza?", the close, Plan, envelopes, the cushion in days, wishes,
-  what if, fixed payments, purchases in instalments, one of them, and the
-  charges to check) on a 360-point
+  what if, fixed payments, purchases in instalments, one of them, the
+  charges to check, shared expenses, a group, variable income, trips and
+  one trip) on a 360-point
   phone with the system text at twice its size, in both themes, and holds
   each to Flutter's guidelines: every tap target labeled, 48 by 48 on
   Android and 44 by 44 on iOS, and text contrast of at least 4.5:1. It
@@ -89,6 +90,9 @@ generated catalog is current.
   what it was granted: shared from the gallery, the share grants it. That
   path is left for a real device.
 
+- **Sharing a reminder**, iPhone 17 Pro simulator, iOS 26: in a group where
+  Ana owed $ 30.000, "Recordar" opened the system's share sheet with
+  "Hola, Ana. Te escribo por los $ 30.000…", and closing it sent nothing.
 - **Reminders**, Pixel 9 emulator, Android 16, a release build with the
   receiver opened to the shell for the test only: the payday reminder set
   six alarms at nine on the next paydays. Fired with the app force-stopped,
@@ -111,6 +115,8 @@ TestFlight build 5 and an Android phone, before the stores' review:
 - VoiceOver and TalkBack on the home, a movement and "Por revisar".
 - Reminders on the lock screen: the payday close and a renewal or free
   trial, at nine, with no amount, after restarting the phone too.
+- Sharing a reminder on Android: the system's chooser opens with the
+  message, and nothing is sent until the person picks where.
 
 ## Left for the developer account
 

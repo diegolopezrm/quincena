@@ -8,6 +8,7 @@ import '../store/store.dart';
 import 'categories.dart';
 import 'commitments.dart';
 import 'records.dart';
+import 'shared.dart';
 
 /// The ledger the screens and the agent read, built from the person's own
 /// accounts.
@@ -22,11 +23,20 @@ import 'records.dart';
 /// currency's smallest unit. The [instalments] still to pay join the
 /// charges to come, unless their debt is already in an account counted
 /// here.
+///
+/// [shared] says what of each movement others owe, or paid back: of an
+/// expense paid for others, only the person's part is spending and the
+/// rest is money lent; a repayment is money back, not income. [expected]
+/// are payments from clients still to come, and [reserved] what the person
+/// keeps apart of those that came.
 LedgerBuild buildLedger(
   StoreSnapshot s, {
   required DateTime today,
   int setAside = 0,
   List<Instalments> instalments = const <Instalments>[],
+  SharedLinks shared = const SharedLinks(),
+  List<Movement> expected = const <Movement>[],
+  int reserved = 0,
 }) {
   final Asset base = s.profile.base;
   final RateTable rates = RateTable(s.rates);
@@ -93,17 +103,43 @@ LedgerBuild buildLedger(
           flow = out ? Flow.saving : Flow.transferIn;
       }
     }
-    movements.add(
-      Movement(
-        id: e.id,
-        date: e.date,
-        merchant: label(e),
-        amount: inBase(Money(e.amount.abs(), accounts[e.accountId]!.asset)),
-        category: ledgerCategory(e.category),
-        flow: flow,
-      ),
+    final int amount = inBase(
+      Money(e.amount.abs(), accounts[e.accountId]!.asset),
     );
-    accountOf[e.id] = e.accountId;
+    // What of it others owe, or paid back, goes apart.
+    final (int apart, Flow apartFlow) = switch (flow) {
+      Flow.expense => (shared.lent[e.id] ?? 0, Flow.saving),
+      Flow.income => (shared.repaid[e.id] ?? 0, Flow.transferIn),
+      _ => (0, flow),
+    };
+    final int other = apart.clamp(0, amount);
+    if (amount - other > 0 || other == 0) {
+      movements.add(
+        Movement(
+          id: e.id,
+          date: e.date,
+          merchant: label(e),
+          amount: amount - other,
+          category: ledgerCategory(e.category),
+          flow: flow,
+        ),
+      );
+      accountOf[e.id] = e.accountId;
+    }
+    if (other > 0) {
+      final String id = '${e.id}#shared';
+      movements.add(
+        Movement(
+          id: id,
+          date: e.date,
+          merchant: label(e),
+          amount: other,
+          category: ledgerCategory(e.category),
+          flow: apartFlow,
+        ),
+      );
+      accountOf[id] = e.accountId;
+    }
   }
 
   // Two months of charges ahead: those by payday are committed, the rest
@@ -168,6 +204,8 @@ LedgerBuild buildLedger(
       _ => 0,
     },
     setAside: setAside,
+    reserved: reserved,
+    expected: expected,
     pay: switch (s.profile.pay) {
       final Decimal p when p > Decimal.zero => inBase(Money(p, base)),
       _ => null,

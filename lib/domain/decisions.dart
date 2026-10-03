@@ -131,10 +131,13 @@ PurchaseCheck checkPurchase(
   );
 }
 
+/// What is only expected on [d]: the pay, or a client's payment.
 int _payOn(ProjectedDay d) => d.events
     .where(
       (ProjectedEvent e) =>
-          e.kind == ProjectedKind.pay || e.kind == ProjectedKind.latePay,
+          e.kind == ProjectedKind.pay ||
+          e.kind == ProjectedKind.latePay ||
+          e.kind == ProjectedKind.income,
     )
     .fold(0, (int sum, ProjectedEvent e) => sum + e.amount);
 

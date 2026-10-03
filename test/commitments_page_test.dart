@@ -1,143 +1,37 @@
 import 'package:decimal/decimal.dart';
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/domain/commitments.dart';
-import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/format/money.dart';
-import 'package:quincena/l10n/l10n.dart';
 import 'package:quincena/money/asset.dart';
 import 'package:quincena/money/money.dart';
 import 'package:quincena/own/own_controller.dart';
-import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
-import 'package:quincena/theme/theme.dart';
 import 'package:quincena/ui/own/commitments_page.dart';
 import 'package:quincena/ui/own/detective_page.dart';
 import 'package:quincena/ui/own/instalments_page.dart';
 import 'package:quincena/ui/own/plan_tab.dart';
 
 import 'own_flow_test.dart' show settle;
+import 'page_harness.dart';
 
 Decimal d(String s) => Decimal.parse(s);
 
 void main() {
-  final DateTime now = DateTime(2026, 10, 3, 10);
-  const MethodChannel reminders = MethodChannel(
-    'dev.dlsoft.quincena/reminders',
-  );
-
   setUpAll(() async {
     Intl.defaultLocale = 'es_CO';
     await initializeDateFormatting('es');
   });
 
-  /// 2.000.000 in the bank after September's pay, and a Visa in the app.
-  Future<OwnController> open(
-    WidgetTester tester,
-    Widget Function(OwnController own) page, {
-    Future<void> Function(QuincenaStore store, Account bank, Account card)?
-    data,
-    List<MethodCall>? calls,
-  }) async {
-    tester.view.physicalSize = const Size(1170, 2532);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(reminders, (
-      MethodCall call,
-    ) async {
-      calls?.add(call);
-      return call.method == 'ask' ? true : null;
-    });
-    addTearDown(
-      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-        reminders,
-        null,
-      ),
-    );
-    final QuincenaStore store = QuincenaStore(
-      QuincenaDatabase(NativeDatabase.memory()),
-      now: () => now,
-    );
-    addTearDown(() => tester.runAsync(store.close));
-    final OwnController own = OwnController(
-      store,
-      now: () => now,
-      readNative: false,
-    );
-    addTearDown(own.dispose);
-    await tester.runAsync(() async {
-      await store.ensureCategories();
-      await store.saveProfile(
-        const Profile(name: 'Ana', base: Asset.cop, schedule: TwiceMonthly()),
-      );
-      final Account bank = await store.addAccount(
-        name: 'Bancolombia',
-        kind: AccountKind.bank,
-        asset: Asset.cop,
-        opening: d('0'),
-      );
-      final Account card = await store.addAccount(
-        name: 'Visa',
-        kind: AccountKind.card,
-        asset: Asset.cop,
-        opening: d('0'),
-      );
-      await store.addEntry(
-        accountId: bank.id,
-        amount: d('2000000'),
-        kind: EntryKind.income,
-        date: DateTime(2026, 9, 30, 8),
-        category: 'salary',
-        payee: 'Nómina',
-      );
-      await data?.call(store, bank, card);
-      await own.start();
-    });
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: quincenaTheme(Brightness.light),
-        locale: const Locale('es'),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: appLocales,
-        home: page(own),
-      ),
-    );
-    await settle(tester);
-    return own;
-  }
-
-  /// Brings [finder] into view, building it first when a list has not. A
-  /// focused field would scroll itself back into view, so none is.
-  Future<void> reveal(WidgetTester tester, Finder finder) async {
-    FocusManager.instance.primaryFocus?.unfocus();
-    await tester.pumpAndSettle();
-    if (finder.evaluate().isEmpty) {
-      await tester.scrollUntilVisible(
-        finder,
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-    }
-    await tester.ensureVisible(finder.last);
-    await tester.pumpAndSettle();
-  }
-
-  Future<void> tapText(WidgetTester tester, String text) async {
-    await reveal(tester, find.text(text));
-    await tester.tap(find.text(text).last);
-    await settle(tester);
-  }
-
   group('fixed payments', () {
     testWidgets('one is added with a reminder, follows its last charge, '
         'pauses and goes', (tester) async {
       final List<MethodCall> calls = <MethodCall>[];
-      final OwnController own = await open(
+      final OwnController own = await openPage(
         tester,
         (OwnController own) => CommitmentsPage(own: own),
         calls: calls,
@@ -213,7 +107,7 @@ void main() {
 
     testWidgets('one not in use says what pausing saves, and that the app '
         'cancels nothing', (tester) async {
-      await open(tester, (OwnController own) => CommitmentsPage(own: own));
+      await openPage(tester, (OwnController own) => CommitmentsPage(own: own));
       await tapText(tester, 'Agregar pago fijo');
       await tester.enterText(
         find.widgetWithText(TextField, '¿Cuánto cobra?'),
@@ -237,7 +131,7 @@ void main() {
 
     testWidgets('a charge that repeats each month is offered, never added '
         'alone', (tester) async {
-      final OwnController own = await open(
+      final OwnController own = await openPage(
         tester,
         (OwnController own) => CommitmentsPage(own: own),
         data: (QuincenaStore store, Account bank, _) async {
@@ -332,7 +226,7 @@ void main() {
 
     testWidgets('with every figure the total is known, compared with paying '
         'at once, and the coming ones are committed', (tester) async {
-      final OwnController own = await open(
+      final OwnController own = await openPage(
         tester,
         (OwnController own) => InstalmentsPage(own: own),
       );
@@ -390,7 +284,7 @@ void main() {
 
     testWidgets('without the fee it is only an estimate, and a card in the '
         'app keeps it from counting twice', (tester) async {
-      final OwnController own = await open(
+      final OwnController own = await openPage(
         tester,
         (OwnController own) => InstalmentsPage(own: own),
       );
@@ -431,7 +325,7 @@ void main() {
     testWidgets('without rate or instalment there is no total to invent', (
       tester,
     ) async {
-      final OwnController own = await open(
+      final OwnController own = await openPage(
         tester,
         (OwnController own) => InstalmentsPage(own: own),
       );
@@ -473,7 +367,7 @@ void main() {
 
     testWidgets('a payment seen twice is shown with its evidence, put away '
         'and back, and nothing is deleted', (tester) async {
-      final OwnController own = await open(
+      final OwnController own = await openPage(
         tester,
         (OwnController own) => DetectivePage(own: own),
         data: twice,
@@ -510,7 +404,7 @@ void main() {
     testWidgets('a kind of alert can be silenced, and comes back', (
       tester,
     ) async {
-      final OwnController own = await open(
+      final OwnController own = await openPage(
         tester,
         (OwnController own) => DetectivePage(own: own),
         data: twice,
@@ -525,7 +419,7 @@ void main() {
   });
 
   testWidgets('the Plan tab sums up what is committed', (tester) async {
-    await open(
+    await openPage(
       tester,
       (OwnController own) => Scaffold(
         body: SingleChildScrollView(child: PlanTab(own: own)),

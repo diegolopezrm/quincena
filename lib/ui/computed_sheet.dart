@@ -36,6 +36,7 @@ String computedLabel(BuildContext context, Computed c) {
     'coming_days' => l.computedComing,
     'fortnight_close' => l.computedClose,
     'commitments' => l.computedCommitments,
+    'owed_and_variable' => l.computedOwed,
     _ => c.tool,
   };
 }

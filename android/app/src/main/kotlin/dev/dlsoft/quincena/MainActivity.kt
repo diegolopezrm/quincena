@@ -16,6 +16,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     private var capture: MethodChannel? = null
     private var reminders: MethodChannel? = null
+    private var share: MethodChannel? = null
     private var asking: MethodChannel.Result? = null
     private var askingToNotify: MethodChannel.Result? = null
 
@@ -115,6 +116,23 @@ class MainActivity : FlutterActivity() {
             }
         }
         reminders = remind
+
+        // The same channel as `ShareText` in lib/platform/share_text.dart:
+        // the system's share sheet, with a message the person chose to send.
+        val sheet = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SHARE)
+        sheet.setMethodCallHandler { call, result ->
+            val text = call.arguments as? String
+            if (call.method != "text" || text == null) {
+                result.notImplemented()
+                return@setMethodCallHandler
+            }
+            val send = Intent(Intent.ACTION_SEND)
+                .setType("text/plain")
+                .putExtra(Intent.EXTRA_TEXT, text)
+            startActivity(Intent.createChooser(send, null))
+            result.success(true)
+        }
+        share = sheet
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
@@ -123,6 +141,8 @@ class MainActivity : FlutterActivity() {
         capture = null
         reminders?.setMethodCallHandler(null)
         reminders = null
+        share?.setMethodCallHandler(null)
+        share = null
         super.cleanUpFlutterEngine(flutterEngine)
     }
 
@@ -185,6 +205,7 @@ class MainActivity : FlutterActivity() {
     private companion object {
         const val CHANNEL = "dev.dlsoft.quincena/capture"
         const val REMINDERS = "dev.dlsoft.quincena/reminders"
+        const val SHARE = "dev.dlsoft.quincena/share"
         const val ASK_LOCATION = 4815
         const val ASK_NOTIFY = 4816
         const val NOTIFY = "android.permission.POST_NOTIFICATIONS"

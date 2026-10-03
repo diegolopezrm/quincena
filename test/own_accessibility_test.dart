@@ -26,12 +26,15 @@ import 'package:quincena/ui/own/coming_days_page.dart';
 import 'package:quincena/ui/own/cushion_page.dart';
 import 'package:quincena/ui/own/detective_page.dart';
 import 'package:quincena/ui/own/envelopes_page.dart';
+import 'package:quincena/ui/own/freelance_page.dart';
 import 'package:quincena/ui/own/home_tab.dart';
 import 'package:quincena/ui/own/inbox_page.dart';
 import 'package:quincena/ui/own/instalments_page.dart';
 import 'package:quincena/ui/own/plan_tab.dart';
 import 'package:quincena/ui/own/portfolio_page.dart';
+import 'package:quincena/ui/own/shared_page.dart';
 import 'package:quincena/ui/own/statement_page.dart';
+import 'package:quincena/ui/own/trips_page.dart';
 import 'package:quincena/ui/own/wallets_page.dart';
 import 'package:quincena/ui/own/what_if_page.dart';
 import 'package:quincena/ui/own/wishes_page.dart';
@@ -39,6 +42,7 @@ import 'package:quincena/ui/own/wishes_page.dart';
 import '../test_screens/store_screens_test.dart' show ExampleMarket, example;
 import 'commitments_data.dart';
 import 'fonts.dart';
+import 'real_life_data.dart';
 import 'own_flow_test.dart' show settle;
 
 final DateTime _now = DateTime(2026, 10, 3, 10);
@@ -126,6 +130,11 @@ void main() {
         'an instalment purchase': (OwnController own) =>
             InstalmentDetailPage(own: own, id: televisor),
         'charges to check': (OwnController own) => DetectivePage(own: own),
+        'shared expenses': (OwnController own) => SharedPage(own: own),
+        'a group': (OwnController own) => GroupPage(own: own, id: guatape),
+        'variable income': (OwnController own) => FreelancePage(own: own),
+        'trips': (OwnController own) => TripsPage(own: own),
+        'a trip': (OwnController own) => TripPage(own: own, id: newYork),
       };
 
   for (final MapEntry<String, Widget Function(OwnController)> screen
@@ -146,6 +155,7 @@ void main() {
             final QuincenaStore store = await example();
             await followLedger(store);
             await addCommitments(store);
+            await addRealLife(store);
             return store;
           }))!;
           addTearDown(() => tester.runAsync(store.close));

@@ -68,6 +68,28 @@ import UserNotifications
         result(FlutterMethodNotImplemented)
       }
     }
+
+    // The same channel as `ShareText` in lib/platform/share_text.dart: the
+    // system's share sheet, with a message the person chose to send.
+    let share = FlutterMethodChannel(
+      name: "dev.dlsoft.quincena/share",
+      binaryMessenger: engineBridge.applicationRegistrar.messenger())
+    share.setMethodCallHandler { call, result in
+      guard call.method == "text", let text = call.arguments as? String,
+        let root = UIApplication.shared.connectedScenes
+          .compactMap({ ($0 as? UIWindowScene)?.keyWindow?.rootViewController })
+          .first
+      else { return result(false) }
+      var top = root
+      while let shown = top.presentedViewController { top = shown }
+      let sheet = UIActivityViewController(activityItems: [text], applicationActivities: nil)
+      // An iPad shows it as a popover, which needs somewhere to point.
+      sheet.popoverPresentationController?.sourceView = top.view
+      sheet.popoverPresentationController?.sourceRect = CGRect(
+        x: top.view.bounds.midX, y: top.view.bounds.maxY - 80, width: 0, height: 0)
+      top.present(sheet, animated: true)
+      result(true)
+    }
   }
 }
 

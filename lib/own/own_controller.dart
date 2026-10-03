@@ -15,10 +15,13 @@ import '../agent/tools.dart';
 import '../data/clock.dart';
 import '../data/ledger.dart';
 import '../domain/commitments.dart';
+import '../domain/freelance.dart';
 import '../domain/ledger_builder.dart';
 import '../domain/plan.dart';
 import '../domain/projection.dart';
 import '../domain/records.dart';
+import '../domain/shared.dart';
+import '../domain/trips.dart';
 import '../format/money.dart' as format;
 import '../money/asset.dart';
 import '../money/money.dart';
@@ -113,6 +116,9 @@ class OwnController extends ChangeNotifier {
   List<Instalments> _instalments = const <Instalments>[];
   DetectiveState _detective = const DetectiveState();
   List<ChargeAlert>? _alerts;
+  List<Group> _groups = const <Group>[];
+  FreelancePlan _freelance = const FreelancePlan();
+  List<Trip> _trips = const <Trip>[];
   CaptureSettings _captureSettings = const CaptureSettings();
   bool _pulling = false;
   bool _pullAgain = false;
@@ -310,6 +316,140 @@ class OwnController extends ChangeNotifier {
   static const String _memoriesKey = 'commitments.memories';
   static const String _instalmentsKey = 'commitments.instalments';
   static const String _detectiveKey = 'commitments.detective';
+
+  /// The groups the person shares expenses with.
+  List<Group> get groups => _groups;
+
+  Group? group(String id) => _groups.where((Group g) => g.id == id).firstOrNull;
+
+  /// What others owe the person across every group, and what they owe.
+  (int owed, int owing) get sharedBalance {
+    var owed = 0;
+    var owing = 0;
+    for (final Group g in _groups) {
+      final int b = g.balances[meId] ?? 0;
+      if (b > 0) owed += b;
+      if (b < 0) owing -= b;
+    }
+    return (owed, owing);
+  }
+
+  /// The group and expense that split the movement [entryId], if any.
+  (Group, SharedExpense)? splitOf(String entryId) {
+    for (final Group g in _groups) {
+      for (final SharedExpense e in g.expenses) {
+        if (e.entryId == entryId) return (g, e);
+      }
+    }
+    return null;
+  }
+
+  /// Adds [group], or replaces the one with its id.
+  Future<void> saveGroup(Group group) => _saveGroups(<Group>[
+    for (final Group g in _groups)
+      if (g.id != group.id) g,
+    group,
+  ]);
+
+  Future<void> deleteGroup(String id) => _saveGroups(<Group>[
+    for (final Group g in _groups)
+      if (g.id != id) g,
+  ]);
+
+  Future<void> _saveGroups(List<Group> groups) => store.setSetting(
+    _groupsKey,
+    jsonEncode(<Object?>[for (final Group g in groups) g.toJson()]),
+  );
+
+  /// The person's variable income: what clients owe and the reserve.
+  FreelancePlan get freelance => _freelance;
+
+  Future<void> saveFreelance(FreelancePlan plan) =>
+      store.setSetting(_freelanceKey, jsonEncode(plan.toJson()));
+
+  /// What arrived from clients since the reserve started, in the base
+  /// currency's smallest unit: incomes filed as freelance work and those
+  /// linked to a collected payment.
+  int get collectedForReserve {
+    final StoreSnapshot? s = _snapshot;
+    return s == null ? 0 : _collected(s, today);
+  }
+
+  int _collected(StoreSnapshot s, DateTime day) {
+    final Asset base = s.profile.base;
+    final RateTable table = RateTable(s.rates);
+    final Decimal unit = Decimal.ten.pow(base.decimals).toDecimal();
+    final DateTime? since = _freelance.reserveSince;
+    final Set<String> linked = <String>{
+      for (final ExpectedIncome i in _freelance.incomes)
+        if (i.status == IncomeStatus.collected) ?i.entryId,
+    };
+    var total = 0;
+    for (final Entry e in s.entries) {
+      if (e.kind != EntryKind.income || e.amount <= Decimal.zero) continue;
+      if (e.category != 'freelance' && !linked.contains(e.id)) continue;
+      if (since != null && e.date.isBefore(since)) continue;
+      if (e.date.isAfter(endOfDay(day))) continue;
+      final Account? a = s.account(e.accountId);
+      if (a == null) continue;
+      final Money? m = table.convert(Money(e.amount, a.asset), base);
+      if (m != null) total += (m.amount * unit).round().toBigInt().toInt();
+    }
+    return total;
+  }
+
+  /// Money that came into the person's accounts in the last [days] days,
+  /// newest first: what a repayment or a client's payment can be linked to.
+  List<Entry> recentIncomes({int days = 45}) {
+    final StoreSnapshot? s = _snapshot;
+    if (s == null) return const <Entry>[];
+    final DateTime since = today.subtract(Duration(days: days));
+    return <Entry>[
+      for (final Entry e in s.entries)
+        if (e.kind == EntryKind.income &&
+            e.amount > Decimal.zero &&
+            !e.date.isBefore(since) &&
+            !e.date.isAfter(endOfDay(today)))
+          e,
+    ]..sort((Entry a, Entry b) => b.date.compareTo(a.date));
+  }
+
+  /// The person's trips, the newest first.
+  List<Trip> get trips =>
+      <Trip>[..._trips]..sort((Trip a, Trip b) => b.from.compareTo(a.from));
+
+  Trip? trip(String id) => _trips.where((Trip t) => t.id == id).firstOrNull;
+
+  /// Adds [trip], or replaces the one with its id.
+  Future<void> saveTrip(Trip trip) => _saveTrips(<Trip>[
+    for (final Trip t in _trips)
+      if (t.id != trip.id) t,
+    trip,
+  ]);
+
+  Future<void> deleteTrip(String id) => _saveTrips(<Trip>[
+    for (final Trip t in _trips)
+      if (t.id != id) t,
+  ]);
+
+  Future<void> _saveTrips(List<Trip> trips) => store.setSetting(
+    _tripsKey,
+    jsonEncode(<Object?>[for (final Trip t in trips) t.toJson()]),
+  );
+
+  /// Where [trip] stands today, from the movements as they are.
+  TripSummary tripSummary(Trip trip) => TripSummary.of(
+    trip,
+    entries: _snapshot?.entries ?? const <Entry>[],
+    assetOf: (String id) =>
+        _snapshot?.account(id)?.asset ?? profile?.base ?? Asset.cop,
+    rates: rates,
+    today: today,
+  );
+
+  static const String _groupsKey = 'shared.groups';
+  static const String _freelanceKey = 'freelance';
+  static const String _tripsKey = 'trips';
 
   /// Whether the close of each fortnight is reminded on payday.
   bool get remindsClose => _reminder != null;
@@ -647,6 +787,17 @@ class OwnController extends ChangeNotifier {
       _json(await store.setting(_detectiveKey)),
     );
     _alerts = null;
+    _groups = <Group>[
+      for (final Object? g in _list(await store.setting(_groupsKey)))
+        ?Group.fromJson(g),
+    ];
+    _freelance = FreelancePlan.fromJson(
+      _json(await store.setting(_freelanceKey)),
+    );
+    _trips = <Trip>[
+      for (final Object? t in _list(await store.setting(_tripsKey)))
+        ?Trip.fromJson(t),
+    ];
     _reminder = switch (_json(await store.setting(_reminderKey))) {
       final Map<Object?, Object?> m => <String, String>{
         for (final MapEntry<Object?, Object?> e in m.entries)
@@ -673,6 +824,11 @@ class OwnController extends ChangeNotifier {
             ? plan.setAside
             : 0,
         instalments: _instalments,
+        shared: SharedLinks.of(_groups),
+        expected: _freelance.ahead(day),
+        reserved: _freelance.reservePercent > 0
+            ? _freelance.reserve(_collected(s, day))
+            : 0,
       );
       _balances = balancesOf(s.accounts, s.entries, day);
     } else {

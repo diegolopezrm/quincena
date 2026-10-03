@@ -95,6 +95,14 @@ teléfono.
 > detective de cargos te muestra pagos repetidos, subidas de precio y
 > cargos fuera de lo común, con la evidencia y sin borrar nada.
 >
+> PARA TU VIDA REAL
+> Divide una cuenta con quien sea, sin que tenga la app: tu parte es tu
+> gasto y lo demás es plata que te deben, que no cuenta como disponible.
+> Si tus ingresos cambian de un mes a otro, separa lo cobrado, lo
+> facturado y lo estimado, elige qué contar y aparta una reserva. En un
+> viaje, lleva un presupuesto en la moneda local con tus mismos
+> movimientos, la tasa de cada día y el cargo real del banco.
+>
 > CRIPTO, COMO UN PROFESIONAL
 > Tu portafolio con precios en vivo, lo que te costó cada moneda en pesos y
 > en dólares, la ganancia o pérdida y la gráfica de 24 horas a un año.
@@ -163,6 +171,14 @@ you can touch. Your finances stay on your phone.
 > cost against paying at once, keeping what you know apart from what's
 > estimated. A charge detective shows repeated payments, price increases
 > and unusual charges, with the evidence, and deletes nothing.
+>
+> FOR REAL LIFE
+> Split a bill with anyone, no app needed on their side: your part is your
+> spending, and the rest is money you're owed, which doesn't count as
+> available. If your income changes from month to month, keep collected,
+> billed and estimated apart, choose what counts ahead and keep a reserve.
+> On a trip, keep a budget in the local currency with your own movements,
+> each day's rate and the bank's real charge.
 >
 > CRYPTO, LIKE A PRO
 > Your portfolio with live prices, what each coin cost you in pesos and

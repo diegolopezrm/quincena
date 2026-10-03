@@ -5425,6 +5425,1097 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Lo ya comprometido en los próximos 30 días'**
   String get computedCommitments;
+
+  /// No description provided for @comingIncome.
+  ///
+  /// In es, this message translates to:
+  /// **'Cobro esperado: {client}'**
+  String comingIncome(String client);
+
+  /// No description provided for @computedOwed.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que te deben, tus cobros y tus viajes'**
+  String get computedOwed;
+
+  /// No description provided for @freeExplainReserved.
+  ///
+  /// In es, this message translates to:
+  /// **'Reserva de tus cobros'**
+  String get freeExplainReserved;
+
+  /// No description provided for @messageCopied.
+  ///
+  /// In es, this message translates to:
+  /// **'Mensaje copiado: pégalo donde quieras enviarlo.'**
+  String get messageCopied;
+
+  /// No description provided for @rateSourceManual.
+  ///
+  /// In es, this message translates to:
+  /// **'tu tasa'**
+  String get rateSourceManual;
+
+  /// No description provided for @planOptional.
+  ///
+  /// In es, this message translates to:
+  /// **'Si te sirve'**
+  String get planOptional;
+
+  /// No description provided for @planSharedNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Divide una cuenta y lleva lo que te deben'**
+  String get planSharedNone;
+
+  /// No description provided for @planShared.
+  ///
+  /// In es, this message translates to:
+  /// **'Te deben {owed} · debes {owing}'**
+  String planShared(String owed, String owing);
+
+  /// No description provided for @planFreelanceNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Cobros pendientes, estimados y una reserva'**
+  String get planFreelanceNone;
+
+  /// No description provided for @planFreelance.
+  ///
+  /// In es, this message translates to:
+  /// **'{amount} por cobrar'**
+  String planFreelance(String amount);
+
+  /// No description provided for @planFreelanceLate.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Un cobro vencido} other{{count} cobros vencidos}}'**
+  String planFreelanceLate(int count);
+
+  /// No description provided for @planTripsNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Un presupuesto en la moneda del viaje'**
+  String get planTripsNone;
+
+  /// No description provided for @planTripLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'{trip}: te quedan {amount}'**
+  String planTripLeft(String trip, String amount);
+
+  /// No description provided for @splitTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Dividir un gasto'**
+  String get splitTitle;
+
+  /// No description provided for @splitBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Nadie más necesita la app: escribe los nombres. Lo que te deben no cuenta como plata disponible hasta que te paguen.'**
+  String get splitBody;
+
+  /// No description provided for @splitGroup.
+  ///
+  /// In es, this message translates to:
+  /// **'Grupo'**
+  String get splitGroup;
+
+  /// No description provided for @splitNewGroup.
+  ///
+  /// In es, this message translates to:
+  /// **'Un grupo nuevo'**
+  String get splitNewGroup;
+
+  /// No description provided for @splitWithWhom.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Con quién lo divides?'**
+  String get splitWithWhom;
+
+  /// No description provided for @splitWithWhomHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombres separados por comas: Ana, Juan'**
+  String get splitWithWhomHelp;
+
+  /// No description provided for @splitGroupName.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre del grupo'**
+  String get splitGroupName;
+
+  /// No description provided for @splitWhat.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Qué fue?'**
+  String get splitWhat;
+
+  /// No description provided for @splitAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'Valor total'**
+  String get splitAmount;
+
+  /// No description provided for @splitFromEntry.
+  ///
+  /// In es, this message translates to:
+  /// **'El del movimiento: no se cambia.'**
+  String get splitFromEntry;
+
+  /// No description provided for @splitPaidBy.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Quién pagó?'**
+  String get splitPaidBy;
+
+  /// No description provided for @splitEven.
+  ///
+  /// In es, this message translates to:
+  /// **'En partes iguales'**
+  String get splitEven;
+
+  /// No description provided for @splitCustom.
+  ///
+  /// In es, this message translates to:
+  /// **'Por montos'**
+  String get splitCustom;
+
+  /// No description provided for @splitPartOf.
+  ///
+  /// In es, this message translates to:
+  /// **'Parte de {name}'**
+  String splitPartOf(String name);
+
+  /// No description provided for @splitRest.
+  ///
+  /// In es, this message translates to:
+  /// **'Para que el total cuadre, los {amount} del redondeo quedan en la parte de {name}.'**
+  String splitRest(String amount, String name);
+
+  /// No description provided for @splitRestYou.
+  ///
+  /// In es, this message translates to:
+  /// **'Para que el total cuadre, los {amount} del redondeo quedan en tu parte.'**
+  String splitRestYou(String amount);
+
+  /// No description provided for @splitPartYou.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu parte'**
+  String get splitPartYou;
+
+  /// No description provided for @splitMissing.
+  ///
+  /// In es, this message translates to:
+  /// **'Faltan {amount} para el total'**
+  String splitMissing(String amount);
+
+  /// No description provided for @splitOver.
+  ///
+  /// In es, this message translates to:
+  /// **'Sobran {amount} sobre el total'**
+  String splitOver(String amount);
+
+  /// No description provided for @splitYourPart.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu parte es {mine}; {others} te los deben.'**
+  String splitYourPart(String mine, String others);
+
+  /// No description provided for @splitIncomplete.
+  ///
+  /// In es, this message translates to:
+  /// **'Falta el valor o con quién dividirlo.'**
+  String get splitIncomplete;
+
+  /// No description provided for @splitDoesNotAddUp.
+  ///
+  /// In es, this message translates to:
+  /// **'Las partes no suman el total.'**
+  String get splitDoesNotAddUp;
+
+  /// No description provided for @splitNeedsSomeone.
+  ///
+  /// In es, this message translates to:
+  /// **'Agrega al menos a una persona más.'**
+  String get splitNeedsSomeone;
+
+  /// No description provided for @splitRemove.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar la división'**
+  String get splitRemove;
+
+  /// No description provided for @splitThis.
+  ///
+  /// In es, this message translates to:
+  /// **'Dividir este gasto'**
+  String get splitThis;
+
+  /// No description provided for @splitChange.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar la división'**
+  String get splitChange;
+
+  /// No description provided for @splitYours.
+  ///
+  /// In es, this message translates to:
+  /// **'Dividido: tu parte {amount}'**
+  String splitYours(String amount);
+
+  /// No description provided for @sharedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Gastos compartidos'**
+  String get sharedTitle;
+
+  /// No description provided for @sharedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Divide gastos con quien sea, sin que tenga la app. Lo que te deben no es plata disponible: vuelve a serlo cuando te pagan.'**
+  String get sharedBody;
+
+  /// No description provided for @sharedEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no divides gastos. Crea un grupo, o abre un gasto en Movimientos y toca «Dividir este gasto».'**
+  String get sharedEmpty;
+
+  /// No description provided for @sharedNewGroup.
+  ///
+  /// In es, this message translates to:
+  /// **'Nuevo grupo'**
+  String get sharedNewGroup;
+
+  /// No description provided for @sharedEditGroup.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar grupo'**
+  String get sharedEditGroup;
+
+  /// No description provided for @sharedGroupName.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre del grupo'**
+  String get sharedGroupName;
+
+  /// No description provided for @sharedAddPeople.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar personas'**
+  String get sharedAddPeople;
+
+  /// No description provided for @sharedGroupIncomplete.
+  ///
+  /// In es, this message translates to:
+  /// **'Falta el nombre o alguien más en el grupo.'**
+  String get sharedGroupIncomplete;
+
+  /// No description provided for @sharedOwedToYou.
+  ///
+  /// In es, this message translates to:
+  /// **'Te deben'**
+  String get sharedOwedToYou;
+
+  /// No description provided for @sharedYouOwe.
+  ///
+  /// In es, this message translates to:
+  /// **'Debes'**
+  String get sharedYouOwe;
+
+  /// No description provided for @sharedNotCash.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que te deben no se suma a lo libre hasta que llega.'**
+  String get sharedNotCash;
+
+  /// No description provided for @sharedGroups.
+  ///
+  /// In es, this message translates to:
+  /// **'Grupos'**
+  String get sharedGroups;
+
+  /// No description provided for @sharedOwesYouShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Te deben {amount}'**
+  String sharedOwesYouShort(String amount);
+
+  /// No description provided for @sharedYouOweShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Debes {amount}'**
+  String sharedYouOweShort(String amount);
+
+  /// No description provided for @sharedEven.
+  ///
+  /// In es, this message translates to:
+  /// **'A paz y salvo'**
+  String get sharedEven;
+
+  /// No description provided for @sharedYou.
+  ///
+  /// In es, this message translates to:
+  /// **'Tú'**
+  String get sharedYou;
+
+  /// No description provided for @sharedDelete.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrar grupo'**
+  String get sharedDelete;
+
+  /// No description provided for @sharedDeleteTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Borrar {name}?'**
+  String sharedDeleteTitle(String name);
+
+  /// No description provided for @sharedDeleteBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Se borran el grupo, sus gastos y sus pagos aquí. Tus movimientos no se tocan.'**
+  String get sharedDeleteBody;
+
+  /// No description provided for @sharedAddExpense.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar gasto'**
+  String get sharedAddExpense;
+
+  /// No description provided for @sharedOwedToYouIn.
+  ///
+  /// In es, this message translates to:
+  /// **'En este grupo te deben {amount}'**
+  String sharedOwedToYouIn(String amount);
+
+  /// No description provided for @sharedYouOweIn.
+  ///
+  /// In es, this message translates to:
+  /// **'En este grupo debes {amount}'**
+  String sharedYouOweIn(String amount);
+
+  /// No description provided for @sharedAllEven.
+  ///
+  /// In es, this message translates to:
+  /// **'Todos están a paz y salvo'**
+  String get sharedAllEven;
+
+  /// No description provided for @sharedToSettle.
+  ///
+  /// In es, this message translates to:
+  /// **'Para quedar a paz y salvo'**
+  String get sharedToSettle;
+
+  /// No description provided for @sharedPaysYou.
+  ///
+  /// In es, this message translates to:
+  /// **'{name} te paga {amount}'**
+  String sharedPaysYou(String name, String amount);
+
+  /// No description provided for @sharedYouPay.
+  ///
+  /// In es, this message translates to:
+  /// **'Le pagas a {name} {amount}'**
+  String sharedYouPay(String name, String amount);
+
+  /// No description provided for @sharedPays.
+  ///
+  /// In es, this message translates to:
+  /// **'{from} le paga a {to} {amount}'**
+  String sharedPays(String from, String to, String amount);
+
+  /// No description provided for @sharedRemind.
+  ///
+  /// In es, this message translates to:
+  /// **'Recordar'**
+  String get sharedRemind;
+
+  /// No description provided for @sharedReminderMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'Hola, {name}. Te escribo por los {amount} de {group}. Cuando puedas me los pasas. ¡Gracias!'**
+  String sharedReminderMessage(String name, String amount, String group);
+
+  /// No description provided for @sharedRecordPayment.
+  ///
+  /// In es, this message translates to:
+  /// **'Registrar pago'**
+  String get sharedRecordPayment;
+
+  /// No description provided for @sharedExpenses.
+  ///
+  /// In es, this message translates to:
+  /// **'Gastos'**
+  String get sharedExpenses;
+
+  /// No description provided for @sharedNoExpenses.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no hay gastos en este grupo.'**
+  String get sharedNoExpenses;
+
+  /// No description provided for @sharedPaidBy.
+  ///
+  /// In es, this message translates to:
+  /// **'pagó {name}'**
+  String sharedPaidBy(String name);
+
+  /// No description provided for @sharedPaidByYou.
+  ///
+  /// In es, this message translates to:
+  /// **'pagaste tú'**
+  String get sharedPaidByYou;
+
+  /// No description provided for @sharedYourShare.
+  ///
+  /// In es, this message translates to:
+  /// **'tu parte {amount}'**
+  String sharedYourShare(String amount);
+
+  /// No description provided for @sharedPayments.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagos'**
+  String get sharedPayments;
+
+  /// No description provided for @sharedPaid.
+  ///
+  /// In es, this message translates to:
+  /// **'{from} le pagó a {to}'**
+  String sharedPaid(String from, String to);
+
+  /// No description provided for @sharedPaidYou.
+  ///
+  /// In es, this message translates to:
+  /// **'{from} te pagó'**
+  String sharedPaidYou(String from);
+
+  /// No description provided for @sharedYouPaid.
+  ///
+  /// In es, this message translates to:
+  /// **'Le pagaste a {to}'**
+  String sharedYouPaid(String to);
+
+  /// No description provided for @sharedLinked.
+  ///
+  /// In es, this message translates to:
+  /// **'llegó a tu cuenta'**
+  String get sharedLinked;
+
+  /// No description provided for @sharedRemovePayment.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar este pago'**
+  String get sharedRemovePayment;
+
+  /// No description provided for @sharedLedgerNote.
+  ///
+  /// In es, this message translates to:
+  /// **'De un gasto que pagaste por otros, solo tu parte cuenta como gasto; el resto es plata prestada. Cuando te la devuelven no es un ingreso: es plata que vuelve.'**
+  String get sharedLedgerNote;
+
+  /// No description provided for @sharedArrivedAs.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Llegó a una de tus cuentas?'**
+  String get sharedArrivedAs;
+
+  /// No description provided for @sharedNotRecorded.
+  ///
+  /// In es, this message translates to:
+  /// **'No, o no está en Quincena'**
+  String get sharedNotRecorded;
+
+  /// No description provided for @sharedArrivedAsHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Si eliges el movimiento, cuenta como plata que vuelve y no como ingreso.'**
+  String get sharedArrivedAsHelp;
+
+  /// No description provided for @freelanceTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresos variables'**
+  String get freelanceTitle;
+
+  /// No description provided for @freelanceBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Para cuando tus ingresos cambian de un mes a otro. Separa lo cobrado, lo pendiente y lo estimado. Quincena no calcula impuestos: la reserva la decides tú.'**
+  String get freelanceBody;
+
+  /// No description provided for @freelanceAdd.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar cobro'**
+  String get freelanceAdd;
+
+  /// No description provided for @freelanceEdit.
+  ///
+  /// In es, this message translates to:
+  /// **'Cobro'**
+  String get freelanceEdit;
+
+  /// No description provided for @freelancePending.
+  ///
+  /// In es, this message translates to:
+  /// **'Por cobrar'**
+  String get freelancePending;
+
+  /// No description provided for @freelanceEstimated.
+  ///
+  /// In es, this message translates to:
+  /// **'Estimado'**
+  String get freelanceEstimated;
+
+  /// No description provided for @freelanceReserve.
+  ///
+  /// In es, this message translates to:
+  /// **'Reserva'**
+  String get freelanceReserve;
+
+  /// No description provided for @freelanceOverdueNote.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Un cobro vencido por {amount}.} other{{count} cobros vencidos por {amount}.}}'**
+  String freelanceOverdueNote(int count, String amount);
+
+  /// No description provided for @freelanceOverdue.
+  ///
+  /// In es, this message translates to:
+  /// **'Vencidos'**
+  String get freelanceOverdue;
+
+  /// No description provided for @freelancePendingList.
+  ///
+  /// In es, this message translates to:
+  /// **'Pendientes'**
+  String get freelancePendingList;
+
+  /// No description provided for @freelanceEstimatedList.
+  ///
+  /// In es, this message translates to:
+  /// **'Estimados'**
+  String get freelanceEstimatedList;
+
+  /// No description provided for @freelanceCollectedList.
+  ///
+  /// In es, this message translates to:
+  /// **'Cobrados'**
+  String get freelanceCollectedList;
+
+  /// No description provided for @freelanceScenario.
+  ///
+  /// In es, this message translates to:
+  /// **'Qué contar en los próximos días'**
+  String get freelanceScenario;
+
+  /// No description provided for @scenarioCollected.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo cobrado'**
+  String get scenarioCollected;
+
+  /// No description provided for @scenarioPending.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo facturado'**
+  String get scenarioPending;
+
+  /// No description provided for @scenarioEstimated.
+  ///
+  /// In es, this message translates to:
+  /// **'Todo'**
+  String get scenarioEstimated;
+
+  /// No description provided for @scenarioCollectedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo la plata que ya tienes. Lo más prudente para un mes difícil.'**
+  String get scenarioCollectedBody;
+
+  /// No description provided for @scenarioPendingBody.
+  ///
+  /// In es, this message translates to:
+  /// **'También lo facturado, el día que lo esperas. Si se atrasa, se corre al día siguiente, y nunca cuenta en lo libre hasta que llega.'**
+  String get scenarioPendingBody;
+
+  /// No description provided for @scenarioEstimatedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'También lo que crees que vendrá sin haberlo facturado. Lo menos prudente: úsalo con cuidado.'**
+  String get scenarioEstimatedBody;
+
+  /// No description provided for @freelanceReservePercent.
+  ///
+  /// In es, this message translates to:
+  /// **'Apartar de cada cobro'**
+  String get freelanceReservePercent;
+
+  /// No description provided for @freelanceNoReserve.
+  ///
+  /// In es, this message translates to:
+  /// **'Nada'**
+  String get freelanceNoReserve;
+
+  /// No description provided for @freelanceReserveNow.
+  ///
+  /// In es, this message translates to:
+  /// **'Tienes apartados {amount} desde el {date}. No cuentan en lo libre, pero siguen en tus cuentas.'**
+  String freelanceReserveNow(String amount, String date);
+
+  /// No description provided for @freelanceReserveOff.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin reserva: todo lo que cobras cuenta como libre.'**
+  String get freelanceReserveOff;
+
+  /// No description provided for @freelanceNoTax.
+  ///
+  /// In es, this message translates to:
+  /// **'Quincena no calcula impuestos ni sabe cuánto te toca pagar: el porcentaje es tuyo.'**
+  String get freelanceNoTax;
+
+  /// No description provided for @freelanceUse.
+  ///
+  /// In es, this message translates to:
+  /// **'Usé de la reserva'**
+  String get freelanceUse;
+
+  /// No description provided for @freelanceUseAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto usaste?'**
+  String get freelanceUseAmount;
+
+  /// No description provided for @freelanceUseHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Por ejemplo, lo que pagaste de impuestos o seguridad social.'**
+  String get freelanceUseHelp;
+
+  /// No description provided for @freelanceExpectedOn.
+  ///
+  /// In es, this message translates to:
+  /// **'Esperado el {date}'**
+  String freelanceExpectedOn(String date);
+
+  /// No description provided for @freelanceCollectedOn.
+  ///
+  /// In es, this message translates to:
+  /// **'Cobrado el {date}'**
+  String freelanceCollectedOn(String date);
+
+  /// No description provided for @freelanceLate.
+  ///
+  /// In es, this message translates to:
+  /// **'{days, plural, =1{Vencido hace un día: era el {date}} other{Vencido hace {days} días: era el {date}}}'**
+  String freelanceLate(int days, String date);
+
+  /// No description provided for @freelanceClient.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Quién te paga?'**
+  String get freelanceClient;
+
+  /// No description provided for @freelanceAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'Valor'**
+  String get freelanceAmount;
+
+  /// No description provided for @incomeEstimated.
+  ///
+  /// In es, this message translates to:
+  /// **'Estimado'**
+  String get incomeEstimated;
+
+  /// No description provided for @incomePending.
+  ///
+  /// In es, this message translates to:
+  /// **'Facturado'**
+  String get incomePending;
+
+  /// No description provided for @incomeCollected.
+  ///
+  /// In es, this message translates to:
+  /// **'Cobrado'**
+  String get incomeCollected;
+
+  /// No description provided for @incomeEstimatedHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Crees que vendrá, pero aún no lo facturas.'**
+  String get incomeEstimatedHelp;
+
+  /// No description provided for @incomePendingHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya lo facturaste y esperas el pago.'**
+  String get incomePendingHelp;
+
+  /// No description provided for @incomeCollectedHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'La plata ya llegó.'**
+  String get incomeCollectedHelp;
+
+  /// No description provided for @freelanceArrivedAs.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Con qué movimiento llegó?'**
+  String get freelanceArrivedAs;
+
+  /// No description provided for @freelanceNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Nota'**
+  String get freelanceNote;
+
+  /// No description provided for @freelanceIncomplete.
+  ///
+  /// In es, this message translates to:
+  /// **'Falta quién te paga o el valor.'**
+  String get freelanceIncomplete;
+
+  /// No description provided for @freelanceRemind.
+  ///
+  /// In es, this message translates to:
+  /// **'Recordar al cliente'**
+  String get freelanceRemind;
+
+  /// No description provided for @freelanceReminderMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'Hola, {client}. Te escribo por el pago de {amount} que esperaba el {date}. ¿Me confirmas cuándo lo puedes hacer? ¡Gracias!'**
+  String freelanceReminderMessage(String client, String amount, String date);
+
+  /// No description provided for @freelanceDelete.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrar cobro'**
+  String get freelanceDelete;
+
+  /// No description provided for @tripsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Viajes'**
+  String get tripsTitle;
+
+  /// No description provided for @tripsBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Un presupuesto en la moneda del viaje, contado con tus mismos movimientos: nada se copia.'**
+  String get tripsBody;
+
+  /// No description provided for @tripsEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no tienes viajes.'**
+  String get tripsEmpty;
+
+  /// No description provided for @tripsNew.
+  ///
+  /// In es, this message translates to:
+  /// **'Nuevo viaje'**
+  String get tripsNew;
+
+  /// No description provided for @tripEdit.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar viaje'**
+  String get tripEdit;
+
+  /// No description provided for @tripDelete.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrar viaje'**
+  String get tripDelete;
+
+  /// No description provided for @tripDeleteTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Borrar {name}?'**
+  String tripDeleteTitle(String name);
+
+  /// No description provided for @tripDeleteBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Se borra el viaje aquí. Sus gastos siguen en tus cuentas.'**
+  String get tripDeleteBody;
+
+  /// No description provided for @tripLeftShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Quedan {amount}'**
+  String tripLeftShort(String amount);
+
+  /// No description provided for @tripSpentShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Gastaste {amount}'**
+  String tripSpentShort(String amount);
+
+  /// No description provided for @tripSpent.
+  ///
+  /// In es, this message translates to:
+  /// **'Gastaste'**
+  String get tripSpent;
+
+  /// No description provided for @tripLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'Te quedan'**
+  String get tripLeft;
+
+  /// No description provided for @tripOf.
+  ///
+  /// In es, this message translates to:
+  /// **'de {amount}'**
+  String tripOf(String amount);
+
+  /// No description provided for @tripPerDay.
+  ///
+  /// In es, this message translates to:
+  /// **'{days, plural, =1{Puedes gastar {amount} hoy, el último día.} other{Puedes gastar {amount} al día los {days} días que quedan.}}'**
+  String tripPerDay(String amount, int days);
+
+  /// No description provided for @tripAverage.
+  ///
+  /// In es, this message translates to:
+  /// **'Llevas {amount} al día en promedio.'**
+  String tripAverage(String amount);
+
+  /// No description provided for @tripOver.
+  ///
+  /// In es, this message translates to:
+  /// **'El viaje terminó.'**
+  String get tripOver;
+
+  /// No description provided for @tripUnconverted.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Un gasto no tiene tasa para convertirlo y no cuenta.} other{{count} gastos no tienen tasa para convertirlos y no cuentan.}}'**
+  String tripUnconverted(int count);
+
+  /// No description provided for @tripShared.
+  ///
+  /// In es, this message translates to:
+  /// **'Gastos compartidos del viaje'**
+  String get tripShared;
+
+  /// No description provided for @tripShare.
+  ///
+  /// In es, this message translates to:
+  /// **'Dividir gastos del viaje con alguien'**
+  String get tripShare;
+
+  /// No description provided for @tripExpenses.
+  ///
+  /// In es, this message translates to:
+  /// **'Gastos del viaje'**
+  String get tripExpenses;
+
+  /// No description provided for @tripNoExpenses.
+  ///
+  /// In es, this message translates to:
+  /// **'Los gastos de las fechas del viaje aparecen aquí solos. Agrega los que pagaste allá en su moneda.'**
+  String get tripNoExpenses;
+
+  /// No description provided for @tripIncludeEarlier.
+  ///
+  /// In es, this message translates to:
+  /// **'Incluir un gasto de antes'**
+  String get tripIncludeEarlier;
+
+  /// No description provided for @tripIncludeEarlierBody.
+  ///
+  /// In es, this message translates to:
+  /// **'El vuelo o el hotel que pagaste antes de salir.'**
+  String get tripIncludeEarlierBody;
+
+  /// No description provided for @tripNothingEarlier.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay gastos en los 120 días antes del viaje.'**
+  String get tripNothingEarlier;
+
+  /// No description provided for @tripSameMovements.
+  ///
+  /// In es, this message translates to:
+  /// **'Un viaje usa tus mismos movimientos: cambiar uno aquí lo cambia en tu cuenta.'**
+  String get tripSameMovements;
+
+  /// No description provided for @tripNoRate.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin tasa'**
+  String get tripNoRate;
+
+  /// No description provided for @tripExclude.
+  ///
+  /// In es, this message translates to:
+  /// **'No es del viaje'**
+  String get tripExclude;
+
+  /// No description provided for @tripForeign.
+  ///
+  /// In es, this message translates to:
+  /// **'{amount} a {rate} ({date}) más {fee} de la tarjeta: {estimate} estimado'**
+  String tripForeign(
+    String amount,
+    String rate,
+    String date,
+    String fee,
+    String estimate,
+  );
+
+  /// No description provided for @tripForeignNoFee.
+  ///
+  /// In es, this message translates to:
+  /// **'{amount} a {rate} ({date}): {estimate} estimado'**
+  String tripForeignNoFee(
+    String amount,
+    String rate,
+    String date,
+    String estimate,
+  );
+
+  /// No description provided for @tripConverted.
+  ///
+  /// In es, this message translates to:
+  /// **'{amount}, convertido con {source} del {date}'**
+  String tripConverted(String amount, String source, String date);
+
+  /// No description provided for @tripChargedMore.
+  ///
+  /// In es, this message translates to:
+  /// **'El banco cobró {charged}: {difference} más que el estimado'**
+  String tripChargedMore(String charged, String difference);
+
+  /// No description provided for @tripChargedLess.
+  ///
+  /// In es, this message translates to:
+  /// **'El banco cobró {charged}: {difference} menos que el estimado'**
+  String tripChargedLess(String charged, String difference);
+
+  /// No description provided for @tripAdjust.
+  ///
+  /// In es, this message translates to:
+  /// **'Ajustar al cargo real'**
+  String get tripAdjust;
+
+  /// No description provided for @tripCharged.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto te cobró el banco?'**
+  String get tripCharged;
+
+  /// No description provided for @tripAdjustHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambia el movimiento a lo que dice el extracto, y queda la diferencia con el estimado.'**
+  String get tripAdjustHelp;
+
+  /// No description provided for @tripName.
+  ///
+  /// In es, this message translates to:
+  /// **'¿A dónde vas?'**
+  String get tripName;
+
+  /// No description provided for @tripCurrency.
+  ///
+  /// In es, this message translates to:
+  /// **'Moneda del viaje'**
+  String get tripCurrency;
+
+  /// No description provided for @tripBudget.
+  ///
+  /// In es, this message translates to:
+  /// **'Presupuesto'**
+  String get tripBudget;
+
+  /// No description provided for @tripFee.
+  ///
+  /// In es, this message translates to:
+  /// **'Comisión de tu tarjeta en el exterior'**
+  String get tripFee;
+
+  /// No description provided for @tripFeeHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Si la sabes: se suma al estimar lo que te cobrarán en pesos.'**
+  String get tripFeeHelp;
+
+  /// No description provided for @tripFeeShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Comisión'**
+  String get tripFeeShort;
+
+  /// No description provided for @tripIncomplete.
+  ///
+  /// In es, this message translates to:
+  /// **'Falta a dónde vas.'**
+  String get tripIncomplete;
+
+  /// No description provided for @tripAddExpense.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar gasto del viaje'**
+  String get tripAddExpense;
+
+  /// No description provided for @tripWhat.
+  ///
+  /// In es, this message translates to:
+  /// **'¿En qué?'**
+  String get tripWhat;
+
+  /// No description provided for @tripAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'Valor'**
+  String get tripAmount;
+
+  /// No description provided for @tripPaidWith.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagaste con'**
+  String get tripPaidWith;
+
+  /// No description provided for @tripRate.
+  ///
+  /// In es, this message translates to:
+  /// **'1 {from} en {to}'**
+  String tripRate(String from, String to);
+
+  /// No description provided for @tripRateNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin tasa guardada: escribe la que viste.'**
+  String get tripRateNone;
+
+  /// No description provided for @tripRateFrom.
+  ///
+  /// In es, this message translates to:
+  /// **'{source} del {date}'**
+  String tripRateFrom(String source, String date);
+
+  /// No description provided for @tripWillRecord.
+  ///
+  /// In es, this message translates to:
+  /// **'Se registran {amount} en {account}, estimado hasta que llegue el cargo real.'**
+  String tripWillRecord(String amount, String account);
+
+  /// No description provided for @tripExpenseIncomplete.
+  ///
+  /// In es, this message translates to:
+  /// **'Falta el valor o la tasa.'**
+  String get tripExpenseIncomplete;
 }
 
 class _AppLocalizationsDelegate

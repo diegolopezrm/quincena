@@ -2,7 +2,11 @@ import 'package:dartantic_ai/dartantic_ai.dart';
 import 'package:decimal/decimal.dart';
 
 import '../agent/tools.dart';
+import '../data/ledger.dart';
+import '../domain/freelance.dart';
 import '../domain/records.dart';
+import '../domain/shared.dart';
+import '../domain/trips.dart';
 import '../money/asset.dart';
 import '../money/money.dart';
 import '../money/rates.dart';
@@ -46,7 +50,90 @@ List<Tool> ownTools(OwnController own) => <Tool>[
       return portfolioAnswer(own);
     },
   ),
+  Tool<Map<String, dynamic>>(
+    name: 'owed_and_variable',
+    description:
+        'What others owe the person and what they owe, from the expenses '
+        'they share, by group and person, with the payments that would '
+        'settle each group; the payments clients owe them, billed or only '
+        'estimated, with the day each is expected and whether it is late; '
+        'the reserve they keep from those payments and what counts ahead; '
+        'and their trips, each with its budget, what was spent and what is '
+        'left in the trip\'s currency. What others owe is not money to spend '
+        'until it arrives. No tax is worked out here.',
+    onCall: (_) => owedAndVariableAnswer(own),
+  ),
 ];
+
+/// The `owed_and_variable` tool's answer, apart so a test can read it.
+Map<String, Object?> owedAndVariableAnswer(OwnController own) {
+  final Ledger? ledger = own.ledger;
+  if (ledger == null) return <String, Object?>{'available': false};
+  num major(int minor) => ledger.major(minor);
+  final DateTime today = own.today;
+  String day(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  final (int owed, int owing) = own.sharedBalance;
+  final FreelancePlan freelance = own.freelance;
+  return <String, Object?>{
+    'currency': ledger.currency.code,
+    'today': day(today),
+    'owedToYou': major(owed),
+    'youOwe': major(owing),
+    'groups': <Object?>[
+      for (final Group g in own.groups)
+        <String, Object?>{
+          'name': g.name,
+          'members': <String>[
+            for (final Member m in g.members) m.isMe ? 'you' : m.name,
+          ],
+          'yourBalance': major(g.balances[meId] ?? 0),
+          'toSettle': <Object?>[
+            for (final Transfer t in g.plan)
+              <String, Object?>{
+                'from': g.member(t.from)?.isMe ?? false
+                    ? 'you'
+                    : g.member(t.from)?.name,
+                'to': g.member(t.to)?.isMe ?? false
+                    ? 'you'
+                    : g.member(t.to)?.name,
+                'amount': major(t.amount),
+              },
+          ],
+        },
+    ],
+    'clientPayments': <Object?>[
+      for (final ExpectedIncome i in freelance.incomes)
+        if (i.status != IncomeStatus.collected)
+          <String, Object?>{
+            'client': i.client,
+            'amount': major(i.amount),
+            'status': i.status.name,
+            'expected': day(i.expected),
+            if (i.overdue(today)) 'daysLate': i.daysLate(today),
+          },
+    ],
+    'countsAhead': freelance.scenario.name,
+    if (freelance.reservePercent > 0) ...<String, Object?>{
+      'reservePercent': freelance.reservePercent,
+      'reserve': major(ledger.reserved),
+    },
+    'trips': <Object?>[
+      for (final Trip t in own.trips)
+        <String, Object?>{
+          'name': t.name,
+          'from': day(t.from),
+          'to': day(t.to),
+          'currency': t.currency,
+          if (t.budget case final Decimal b) 'budget': b.toDouble(),
+          'spent': own.tripSummary(t).spent.toDouble(),
+          if (own.tripSummary(t).left case final Decimal left)
+            'left': left.toDouble(),
+          'daysLeft': t.daysLeft(today),
+        },
+    ],
+  };
+}
 
 /// The `portfolio` tool's answer, apart so a test can read it.
 Map<String, Object?> portfolioAnswer(OwnController own) {

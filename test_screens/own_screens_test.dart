@@ -29,6 +29,7 @@ import 'package:quincena/store/store.dart';
 
 import '../test/commitments_data.dart';
 import '../test/fonts.dart';
+import '../test/real_life_data.dart';
 import '../test/own_flow_test.dart' show fakeRates, settle;
 
 final DateTime _now = DateTime(2026, 10, 3, 10);
@@ -458,6 +459,48 @@ void main() {
     await tester.tap(find.byTooltip('Atrás'));
     await settle(tester);
     await visit('Cargos para revisar', 'detective');
+  });
+
+  testWidgets('real life', (tester) async {
+    final QuincenaStore store = (await tester.runAsync(() async {
+      final QuincenaStore store = await seeded();
+      await addRealLife(store);
+      return store;
+    }))!;
+    await open(tester, store, phone, Brightness.light);
+    await tester.tap(find.text('Plan'));
+    await settle(tester);
+    final Finder list = find.byType(Scrollable).first;
+    Future<void> visit(String row, String name) async {
+      await tester.scrollUntilVisible(find.text(row), 200, scrollable: list);
+      await tester.tap(find.text(row));
+      await settle(tester);
+      await shoot(name);
+    }
+
+    await tester.scrollUntilVisible(
+      find.text('SI TE SIRVE'),
+      200,
+      scrollable: list,
+    );
+    await tester.drag(list, const Offset(0, -200));
+    await settle(tester);
+    await shoot('plan-optional');
+    await visit('Gastos compartidos', 'shared');
+    await tester.tap(find.text('Paseo a Guatapé'));
+    await settle(tester);
+    await shoot('group');
+    await tester.tap(find.byTooltip('Atrás'));
+    await settle(tester);
+    await tester.tap(find.byTooltip('Atrás'));
+    await settle(tester);
+    await visit('Ingresos variables', 'freelance');
+    await tester.tap(find.byTooltip('Atrás'));
+    await settle(tester);
+    await visit('Viajes', 'trips');
+    await tester.tap(find.text('Nueva York'));
+    await settle(tester);
+    await shoot('trip');
   });
 
   testWidgets('explained', (tester) async {

@@ -109,10 +109,13 @@ class Ledger {
     List<Movement> upcoming = const <Movement>[],
     this.cushion = 0,
     this.setAside = 0,
+    this.reserved = 0,
     this.pay,
+    List<Movement> expected = const <Movement>[],
   }) : movements = List<Movement>.of(movements)
          ..sort((Movement a, Movement b) => a.date.compareTo(b.date)),
-       upcoming = List<Movement>.unmodifiable(upcoming);
+       upcoming = List<Movement>.unmodifiable(upcoming),
+       expected = List<Movement>.unmodifiable(expected);
 
   final String owner;
 
@@ -145,6 +148,14 @@ class Ledger {
   /// What arrives each payday, when the person said; expected, not counted
   /// as money until it is there.
   final int? pay;
+
+  /// What the person keeps apart of each variable payment, in the
+  /// accounts but not free to spend.
+  final int reserved;
+
+  /// Payments expected from clients, on the day they should come: like the
+  /// pay, not money until they are there.
+  final List<Movement> expected;
 
   /// [amount] in whole units of [currency]: pesos stay as they are, cents
   /// become dollars. What the agent's tools and the catalog read.
@@ -192,9 +203,10 @@ class Ledger {
       committed.fold(0, (int total, Movement m) => total + m.amount);
 
   /// What can be spent until the next payday without touching what is
-  /// already committed, the cushion, or what the envelopes set aside.
+  /// already committed, the cushion, what the envelopes set aside, or the
+  /// reserve kept from variable payments.
   int get freeUntilPayday =>
-      balance - committedUntilPayday - cushion - setAside;
+      balance - committedUntilPayday - cushion - setAside - reserved;
 
   Iterable<Movement> expensesIn(int year, int month) => movements.where(
     (Movement m) =>
