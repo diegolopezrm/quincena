@@ -1,5 +1,22 @@
 # Roadmap
 
+## Estado y alcance del plan
+
+Las fases 5 a 15 están construidas y en `main`, y la build 11 de TestFlight
+las lleva todas. Las fases 10 a 14 incorporan las 15 propuestas
+del [registro de ideación](IDEAS_PRODUCTO.md), y la 15 es la sincronización
+entre dispositivos. Construida no quiere decir validada: lo que falta probar
+en dispositivos reales y con personas está en la puerta de calidad de abajo y
+en [`QUALITY.md`](QUALITY.md). No hay fechas comprometidas.
+
+**Visión:** Quincena ayuda a decidir antes de gastar, además de explicar en qué
+se fue la plata. Cada respuesta debe poder convertirse en una herramienta
+interactiva, con cifras verificables y acciones bajo control de la persona.
+
+**Orden de entrega:** las fases se construyeron en orden, cada una sobre la
+anterior, y la primera versión de las tiendas las lleva todas. La puerta de
+calidad de la fase 9 sigue siendo la condición para publicar.
+
 Quincena started as a demo with a made-up account. It is becoming an app anyone
 can use for their own money, on iOS, Android, the web and the desktop, with the
 demo kept as a way to try it before entering anything.
@@ -208,3 +225,252 @@ Built:
 Left for the developer accounts: submitting to the App Store, creating the
 app in Google Play with its upload key, and the checks on real devices that
 `docs/QUALITY.md` lists.
+
+#### Puerta de calidad del lanzamiento
+
+- Verificar en dispositivos reales captura, permisos, funcionamiento sin red,
+  recuperación tras cierre y comportamiento con permisos denegados.
+- Probar migraciones y restauración con datos de versiones anteriores; una
+  importación fallida no debe destruir la base existente.
+- Unificar logo, iconos, pantallas de arranque, web, capturas y fichas de tiendas;
+  verificar legibilidad en tamaños pequeños, tema claro y oscuro.
+- Accesibilidad: lector de pantalla, texto grande, contraste, navegación por
+  teclado cuando aplique y ninguna señal basada solo en color.
+- Validar español e inglés, fechas, monedas y redondeos; sin datos reales en
+  capturas de tienda, registros de diagnóstico ni fixtures.
+- Hacer visibles los componentes de «libre hasta el próximo pago», la fecha de
+  las tasas y el estado estimado de cualquier proyección. Permitir desactivar
+  captura automática y corregir sus resultados.
+- Revisar vigencia de requisitos de tiendas, SDK, modelos, privacidad y cuotas
+  del proveedor antes de publicar; las versiones mencionadas arriba son
+  decisiones a verificar, no garantías de disponibilidad futura.
+- Registrar evidencia de pruebas y compilaciones por plataforma. Una función
+  no compatible debe tener alternativa clara o declararse no disponible.
+
+### 10. Confianza y un motor financiero explicable
+
+**Estado:** construida en 2847859, build 6.
+
+**Objetivo:** que todas las nuevas experiencias compartan cálculos consistentes
+y que la persona pueda entender y corregir lo que hace la app.
+
+**Dependencias:** base financiera (5), captura (6) y herramientas de Gemini (7).
+
+- **Idea 11 — ¿De dónde salió este número?** Desplegar movimientos, período,
+  fórmula, origen y fecha de tasas detrás de cada cifra agregada, incluidas las
+  respuestas de Gemini. Empezar por disponible, saldos y conversiones.
+- **Idea 15 — Captura que aprende contigo.** Ofrecer reglas de comercio,
+  categoría y cuenta después de una corrección. Listarlas, editarlas,
+  desactivarlas y explicar qué regla actuó. Mantener excepciones por revisar.
+- Motor local de proyecciones que separe saldo real, ingreso confirmado,
+  ingreso esperado, obligaciones, reservas y escenarios hipotéticos.
+- Definir cómo se calcula el disponible: horizonte de fechas, cuentas incluidas,
+  compromisos, colchón y reservas sin doble conteo. Mostrar los supuestos.
+- Las herramientas calculan con precisión monetaria; Gemini explica sus
+  resultados. La funcionalidad esencial no depende de que el modelo responda.
+
+**Criterios de terminado:**
+
+- Una cifra y su desglose coinciden con y sin conexión; al corregir un movimiento
+  se actualizan todas las vistas que dependen de él.
+- Pruebas cubren múltiples monedas, redondeos, transferencias, datos incompletos,
+  ingreso retrasado y ausencia de historial.
+- Cada captura automática indica por qué se registró y ofrece corrección o
+  deshacer. Cambiar una regla no reescribe el historial silenciosamente.
+
+### 11. Decidir antes de gastar
+
+**Estado:** construida en f6c1fe2, build 7.
+
+**Objetivo:** entregar el primer conjunto diferencial de uso cotidiano.
+
+**Dependencias:** motor y trazabilidad de la fase 10; calendario de pagos y
+recurrencias confirmadas. La entrada manual debe funcionar sin Gemini.
+
+- **Idea 1 — ¿Me lo puedo comprar?** Introducir precio, moneda, cuenta y fecha;
+  comparar comprar hoy frente a después del próximo pago. Mostrar obligaciones,
+  colchón y mínimo de saldo proyectado, con controles de precio y fecha.
+- **Idea 2 — Calendario de días apretados.** Vista inicial de 30 días con saldo
+  proyectado, ingresos y pagos. Identificar fechas bajo el colchón y abrir el
+  detalle de lo que causa la caída. Mover fechas solo dentro de una simulación.
+- **Idea 5 — Cierre de quincena en tres tarjetas.** Qué cambió, qué viene y una
+  acción posible. Comparar períodos equivalentes y enlazar cada conclusión con
+  sus movimientos. Resumen dentro de la app y recordatorio opcional.
+
+**Criterios de terminado:**
+
+- Compra y calendario usan el mismo cálculo; cambiar precio o fecha actualiza
+  ambos sin llamadas adicionales al modelo.
+- Sin información suficiente se pide completarla o se muestra un escenario
+  limitado; nunca se garantiza que una compra sea segura.
+- La simulación no crea movimientos ni cambia pagos reales. El resumen funciona
+  con historial escaso sin inventar tendencias.
+- Recordatorios desactivables y sin importes sensibles en pantalla bloqueada.
+
+### 12. Planear la quincena y avanzar hacia metas
+
+**Estado:** construida en 068ba97, build 8.
+
+**Objetivo:** convertir ingresos y aspiraciones en un plan ajustable.
+
+**Dependencias:** fases 10–11 y metas/presupuestos existentes.
+
+- **Idea 3 — Me llegó la quincena.** Al confirmar un ingreso, proponer una
+  distribución entre compromisos, gastos cotidianos, metas y dinero libre.
+  Editar importes, guardar y reutilizar una plantilla de sobres virtuales.
+- **Idea 4 — ¿Y si…?** Comparar escenario actual y alternativo: ahorro adicional,
+  subida de arriendo o retraso de ingresos. Empezar por una variable y ampliar
+  a escenarios guardados con supuestos visibles.
+- **Idea 10 — Colchón en días de tranquilidad.** Traducir una reserva elegida a
+  días estimados de gastos esenciales, usando categorías confirmadas y un
+  período visible. Meta configurable, sin cifra universal impuesta.
+- **Idea 13 — Lo quiero, pero después.** Lista de deseos con precio manual,
+  prioridad y espera opcional; comparar una compra con el avance de otra meta.
+  Sin rastreo de tiendas ni incentivos de afiliación en el alcance inicial.
+
+**Criterios de terminado:**
+
+- Las asignaciones no superan el dinero asignable sin advertencia explícita;
+  sobres y cuentas no cuentan la misma plata dos veces.
+- Los sobres no se presentan como transferencias bancarias. Guardar un escenario
+  no lo aplica al presupuesto; aplicar cambios requiere confirmación.
+- Un gasto esencial promedio cero o historial insuficiente produce una
+  explicación, no infinitos días de cobertura.
+- Deseos y simulaciones no alteran saldos; fechas de metas se recalculan con
+  los mismos supuestos del plan.
+
+### 13. Compromisos, cuotas y cargos bajo control
+
+**Estado:** construida en 24f0408, build 9.
+
+**Objetivo:** entender cuánto dinero futuro ya está comprometido.
+
+**Dependencias:** fases 10–12, recurrencias y conciliación de movimientos.
+
+- **Idea 6 — Suscripciones con memoria.** Próximas renovaciones, fin de pruebas,
+  cambios de precio y recordatorios configurables. La persona confirma si las
+  usa. Mostrar ahorro potencial al pausar, sin prometer cancelar por ella.
+- **Idea 7 — Compras a cuotas, sin sorpresas.** Registro manual de principal,
+  cuotas, tasa y cargos; calendario de pagos, saldo pendiente y total estimado.
+  Comparar contado y cuotas, declarando modalidad y periodicidad de la tasa.
+- **Idea 12 — Detective de cargos.** Reglas locales para posibles duplicados,
+  aumentos de recurrencias y movimientos atípicos. Mostrar evidencia y permitir
+  marcar como esperado, investigar o descartar la alerta.
+
+**Criterios de terminado:**
+
+- Diferenciar compra, deuda y pago de tarjeta para no duplicar gastos. Probar
+  pagos parciales, cambios de importe y cancelación de una recurrencia.
+- No calcular un costo total definitivo cuando faltan tasa o comisiones;
+  distinguir expresamente lo conocido de lo estimado.
+- Distinguir dos capturas del mismo cargo de dos cargos bancarios reales.
+  Ninguna alerta borra movimientos ni declara fraude automáticamente.
+- Todas las alertas son explicables y silenciables; un cargo recurrente no
+  prueba que el servicio esté sin uso.
+
+### 14. Finanzas que se adaptan a la vida real
+
+**Estado:** construida en 7f3c700, build 10.
+
+**Objetivo:** añadir módulos opcionales sin complicar la experiencia básica.
+
+**Dependencias:** fases 10–13, cuentas multidivisa y proyecciones.
+
+- **Idea 8 — Plata que te deben y gastos compartidos.** Dividir un gasto en
+  partes iguales o personalizadas; separar gasto propio de cuenta por cobrar;
+  registrar devoluciones parciales y liquidar grupos pequeños. Funcionar sin
+  exigir que los demás instalen Quincena. Redactar recordatorios para compartir
+  solo cuando la persona decida enviarlos.
+- **Idea 9 — Modo independiente.** Diferenciar cobrado, pendiente y estimado;
+  fechas previstas y vencidas, reservas configurables y un escenario conservador
+  elegido por la persona para meses de ingresos variables. Sin cálculo tributario
+  automático en el alcance inicial.
+- **Idea 14 — Bolsillo de viaje.** Presupuesto etiquetado, moneda local y base,
+  gasto diario y restante. Integrar gastos compartidos cuando se habiliten;
+  tasas con fecha, comisiones conocidas y posterior ajuste al cargo real.
+
+**Criterios de terminado:**
+
+- Una devolución reduce lo pendiente sin inventar ingresos ni duplicar el gasto;
+  las divisiones conservan el total, incluido el residuo de redondeo.
+- Dinero por cobrar nunca aparece como efectivo disponible. Retrasar un cobro
+  modifica la proyección, no el saldo real.
+- Un viaje usa los mismos movimientos del libro principal, no una copia;
+  conversiones y diferencias contra el cargo final son trazables.
+- Cada módulo se puede omitir; no exige permisos, contactos ni servicios externos
+  que no sean necesarios para la función elegida.
+
+### 15. Continuidad entre dispositivos
+
+**Estado:** construida en 3beda3c, build 11. El diseño, el modelo de amenazas y
+las dos revisiones de seguridad están en [`SYNC.md`](SYNC.md); falta probarla
+entre dispositivos reales.
+
+**Objetivo:** desarrollar la sincronización cifrada ya prevista, sin perder el
+principio de datos locales ni convertirla en requisito para usar la app.
+
+**Dependencias:** esquema estable, identificadores consistentes, migraciones y
+exportación/restauración probadas. Puede investigarse en paralelo al producto,
+pero requiere diseño y revisión de seguridad antes de implementarse.
+
+- Diseñar identidad, vinculación de dispositivos, gestión de claves y recuperación;
+  explicar qué ocurre si se pierde un dispositivo o la clave de recuperación.
+- Sincronización opcional con cifrado de extremo a extremo; documentar qué
+  metadatos quedan fuera del cifrado y cómo se minimizan.
+- Resolver conflictos, ediciones simultáneas, duplicados y eliminaciones sin
+  resucitar datos borrados ni perder cambios silenciosamente.
+- Revocar dispositivos y definir eliminación de copias remotas, retención y
+  límites de recuperación. La copia local sigue funcionando sin red.
+
+**Criterios de terminado:** dos dispositivos convergen después de editar sin
+conexión; pruebas de conflictos, restauración, revocación y borrado pasan;
+revisión de seguridad completada y ninguna clave secreta expuesta al servidor.
+No confundir sincronización con copia de seguridad: documentar ambas garantías.
+
+## Trazabilidad de las 15 ideas
+
+Los números conservan la referencia del [registro de ideación](IDEAS_PRODUCTO.md).
+Todas están construidas, en la fase que indica la tabla.
+
+| Idea | Entrega prevista | Fase |
+|---|---|---|
+| 1 | ¿Me lo puedo comprar? | 11 |
+| 2 | Calendario de días apretados | 11 |
+| 3 | Me llegó la quincena / sobres virtuales | 12 |
+| 4 | Simulador ¿y si…? | 12 |
+| 5 | Cierre en tres tarjetas | 11 |
+| 6 | Suscripciones con memoria | 13 |
+| 7 | Compras a cuotas | 13 |
+| 8 | Dinero por cobrar y gastos compartidos | 14 |
+| 9 | Modo independiente | 14 |
+| 10 | Colchón en días | 12 |
+| 11 | Trazabilidad de cifras | 10 |
+| 12 | Detective de cargos | 13 |
+| 13 | Lista de deseos | 12 |
+| 14 | Bolsillo de viaje | 14 |
+| 15 | Reglas de captura visibles | 10 |
+
+## Reglas de ejecución y validación
+
+- Antes de cada fase, acordar alcance y responsable; evitar ediciones
+  simultáneas sobre los mismos archivos.
+- Desglosar la fase en cambios pequeños: modelo/migración, cálculo, interfaz,
+  herramientas del agente, localización, pruebas y documentación.
+- Validar primero con datos ficticios y prototipos. Las experiencias financieras
+  deben funcionar mediante controles normales, no solo conversación con Gemini.
+- Cada entrega necesita pruebas de cálculo, integración, accesibilidad y estados
+  vacío, error, sin conexión y permisos denegados según corresponda.
+- Mantener migraciones compatibles y exportación/restauración actualizadas con
+  cada dato nuevo. No guardar secretos ni movimientos reales en logs.
+- No ejecutar pagos, inversiones, cancelaciones o mensajes sin autorización;
+  ninguna de estas fases incorpora ejecución bancaria automática.
+- No usar culpa, rankings de riqueza, rachas punitivas ni promesas de predicción
+  exacta. Explicar alternativas, incertidumbre y supuestos.
+- Medir comprensión del disponible, capacidad de explicar un cálculo, tiempo
+  para revisar capturas, correcciones necesarias y utilidad durante dos
+  quincenas. No optimizar solo tiempo en pantalla ni recopilar datos financieros
+  para analítica sin consentimiento.
+- Establecer objetivos medibles después de obtener una línea base con usuarios;
+  registrar hallazgos y ajustar alcance antes de ampliar cada módulo.
+- Marcar una entrega como terminada solo con evidencia de pruebas y señalar
+  por separado su disponibilidad local, en beta y publicada por plataforma.
