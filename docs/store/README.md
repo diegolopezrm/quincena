@@ -243,9 +243,9 @@ only about the person's money, through tools, inside the app.
 > exchange end-to-end encrypted files that the person moves, with no
 > account or server.
 
-The App Review contact needs a phone number, which is not set yet: until
-it is, version 1.0 can't be submitted. Release is set to manual, so an
-approved version waits for someone to release it.
+Version 1.0 went to App Review on 2 October 2026 with build 12. The
+review contact is Diego López, +57 316 605 0934, admin@dlsoft.dev. Release
+is set to manual, so an approved version waits for someone to release it.
 
 ## Google Play
 
@@ -304,20 +304,29 @@ the 512 icon from `web/icons/Icon-512.png`, the feature graphics
 the six phone screenshots per language. Category Finance; contact
 admin@dlsoft.dev and the marketing site; no phone.
 
+1.0.0 (12) went to internal testing on 2 October 2026: a 19.5 MB download
+from a 92.6 MB bundle, with Play App Signing. The track has no testers
+yet; they go under Testing, Internal testing, Testers.
+
 ### Permission declarations
 
-**Background location** (`ACCESS_BACKGROUND_LOCATION`). Play asks for a
-justification and a short video.
+**Background location** (`ACCESS_BACKGROUND_LOCATION`). Play asks for the
+app's purpose, one feature that needs the location in the background, and
+a short video. Submitted on 2 October 2026:
 
-> Quincena records a person's payments from their bank's notifications.
-> Most of those notifications arrive while the app is closed, and many do
-> not name the shop ("Compra POS 4512"). With the person's consent, and
-> only at the moment a payment notification arrives, Quincena reads the
-> phone's location to suggest the shop nearby, so the payment is recorded
-> with its merchant and category. The option is off by default, the app
-> explains it before asking, and the person can turn it off at any time.
-> The coordinates stay on the device; to find the shop, only they are
-> sent to OpenStreetMap's Photon search.
+> **Purpose:** Quincena is a personal finance app that shows how much money
+> is left until the next payday. Payments are recorded by hand, from bank
+> statements, or automatically from the bank and wallet notifications the
+> person chooses to let it read. Records are kept on the phone, with no
+> account.
+>
+> **Feature:** Finding the shop of a payment. Payment notifications arrive
+> while Quincena is closed, and many do not name the shop ("Compra POS
+> 4512"). With "Use where the payment happened" turned on (off by
+> default), Quincena reads the location once when a payment notification
+> arrives and suggests the shop nearby. The prominent disclosure "Location
+> while Quincena is closed" comes before Android's prompt. The location
+> stays on the phone; only coordinates go to Photon (OpenStreetMap search).
 
 The video, `background-location.mp4` (51 seconds, recorded on an emulator
 with example data, captioned): Settings, Automatic capture, turning on

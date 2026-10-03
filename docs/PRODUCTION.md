@@ -1,8 +1,8 @@
 # Production
 
 Where Quincena's Firebase project stands before real people and real money
-go through it. Checked on 2 October 2026. Nothing here is published yet: the
-web demo deploys from `main`, and none of this has been merged.
+go through it. Checked on 2 October 2026, when version 1.0 went to App Review
+and to Google Play's internal testing. The web demo deploys from `main`.
 
 ## What is set up
 
@@ -27,8 +27,8 @@ account, with three apps: Android, Apple (iOS and macOS share the bundle ID
 - **API keys** only reach Firebase APIs, so none of them can call Gemini
   directly. The Apple key only answers the app's bundle ID, the web key only
   answers `diegolopezrm.github.io` and `localhost`, and the Android key only
-  answers the app's package signed with the debug certificate, which release
-  builds use until there is an upload key. GitHub flags all three as
+  answers the app's package signed with the debug certificate, the upload
+  key or Play's app signing key. GitHub flags all three as
   secrets; they ship in every build by design, and those alerts are closed
   as such.
 - **Logs**: prompts and answers are kept out of Cloud Logging by an exclusion
@@ -39,7 +39,8 @@ account, with three apps: Android, Apple (iOS and macOS share the bundle ID
   with 12.19.0, and the CocoaPods registry turns read-only in December 2026.
 - **Android release builds** are signed with an upload key described in
   `android/key.properties`, which stays out of the repository. Without that
-  file they fall back to the debug key, which Google Play refuses.
+  file they fall back to the debug key, which Google Play refuses. Play signs
+  what it delivers with its own app signing key.
 
 ## Which limits stop spending, and which only warn
 
@@ -180,13 +181,24 @@ Waiting on the owner:
       ```
 
    2. Create the app in Play Console and upload `flutter build appbundle` to
-      internal testing.
+      internal testing. Done on 2 October 2026 with 1.0.0 (12). Play's app
+      signing certificate has the SHA-1
+      `A1:D6:C8:B0:96:0A:75:A4:6E:88:FF:F7:EB:AC:C9:29:37:C9:0F:5F` and the
+      SHA-256
+      `D3:1F:CE:28:1F:4D:84:B5:54:13:C3:0E:A7:8F:EA:CB:24:CF:5C:6F:01:5D:59:68:A7:0F:4C:E9:19:5A:27:F0`.
    3. Link `quincena-dlsoft` under Protected with Play > Play Integrity API.
-      This needs a direct Owner of the project.
+      This needs a direct Owner of the project, and linking accepts the
+      Play Integrity API's terms of service for DL SOFT. Still to do. The
+      API is already on in the project, and App Check asks for tokens with
+      the project's number, so tokens may work before the link. Linking is
+      what Google documents for apps on Google Play.
    4. Add the SHA-256 of Play's app signing certificate to the Android app in
-      Firebase, and register Play Integrity in App Check.
+      Firebase, and register Play Integrity in App Check. Done: Firebase has
+      the SHA-1 and SHA-256 of both certificates, and App Check shows Play
+      Integrity registered.
    5. Add the SHA-1 of the upload and the Play signing certificates to the
-      Android API key, or release builds from Play will be refused.
+      Android API key, or release builds from Play will be refused. Done,
+      next to the debug certificate's.
 
    Builds that don't come from Google Play fail Play Integrity. They keep
    using the debug provider.
