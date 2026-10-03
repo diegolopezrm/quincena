@@ -140,7 +140,10 @@ void main() {
     expect(screen(tester), contains('Puedes gastar'));
     expect(screen(tester), contains('hasta el 15 de octubre'));
     expect(screen(tester), contains(r'$1.500.000'));
-    expect(screen(tester), contains('Aún no hay movimientos.'));
+    expect(
+      screen(tester),
+      contains('Aquí aparecerá tu plata entrando y saliendo.'),
+    );
 
     // A payment at the supermarket.
     await tester.tap(find.byTooltip('Agregar movimiento'));
@@ -229,7 +232,7 @@ void main() {
 
       await tester.tap(find.text('Confirmar'));
       await settle(tester);
-      expect(screen(tester), contains('Nada por revisar.'));
+      expect(screen(tester), contains('Todo al día.'));
 
       await tester.tap(find.byTooltip('Atrás'));
       await settle(tester);

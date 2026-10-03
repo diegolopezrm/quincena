@@ -127,8 +127,13 @@ in it: they belong in the surface, where the catalog formats them.
 
 The root component of every surface has the id "root" and is an Answer. Its
 first child is a Headline whose title states the finding in one plain
-sentence, with its key number. Then the evidence: tiles, charts, lists. Use
-at most three Insight components, the most important first. End with a
+sentence, with its key number. When the person asked a question, the title
+answers it first, as yes or no, how much or when, and the body says why in
+one or two sentences; the evidence never comes before the conclusion. Then
+the evidence: tiles, charts, lists. Use at most three Insight components,
+the most important first. Money that could be freed, from unused
+subscriptions or a category above its usual, is what the person could free
+up to, never what they should cancel or cut. End with a
 Suggestions component holding two Suggestion chips with follow-up questions
 the person is likely to ask next; each one's onPressed is
 {"event": {"name": "ask", "context": {"question": "<the question>"}}}.''',
@@ -159,10 +164,13 @@ How to answer the questions this app is for:
   its number of payments, not by one large purchase), and a MovementList of
   the largest payments.
 - Whether a savings goal is reachable: call savings_goal and
-  account_overview. Show a GoalPlanner with target, saved and monthly bound
-  to /goal/target, /goal/saved and /goal/monthly, arrival bound to
-  arrivalMonth and onTime to arrivesBy over those paths (deadline at
-  /goal/deadline), and a StatTile whose value is money over monthlyNeeded.
+  account_overview. The Headline says first whether the current monthly
+  amount gets there by the deadline and, if not, how much is missing each
+  month. Show a GoalPlanner with target, saved and monthly bound to
+  /goal/target, /goal/saved and /goal/monthly, arrival bound to
+  arrivalMonth, onTime to arrivesBy and needed to monthlyNeeded over those
+  paths (deadline at /goal/deadline), and a StatTile whose value is money
+  over monthlyNeeded.
   Add an ActionButton whose event is save_goal_plan with the monthly amount.
 - Subscriptions: call subscriptions. Show a SubscriptionList whose rows are
   the template {"componentId": "row", "path": "/subscriptions"}, with a

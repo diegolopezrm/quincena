@@ -347,6 +347,10 @@ class PortfolioPage extends StatefulWidget {
 class _PortfolioPageState extends State<PortfolioPage> {
   ChartRange _range = ChartRange.week;
 
+  /// Whether the chart draws what prices made (the default) or the value,
+  /// which also moves with every purchase and sale.
+  bool _performance = true;
+
   PortfolioController get _controller => widget.own.portfolio;
 
   @override
@@ -422,6 +426,9 @@ class _PortfolioPageState extends State<PortfolioPage> {
                       controller: _controller,
                       range: _range,
                       onRange: _pick,
+                      performance: _performance,
+                      onPerformance: (bool on) =>
+                          setState(() => _performance = on),
                     ),
                     const SizedBox(height: 24),
                     _Allocation(portfolio: p),
@@ -472,7 +479,9 @@ class _Hero extends StatelessWidget {
     final String status = controller.pricing && at == null
         ? l.portfolioPricing
         : controller.pricingFailed
-        ? l.portfolioPricingFailed
+        ? (at == null
+              ? l.portfolioPricingFailed
+              : l.portfolioPricingFailedAt(dayAndTime(at)))
         : at == null
         ? l.portfolioNeverPriced
         : l.portfolioPricedAt(timeOfDay(at));
@@ -604,12 +613,19 @@ class _ChartCard extends StatelessWidget {
     required this.controller,
     required this.range,
     required this.onRange,
+    required this.performance,
+    required this.onPerformance,
   });
 
   final Portfolio portfolio;
   final PortfolioController controller;
   final ChartRange range;
   final ValueChanged<ChartRange> onRange;
+
+  /// Draw what prices made on what was held, from zero, rather than the
+  /// value: a purchase lifts the value in one step, which reads as a rally.
+  final bool performance;
+  final ValueChanged<bool> onPerformance;
 
   String _short(AppLocalizations l, ChartRange r) => switch (r) {
     ChartRange.day => l.rangeDay,
@@ -632,22 +648,30 @@ class _ChartCard extends StatelessWidget {
     final List<ValuePoint>? points = controller.chart(range);
     // The last candle can be minutes old: the line ends at the value now,
     // when everything held has a price to count it with.
-    final List<double> values = <double>[
+    final List<double> worth = <double>[
       for (final ValuePoint v in points ?? const <ValuePoint>[])
         v.value.base.toDouble(),
       if (points != null && points.isNotEmpty && portfolio.unpriced.isEmpty)
         portfolio.value.base.toDouble(),
     ];
-    final double? first = values.isEmpty ? null : values.first;
+    final List<double> values = performance
+        ? <double>[
+            for (final ValuePoint v in points ?? const <ValuePoint>[])
+              v.gain.base.toDouble(),
+          ]
+        : worth;
+    final double? first = worth.isEmpty ? null : worth.first;
     // What prices made over the range on what was held, not what was
     // bought or sold in it.
     final Pair made = points == null || points.isEmpty
         ? Pair.zero
         : points.last.gain;
     final double moved = made.base.toDouble();
-    final double changed = values.isEmpty ? 0 : values.last - values.first;
+    final double changed = worth.isEmpty ? 0 : worth.last - worth.first;
     final bool flows =
-        first != null && (changed - moved).abs() > (first.abs() * 0.01 + 1);
+        !performance &&
+        first != null &&
+        (changed - moved).abs() > (first.abs() * 0.01 + 1);
     final Color color = changeColor(context, moved);
     return Block(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -672,24 +696,52 @@ class _ChartCard extends StatelessWidget {
               ),
             ),
           if (flows) Text(l.chartWithoutTrades, style: context.type.bodySmall),
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: SegmentedButton<bool>(
+              showSelectedIcon: false,
+              segments: <ButtonSegment<bool>>[
+                ButtonSegment<bool>(
+                  value: true,
+                  label: Text(l.chartPerformance),
+                ),
+                ButtonSegment<bool>(value: false, label: Text(l.chartValue)),
+              ],
+              selected: <bool>{performance},
+              onSelectionChanged: (Set<bool> s) => onPerformance(s.first),
+            ),
+          ),
           const SizedBox(height: 12),
           SizedBox(
             height: 168,
             child: values.length < 2
-                ? Center(
-                    child: controller.charting(range)
-                        ? const SizedBox.square(
-                            dimension: 22,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(l.chartEmpty, style: context.type.bodySmall),
-                  )
+                ? controller.charting(range)
+                      ? Semantics(
+                          liveRegion: true,
+                          label: l.chartLoading,
+                          child: const Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: <Widget>[
+                              Skeleton(height: 120, radius: 12),
+                              SizedBox(height: 8),
+                              Skeleton(height: 10, width: 120),
+                            ],
+                          ),
+                        )
+                      : Center(
+                          child: Text(
+                            l.chartEmpty,
+                            style: context.type.bodySmall,
+                          ),
+                        )
                 : Semantics(
                     label:
                         '${l.portfolioWorth} ${_long(l, range)}: '
                         '${percentText(first! > 0 ? moved / first : 0)}',
                     child: DrawIn(
-                      key: ValueKey<ChartRange>(range),
+                      key: ValueKey<(ChartRange, bool)>((range, performance)),
                       builder: (BuildContext context, double progress) =>
                           CustomPaint(
                             painter: LinePainter(
@@ -722,7 +774,10 @@ class _ChartCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Text(l.chartWithHoldings, style: context.type.bodySmall),
+          Text(
+            performance ? l.chartPerformanceNote : l.chartWithHoldings,
+            style: context.type.bodySmall,
+          ),
         ],
       ),
     );

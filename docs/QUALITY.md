@@ -26,7 +26,7 @@ Checked against each provider's published requirements on 2 October 2026.
 
 ## Automated checks
 
-`flutter test` runs 400 tests, the same that CI runs on every push,
+`flutter test` runs 406 tests, the same that CI runs on every push,
 with `dart format`, `flutter analyze --fatal-infos` and a check that the
 generated catalog is current.
 
@@ -71,6 +71,14 @@ generated catalog is current.
   are written one way. `test/statement_page_test.dart` follows an import
   from its summary (new, already there, without a category) to the
   movements left to categorize.
+- **Deciding before spending.** `test/decide_test.dart` checks that the
+  home lines up the days until payday with the lowest point first and the
+  pay marked as expected, that "¿Me alcanza para…?" opens the days ahead
+  with the price tried out, that a goal's slider says what is missing,
+  marks what it takes, stops on it and ticks once, that the ask bar turns
+  to questions the account can answer and holds still while the person
+  types, and that money lent from an account is owed to the person and
+  not counted as spending.
 - **Reporting an answer.** `test/report_test.dart` reports a Gemini
   answer from the conversation: the reason, the comment and the answer go
   to Firestore with App Check's token; the sheet stays open with an error

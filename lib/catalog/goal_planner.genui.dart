@@ -21,7 +21,9 @@ final CatalogItem goalPlannerCatalogItem = CatalogItem(
         '`arrivalMonth` function and `onTime` to the `arrivesBy` '
         'function over the same paths, and the answer recalculates on '
         'the device as the person drags, with no new message from '
-        'you.',
+        'you. Bind `needed` to the `monthlyNeeded` function over the '
+        'same paths and deadline: the slider marks the amount that '
+        'reaches the goal in time and stops on it.',
     properties: {
       'name': A2uiSchemas.stringReference(
         description: 'What the money is for, such as "Cartagena".',
@@ -63,6 +65,13 @@ final CatalogItem goalPlannerCatalogItem = CatalogItem(
       ),
       'step': A2uiSchemas.numberReference(
         description: 'How far one notch of the slider moves, in pesos.',
+      ),
+      'needed': A2uiSchemas.numberReference(
+        description:
+            'The monthly amount that reaches the goal by the deadline. '
+            'Bind it to the `monthlyNeeded` function over the same paths: '
+            'the slider marks it, stops on it when dragged near, and the '
+            'phone ticks as it is reached.',
       ),
     },
     required: [
@@ -115,6 +124,7 @@ final CatalogItem goalPlannerCatalogItem = CatalogItem(
         'deadlineLabel': GenUiBinding.string(data['deadlineLabel']),
         'min': GenUiBinding.number(data['min']),
         'step': GenUiBinding.number(data['step']),
+        'needed': GenUiBinding.number(data['needed']),
       },
       builder: (context, v) => GoalPlanner(
         name: v.string('name') ?? missing<String>('name', ''),
@@ -136,6 +146,7 @@ final CatalogItem goalPlannerCatalogItem = CatalogItem(
         ),
         min: v.number('min')?.toDouble() ?? 0,
         step: v.number('step')?.toDouble() ?? 10000,
+        needed: v.number('needed')?.toDouble(),
       ),
     );
   },

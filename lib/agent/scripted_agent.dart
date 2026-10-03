@@ -6,6 +6,7 @@ import '../data/clock.dart';
 import '../data/ledger.dart';
 import '../format/dates.dart';
 import '../format/money.dart';
+import '../functions/money_functions.dart' show monthlyNeeded;
 import '../l10n/l10n.dart';
 import 'understand.dart';
 
@@ -332,6 +333,14 @@ class ScriptedAgent {
       'el ${dayMonth(goal.deadline)}',
       dayMonth(goal.deadline),
     );
+    // The answer to the question comes first: whether the current pace
+    // gets there, and what is missing each month if it does not.
+    final int needed = monthlyNeeded(
+      goal.target.toDouble(),
+      goal.saved.toDouble(),
+      deadline,
+    ).round();
+    final int gap = needed - goal.monthly;
 
     Map<String, Object?> goalArgs([bool withDeadline = false]) => {
       'target': _path('/goal/target'),
@@ -347,18 +356,32 @@ class ScriptedAgent {
         }),
         _c('head', 'Headline', {
           'kicker': _t('Tu meta', 'Your goal'),
-          'title': _t(
-            'A este ritmo llegas después del viaje',
-            'At this pace you get there after the trip',
-          ),
-          'body': _t(
-            'Llevas ${pesos(goal.saved)} de ${pesos(goal.target)}. Con '
-                '${pesos(goal.monthly)} al mes no alcanzas para $deadlineLabel. '
-                'Mueve el control para ver cuánto necesitas.',
-            'You have ${pesos(goal.saved)} of ${pesos(goal.target)}. At '
-                '${pesos(goal.monthly)} a month you will not make it by $deadlineLabel. '
-                'Move the slider to see what it takes.',
-          ),
+          'title': gap > 0
+              ? _t(
+                  'No con lo que apartas hoy',
+                  'Not with what you put aside now',
+                )
+              : _t(
+                  'Sí, con lo que apartas llegas',
+                  'Yes, at this pace you get there',
+                ),
+          'body': gap > 0
+              ? _t(
+                  'Te faltan ${pesos(gap)} al mes para llegar $deadlineLabel: '
+                      'necesitas ${pesos(needed)} y hoy apartas '
+                      '${pesos(goal.monthly)}. Mueve el control para ver '
+                      'cuándo llegas.',
+                  'You are ${pesos(gap)} a month short of $deadlineLabel: it '
+                      'takes ${pesos(needed)} and you put aside '
+                      '${pesos(goal.monthly)}. Move the slider to see when '
+                      'you get there.',
+                )
+              : _t(
+                  'Con ${pesos(goal.monthly)} al mes llegas antes de '
+                      '$deadlineLabel.',
+                  'At ${pesos(goal.monthly)} a month you get there before '
+                      '$deadlineLabel.',
+                ),
         }),
         _c('planner', 'GoalPlanner', {
           'name': goal.name,
@@ -371,6 +394,11 @@ class ScriptedAgent {
           'arrival': _call('arrivalMonth', goalArgs()),
           'onTime': _call('arrivesBy', goalArgs(true)),
           'deadlineLabel': dayMonth(goal.deadline),
+          'needed': _call('monthlyNeeded', {
+            'target': _path('/goal/target'),
+            'saved': _path('/goal/saved'),
+            'deadline': _path('/goal/deadline'),
+          }),
         }),
         _c('tiles', 'Tiles', {
           'children': ['need', 'free'],
@@ -391,8 +419,8 @@ class ScriptedAgent {
         }),
         _c('free', 'StatTile', {
           'label': _t(
-            'Libre hasta el ${ledger.nextPayday.day}',
-            'Free until the ${_ordinal(ledger.nextPayday.day)}',
+            'Puedes gastar hasta el ${ledger.nextPayday.day}',
+            'You can spend until the ${_ordinal(ledger.nextPayday.day)}',
           ),
           'value': _call('money', {'amount': _path('/free')}),
           'caption': _t(
@@ -402,17 +430,17 @@ class ScriptedAgent {
         }),
         _c('room', 'Insight', {
           'tone': 'good',
+          // What could be freed, never what the person should cut: the
+          // choice is theirs.
           'title': _t(
-            'Hay de dónde sacar ${pesos(stale + restaurantsBack)}',
-            'There is ${pesos(stale + restaurantsBack)} to find',
+            'Podrías liberar hasta ${pesos(stale + restaurantsBack)}',
+            'You could free up to ${pesos(stale + restaurantsBack)}',
           ),
           'body': _t(
-            'Dos suscripciones llevan más de un mes sin uso '
-                '(${pesos(stale)}), y si restaurantes vuelve a lo de agosto son '
-                '${pesos(restaurantsBack)} más.',
-            'Two subscriptions have gone unused for over a month '
-                '(${pesos(stale)}), and eating out back at August\'s level is '
-                '${pesos(restaurantsBack)} more.',
+            '${pesos(stale)} de dos suscripciones sin uso hace más de un mes.\n'
+                '${pesos(restaurantsBack)} si restaurantes vuelve a lo de agosto.',
+            '${pesos(stale)} from two subscriptions unused for over a month.\n'
+                '${pesos(restaurantsBack)} if eating out goes back to August.',
           ),
           'actionLabel': _t('Revisar suscripciones', 'Review subscriptions'),
           'onAction': _event('ask', {'question': _questions[2]}),

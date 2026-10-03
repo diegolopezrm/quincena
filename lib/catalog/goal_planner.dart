@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:genui/genui.dart';
 import 'package:genui_gen/genui_gen.dart';
 
@@ -19,7 +20,9 @@ part 'goal_planner.genui.dart';
       'there as it moves. Bind `arrival` to the `arrivalMonth` function and '
       '`onTime` to the `arrivesBy` function over the same paths, and the '
       'answer recalculates on the device as the person drags, with no new '
-      'message from you.',
+      'message from you. Bind `needed` to the `monthlyNeeded` function over '
+      'the same paths and deadline: the slider marks the amount that '
+      'reaches the goal in time and stops on it.',
 )
 class GoalPlanner extends StatelessWidget {
   const GoalPlanner({
@@ -35,6 +38,7 @@ class GoalPlanner extends StatelessWidget {
     @GenUiWrites('monthly') this.onMonthlyChanged,
     this.min = 0,
     this.step = 10000,
+    this.needed,
   });
 
   /// What the money is for, such as "Cartagena".
@@ -74,6 +78,39 @@ class GoalPlanner extends StatelessWidget {
   /// Called with the new monthly amount as the slider moves.
   final ValueChanged<double>? onMonthlyChanged;
 
+  /// The monthly amount that reaches the goal by the deadline. Bind it to
+  /// the `monthlyNeeded` function over the same paths: the slider marks
+  /// it, stops on it when dragged near, and the phone ticks as it is
+  /// reached.
+  final double? needed;
+
+  /// Where the slider lands for [value]: on a notch, or on [needed] when it
+  /// is within a notch and a half of it.
+  double _landing(double value, double lo, double hi) {
+    final double notch = (value / step).round() * step;
+    final double? need = needed;
+    if (need != null &&
+        need > lo &&
+        need < hi &&
+        (notch - need).abs() <= step * 1.5) {
+      return need;
+    }
+    return notch;
+  }
+
+  void _move(double value, double lo, double hi) {
+    final double next = _landing(value, lo, hi);
+    final double? need = needed;
+    // A light tick as the amount that reaches the goal is reached, either
+    // way across it.
+    if (need != null &&
+        next != monthly &&
+        (next == need || (monthly < need) != (next < need))) {
+      HapticFeedback.selectionClick();
+    }
+    onMonthlyChanged!(next);
+  }
+
   @override
   Widget build(BuildContext context) {
     final double progress = target <= 0 ? 0 : (saved / target).clamp(0, 1);
@@ -112,9 +149,10 @@ class GoalPlanner extends StatelessWidget {
                   children: <Widget>[
                     Text(name, style: context.type.titleLarge),
                     Figures(
-                      englishFormatting
-                          ? '${pesos(saved)} of ${pesos(target)}'
-                          : '${pesos(saved)} de ${pesos(target)}',
+                      target - saved <= 0
+                          ? context.l10n.goalReached
+                          : '${context.l10n.goalSoFar(pesos(saved))} · '
+                                '${context.l10n.goalMissing(pesos(target - saved))}',
                       style: context.type.bodySmall,
                     ),
                   ],
@@ -175,11 +213,12 @@ class GoalPlanner extends StatelessWidget {
                     context.l10n.perMonth(pesos(value)),
                 onChanged: onMonthlyChanged == null
                     ? null
-                    : (double value) =>
-                          onMonthlyChanged!((value / step).round() * step),
+                    : (double value) => _move(value, lo, hi),
               ),
             ),
           ),
+          if (needed case final double need when need > lo && need < hi)
+            _NeedMark(fraction: (need - lo) / (hi - lo), amount: need),
           const SizedBox(height: 10),
           Padding(
             padding: EdgeInsets.zero,
@@ -243,6 +282,54 @@ class GoalPlanner extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Where on the slider the goal is reached in time, and how much that is.
+class _NeedMark extends StatelessWidget {
+  const _NeedMark({required this.fraction, required this.amount});
+
+  /// How far along the track the amount sits, from 0 to 1.
+  final double fraction;
+  final double amount;
+
+  @override
+  Widget build(BuildContext context) {
+    const double width = 140;
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints box) {
+        final double x = fraction * box.maxWidth;
+        return SizedBox(
+          height: 30,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: <Widget>[
+              Positioned(
+                left: x - 1,
+                top: 2,
+                child: Container(
+                  width: 2,
+                  height: 8,
+                  color: context.colors.brand,
+                ),
+              ),
+              Positioned(
+                left: (x - width / 2).clamp(0, box.maxWidth - width),
+                top: 10,
+                width: width,
+                child: Figures(
+                  context.l10n.goalNeedMark(pesos(amount)),
+                  textAlign: TextAlign.center,
+                  style: context.type.bodySmall?.copyWith(
+                    color: context.colors.brand,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

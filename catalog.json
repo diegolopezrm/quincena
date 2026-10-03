@@ -353,6 +353,10 @@
             "step": {
               "description": "How far one notch of the slider moves, in pesos.",
               "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicNumber"
+            },
+            "needed": {
+              "description": "The monthly amount that reaches the goal by the deadline. Bind it to the `monthlyNeeded` function over the same paths: the slider marks it, stops on it when dragged near, and the phone ticks as it is reached.",
+              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicNumber"
             }
           },
           "required": [

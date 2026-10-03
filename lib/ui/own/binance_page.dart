@@ -71,6 +71,36 @@ class BinanceCard extends StatelessWidget {
                           style: context.type.titleSmall,
                         ),
                         Text(body, style: context.type.bodySmall),
+                        // What the key can and cannot do, before anyone is
+                        // asked for one.
+                        if (!link.connected) ...<Widget>[
+                          const SizedBox(height: 8),
+                          for (final String promise in <String>[
+                            l.binancePromiseRead,
+                            l.binancePromiseNoWithdraw,
+                            l.binancePromiseNoTrade,
+                            l.binancePromiseDisconnect,
+                          ])
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Row(
+                                children: <Widget>[
+                                  Icon(
+                                    Glyph.check,
+                                    size: 14,
+                                    color: context.colors.brand,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      promise,
+                                      style: context.type.bodySmall,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
                       ],
                     ),
                   ),

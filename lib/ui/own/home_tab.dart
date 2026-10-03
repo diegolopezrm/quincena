@@ -1,3 +1,5 @@
+import 'package:decimal/decimal.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/ledger.dart';
@@ -9,6 +11,7 @@ import '../../format/dates.dart';
 import '../../format/money.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
+import '../../money/money.dart';
 import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
@@ -20,6 +23,7 @@ import 'coming_days_page.dart';
 import 'envelopes_page.dart';
 import 'free_explained.dart';
 import 'inbox_page.dart';
+import 'amount_input.dart';
 import 'look.dart';
 import 'movement_list.dart';
 
@@ -87,7 +91,9 @@ class OwnHomeTab extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 24),
-        _ComingCard(own: own, ledger: ledger),
+        _ComingDays(own: own, ledger: ledger),
+        const SizedBox(height: 12),
+        _CanIBuy(own: own, ledger: ledger),
         if (missing.isNotEmpty) ...<Widget>[
           const SizedBox(height: 12),
           _Notice(
@@ -318,14 +324,18 @@ class _MovementsTabState extends State<MovementsTab> {
   }
 }
 
-/// What comes until payday: the lowest point, a tight day if there is one,
-/// and the ways to look closer or try a purchase. In the week after a
-/// payday, the close of the period that ended.
-class _ComingCard extends StatelessWidget {
-  const _ComingCard({required this.own, required this.ledger});
+/// What comes until payday, as a line of days: what there is today, each
+/// charge on its day, and the pay, with the lowest point said first. In
+/// the week after a payday, the close of the period that ended.
+class _ComingDays extends StatelessWidget {
+  const _ComingDays({required this.own, required this.ledger});
 
   final OwnController own;
   final Ledger ledger;
+
+  /// How many of the coming charges the card shows before pointing to the
+  /// rest.
+  static const int _shown = 5;
 
   void _open(BuildContext context, Widget page) => Navigator.of(
     context,
@@ -338,20 +348,35 @@ class _ComingCard extends StatelessWidget {
     if (projection == null) return const SizedBox.shrink();
     final ProjectedDay low = projection.lowestBeforePayday;
     final ProjectedDay? tight = projection.firstTight;
+    final DateTime payday = projection.nextPayday;
     final PeriodClose? close = closePeriod(ledger);
     final bool closeFresh =
         close != null && ledger.today.difference(close.end).inDays <= 7;
+    final List<ProjectedEvent> events = <ProjectedEvent>[
+      for (final ProjectedDay d in projection.days)
+        if (!d.date.isAfter(payday))
+          for (final ProjectedEvent e in d.events)
+            if (e.kind != ProjectedKind.tryOut) e,
+    ];
+    final bool fortnight = ledger.schedule is TwiceMonthly;
+    String label(ProjectedEvent e) => switch (e.kind) {
+      ProjectedKind.pay => fortnight ? l.timelineFortnight : l.comingPay,
+      ProjectedKind.latePay => l.comingLatePay,
+      _ => e.label.isEmpty ? l.timelineCharge : e.label,
+    };
+    String amount(int minor) =>
+        '${minor > 0 ? '+' : ''}${pesos(ledger.major(minor))}';
     return Block(
       padding: const EdgeInsets.fromLTRB(18, 14, 14, 8),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Text(l.homeComing, style: context.type.titleSmall),
           const SizedBox(height: 4),
           Text(
-            l.comingLowest(
+            l.comingLowestLine(
               pesos(ledger.major(low.sure)),
-              dayShortMonth(low.date),
+              dayMonth(low.date),
             ),
             style: context.type.bodyMedium,
           ),
@@ -362,16 +387,35 @@ class _ComingCard extends StatelessWidget {
                 color: context.colors.caution,
               ),
             ),
+          const SizedBox(height: 10),
+          _TimelineRow(
+            when: l.timelineToday,
+            what: l.timelineAvailable,
+            amount: pesos(ledger.major(projection.start)),
+            strong: true,
+          ),
+          for (final ProjectedEvent e in events.take(_shown))
+            _TimelineRow(
+              when: dayShortMonth(e.date),
+              what: label(e),
+              amount: amount(e.amount),
+              note: e.certainty == Certainty.expected
+                  ? l.timelineExpected
+                  : null,
+              income: e.amount > 0,
+            ),
+          if (events.length > _shown)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                l.timelineMore(events.length - _shown),
+                style: context.type.bodySmall,
+              ),
+            ),
           const SizedBox(height: 6),
           Wrap(
             spacing: 8,
             children: <Widget>[
-              TextButton.icon(
-                onPressed: () =>
-                    _open(context, ComingDaysPage(own: own, tryPurchase: true)),
-                icon: const Icon(Glyph.shoppingBag, size: 18),
-                label: Text(l.buyTitle),
-              ),
               TextButton.icon(
                 onPressed: () => _open(context, ComingDaysPage(own: own)),
                 icon: const Icon(Glyph.calendarBlank, size: 18),
@@ -383,6 +427,145 @@ class _ComingCard extends StatelessWidget {
                   icon: const Icon(Glyph.receipt, size: 18),
                   label: Text(l.closeTitle),
                 ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One day on the line: when, what, and how much, with expected money
+/// marked as such.
+class _TimelineRow extends StatelessWidget {
+  const _TimelineRow({
+    required this.when,
+    required this.what,
+    required this.amount,
+    this.note,
+    this.strong = false,
+    this.income = false,
+  });
+
+  final String when;
+  final String what;
+  final String amount;
+  final String? note;
+  final bool strong;
+  final bool income;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextStyle? style = strong
+        ? context.type.titleSmall
+        : context.type.bodyMedium;
+    return MergeSemantics(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            SizedBox(
+              width: 64,
+              child: Text(when, style: context.type.bodySmall),
+            ),
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  text: what,
+                  children: <InlineSpan>[
+                    if (note case final String n)
+                      TextSpan(text: ' · $n', style: context.type.bodySmall),
+                  ],
+                ),
+                style: style,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Figures(
+              amount,
+              style: style?.copyWith(
+                color: income ? context.colors.positive : null,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// "Can I afford it?" with the price at hand: typed here, it opens the
+/// coming days with the purchase tried out.
+class _CanIBuy extends StatefulWidget {
+  const _CanIBuy({required this.own, required this.ledger});
+
+  final OwnController own;
+  final Ledger ledger;
+
+  @override
+  State<_CanIBuy> createState() => _CanIBuyState();
+}
+
+class _CanIBuyState extends State<_CanIBuy> {
+  final TextEditingController _price = TextEditingController();
+
+  @override
+  void dispose() {
+    _price.dispose();
+    super.dispose();
+  }
+
+  void _check() {
+    final Decimal? typed = parseAmount(_price.text);
+    final int? price = typed == null || typed <= Decimal.zero
+        ? null
+        : widget.ledger.minor(typed.toDouble());
+    FocusScope.of(context).unfocus();
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) =>
+            ComingDaysPage(own: widget.own, tryPurchase: true, price: price),
+      ),
+    );
+    _price.clear();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    return Block(
+      padding: const EdgeInsets.fromLTRB(18, 14, 14, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(l.buyAsk, style: context.type.titleSmall),
+          Text(l.buyAskBody, style: context.type.bodySmall),
+          const SizedBox(height: 10),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: TextField(
+                  controller: _price,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  inputFormatters: <TextInputFormatter>[
+                    AmountInputFormatter(
+                      maxDecimals: widget.ledger.currency.decimals,
+                    ),
+                  ],
+                  textInputAction: TextInputAction.go,
+                  onSubmitted: (_) => _check(),
+                  decoration: InputDecoration(
+                    hintText: l.buyAskHint,
+                    prefixText: r'$',
+                    isDense: true,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              FilledButton(onPressed: _check, child: Text(l.buyAskGo)),
             ],
           ),
         ],

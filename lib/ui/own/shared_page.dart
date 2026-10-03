@@ -16,6 +16,7 @@ import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
 import 'amount_input.dart';
+import 'loan_sheet.dart';
 import 'look.dart';
 import 'split_sheet.dart';
 
@@ -71,6 +72,25 @@ class SharedPage extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
               children: <Widget>[
                 Text(l.sharedBody, style: context.type.bodyMedium),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: <Widget>[
+                    OutlinedButton.icon(
+                      onPressed: () =>
+                          showLoanSheet(context, own: own, lent: true),
+                      icon: const Icon(Glyph.arrowUp, size: 18),
+                      label: Text(l.loanLentAction),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () =>
+                          showLoanSheet(context, own: own, lent: false),
+                      icon: const Icon(Glyph.arrowDown, size: 18),
+                      label: Text(l.loanBorrowedAction),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 16),
                 if (groups.isEmpty)
                   Block(

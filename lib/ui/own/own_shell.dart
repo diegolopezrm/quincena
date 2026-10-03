@@ -154,10 +154,11 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
             icon: const Icon(Glyph.plus),
             label: Text(l.goalAdd),
           )
-        : FloatingActionButton(
+        : FloatingActionButton.extended(
             tooltip: l.addMovement,
             onPressed: () => showEntrySheet(context, own: own),
-            child: const Icon(Glyph.plus),
+            icon: const Icon(Glyph.plus),
+            label: Text(l.fabMovement),
           );
     return Scaffold(
       appBar: AppBar(

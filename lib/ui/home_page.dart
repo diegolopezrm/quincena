@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:genui_gen/inspector.dart';
 
+import '../agent/scripted_agent.dart';
 import '../app.dart';
 import '../l10n/l10n.dart';
 import '../session/recordings.dart';
@@ -174,6 +175,9 @@ class _HomePageState extends State<HomePage> {
                         child: AskBar(
                           onAsk: _session.ask,
                           enabled: !_session.busy,
+                          examples: ScriptedAgent.startersFor(
+                            _session.language,
+                          ),
                         ),
                       ),
                     ),

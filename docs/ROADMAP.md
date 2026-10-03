@@ -483,6 +483,10 @@ el patrimonio cuadran en "¿De dónde sale?".
 
 ### 17. Decidir antes de gastar
 
+**Estado:** construida, build 15 (1.1.0). Queda abierto: la plata que alguien
+te presta y llega a una de tus cuentas no tiene todavía cómo registrarse sin
+contar como ingreso; "Me prestaron" anota la deuda.
+
 **Objetivo:** que Inicio sea un resumen del día y que las respuestas
 empiecen por la conclusión.
 

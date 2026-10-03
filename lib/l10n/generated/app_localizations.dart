@@ -245,7 +245,7 @@ abstract class AppLocalizations {
   /// No description provided for @ownAskFree.
   ///
   /// In es, this message translates to:
-  /// **'¿Cuánto me queda libre hasta el pago?'**
+  /// **'¿Cuánto puedo gastar antes de que me paguen?'**
   String get ownAskFree;
 
   /// No description provided for @ownAskMonth.
@@ -1043,7 +1043,7 @@ abstract class AppLocalizations {
   /// No description provided for @noAccounts.
   ///
   /// In es, this message translates to:
-  /// **'Aún no tienes cuentas.'**
+  /// **'Aún no tienes cuentas. Agrega la de tu banco, tu billetera o el efectivo con «Agregar cuenta».'**
   String get noAccounts;
 
   /// No description provided for @yourAccounts.
@@ -1271,13 +1271,13 @@ abstract class AppLocalizations {
   /// No description provided for @noMovements.
   ///
   /// In es, this message translates to:
-  /// **'Aún no hay movimientos.'**
+  /// **'Aquí aparecerá tu plata entrando y saliendo.'**
   String get noMovements;
 
   /// No description provided for @noMovementsBody.
   ///
   /// In es, this message translates to:
-  /// **'Registra un gasto, un ingreso o una transferencia con el botón +.'**
+  /// **'Registra un gasto, un ingreso o una transferencia con «Movimiento».'**
   String get noMovementsBody;
 
   /// No description provided for @noResults.
@@ -1973,7 +1973,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeComing.
   ///
   /// In es, this message translates to:
-  /// **'Lo que viene'**
+  /// **'Próximos días'**
   String get homeComing;
 
   /// No description provided for @homeSeeDays.
@@ -2933,13 +2933,13 @@ abstract class AppLocalizations {
   /// No description provided for @inboxEmpty.
   ///
   /// In es, this message translates to:
-  /// **'Nada por revisar.'**
+  /// **'Todo al día.'**
   String get inboxEmpty;
 
   /// No description provided for @inboxEmptyBody.
   ///
   /// In es, this message translates to:
-  /// **'Cuando llegue un pago de tu banco, aparece aquí para confirmarlo.'**
+  /// **'No tienes movimientos pendientes. Cuando llegue un pago de tu banco, aparece aquí para confirmarlo.'**
   String get inboxEmptyBody;
 
   /// No description provided for @confirm.
@@ -3563,19 +3563,19 @@ abstract class AppLocalizations {
   /// No description provided for @portfolioToday.
   ///
   /// In es, this message translates to:
-  /// **'Últimas 24 h'**
+  /// **'En 24 horas'**
   String get portfolioToday;
 
   /// No description provided for @portfolioGain.
   ///
   /// In es, this message translates to:
-  /// **'Ganancia'**
+  /// **'Ganancia total'**
   String get portfolioGain;
 
   /// No description provided for @portfolioLoss.
   ///
   /// In es, this message translates to:
-  /// **'Pérdida'**
+  /// **'Pérdida total'**
   String get portfolioLoss;
 
   /// No description provided for @portfolioSinceBought.
@@ -3665,7 +3665,7 @@ abstract class AppLocalizations {
   /// No description provided for @chartWithHoldings.
   ///
   /// In es, this message translates to:
-  /// **'Con lo que tenías en cada momento.'**
+  /// **'El valor con lo que tenías en cada momento: una compra lo sube de golpe.'**
   String get chartWithHoldings;
 
   /// No description provided for @portfolioAllocation.
@@ -3725,7 +3725,7 @@ abstract class AppLocalizations {
   /// No description provided for @portfolioEmpty.
   ///
   /// In es, this message translates to:
-  /// **'Aún no tienes cripto. Agrega una cuenta con bitcoin, tether o la moneda que tengas.'**
+  /// **'Aún no tienes cripto. Agrega una billetera o conecta Binance.'**
   String get portfolioEmpty;
 
   /// No description provided for @holdingQuantity.
@@ -3881,7 +3881,7 @@ abstract class AppLocalizations {
   /// No description provided for @binanceCardBody.
   ///
   /// In es, this message translates to:
-  /// **'Trae tus saldos, compras P2P y conversiones solos, con una llave que solo puede leer.'**
+  /// **'Quincena solo podrá consultar tu cuenta: nunca podrá mover tus fondos.'**
   String get binanceCardBody;
 
   /// No description provided for @binanceConnectTitle.
@@ -7116,6 +7116,282 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'© 2026 DL SOFT TECHNOLOGIES SAS. Los comercios cercanos vienen de © colaboradores de OpenStreetMap (ODbL).'**
   String get licensesLegalese;
+
+  /// No description provided for @comingLowestLine.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu punto más bajo será {amount} el {date}.'**
+  String comingLowestLine(String amount, String date);
+
+  /// No description provided for @timelineToday.
+  ///
+  /// In es, this message translates to:
+  /// **'Hoy'**
+  String get timelineToday;
+
+  /// No description provided for @timelineFortnight.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu quincena'**
+  String get timelineFortnight;
+
+  /// No description provided for @timelineCharge.
+  ///
+  /// In es, this message translates to:
+  /// **'Un cobro programado'**
+  String get timelineCharge;
+
+  /// No description provided for @timelineExpected.
+  ///
+  /// In es, this message translates to:
+  /// **'esperado'**
+  String get timelineExpected;
+
+  /// No description provided for @timelineMore.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Y un día más hasta el pago.} other{Y {count} más hasta el pago.}}'**
+  String timelineMore(int count);
+
+  /// No description provided for @buyAsk.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Me alcanza para…?'**
+  String get buyAsk;
+
+  /// No description provided for @buyAskBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe el precio y te digo si te alcanza sin tocar lo comprometido.'**
+  String get buyAskBody;
+
+  /// No description provided for @buyAskHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Precio'**
+  String get buyAskHint;
+
+  /// No description provided for @buyAskGo.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver'**
+  String get buyAskGo;
+
+  /// No description provided for @fabMovement.
+  ///
+  /// In es, this message translates to:
+  /// **'Movimiento'**
+  String get fabMovement;
+
+  /// No description provided for @timelineAvailable.
+  ///
+  /// In es, this message translates to:
+  /// **'Disponible'**
+  String get timelineAvailable;
+
+  /// No description provided for @goalSoFar.
+  ///
+  /// In es, this message translates to:
+  /// **'Llevas {saved}'**
+  String goalSoFar(String saved);
+
+  /// No description provided for @goalMissing.
+  ///
+  /// In es, this message translates to:
+  /// **'faltan {missing}'**
+  String goalMissing(String missing);
+
+  /// No description provided for @goalReached.
+  ///
+  /// In es, this message translates to:
+  /// **'Meta cumplida'**
+  String get goalReached;
+
+  /// No description provided for @goalNeedMark.
+  ///
+  /// In es, this message translates to:
+  /// **'Necesitas {amount}'**
+  String goalNeedMark(String amount);
+
+  /// No description provided for @askExample.
+  ///
+  /// In es, this message translates to:
+  /// **'Por ejemplo: {question}'**
+  String askExample(String question);
+
+  /// No description provided for @askExampleBuy.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Me alcanza para unos audífonos de \$350.000?'**
+  String get askExampleBuy;
+
+  /// No description provided for @askExampleGoal.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Llego a mi meta de {name}?'**
+  String askExampleGoal(String name);
+
+  /// No description provided for @askExampleWeekend.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto puedo gastar este fin de semana?'**
+  String get askExampleWeekend;
+
+  /// No description provided for @askExampleCard.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto debo en la tarjeta?'**
+  String get askExampleCard;
+
+  /// No description provided for @askExampleCrypto.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cómo va mi cripto esta semana?'**
+  String get askExampleCrypto;
+
+  /// No description provided for @askExampleMost.
+  ///
+  /// In es, this message translates to:
+  /// **'¿En qué gasté más este mes?'**
+  String get askExampleMost;
+
+  /// No description provided for @chartPerformance.
+  ///
+  /// In es, this message translates to:
+  /// **'Rendimiento'**
+  String get chartPerformance;
+
+  /// No description provided for @chartValue.
+  ///
+  /// In es, this message translates to:
+  /// **'Valor'**
+  String get chartValue;
+
+  /// No description provided for @chartPerformanceNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo lo que movieron los precios: comprar o vender no cambia esta línea.'**
+  String get chartPerformanceNote;
+
+  /// No description provided for @binancePromiseRead.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo lectura'**
+  String get binancePromiseRead;
+
+  /// No description provided for @binancePromiseNoWithdraw.
+  ///
+  /// In es, this message translates to:
+  /// **'No permite retiros'**
+  String get binancePromiseNoWithdraw;
+
+  /// No description provided for @binancePromiseNoTrade.
+  ///
+  /// In es, this message translates to:
+  /// **'No permite órdenes de compra ni de venta'**
+  String get binancePromiseNoTrade;
+
+  /// No description provided for @binancePromiseDisconnect.
+  ///
+  /// In es, this message translates to:
+  /// **'La desconectas cuando quieras'**
+  String get binancePromiseDisconnect;
+
+  /// No description provided for @ratesFailedAt.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudieron actualizar. Se usan las del {when}.'**
+  String ratesFailedAt(String when);
+
+  /// No description provided for @portfolioPricingFailedAt.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudieron leer los precios. Se muestran los del {when}.'**
+  String portfolioPricingFailedAt(String when);
+
+  /// No description provided for @chartLoading.
+  ///
+  /// In es, this message translates to:
+  /// **'Actualizando la gráfica…'**
+  String get chartLoading;
+
+  /// No description provided for @loanLentAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Le presté'**
+  String get loanLentAction;
+
+  /// No description provided for @loanBorrowedAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Me prestaron'**
+  String get loanBorrowedAction;
+
+  /// No description provided for @loanLentTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Le presté plata a alguien'**
+  String get loanLentTitle;
+
+  /// No description provided for @loanBorrowedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Alguien me prestó plata'**
+  String get loanBorrowedTitle;
+
+  /// No description provided for @loanLentWho.
+  ///
+  /// In es, this message translates to:
+  /// **'¿A quién?'**
+  String get loanLentWho;
+
+  /// No description provided for @loanBorrowedWho.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Quién te prestó?'**
+  String get loanBorrowedWho;
+
+  /// No description provided for @loanWhat.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Para qué? (opcional)'**
+  String get loanWhat;
+
+  /// No description provided for @loanLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Préstamo'**
+  String get loanLabel;
+
+  /// No description provided for @loanFromAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'¿De qué cuenta salió?'**
+  String get loanFromAccount;
+
+  /// No description provided for @loanNoAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'No salió de mis cuentas'**
+  String get loanNoAccount;
+
+  /// No description provided for @loanLentNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Queda como plata que te deben, no como gasto. Cuando te la devuelvan, regístralo en el grupo.'**
+  String get loanLentNote;
+
+  /// No description provided for @loanBorrowedNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Queda como plata que debes. Cuando la pagues, regístralo en el grupo.'**
+  String get loanBorrowedNote;
+
+  /// No description provided for @loanIncomplete.
+  ///
+  /// In es, this message translates to:
+  /// **'Falta a quién o el monto.'**
+  String get loanIncomplete;
 }
 
 class _AppLocalizationsDelegate

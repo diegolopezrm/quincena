@@ -110,3 +110,56 @@ class Block extends StatelessWidget {
     child: child,
   );
 }
+
+/// Where something is still loading: a soft shape that breathes, in the
+/// place the content will take, instead of a spinner in an empty space.
+/// With animations turned down it stays still.
+class Skeleton extends StatefulWidget {
+  const Skeleton({super.key, this.height = 12, this.width, this.radius = 8});
+
+  final double height;
+  final double? width;
+  final double radius;
+
+  @override
+  State<Skeleton> createState() => _SkeletonState();
+}
+
+class _SkeletonState extends State<Skeleton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _breath = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1200),
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _breath.stop();
+    } else if (!_breath.isAnimating) {
+      _breath.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _breath.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => ExcludeSemantics(
+    child: FadeTransition(
+      opacity: Tween<double>(begin: 0.45, end: 1).animate(_breath),
+      child: Container(
+        height: widget.height,
+        width: widget.width,
+        decoration: BoxDecoration(
+          color: context.colors.sunken,
+          borderRadius: BorderRadius.circular(widget.radius),
+        ),
+      ),
+    ),
+  );
+}

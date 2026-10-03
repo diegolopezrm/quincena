@@ -309,7 +309,7 @@ String ratesStatus(AppLocalizations l, OwnController own) {
   return own.refreshingRates
       ? l.ratesRefresh
       : own.ratesFailed
-      ? l.ratesFailed
+      ? (fetched == null ? l.ratesFailed : l.ratesFailedAt(dayAndTime(fetched)))
       : fetched == null
       ? l.ratesNever
       : l.ratesUpdated(dayAndTime(fetched));

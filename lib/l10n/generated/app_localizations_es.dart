@@ -90,7 +90,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get askYourMoneyLabel => 'Pregúntale a tu plata';
 
   @override
-  String get ownAskFree => '¿Cuánto me queda libre hasta el pago?';
+  String get ownAskFree => '¿Cuánto puedo gastar antes de que me paguen?';
 
   @override
   String get ownAskMonth => '¿En qué se me fue la plata este mes?';
@@ -585,7 +585,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get netWorth => 'Patrimonio';
 
   @override
-  String get noAccounts => 'Aún no tienes cuentas.';
+  String get noAccounts =>
+      'Aún no tienes cuentas. Agrega la de tu banco, tu billetera o el efectivo con «Agregar cuenta».';
 
   @override
   String get yourAccounts => 'Tus cuentas';
@@ -708,11 +709,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get searchMovements => 'Buscar movimientos';
 
   @override
-  String get noMovements => 'Aún no hay movimientos.';
+  String get noMovements => 'Aquí aparecerá tu plata entrando y saliendo.';
 
   @override
   String get noMovementsBody =>
-      'Registra un gasto, un ingreso o una transferencia con el botón +.';
+      'Registra un gasto, un ingreso o una transferencia con «Movimiento».';
 
   @override
   String get noResults => 'Nada coincide con la búsqueda.';
@@ -1209,7 +1210,7 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get homeComing => 'Lo que viene';
+  String get homeComing => 'Próximos días';
 
   @override
   String get homeSeeDays => 'Ver 30 días';
@@ -1822,11 +1823,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get inboxBannerBody => 'Llegaron de tus notificaciones y mensajes.';
 
   @override
-  String get inboxEmpty => 'Nada por revisar.';
+  String get inboxEmpty => 'Todo al día.';
 
   @override
   String get inboxEmptyBody =>
-      'Cuando llegue un pago de tu banco, aparece aquí para confirmarlo.';
+      'No tienes movimientos pendientes. Cuando llegue un pago de tu banco, aparece aquí para confirmarlo.';
 
   @override
   String get confirm => 'Confirmar';
@@ -2221,13 +2222,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get portfolioWorth => 'Tu cripto vale';
 
   @override
-  String get portfolioToday => 'Últimas 24 h';
+  String get portfolioToday => 'En 24 horas';
 
   @override
-  String get portfolioGain => 'Ganancia';
+  String get portfolioGain => 'Ganancia total';
 
   @override
-  String get portfolioLoss => 'Pérdida';
+  String get portfolioLoss => 'Pérdida total';
 
   @override
   String get portfolioSinceBought => 'frente a lo que pagaste';
@@ -2275,7 +2276,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chartEmpty => 'Aún no hay precios para dibujar.';
 
   @override
-  String get chartWithHoldings => 'Con lo que tenías en cada momento.';
+  String get chartWithHoldings =>
+      'El valor con lo que tenías en cada momento: una compra lo sube de golpe.';
 
   @override
   String get portfolioAllocation => 'Distribución';
@@ -2315,7 +2317,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get portfolioEmpty =>
-      'Aún no tienes cripto. Agrega una cuenta con bitcoin, tether o la moneda que tengas.';
+      'Aún no tienes cripto. Agrega una billetera o conecta Binance.';
 
   @override
   String get holdingQuantity => 'Tienes';
@@ -2403,7 +2405,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get binanceCardBody =>
-      'Trae tus saldos, compras P2P y conversiones solos, con una llave que solo puede leer.';
+      'Quincena solo podrá consultar tu cuenta: nunca podrá mover tus fondos.';
 
   @override
   String get binanceConnectTitle => 'Tu cuenta de Binance, sola';
@@ -4494,4 +4496,171 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get licensesLegalese =>
       '© 2026 DL SOFT TECHNOLOGIES SAS. Los comercios cercanos vienen de © colaboradores de OpenStreetMap (ODbL).';
+
+  @override
+  String comingLowestLine(String amount, String date) {
+    return 'Tu punto más bajo será $amount el $date.';
+  }
+
+  @override
+  String get timelineToday => 'Hoy';
+
+  @override
+  String get timelineFortnight => 'Tu quincena';
+
+  @override
+  String get timelineCharge => 'Un cobro programado';
+
+  @override
+  String get timelineExpected => 'esperado';
+
+  @override
+  String timelineMore(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Y $count más hasta el pago.',
+      one: 'Y un día más hasta el pago.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get buyAsk => '¿Me alcanza para…?';
+
+  @override
+  String get buyAskBody =>
+      'Escribe el precio y te digo si te alcanza sin tocar lo comprometido.';
+
+  @override
+  String get buyAskHint => 'Precio';
+
+  @override
+  String get buyAskGo => 'Ver';
+
+  @override
+  String get fabMovement => 'Movimiento';
+
+  @override
+  String get timelineAvailable => 'Disponible';
+
+  @override
+  String goalSoFar(String saved) {
+    return 'Llevas $saved';
+  }
+
+  @override
+  String goalMissing(String missing) {
+    return 'faltan $missing';
+  }
+
+  @override
+  String get goalReached => 'Meta cumplida';
+
+  @override
+  String goalNeedMark(String amount) {
+    return 'Necesitas $amount';
+  }
+
+  @override
+  String askExample(String question) {
+    return 'Por ejemplo: $question';
+  }
+
+  @override
+  String get askExampleBuy => '¿Me alcanza para unos audífonos de \$350.000?';
+
+  @override
+  String askExampleGoal(String name) {
+    return '¿Llego a mi meta de $name?';
+  }
+
+  @override
+  String get askExampleWeekend => '¿Cuánto puedo gastar este fin de semana?';
+
+  @override
+  String get askExampleCard => '¿Cuánto debo en la tarjeta?';
+
+  @override
+  String get askExampleCrypto => '¿Cómo va mi cripto esta semana?';
+
+  @override
+  String get askExampleMost => '¿En qué gasté más este mes?';
+
+  @override
+  String get chartPerformance => 'Rendimiento';
+
+  @override
+  String get chartValue => 'Valor';
+
+  @override
+  String get chartPerformanceNote =>
+      'Solo lo que movieron los precios: comprar o vender no cambia esta línea.';
+
+  @override
+  String get binancePromiseRead => 'Solo lectura';
+
+  @override
+  String get binancePromiseNoWithdraw => 'No permite retiros';
+
+  @override
+  String get binancePromiseNoTrade =>
+      'No permite órdenes de compra ni de venta';
+
+  @override
+  String get binancePromiseDisconnect => 'La desconectas cuando quieras';
+
+  @override
+  String ratesFailedAt(String when) {
+    return 'No se pudieron actualizar. Se usan las del $when.';
+  }
+
+  @override
+  String portfolioPricingFailedAt(String when) {
+    return 'No se pudieron leer los precios. Se muestran los del $when.';
+  }
+
+  @override
+  String get chartLoading => 'Actualizando la gráfica…';
+
+  @override
+  String get loanLentAction => 'Le presté';
+
+  @override
+  String get loanBorrowedAction => 'Me prestaron';
+
+  @override
+  String get loanLentTitle => 'Le presté plata a alguien';
+
+  @override
+  String get loanBorrowedTitle => 'Alguien me prestó plata';
+
+  @override
+  String get loanLentWho => '¿A quién?';
+
+  @override
+  String get loanBorrowedWho => '¿Quién te prestó?';
+
+  @override
+  String get loanWhat => '¿Para qué? (opcional)';
+
+  @override
+  String get loanLabel => 'Préstamo';
+
+  @override
+  String get loanFromAccount => '¿De qué cuenta salió?';
+
+  @override
+  String get loanNoAccount => 'No salió de mis cuentas';
+
+  @override
+  String get loanLentNote =>
+      'Queda como plata que te deben, no como gasto. Cuando te la devuelvan, regístralo en el grupo.';
+
+  @override
+  String get loanBorrowedNote =>
+      'Queda como plata que debes. Cuando la pagues, regístralo en el grupo.';
+
+  @override
+  String get loanIncomplete => 'Falta a quién o el monto.';
 }

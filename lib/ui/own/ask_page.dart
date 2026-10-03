@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import '../../ai/allowance.dart';
 import '../../ai/cloud.dart';
 import '../../l10n/l10n.dart';
+import '../../domain/plan.dart';
+import '../../domain/records.dart';
 import '../../own/own_controller.dart';
 import '../../own/own_tools.dart';
 import '../../session/session.dart';
@@ -31,6 +33,22 @@ const List<IconData> _starterIcons = <IconData>[
   Glyph.coins,
   Glyph.chartBar,
   Glyph.plusCircle,
+];
+
+/// Questions to suggest in the ask bar, from what this account holds: a
+/// goal by its name, a card's debt, crypto, and what anyone can ask.
+List<String> askExamples(AppLocalizations l, OwnController own) => <String>[
+  l.askExampleBuy,
+  if (own.goalShares.firstOrNull case final GoalShare g)
+    l.askExampleGoal(g.name),
+  l.askExampleWeekend,
+  if (own.accounts.any(
+    (Account a) =>
+        a.kind == AccountKind.card && (own.balances[a.id]?.isNegative ?? false),
+  ))
+    l.askExampleCard,
+  if (own.portfolio.hasHoldings) l.askExampleCrypto,
+  l.askExampleMost,
 ];
 
 /// Asking Gemini about the person's own money, through Quincena's project:
@@ -202,7 +220,11 @@ class _AskPageState extends State<AskPage> {
                 child: _Column(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-                    child: AskBar(onAsk: session.ask, enabled: !session.busy),
+                    child: AskBar(
+                      onAsk: session.ask,
+                      enabled: !session.busy,
+                      examples: askExamples(l, widget.own),
+                    ),
                   ),
                 ),
               ),
