@@ -2,4 +2,11 @@
 <resources>
     <color name="quincena_launch_background">#0C0F0E</color>
     <color name="quincena_mark_primary">#F2F4F1</color>
+    <color name="widget_surface">#151A18</color>
+    <color name="widget_ink">#E8EEEA</color>
+    <color name="widget_ink_soft">#A7B2AC</color>
+    <color name="widget_ink_faint">#909C96</color>
+    <color name="widget_brand">#3FCB93</color>
+    <color name="widget_negative">#FF7A68</color>
+    <color name="widget_caution">#F2B93F</color>
 </resources>

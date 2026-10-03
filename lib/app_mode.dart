@@ -9,6 +9,7 @@ import 'money/rate_sources.dart';
 import 'ai/allowance.dart';
 import 'own/own_controller.dart';
 import 'store/store.dart';
+import 'widget/home_widget.dart';
 
 /// What the app is showing.
 enum AppMode {
@@ -91,6 +92,8 @@ class AppModeController extends ChangeNotifier {
   Future<void> useDemo() async {
     await store?.setSetting(_modeKey, 'demo');
     _leaveOwn();
+    // The sample's figures are not the person's: the widget waits.
+    unawaited(HomeWidget.show(null));
     appToday = DateTime(2026, 10, 1);
     format.baseCurrency = Asset.cop;
     _set(AppMode.demo);
@@ -118,6 +121,7 @@ class AppModeController extends ChangeNotifier {
   /// Everything was deleted: back to the first screen.
   Future<void> wiped() async {
     _leaveOwn();
+    unawaited(HomeWidget.show(null));
     _hasOwn = false;
     appToday = DateTime(2026, 10, 1);
     format.baseCurrency = Asset.cop;

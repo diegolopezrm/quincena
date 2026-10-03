@@ -70,6 +70,19 @@ generated catalog is current.
   keychain still seals each backup with a code of its own, and that the
   person sees the code before choosing where to keep the file and is
   asked to replace everything only once the file has opened.
+- **The home screen widget.** `test/home_widget_test.dart` checks that the
+  app hands the widget Inicio's own words and figure in both languages,
+  "Te faltan" when the period falls short, nothing of the amount when the
+  person hides it, and a new figure only when something changed; that the
+  sample's figures never reach it; and that Settings says how to add it. On
+  3 October 2026 the iOS widget's view was drawn from its source in both
+  themes, both sizes and each state (current, of another day, short,
+  hidden, before any figure), and its extension rendered without errors in
+  the simulator, where the app's figure reached the App Group. On a Pixel 9
+  emulator the widget was added from Settings and showed the figure in
+  light and dark, hid it on request, kept only the dots, and opened the
+  app when tapped. The simulator's widget gallery would not load, so the
+  iOS widget still has to be seen on a home screen, from TestFlight.
 - **Money that reads by itself.** `test/money_clarity_test.dart` holds
   the home card to one figure to spend, with what is there today and each
   thing held back as its own line, "Te faltan" when the period falls short,

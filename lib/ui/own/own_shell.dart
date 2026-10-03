@@ -7,6 +7,7 @@ import '../../capture/native_channel.dart';
 import '../../l10n/l10n.dart';
 import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
+import '../../widget/home_widget.dart';
 import '../icons.dart';
 import '../mark.dart';
 import 'account_sheet.dart';
@@ -41,11 +42,26 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
 
   OwnController get own => widget.own;
 
+  /// The widget on the phone's home screen, kept saying what Inicio says.
+  final WidgetFeed _widget = WidgetFeed();
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _openInboxIfAsked());
+    own.addListener(_feedWidget);
+  }
+
+  // Also when the language changes.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _feedWidget();
+  }
+
+  void _feedWidget() {
+    if (mounted) _widget.update(context.l10n, own);
   }
 
   /// Someone shared a screenshot or a text with Quincena from another app
@@ -56,6 +72,7 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    own.removeListener(_feedWidget);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }

@@ -1,0 +1,76 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "$299,900" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "$299.900"
+          }
+        }
+      }
+    },
+    "How much you can spend until your next pay without hurting your plans." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuánto puedes gastar hasta tu próximo pago sin dañar tus planes."
+          }
+        }
+      }
+    },
+    "Open Quincena to see how much you can spend." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre Quincena para ver cuánto puedes gastar."
+          }
+        }
+      }
+    },
+    "Updated 9:40 AM" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizado: 9:40 a. m."
+          }
+        }
+      }
+    },
+    "You can spend" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puedes gastar"
+          }
+        }
+      }
+    },
+    "Your pay arrives in 12 days" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu quincena llega en 12 días"
+          }
+        }
+      }
+    },
+    "until October 15" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hasta el 15 de octubre"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

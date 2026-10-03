@@ -10,6 +10,7 @@
 		0D6E9032AF7B9A7779F6E235 /* AppShortcuts.strings in Resources */ = {isa = PBXBuildFile; fileRef = 270B7F93198AB8B7CAB817DF /* AppShortcuts.strings */; };
 		144033E4F7C29A8FF7C06AE3 /* RecordMovementIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81EE238D86B1E2C1230CCC1C /* RecordMovementIntent.swift */; };
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
+		1E4A278CE32096F0BE15D234 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 92E250FCF44C7C67CF99EF91 /* Localizable.xcstrings */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		44B491B43DCEAFF269A5AE9D /* TextReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC099302AD7FB95DF57A4207 /* TextReader.swift */; };
@@ -20,11 +21,13 @@
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */; };
 		78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */; };
+		7D6CC5762E3DF97BF16C8C4F /* QuincenaWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4227FF7D3D7C938A48BFC80 /* QuincenaWidget.swift */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		C0BBAF0D026ADEF2F221ABFB /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA31A64DC6ADE914736A7756 /* ShareViewController.swift */; };
 		D43659C30430604650BD8AD3 /* TextReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC099302AD7FB95DF57A4207 /* TextReader.swift */; };
+		E0346BB0F734521E82C1A66B /* QuincenaWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E4B1CF513B2D53154D8C62B3 /* QuincenaWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E3BB2E230E9D4B7385DDCF5F /* ReadReceiptIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65887BF2376420445A3326AA /* ReadReceiptIntent.swift */; };
 /* End PBXBuildFile section */
 
@@ -42,6 +45,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 97C146ED1CF9000F007C117D;
 			remoteInfo = Runner;
+		};
+		C6FA4977ABE2C6D651E3DB2C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9BCBD5A355D85BD4A1003D56;
+			remoteInfo = QuincenaWidget;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -63,6 +73,7 @@
 			dstSubfolderSpec = 13;
 			files = (
 				548CB24FF6BBD40CADE53F34 /* ShareExtension.appex in Embed Foundation Extensions */,
+				E0346BB0F734521E82C1A66B /* QuincenaWidget.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -77,6 +88,7 @@
 		331C8081294A63A400263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
 		3E9CFF36EA803D1A1B8D70D4 /* RunnerDebug.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = RunnerDebug.entitlements; sourceTree = "<group>"; };
+		5175E62597CC27E3A4E3EFAB /* QuincenaWidget.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = QuincenaWidget.entitlements; sourceTree = "<group>"; };
 		5D3C0042AD54DED8553FC784 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		65887BF2376420445A3326AA /* ReadReceiptIntent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReadReceiptIntent.swift; sourceTree = "<group>"; };
 		6A0FFC38BDE97B93EBC03F1E /* CaptureInbox.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CaptureInbox.swift; sourceTree = "<group>"; };
@@ -87,6 +99,7 @@
 		7A616519AB19E1DE14111626 /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
 		81EE238D86B1E2C1230CCC1C /* RecordMovementIntent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RecordMovementIntent.swift; sourceTree = "<group>"; };
+		92E250FCF44C7C67CF99EF91 /* Localizable.xcstrings */ = {isa = PBXFileReference; includeInIndex = 1; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
 		97C146EE1CF9000F007C117D /* Runner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Runner.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -97,7 +110,10 @@
 		BA0B1EEAA8EC341DA55AAB10 /* en */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/AppShortcuts.strings; sourceTree = "<group>"; };
 		BBDDDD96D0A5943CE1138555 /* ShareExtension.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = ShareExtension.entitlements; sourceTree = "<group>"; };
 		BC099302AD7FB95DF57A4207 /* TextReader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TextReader.swift; sourceTree = "<group>"; };
+		BD268892321261BBFC3C2E2E /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		C4227FF7D3D7C938A48BFC80 /* QuincenaWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QuincenaWidget.swift; sourceTree = "<group>"; };
 		C7C19DF8C4CD24227E870FFE /* Localizable.xcstrings */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		E4B1CF513B2D53154D8C62B3 /* QuincenaWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = QuincenaWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		EA31A64DC6ADE914736A7756 /* ShareViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		EED6F6088086055A8ACB94FE /* Runner.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -115,6 +131,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A930B2FB95F32730DD610780 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -156,6 +179,7 @@
 				97C146EF1CF9000F007C117D /* Products */,
 				331C8082294A63A400263BE5 /* RunnerTests */,
 				98C1C66B4D33885C3D132A20 /* ShareExtension */,
+				A2197BB5CA0419CAA7987B40 /* QuincenaWidget */,
 			);
 			sourceTree = "<group>";
 		};
@@ -165,6 +189,7 @@
 				97C146EE1CF9000F007C117D /* Runner.app */,
 				331C8081294A63A400263BE5 /* RunnerTests.xctest */,
 				7A616519AB19E1DE14111626 /* ShareExtension.appex */,
+				E4B1CF513B2D53154D8C62B3 /* QuincenaWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -202,6 +227,18 @@
 			);
 			name = ShareExtension;
 			path = ShareExtension;
+			sourceTree = "<group>";
+		};
+		A2197BB5CA0419CAA7987B40 /* QuincenaWidget */ = {
+			isa = PBXGroup;
+			children = (
+				C4227FF7D3D7C938A48BFC80 /* QuincenaWidget.swift */,
+				BD268892321261BBFC3C2E2E /* Info.plist */,
+				5175E62597CC27E3A4E3EFAB /* QuincenaWidget.entitlements */,
+				92E250FCF44C7C67CF99EF91 /* Localizable.xcstrings */,
+			);
+			name = QuincenaWidget;
+			path = QuincenaWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -258,6 +295,7 @@
 			);
 			dependencies = (
 				5260ADB362A2D402CC464818 /* PBXTargetDependency */,
+				A2396AE394BE60A7AEF37AAB /* PBXTargetDependency */,
 			);
 			name = Runner;
 			packageProductDependencies = (
@@ -266,6 +304,23 @@
 			productName = Runner;
 			productReference = 97C146EE1CF9000F007C117D /* Runner.app */;
 			productType = "com.apple.product-type.application";
+		};
+		9BCBD5A355D85BD4A1003D56 /* QuincenaWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 95799F681232698865FB43F1 /* Build configuration list for PBXNativeTarget "QuincenaWidget" */;
+			buildPhases = (
+				571DB0D34EECCB9980326757 /* Sources */,
+				A930B2FB95F32730DD610780 /* Frameworks */,
+				B5DE538F172206033B36A3DB /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = QuincenaWidget;
+			productName = QuincenaWidget;
+			productReference = E4B1CF513B2D53154D8C62B3 /* QuincenaWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -307,6 +362,7 @@
 				97C146ED1CF9000F007C117D /* Runner */,
 				331C8080294A63A400263BE5 /* RunnerTests */,
 				09FCF8F26AFB554FDE390FB6 /* ShareExtension */,
+				9BCBD5A355D85BD4A1003D56 /* QuincenaWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -336,6 +392,14 @@
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
 				5F023D01F34C315A4303A7DC /* Localizable.xcstrings in Resources */,
 				0D6E9032AF7B9A7779F6E235 /* AppShortcuts.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B5DE538F172206033B36A3DB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1E4A278CE32096F0BE15D234 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -394,6 +458,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		571DB0D34EECCB9980326757 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7D6CC5762E3DF97BF16C8C4F /* QuincenaWidget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		97C146EA1CF9000F007C117D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -421,6 +493,12 @@
 			name = ShareExtension;
 			target = 09FCF8F26AFB554FDE390FB6 /* ShareExtension */;
 			targetProxy = 10123744FEA225C11EDD2E2F /* PBXContainerItemProxy */;
+		};
+		A2396AE394BE60A7AEF37AAB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = QuincenaWidget;
+			target = 9BCBD5A355D85BD4A1003D56 /* QuincenaWidget */;
+			targetProxy = C6FA4977ABE2C6D651E3DB2C /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -603,6 +681,62 @@
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Runner";
 			};
 			name = Profile;
+		};
+		4BB1FDA83B3B1FF13087EE4A /* Profile */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = QuincenaWidget/QuincenaWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = NYPMG7778Z;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = QuincenaWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.dlsoft.quincena.QuincenaWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Profile;
+		};
+		55C37292F5D52BA9222C1400 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = QuincenaWidget/QuincenaWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = NYPMG7778Z;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = QuincenaWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.dlsoft.quincena.QuincenaWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
 		};
 		5AE444E432204995F80B99D0 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -819,6 +953,33 @@
 			};
 			name = Release;
 		};
+		9A6CEE749009B6FF9CDB28D6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9740EEB21CF90195004384FC /* Debug.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = QuincenaWidget/QuincenaWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = NYPMG7778Z;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = QuincenaWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.dlsoft.quincena.QuincenaWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -828,6 +989,16 @@
 				331C8088294A63A400263BE5 /* Debug */,
 				331C8089294A63A400263BE5 /* Release */,
 				331C808A294A63A400263BE5 /* Profile */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		95799F681232698865FB43F1 /* Build configuration list for PBXNativeTarget "QuincenaWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				55C37292F5D52BA9222C1400 /* Release */,
+				9A6CEE749009B6FF9CDB28D6 /* Debug */,
+				4BB1FDA83B3B1FF13087EE4A /* Profile */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

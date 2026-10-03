@@ -7518,6 +7518,54 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Tu nuevo código de respaldo'**
   String get backupNewCode;
+
+  /// No description provided for @widgetUpdated.
+  ///
+  /// In es, this message translates to:
+  /// **'Actualizado: {when}'**
+  String widgetUpdated(String when);
+
+  /// No description provided for @widgetStale.
+  ///
+  /// In es, this message translates to:
+  /// **'Abre Quincena para ver la cifra de hoy.'**
+  String get widgetStale;
+
+  /// No description provided for @widgetSection.
+  ///
+  /// In es, this message translates to:
+  /// **'Widget de inicio'**
+  String get widgetSection;
+
+  /// No description provided for @widgetHow.
+  ///
+  /// In es, this message translates to:
+  /// **'Para agregarlo, mantén presionado un espacio vacío de la pantalla de inicio y busca Quincena. Muestra lo que puedes gastar hasta tu próximo pago, como lo calculó la app la última vez que la abriste.'**
+  String get widgetHow;
+
+  /// No description provided for @widgetHide.
+  ///
+  /// In es, this message translates to:
+  /// **'Ocultar montos en el widget'**
+  String get widgetHide;
+
+  /// No description provided for @widgetHideHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Dice hasta cuándo, sin la cifra.'**
+  String get widgetHideHelp;
+
+  /// No description provided for @widgetAdd.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar a la pantalla de inicio'**
+  String get widgetAdd;
+
+  /// No description provided for @widgetAddFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena.'**
+  String get widgetAddFailed;
 }
 
 class _AppLocalizationsDelegate

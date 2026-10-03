@@ -1242,5 +1242,14 @@
   "backupChangeTitle": "Change the backup code?",
   "backupChangeBody": "Backups you already made still open with the old code; new ones use the new one. Keep both while you have old backups.",
   "backupChange": "Change",
-  "backupNewCode": "Your new backup code"
+  "backupNewCode": "Your new backup code",
+  "widgetUpdated": "Updated {when}",
+  "@widgetUpdated": {"placeholders": {"when": {"type": "String"}}},
+  "widgetStale": "Open Quincena for today's figure.",
+  "widgetSection": "Home screen widget",
+  "widgetHow": "To add it, touch and hold an empty spot on your home screen and look for Quincena. It shows what you can spend until your next pay, as the app worked it out the last time you opened it.",
+  "widgetHide": "Hide amounts in the widget",
+  "widgetHideHelp": "It says until when, without the figure.",
+  "widgetAdd": "Add to home screen",
+  "widgetAddFailed": "Your home screen doesn't allow adding it from here. Touch and hold an empty spot and look for Quincena."
 }

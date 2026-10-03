@@ -17,6 +17,7 @@ class MainActivity : FlutterActivity() {
     private var capture: MethodChannel? = null
     private var reminders: MethodChannel? = null
     private var share: MethodChannel? = null
+    private var widget: MethodChannel? = null
     private var asking: MethodChannel.Result? = null
     private var askingToNotify: MethodChannel.Result? = null
 
@@ -133,6 +134,25 @@ class MainActivity : FlutterActivity() {
             result.success(true)
         }
         share = sheet
+
+        // The same channel as `HomeWidget` in lib/widget/home_widget.dart: the
+        // figure the widget on the home screen shows.
+        val spend = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, WIDGET)
+        spend.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "show" -> {
+                    SpendWidget.save(this, call.arguments as? Map<*, *>)
+                    result.success(null)
+                }
+                "clear" -> {
+                    SpendWidget.save(this, null)
+                    result.success(null)
+                }
+                "pin" -> result.success(SpendWidget.pin(this))
+                else -> result.notImplemented()
+            }
+        }
+        widget = spend
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
@@ -143,6 +163,8 @@ class MainActivity : FlutterActivity() {
         reminders = null
         share?.setMethodCallHandler(null)
         share = null
+        widget?.setMethodCallHandler(null)
+        widget = null
         super.cleanUpFlutterEngine(flutterEngine)
     }
 
@@ -206,6 +228,7 @@ class MainActivity : FlutterActivity() {
         const val CHANNEL = "dev.dlsoft.quincena/capture"
         const val REMINDERS = "dev.dlsoft.quincena/reminders"
         const val SHARE = "dev.dlsoft.quincena/share"
+        const val WIDGET = "dev.dlsoft.quincena/widget"
         const val ASK_LOCATION = 4815
         const val ASK_NOTIFY = 4816
         const val NOTIFY = "android.permission.POST_NOTIFICATIONS"

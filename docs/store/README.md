@@ -385,7 +385,9 @@ can touch.
 > debajo, y lo que viene día a día. Las tarjetas de crédito aparecen como lo
 > que debes, «Por revisar» pide una sola decisión por movimiento y pregunta
 > si una plata que llega viene de otra cuenta tuya. Las respuestas empiezan
-> por la conclusión, y puedes reportar una respuesta de Gemini.
+> por la conclusión, y puedes reportar una respuesta de Gemini. Hay un
+> widget para la pantalla de inicio, que puede ocultar los montos, y los
+> respaldos salen cifrados con un código tuyo.
 
 **What's new** (en):
 
@@ -393,7 +395,9 @@ can touch.
 > and what is coming day by day. Credit cards show what you owe, "To
 > review" asks for one decision per movement and whether money that
 > arrives comes from another account of yours. Answers start with their
-> conclusion, and you can report a Gemini answer.
+> conclusion, and you can report a Gemini answer. There is a home screen
+> widget, which can hide amounts, and backups are encrypted with a code of
+> your own.
 
 The screenshots are rendered again from `test_screens/store_screens_test.dart`
 before submitting: the 1.0 ones in `screenshots/` are what the stores show

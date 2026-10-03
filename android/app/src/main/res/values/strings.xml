@@ -8,4 +8,12 @@
     </plurals>
     <string name="share_open">Open Quincena</string>
     <string name="share_done">Done</string>
+    <string name="widget_name">You can spend</string>
+    <string name="widget_description">How much you can spend until your next pay without hurting your plans.</string>
+    <string name="widget_app" translatable="false">Quincena</string>
+    <string name="widget_open">Open Quincena to see how much you can spend.</string>
+    <string name="widget_sample_label">You can spend</string>
+    <string name="widget_sample_amount">$299,900</string>
+    <string name="widget_sample_until">until October 15</string>
+    <string name="widget_sample_updated">Updated 9:40 AM</string>
 </resources>

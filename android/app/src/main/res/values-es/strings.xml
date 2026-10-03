@@ -9,4 +9,11 @@
     </plurals>
     <string name="share_open">Abrir Quincena</string>
     <string name="share_done">Listo</string>
+    <string name="widget_name">Puedes gastar</string>
+    <string name="widget_description">Cuánto puedes gastar hasta tu próximo pago sin dañar tus planes.</string>
+    <string name="widget_open">Abre Quincena para ver cuánto puedes gastar.</string>
+    <string name="widget_sample_label">Puedes gastar</string>
+    <string name="widget_sample_amount">$299.900</string>
+    <string name="widget_sample_until">hasta el 15 de octubre</string>
+    <string name="widget_sample_updated">Actualizado: 9:40 a. m.</string>
 </resources>

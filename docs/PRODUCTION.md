@@ -46,6 +46,11 @@ account, with three apps: Android, Apple (iOS and macOS share the bundle ID
 - **Logs**: prompts and answers are kept out of Cloud Logging by an exclusion
   on the `_Default` sink, in case AI monitoring is ever turned on. Out of the
   box it stores them, personal data included.
+- **iOS extensions**: the share extension (`dev.dlsoft.quincena.ShareExtension`)
+  and the home screen widget (`dev.dlsoft.quincena.QuincenaWidget`) share
+  the App Group `group.dev.dlsoft.quincena` with the app, which leaves them
+  what they need there. Both sign automatically with the team, like the app,
+  and carry its version.
 - **iOS and macOS** take every plugin, Firebase included, through Swift
   Package Manager. No CocoaPods is left: Firebase published its last pods
   with 12.19.0, and the CocoaPods registry turns read-only in December 2026.

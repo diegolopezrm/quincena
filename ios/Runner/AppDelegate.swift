@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
 import UserNotifications
+import WidgetKit
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -67,6 +68,33 @@ import UserNotifications
       default:
         result(FlutterMethodNotImplemented)
       }
+    }
+
+    // The same channel as `HomeWidget` in lib/widget/home_widget.dart: the
+    // figure the widget on the home screen shows, left where it reads it.
+    let widget = FlutterMethodChannel(
+      name: "dev.dlsoft.quincena/widget",
+      binaryMessenger: engineBridge.applicationRegistrar.messenger())
+    widget.setMethodCallHandler { call, result in
+      // Without the App Group, as in a build not signed with the team,
+      // there is no widget to tell.
+      guard let shared = UserDefaults(suiteName: CaptureInbox.appGroup) else {
+        return result(nil)
+      }
+      switch call.method {
+      case "show":
+        guard let figure = call.arguments as? [String: Any] else {
+          return result(FlutterError(code: "args", message: nil, details: nil))
+        }
+        // The same key and kind as ios/QuincenaWidget.
+        shared.set(figure, forKey: "widget.figure")
+      case "clear":
+        shared.removeObject(forKey: "widget.figure")
+      default:
+        return result(FlutterMethodNotImplemented)
+      }
+      WidgetCenter.shared.reloadTimelines(ofKind: "QuincenaSpend")
+      result(nil)
     }
 
     // The same channel as `ShareText` in lib/platform/share_text.dart: the

@@ -4734,4 +4734,32 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get backupNewCode => 'Tu nuevo código de respaldo';
+
+  @override
+  String widgetUpdated(String when) {
+    return 'Actualizado: $when';
+  }
+
+  @override
+  String get widgetStale => 'Abre Quincena para ver la cifra de hoy.';
+
+  @override
+  String get widgetSection => 'Widget de inicio';
+
+  @override
+  String get widgetHow =>
+      'Para agregarlo, mantén presionado un espacio vacío de la pantalla de inicio y busca Quincena. Muestra lo que puedes gastar hasta tu próximo pago, como lo calculó la app la última vez que la abriste.';
+
+  @override
+  String get widgetHide => 'Ocultar montos en el widget';
+
+  @override
+  String get widgetHideHelp => 'Dice hasta cuándo, sin la cifra.';
+
+  @override
+  String get widgetAdd => 'Agregar a la pantalla de inicio';
+
+  @override
+  String get widgetAddFailed =>
+      'Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena.';
 }

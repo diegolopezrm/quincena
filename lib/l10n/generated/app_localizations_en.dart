@@ -4735,4 +4735,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backupNewCode => 'Your new backup code';
+
+  @override
+  String widgetUpdated(String when) {
+    return 'Updated $when';
+  }
+
+  @override
+  String get widgetStale => 'Open Quincena for today\'s figure.';
+
+  @override
+  String get widgetSection => 'Home screen widget';
+
+  @override
+  String get widgetHow =>
+      'To add it, touch and hold an empty spot on your home screen and look for Quincena. It shows what you can spend until your next pay, as the app worked it out the last time you opened it.';
+
+  @override
+  String get widgetHide => 'Hide amounts in the widget';
+
+  @override
+  String get widgetHideHelp => 'It says until when, without the figure.';
+
+  @override
+  String get widgetAdd => 'Add to home screen';
+
+  @override
+  String get widgetAddFailed =>
+      'Your home screen doesn\'t allow adding it from here. Touch and hold an empty spot and look for Quincena.';
 }

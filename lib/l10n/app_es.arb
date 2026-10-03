@@ -1498,5 +1498,14 @@
   "backupChangeTitle": "¿Cambiar el código de respaldo?",
   "backupChangeBody": "Los respaldos que ya hiciste se siguen abriendo con el código de antes; los nuevos, con el nuevo. Guarda los dos mientras tengas respaldos viejos.",
   "backupChange": "Cambiar",
-  "backupNewCode": "Tu nuevo código de respaldo"
+  "backupNewCode": "Tu nuevo código de respaldo",
+  "widgetUpdated": "Actualizado: {when}",
+  "@widgetUpdated": {"placeholders": {"when": {"type": "String"}}},
+  "widgetStale": "Abre Quincena para ver la cifra de hoy.",
+  "widgetSection": "Widget de inicio",
+  "widgetHow": "Para agregarlo, mantén presionado un espacio vacío de la pantalla de inicio y busca Quincena. Muestra lo que puedes gastar hasta tu próximo pago, como lo calculó la app la última vez que la abriste.",
+  "widgetHide": "Ocultar montos en el widget",
+  "widgetHideHelp": "Dice hasta cuándo, sin la cifra.",
+  "widgetAdd": "Agregar a la pantalla de inicio",
+  "widgetAddFailed": "Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena."
 }

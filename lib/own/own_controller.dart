@@ -478,6 +478,16 @@ class OwnController extends ChangeNotifier {
 
   static const String _reminderKey = 'reminders.close';
 
+  /// Whether the widget on the home screen leaves the amount out. This
+  /// device's choice alone: it travels in no export and no sync.
+  bool get widgetHidesAmounts => _widgetHides;
+  bool _widgetHides = false;
+
+  Future<void> hideWidgetAmounts(bool hide) =>
+      store.setSetting(_widgetHideKey, hide ? 'yes' : '');
+
+  static const String _widgetHideKey = 'widget.hideAmounts';
+
   static List<Object?> _list(String? text) => switch (_json(text)) {
     final List<Object?> list => list,
     _ => const <Object?>[],
@@ -805,6 +815,7 @@ class OwnController extends ChangeNotifier {
       },
       _ => null,
     };
+    _widgetHides = await store.setting(_widgetHideKey) == 'yes';
     if (_disposed) return;
     _configureListener();
     unawaited(_remind());

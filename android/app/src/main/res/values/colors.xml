@@ -4,4 +4,12 @@
     <color name="quincena_mark_primary">#0B7552</color>
     <color name="quincena_mark_mint">#42D6A4</color>
     <color name="quincena_icon_background">#0B7552</color>
+    <!-- The widget, from lib/theme/tokens.dart. -->
+    <color name="widget_surface">#FFFFFF</color>
+    <color name="widget_ink">#111513</color>
+    <color name="widget_ink_soft">#4A5450</color>
+    <color name="widget_ink_faint">#5F6A64</color>
+    <color name="widget_brand">#0B7552</color>
+    <color name="widget_negative">#C8402F</color>
+    <color name="widget_caution">#9A6A00</color>
 </resources>

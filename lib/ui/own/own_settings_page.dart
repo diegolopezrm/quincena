@@ -17,6 +17,7 @@ import '../../sync/sync_service.dart' show SecureKeyStore;
 import '../../reminders/reminders.dart';
 import '../../theme/tokens.dart';
 import '../../version.dart';
+import '../../widget/home_widget.dart';
 import '../icons.dart';
 import 'amount_input.dart';
 import 'backup_flow.dart';
@@ -387,6 +388,46 @@ class OwnSettingsPage extends StatelessWidget {
                             style: context.type.bodySmall,
                           ),
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                  if (HomeWidget.available) ...<Widget>[
+                    SectionLabel(l.widgetSection),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Text(l.widgetHow, style: context.type.bodySmall),
+                    ),
+                    const SizedBox(height: 8),
+                    Panel(
+                      children: <Widget>[
+                        SwitchListTile(
+                          value: own.widgetHidesAmounts,
+                          onChanged: own.hideWidgetAmounts,
+                          title: Text(
+                            l.widgetHide,
+                            style: context.type.titleSmall,
+                          ),
+                          subtitle: Text(
+                            l.widgetHideHelp,
+                            style: context.type.bodySmall,
+                          ),
+                        ),
+                        if (canPinWidget)
+                          _row(
+                            context,
+                            icon: Glyph.plus,
+                            title: l.widgetAdd,
+                            onTap: () async {
+                              final ScaffoldMessengerState messenger =
+                                  ScaffoldMessenger.of(context);
+                              if (!await pinWidget()) {
+                                messenger.showSnackBar(
+                                  SnackBar(content: Text(l.widgetAddFailed)),
+                                );
+                              }
+                            },
+                          ),
                       ],
                     ),
                     const SizedBox(height: 24),
