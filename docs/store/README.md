@@ -42,7 +42,10 @@ library: a standard algorithm, not the one in Apple's operating system. In
 App Store Connect's terms that needs no documentation, except a French
 encryption declaration to be offered in France, which is why France is left
 out for now. `Info.plist` carries no `ITSAppUsesNonExemptEncryption`, so each
-build answers the encryption questions in App Store Connect.
+build answers the encryption questions in App Store Connect: standard
+algorithms, not offered in France. App Store Connect's reply is that no
+document is needed and the key can say `NO`, which stays true only while
+France is left out.
 
 ### Spanish
 
@@ -207,12 +210,13 @@ you can touch. Your finances stay on your phone.
 ### App Privacy
 
 Apple counts as collected what leaves the device and is kept beyond
-serving the request. Proposed answers:
+serving the request. Published on 2 October 2026:
 
 | Data type | Collected | Purpose | Linked to the person | Tracking |
 | --- | --- | --- | --- | --- |
 | Identifiers: User ID (Firebase's anonymous ID) | Yes | App Functionality | No: anonymous, deleted after 30 days | No |
 | Financial Info: Other financial info (the figures in a question to Gemini) | Yes, when the person asks | App Functionality | No | No |
+| Purchases: Purchase history (the payments of a category in a month, which the `category_payments` tool gives Gemini) | Yes, when the person asks | App Functionality | No | No |
 | User Content: Other user content (the question's text, a statement read with Gemini) | Yes, when the person asks | App Functionality | No | No |
 | Location: Precise location | Yes, only with the option on | App Functionality (finding the shop of a payment) | No | No |
 
@@ -233,6 +237,14 @@ only about the person's money, through tools, inside the app.
 > protected by App Check; questions are limited to 30 a day per person.
 > Connecting Binance needs a read-only API key of the reviewer's own and is
 > optional; every other feature works without it.
+>
+> Sync between devices (Ajustes, Varios dispositivos) is optional: devices
+> exchange end-to-end encrypted files that the person moves, with no
+> account or server.
+
+The App Review contact needs a phone number, which is not set yet: until
+it is, version 1.0 can't be submitted. Release is set to manual, so an
+approved version waits for someone to release it.
 
 ## Google Play
 
@@ -261,16 +273,35 @@ which on Android reads:
 
 ### Data safety
 
+Submitted on 2 October 2026. None of it is processed ephemerally, and
+none is shared: Google and Photon receive it as service providers.
+
 | Data | Collected | Shared | Purpose | Optional |
 | --- | --- | --- | --- | --- |
-| Device or other IDs (Firebase's anonymous ID) | Yes | No | App functionality, fraud prevention | No |
+| Device or other IDs (Firebase's anonymous ID, made only when the person asks Gemini) | Yes | No | App functionality; fraud prevention, security and compliance | Yes |
+| Financial info: purchase history (the payments of a category in a month, in a question to Gemini) | Yes | No | App functionality | Yes |
 | Financial info: other (figures in a question to Gemini) | Yes | No | App functionality | Yes |
 | Messages: other in-app messages (a question's text) | Yes | No | App functionality | Yes |
+| Files and docs (a statement read with Gemini) | Yes | No | App functionality | Yes |
 | Location: precise | Yes | No | App functionality | Yes |
 
-Encrypted in transit: yes. The person can ask for deletion: yes, in the
-app (Settings, delete everything) and by email. Data is not sold, and
-Google receives it as a service provider.
+Encrypted in transit: yes. No accounts are created in the app. The person
+can ask for deletion: yes, in the app (Settings, delete everything) and by
+email, as section 4 of the privacy policy says; that page is the deletion
+link. Data is not sold.
+
+The rest of App content, also submitted: no ads; nothing behind a login;
+IARC rating for every age (PEGI 3, ESRB Everyone, USK 0), with online
+content declared for Gemini's answers; audience 18 and over; no
+advertising ID; not a government or health app; financial features
+"Other": personal finance management with read-only balances, and no
+loans, payments, transfers, custody, trading or advice.
+
+Listing: Spanish (Latin America) by default and English (United States),
+the 512 icon from `web/icons/Icon-512.png`, the feature graphics
+`feature-graphic-{es,en}.png` (from `tool/brand/feature_graphic.py`), and
+the six phone screenshots per language. Category Finance; contact
+admin@dlsoft.dev and the marketing site; no phone.
 
 ### Permission declarations
 
@@ -287,10 +318,14 @@ justification and a short video.
 > The coordinates stay on the device; to find the shop, only they are
 > sent to OpenStreetMap's Photon search.
 
-The video: Settings, Automatic capture, turning on "Usar la ubicación del
-pago", the explanation, the permission dialog with "Allow all the time",
-then a payment notification arriving with the app closed and the payment
-waiting in "Por revisar" with the shop's name.
+The video, `background-location.mp4` (51 seconds, recorded on an emulator
+with example data, captioned): Settings, Automatic capture, turning on
+"Use where the payment happened", Android's location prompt, the app's
+explanation "Location while Quincena is closed", "Allow all the time",
+then the app closed, a bank notification with no shop name ("Compra por
+$18.500 POS 7731") and the payment waiting in To review with the shop
+found nearby. It is shared from DL SOFT's Google Drive to anyone with the
+link: https://drive.google.com/file/d/1xdb85_mDkdhPHvFe85GKVF-SWqFoob4N/view
 
 **Notification access** (`BIND_NOTIFICATION_LISTENER_SERVICE`). Not a
 Play declaration, but the listing and the in-app explanation say what it
