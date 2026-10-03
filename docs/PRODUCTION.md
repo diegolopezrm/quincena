@@ -100,7 +100,8 @@ reset it.
 
 No server-side limit counts a person's questions per day. A real per-person
 daily limit needs a small backend that counts by user and calls Gemini
-itself, such as a Cloud Function with Firestore.
+itself; [`SERVER_LIMIT.md`](SERVER_LIMIT.md) designs one, a Cloud Function
+with Firestore, and lists what to decide before building it.
 
 ## Privacy
 

@@ -26,7 +26,7 @@ Checked against each provider's published requirements on 2 October 2026.
 
 ## Automated checks
 
-`flutter test` runs 409 tests, the same that CI runs on every push,
+`flutter test` runs 426 tests, the same that CI runs on every push,
 with `dart format`, `flutter analyze --fatal-infos` and a check that the
 generated catalog is current.
 
@@ -187,6 +187,24 @@ TestFlight build 5 and an Android phone, before the stores' review:
   message, and nothing is sent until the person picks where.
 - Sync between a phone and a Mac or a second phone: save a file, carry it
   by AirDrop or Files, open it on the other, and back.
+
+For 1.1.0, on TestFlight and the internal track, before production:
+
+- The widget on an iPhone's home screen, small and medium, light and dark,
+  with amounts and hidden; on the lock screen and in StandBy, where the
+  amount should hide while the phone is locked; and the next morning, when
+  it says the figure is a day old.
+- The widget on an Android launcher other than the Pixel's, such as
+  Samsung's, added from Settings and from the launcher.
+- A sealed backup saved to iCloud Drive or Google Drive and opened on
+  another phone with its code; the same file after deleting everything on
+  the first one; and a JSON export opened in a text editor.
+- Reporting a Gemini answer from a phone, with App Check's real providers.
+- The five home questions with Gemini on a phone, after the prompt changed
+  shape.
+
+The closed test with people, over two fortnights, is planned in
+[`CLOSED_TEST.md`](CLOSED_TEST.md).
 
 ## Left for the developer account
 

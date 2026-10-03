@@ -533,20 +533,32 @@ demo empiezan por su conclusión.
 
 ### 19. Respaldo, costos y alcance
 
-- Respaldo cifrado: exportar con un código, como el de la sincronización,
-  en lugar de un JSON legible.
-- Widget de "Puedes gastar" en iOS y Android, con opción de ocultar montos.
-- Gemini más barato antes de que se duplique su precio en enero de 2027:
-  un prompt más corto, medido con las trazas grabadas. La caché de prompts
-  queda a decisión de Diego.
-- Límite diario en el servidor: hoy las 30 preguntas se cuentan en el
-  teléfono. Contarlas en el servidor necesita una función propia delante de
-  Gemini; se diseña aquí y se decide antes de construirla.
-- Validación: pruebas en dispositivos reales de [`QUALITY.md`](QUALITY.md)
-  y una prueba cerrada con personas durante dos quincenas.
+**Estado:** construida, build 17 (1.1.0). Quedan decisiones de Diego: la
+caché de prompts y el límite en el servidor; y la validación con personas.
+
+- Respaldo cifrado: exportar sale sellado con un código propio, como el de
+  la sincronización, salvo que la persona elija el JSON legible. El primer
+  respaldo muestra el código; abrirlo en otro teléfono lo pide, y ningún
+  código de sincronización abre un respaldo ni al revés. Diseño en
+  [`SYNC.md`](SYNC.md).
+- Widget de "Puedes gastar" en iOS y Android: dice lo mismo que Inicio,
+  avisa cuando la cifra es de otro día y puede ocultar los montos, que
+  entonces ni se guardan para el widget.
+- Gemini más barato: el prompt pasó de 19.080 a 11.822 tokens por ronda,
+  contados por el modelo, con los mismos esquemas en una línea. Dos
+  preguntas de Inicio, hechas en vivo, costaron US$0,024 y US$0,041 en vez
+  de US$0,035 y US$0,052. La caché de prompts queda a decisión de Diego
+  ([`PRODUCTION.md`](PRODUCTION.md)).
+- Límite diario en el servidor: diseñado en
+  [`SERVER_LIMIT.md`](SERVER_LIMIT.md), una función delante de Gemini que
+  cuenta rondas y tokens por persona y un techo diario para todos. Se
+  decide antes de construirla.
+- Validación: lo que falta probar en dispositivos reales está en
+  [`QUALITY.md`](QUALITY.md), y la prueba cerrada con personas durante dos
+  quincenas, en [`CLOSED_TEST.md`](CLOSED_TEST.md).
 - En la web, lo que depende del teléfono sigue fuera por diseño: captura
-  automática, leer fotos en el dispositivo, Binance, sincronización y
-  recordatorios.
+  automática, leer fotos en el dispositivo, Binance, sincronización,
+  recordatorios y el widget.
 
 ## Trazabilidad de las 15 ideas
 
