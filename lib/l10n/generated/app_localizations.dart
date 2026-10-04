@@ -2627,7 +2627,7 @@ abstract class AppLocalizations {
   /// No description provided for @planPeriod.
   ///
   /// In es, this message translates to:
-  /// **'Tu plata hasta el {date}'**
+  /// **'Presupuesto hasta el {date}'**
   String planPeriod(String date);
 
   /// No description provided for @planGoals.
@@ -2645,7 +2645,7 @@ abstract class AppLocalizations {
   /// No description provided for @planTools.
   ///
   /// In es, this message translates to:
-  /// **'Para decidir'**
+  /// **'Herramientas'**
   String get planTools;
 
   /// No description provided for @planCushionChoose.
@@ -5303,7 +5303,7 @@ abstract class AppLocalizations {
   /// No description provided for @planCommitments.
   ///
   /// In es, this message translates to:
-  /// **'Compromisos'**
+  /// **'Pagos'**
   String get planCommitments;
 
   /// No description provided for @planFixedNext30.
@@ -5389,12 +5389,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'tu tasa'**
   String get rateSourceManual;
-
-  /// No description provided for @planOptional.
-  ///
-  /// In es, this message translates to:
-  /// **'Si te sirve'**
-  String get planOptional;
 
   /// No description provided for @planSharedNone.
   ///

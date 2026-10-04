@@ -1624,7 +1624,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String planPeriod(String date) {
-    return 'Your money until $date';
+    return 'Budget until $date';
   }
 
   @override
@@ -1635,7 +1635,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'You don\'t have goals yet. A goal with something each month tells you when you\'ll get there.';
 
   @override
-  String get planTools => 'To decide';
+  String get planTools => 'Tools';
 
   @override
   String get planCushionChoose => 'Choose where your emergency fund is';
@@ -3303,7 +3303,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sourceOther => 'Another source';
 
   @override
-  String get planCommitments => 'Commitments';
+  String get planCommitments => 'Payments';
 
   @override
   String planFixedNext30(String amount) {
@@ -3373,9 +3373,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rateSourceManual => 'your rate';
-
-  @override
-  String get planOptional => 'If it helps';
 
   @override
   String get planSharedNone =>
