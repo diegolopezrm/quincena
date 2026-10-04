@@ -42,6 +42,7 @@ Decimal d(String s) => Decimal.parse(s);
 Ledger ledgerOf({
   int balance = 500000,
   int due = 26900,
+  DateTime? dueOn,
   int cushion = 0,
   int setAside = 0,
   PaySchedule schedule = const TwiceMonthly(),
@@ -59,7 +60,7 @@ Ledger ledgerOf({
     if (due > 0)
       Movement(
         id: 'internet',
-        date: DateTime(2026, 10, 12),
+        date: dueOn ?? DateTime(2026, 10, 12),
         merchant: 'Claro',
         amount: due,
         category: Category.subscriptions,
@@ -124,6 +125,15 @@ void main() {
       expect(text, isNot(contains('Pagos hasta')));
       expect(text, isNot(contains('Lo que debes en tarjetas')));
       expect(text, isNot(contains('Colchón')));
+    });
+
+    testWidgets('a charge due on payday itself is among the payments', (
+      tester,
+    ) async {
+      await showCard(tester, ledgerOf(dueOn: DateTime(2026, 10, 15)));
+      final String text = screen(tester);
+      expect(text, contains('Pagos hasta el 15 oct\n−\$26.900'));
+      expect(text, contains(r'$473.100'));
     });
 
     testWidgets(
