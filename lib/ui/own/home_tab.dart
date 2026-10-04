@@ -365,7 +365,8 @@ class _Empty extends StatelessWidget {
 }
 
 /// Every movement, with a search over what it was, where and in which
-/// account.
+/// account. A sliver: the days are built as they scroll into view, so a
+/// long history costs only what shows.
 class MovementsTab extends StatefulWidget {
   const MovementsTab({super.key, required this.own});
 
@@ -407,24 +408,31 @@ class _MovementsTabState extends State<MovementsTab> {
     final List<Entry> shown = q.isEmpty
         ? all
         : all.where((Entry e) => _matches(context, e, q)).toList();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        TextField(
-          controller: _search,
-          onChanged: (_) => setState(() {}),
-          decoration: InputDecoration(
-            hintText: l.searchMovements,
-            prefixIcon: const Icon(Glyph.magnifyingGlass, size: 20),
+    return SliverMainAxisGroup(
+      slivers: <Widget>[
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 20),
+            child: TextField(
+              controller: _search,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: l.searchMovements,
+                prefixIcon: const Icon(Glyph.magnifyingGlass, size: 20),
+              ),
+            ),
           ),
         ),
-        const SizedBox(height: 20),
         if (all.isEmpty)
-          _Empty(title: l.noMovements, body: l.noMovementsBody)
+          SliverToBoxAdapter(
+            child: _Empty(title: l.noMovements, body: l.noMovementsBody),
+          )
         else if (shown.isEmpty)
-          Text(l.noResults, style: context.type.bodyMedium)
+          SliverToBoxAdapter(
+            child: Text(l.noResults, style: context.type.bodyMedium),
+          )
         else
-          MovementGroups(own: own, entries: shown),
+          MovementGroups.sliver(own: own, entries: shown),
       ],
     );
   }

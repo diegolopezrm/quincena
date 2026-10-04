@@ -91,6 +91,18 @@ Widget tab(Widget body) => Scaffold(
   ),
 );
 
+/// A tab that is a list built as it scrolls, scrolled the same way.
+Widget sliverTab(Widget sliver) => Scaffold(
+  body: CustomScrollView(
+    slivers: <Widget>[
+      SliverPadding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 112),
+        sliver: sliver,
+      ),
+    ],
+  ),
+);
+
 void main() {
   setUpAll(() async {
     await loadAppFonts();
@@ -102,7 +114,7 @@ void main() {
       <String, Widget Function(OwnController own)>{
         'home': (OwnController own) =>
             tab(OwnHomeTab(own: own, onSeeAll: () {}, onAsk: ([String? _]) {})),
-        'movements': (OwnController own) => tab(MovementsTab(own: own)),
+        'movements': (OwnController own) => sliverTab(MovementsTab(own: own)),
         'accounts': (OwnController own) => tab(AccountsTab(own: own)),
         'where the net worth comes from': (OwnController own) =>
             tab(TotalExplained(own: own)),

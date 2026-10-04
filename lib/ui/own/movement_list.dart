@@ -161,9 +161,11 @@ class MovementRow extends StatelessWidget {
 DateTime endOfToday(DateTime today) =>
     DateTime(today.year, today.month, today.day, 23, 59, 59);
 
-/// Movements grouped under the day they happened.
+/// Movements grouped under the day they happened, as a sliver for a
+/// CustomScrollView: each day is built as it scrolls into view, so a long
+/// history costs only what shows.
 class MovementGroups extends StatelessWidget {
-  const MovementGroups({
+  const MovementGroups.sliver({
     super.key,
     required this.own,
     required this.entries,
@@ -194,21 +196,22 @@ class MovementGroups extends StatelessWidget {
           )
           .add(e);
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        for (final MapEntry<DateTime, List<Entry>> day
-            in days.entries) ...<Widget>[
-          SectionLabel(_dayLabel(l, day.key)),
+    final List<MapEntry<DateTime, List<Entry>>> list = days.entries.toList();
+    return SliverList.builder(
+      itemCount: list.length,
+      itemBuilder: (BuildContext context, int i) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          SectionLabel(_dayLabel(l, list[i].key)),
           Panel(
             children: <Widget>[
-              for (final Entry e in day.value)
+              for (final Entry e in list[i].value)
                 MovementRow(own: own, entry: e, inAccount: inAccount),
             ],
           ),
           const SizedBox(height: 20),
         ],
-      ],
+      ),
     );
   }
 }

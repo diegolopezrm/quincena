@@ -47,7 +47,7 @@ void main() {
         body: ListenableBuilder(
           listenable: own,
           builder: (BuildContext context, _) =>
-              SingleChildScrollView(child: MovementsTab(own: own)),
+              CustomScrollView(slivers: <Widget>[MovementsTab(own: own)]),
         ),
       ),
       data: (QuincenaStore store, Account bank, _) => dinner(store, bank),
