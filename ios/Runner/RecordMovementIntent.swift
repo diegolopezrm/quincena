@@ -30,9 +30,9 @@ enum CaptureSourceOption: String, AppEnum {
 /// Notification for the banks' apps. The event waits in a file until the
 /// app opens; the app reads it, and nothing here decides what it is.
 struct RecordMovementIntent: AppIntent {
-  static let title: LocalizedStringResource = "Record a movement"
+  static let title: LocalizedStringResource = "Record a transaction"
   static let description = IntentDescription(
-    "Hands Quincena a payment or a bank's message. It waits in the inbox until you confirm it, or is recorded on its own when everything about it is clear."
+    "Hands Quincena a payment or a bank's message. It waits in Needs review until you record it, or is recorded on its own when everything about it is clear."
   )
   static let openAppWhenRun = false
   static let authenticationPolicy: IntentAuthenticationPolicy = .alwaysAllowed
@@ -118,8 +118,8 @@ struct QuincenaShortcuts: AppShortcutsProvider {
   static var appShortcuts: [AppShortcut] {
     AppShortcut(
       intent: RecordMovementIntent(),
-      phrases: ["Record a movement in \(.applicationName)"],
-      shortTitle: "Record a movement",
+      phrases: ["Record a transaction in \(.applicationName)"],
+      shortTitle: "Record a transaction",
       systemImageName: "tray.and.arrow.down"
     )
     AppShortcut(

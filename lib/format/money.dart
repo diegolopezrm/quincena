@@ -20,21 +20,29 @@ NumberFormat get _oneDecimal =>
 
 /// Pesos as they are written in the interface language: `$1.650.000` in
 /// Spanish, `$1,650,000` in English: no space after the sign, as Colombians
-/// write it, and the minus sign of print for what goes out.
+/// write it, and the minus sign of print for what goes out. [signed] puts a
+/// `+` before what comes in. A sign never ends a line apart from its `$`.
 ///
 /// Built by hand rather than with `NumberFormat.currency`, whose `es_CO`
 /// pattern puts the symbol after the number.
-String pesos(num amount) {
+String pesos(num amount, {bool signed = false}) {
   if (baseCurrency != Asset.cop) {
     return formatAmount(
       Decimal.parse(amount.toString()),
       baseCurrency,
       base: baseCurrency,
+      signed: signed,
     );
   }
   final String digits = _whole.format(amount.abs().round());
-  final String sign = amount < 0 ? '−' : '';
-  return '$sign\$$digits';
+  return '${_sign(amount, signed: signed)}\$$digits';
+}
+
+/// The sign before an amount's symbol, held to it.
+String _sign(num amount, {bool signed = false}) {
+  if (amount < 0) return '−$signJoiner';
+  if (signed && amount > 0) return '+$signJoiner';
+  return '';
 }
 
 /// Pesos in the short form people say out loud: `$4,7 M` and `$589 mil` in
@@ -42,7 +50,7 @@ String pesos(num amount) {
 /// never breaks a line.
 String pesosShort(num amount) {
   final num value = amount.abs();
-  final String sign = amount < 0 ? '−' : '';
+  final String sign = _sign(amount);
   final bool en = englishFormatting;
   if (baseCurrency != Asset.cop) {
     final String symbol = baseCurrency.localSymbol ?? baseCurrency.code;
@@ -65,15 +73,29 @@ String pesosShort(num amount) {
     final String n = _whole.format((value / 1000).round());
     return en ? '$sign\$${n}K' : '$sign\$$n mil';
   }
-  return '$sign${pesos(value)}';
+  return pesos(amount);
+}
+
+/// [value] as a percentage: `27 %` in Spanish, with a space that never
+/// breaks, and `27%` in English. It is rounded to [decimals]; [trim] drops
+/// the zeros a rate would end in, so `26,50 %` reads `26,5 %`.
+String percent(num value, {int decimals = 0, bool trim = false}) {
+  final Decimal rounded = Decimal.parse(
+    value.toString(),
+  ).round(scale: decimals);
+  final String digits = formatDecimal(
+    rounded.abs(),
+    decimals: decimals,
+    trim: trim,
+  );
+  final String sign = rounded < Decimal.zero ? '−' : '';
+  return englishFormatting ? '$sign$digits%' : '$sign$digits\u00a0%';
 }
 
 /// A change as a signed percentage: `+67 %` in Spanish, `+67%` in English.
 String signedPercent(num current, num previous) {
   if (previous == 0) return '—';
   final double change = (current - previous) / previous * 100;
-  final String space = englishFormatting ? '' : ' ';
-  if (change.round() == 0) return '0$space%';
-  final String rounded = _whole.format(change.abs().round());
-  return '${change > 0 ? '+' : '−'}$rounded$space%';
+  if (change.round() == 0) return percent(0);
+  return '${change > 0 ? '+' : '−'}${percent(change.abs().round())}';
 }

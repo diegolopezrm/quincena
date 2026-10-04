@@ -10,7 +10,7 @@ import 'package:flutter/foundation.dart' show LicenseEntry, LicenseRegistry;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 import 'package:quincena/capture/capture_service.dart';
 import 'package:quincena/capture/event.dart';
 import 'package:quincena/data/ledger.dart';
@@ -19,6 +19,7 @@ import 'package:quincena/domain/commitments.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/domain/shared.dart';
+import 'package:quincena/format/dates.dart';
 import 'package:quincena/format/money.dart';
 import 'package:quincena/l10n/l10n.dart';
 import 'package:quincena/licenses.dart';
@@ -932,11 +933,84 @@ void main() {
   test('amounts have one format', () {
     Intl.defaultLocale = 'es_CO';
     expect(pesos(299900), r'$299.900');
-    expect(pesos(-63200), r'−$63.200');
+    expect(pesos(-63200), '−$signJoiner\$63.200');
     expect(pesosShort(280300000).replaceAll(' ', ' '), r'$280,3 M');
     expect(signedPercent(106.98, 100).replaceAll(' ', ' '), '+7 %');
     Intl.defaultLocale = 'en_US';
     expect(pesos(299900), r'$299,900');
     Intl.defaultLocale = 'es_CO';
+  });
+
+  test('a percentage has one format', () {
+    Intl.defaultLocale = 'es_CO';
+    expect(percent(27), '27\u00a0%');
+    expect(percent(2121), '2.121\u00a0%');
+    expect(percent(26.5, decimals: 2), '26,50\u00a0%');
+    expect(percent(26.5, decimals: 2, trim: true), '26,5\u00a0%');
+    expect(signedPercent(87, 100), '−13\u00a0%');
+    Intl.defaultLocale = 'en_US';
+    // No space in English: "27%", as the goal and the reserve say it.
+    expect(percent(27), '27%');
+    expect(percent(2121), '2,121%');
+    expect(percent(26.5, decimals: 2, trim: true), '26.5%');
+    expect(signedPercent(106.98, 100), '+7%');
+    Intl.defaultLocale = 'es_CO';
+  });
+
+  test('a sign is held to the symbol after it', () {
+    Intl.defaultLocale = 'es_CO';
+    expect(pesos(45900, signed: true), '+$signJoiner\$45.900');
+    expect(pesos(0, signed: true), r'$0');
+    expect(pesosShort(-4700000), '−$signJoiner\$4,7\u00a0M');
+    expect(
+      formatAmount(Decimal.parse('-12.5'), Asset.usd, base: Asset.cop),
+      '−${signJoiner}US\$12,50',
+    );
+    // A coin's digits come first: there is no symbol to hold.
+    expect(formatAmount(Decimal.parse('-0.5'), Asset.btc), '−0,5\u00a0BTC');
+  });
+
+  testWidgets('a narrow line keeps a sign with its amount and an hour with '
+      'its a. m.', (tester) async {
+    Intl.defaultLocale = 'es_CO';
+    await initializeDateFormatting('es');
+    const TextStyle style = TextStyle(fontFamily: 'Geist', fontSize: 16);
+    TextPainter laid(String text, [double width = double.infinity]) {
+      final TextPainter painter = TextPainter(
+        text: TextSpan(text: text, style: style),
+        textDirection: TextDirection.ltr,
+      )..layout(maxWidth: width);
+      addTearDown(painter.dispose);
+      return painter;
+    }
+
+    /// Whether [first] and [last] of [text] end up on the same line when
+    /// the line is as wide as the wider of [head] and [tail], which each
+    /// fit on one but not together.
+    bool together(
+      String text,
+      String head,
+      String tail,
+      String first,
+      String last,
+    ) {
+      final double width =
+          <double>[
+            laid(head).width,
+            laid(tail).width,
+          ].reduce((double a, double b) => a > b ? a : b) +
+          1;
+      final TextPainter painter = laid(text, width);
+      expect(painter.computeLineMetrics(), hasLength(2));
+      TextRange line(String of) =>
+          painter.getLineBoundary(TextPosition(offset: text.indexOf(of)));
+      return line(first) == line(last);
+    }
+
+    final String paid = 'Pagaste ${pesos(-45900)}';
+    expect(together(paid, 'Pagaste −', pesos(-45900), '−', r'$'), isTrue);
+    final String at = 'A las ${timeOfDay(DateTime(2026, 10, 3, 10))}';
+    expect(at, endsWith('10:00\u00a0a.\u202fm.'));
+    expect(together(at, 'A las 10:00', '10:00 a. m.', '10', 'm.'), isTrue);
   });
 }

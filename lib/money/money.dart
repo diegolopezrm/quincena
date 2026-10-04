@@ -62,6 +62,11 @@ class Money {
 
 const String _nbsp = ' ';
 
+/// Holds a sign to the currency symbol after it. Both are prefixes of a
+/// number, and a line may otherwise break between them, leaving `−` at the
+/// end of one line and `$45.900` at the start of the next.
+const String signJoiner = '\u2060';
+
 /// [amount] of [asset] as the interface language writes it.
 ///
 /// Spanish: `$45.900`, `US$1.250,00`, `0,0042 BTC`. English: `$45,900`,
@@ -88,7 +93,8 @@ String formatAmount(
   final String symbol =
       (asset == (base ?? asset) ? asset.localSymbol : asset.symbol) ??
       asset.code;
-  return '$sign$symbol$digits';
+  if (sign.isEmpty) return '$symbol$digits';
+  return '$sign$signJoiner$symbol$digits';
 }
 
 /// [value] with the interface language's separators: `1.250,5` in Spanish,

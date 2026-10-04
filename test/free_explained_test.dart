@@ -258,7 +258,7 @@ void main() {
           .first;
       const String pending =
           'No cuenta 1 movimiento que espera en Por revisar. Cuando lo '
-          'confirmes, la cifra puede cambiar.';
+          'registres, la cifra puede cambiar.';
       await tester.scrollUntilVisible(
         inSheet(find.text(pending)),
         120,

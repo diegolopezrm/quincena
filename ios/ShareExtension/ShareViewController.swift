@@ -57,7 +57,7 @@ final class ShareViewController: UIViewController {
     spinner.stopAnimating()
     label.text =
       kept > 0
-      ? Self.text(es: "Quedó en Por revisar.", en: "It is waiting in To review.")
+      ? Self.text(es: "Quedó en Por revisar.", en: "It's waiting in Needs review.")
       : lost > 0
         ? Self.text(es: "No se pudo guardar. Inténtalo de nuevo.", en: "It could not be saved. Try again.")
         : Self.text(es: "No había texto que leer.", en: "There was no text to read.")

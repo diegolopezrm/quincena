@@ -126,7 +126,10 @@ class _PayScheduleEditorState extends State<PayScheduleEditor> {
           _option(
             _Kind.twice,
             l.payTwiceMonthly,
-            l.payTwiceMonthlyDetail(_twice.first, _twice.second),
+            l.payTwiceMonthlyDetail(
+              dayOfMonth(_twice.first),
+              dayOfMonth(_twice.second),
+            ),
           ),
           if (kind == _Kind.twice)
             Padding(
@@ -156,7 +159,7 @@ class _PayScheduleEditorState extends State<PayScheduleEditor> {
           _option(
             _Kind.monthly,
             l.payMonthly,
-            l.payMonthlyDetail(_monthly.day),
+            l.payMonthlyDetail(dayOfMonth(_monthly.day)),
           ),
           if (kind == _Kind.monthly)
             Padding(

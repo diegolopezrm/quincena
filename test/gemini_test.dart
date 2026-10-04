@@ -9,8 +9,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'package:quincena/agent/catalog.dart';
 import 'package:quincena/agent/firebase_client.dart';
 import 'package:quincena/agent/model_client.dart';
+import 'package:quincena/agent/prompt.dart';
 import 'package:quincena/agent/tools.dart';
 import 'package:quincena/ai/allowance.dart';
 import 'package:quincena/data/seed.dart';
@@ -24,6 +26,7 @@ import 'package:quincena/money/rates.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/own/own_tools.dart';
 import 'package:quincena/session/session.dart';
+import 'package:quincena/statements/gemini_statement.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
 
@@ -509,6 +512,34 @@ void main() {
         isTrue,
       );
       expect(Session.offline('429 RESOURCE_EXHAUSTED'), isFalse);
+    });
+  });
+
+  group('names, as they come', () {
+    test('a statement read by Gemini keeps each description word for word', () {
+      final String asked = GeminiStatementReader.instructions;
+      expect(
+        asked,
+        contains('Copy each description exactly as the statement writes it'),
+      );
+      expect(asked, contains('never translate, shorten or reword it'));
+    });
+
+    test('the conversation never translates a merchant, a person or an '
+        'account', () {
+      final String told = quincenaPrompt(
+        quincenaCatalog,
+        demoLedger(),
+        language: 'en',
+        own: true,
+      ).replaceAll(RegExp(r'\s+'), ' ');
+      expect(
+        told,
+        contains(
+          'merchants, people, accounts and statement descriptions are never '
+          'translated',
+        ),
+      );
     });
   });
 }

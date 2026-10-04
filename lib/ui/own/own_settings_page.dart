@@ -9,6 +9,7 @@ import '../../backup/backup.dart';
 import '../../domain/pay_schedule.dart';
 import '../../domain/records.dart';
 import '../../exchanges/binance_link.dart';
+import '../../format/dates.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
@@ -43,12 +44,23 @@ class OwnSettingsPage extends StatelessWidget {
   final AppSettings settings;
 
   String _schedule(AppLocalizations l, PaySchedule s) => switch (s) {
-    TwiceMonthly(:final int first, :final int second) =>
-      '${l.payTwiceMonthly}: ${l.payTwiceMonthlyDetail(first, second)}',
-    Monthly(:final int day) => '${l.payMonthly}: ${l.payMonthlyDetail(day)}',
+    TwiceMonthly(:final int first, :final int second) => _detailed(
+      l.payTwiceMonthly,
+      l.payTwiceMonthlyDetail(dayOfMonth(first), dayOfMonth(second)),
+    ),
+    Monthly(:final int day) => _detailed(
+      l.payMonthly,
+      l.payMonthlyDetail(dayOfMonth(day)),
+    ),
     EveryTwoWeeks() => l.payBiweekly,
     Weekly() => l.payWeekly,
   };
+
+  /// [kind] with its [detail] after a colon, lowercased to follow it:
+  /// `Twice a month: the 15th and 30th of each month`. In the editor the
+  /// detail starts a line of its own.
+  String _detailed(String kind, String detail) =>
+      '$kind: ${detail[0].toLowerCase()}${detail.substring(1)}';
 
   Future<void> _editName(BuildContext context, Profile p) async {
     final String? typed = await showDialog<String>(

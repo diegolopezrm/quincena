@@ -428,4 +428,24 @@ void main() {
       ],
     );
   });
+
+  test('in English, each step names a currency by its code, as the rate '
+      'above it does', () async {
+    await initializeDateFormatting('en_US');
+    Intl.defaultLocale = 'en_US';
+    addTearDown(() => Intl.defaultLocale = 'es_CO');
+    final AppLocalizations l = lookupAppLocalizations(const Locale('en'));
+    final RateTable rates = RateTable(<Rate>[
+      Rate(
+        asset: 'USD',
+        quote: 'COP',
+        value: d('3312.84'),
+        asOf: DateTime(2026, 10, 3),
+        source: 'trm',
+      ),
+    ]);
+    expect(rateStepLines(l, rates, Asset.usd, Asset.cop), <String>[
+      r'Conversion to COP: 1 USD = $3,312.84 · Official TRM, Oct 3',
+    ]);
+  });
 }

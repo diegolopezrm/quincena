@@ -6,6 +6,7 @@ import '../data/category.dart';
 import '../data/clock.dart';
 import '../data/ledger.dart';
 import '../domain/pay_schedule.dart';
+import '../format/dates.dart';
 
 /// What the model is told before the first question.
 ///
@@ -71,7 +72,7 @@ String _sampleIntro(Ledger ledger, String language) =>
 You are Quincena, the assistant inside a personal finance app in Colombia. You
 talk with ${ledger.owner}, who holds the account. ${language == 'en' ? 'Speak English, plainly' : 'Speak Spanish as it is spoken in Colombia, address her as "tú"'},
 and be brief and concrete. Every text the person reads, in components and
-outside them, is in that language.${_chips(language)}
+outside them, is in that language. $_names${_chips(language)}
 
 Today is ${appToday.toIso8601String().split('T').first}. Paydays are the 15th and the last day of each
 month. Amounts are Colombian pesos, always whole numbers.''';
@@ -81,7 +82,7 @@ Iterable<String> _ownFragments(Ledger ledger, String language) => <String>[
 You are Quincena, the assistant inside a personal finance app. You talk with
 ${ledger.owner}, who uses it with their own accounts. ${language == 'en' ? 'Speak English, plainly' : 'Speak Spanish as it is spoken in Colombia, address them as "tú"'},
 and be brief and concrete. Every text the person reads, in components and
-outside them, is in that language.${_chips(language)}
+outside them, is in that language. $_names${_chips(language)}
 
 Today is ${appToday.toIso8601String().split('T').first}. ${_payday(ledger.schedule)} The next one is
 ${ledger.nextPayday.toIso8601String().split('T').first}. ${_currency(ledger)}''',
@@ -105,6 +106,23 @@ record_expense only after save_expense arrives, with the account the person
 named if they named one.''',
 ];
 
+/// Names keep the language they came in: "Almuerzos Doña Rosa" stays as it
+/// is in an answer in English.
+const String _names =
+    'Names stay as they come: merchants, people, accounts and statement '
+    'descriptions are never translated.';
+
+/// The words the English screens use where a literal translation of the
+/// Spanish would say another.
+String _glossary(String language) => language == 'en'
+    ? '\n\nIn English, say "transactions", never "movements"; "pay period" '
+          'for the days between paydays and "paycheck" for the money, never '
+          '"fortnight"; "safety buffer", never "cushion"; "recurring '
+          'payments", never "fixed payments"; "installments"; "Needs review" '
+          'for the payments waiting to be recorded; and "compared with", '
+          'never "against". The tools keep their own names for these.'
+    : '';
+
 /// The catalog's examples of a question are Spanish; in English, the
 /// questions the person is offered must not follow them.
 String _chips(String language) => language == 'en'
@@ -114,21 +132,11 @@ String _chips(String language) => language == 'en'
 
 String _payday(PaySchedule schedule) => switch (schedule) {
   TwiceMonthly(:final int first, :final int second) =>
-    'Paydays are the ${_nth(first)} and the ${_nth(second)} of each month, or the last day of a shorter month.',
+    'Paydays are the ${ordinal(first)} and the ${ordinal(second)} of each month, or the last day of a shorter month.',
   Monthly(:final int day) =>
-    'Payday is the ${_nth(day)} of each month, or the last day of a shorter month.',
+    'Payday is the ${ordinal(day)} of each month, or the last day of a shorter month.',
   EveryTwoWeeks() => 'Payday comes every two weeks.',
   Weekly() => 'Payday comes every week.',
-};
-
-String _nth(int n) => switch (n % 100) {
-  11 || 12 || 13 => '${n}th',
-  _ => switch (n % 10) {
-    1 => '${n}st',
-    2 => '${n}nd',
-    3 => '${n}rd',
-    _ => '${n}th',
-  },
 };
 
 String _currency(Ledger ledger) => ledger.currency.decimals == 0
@@ -192,7 +200,7 @@ until payday ("puedes gastar … hasta el …", "you can spend … until …"), 
 everyday accounts ("tus cuentas de uso diario", "your everyday accounts"), with
 what everyday cards owe ("lo que debes en tarjetas") already taken off; the
 lowest balance ahead is the "saldo mínimo estimado" ("lowest estimated
-balance").
+balance").${_glossary(language)}
 
 Put the data components read in the data model with updateDataModel, after
 updateComponents, and bind properties to it with {"path": "..."}. Anything

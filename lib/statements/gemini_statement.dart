@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:decimal/decimal.dart';
 import 'package:firebase_ai/firebase_ai.dart' as ai;
+import 'package:flutter/foundation.dart';
 
 import '../agent/firebase_client.dart';
 import '../ai/cloud.dart';
@@ -26,7 +26,7 @@ class GeminiStatementReader {
           properties: <String, ai.Schema>{
             'date': ai.Schema.string(description: 'The date, as YYYY-MM-DD.'),
             'description': ai.Schema.string(
-              description: 'What the statement says the movement was.',
+              description: 'The description, exactly as the statement has it.',
             ),
             'amount': ai.Schema.string(
               description:
@@ -45,18 +45,22 @@ class GeminiStatementReader {
     },
   );
 
-  static const String _instructions =
+  /// What Gemini is asked, before the statement.
+  @visibleForTesting
+  static const String instructions =
       'Below is the text of a bank or card statement, read from a PDF. List '
       'every movement in it, in the order it appears, with its date, its '
-      'description and its signed amount. Leave out totals, balances carried '
-      'over, interest summaries and anything that is not a movement. Do not '
+      'description and its signed amount. Copy each description exactly as '
+      'the statement writes it, in its own language; never translate, '
+      'shorten or reword it. Leave out totals, balances carried over, '
+      'interest summaries and anything that is not a movement. Do not '
       'invent movements or amounts: if a line is unclear, leave it out.';
 
   /// The movements in a statement's [text], read on the device.
   Future<StatementRead> read(String text) async {
     final ai.GenerateContentResponse response = await (await _model())
         .generateContent(<ai.Content>[
-          ai.Content.text('$_instructions\n\n$text'),
+          ai.Content.text('$instructions\n\n$text'),
         ]);
     return parseAnswer(response.text ?? '', text);
   }
@@ -67,9 +71,7 @@ class GeminiStatementReader {
     final ai.GenerateContentResponse response = await (await _model())
         .generateContent(<ai.Content>[
           ai.Content.multi(<ai.Part>[
-            ai.TextPart(
-              _instructions.replaceFirst('the text of', 'the PDF of'),
-            ),
+            ai.TextPart(instructions.replaceFirst('the text of', 'the PDF of')),
             ai.InlineDataPart('application/pdf', pdf),
           ]),
         ]);

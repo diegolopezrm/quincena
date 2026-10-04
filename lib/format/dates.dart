@@ -86,8 +86,10 @@ String dayAndTime(DateTime moment) =>
     '${dayShortMonth(moment)} · ${timeOfDay(moment)}';
 
 /// `2:05 p. m.` or `2:05 PM`: the time of something that happened today,
-/// on the twelve-hour clock people in Colombia read.
-String timeOfDay(DateTime moment) => _format('h:mm a', 'h:mm a').format(moment);
+/// on the twelve-hour clock people in Colombia read. The hour and the
+/// `p. m.` after it never go to different lines.
+String timeOfDay(DateTime moment) =>
+    _format('h:mm\u00a0a', 'h:mm\u00a0a').format(moment);
 
 /// `16 de mayo de 2027` or `May 16, 2027`.
 String dayMonthYear(DateTime date) =>
@@ -97,6 +99,23 @@ String dayMonthYear(DateTime date) =>
 /// this one: `16 de octubre`, but `16 de mayo de 2027`.
 String dayMonthAhead(DateTime date) =>
     date.year == appToday.year ? dayMonth(date) : dayMonthYear(date);
+
+/// [day] of a month as English writes it: `1st`, `2nd`, `15th`, `23rd`.
+/// For what the model is told and for English text; a screen in either
+/// language goes through [dayOfMonth].
+String ordinal(int day) {
+  if (day % 100 >= 11 && day % 100 <= 13) return '${day}th';
+  return switch (day % 10) {
+    1 => '${day}st',
+    2 => '${day}nd',
+    3 => '${day}rd',
+    _ => '${day}th',
+  };
+}
+
+/// [day] of a month as the interface language writes it after "the" or
+/// "el": `15th` in English, `15` in Spanish.
+String dayOfMonth(int day) => englishFormatting ? ordinal(day) : '$day';
 
 /// Items in a sentence: `a, b y c` or `a, b and c`.
 String listed(List<String> items) {

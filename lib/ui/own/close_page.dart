@@ -168,7 +168,7 @@ class ClosePage extends StatelessWidget {
                       Figures(
                         c.difference == 0
                             ? '='
-                            : '${c.difference > 0 ? '+' : '−'}${amount(c.difference.abs())}',
+                            : pesos(ledger.major(c.difference), signed: true),
                         style: context.type.bodySmall,
                       ),
                     ],

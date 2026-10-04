@@ -17,11 +17,6 @@ import '../kit.dart';
 import 'amount_input.dart';
 import 'look.dart';
 
-/// [rate] percent written for the screen: `26,82 %`.
-String percentText(double rate) =>
-    '${formatDecimal(Decimal.parse(rate.toStringAsFixed(2)), decimals: 2, trim: true)}'
-    '${englishFormatting ? '' : ' '}%';
-
 String rateKindLabel(AppLocalizations l, RateKind kind) => switch (kind) {
   RateKind.effectiveAnnual => l.rateEffectiveAnnual,
   RateKind.nominalMonthly => l.rateNominalMonthly,
@@ -398,9 +393,9 @@ class InstalmentDetailPage extends StatelessWidget {
                     _Fact(l.instalRate, switch ((plan.rate, plan.monthlyRate)) {
                       (final double rate, final double monthly) =>
                         l.instalRateValue(
-                          percentText(rate),
+                          percent(rate, decimals: 2, trim: true),
                           rateKindLabel(l, plan.rateKind),
-                          percentText(monthly * 100),
+                          percent(monthly * 100, decimals: 2, trim: true),
                         ),
                       _ => l.instalNotKnown,
                     }),

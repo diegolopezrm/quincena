@@ -1,12 +1,23 @@
+import 'package:decimal/decimal.dart';
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:quincena/agent/scripted_agent.dart';
 import 'package:quincena/app.dart';
+import 'package:quincena/data/clock.dart';
 import 'package:quincena/data/seed.dart';
+import 'package:quincena/domain/pay_schedule.dart';
+import 'package:quincena/domain/records.dart';
+import 'package:quincena/format/money.dart' as format;
+import 'package:quincena/money/asset.dart';
+import 'package:quincena/money/money.dart';
 import 'package:quincena/session/session.dart';
+import 'package:quincena/store/database.dart';
+import 'package:quincena/store/store.dart';
 
 import 'fonts.dart';
+import 'own_flow_test.dart' show fakeRates, settle;
 
 /// Opens the app on a phone whose language is English.
 Future<Session> open(WidgetTester tester) async {
@@ -234,6 +245,77 @@ void main() {
     ];
     expect(offered, isNotEmpty);
     expect(offered, everyElement(isIn(ScriptedAgent.startersEn)));
+  });
+
+  testWidgets('someone\'s own accounts speak English, in its own words', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    tester.platformDispatcher.localesTestValue = const <Locale>[Locale('en')];
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+    DateTime now() => DateTime(2026, 10, 3, 10);
+    // The demo's day and currency, for the tests after this one.
+    addTearDown(() {
+      appToday = DateTime(2026, 10, 1);
+      format.baseCurrency = Asset.cop;
+    });
+    final QuincenaStore store = QuincenaStore(
+      QuincenaDatabase(NativeDatabase.memory()),
+      now: now,
+    );
+    addTearDown(() => tester.runAsync(store.close));
+    await tester.runAsync(() async {
+      await store.ensureCategories();
+      await store.saveProfile(
+        const Profile(name: 'Ana', base: Asset.cop, schedule: TwiceMonthly()),
+      );
+      await store.addAccount(
+        name: 'Bancolombia',
+        kind: AccountKind.bank,
+        asset: Asset.cop,
+        opening: Decimal.fromInt(2000000),
+      );
+      await store.addGoal(
+        name: 'Cartagena',
+        target: Money(Decimal.fromInt(1000000), Asset.cop),
+        saved: Money(Decimal.fromInt(270000), Asset.cop),
+      );
+      // Past the first screen, as after onboarding.
+      await store.setSetting('app.mode', 'own');
+    });
+    await tester.pumpWidget(
+      QuincenaApp(
+        store: store,
+        startInDemo: false,
+        fetcher: fakeRates(),
+        now: now,
+      ),
+    );
+    await settle(tester);
+
+    expect(find.text('Transactions'), findsOneWidget);
+    expect(find.text('Transaction'), findsOneWidget);
+    expect(find.byTooltip('Needs review'), findsOneWidget);
+
+    // A goal's share has no space before its sign in English.
+    await tester.tap(find.text('Plan'));
+    await settle(tester);
+    await tester.scrollUntilVisible(
+      find.text('27%'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('27%'), findsOneWidget);
+
+    // Paydays are said as days of the month are.
+    await tester.tap(find.byTooltip('Settings'));
+    await settle(tester);
+    expect(
+      find.text('Twice a month: the 15th and 30th of each month'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('the expense form checks in English', (tester) async {

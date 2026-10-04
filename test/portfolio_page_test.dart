@@ -38,6 +38,9 @@ import 'portfolio_test.dart' show FakeMarket;
 
 final DateTime _now = DateTime(2026, 10, 3, 10);
 
+/// [moment] as [screen] reads it, with a plain space before `a. m.`.
+String _seen(DateTime moment) => dayAndTime(moment).replaceAll('\u00a0', ' ');
+
 /// Prices for the day that climbed from 98.000 to 100.000 dollars a
 /// bitcoin, while Binance's ticker says it opened at 97.000: two ways of
 /// telling the same day that do not agree.
@@ -220,7 +223,7 @@ void main() {
     // No "$0 · 0,00 %" that reads like a measurement.
     expect(find.text('Sin dato'), findsOneWidget);
     expect(find.text('Aún no hay precio de hace 24 horas.'), findsOneWidget);
-    expect(find.textContaining('0,00 %'), findsNothing);
+    expect(find.textContaining('0,00\u00a0%'), findsNothing);
     // Tether's day is its peg, so it shows none.
     await reveal(tester, find.text('Sin precio'));
     expect(screen(tester), contains('500 USDT'));
@@ -237,7 +240,7 @@ void main() {
     // Bitcoin keeps the last price saved, but nothing says how it moved.
     expect(own.portfolio.day, isNull);
     expect(find.text('Sin dato'), findsOneWidget);
-    expect(find.textContaining('0,00 %'), findsNothing);
+    expect(find.textContaining('0,00\u00a0%'), findsNothing);
     expect(portfolioAnswer(own)['change24hInBase'], isNull);
   });
 
@@ -246,9 +249,9 @@ void main() {
 
     // 0,01 BTC from 98.000 to 100.000 dollars at 4.000 pesos: 80.000, on
     // 5.920.000 held with the tether. The ticker would have said 120.000.
-    expect(find.text('+\$80.000'), findsOneWidget);
-    expect(find.text('+1,35 % por precio'), findsOneWidget);
-    expect(find.text('+\$120.000'), findsNothing);
+    expect(find.text('+$signJoiner\$80.000'), findsOneWidget);
+    expect(find.text('+1,35\u00a0% por precio'), findsOneWidget);
+    expect(find.text('+$signJoiner\$120.000'), findsNothing);
 
     await reveal(tester, find.text('24 h'));
     await tester.tap(find.text('24 h'));
@@ -264,8 +267,8 @@ void main() {
 
     expect(find.text('Ganancia no realizada'), findsOneWidget);
     // 4.000.000 for what cost 3.000.000; the tether is left out.
-    expect(find.text('+\$1.000.000'), findsOneWidget);
-    expect(find.text('+33,3 % sobre lo que pagaste'), findsOneWidget);
+    expect(find.text('+$signJoiner\$1.000.000'), findsOneWidget);
+    expect(find.text('+33,3\u00a0% sobre lo que pagaste'), findsOneWidget);
     expect(
       find.text('Sin contar \$2.000.000 que llegó sin precio de compra.'),
       findsOneWidget,
@@ -600,10 +603,7 @@ void main() {
       line.centerLeft + const Offset(0.4, 0),
     );
     await tester.pump(const Duration(milliseconds: 200));
-    expect(
-      screen(tester),
-      contains('${dayAndTime(start)}: \$0 desde el inicio'),
-    );
+    expect(screen(tester), contains('${_seen(start)}: \$0 desde el inicio'));
     for (var i = 0; i < 10; i++) {
       await finger.moveBy(Offset(line.width / 10, 0));
       await tester.pump();
@@ -611,7 +611,7 @@ void main() {
     // The end of the line: what prices made over the week.
     expect(
       screen(tester),
-      contains('${dayAndTime(_now)}: +\$80.000 desde el inicio'),
+      contains('${_seen(_now)}: +\$80.000 desde el inicio'),
     );
     expect(screen(tester), isNot(contains('en 7 días')));
 
@@ -630,7 +630,7 @@ void main() {
       line.centerLeft + const Offset(0.4, 0),
     );
     await tester.pump(const Duration(milliseconds: 200));
-    expect(screen(tester), contains('${dayAndTime(start)}: valía \$5.920.000'));
+    expect(screen(tester), contains('${_seen(start)}: valía \$5.920.000'));
     await again.up();
     await settle(tester);
     expect(find.textContaining('valía'), findsNothing);
@@ -641,21 +641,63 @@ void main() {
     expect(find.textContaining('valía'), findsNothing);
   });
 
+  testWidgets('over a year, the chart says the year of each day', (
+    tester,
+  ) async {
+    await openCrypto(tester, CandleMarket());
+    await reveal(tester, find.text('1 a'));
+    await tester.tap(find.text('1 a'));
+    await settle(tester);
+    // A year of daily closes: the first one is in 2025.
+    final DateTime start = _now.subtract(
+      ChartRange.year.step * (ChartRange.year.points - 1),
+    );
+    expect(start.year, 2025);
+    expect(find.text(shortDate(start)), findsOneWidget);
+
+    await tester.ensureVisible(find.byType(PortfolioChart));
+    await settle(tester);
+    final Rect line = tester.getRect(
+      find
+          .descendant(
+            of: find.byType(PortfolioChart),
+            matching: find.byType(CustomPaint),
+          )
+          .first,
+    );
+    final TestGesture finger = await tester.startGesture(
+      line.centerLeft + const Offset(0.4, 0),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(
+      screen(tester),
+      contains('${shortDate(start)}: \$0 desde el inicio'),
+    );
+    await finger.up();
+    await settle(tester);
+  });
+
   testWidgets('a screen reader steps through the chart\'s moments', (
     tester,
   ) async {
     final SemanticsHandle semantics = tester.ensureSemantics();
     await openCrypto(tester, CandleMarket());
     final SemanticsNode node = tester.getSemantics(find.byType(PortfolioChart));
-    expect(node.label, 'Ganancia por precio en 7 días: +\$80.000, +1,35 %');
-    expect(node.value, '${dayAndTime(_now)}: +\$80.000 desde el inicio');
+    expect(
+      node.label,
+      'Ganancia por precio en 7 días: +$signJoiner\$80.000, +1,35\u00a0%',
+    );
+    expect(
+      node.value,
+      '${dayAndTime(_now)}: +$signJoiner\$80.000 desde el inicio',
+    );
 
     node.owner!.performAction(node.id, SemanticsAction.decrease);
     await settle(tester);
     final DateTime hourBefore = _now.subtract(const Duration(hours: 1));
     expect(
       tester.getSemantics(find.byType(PortfolioChart)).value,
-      startsWith('${dayAndTime(hourBefore)}: +\$'),
+      startsWith('${dayAndTime(hourBefore)}: +$signJoiner\$'),
     );
     semantics.dispose();
   });

@@ -443,7 +443,10 @@ String _stepLine(AppLocalizations l, RateStep step, Asset base) {
     return l.stablecoinPeg(step.from == 'USD' ? step.to : step.from);
   }
   final Asset one = Asset.of(r.asset);
-  final String unit = one.isCrypto ? one.code : one.symbol ?? one.code;
+  // English reads a currency's code, as the line above it does: `1 USD`.
+  final String unit = one.isCrypto || englishFormatting
+      ? one.code
+      : one.symbol ?? one.code;
   final String value = formatAmount(
     r.value,
     Asset.of(r.quote),

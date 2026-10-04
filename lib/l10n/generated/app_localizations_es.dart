@@ -421,7 +421,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get payTwiceMonthly => 'Quincenal';
 
   @override
-  String payTwiceMonthlyDetail(int first, int second) {
+  String payTwiceMonthlyDetail(String first, String second) {
     return 'Los días $first y $second de cada mes';
   }
 
@@ -429,7 +429,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get payMonthly => 'Mensual';
 
   @override
-  String payMonthlyDetail(int day) {
+  String payMonthlyDetail(String day) {
     return 'El día $day de cada mes';
   }
 
@@ -590,9 +590,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get yourAccounts => 'Tus cuentas';
-
-  @override
-  String get accountMovements => 'Movimientos de la cuenta';
 
   @override
   String get balanceToday => 'Saldo hoy';
@@ -1957,11 +1954,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get rulesBody =>
-      'Se crean cuando confirmas algo en Por revisar. Una regla solo cambia lo que llegue después: lo ya registrado se queda como está.';
+      'Se crean cuando registras algo en Por revisar. Una regla solo cambia lo que llegue después: lo ya registrado se queda como está.';
 
   @override
   String get rulesEmpty =>
-      'Todavía no hay reglas. Aparecen cuando confirmas tus primeros movimientos.';
+      'Todavía no hay reglas. Aparecen cuando registras tus primeros movimientos.';
 
   @override
   String get rulesMerchants => 'Comercios';
@@ -2114,7 +2111,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get captureImagesAndroid =>
-      'Comparte con Quincena una captura, una foto, un PDF o un texto desde cualquier app, o elígelos en Por revisar. Se leen en el teléfono y quedan para que los confirmes.';
+      'Comparte con Quincena una captura, una foto, un PDF o un texto desde cualquier app, o elígelos en Por revisar. Se leen en el teléfono y quedan ahí para que los registres.';
 
   @override
   String get captureImagesDesktop =>
@@ -2304,14 +2301,8 @@ class AppLocalizationsEs extends AppLocalizations {
       'Precios de mercado de Binance, que cambian a cada momento. Quincena no da asesoría de inversión.';
 
   @override
-  String get portfolioOpen => 'Ver cripto';
-
-  @override
   String get portfolioEmpty =>
       'Aún no tienes cripto. Agrega una billetera o conecta Binance.';
-
-  @override
-  String get holdingQuantity => 'Tienes';
 
   @override
   String get holdingPrice => 'Precio';
@@ -2367,9 +2358,6 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get tradeOutsideHelp =>
       'En Binance P2P, en otro exchange o en efectivo. Si sale de una de tus cuentas, elígela y su saldo también cambia.';
-
-  @override
-  String get tradeCurrency => 'Moneda';
 
   @override
   String tradePriceEach(String price) {
@@ -3259,8 +3247,8 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String detectivePriceUpWhy(String before, String now, int percent) {
-    return 'Solía cobrar $before y el último cobro fue $now, un $percent % más. Que suba no quiere decir que esté mal: puede ser un cambio de plan o de tarifa.';
+  String detectivePriceUpWhy(String before, String now, String percent) {
+    return 'Solía cobrar $before y el último cobro fue $now, un $percent más. Que suba no quiere decir que esté mal: puede ser un cambio de plan o de tarifa.';
   }
 
   @override
@@ -4861,9 +4849,9 @@ class AppLocalizationsEs extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          'No cuenta $count movimientos que esperan en Por revisar. Cuando los confirmes, la cifra puede cambiar.',
+          'No cuenta $count movimientos que esperan en Por revisar. Cuando los registres, la cifra puede cambiar.',
       one:
-          'No cuenta 1 movimiento que espera en Por revisar. Cuando lo confirmes, la cifra puede cambiar.',
+          'No cuenta 1 movimiento que espera en Por revisar. Cuando lo registres, la cifra puede cambiar.',
     );
     return '$_temp0';
   }

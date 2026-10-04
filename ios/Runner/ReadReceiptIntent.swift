@@ -12,7 +12,7 @@ import UniformTypeIdentifiers
 struct ReadReceiptIntent: AppIntent {
   static let title: LocalizedStringResource = "Read a receipt"
   static let description = IntentDescription(
-    "Reads screenshots, photos, PDFs or texts of payments on the device and leaves them in Quincena's inbox to confirm."
+    "Reads screenshots, photos, PDFs or texts of payments on the device and leaves them in Needs review for you to record."
   )
   static let openAppWhenRun = false
   static let authenticationPolicy: IntentAuthenticationPolicy = .alwaysAllowed
@@ -43,8 +43,8 @@ struct ReadReceiptIntent: AppIntent {
     }
     switch kept {
     case 0: return .result(dialog: "There was no text to read in it.")
-    case 1: return .result(dialog: "It is waiting in Quincena's inbox.")
-    default: return .result(dialog: "They are waiting in Quincena's inbox.")
+    case 1: return .result(dialog: "It's waiting in Quincena, in Needs review.")
+    default: return .result(dialog: "They're waiting in Quincena, in Needs review.")
     }
   }
 }

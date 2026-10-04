@@ -74,7 +74,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get problemOffline =>
-      'No internet connection. Your accounts and movements still work; ask again once you\'re online.';
+      'No internet connection. Your accounts and transactions still work; ask again once you\'re online.';
 
   @override
   String get problemOther => 'I couldn\'t answer this time. Try again.';
@@ -99,7 +99,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ownAskAll => 'How much do I have in all, with dollars and crypto?';
 
   @override
-  String get ownAskCompare => 'How am I doing against last month?';
+  String get ownAskCompare => 'How am I doing compared with last month?';
 
   @override
   String get ownAskRecord => 'I want to record an expense';
@@ -132,7 +132,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get geminiNoteNot =>
-      'Your other movements one by one do not travel, nor your notes, nor your bank\'s alerts, nor your location.';
+      'Your other individual transactions, your notes, your bank\'s alerts and your location are never sent.';
 
   @override
   String get geminiNoteTerms =>
@@ -367,7 +367,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacyNote =>
-      'Your accounts and movements are stored only on this device.';
+      'Your accounts and transactions are stored only on this device.';
 
   @override
   String onboardingStep(int step, int total) {
@@ -420,16 +420,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get payTwiceMonthly => 'Twice a month';
 
   @override
-  String payTwiceMonthlyDetail(int first, int second) {
-    return 'Days $first and $second of each month';
+  String payTwiceMonthlyDetail(String first, String second) {
+    return 'The $first and $second of each month';
   }
 
   @override
   String get payMonthly => 'Monthly';
 
   @override
-  String payMonthlyDetail(int day) {
-    return 'Day $day of each month';
+  String payMonthlyDetail(String day) {
+    return 'The $day of each month';
   }
 
   @override
@@ -472,7 +472,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabHome => 'Home';
 
   @override
-  String get tabMovements => 'Movements';
+  String get tabMovements => 'Transactions';
 
   @override
   String get tabAccounts => 'Accounts';
@@ -546,7 +546,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountAssetLocked =>
-      'The currency can\'t change: the account\'s movements are in it.';
+      'The currency can\'t change because the account already has transactions in it.';
 
   @override
   String get save => 'Save';
@@ -567,9 +567,9 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Its $count movements are deleted too. This can\'t be undone.',
-      one: 'Its movement is deleted too. This can\'t be undone.',
-      zero: 'It has no movements.',
+      other: 'Its $count transactions are deleted too. This can\'t be undone.',
+      one: 'Its transaction is deleted too. This can\'t be undone.',
+      zero: 'It has no transactions.',
     );
     return '$_temp0';
   }
@@ -589,9 +589,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yourAccounts => 'Your accounts';
-
-  @override
-  String get accountMovements => 'Account movements';
 
   @override
   String get balanceToday => 'Balance today';
@@ -644,10 +641,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get addMovement => 'Add movement';
+  String get addMovement => 'Add transaction';
 
   @override
-  String get editMovement => 'Edit movement';
+  String get editMovement => 'Edit transaction';
 
   @override
   String get kindExpense => 'Expense';
@@ -702,7 +699,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get yesterday => 'Yesterday';
 
   @override
-  String get searchMovements => 'Search movements';
+  String get searchMovements => 'Search transactions';
 
   @override
   String get noMovements =>
@@ -710,13 +707,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noMovementsBody =>
-      'Record an expense, an income or a transfer with \"Movement\".';
+      'Record an expense, an income or a transfer with \"Transaction\".';
 
   @override
   String get noResults => 'Nothing matches the search.';
 
   @override
-  String get deleteMovementTitle => 'Delete this movement?';
+  String get deleteMovementTitle => 'Delete this transaction?';
 
   @override
   String get deleteTransferBody => 'Both sides of the transfer are deleted.';
@@ -731,7 +728,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get needAccountFirst => 'Add an account first.';
 
   @override
-  String get recentMovements => 'Recent movements';
+  String get recentMovements => 'Recent transactions';
 
   @override
   String get seeAll => 'See all';
@@ -768,7 +765,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'What arrives each payday. It\'s used to project the coming days; it doesn\'t count as money until it arrives.';
 
   @override
-  String get settingsCushion => 'Cushion';
+  String get settingsCushion => 'Safety buffer';
 
   @override
   String get settingsCushionBody =>
@@ -781,7 +778,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsRemove => 'Remove';
 
   @override
-  String get freeExplainCushion => 'Cushion you keep';
+  String get freeExplainCushion => 'Safety buffer';
 
   @override
   String get freeExplainAssumptions => 'What it assumes';
@@ -802,12 +799,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String freeExplainAssumeCushion(String cushion) {
-    return 'It leaves out $cushion as a cushion.';
+    return 'It keeps $cushion aside as your safety buffer.';
   }
 
   @override
   String get freeExplainAssumeNoCushion =>
-      'There\'s no cushion. You can choose one in Settings.';
+      'You haven\'t set a safety buffer. You can add one in Settings.';
 
   @override
   String payLate(String date) {
@@ -828,8 +825,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count movements dated ahead ($amount) don\'t count yet.',
-      one: 'One movement dated ahead ($amount) doesn\'t count yet.',
+      other: '$count future-dated transactions ($amount) don\'t count yet.',
+      one: 'One future-dated transaction ($amount) doesn\'t count yet.',
     );
     return '$_temp0';
   }
@@ -912,7 +909,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get totalExplainTitle => 'How your net worth is worked out';
+  String get totalExplainTitle => 'How your net worth is calculated';
 
   @override
   String totalExplainUnpriced(String names) {
@@ -920,10 +917,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get computedOnPhone => 'Worked out on your phone';
+  String get computedOnPhone => 'Calculated on your phone';
 
   @override
-  String get computedTitle => 'How it was worked out';
+  String get computedTitle => 'How this was calculated';
 
   @override
   String computedFooter(String time) {
@@ -936,7 +933,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String computedMonth(String month) {
-    return 'Spending in $month by category, against the month before';
+    return 'Spending in $month by category, compared with the month before';
   }
 
   @override
@@ -976,14 +973,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String comingTight(String date) {
-    return 'On $date you\'d be under your cushion.';
+    return 'On $date you\'d dip below your safety buffer.';
   }
 
   @override
-  String get comingNoTight => 'No day under your cushion in these 30 days.';
+  String get comingNoTight =>
+      'You stay above your safety buffer for the next 30 days.';
 
   @override
-  String get comingNoTightZero => 'You don\'t run out in these 30 days.';
+  String get comingNoTightZero =>
+      'You don\'t run out of money in the next 30 days.';
 
   @override
   String get comingLegendSure => 'What\'s sure';
@@ -993,7 +992,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String comingLegendCushion(String amount) {
-    return '$amount cushion';
+    return '$amount buffer';
   }
 
   @override
@@ -1007,7 +1006,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get comingUnderCushion => 'Under your cushion';
+  String get comingUnderCushion => 'Below your buffer';
 
   @override
   String get comingPay => 'Your pay';
@@ -1032,7 +1031,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get comingNoEvents => 'Nothing scheduled in these days.';
 
   @override
-  String get comingClose => 'Fortnight close';
+  String get comingClose => 'Pay-period summary';
 
   @override
   String get buyTitle => 'Can I afford it?';
@@ -1066,11 +1065,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get buyBelow => 'You\'d go under your cushion';
+  String get buyBelow => 'You\'d dip below your safety buffer';
 
   @override
   String buyBelowBody(String date, String amount, String cushion) {
-    return 'On $date you\'d have $amount; your cushion is $cushion.';
+    return 'On $date you\'d have $amount; your buffer is $cushion.';
   }
 
   @override
@@ -1108,7 +1107,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get closeTitle => 'Fortnight close';
+  String get closeTitle => 'Pay-period summary';
 
   @override
   String closeRange(String from, String to) {
@@ -1119,43 +1118,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get closeChanged => 'What changed';
 
   @override
-  String get closeComing => 'What\'s coming';
+  String get closeComing => 'Coming up';
 
   @override
   String get closeAction => 'One thing you could do';
 
   @override
   String closeSpentMore(String spent, String difference) {
-    return 'You spent $spent, $difference more than the fortnight before.';
+    return 'You spent $spent, $difference more than the previous pay period.';
   }
 
   @override
   String closeSpentLess(String spent, String difference) {
-    return 'You spent $spent, $difference less than the fortnight before.';
+    return 'You spent $spent, $difference less than the previous pay period.';
   }
 
   @override
   String closeSpentSame(String spent) {
-    return 'You spent $spent, the same as the fortnight before.';
+    return 'You spent $spent, the same as the previous pay period.';
   }
 
   @override
   String closeSpentFirst(String spent) {
-    return 'You spent $spent. It\'s your first whole fortnight recorded: there\'s nothing to compare it with yet.';
+    return 'You spent $spent. This is your first full pay period on record, so there\'s nothing to compare it with yet.';
   }
 
   @override
   String get closeNone =>
-      'There\'s no whole fortnight recorded yet. The close shows up once there is one, from one payday to the next.';
+      'There\'s no full pay period on record yet. The summary appears once there is one, from one payday to the next.';
 
   @override
   String closeComingTotal(String date, String amount) {
-    return 'Until $date, $amount is committed.';
+    return '$amount is due by $date.';
   }
 
   @override
   String closeComingNone(String date) {
-    return 'Nothing is committed until $date.';
+    return 'Nothing is due by $date.';
   }
 
   @override
@@ -1179,12 +1178,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String closeActionTight(String date) {
-    return 'On $date you\'d go under your cushion. See which charge could move to another day.';
+    return 'On $date you\'d dip below your buffer. See whether a charge could move to another day.';
   }
 
   @override
   String closeActionCategory(String category, String before, String now) {
-    return '$category went from $before to $now against the fortnight before. Have a look at those payments.';
+    return '$category went from $before to $now compared with the previous pay period. Take a look at those payments.';
   }
 
   @override
@@ -1213,7 +1212,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get buyWithoutPay => 'without counting your pay';
 
   @override
-  String get closeSpentNone => 'You recorded no spending this fortnight.';
+  String get closeSpentNone => 'You recorded no spending this pay period.';
 
   @override
   String comingLowestWithout(String amount, String date) {
@@ -1229,7 +1228,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get computedClose =>
-      'The close of your last fortnight, against the one before';
+      'Your last pay period, compared with the one before';
 
   @override
   String get remindersTitle => 'Reminders';
@@ -1239,17 +1238,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get remindersCloseHelp =>
-      'A reminder with no amounts, to see the fortnight\'s close. Nothing about your money shows on the lock screen.';
+      'A reminder with no amounts, to see your pay-period summary. Nothing about your money shows on the lock screen.';
 
   @override
   String get remindersDenied =>
       'For reminders, allow Quincena\'s notifications in your phone\'s settings.';
 
   @override
-  String get reminderTitle => 'Your fortnight close is ready';
+  String get reminderTitle => 'Your pay-period summary is ready';
 
   @override
-  String get reminderBody => 'Open it to see what changed and what\'s coming.';
+  String get reminderBody =>
+      'Open it to see what changed and what\'s coming up.';
 
   @override
   String get tabPlan => 'Plan';
@@ -1264,7 +1264,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get goalDeleteBody =>
-      'The goal is deleted. Your accounts and movements don\'t change.';
+      'The goal is deleted. Your accounts and transactions don\'t change.';
 
   @override
   String get goalDelete => 'Delete goal';
@@ -1329,7 +1329,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get envelopesSaveAnyway => 'Save anyway';
 
   @override
-  String get envelopesTitle => 'Split your fortnight';
+  String get envelopesTitle => 'Split your paycheck';
 
   @override
   String envelopesPeriod(String from, String to) {
@@ -1341,7 +1341,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String envelopesToSplitBody(String committed, String cushion) {
-    return 'What there is to spend, less $committed committed until payday and $cushion of cushion.';
+    return 'What you have to spend, minus $committed due by payday and your $cushion safety buffer.';
   }
 
   @override
@@ -1376,7 +1376,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get envelopesSave => 'Save the split';
 
   @override
-  String get cushionDaysTitle => 'Cushion in days';
+  String get cushionDaysTitle => 'Emergency fund in days';
 
   @override
   String cushionDaysCovers(int days) {
@@ -1395,7 +1395,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cushionDaysShortHistory =>
-      'With less than a month of movements there\'s no average to trust yet. Come back in a few weeks.';
+      'With less than a month of transactions, there\'s no reliable average yet. Check back in a few weeks.';
 
   @override
   String get cushionDaysNoEssential =>
@@ -1427,7 +1427,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'It\'s an average: a month that spends differently changes it.';
 
   @override
-  String get cushionDaysAccounts => 'Where your cushion is';
+  String get cushionDaysAccounts => 'Where your emergency fund is';
 
   @override
   String get cushionDaysEssentials => 'What\'s essential to you';
@@ -1580,7 +1580,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get whatIfLowest => 'Lowest balance in 45 days';
 
   @override
-  String get whatIfTight => 'First day under your cushion';
+  String get whatIfTight => 'First day below your buffer';
 
   @override
   String get whatIfNoTight => 'none';
@@ -1664,7 +1664,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get planComing => 'The days ahead, with the tight ones marked';
 
   @override
-  String get planSplitTitle => 'Split this fortnight';
+  String get planSplitTitle => 'Split this paycheck';
 
   @override
   String planSplitBody(String amount) {
@@ -1697,7 +1697,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get freeExplainAction => 'Where does it come from?';
 
   @override
-  String get freeExplainTitle => 'How what you can spend is worked out';
+  String get freeExplainTitle => 'How \"You can spend\" is calculated';
 
   @override
   String get freeExplainSpendable => 'In your everyday accounts';
@@ -1770,7 +1770,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteAllBody =>
-      'Accounts, movements and settings are deleted from this device. This can\'t be undone; export first if you want to keep them.';
+      'Accounts, transactions and settings are deleted from this device. This can\'t be undone; export first if you want to keep them.';
 
   @override
   String get useDemo => 'See the sample data';
@@ -1786,13 +1786,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacyBody =>
-      'Your accounts and movements are kept only on this device. Quincena has no server holding your finances, shows no ads and does not sell your data. The policy says what goes to Gemini, to Binance or to the price sources, and when.';
+      'Your accounts and transactions are kept only on this device. Quincena has no server holding your finances, shows no ads and does not sell your data. The policy says what goes to Gemini, to Binance or to the price sources, and when.';
 
   @override
   String get settingsTitle => 'Settings';
 
   @override
-  String get inboxTitle => 'To review';
+  String get inboxTitle => 'Needs review';
 
   @override
   String inboxBanner(int count) {
@@ -1954,11 +1954,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rulesBody =>
-      'They\'re made when you confirm something in To review. A rule only shapes what arrives later: nothing already recorded changes.';
+      'They\'re created when you record something in Needs review. A rule only affects what comes in later; nothing already recorded changes.';
 
   @override
   String get rulesEmpty =>
-      'No rules yet. They show up when you confirm your first movements.';
+      'No rules yet. They show up when you record your first transactions.';
 
   @override
   String get rulesMerchants => 'Shops';
@@ -1995,7 +1995,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get autoRecordedBody =>
-      'What the app recorded on its own in the last two weeks. If something is wrong, undo it and it goes back to To review.';
+      'What the app recorded on its own in the last two weeks. If something\'s wrong, undo it and it goes back to Needs review.';
 
   @override
   String get fixMovement => 'Fix';
@@ -2017,7 +2017,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pasteRead => 'Read';
 
   @override
-  String get pasteAdded => 'It is in To review.';
+  String get pasteAdded => 'It\'s in Needs review.';
 
   @override
   String get pasteRecorded => 'It was recorded.';
@@ -2045,8 +2045,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Found $count payments. They are in To review.',
-      one: 'Found a payment. It is in To review.',
+      other: 'Found $count payments. They\'re in Needs review.',
+      one: 'Found a payment. It\'s in Needs review.',
     );
     return '$_temp0';
   }
@@ -2067,14 +2067,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get captureAutoHelp =>
-      'When the account, the category and the amount are certain and it is not a repeat, it is recorded without asking. The rest waits in To review.';
+      'When the account, category and amount are certain and it isn\'t a duplicate, it\'s recorded without asking. Everything else waits in Needs review.';
 
   @override
   String get captureLocation => 'Use where the payment happened';
 
   @override
   String get captureLocationHelp =>
-      'When the alert doesn\'t say where, Quincena looks up the shops a few metres from where the phone was. The location stays here; only the coordinates go to OpenStreetMap, through Photon, to find the shops. Shop data is © OpenStreetMap contributors, under the ODbL.';
+      'When the alert doesn\'t say where, Quincena looks up the shops a few meters from where the phone was. The location stays here; only the coordinates go to OpenStreetMap, through Photon, to find the shops. Shop data is © OpenStreetMap contributors, under the ODbL.';
 
   @override
   String get captureLocationDenied =>
@@ -2108,22 +2108,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get captureImagesIos =>
-      'In To review you can pick a screenshot, a photo or a PDF of a payment, and Quincena reads it on the phone.\nTo send them from other apps, make a shortcut with Quincena\'s \"Read a receipt\" action and turn on \"Show in Share Sheet\".\nWith \"Take Screenshot\" before it and Back Tap (Settings, Accessibility, Touch), double-tap the back of the iPhone to read what is on the screen.';
+      'In Needs review, you can pick a screenshot, a photo or a PDF of a payment, and Quincena reads it on the phone.\nTo send them from other apps, make a shortcut with Quincena\'s \"Read a receipt\" action and turn on \"Show in Share Sheet\".\nWith \"Take Screenshot\" before it and Back Tap (Settings, Accessibility, Touch), double-tap the back of the iPhone to read what is on the screen.';
 
   @override
   String get captureImagesAndroid =>
-      'Share a screenshot, a photo, a PDF or a text with Quincena from any app, or pick them in To review. They are read on the phone and wait for you to confirm them.';
+      'Share a screenshot, a photo, a PDF or a text with Quincena from any app, or pick them in Needs review. They\'re read on the phone and wait there for you to record them.';
 
   @override
   String get captureImagesDesktop =>
-      'Pick a screenshot, a photo or a PDF of a payment in To review, and Quincena reads it on this computer.';
+      'Pick a screenshot, a photo or a PDF of a payment in Needs review, and Quincena reads it on this computer.';
 
   @override
   String get captureIosTitle => 'On iPhone, with Shortcuts';
 
   @override
   String get captureIosSteps =>
-      '1. Open Shortcuts and go to Automation.\n2. Create a new one with Wallet and pick your cards.\n3. If you want to use the location, add \"Get Current Location\". Then add Quincena\'s \"Record a movement\" action, choose Apple Pay as the source and give it the amount, the merchant and the card.\n4. Choose \"Run Immediately\".\nFor your bank\'s text messages, create a Message automation for the bank\'s sender, use the same action with Message as the source and give it the message as text. From iOS 27, the Notification automation does the same with your banks\' apps.';
+      '1. Open Shortcuts and go to Automation.\n2. Create a new one with Wallet and pick your cards.\n3. If you want to use the location, add \"Get Current Location\". Then add Quincena\'s \"Record a transaction\" action, choose Apple Pay as the source and give it the amount, the merchant and the card.\n4. Choose \"Run Immediately\".\nFor your bank\'s text messages, create a Message automation for the bank\'s sender, use the same action with Message as the source and give it the message as text. From iOS 27, the Notification automation does the same with your banks\' apps.';
 
   @override
   String get captureOpenShortcuts => 'Open Shortcuts';
@@ -2303,14 +2303,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Market prices from Binance, which change by the moment. Quincena does not give investment advice.';
 
   @override
-  String get portfolioOpen => 'See crypto';
-
-  @override
   String get portfolioEmpty =>
       'No crypto yet. Add a wallet or connect Binance.';
-
-  @override
-  String get holdingQuantity => 'You hold';
 
   @override
   String get holdingPrice => 'Price';
@@ -2368,9 +2362,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'On Binance P2P, another exchange or in cash. If it comes out of one of your accounts, pick it and its balance changes too.';
 
   @override
-  String get tradeCurrency => 'Currency';
-
-  @override
   String tradePriceEach(String price) {
     return 'Price per unit: $price';
   }
@@ -2385,7 +2376,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountOpeningCostHelp =>
-      'Optional. What you paid for that balance; with it, Quincena works out how much you have gained.';
+      'Optional. What you paid for that balance; with it, Quincena calculates your gain.';
 
   @override
   String get binanceTitle => 'Binance';
@@ -2402,7 +2393,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get binanceConnectBody =>
-      'Quincena brings in your spot, funding and Earn balances, your P2P purchases and sales, your conversions, market trades, deposits and withdrawals, and works out from them what each coin cost you.';
+      'Quincena brings in your spot, funding and Earn balances, your P2P purchases and sales, your conversions, market trades, deposits and withdrawals, and calculates what each coin cost you.';
 
   @override
   String get binanceReadOnlyTitle => 'Read only';
@@ -2480,8 +2471,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       movements,
       locale: localeName,
-      other: '$movements new movements',
-      one: 'one new movement',
+      other: '$movements new transactions',
+      one: 'one new transaction',
       zero: 'nothing new',
     );
     return 'Done: $_temp0.';
@@ -2495,7 +2486,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get binanceDisconnectBody =>
-      'The key is erased from this device. The accounts and movements it brought stay as yours.';
+      'The key is erased from this device. The accounts and transactions it brought stay as yours.';
 
   @override
   String get binanceWebOnly =>
@@ -2702,13 +2693,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cadenceYearly => 'Every year';
 
   @override
-  String get chargeAdd => 'Add a fixed payment';
+  String get chargeAdd => 'Add a recurring payment';
 
   @override
-  String get chargeEdit => 'Fixed payment';
+  String get chargeEdit => 'Recurring payment';
 
   @override
-  String get chargePausedNote => 'Paused: not counted as committed.';
+  String get chargePausedNote => 'Paused: not counted in upcoming payments.';
 
   @override
   String get chargeName => 'What is it?';
@@ -2811,10 +2802,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chargePauseNote =>
-      'Pausing here only stops counting it as committed. To stop the charges, cancel it with the service.';
+      'Pausing here only stops counting it in upcoming payments. To stop the charges, cancel with the service.';
 
   @override
-  String get chargeDelete => 'Delete fixed payment';
+  String get chargeDelete => 'Delete recurring payment';
 
   @override
   String chargeDeleteTitle(String name) {
@@ -2823,18 +2814,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chargeDeleteBody =>
-      'It stops counting as committed. The charges you already recorded stay.';
+      'It\'s no longer counted in upcoming payments. Charges you already recorded stay.';
 
   @override
-  String get fixedTitle => 'Fixed payments';
+  String get fixedTitle => 'Recurring payments';
 
   @override
   String get fixedBody =>
-      'What\'s charged on its own every month or year: subscriptions, rent, utilities. Quincena counts it as committed before it comes.';
+      'Charges that repeat every month or year: subscriptions, rent, utilities. Quincena takes them out of what you can spend before they\'re due.';
 
   @override
   String get fixedEmpty =>
-      'No fixed payments yet. Add rent, internet or a subscription to see them coming.';
+      'No recurring payments yet. Add rent, internet or a subscription to see them coming.';
 
   @override
   String get fixedNext30 => 'In the next 30 days';
@@ -2843,7 +2834,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fixedSubscriptionsYear => 'Subscriptions a year';
 
   @override
-  String get guessTitle => 'These look like fixed payments';
+  String get guessTitle => 'These look like recurring payments';
 
   @override
   String guessEvidence(int count, String amount, String dates) {
@@ -2851,16 +2842,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get guessAdd => 'Add as a fixed payment';
+  String get guessAdd => 'Add as a recurring payment';
 
   @override
-  String get guessNot => 'Not fixed';
+  String get guessNot => 'Not recurring';
 
   @override
   String get fixedSubscriptions => 'Subscriptions';
 
   @override
-  String get fixedOthers => 'Other fixed payments';
+  String get fixedOthers => 'Other recurring payments';
 
   @override
   String get fixedPausedTitle => 'Paused';
@@ -2906,20 +2897,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fixedReminds => 'With a reminder';
 
   @override
-  String get instalTitle => 'Instalment purchases';
+  String get instalTitle => 'Installment purchases';
 
   @override
-  String get instalAdd => 'Add an instalment purchase';
+  String get instalAdd => 'Add an installment purchase';
 
   @override
-  String get instalEdit => 'Edit instalment purchase';
+  String get instalEdit => 'Edit installment purchase';
 
   @override
   String get instalBody =>
-      'What you bought in instalments, with the figures the bank or the shop gave you. What you don\'t know stays an estimate, never a final figure.';
+      'What you bought in installments, with the figures the bank or the store gave you. What you don\'t know stays an estimate, never a final figure.';
 
   @override
-  String get instalEmpty => 'No instalment purchases yet.';
+  String get instalEmpty => 'No installment purchases yet.';
 
   @override
   String get instalCardNote =>
@@ -2950,14 +2941,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get instalList => 'Your purchases';
 
   @override
-  String get instalNoData => 'The rate or the instalment is missing';
+  String get instalNoData => 'The rate or the installment amount is missing';
 
   @override
   String get instalPaidOff => 'Paid off';
 
   @override
   String instalNextRow(int number, int count, String date) {
-    return 'Instalment $number of $count: $date';
+    return 'Installment $number of $count: $date';
   }
 
   @override
@@ -2968,7 +2959,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get instalTotalUnknown =>
-      'Without the rate or the instalment, the total can\'t be worked out.';
+      'Without the rate or the installment amount, the total can\'t be calculated.';
 
   @override
   String instalTotalKnown(String amount) {
@@ -2982,32 +2973,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String instalVsCash(String cash, String extra) {
-    return 'Paying at once cost $cash: in instalments you pay $extra more.';
+    return 'Paying up front cost $cash; in installments you pay $extra more.';
   }
 
   @override
   String instalVsCashAtLeast(String cash, String extra) {
-    return 'Paying at once cost $cash: in instalments you pay at least $extra more.';
+    return 'Paying up front cost $cash; in installments you pay at least $extra more.';
   }
 
   @override
   String instalVsCashSame(String cash) {
-    return 'Paying at once cost $cash: instalments cost you no more.';
+    return 'Paying up front cost $cash; installments cost you nothing extra.';
   }
 
   @override
   String instalProgress(int covered, int count) {
-    return '$covered of $count instalments paid';
+    return '$covered of $count installments paid';
   }
 
   @override
   String instalOwing(int number, String amount) {
-    return 'Instalment $number still needs $amount.';
+    return 'Installment $number still needs $amount.';
   }
 
   @override
   String instalLate(int number, String date) {
-    return 'Instalment $number was due on $date. If you paid it, record it to keep count.';
+    return 'Installment $number was due on $date. If you paid it, record it to keep count.';
   }
 
   @override
@@ -3020,7 +3011,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get instalFinanced => 'Amount financed';
 
   @override
-  String get instalCount => 'Instalments';
+  String get instalCount => 'Installments';
 
   @override
   String get instalRate => 'Rate';
@@ -3034,7 +3025,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get instalNotKnown => 'Unknown';
 
   @override
-  String get instalPayment => 'Instalment';
+  String get instalPayment => 'Installment';
 
   @override
   String instalPaymentStated(String amount) {
@@ -3043,7 +3034,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String instalPaymentWorked(String amount) {
-    return '$amount, worked out from the rate';
+    return '$amount, calculated from the rate';
   }
 
   @override
@@ -3056,15 +3047,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get instalPaysFrom => 'Paid with';
 
   @override
-  String get instalOutside => 'Outside Quincena: a shop or a loan';
+  String get instalOutside => 'Outside Quincena: a store or a loan';
 
   @override
   String get instalCountedOnce =>
-      'The purchase is already in that account: its instalments aren\'t added to what\'s committed again.';
+      'The purchase is already in that account, so its installments aren\'t counted again.';
 
   @override
   String get instalCountedAsComing =>
-      'The coming instalments count as committed.';
+      'Upcoming installments are counted as payments due.';
 
   @override
   String get instalPayments => 'Payments';
@@ -3076,15 +3067,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get instalPaymentRemove => 'Remove this payment';
 
   @override
-  String get instalSchedule => 'Instalment schedule';
+  String get instalSchedule => 'Installment schedule';
 
   @override
   String get instalNoSchedule =>
-      'The rate or the instalment is needed for the schedule.';
+      'The schedule needs the rate or the installment amount.';
 
   @override
   String instalRow(int number, String date) {
-    return 'Instalment $number · $date';
+    return 'Installment $number · $date';
   }
 
   @override
@@ -3108,7 +3099,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get instalPaymentPartial =>
-      'It can be less than the instalment: what\'s missing stays owed.';
+      'It can be less than the installment: what\'s missing stays owed.';
 
   @override
   String get instalDelete => 'Delete purchase';
@@ -3120,7 +3111,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get instalDeleteBody =>
-      'Its figures and payments here are deleted. Your movements stay as they are.';
+      'Its figures and payments here are deleted. Your transactions stay as they are.';
 
   @override
   String get instalSheetBody =>
@@ -3133,11 +3124,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get instalPrincipal => 'Amount financed';
 
   @override
-  String get instalCountField => 'Number of instalments';
+  String get instalCountField => 'Number of installments';
 
   @override
   String instalFirstDue(String date) {
-    return 'First instalment: $date';
+    return 'First installment: $date';
   }
 
   @override
@@ -3160,35 +3151,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rateMonthly => 'monthly';
 
   @override
-  String get instalStated => 'Instalment amount, if you were told';
+  String get instalStated => 'Installment amount, if you were told';
 
   @override
   String get instalStatedHelp =>
-      'Without the fee. If you don\'t know it, it\'s worked out from the rate.';
+      'Without the fee. If you don\'t know it, it\'s calculated from the rate.';
 
   @override
-  String get instalFeeField => 'Fee or insurance, per instalment';
+  String get instalFeeField => 'Fee or insurance, per installment';
 
   @override
   String get instalFeeHelp =>
       'Type 0 if there is none. If you don\'t know, leave it empty: the total will be an estimate.';
 
   @override
-  String get instalCash => 'Price paying at once';
+  String get instalCash => 'Price if paid up front';
 
   @override
-  String get instalCashHelp => 'To compare what instalments cost.';
+  String get instalCashHelp => 'To compare what installments cost.';
 
   @override
   String get instalIncomplete =>
-      'The name, the amount financed or the number of instalments is missing.';
+      'The name, the amount financed or the number of installments is missing.';
 
   @override
   String get detectiveTitle => 'Charges to check';
 
   @override
   String get detectiveBody =>
-      'Quincena looks at your last 60 days of movements, here on the phone, and shows what\'s worth a look, with the evidence. It never deletes a movement or calls anything fraud.';
+      'Quincena looks at your last 60 days of transactions, here on the phone, and shows what\'s worth a look, with the evidence. It never deletes a transaction or calls anything fraud.';
 
   @override
   String get detectiveEmpty => 'Nothing to check for now.';
@@ -3258,8 +3249,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String detectivePriceUpWhy(String before, String now, int percent) {
-    return 'It used to charge $before and the last charge was $now, $percent% more. Going up doesn\'t mean it\'s wrong: it may be a new plan or rate.';
+  String detectivePriceUpWhy(String before, String now, String percent) {
+    return 'It used to charge $before and the last charge was $now, $percent more. Going up doesn\'t mean it\'s wrong: it may be a new plan or rate.';
   }
 
   @override
@@ -3309,8 +3300,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count look like fixed payments',
-      one: 'One looks like a fixed payment',
+      other: '$count look like recurring payments',
+      one: 'One looks like a recurring payment',
     );
     return '$_temp0';
   }
@@ -3346,8 +3337,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get planDetectiveNone => 'Nothing odd for now';
 
   @override
-  String get computedCommitments =>
-      'What\'s already committed in the next 30 days';
+  String get computedCommitments => 'What\'s already due in the next 30 days';
 
   @override
   String comingIncome(String client) {
@@ -3434,7 +3424,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get splitAmount => 'Total amount';
 
   @override
-  String get splitFromEntry => 'The movement\'s: it doesn\'t change.';
+  String get splitFromEntry => 'From the transaction; it doesn\'t change here.';
 
   @override
   String get splitPaidBy => 'Who paid?';
@@ -3510,7 +3500,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sharedEmpty =>
-      'No shared expenses yet. Create a group, or open an expense in Movements and tap \"Split this expense\".';
+      'No shared expenses yet. Create a group, or open an expense in Transactions and tap \"Split this expense\".';
 
   @override
   String get sharedNewGroup => 'New group';
@@ -3567,7 +3557,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sharedDeleteBody =>
-      'The group, its expenses and its payments are deleted here. Your movements stay as they are.';
+      'The group, its expenses and its payments are deleted here. Your transactions stay as they are.';
 
   @override
   String get sharedAddExpense => 'Add expense';
@@ -3669,14 +3659,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sharedArrivedAsHelp =>
-      'If you pick the movement, it counts as money returning, not as income.';
+      'If you pick the transaction, it counts as money returning, not as income.';
 
   @override
   String get freelanceTitle => 'Variable income';
 
   @override
   String get freelanceBody =>
-      'For when your income changes from month to month. It keeps collected, pending and estimated apart. Quincena doesn\'t work out taxes: you decide the reserve.';
+      'For when your income changes from month to month. It keeps collected, pending and estimated apart. Quincena doesn\'t calculate taxes: you choose the reserve.';
 
   @override
   String get freelanceAdd => 'Add payment';
@@ -3757,7 +3747,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get freelanceNoTax =>
-      'Quincena doesn\'t work out taxes or know what you owe: the percentage is yours.';
+      'Quincena doesn\'t calculate taxes or know what you owe: the percentage is up to you.';
 
   @override
   String get freelanceUse => 'I used some of the reserve';
@@ -3816,7 +3806,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get incomeCollectedHelp => 'The money arrived.';
 
   @override
-  String get freelanceArrivedAs => 'Which movement did it arrive as?';
+  String get freelanceArrivedAs => 'Which transaction was it?';
 
   @override
   String get freelanceNote => 'Note';
@@ -3840,7 +3830,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripsBody =>
-      'A budget in the trip\'s currency, counted from your own movements: nothing is copied.';
+      'A budget in the trip\'s currency, counted from your own transactions: nothing is copied.';
 
   @override
   String get tripsEmpty => 'No trips yet.';
@@ -3941,7 +3931,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripSameMovements =>
-      'A trip uses your own movements: changing one here changes it in your account.';
+      'A trip uses your own transactions: changing one here changes it in your account.';
 
   @override
   String get tripNoRate => 'No rate';
@@ -3993,7 +3983,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripAdjustHelp =>
-      'The movement changes to what the statement says, and the difference from the estimate is kept.';
+      'The transaction changes to what the statement says, and the difference from the estimate is kept.';
 
   @override
   String get tripName => 'Where are you going?';
@@ -4179,7 +4169,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'The file is damaged or cut: save it again on the other device. Nothing changed.';
 
   @override
-  String get syncWaiting => 'To review';
+  String get syncWaiting => 'Changes to review';
 
   @override
   String get syncWaitingBody =>
@@ -4340,7 +4330,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get standingCushionLine => 'Cushion';
+  String get standingCushionLine => 'Safety buffer';
 
   @override
   String get standingEnvelopesLine => 'Set aside in envelopes';
@@ -4513,7 +4503,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get buyAskBody =>
-      'Type the price to see if it fits without touching what\'s committed.';
+      'Enter a price to see if you can afford it without touching money that\'s already due.';
 
   @override
   String get buyAskHint => 'Price';
@@ -4522,7 +4512,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get buyAskGo => 'Check';
 
   @override
-  String get fabMovement => 'Movement';
+  String get fabMovement => 'Transaction';
 
   @override
   String goalSoFar(String saved) {
@@ -4727,7 +4717,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get widgetHow =>
-      'To add it, touch and hold an empty spot on your home screen and look for Quincena. It shows what you can spend until your next pay, as the app worked it out the last time you opened it.';
+      'To add it, touch and hold an empty spot on your home screen and look for Quincena. It shows what you can spend until your next pay, as of the last time you opened the app.';
 
   @override
   String get widgetHide => 'Hide amounts in the widget';
@@ -4861,9 +4851,9 @@ class AppLocalizationsEn extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          'It leaves out $count transactions waiting for review. Once you confirm them, the figure may change.',
+          'It leaves out $count transactions waiting for review. Once you record them, the figure may change.',
       one:
-          'It leaves out 1 transaction waiting for review. Once you confirm it, the figure may change.',
+          'It leaves out 1 transaction waiting for review. Once you record it, the figure may change.',
     );
     return '$_temp0';
   }

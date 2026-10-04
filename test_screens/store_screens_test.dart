@@ -330,7 +330,7 @@ void main() {
         await settle(tester);
         await shoot(s.key, language, '02-home');
         await tester.tap(
-          find.byTooltip(language == 'en' ? 'To review' : 'Por revisar'),
+          find.byTooltip(language == 'en' ? 'Needs review' : 'Por revisar'),
         );
         await settle(tester);
         await shoot(s.key, language, '03-inbox');
