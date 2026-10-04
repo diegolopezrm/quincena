@@ -166,19 +166,21 @@ class OwnController extends ChangeNotifier {
   }
 
   /// What [payArrivals] add up to, in the ledger's smallest unit; null when
-  /// none of them has a rate to the base currency.
+  /// there are none, or when one has no rate to the base currency, since a
+  /// total without it would be short.
   int? get payArrivedTotal {
     final Ledger? l = ledger;
     final StoreSnapshot? s = _snapshot;
-    if (l == null || s == null) return null;
-    int? total;
-    for (final Entry e in payArrivals) {
+    final List<Entry> arrivals = payArrivals;
+    if (l == null || s == null || arrivals.isEmpty) return null;
+    var total = 0;
+    for (final Entry e in arrivals) {
       final Account? a = s.account(e.accountId);
       final Money? converted = a == null
           ? null
           : inBase(Money(e.amount, a.asset));
-      if (converted == null) continue;
-      total = (total ?? 0) + l.minor(converted.amount.toDouble());
+      if (converted == null) return null;
+      total += l.minor(converted.amount.toDouble());
     }
     return total;
   }

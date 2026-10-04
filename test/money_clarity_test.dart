@@ -184,10 +184,48 @@ void main() {
         );
         final String text = screen(tester);
         // 2.000.000 on the 30th in Bancolombia and 400.000 on the 1st in
-        // Nequi: the latest day, and both accounts.
+        // Nequi: both days, and both accounts in the order the money came.
         expect(text, contains(r'Te llegó la quincena: $2.400.000'));
-        expect(text, contains('El 1 oct en Nequi y Bancolombia.'));
+        expect(text, contains('Del 30 sept al 1 oct en Bancolombia y Nequi.'));
         expect(text, contains('Ponle a cada parte su sobre'));
+      },
+    );
+
+    testWidgets(
+      'a pay with no rate leaves the amount out rather than a short total',
+      (tester) async {
+        final OwnController own = await openPage(
+          tester,
+          (OwnController own) => Scaffold(
+            body: SingleChildScrollView(
+              child: OwnHomeTab(own: own, onSeeAll: () {}),
+            ),
+          ),
+          data: (QuincenaStore store, Account bank, Account card) async {
+            final Account itau = await store.addAccount(
+              name: 'Itaú',
+              kind: AccountKind.bank,
+              asset: Asset.usd,
+              opening: Decimal.zero,
+            );
+            await store.addEntry(
+              accountId: itau.id,
+              amount: d('500'),
+              kind: EntryKind.income,
+              date: DateTime(2026, 9, 30, 9),
+              category: 'salary',
+              payee: 'Cliente',
+            );
+          },
+        );
+        expect(own.payArrivals, hasLength(2));
+        expect(own.payArrivedTotal, isNull);
+        final String text = screen(tester);
+        // The dollars have no rate: $2.000.000 would read as all of it.
+        expect(text, isNot(contains('Te llegó la quincena:')));
+        expect(text, contains('Te llegó la quincena'));
+        // One day, two accounts, and "e" before the sound of an i.
+        expect(text, contains('El 30 sept en Bancolombia e Itaú.'));
       },
     );
 
@@ -352,7 +390,7 @@ void main() {
       expect(text, contains(r'$50.000'));
       expect(
         text,
-        contains('Le debes a otras personas\nGastos compartidos y préstamos'),
+        contains('Les debes a otras personas\nGastos compartidos y préstamos'),
       );
       expect(text, contains(r'−$170.000'));
       expect(

@@ -4807,8 +4807,9 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String listAnd(String a, String b) {
-    return '$a y $b';
+  String listAnd(String a, String b, String sound) {
+    String _temp0 = intl.Intl.selectLogic(sound, {'i': 'e', 'other': 'y'});
+    return '$a $_temp0 $b';
   }
 
   @override
@@ -4820,7 +4821,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get totalExplainOwedToYou => 'Te deben';
 
   @override
-  String get totalExplainYouOwe => 'Le debes a otras personas';
+  String get totalExplainYouOwe => 'Les debes a otras personas';
 
   @override
   String get totalExplainShared => 'Gastos compartidos y préstamos';
@@ -4831,4 +4832,9 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get totalExplainInstallmentsLeft =>
       'Lo que falta pagar, fuera de tus tarjetas';
+
+  @override
+  String paydayArrivedDetailRange(String from, String to, String account) {
+    return 'Del $from al $to en $account. Ponle a cada parte su sobre antes de gastar.';
+  }
 }

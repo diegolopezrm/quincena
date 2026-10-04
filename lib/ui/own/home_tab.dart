@@ -148,12 +148,22 @@ class _PayArrivedRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
     final bool fortnight = ledger.schedule is TwiceMonthly;
-    final List<Entry> arrivals = own.payArrivals;
+    // The earliest first, so the accounts read in the order the money came.
+    final List<Entry> arrivals = own.payArrivals.reversed.toList();
     final int? total = own.payArrivedTotal;
     final String? amount = total == null ? null : pesos(ledger.major(total));
     final List<String> names = <String>{
       for (final Entry e in arrivals) ?own.snapshot?.account(e.accountId)?.name,
     }.toList();
+    final String where = names.length < 2
+        ? names.join()
+        : l.listAnd(
+            names.take(names.length - 1).join(', '),
+            names.last,
+            _sound(names.last),
+          );
+    final String from = dayShortMonth(arrivals.first.date);
+    final String to = dayShortMonth(arrivals.last.date);
     return _TodoRow(
       icon: Glyph.wallet,
       title: amount == null
@@ -161,16 +171,22 @@ class _PayArrivedRow extends StatelessWidget {
           : fortnight
           ? l.paydayArrivedAmount(amount)
           : l.paydayArrivedPayAmount(amount),
-      body: l.paydayArrivedDetail(
-        dayShortMonth(arrivals.first.date),
-        names.length < 2
-            ? names.join()
-            : l.listAnd(names.take(names.length - 1).join(', '), names.last),
-      ),
+      // On two days, both: the latest alone would date all of it.
+      body: from == to
+          ? l.paydayArrivedDetail(to, where)
+          : l.paydayArrivedDetailRange(from, to, where),
       action: l.todoSplit,
       open: (_) => EnvelopesPage(own: own),
     );
   }
+
+  /// The sound [word] starts with, as listAnd picks its conjunction: "i"
+  /// for an i, so Spanish says "Nequi e Itaú" and not "y Itaú"; an i
+  /// opening a diphthong, as in "hielo", keeps the y.
+  static String _sound(String word) =>
+      RegExp(r'^h?[ií](?![aeoáéó])', caseSensitive: false).hasMatch(word)
+      ? 'i'
+      : 'other';
 }
 
 /// One question to ask, or the way to ask another.

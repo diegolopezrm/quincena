@@ -1264,5 +1264,6 @@
   "totalExplainYouOwe": "You owe other people",
   "totalExplainShared": "Shared expenses and loans",
   "totalExplainInstallments": "Installment purchases",
-  "totalExplainInstallmentsLeft": "Left to pay, outside your cards"
+  "totalExplainInstallmentsLeft": "Left to pay, outside your cards",
+  "paydayArrivedDetailRange": "From {from} to {to}, in {account}. Give each part its envelope before you spend."
 }

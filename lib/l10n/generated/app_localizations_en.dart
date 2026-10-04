@@ -4807,7 +4807,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String listAnd(String a, String b) {
+  String listAnd(String a, String b, String sound) {
     return '$a and $b';
   }
 
@@ -4830,4 +4830,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get totalExplainInstallmentsLeft => 'Left to pay, outside your cards';
+
+  @override
+  String paydayArrivedDetailRange(String from, String to, String account) {
+    return 'From $from to $to, in $account. Give each part its envelope before you spend.';
+  }
 }

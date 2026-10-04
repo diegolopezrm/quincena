@@ -1519,13 +1519,15 @@
   "@paydayArrivedPayAmount": {"placeholders": {"amount": {"type": "String"}}},
   "paydayArrivedDetail": "El {date} en {account}. Ponle a cada parte su sobre antes de gastar.",
   "@paydayArrivedDetail": {"placeholders": {"date": {"type": "String"}, "account": {"type": "String"}}},
-  "listAnd": "{a} y {b}",
-  "@listAnd": {"placeholders": {"a": {"type": "String"}, "b": {"type": "String"}}},
+  "listAnd": "{a} {sound, select, i{e} other{y}} {b}",
+  "@listAnd": {"placeholders": {"a": {"type": "String"}, "b": {"type": "String"}, "sound": {"type": "String"}}},
   "comingLowestLineSure": "Tu saldo mínimo estimado será {amount} el {date}, sin contar lo que esperas recibir.",
   "@comingLowestLineSure": {"placeholders": {"amount": {"type": "String"}, "date": {"type": "String"}}},
   "totalExplainOwedToYou": "Te deben",
-  "totalExplainYouOwe": "Le debes a otras personas",
+  "totalExplainYouOwe": "Les debes a otras personas",
   "totalExplainShared": "Gastos compartidos y préstamos",
   "totalExplainInstallments": "Compras a cuotas",
-  "totalExplainInstallmentsLeft": "Lo que falta pagar, fuera de tus tarjetas"
+  "totalExplainInstallmentsLeft": "Lo que falta pagar, fuera de tus tarjetas",
+  "paydayArrivedDetailRange": "Del {from} al {to} en {account}. Ponle a cada parte su sobre antes de gastar.",
+  "@paydayArrivedDetailRange": {"placeholders": {"from": {"type": "String"}, "to": {"type": "String"}, "account": {"type": "String"}}}
 }

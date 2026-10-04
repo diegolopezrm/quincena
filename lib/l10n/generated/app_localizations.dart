@@ -7606,8 +7606,8 @@ abstract class AppLocalizations {
   /// No description provided for @listAnd.
   ///
   /// In es, this message translates to:
-  /// **'{a} y {b}'**
-  String listAnd(String a, String b);
+  /// **'{a} {sound, select, i{e} other{y}} {b}'**
+  String listAnd(String a, String b, String sound);
 
   /// No description provided for @comingLowestLineSure.
   ///
@@ -7624,7 +7624,7 @@ abstract class AppLocalizations {
   /// No description provided for @totalExplainYouOwe.
   ///
   /// In es, this message translates to:
-  /// **'Le debes a otras personas'**
+  /// **'Les debes a otras personas'**
   String get totalExplainYouOwe;
 
   /// No description provided for @totalExplainShared.
@@ -7644,6 +7644,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Lo que falta pagar, fuera de tus tarjetas'**
   String get totalExplainInstallmentsLeft;
+
+  /// No description provided for @paydayArrivedDetailRange.
+  ///
+  /// In es, this message translates to:
+  /// **'Del {from} al {to} en {account}. Ponle a cada parte su sobre antes de gastar.'**
+  String paydayArrivedDetailRange(String from, String to, String account);
 }
 
 class _AppLocalizationsDelegate
