@@ -43,6 +43,7 @@ class Account {
     this.sortOrder = 0,
     this.openingCost,
     this.syncRef,
+    this.balanceSince,
   });
 
   final String id;
@@ -64,6 +65,10 @@ class Account {
   /// What keeps the account in sync, such as `binance:BTC`; null for one
   /// the person keeps by hand.
   final String? syncRef;
+
+  /// When the account was added, with the balance the person wrote then:
+  /// a movement dated before it was already in that balance.
+  final DateTime? balanceSince;
 
   Money get openingMoney => Money(opening, asset);
 
@@ -89,6 +94,7 @@ class Account {
     sortOrder: sortOrder ?? this.sortOrder,
     openingCost: clearOpeningCost ? null : (openingCost ?? this.openingCost),
     syncRef: syncRef,
+    balanceSince: balanceSince,
   );
 }
 

@@ -4139,8 +4139,8 @@ abstract class AppLocalizations {
   /// No description provided for @statementSummary.
   ///
   /// In es, this message translates to:
-  /// **'{count, plural, =1{Un movimiento} other{{count} movimientos}}, del {from} al {to}'**
-  String statementSummary(int count, String from, String to);
+  /// **'{count, plural, =1{Un movimiento} other{{count} movimientos}} · {range}'**
+  String statementSummary(int count, String range);
 
   /// No description provided for @statementRecorded.
   ///
@@ -4157,7 +4157,7 @@ abstract class AppLocalizations {
   /// No description provided for @statementFlip.
   ///
   /// In es, this message translates to:
-  /// **'Invertir signos'**
+  /// **'Invertir entradas y salidas'**
   String get statementFlip;
 
   /// No description provided for @statementImport.
@@ -7776,6 +7776,168 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Del {from} al {to} en {account}. Ponle a cada parte su sobre antes de gastar.'**
   String paydayArrivedDetailRange(String from, String to, String account);
+
+  /// No description provided for @statementSelectNew.
+  ///
+  /// In es, this message translates to:
+  /// **'Marcar los nuevos'**
+  String get statementSelectNew;
+
+  /// No description provided for @statementRepeatsChosen.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Marcaste 1 que ya estaba: se contaría dos veces.} other{Marcaste {count} que ya estaban: se contarían dos veces.}}'**
+  String statementRepeatsChosen(int count);
+
+  /// No description provided for @statementSelected.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Nada seleccionado} =1{1 seleccionado} other{{count} seleccionados}}'**
+  String statementSelected(int count);
+
+  /// No description provided for @statementIn.
+  ///
+  /// In es, this message translates to:
+  /// **'entran {amount}'**
+  String statementIn(String amount);
+
+  /// No description provided for @statementOut.
+  ///
+  /// In es, this message translates to:
+  /// **'salen {amount}'**
+  String statementOut(String amount);
+
+  /// No description provided for @statementReviewLine.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisar movimiento'**
+  String get statementReviewLine;
+
+  /// No description provided for @statementOriginal.
+  ///
+  /// In es, this message translates to:
+  /// **'Como aparece en el extracto'**
+  String get statementOriginal;
+
+  /// No description provided for @statementCardPayment.
+  ///
+  /// In es, this message translates to:
+  /// **'Pago de tu tarjeta {card}'**
+  String statementCardPayment(String card);
+
+  /// No description provided for @statementOwnTransferTo.
+  ///
+  /// In es, this message translates to:
+  /// **'Pasa a {account}'**
+  String statementOwnTransferTo(String account);
+
+  /// No description provided for @statementOwnTransferFrom.
+  ///
+  /// In es, this message translates to:
+  /// **'Viene de {account}'**
+  String statementOwnTransferFrom(String account);
+
+  /// No description provided for @statementBetweenAccounts.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{1 entre tus cuentas} other{{count} entre tus cuentas}}'**
+  String statementBetweenAccounts(int count);
+
+  /// No description provided for @statementTransferNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Un pago de tarjeta pasa plata de una cuenta tuya a otra: no cuenta como gasto, porque las compras ya están en la tarjeta.'**
+  String get statementTransferNote;
+
+  /// No description provided for @statementIsCardPayment.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Es el pago de una tarjeta tuya?'**
+  String get statementIsCardPayment;
+
+  /// No description provided for @statementAddCard.
+  ///
+  /// In es, this message translates to:
+  /// **'Parece el pago de una tarjeta. Agrégala en Cuentas para que Quincena no cuente dos veces lo que compraste con ella.'**
+  String get statementAddCard;
+
+  /// No description provided for @statementDoneTransfers.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Uno quedó como movimiento entre tus cuentas: no cuenta como gasto.} other{{count} quedaron como movimientos entre tus cuentas: no cuentan como gasto.}}'**
+  String statementDoneTransfers(int count);
+
+  /// No description provided for @statementOlder.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Un movimiento es de antes del {date}} other{{count} movimientos son de antes del {date}}}, cuando escribiste el saldo de {account}.'**
+  String statementOlder(int count, String date, String account);
+
+  /// No description provided for @statementOlderKeep.
+  ///
+  /// In es, this message translates to:
+  /// **'Mi saldo ya los incluye (recomendado)'**
+  String get statementOlderKeep;
+
+  /// No description provided for @statementOlderAdd.
+  ///
+  /// In es, this message translates to:
+  /// **'Sumarlos a mi saldo'**
+  String get statementOlderAdd;
+
+  /// No description provided for @statementOlderNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Se guardan para ver en qué se fue la plata, sin cambiar lo que tienes hoy.'**
+  String get statementOlderNote;
+
+  /// No description provided for @statementEndsAt.
+  ///
+  /// In es, this message translates to:
+  /// **'Según el extracto, el {date} tenías {amount}.'**
+  String statementEndsAt(String date, String amount);
+
+  /// No description provided for @statementMismatch.
+  ///
+  /// In es, this message translates to:
+  /// **'Quincena tendría {amount} ese día.'**
+  String statementMismatch(String amount);
+
+  /// No description provided for @statementUseBalance.
+  ///
+  /// In es, this message translates to:
+  /// **'Ajustar al saldo del extracto'**
+  String get statementUseBalance;
+
+  /// No description provided for @statementBalanceEffect.
+  ///
+  /// In es, this message translates to:
+  /// **'Saldo de {account}: {before} → {after}'**
+  String statementBalanceEffect(String account, String before, String after);
+
+  /// No description provided for @statementDebtEffect.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que debes en {account}: {before} → {after}'**
+  String statementDebtEffect(String account, String before, String after);
+
+  /// No description provided for @statementBalanceSame.
+  ///
+  /// In es, this message translates to:
+  /// **'El saldo de {account} sigue en {amount}: ya incluía estos movimientos.'**
+  String statementBalanceSame(String account, String amount);
+
+  /// No description provided for @statementPaidFrom.
+  ///
+  /// In es, this message translates to:
+  /// **'¿De cuál de tus cuentas salió este pago?'**
+  String get statementPaidFrom;
+
+  /// No description provided for @statementSaveFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo terminar de importar. Lo que sí se guardó aparece como «Ya importado».'**
+  String get statementSaveFailed;
 }
 
 class _AppLocalizationsDelegate

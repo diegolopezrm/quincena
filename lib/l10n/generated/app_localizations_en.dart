@@ -2541,7 +2541,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statementIntro =>
-      'Bring in the movements from a bank or card statement: CSV, Excel (.xlsx) or PDF. It is read on this device, and you review every movement before it is saved.';
+      'Bring in the transactions from a bank or card statement: CSV, Excel (.xlsx) or PDF. It is read on this device, and you review every transaction before it is saved.';
 
   @override
   String get statementPick => 'Choose a file';
@@ -2550,7 +2550,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statementReading => 'Reading the statement…';
 
   @override
-  String get statementNothing => 'No movements were found in this file.';
+  String get statementNothing => 'No transactions were found in this file.';
 
   @override
   String get statementFailed =>
@@ -2568,14 +2568,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'On the web the PDF cannot be read here: the file goes to Gemini to read it. It counts as one of the day\'s questions.';
 
   @override
-  String statementSummary(int count, String from, String to) {
+  String statementSummary(int count, String range) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count movements',
-      one: 'One movement',
+      other: '$count transactions',
+      one: 'One transaction',
     );
-    return '$_temp0, from $from to $to';
+    return '$_temp0 · $range';
   }
 
   @override
@@ -2585,15 +2585,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statementImportedBefore => 'Already imported';
 
   @override
-  String get statementFlip => 'Flip the signs';
+  String get statementFlip => 'Swap money in and out';
 
   @override
   String statementImport(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Import $count movements',
-      one: 'Import one movement',
+      other: 'Import $count transactions',
+      one: 'Import one transaction',
       zero: 'Nothing to import',
     );
     return '$_temp0';
@@ -2604,8 +2604,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count movements were imported.',
-      one: 'One movement was imported.',
+      other: '$count transactions were imported.',
+      one: 'One transaction was imported.',
     );
     return '$_temp0';
   }
@@ -4930,4 +4930,156 @@ class AppLocalizationsEn extends AppLocalizations {
   String paydayArrivedDetailRange(String from, String to, String account) {
     return 'From $from to $to, in $account. Give each part its envelope before you spend.';
   }
+
+  @override
+  String get statementSelectNew => 'Check the new ones';
+
+  @override
+  String statementRepeatsChosen(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'You checked $count that were already there: they would count twice.',
+      one: 'You checked 1 that was already there: it would count twice.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String statementSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count selected',
+      one: '1 selected',
+      zero: 'Nothing selected',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String statementIn(String amount) {
+    return '$amount in';
+  }
+
+  @override
+  String statementOut(String amount) {
+    return '$amount out';
+  }
+
+  @override
+  String get statementReviewLine => 'Review transaction';
+
+  @override
+  String get statementOriginal => 'As the statement shows it';
+
+  @override
+  String statementCardPayment(String card) {
+    return 'Payment to your $card card';
+  }
+
+  @override
+  String statementOwnTransferTo(String account) {
+    return 'Moves to $account';
+  }
+
+  @override
+  String statementOwnTransferFrom(String account) {
+    return 'Comes from $account';
+  }
+
+  @override
+  String statementBetweenAccounts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count between your accounts',
+      one: '1 between your accounts',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get statementTransferNote =>
+      'A card payment moves money between your own accounts: it doesn\'t count as spending, because the purchases are already on the card.';
+
+  @override
+  String get statementIsCardPayment =>
+      'Is this a payment to one of your cards?';
+
+  @override
+  String get statementAddCard =>
+      'This looks like a card payment. Add the card in Accounts so Quincena doesn\'t count what you bought with it twice.';
+
+  @override
+  String statementDoneTransfers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count were saved as transfers between your accounts: they don\'t count as spending.',
+      one:
+          'One was saved as a transfer between your accounts: it doesn\'t count as spending.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String statementOlder(int count, String date, String account) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count transactions are from before $date',
+      one: 'One transaction is from before $date',
+    );
+    return '$_temp0, when you entered the $account balance.';
+  }
+
+  @override
+  String get statementOlderKeep =>
+      'My balance already includes them (recommended)';
+
+  @override
+  String get statementOlderAdd => 'Add them to my balance';
+
+  @override
+  String get statementOlderNote =>
+      'They\'re saved to show where the money went, without changing what you have today.';
+
+  @override
+  String statementEndsAt(String date, String amount) {
+    return 'The statement says you had $amount on $date.';
+  }
+
+  @override
+  String statementMismatch(String amount) {
+    return 'Quincena would show $amount that day.';
+  }
+
+  @override
+  String get statementUseBalance => 'Match the statement\'s balance';
+
+  @override
+  String statementBalanceEffect(String account, String before, String after) {
+    return '$account balance: $before → $after';
+  }
+
+  @override
+  String statementDebtEffect(String account, String before, String after) {
+    return 'What you owe on $account: $before → $after';
+  }
+
+  @override
+  String statementBalanceSame(String account, String amount) {
+    return 'The $account balance stays at $amount: it already included these transactions.';
+  }
+
+  @override
+  String get statementPaidFrom =>
+      'Which of your accounts did this payment come from?';
+
+  @override
+  String get statementSaveFailed =>
+      'The import didn\'t finish. What was saved shows as \"Already imported\".';
 }

@@ -17,9 +17,11 @@ import '../../statements/statement.dart';
 import '../../statements/statement_import.dart';
 import '../../statements/tables.dart';
 import '../../statements/text_statement.dart';
+import '../../store/store.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import 'category_choices.dart';
 import 'look.dart';
 import 'movement_list.dart';
 
@@ -66,10 +68,30 @@ class _StatementPageState extends State<StatementPage> {
   final Set<int> _chosen = <int>{};
   bool _saving = false;
 
-  /// What the import recorded: how many, and the statement references of
-  /// those that came without a category, to give them one before leaving.
+  /// The last import stopped before saving every line.
+  bool _saveFailed = false;
+
+  /// What the import does with lines older than the balance the person
+  /// wrote, and whether it matches the statement's own last balance
+  /// instead, when the statement prints one that adds up.
+  BalanceRule _olderRule = BalanceRule.keep;
+  bool _matchClosing = false;
+  ClosingBalance? _closing;
+
+  BalanceRule get _rule =>
+      _matchClosing && _closing != null ? BalanceRule.statement : _olderRule;
+
+  /// What the import recorded: how many, how many of them as moves
+  /// between the person's accounts, and the statement references of those
+  /// that came without a category, to give them one before leaving.
   int _imported = 0;
+  int _transfers = 0;
   Set<String> _uncategorized = const <String>{};
+
+  /// The account's balance before the import, and whether that balance
+  /// already had the lines, to show what the import did.
+  Money? _before;
+  bool _included = false;
 
   OwnController get own => widget.own;
 
@@ -87,9 +109,11 @@ class _StatementPageState extends State<StatementPage> {
     }
   }
 
-  Account? get _account {
+  Account? get _account => _accountOf(_accountId);
+
+  Account? _accountOf(String? id) {
     for (final Account a in own.accounts) {
-      if (a.id == _accountId) return a;
+      if (a.id == id) return a;
     }
     return null;
   }
@@ -189,13 +213,14 @@ class _StatementPageState extends State<StatementPage> {
     final Account? account = _account;
     final StatementRead? read = _read;
     if (account == null || read == null) return;
-    List<ImportCandidate> all = await StatementImporter(
+    final List<ImportCandidate> all = await StatementImporter(
       own.store,
-    ).prepare(account, read);
-    if (flip) all = <ImportCandidate>[for (final c in all) c.flipped()];
+    ).prepare(account, read, flip: flip);
     if (!mounted) return;
     setState(() {
       _candidates = all;
+      _closing = StatementImporter.closing(account, all);
+      _matchClosing = false;
       _chosen
         ..clear()
         ..addAll(<int>[
@@ -216,65 +241,195 @@ class _StatementPageState extends State<StatementPage> {
   Future<void> _import() async {
     final Account? account = _account;
     if (account == null || _chosen.isEmpty || _saving) return;
-    setState(() => _saving = true);
+    setState(() {
+      _saving = true;
+      _saveFailed = false;
+    });
     final List<ImportCandidate> chosen = <ImportCandidate>[
       for (final int i in _chosen.toList()..sort()) _candidates[i],
     ];
-    final int n = await StatementImporter(own.store).record(account, chosen);
-    await own.joinTransfers();
+    final Money before = own.balances[account.id] ?? account.openingMoney;
+    final BalanceRule rule = _rule;
+    final int n;
+    try {
+      n = await StatementImporter(
+        own.store,
+      ).record(account, chosen, rule: rule, closing: _closing);
+      await own.joinTransfers();
+    } on Object catch (e) {
+      if (kDebugMode) debugPrint('Statement could not be saved: $e');
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _saveFailed = true;
+      });
+      // What was saved before it stopped reads as imported now, so trying
+      // again does not save it twice.
+      await _prepare(flip: _flipped);
+      return;
+    }
     if (!mounted) return;
     // The person checks the exceptions, not every line: what came without
     // a category is what is left to look at.
     setState(() {
       _imported = n;
+      _before = before;
+      _included = _alreadyIn(account, chosen, rule);
+      _transfers = chosen
+          .where((ImportCandidate c) => c.kind == EntryKind.transfer)
+          .length;
       _uncategorized = <String>{
         for (final ImportCandidate c in chosen)
-          if (c.category == null) c.ref,
+          if (c.kind != EntryKind.transfer && c.category == null) c.ref,
       };
       _saving = false;
       _stage = _Stage.done;
     });
   }
 
+  List<Entry> _entriesOf(Account account) => <Entry>[
+    for (final Entry e in own.snapshot?.entries ?? const <Entry>[])
+      if (e.accountId == account.id) e,
+  ];
+
+  /// What [account] would hold today after recording [chosen] under
+  /// [rule].
+  Money _after(
+    Account account,
+    List<ImportCandidate> chosen,
+    BalanceRule rule,
+  ) {
+    final Money before = own.balances[account.id] ?? account.openingMoney;
+    final DateTime today = endOfDay(own.today);
+    var moved = Decimal.zero;
+    for (final ImportCandidate c in chosen) {
+      if (!c.line.date.isAfter(today)) moved += c.line.amount;
+    }
+    final Decimal opening = StatementImporter.openingAfter(
+      account,
+      chosen,
+      rule,
+      entries: _entriesOf(account),
+      closing: _closing,
+    );
+    return Money(
+      before.amount + moved + opening - account.opening,
+      account.asset,
+    );
+  }
+
+  /// Whether, under [rule], the balance of [account] already had [chosen]:
+  /// the statement's own balance, or lines older than the one written.
+  static bool _alreadyIn(
+    Account account,
+    List<ImportCandidate> chosen,
+    BalanceRule rule,
+  ) => switch (rule) {
+    BalanceRule.add => false,
+    BalanceRule.statement => true,
+    BalanceRule.keep => chosen.any(
+      (ImportCandidate c) => StatementImporter.older(account, c.line.date),
+    ),
+  };
+
+  /// The balance of [account] from [before] to [after], or that it stays
+  /// because it [included] these lines already. A card says what is owed
+  /// on it.
+  String _balanceText(
+    AppLocalizations l,
+    Account account,
+    Money before,
+    Money after, {
+    required bool included,
+  }) {
+    final Asset? base = own.profile?.base;
+    if (account.kind == AccountKind.card) {
+      return l.statementDebtEffect(
+        account.name,
+        moneyText(-before, base: base),
+        moneyText(-after, base: base),
+      );
+    }
+    if (before == after && included) {
+      return l.statementBalanceSame(
+        account.name,
+        moneyText(before, base: base),
+      );
+    }
+    return l.statementBalanceEffect(
+      account.name,
+      moneyText(before, base: base),
+      moneyText(after, base: base),
+    );
+  }
+
+  /// Opens line [i] to change what it is recorded as.
+  Future<void> _review(int i) async {
+    final Account? account = _account;
+    if (account == null) return;
+    final ImportCandidate? changed =
+        await showModalBottomSheet<ImportCandidate>(
+          context: context,
+          isScrollControlled: true,
+          showDragHandle: true,
+          useSafeArea: true,
+          backgroundColor: context.colors.surface,
+          constraints: const BoxConstraints(maxWidth: 560),
+          builder: (BuildContext context) =>
+              _LineSheet(own: own, account: account, candidate: _candidates[i]),
+        );
+    if (changed == null || !mounted) return;
+    setState(
+      () => _candidates = <ImportCandidate>[
+        for (var j = 0; j < _candidates.length; j++)
+          j == i ? changed : _candidates[j],
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: context.colors.canvas,
-        surfaceTintColor: Colors.transparent,
-        title: Text(l.statementTitle, style: context.type.titleLarge),
-        actions: <Widget>[
-          if (_stage == _Stage.review)
-            IconButton(
-              tooltip: l.statementFlip,
-              onPressed: _flip,
-              icon: const Icon(Glyph.arrowsDownUp),
-            ),
-        ],
-      ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 760),
-          child: switch (_stage) {
-            _Stage.pick => _pickView(l),
-            _Stage.reading => Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  const CircularProgressIndicator(),
-                  const SizedBox(height: 16),
-                  Text(l.statementReading, style: context.type.bodyMedium),
-                ],
+    // A write that started finishes: leaving would only hide how it went.
+    return PopScope(
+      canPop: !_saving,
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: context.colors.canvas,
+          surfaceTintColor: Colors.transparent,
+          title: Text(l.statementTitle, style: context.type.titleLarge),
+          actions: <Widget>[
+            if (_stage == _Stage.review)
+              IconButton(
+                tooltip: l.statementFlip,
+                onPressed: _saving ? null : _flip,
+                icon: const Icon(Glyph.arrowsDownUp),
               ),
-            ),
-            _Stage.nothing => _nothingView(l),
-            _Stage.review => _reviewView(l),
-            _Stage.done => ListenableBuilder(
-              listenable: own,
-              builder: (BuildContext context, _) => _doneView(l),
-            ),
-          },
+          ],
+        ),
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 760),
+            child: switch (_stage) {
+              _Stage.pick => _pickView(l),
+              _Stage.reading => Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    Text(l.statementReading, style: context.type.bodyMedium),
+                  ],
+                ),
+              ),
+              _Stage.nothing => _nothingView(l),
+              _Stage.review => _reviewView(l),
+              _Stage.done => ListenableBuilder(
+                listenable: own,
+                builder: (BuildContext context, _) => _doneView(l),
+              ),
+            },
+          ),
         ),
       ),
     );
@@ -370,7 +525,30 @@ class _StatementPageState extends State<StatementPage> {
             ),
           ],
         ),
+        if ((_account, _before) case (
+          final Account account,
+          final Money before,
+        )) ...<Widget>[
+          const SizedBox(height: 8),
+          Figures(
+            _balanceText(
+              l,
+              account,
+              before,
+              own.balances[account.id] ?? account.openingMoney,
+              included: _included,
+            ),
+            style: context.type.bodyMedium,
+          ),
+        ],
         const SizedBox(height: 8),
+        if (_transfers > 0) ...<Widget>[
+          Text(
+            l.statementDoneTransfers(_transfers),
+            style: context.type.bodyMedium,
+          ),
+          const SizedBox(height: 4),
+        ],
         Text(
           unsorted.isEmpty
               ? l.statementDoneSorted
@@ -395,6 +573,94 @@ class _StatementPageState extends State<StatementPage> {
     );
   }
 
+  /// Lines older than the balance the person wrote: whether that balance
+  /// already has them.
+  Widget _olderBlock(AppLocalizations l, Account account, int older) => Padding(
+    padding: const EdgeInsets.only(top: 12),
+    child: Panel(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+      children: <Widget>[
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              l.statementOlder(
+                older,
+                dayMonth(account.balanceSince!),
+                account.name,
+              ),
+              style: context.type.bodyMedium,
+            ),
+            RadioGroup<BalanceRule>(
+              groupValue: _olderRule,
+              onChanged: (BalanceRule? rule) {
+                if (rule != null) setState(() => _olderRule = rule);
+              },
+              child: Column(
+                children: <Widget>[
+                  RadioListTile<BalanceRule>(
+                    value: BalanceRule.keep,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l.statementOlderKeep),
+                    subtitle: Text(l.statementOlderNote),
+                  ),
+                  RadioListTile<BalanceRule>(
+                    value: BalanceRule.add,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l.statementOlderAdd),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+
+  /// The statement's last balance next to what the app would show that
+  /// day, and a way to take the statement's.
+  Widget _closingBlock(
+    AppLocalizations l,
+    Account account,
+    ClosingBalance closing,
+    Money wouldBe,
+    bool mismatch,
+  ) {
+    final Asset? base = own.profile?.base;
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Panel(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+        children: <Widget>[
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Figures(
+                l.statementEndsAt(
+                  dayMonth(closing.day),
+                  moneyText(Money(closing.amount, account.asset), base: base),
+                ),
+                style: context.type.bodyMedium,
+              ),
+              if (mismatch)
+                Figures(
+                  l.statementMismatch(moneyText(wouldBe, base: base)),
+                  style: context.type.bodySmall,
+                ),
+              SwitchListTile(
+                value: _matchClosing,
+                onChanged: (bool on) => setState(() => _matchClosing = on),
+                contentPadding: EdgeInsets.zero,
+                title: Text(l.statementUseBalance),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _reviewView(AppLocalizations l) {
     final List<ImportCandidate> all = _candidates;
     final List<DateTime> dates =
@@ -402,12 +668,133 @@ class _StatementPageState extends State<StatementPage> {
     final int recorded = all
         .where((ImportCandidate c) => c.recorded || c.importedBefore)
         .length;
-    final int fresh = all.where((ImportCandidate c) => c.proposed).length;
+    final List<int> newOnes = <int>[
+      for (var i = 0; i < all.length; i++)
+        if (all[i].proposed) i,
+    ];
+    final int fresh = newOnes.length;
     final int unsorted = all
-        .where((ImportCandidate c) => c.proposed && c.category == null)
+        .where(
+          (ImportCandidate c) =>
+              c.proposed && c.kind != EntryKind.transfer && c.category == null,
+        )
         .length;
-    final bool everything = _chosen.length == all.length;
+    final int between = all
+        .where(
+          (ImportCandidate c) => c.proposed && c.kind == EntryKind.transfer,
+        )
+        .length;
+    // What was already there and the person checked anyway: it would be
+    // recorded a second time.
+    final int repeatsChosen = _chosen.where((int i) => !all[i].proposed).length;
+    final bool everything = _chosen.isNotEmpty && _chosen.containsAll(newOnes);
     final Account? account = _account;
+    // What the checked lines bring in and take out.
+    var inflow = Decimal.zero;
+    var outflow = Decimal.zero;
+    for (final int i in _chosen) {
+      final Decimal amount = all[i].line.amount;
+      if (amount > Decimal.zero) {
+        inflow += amount;
+      } else {
+        outflow += amount;
+      }
+    }
+    final Asset? base = own.profile?.base;
+    final bool hasCards = own.accounts.any(
+      (Account a) => a.kind == AccountKind.card && a.id != account?.id,
+    );
+    // A card payment with nothing on its other side asks where it goes
+    // when there is somewhere: a card for a bank's, an account for a card's.
+    final bool askCard = account?.kind == AccountKind.card
+        ? own.accounts.any(
+            (Account a) => a.id != account?.id && a.asset == account?.asset,
+          )
+        : hasCards;
+    // A card payment checked as a move: say why it is not spending.
+    final bool cardMoves = _chosen.any((int i) {
+      final ImportCandidate c = all[i];
+      return c.kind == EntryKind.transfer &&
+          (account?.kind == AccountKind.card ||
+              _accountOf(c.otherAccountId)?.kind == AccountKind.card);
+    });
+    // Card payments with no card to move them to.
+    final bool cardless =
+        account?.kind != AccountKind.card &&
+        !hasCards &&
+        all.any(
+          (ImportCandidate c) =>
+              c.proposed && c.cardPayment && c.kind != EntryKind.transfer,
+        );
+    final List<ImportCandidate> chosen = <ImportCandidate>[
+      for (final int i in _chosen.toList()..sort()) all[i],
+    ];
+    // Lines from before the balance the person wrote, which it may
+    // already have.
+    final int older = account == null
+        ? 0
+        : chosen
+              .where(
+                (ImportCandidate c) =>
+                    StatementImporter.older(account, c.line.date),
+              )
+              .length;
+    // What the statement says the account ended on, next to what the app
+    // would show that day.
+    final ClosingBalance? closing = _closing;
+    Money? wouldBe;
+    if (account != null && closing != null) {
+      final DateTime until = endOfDay(closing.day);
+      var held = StatementImporter.openingAfter(account, chosen, _olderRule);
+      for (final Entry e in _entriesOf(account)) {
+        if (!e.date.isAfter(until)) held += e.amount;
+      }
+      for (final ImportCandidate c in chosen) {
+        if (!c.line.date.isAfter(until)) held += c.line.amount;
+      }
+      wouldBe = Money(held, account.asset);
+    }
+    final bool mismatch =
+        closing != null && wouldBe != null && wouldBe.amount != closing.amount;
+    // What the checked lines bring in and take out, and what they leave in
+    // the account.
+    final List<Widget> effect = <Widget>[
+      Figures(
+        <String>[
+          l.statementSelected(_chosen.length),
+          if (account != null && inflow > Decimal.zero)
+            l.statementIn(
+              moneyText(Money(inflow, account.asset), base: base, signed: true),
+            ),
+          if (account != null && outflow < Decimal.zero)
+            l.statementOut(
+              moneyText(
+                Money(outflow, account.asset),
+                base: base,
+                signed: true,
+              ),
+            ),
+        ].join(' · '),
+        style: context.type.bodyMedium,
+      ),
+      if (account != null && chosen.isNotEmpty)
+        Figures(
+          _balanceText(
+            l,
+            account,
+            own.balances[account.id] ?? account.openingMoney,
+            _after(account, chosen, _rule),
+            included: _alreadyIn(account, chosen, _rule),
+          ),
+          style: context.type.bodyMedium,
+        ),
+    ];
+    // With large text they would leave the lines no room above the
+    // button: they go under the lines instead.
+    final bool large = MediaQuery.textScalerOf(context).scale(10) > 13;
+    // A statement within one year says it once, in its summary.
+    final bool oneYear =
+        dates.isNotEmpty && dates.first.year == dates.last.year;
     return Column(
       children: <Widget>[
         Expanded(
@@ -429,18 +816,19 @@ class _StatementPageState extends State<StatementPage> {
                       ),
                     ),
                 ],
-                onChanged: (String? id) {
-                  setState(() => _accountId = id);
-                  _prepare(flip: _flipped);
-                },
+                onChanged: _saving
+                    ? null
+                    : (String? id) {
+                        setState(() => _accountId = id);
+                        _prepare(flip: _flipped);
+                      },
               ),
               const SizedBox(height: 16),
               if (dates.isNotEmpty)
                 Text(
                   l.statementSummary(
                     all.length,
-                    shortDate(dates.first),
-                    shortDate(dates.last),
+                    dayRange(dates.first, dates.last),
                   ),
                   style: context.type.titleSmall,
                 ),
@@ -450,10 +838,20 @@ class _StatementPageState extends State<StatementPage> {
                   l.statementNew(fresh),
                   l.statementAlready(recorded),
                   if (unsorted > 0) l.statementUnsorted(unsorted),
+                  if (between > 0) l.statementBetweenAccounts(between),
                 ].join(' · '),
                 style: context.type.bodyMedium,
               ),
-              if (recorded > 0)
+              if (cardMoves)
+                Text(l.statementTransferNote, style: context.type.bodySmall),
+              if (cardless)
+                Text(
+                  l.statementAddCard,
+                  style: context.type.bodySmall?.copyWith(
+                    color: context.colors.caution,
+                  ),
+                ),
+              if (recorded > 0 && repeatsChosen == 0)
                 Text(
                   l.statementAlreadyUnchecked,
                   style: context.type.bodySmall,
@@ -467,37 +865,60 @@ class _StatementPageState extends State<StatementPage> {
                   ),
                 ),
               ],
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => setState(() {
-                    _chosen.clear();
-                    if (!everything) {
-                      _chosen.addAll(<int>[
-                        for (var i = 0; i < all.length; i++) i,
-                      ]);
-                    }
-                  }),
-                  child: Text(
-                    everything ? l.statementSelectNone : l.statementSelectAll,
+              // Checking everything checks what is new: a line already there
+              // is checked only on purpose, one by one.
+              if (newOnes.isNotEmpty || _chosen.isNotEmpty)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => setState(() {
+                      if (everything) {
+                        _chosen.clear();
+                      } else {
+                        _chosen.addAll(newOnes);
+                      }
+                    }),
+                    child: Text(
+                      everything
+                          ? l.statementSelectNone
+                          : recorded > 0
+                          ? l.statementSelectNew
+                          : l.statementSelectAll,
+                    ),
                   ),
-                ),
-              ),
+                )
+              else
+                const SizedBox(height: 12),
               Panel(
                 indent: 56,
                 children: <Widget>[
                   for (var i = 0; i < all.length; i++)
                     _CandidateRow(
+                      own: own,
                       candidate: all[i],
                       account: account,
-                      base: own.profile?.base,
+                      other: _accountOf(all[i].otherAccountId),
+                      askCard: askCard,
+                      base: base,
+                      oneYear: oneYear,
                       chosen: _chosen.contains(i),
                       onChanged: (bool on) => setState(
                         () => on ? _chosen.add(i) : _chosen.remove(i),
                       ),
+                      onOpen: () => _review(i),
                     ),
                 ],
               ),
+              // What to do with the balance the person wrote, once the
+              // lines are seen.
+              if (account != null && older > 0 && !_matchClosing)
+                _olderBlock(l, account, older),
+              if (account != null &&
+                  closing != null &&
+                  wouldBe != null &&
+                  (mismatch || _matchClosing))
+                _closingBlock(l, account, closing, wouldBe, mismatch),
+              if (large) ...<Widget>[const SizedBox(height: 16), ...effect],
             ],
           ),
         ),
@@ -505,24 +926,46 @@ class _StatementPageState extends State<StatementPage> {
           top: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            child: SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _chosen.isEmpty || _saving ? null : _import,
-                child: _saving
-                    ? Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          const SizedBox.square(
-                            dimension: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(l.statementImporting),
-                        ],
-                      )
-                    : Text(l.statementImport(_chosen.length)),
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                if (!large) ...<Widget>[...effect, const SizedBox(height: 8)],
+                if (_saveFailed) ...<Widget>[
+                  Text(
+                    l.statementSaveFailed,
+                    style: context.type.bodySmall?.copyWith(
+                      color: context.colors.negative,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                if (repeatsChosen > 0) ...<Widget>[
+                  Text(
+                    l.statementRepeatsChosen(repeatsChosen),
+                    style: context.type.bodySmall?.copyWith(
+                      color: context.colors.caution,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                FilledButton(
+                  onPressed: _chosen.isEmpty || _saving ? null : _import,
+                  child: _saving
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            const SizedBox.square(
+                              dimension: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(l.statementImporting),
+                          ],
+                        )
+                      : Text(l.statementImport(_chosen.length)),
+                ),
+              ],
             ),
           ),
         ),
@@ -531,21 +974,40 @@ class _StatementPageState extends State<StatementPage> {
   }
 }
 
-/// One line of the statement, checked to import or not.
+/// One line of the statement: checked to import or not, and a tap away
+/// from what it is recorded as.
 class _CandidateRow extends StatelessWidget {
   const _CandidateRow({
+    required this.own,
     required this.candidate,
     required this.account,
+    required this.other,
+    required this.askCard,
     required this.base,
+    required this.oneYear,
     required this.chosen,
     required this.onChanged,
+    required this.onOpen,
   });
 
+  final OwnController own;
   final ImportCandidate candidate;
   final Account? account;
+
+  /// The other account of a move between the person's accounts.
+  final Account? other;
+
+  /// Whether a card payment with no account on its other side asks where
+  /// it goes: there is an account it could be.
+  final bool askCard;
   final Asset? base;
+
+  /// Whether the statement's lines share a year, which the row then leaves
+  /// out of its date.
+  final bool oneYear;
   final bool chosen;
   final ValueChanged<bool> onChanged;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -560,16 +1022,41 @@ class _CandidateRow extends StatelessWidget {
     final String amount = a == null
         ? c.line.amount.toString()
         : moneyText(Money(c.line.amount, a.asset), base: base, signed: true);
-    return CheckboxListTile(
-      value: chosen,
-      onChanged: (bool? on) => onChanged(on ?? false),
-      controlAffinity: ListTileControlAffinity.leading,
+    final String name = c.payee.isEmpty ? c.line.description : c.payee;
+    final TextStyle? caution = context.type.bodySmall?.copyWith(
+      color: context.colors.caution,
+    );
+    final String? category = c.category;
+    final Account? to = c.kind == EntryKind.transfer ? other : null;
+    final bool out = c.line.amount < Decimal.zero;
+    final String? move = to == null
+        ? null
+        : out && to.kind == AccountKind.card && a?.kind != AccountKind.card
+        ? l.statementCardPayment(to.name)
+        : out
+        ? l.statementOwnTransferTo(to.name)
+        : l.statementOwnTransferFrom(to.name);
+    return ListTile(
+      onTap: onOpen,
       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+      leading: Checkbox(
+        value: chosen,
+        semanticLabel: name,
+        onChanged: (bool? on) => onChanged(on ?? false),
+      ),
       title: Row(
         children: <Widget>[
+          if (move != null) ...<Widget>[
+            Icon(
+              Glyph.arrowsLeftRight,
+              size: 16,
+              color: context.colors.inkSoft,
+            ),
+            const SizedBox(width: 6),
+          ],
           Expanded(
             child: Text(
-              c.payee.isEmpty ? c.line.description : c.payee,
+              name,
               style: context.type.titleSmall,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -586,18 +1073,242 @@ class _CandidateRow extends StatelessWidget {
           ),
         ],
       ),
-      subtitle: Text(
-        <String>[
-          shortDate(c.line.date),
-          if (c.payee.isNotEmpty && c.payee != c.line.description)
-            c.line.description,
-          ?badge,
-        ].join(' · '),
-        style: context.type.bodySmall?.copyWith(
-          color: badge == null ? null : context.colors.caution,
+      // What was already there says so; a new line says what it will be.
+      subtitle: Text.rich(
+        TextSpan(
+          children: <InlineSpan>[
+            TextSpan(
+              text: oneYear
+                  ? dayShortMonth(c.line.date)
+                  : shortDate(c.line.date),
+            ),
+            if (badge != null)
+              TextSpan(text: ' · $badge', style: caution)
+            else if (move != null)
+              TextSpan(text: ' · $move')
+            else if (category != null)
+              TextSpan(
+                text:
+                    ' · ${categoryNameFor(context, category, own.categories)}',
+              )
+            else
+              TextSpan(text: ' · ${l.statementGiveCategory}', style: caution),
+            if (badge == null && move == null && c.cardPayment && askCard)
+              TextSpan(
+                text: a?.kind == AccountKind.card
+                    ? '\n${l.statementPaidFrom}'
+                    : '\n${l.statementIsCardPayment}',
+                style: caution,
+              ),
+          ],
         ),
+        style: context.type.bodySmall,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+}
+
+/// What one line of the statement is recorded as: an expense or an income
+/// and its category, or a move between the person's accounts, next to the
+/// bank's own words for it.
+class _LineSheet extends StatefulWidget {
+  const _LineSheet({
+    required this.own,
+    required this.account,
+    required this.candidate,
+  });
+
+  final OwnController own;
+  final Account account;
+  final ImportCandidate candidate;
+
+  @override
+  State<_LineSheet> createState() => _LineSheetState();
+}
+
+class _LineSheetState extends State<_LineSheet> {
+  ImportCandidate get c => widget.candidate;
+  OwnController get own => widget.own;
+
+  late EntryKind _kind = c.kind;
+  late String? _category = c.category;
+
+  /// The person's other accounts a move can go to or come from: those in
+  /// the same currency.
+  late final List<Account> _others = <Account>[
+    for (final Account a in own.accounts)
+      if (a.id != widget.account.id && a.asset == widget.account.asset) a,
+  ];
+
+  /// The other account of a move: the one found, or a card for money out
+  /// of an account that is not one.
+  late String? _other =
+      c.otherAccountId ??
+      (widget.account.kind != AccountKind.card && c.line.amount < Decimal.zero
+              ? _others
+                    .where((Account a) => a.kind == AccountKind.card)
+                    .firstOrNull
+              : null)
+          ?.id ??
+      _others.firstOrNull?.id;
+
+  /// The line's amount as what it is recorded as: money out for an
+  /// expense, money in for an income, as the statement says for a move.
+  Decimal get _amount => switch (_kind) {
+    EntryKind.expense => -c.line.amount.abs(),
+    EntryKind.income => c.line.amount.abs(),
+    _ => c.line.amount,
+  };
+
+  void _save() {
+    final bool transfer = _kind == EntryKind.transfer && _other != null;
+    Navigator.of(context).pop(
+      c.copyWith(
+        amount: _amount,
+        kind: _kind,
+        category: _category,
+        clearCategory: _category == null,
+        // A move keeps the side found for it only with the same account.
+        clearOther: true,
+        otherAccountId: transfer ? _other : null,
+        otherLeg: transfer && c.otherLeg?.accountId == _other
+            ? c.otherLeg
+            : null,
+        cardPayment: false,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    final Decimal amount = _amount;
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(l.statementReviewLine, style: context.type.headlineMedium),
+            const SizedBox(height: 16),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    c.payee.isEmpty ? c.line.description : c.payee,
+                    style: context.type.titleMedium,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Figures(
+                  moneyText(
+                    Money(amount, widget.account.asset),
+                    base: own.profile?.base,
+                    signed: true,
+                  ),
+                  style: context.type.titleMedium?.copyWith(
+                    color: amount > Decimal.zero
+                        ? context.colors.positive
+                        : context.colors.ink,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(shortDate(c.line.date), style: context.type.bodySmall),
+            const SizedBox(height: 16),
+            Text(l.statementOriginal, style: context.type.labelMedium),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: context.colors.sunken,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: SelectableText(
+                c.line.description,
+                style: context.type.bodyMedium,
+              ),
+            ),
+            const SizedBox(height: 20),
+            SegmentedButton<EntryKind>(
+              segments: <ButtonSegment<EntryKind>>[
+                ButtonSegment<EntryKind>(
+                  value: EntryKind.expense,
+                  label: Text(l.kindExpense),
+                ),
+                ButtonSegment<EntryKind>(
+                  value: EntryKind.income,
+                  label: Text(l.kindIncome),
+                ),
+                if (_others.isNotEmpty)
+                  ButtonSegment<EntryKind>(
+                    value: EntryKind.transfer,
+                    label: Text(l.kindTransfer),
+                  ),
+              ],
+              selected: <EntryKind>{_kind},
+              showSelectedIcon: false,
+              onSelectionChanged: (Set<EntryKind> s) => setState(() {
+                // A category belongs to one side: the line's own comes
+                // back with its side.
+                _category = s.first == c.kind ? c.category : null;
+                _kind = s.first;
+              }),
+            ),
+            const SizedBox(height: 20),
+            if (_kind == EntryKind.transfer)
+              DropdownButtonFormField<String>(
+                icon: const Icon(Glyph.caretDown, size: 18),
+                initialValue: _other,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  labelText: amount < Decimal.zero
+                      ? l.toAccount
+                      : l.fromAccount,
+                ),
+                items: <DropdownMenuItem<String>>[
+                  for (final Account a in _others)
+                    DropdownMenuItem<String>(
+                      value: a.id,
+                      child: Row(
+                        children: <Widget>[
+                          Icon(
+                            accountIcon(a.kind),
+                            size: 18,
+                            color: context.colors.inkSoft,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              a.name,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+                onChanged: (String? id) => setState(() => _other = id),
+              )
+            else ...<Widget>[
+              Text(l.category, style: context.type.labelMedium),
+              const SizedBox(height: 8),
+              CategoryChoices(
+                own: own,
+                income: _kind == EntryKind.income,
+                selected: _category,
+                onChanged: (String? key) => setState(() => _category = key),
+              ),
+            ],
+            const SizedBox(height: 20),
+            FilledButton(onPressed: _save, child: Text(l.save)),
+          ],
+        ),
       ),
     );
   }

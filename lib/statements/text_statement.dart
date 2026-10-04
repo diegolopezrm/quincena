@@ -40,8 +40,11 @@ const List<String> _incomeWords = <String>[
   'reverso',
   'recarga desde',
   'pago recibido',
-  'pago tarjeta',
 ];
+
+/// What also says money came in on a card's statement: there, a card
+/// payment pays the debt down. On a bank's, it is money out.
+const List<String> _cardIncomeWords = <String>['pago tarjeta'];
 
 /// The years a statement names, to complete dates written without one.
 int? _yearOf(String text) {
@@ -112,6 +115,9 @@ StatementRead readStatementText(String text, {int? year}) {
       ),
   ];
   final bool printedSigns = raws.any((_Raw r) => r.signed);
+  final bool cardStatement = RegExp(
+    r'tarjeta de credito|credit card',
+  ).hasMatch(normalize(text));
   if (!printedSigns) {
     final List<StatementLine> byBalance = signFromBalance(lines);
     final bool balanceSaid = byBalance.any(
@@ -124,7 +130,7 @@ StatementRead readStatementText(String text, {int? year}) {
               StatementLine(
                 date: l.date,
                 description: l.description,
-                amount: _soundsLikeIncome(l.description)
+                amount: _soundsLikeIncome(l.description, card: cardStatement)
                     ? l.amount.abs()
                     : -l.amount.abs(),
                 balance: l.balance,
@@ -138,9 +144,10 @@ StatementRead readStatementText(String text, {int? year}) {
   );
 }
 
-bool _soundsLikeIncome(String description) {
+bool _soundsLikeIncome(String description, {required bool card}) {
   final String n = normalize(description);
-  return _incomeWords.any((String w) => n.contains(w));
+  return _incomeWords.any((String w) => n.contains(w)) ||
+      (card && _cardIncomeWords.any((String w) => n.contains(w)));
 }
 
 class _Raw {
