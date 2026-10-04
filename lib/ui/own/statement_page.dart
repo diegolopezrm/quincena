@@ -67,9 +67,11 @@ class _StatementPageState extends State<StatementPage> {
   final Set<int> _chosen = <int>{};
   bool _saving = false;
 
-  /// What the import recorded: how many, and the statement references of
-  /// those that came without a category, to give them one before leaving.
+  /// What the import recorded: how many, how many of them as moves
+  /// between the person's accounts, and the statement references of those
+  /// that came without a category, to give them one before leaving.
   int _imported = 0;
+  int _transfers = 0;
   Set<String> _uncategorized = const <String>{};
 
   OwnController get own => widget.own;
@@ -88,9 +90,11 @@ class _StatementPageState extends State<StatementPage> {
     }
   }
 
-  Account? get _account {
+  Account? get _account => _accountOf(_accountId);
+
+  Account? _accountOf(String? id) {
     for (final Account a in own.accounts) {
-      if (a.id == _accountId) return a;
+      if (a.id == id) return a;
     }
     return null;
   }
@@ -227,6 +231,9 @@ class _StatementPageState extends State<StatementPage> {
     // a category is what is left to look at.
     setState(() {
       _imported = n;
+      _transfers = chosen
+          .where((ImportCandidate c) => c.kind == EntryKind.transfer)
+          .length;
       _uncategorized = <String>{
         for (final ImportCandidate c in chosen)
           if (c.kind != EntryKind.transfer && c.category == null) c.ref,
@@ -395,6 +402,13 @@ class _StatementPageState extends State<StatementPage> {
           ],
         ),
         const SizedBox(height: 8),
+        if (_transfers > 0) ...<Widget>[
+          Text(
+            l.statementDoneTransfers(_transfers),
+            style: context.type.bodyMedium,
+          ),
+          const SizedBox(height: 4),
+        ],
         Text(
           unsorted.isEmpty
               ? l.statementDoneSorted
@@ -437,6 +451,11 @@ class _StatementPageState extends State<StatementPage> {
               c.proposed && c.kind != EntryKind.transfer && c.category == null,
         )
         .length;
+    final int between = all
+        .where(
+          (ImportCandidate c) => c.proposed && c.kind == EntryKind.transfer,
+        )
+        .length;
     // What was already there and the person checked anyway: it would be
     // recorded a second time.
     final int repeatsChosen = _chosen.where((int i) => !all[i].proposed).length;
@@ -454,6 +473,24 @@ class _StatementPageState extends State<StatementPage> {
       }
     }
     final Asset? base = own.profile?.base;
+    final bool hasCards = own.accounts.any(
+      (Account a) => a.kind == AccountKind.card && a.id != account?.id,
+    );
+    // A card payment checked as a move: say why it is not spending.
+    final bool cardMoves = _chosen.any((int i) {
+      final ImportCandidate c = all[i];
+      return c.kind == EntryKind.transfer &&
+          (account?.kind == AccountKind.card ||
+              _accountOf(c.otherAccountId)?.kind == AccountKind.card);
+    });
+    // Card payments with no card to move them to.
+    final bool cardless =
+        account?.kind != AccountKind.card &&
+        !hasCards &&
+        all.any(
+          (ImportCandidate c) =>
+              c.proposed && c.cardPayment && c.kind != EntryKind.transfer,
+        );
     // A statement within one year says it once, in its summary.
     final bool oneYear =
         dates.isNotEmpty && dates.first.year == dates.last.year;
@@ -498,9 +535,19 @@ class _StatementPageState extends State<StatementPage> {
                   l.statementNew(fresh),
                   l.statementAlready(recorded),
                   if (unsorted > 0) l.statementUnsorted(unsorted),
+                  if (between > 0) l.statementBetweenAccounts(between),
                 ].join(' · '),
                 style: context.type.bodyMedium,
               ),
+              if (cardMoves)
+                Text(l.statementTransferNote, style: context.type.bodySmall),
+              if (cardless)
+                Text(
+                  l.statementAddCard,
+                  style: context.type.bodySmall?.copyWith(
+                    color: context.colors.caution,
+                  ),
+                ),
               if (recorded > 0 && repeatsChosen == 0)
                 Text(
                   l.statementAlreadyUnchecked,
@@ -547,6 +594,8 @@ class _StatementPageState extends State<StatementPage> {
                       own: own,
                       candidate: all[i],
                       account: account,
+                      other: _accountOf(all[i].otherAccountId),
+                      askCard: hasCards || account?.kind == AccountKind.card,
                       base: base,
                       oneYear: oneYear,
                       chosen: _chosen.contains(i),
@@ -632,6 +681,8 @@ class _CandidateRow extends StatelessWidget {
     required this.own,
     required this.candidate,
     required this.account,
+    required this.other,
+    required this.askCard,
     required this.base,
     required this.oneYear,
     required this.chosen,
@@ -642,6 +693,13 @@ class _CandidateRow extends StatelessWidget {
   final OwnController own;
   final ImportCandidate candidate;
   final Account? account;
+
+  /// The other account of a move between the person's accounts.
+  final Account? other;
+
+  /// Whether a card payment with no account on its other side asks which
+  /// it is: there is an account it could be.
+  final bool askCard;
   final Asset? base;
 
   /// Whether the statement's lines share a year, which the row then leaves
@@ -669,6 +727,15 @@ class _CandidateRow extends StatelessWidget {
       color: context.colors.caution,
     );
     final String? category = c.category;
+    final Account? to = c.kind == EntryKind.transfer ? other : null;
+    final bool out = c.line.amount < Decimal.zero;
+    final String? move = to == null
+        ? null
+        : out && to.kind == AccountKind.card && a?.kind != AccountKind.card
+        ? l.statementCardPayment(to.name)
+        : out
+        ? l.statementOwnTransferTo(to.name)
+        : l.statementOwnTransferFrom(to.name);
     return ListTile(
       onTap: onOpen,
       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
@@ -679,6 +746,14 @@ class _CandidateRow extends StatelessWidget {
       ),
       title: Row(
         children: <Widget>[
+          if (move != null) ...<Widget>[
+            Icon(
+              Glyph.arrowsLeftRight,
+              size: 16,
+              color: context.colors.inkSoft,
+            ),
+            const SizedBox(width: 6),
+          ],
           Expanded(
             child: Text(
               name,
@@ -709,6 +784,8 @@ class _CandidateRow extends StatelessWidget {
             ),
             if (badge != null)
               TextSpan(text: ' · $badge', style: caution)
+            else if (move != null)
+              TextSpan(text: ' · $move')
             else if (category != null)
               TextSpan(
                 text:
@@ -716,6 +793,8 @@ class _CandidateRow extends StatelessWidget {
               )
             else
               TextSpan(text: ' · ${l.statementGiveCategory}', style: caution),
+            if (badge == null && move == null && c.cardPayment && askCard)
+              TextSpan(text: '\n${l.statementIsCardPayment}', style: caution),
           ],
         ),
         style: context.type.bodySmall,
@@ -726,8 +805,9 @@ class _CandidateRow extends StatelessWidget {
   }
 }
 
-/// What one line of the statement is recorded as: an expense or an income,
-/// and its category, next to the bank's own words for it.
+/// What one line of the statement is recorded as: an expense or an income
+/// and its category, or a move between the person's accounts, next to the
+/// bank's own words for it.
 class _LineSheet extends StatefulWidget {
   const _LineSheet({
     required this.own,
@@ -750,22 +830,51 @@ class _LineSheetState extends State<_LineSheet> {
   late EntryKind _kind = c.kind;
   late String? _category = c.category;
 
+  /// The person's other accounts a move can go to or come from: those in
+  /// the same currency.
+  late final List<Account> _others = <Account>[
+    for (final Account a in own.accounts)
+      if (a.id != widget.account.id && a.asset == widget.account.asset) a,
+  ];
+
+  /// The other account of a move: the one found, or a card for money out
+  /// of an account that is not one.
+  late String? _other =
+      c.otherAccountId ??
+      (widget.account.kind != AccountKind.card && c.line.amount < Decimal.zero
+              ? _others
+                    .where((Account a) => a.kind == AccountKind.card)
+                    .firstOrNull
+              : null)
+          ?.id ??
+      _others.firstOrNull?.id;
+
   /// The line's amount as what it is recorded as: money out for an
-  /// expense, money in for an income.
+  /// expense, money in for an income, as the statement says for a move.
   Decimal get _amount => switch (_kind) {
     EntryKind.expense => -c.line.amount.abs(),
     EntryKind.income => c.line.amount.abs(),
     _ => c.line.amount,
   };
 
-  void _save() => Navigator.of(context).pop(
-    c.copyWith(
-      amount: _amount,
-      kind: _kind,
-      category: _category,
-      clearCategory: _category == null,
-    ),
-  );
+  void _save() {
+    final bool transfer = _kind == EntryKind.transfer && _other != null;
+    Navigator.of(context).pop(
+      c.copyWith(
+        amount: _amount,
+        kind: _kind,
+        category: _category,
+        clearCategory: _category == null,
+        // A move keeps the side found for it only with the same account.
+        clearOther: true,
+        otherAccountId: transfer ? _other : null,
+        otherLeg: transfer && c.otherLeg?.accountId == _other
+            ? c.otherLeg
+            : null,
+        cardPayment: false,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -831,6 +940,11 @@ class _LineSheetState extends State<_LineSheet> {
                   value: EntryKind.income,
                   label: Text(l.kindIncome),
                 ),
+                if (_others.isNotEmpty)
+                  ButtonSegment<EntryKind>(
+                    value: EntryKind.transfer,
+                    label: Text(l.kindTransfer),
+                  ),
               ],
               selected: <EntryKind>{_kind},
               showSelectedIcon: false,
@@ -842,14 +956,50 @@ class _LineSheetState extends State<_LineSheet> {
               }),
             ),
             const SizedBox(height: 20),
-            Text(l.category, style: context.type.labelMedium),
-            const SizedBox(height: 8),
-            CategoryChoices(
-              own: own,
-              income: _kind == EntryKind.income,
-              selected: _category,
-              onChanged: (String? key) => setState(() => _category = key),
-            ),
+            if (_kind == EntryKind.transfer)
+              DropdownButtonFormField<String>(
+                icon: const Icon(Glyph.caretDown, size: 18),
+                initialValue: _other,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  labelText: amount < Decimal.zero
+                      ? l.toAccount
+                      : l.fromAccount,
+                ),
+                items: <DropdownMenuItem<String>>[
+                  for (final Account a in _others)
+                    DropdownMenuItem<String>(
+                      value: a.id,
+                      child: Row(
+                        children: <Widget>[
+                          Icon(
+                            accountIcon(a.kind),
+                            size: 18,
+                            color: context.colors.inkSoft,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              a.name,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+                onChanged: (String? id) => setState(() => _other = id),
+              )
+            else ...<Widget>[
+              Text(l.category, style: context.type.labelMedium),
+              const SizedBox(height: 8),
+              CategoryChoices(
+                own: own,
+                income: _kind == EntryKind.income,
+                selected: _category,
+                onChanged: (String? key) => setState(() => _category = key),
+              ),
+            ],
             const SizedBox(height: 20),
             FilledButton(onPressed: _save, child: Text(l.save)),
           ],

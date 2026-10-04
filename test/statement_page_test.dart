@@ -230,6 +230,93 @@ void main() {
     expect(find.text('Todos quedaron con su categoría.'), findsOneWidget);
     expect(find.text('SIN CATEGORÍA'), findsNothing);
   });
+  testWidgets('a card payment is a move to the card, not spending', (
+    tester,
+  ) async {
+    final (QuincenaStore store, OwnController own, Account bank) = await world(
+      tester,
+    );
+    late Account visa;
+    await tester.runAsync(() async {
+      visa = await store.addAccount(
+        name: 'Visa',
+        kind: AccountKind.card,
+        asset: Asset.cop,
+        institution: 'Bancolombia',
+      );
+    });
+    await open(
+      tester,
+      own,
+      readTable(
+        parseCsv(
+          'Fecha;Descripción;Valor\n'
+          '20/09/2026;COMPRA EN EXITO LAURELES;-45.900\n'
+          '24/09/2026;PAGO TARJETA VISA;-480.000\n',
+        ),
+      ),
+    );
+    expect(
+      find.text('2 nuevos · ninguno repetido · 1 entre tus cuentas'),
+      findsOneWidget,
+    );
+    expect(find.text('24 sept · Pago de tu tarjeta Visa'), findsOneWidget);
+    expect(
+      find.text(
+        'Un pago de tarjeta pasa plata de una cuenta tuya a otra: no cuenta '
+        'como gasto, porque las compras ya están en la tarjeta.',
+      ),
+      findsOneWidget,
+    );
+    // The line says where the money went, and can be changed.
+    await tester.tap(find.text('Tarjeta Visa'));
+    await settle(tester);
+    expect(find.text('Hacia'), findsOneWidget);
+    expect(find.text('Visa'), findsOneWidget);
+    await tester.tapAt(const Offset(20, 20));
+    await settle(tester);
+
+    await tester.tap(find.text('Importar 2 movimientos'));
+    await settle(tester);
+    final List<Entry> onCard =
+        await tester.runAsync(() => store.entries(accountId: visa.id)) ??
+        const <Entry>[];
+    expect(onCard.single.amount, Decimal.parse('480000'));
+    expect(onCard.single.isTransfer, isTrue);
+    final List<Entry> onBank =
+        await tester.runAsync(() => store.entries(accountId: bank.id)) ??
+        const <Entry>[];
+    expect(onBank.length, 2);
+    expect(
+      find.text(
+        'Uno quedó como movimiento entre tus cuentas: no cuenta como gasto.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Todos quedaron con su categoría.'), findsOneWidget);
+  });
+
+  testWidgets('a card payment without a card asks to add it', (tester) async {
+    final (_, OwnController own, _) = await world(tester);
+    await open(
+      tester,
+      own,
+      readTable(
+        parseCsv(
+          'Fecha;Descripción;Valor\n'
+          '24/09/2026;PAGO TARJETA VISA;-480.000\n',
+        ),
+      ),
+    );
+    expect(
+      find.text(
+        'Parece el pago de una tarjeta. Agrégala en Cuentas para que '
+        'Quincena no cuente dos veces lo que compraste con ella.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('24 sept · Sin categoría'), findsOneWidget);
+  });
 }
 
 /// Taps [finder] once it is scrolled into view.

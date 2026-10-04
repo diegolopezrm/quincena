@@ -7608,6 +7608,54 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Como aparece en el extracto'**
   String get statementOriginal;
+
+  /// No description provided for @statementCardPayment.
+  ///
+  /// In es, this message translates to:
+  /// **'Pago de tu tarjeta {card}'**
+  String statementCardPayment(String card);
+
+  /// No description provided for @statementOwnTransferTo.
+  ///
+  /// In es, this message translates to:
+  /// **'Pasa a {account}'**
+  String statementOwnTransferTo(String account);
+
+  /// No description provided for @statementOwnTransferFrom.
+  ///
+  /// In es, this message translates to:
+  /// **'Viene de {account}'**
+  String statementOwnTransferFrom(String account);
+
+  /// No description provided for @statementBetweenAccounts.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{1 entre tus cuentas} other{{count} entre tus cuentas}}'**
+  String statementBetweenAccounts(int count);
+
+  /// No description provided for @statementTransferNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Un pago de tarjeta pasa plata de una cuenta tuya a otra: no cuenta como gasto, porque las compras ya están en la tarjeta.'**
+  String get statementTransferNote;
+
+  /// No description provided for @statementIsCardPayment.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Es el pago de una tarjeta tuya?'**
+  String get statementIsCardPayment;
+
+  /// No description provided for @statementAddCard.
+  ///
+  /// In es, this message translates to:
+  /// **'Parece el pago de una tarjeta. Agrégala en Cuentas para que Quincena no cuente dos veces lo que compraste con ella.'**
+  String get statementAddCard;
+
+  /// No description provided for @statementDoneTransfers.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Uno quedó como movimiento entre tus cuentas: no cuenta como gasto.} other{{count} quedaron como movimientos entre tus cuentas: no cuentan como gasto.}}'**
+  String statementDoneTransfers(int count);
 }
 
 class _AppLocalizationsDelegate

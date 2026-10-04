@@ -1518,5 +1518,18 @@
   "statementOut": "salen {amount}",
   "@statementOut": {"placeholders": {"amount": {"type": "String"}}},
   "statementReviewLine": "Revisar movimiento",
-  "statementOriginal": "Como aparece en el extracto"
+  "statementOriginal": "Como aparece en el extracto",
+  "statementCardPayment": "Pago de tu tarjeta {card}",
+  "@statementCardPayment": {"placeholders": {"card": {"type": "String"}}},
+  "statementOwnTransferTo": "Pasa a {account}",
+  "@statementOwnTransferTo": {"placeholders": {"account": {"type": "String"}}},
+  "statementOwnTransferFrom": "Viene de {account}",
+  "@statementOwnTransferFrom": {"placeholders": {"account": {"type": "String"}}},
+  "statementBetweenAccounts": "{count, plural, =1{1 entre tus cuentas} other{{count} entre tus cuentas}}",
+  "@statementBetweenAccounts": {"placeholders": {"count": {"type": "int"}}},
+  "statementTransferNote": "Un pago de tarjeta pasa plata de una cuenta tuya a otra: no cuenta como gasto, porque las compras ya están en la tarjeta.",
+  "statementIsCardPayment": "¿Es el pago de una tarjeta tuya?",
+  "statementAddCard": "Parece el pago de una tarjeta. Agrégala en Cuentas para que Quincena no cuente dos veces lo que compraste con ella.",
+  "statementDoneTransfers": "{count, plural, =1{Uno quedó como movimiento entre tus cuentas: no cuenta como gasto.} other{{count} quedaron como movimientos entre tus cuentas: no cuentan como gasto.}}",
+  "@statementDoneTransfers": {"placeholders": {"count": {"type": "int"}}}
 }

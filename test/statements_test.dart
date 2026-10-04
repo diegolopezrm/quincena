@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/money/asset.dart';
+import 'package:quincena/money/money.dart';
 import 'package:quincena/statements/gemini_statement.dart';
 import 'package:quincena/statements/statement.dart';
 import 'package:quincena/statements/statement_import.dart';
@@ -221,6 +222,18 @@ void main() {
       ]);
     });
 
+    test('a card payment is money out of a bank account', () {
+      final StatementRead read = readStatementText(
+        'Extracto cuenta de ahorros Bancolombia 2026\n'
+        '20/09  PAGO TARJETA VISA  480.000,00\n'
+        '21/09  ABONO NOMINA  2.500.000,00\n',
+      );
+      expect(read.lines.map((StatementLine l) => l.amount), <Decimal>[
+        d('-480000'),
+        d('2500000'),
+      ]);
+    });
+
     test('a reference number is not an amount', () {
       final StatementRead read = readStatementText(
         '05/09/2026  Transferencia 123456789  -50.000,00\n',
@@ -393,6 +406,149 @@ void main() {
         flipped.map((ImportCandidate c) => c.ref),
         plain.map((ImportCandidate c) => c.ref),
       );
+    });
+
+    group('a card payment', () {
+      StatementRead bankStatement() => readTable(
+        parseCsv(
+          'Fecha;Descripción;Valor\n'
+          '20/09/2026;COMPRA EN EXITO LAURELES;-45.900\n'
+          '24/09/2026;PAGO TARJETA VISA;-480.000\n',
+        ),
+      );
+      StatementRead cardStatement() => readTable(
+        parseCsv(
+          'Fecha;Descripción;Valor\n'
+          '15/09/2026;RAPPI;45.900\n'
+          '16/09/2026;NETFLIX;26.900\n'
+          '25/09/2026;PAGO RECIBIDO;-480.000\n',
+        ),
+      );
+
+      test(
+        'is a move to the card, and the card\'s statement finds it',
+        () async {
+          final StatementImporter importer = StatementImporter(store);
+          final List<ImportCandidate> all = await importer.prepare(
+            bank,
+            bankStatement(),
+          );
+          expect(all.first.kind, EntryKind.expense);
+          final ImportCandidate payment = all.last;
+          expect(payment.cardPayment, isTrue);
+          expect(payment.kind, EntryKind.transfer);
+          expect(payment.otherAccountId, card.id);
+          expect(payment.proposed, isTrue);
+
+          await importer.record(bank, all);
+          final List<Entry> legs = <Entry>[
+            for (final Entry e in await store.entries())
+              if (e.isTransfer) e,
+          ];
+          expect(legs.length, 2);
+          expect(legs.first.transferId, legs.last.transferId);
+          expect(
+            <(String, Decimal)>[
+              for (final Entry e in legs) (e.accountId, e.amount),
+            ],
+            unorderedEquals(<(String, Decimal)>[
+              (bank.id, d('-480000')),
+              (card.id, d('480000')),
+            ]),
+          );
+          final Map<String, Money> balances = balancesOf(
+            await store.accounts(),
+            await store.entries(),
+            DateTime(2026, 10, 2),
+          );
+          // What is owed on the card went down by the payment.
+          expect(balances[card.id]!.amount, d('480000'));
+
+          // The card's statement lists the same payment: it is already
+          // there, and nothing is counted twice.
+          final List<ImportCandidate> onCard = await importer.prepare(
+            card,
+            cardStatement(),
+          );
+          expect(onCard.last.line.amount, d('480000'));
+          expect(onCard.last.recorded, isTrue);
+          expect(onCard.last.proposed, isFalse);
+          await importer.record(
+            card,
+            onCard.where((ImportCandidate c) => c.proposed).toList(),
+          );
+          expect((await store.entries(accountId: card.id)).length, 3);
+          // And the bank's statement again brings nothing new.
+          final List<ImportCandidate> again = await importer.prepare(
+            bank,
+            bankStatement(),
+          );
+          expect(again.where((ImportCandidate c) => c.proposed), isEmpty);
+        },
+      );
+
+      test('imported earlier as an expense is joined, not repeated', () async {
+        // The bank's statement came in before the app knew card payments.
+        await store.addEntry(
+          accountId: bank.id,
+          amount: d('480000'),
+          kind: EntryKind.expense,
+          date: DateTime(2026, 9, 24),
+          category: 'other',
+          payee: 'Tarjeta Visa',
+          source: 'statement',
+          sourceRef:
+              'statement:${bank.id}:2026-09-24|-480000|pago tarjeta visa#1',
+        );
+        final StatementImporter importer = StatementImporter(store);
+        final List<ImportCandidate> onCard = await importer.prepare(
+          card,
+          cardStatement(),
+        );
+        final ImportCandidate payment = onCard.last;
+        expect(payment.kind, EntryKind.transfer);
+        expect(payment.otherAccountId, bank.id);
+        expect(payment.otherLeg?.amount, d('-480000'));
+
+        await importer.record(card, onCard);
+        final List<Entry> onBank = await store.entries(accountId: bank.id);
+        expect(onBank.length, 1);
+        expect(onBank.single.kind, EntryKind.transfer);
+        expect(onBank.single.category, isNull);
+        final Entry received = (await store.entries(
+          accountId: card.id,
+        )).firstWhere((Entry e) => e.isTransfer);
+        expect(received.amount, d('480000'));
+        expect(received.transferId, onBank.single.transferId);
+      });
+
+      test('with more than one card it asks which', () async {
+        final Account master = await store.addAccount(
+          name: 'Mastercard',
+          kind: AccountKind.card,
+          asset: Asset.cop,
+          institution: 'Bancolombia',
+        );
+        final StatementImporter importer = StatementImporter(store);
+        Future<ImportCandidate> paying(String description) async =>
+            (await importer.prepare(
+              bank,
+              readTable(
+                parseCsv(
+                  'Fecha;Descripción;Valor\n24/09/2026;$description;-480.000\n',
+                ),
+              ),
+            )).single;
+        final ImportCandidate unclear = await paying('PAGO TARJETA CREDITO');
+        expect(unclear.cardPayment, isTrue);
+        expect(unclear.kind, EntryKind.expense);
+        expect(unclear.otherAccountId, isNull);
+        // The card the bank's words name is the one.
+        expect((await paying('PAGO TARJETA VISA')).otherAccountId, card.id);
+        final ImportCandidate bancolombia = await paying('PAGO TC BANCOLOMBIA');
+        expect(bancolombia.kind, EntryKind.transfer);
+        expect(bancolombia.otherAccountId, master.id);
+      });
     });
 
     test('a card statement\'s positive purchases are debt', () async {

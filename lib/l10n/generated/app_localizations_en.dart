@@ -4806,4 +4806,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statementOriginal => 'As the statement shows it';
+
+  @override
+  String statementCardPayment(String card) {
+    return 'Payment to your $card card';
+  }
+
+  @override
+  String statementOwnTransferTo(String account) {
+    return 'Moves to $account';
+  }
+
+  @override
+  String statementOwnTransferFrom(String account) {
+    return 'Comes from $account';
+  }
+
+  @override
+  String statementBetweenAccounts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count between your accounts',
+      one: '1 between your accounts',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get statementTransferNote =>
+      'A card payment moves money between your own accounts: it doesn\'t count as spending, because the purchases are already on the card.';
+
+  @override
+  String get statementIsCardPayment =>
+      'Is this a payment to one of your cards?';
+
+  @override
+  String get statementAddCard =>
+      'This looks like a card payment. Add the card in Accounts so Quincena doesn\'t count what you bought with it twice.';
+
+  @override
+  String statementDoneTransfers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count were saved as moves between your accounts: they don\'t count as spending.',
+      one:
+          'One was saved as a move between your accounts: it doesn\'t count as spending.',
+    );
+    return '$_temp0';
+  }
 }

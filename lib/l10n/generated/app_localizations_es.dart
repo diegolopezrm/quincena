@@ -4804,4 +4804,53 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get statementOriginal => 'Como aparece en el extracto';
+
+  @override
+  String statementCardPayment(String card) {
+    return 'Pago de tu tarjeta $card';
+  }
+
+  @override
+  String statementOwnTransferTo(String account) {
+    return 'Pasa a $account';
+  }
+
+  @override
+  String statementOwnTransferFrom(String account) {
+    return 'Viene de $account';
+  }
+
+  @override
+  String statementBetweenAccounts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count entre tus cuentas',
+      one: '1 entre tus cuentas',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get statementTransferNote =>
+      'Un pago de tarjeta pasa plata de una cuenta tuya a otra: no cuenta como gasto, porque las compras ya están en la tarjeta.';
+
+  @override
+  String get statementIsCardPayment => '¿Es el pago de una tarjeta tuya?';
+
+  @override
+  String get statementAddCard =>
+      'Parece el pago de una tarjeta. Agrégala en Cuentas para que Quincena no cuente dos veces lo que compraste con ella.';
+
+  @override
+  String statementDoneTransfers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count quedaron como movimientos entre tus cuentas: no cuentan como gasto.',
+      one: 'Uno quedó como movimiento entre tus cuentas: no cuenta como gasto.',
+    );
+    return '$_temp0';
+  }
 }

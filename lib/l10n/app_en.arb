@@ -1258,5 +1258,13 @@
   "statementIn": "{amount} in",
   "statementOut": "{amount} out",
   "statementReviewLine": "Review transaction",
-  "statementOriginal": "As the statement shows it"
+  "statementOriginal": "As the statement shows it",
+  "statementCardPayment": "Payment to your {card} card",
+  "statementOwnTransferTo": "Moves to {account}",
+  "statementOwnTransferFrom": "Comes from {account}",
+  "statementBetweenAccounts": "{count, plural, =1{1 between your accounts} other{{count} between your accounts}}",
+  "statementTransferNote": "A card payment moves money between your own accounts: it doesn't count as spending, because the purchases are already on the card.",
+  "statementIsCardPayment": "Is this a payment to one of your cards?",
+  "statementAddCard": "This looks like a card payment. Add the card in Accounts so Quincena doesn't count what you bought with it twice.",
+  "statementDoneTransfers": "{count, plural, =1{One was saved as a move between your accounts: it doesn't count as spending.} other{{count} were saved as moves between your accounts: they don't count as spending.}}"
 }
