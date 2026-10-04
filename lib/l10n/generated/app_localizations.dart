@@ -7626,6 +7626,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Lo que movieron los precios y el dólar frente al peso: comprar o vender no cambia esta línea.'**
   String get chartPerformanceNoteFx;
+
+  /// No description provided for @portfolioGainMeaningPlain.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que vale hoy lo que aún tienes menos lo que pagaste por eso. Incluye las comisiones de Binance; lo que ya vendiste va aparte.'**
+  String get portfolioGainMeaningPlain;
+
+  /// No description provided for @chartPerformanceNoteFxPlain.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que movieron los precios y el dólar frente a tu moneda: comprar o vender no cambia esta línea.'**
+  String get chartPerformanceNoteFxPlain;
 }
 
 class _AppLocalizationsDelegate

@@ -1520,5 +1520,7 @@
   "@portfolioConvertedWith": {"placeholders": {"day": {"type": "String"}}},
   "portfolioRefresh": "Actualizar",
   "portfolioRefreshLabel": "Actualizar precios",
-  "chartPerformanceNoteFx": "Lo que movieron los precios y el dólar frente al peso: comprar o vender no cambia esta línea."
+  "chartPerformanceNoteFx": "Lo que movieron los precios y el dólar frente al peso: comprar o vender no cambia esta línea.",
+  "portfolioGainMeaningPlain": "Lo que vale hoy lo que aún tienes menos lo que pagaste por eso. Incluye las comisiones de Binance; lo que ya vendiste va aparte.",
+  "chartPerformanceNoteFxPlain": "Lo que movieron los precios y el dólar frente a tu moneda: comprar o vender no cambia esta línea."
 }

@@ -4800,4 +4800,12 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get chartPerformanceNoteFx =>
       'Lo que movieron los precios y el dólar frente al peso: comprar o vender no cambia esta línea.';
+
+  @override
+  String get portfolioGainMeaningPlain =>
+      'Lo que vale hoy lo que aún tienes menos lo que pagaste por eso. Incluye las comisiones de Binance; lo que ya vendiste va aparte.';
+
+  @override
+  String get chartPerformanceNoteFxPlain =>
+      'Lo que movieron los precios y el dólar frente a tu moneda: comprar o vender no cambia esta línea.';
 }

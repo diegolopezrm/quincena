@@ -1261,5 +1261,7 @@
   "portfolioConvertedWith": "Converted to pesos at the official rate (TRM) of {day}",
   "portfolioRefresh": "Refresh",
   "portfolioRefreshLabel": "Refresh prices",
-  "chartPerformanceNoteFx": "What prices and the dollar against the peso did: buying or selling doesn't move this line."
+  "chartPerformanceNoteFx": "What prices and the dollar against the peso did: buying or selling doesn't move this line.",
+  "portfolioGainMeaningPlain": "What you still hold is worth today minus what you paid for it. It includes Binance fees; what you already sold is shown separately.",
+  "chartPerformanceNoteFxPlain": "What prices and the dollar against your currency did: buying or selling doesn't move this line."
 }

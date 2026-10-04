@@ -82,6 +82,7 @@ Future<OwnController> openCrypto(
   MarketData market, {
   double textScale = 1,
   bool reward = false,
+  Asset base = Asset.cop,
 }) async {
   tester.view.physicalSize = const Size(1080, 2400);
   tester.view.devicePixelRatio = 3;
@@ -95,7 +96,7 @@ Future<OwnController> openCrypto(
     );
     await store.ensureCategories();
     await store.saveProfile(
-      const Profile(name: 'Ana', base: Asset.cop, schedule: TwiceMonthly()),
+      Profile(name: 'Ana', base: base, schedule: const TwiceMonthly()),
     );
     await store.saveRates(<Rate>[
       Rate(
@@ -348,6 +349,29 @@ void main() {
     final double day = tester.getSize(figure('En 24 horas')).height;
     final double gain = tester.getSize(figure('Ganancia no realizada')).height;
     expect(day, gain);
+  });
+
+  testWidgets('in another currency, nothing speaks of pesos', (tester) async {
+    await openCrypto(tester, CandleMarket(), base: Asset.eur);
+
+    expect(
+      find.text(
+        'Lo que vale hoy lo que aún tienes menos lo que pagaste por eso. '
+        'Incluye las comisiones de Binance; lo que ya vendiste va aparte.',
+      ),
+      findsOneWidget,
+    );
+    await reveal(tester, find.text('1 a'));
+    await tester.tap(find.text('1 a'));
+    await settle(tester);
+    expect(
+      find.text(
+        'Lo que movieron los precios y el dólar frente a tu moneda: comprar '
+        'o vender no cambia esta línea.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.textContaining('peso'), findsNothing);
   });
 
   testWidgets('over a month or a year, the note says the dollar moves too', (

@@ -523,7 +523,8 @@ class _Hero extends StatelessWidget {
                           signed: true,
                         ),
                         detail: l.portfolioDayDetail(percentText(day.change)),
-                        color: changeColor(context, day.change),
+                        // By the amount, as the chart colors it.
+                        color: changeColor(context, day.moved.base.toDouble()),
                       ),
               ),
               const SizedBox(width: 12),
@@ -558,7 +559,13 @@ class _Hero extends StatelessWidget {
             ),
             style: context.type.bodySmall,
           ),
-        Text(l.portfolioGainMeaning, style: context.type.bodySmall),
+        Text(
+          // It speaks of pesos, and of the dollar against the peso.
+          base.code == 'COP'
+              ? l.portfolioGainMeaning
+              : l.portfolioGainMeaningPlain,
+          style: context.type.bodySmall,
+        ),
       ],
     );
   }
@@ -848,10 +855,13 @@ class _ChartCard extends StatelessWidget {
                 ? l.chartWithHoldings
                 // Over a month or a year each day has its own dollar, so the
                 // line also moves with it; within a week, today's.
-                : base.code != 'USD' &&
-                      (range == ChartRange.month || range == ChartRange.year)
+                : base.code == 'USD' ||
+                      range == ChartRange.day ||
+                      range == ChartRange.week
+                ? l.chartPerformanceNote
+                : base.code == 'COP'
                 ? l.chartPerformanceNoteFx
-                : l.chartPerformanceNote,
+                : l.chartPerformanceNoteFxPlain,
             style: context.type.bodySmall,
           ),
         ],

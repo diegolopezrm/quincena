@@ -4801,4 +4801,12 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get chartPerformanceNoteFx =>
       'What prices and the dollar against the peso did: buying or selling doesn\'t move this line.';
+
+  @override
+  String get portfolioGainMeaningPlain =>
+      'What you still hold is worth today minus what you paid for it. It includes Binance fees; what you already sold is shown separately.';
+
+  @override
+  String get chartPerformanceNoteFxPlain =>
+      'What prices and the dollar against your currency did: buying or selling doesn\'t move this line.';
 }
