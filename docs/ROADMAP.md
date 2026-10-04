@@ -595,7 +595,8 @@ cerrar.
 
 ### 20. Qué significa cada cifra
 
-**Estado:** en construcción.
+**Estado:** construida, build 19 (1.1.0). El prompt pasó de unos 11.800 a
+unos 12.500 tokens por ronda (estimado por tamaño).
 
 - **Inicio:**
   - La cuenta de "Puedes gastar" separa "En tus cuentas de uso diario" de
@@ -620,7 +621,9 @@ cerrar.
 
 ### 21. Simular no es guardar
 
-**Estado:** en construcción.
+**Estado:** construida, build 19 (1.1.0). Las metas cuentan sus aportes el
+16 de cada mes; las metas propias con otro día quedan para cuando los
+avisos de meta existan.
 
 - **La meta:**
   - La respuesta dice cuánto hace falta al mes y en qué fechas.
@@ -643,7 +646,7 @@ cerrar.
 
 ### 22. Inicio y Cuentas en orden, nada tapado
 
-**Estado:** pendiente.
+**Estado:** en construcción.
 
 - **Botón de agregar:**
   - Se oculta al bajar.
@@ -664,7 +667,8 @@ cerrar.
 
 ### 23. Por revisar e importar con menos lectura
 
-**Estado:** importar en construcción. Por revisar, pendiente.
+**Estado:** importar construido, build 19 (1.1.0). Por revisar, en
+construcción.
 
 - **Importar extracto:**
   - Los repetidos no se marcan solos.
