@@ -214,7 +214,14 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
                 onPressed: _openInbox,
                 icon: Badge(
                   isLabelVisible: count > 0,
-                  label: Text('$count'),
+                  // The count grows no more than the tab labels: at the
+                  // largest text it would hide the tray it sits on.
+                  label: Text(
+                    '$count',
+                    textScaler: MediaQuery.textScalerOf(
+                      context,
+                    ).clamp(maxScaleFactor: 1.3),
+                  ),
                   backgroundColor: context.colors.brand,
                   child: const Icon(Glyph.tray),
                 ),

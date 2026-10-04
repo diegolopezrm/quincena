@@ -629,6 +629,26 @@ void main() {
     }
   }
 
+  testWidgets('at iOS\'s largest text the count of what waits to be '
+      'reviewed does not hide its tray', (WidgetTester tester) async {
+    await expectAccessible(
+      tester,
+      shell,
+      brightness: Brightness.light,
+      locale: const Locale('es'),
+      scale: largestText,
+      then: (WidgetTester tester) async {
+        final Finder count = find.descendant(
+          of: find.byType(Badge),
+          matching: find.byType(Text),
+        );
+        expect(count, findsOneWidget);
+        // No taller than the tray icon under it.
+        expect(tester.getSize(count).height, lessThanOrEqualTo(24));
+      },
+    );
+  });
+
   testWidgets('the buttons inside the lists are 48 points tall at twice '
       'the text size', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1080, 2400);
