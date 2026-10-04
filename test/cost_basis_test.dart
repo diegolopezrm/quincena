@@ -210,6 +210,44 @@ void main() {
     expect(only(all, 'usdt').quantity, d('0'));
   });
 
+  test('a fee takes out what it charged and leaves its cost behind', () {
+    final Account usdt = crypto('usdt', Asset.usdt);
+    final Account btc = crypto('btc', Asset.btc);
+    final List<Entry> entries = <Entry>[
+      // What Binance charged for the trade, in the bitcoin it bought.
+      Entry(
+        id: 'fee',
+        accountId: 'btc',
+        amount: d('-0.0001'),
+        date: august,
+        kind: EntryKind.expense,
+        sourceRef: 'binance:trade:BTCUSDT:7:fee',
+      ),
+      ...transfer('usdt', '1000', 'btc', '0.01', august),
+      entry('usdt', '1000', march, cost: Money(d('4000000'), Asset.cop)),
+    ];
+    final Position p = only(run(<Account>[usdt, btc], entries), 'btc');
+    expect(p.quantity, d('0.0099'));
+    // The whole 4.000.000 now buys 0,0099 BTC: each one cost more, and the
+    // fee is out of the gain.
+    expect(p.cost.base, d('4000000'));
+    expect(p.realized, Pair.zero);
+
+    // Any other spending out of it takes its share of the cost along.
+    final Position spent = only(
+      run(
+        <Account>[usdt, btc],
+        <Entry>[
+          entry('btc', '-0.0001', august, kind: EntryKind.expense),
+          ...transfer('usdt', '1000', 'btc', '0.01', august),
+          entry('usdt', '1000', march, cost: Money(d('4000000'), Asset.cop)),
+        ],
+      ),
+      'btc',
+    );
+    expect(spent.cost.base, d('3960000'));
+  });
+
   test('selling more than is recorded leaves nothing, not a negative cost', () {
     final Account btc = crypto('btc', Asset.btc);
     final List<Entry> entries = <Entry>[

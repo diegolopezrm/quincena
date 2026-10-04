@@ -68,8 +68,8 @@ class Position {
   final Pair cost;
 
   /// Of [quantity], how much came in with no known cost, such as rewards or
-  /// a deposit from a wallet the app does not know. It counts as costing
-  /// nothing, so its whole value shows as gain.
+  /// a deposit from a wallet the app does not know. It carries no cost, and
+  /// the gain leaves it out rather than count its whole value.
   final Decimal uncosted;
 
   /// What sales and conversions out of it brought in, less what they had
@@ -98,7 +98,8 @@ typedef DollarRateOn = Decimal? Function(DateTime day);
 /// An account holds an investment when its asset is crypto. A movement's
 /// cost comes, in this order, from the other leg of a transfer, from the
 /// cost the movement carries (a purchase or sale outside the person's
-/// accounts), or from nowhere: what came in then has no known cost.
+/// accounts), or from nowhere: what came in then has no known cost. A fee
+/// takes out what it charged and leaves its cost behind.
 ///
 /// Amounts in pesos or dollars become the other currency with [dollarOn],
 /// the rate of their own day; failing that, with [today]'s rates, and the
@@ -172,6 +173,10 @@ List<Position> positions({
     if (e.amount > Decimal.zero) {
       h.add(e.amount, cost == null ? null : value.of(cost, e.date));
     } else if (e.amount < Decimal.zero) {
+      if (cost == null && _isFee(e)) {
+        h.charge(-e.amount);
+        continue;
+      }
       final _Taken taken = h.take(-e.amount);
       if (cost != null) {
         final _Valued proceeds = value.of(cost, e.date);
@@ -193,6 +198,10 @@ List<Position> positions({
       ),
   ];
 }
+
+/// Whether [e] is what an exchange charged for a trade, as Binance's are
+/// marked when they are read.
+bool _isFee(Entry e) => e.sourceRef?.endsWith(':fee') ?? false;
 
 /// One move between two of the person's accounts, when at least one of
 /// them holds an investment.
@@ -278,6 +287,14 @@ class _Holding {
       uncosted = Decimal.zero;
     }
     return _Taken(costOut, unknownOut);
+  }
+
+  /// [amount] went to pay a fee: it leaves, and what it had cost stays
+  /// with what is left, so a fee lowers the gain instead of vanishing.
+  void charge(Decimal amount) {
+    final Pair kept = cost;
+    take(amount);
+    if (quantity > Decimal.zero) cost = kept;
   }
 }
 
