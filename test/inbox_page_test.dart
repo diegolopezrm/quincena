@@ -194,6 +194,139 @@ void main() {
     expect(find.byType(TextField), findsOneWidget);
   });
 
+  testWidgets('a narrow phone keeps the title whole and the name its room', (
+    tester,
+  ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await open(tester, withCaptures, size: const Size(320, 640));
+    expect(tester.takeException(), isNull);
+    // The way to read a payment leaves the bar to the title.
+    expect(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.text('Leer un pago'),
+      ),
+      findsNothing,
+    );
+    expect(find.text('Leer un pago'), findsOneWidget);
+    // The amount goes under the name rather than squeezing it.
+    expect(
+      tester.getTopLeft(find.text(r'+$85.000')).dy,
+      greaterThan(tester.getBottomLeft(find.text('Laura Gómez')).dy),
+    );
+  });
+
+  testWidgets('a phone with room keeps both in the bar, side by side', (
+    tester,
+  ) async {
+    await open(tester, withCaptures);
+    expect(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.text('Leer un pago'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      tester.getTopLeft(find.text(r'+$85.000')).dy,
+      lessThan(tester.getBottomLeft(find.text('Laura Gómez')).dy),
+    );
+  });
+
+  group('some clear, some not', () {
+    /// Nequi, its card and a bakery known; two purchases there, one at a
+    /// shop the app has no category for, and one with no bank named that
+    /// only the single peso account could be.
+    Future<QuincenaStore> mixed() async {
+      final store = QuincenaStore(
+        QuincenaDatabase(NativeDatabase.memory()),
+        now: () => screensNow,
+      );
+      await store.ensureCategories();
+      await store.saveProfile(
+        const Profile(name: 'Ana', base: Asset.cop, schedule: TwiceMonthly()),
+      );
+      final Account nequi = await store.addAccount(
+        name: 'Nequi',
+        kind: AccountKind.wallet,
+        asset: Asset.cop,
+        institution: 'Nequi',
+        opening: Decimal.parse('900000'),
+      );
+      await store.saveCaptureSettings(
+        const CaptureSettings(
+          merchantCategories: <String, String>{
+            'panaderia la espiga': 'groceries',
+          },
+        ).copyWith(cardAccounts: <String, String>{'9876': nequi.id}),
+      );
+      CaptureEvent nequiPush(String text, int minutes) => CaptureEvent(
+        source: CaptureSource.notification,
+        at: screensNow.subtract(Duration(minutes: minutes)),
+        app: 'com.nequi.MobileApp',
+        appName: 'Nequi',
+        text: text,
+      );
+      final OwnController own = OwnController(
+        store,
+        now: () => screensNow,
+        readNative: false,
+      );
+      await own.capture.ingest(<CaptureEvent>[
+        nequiPush(
+          r'Pagaste $8.000 en PANADERIA LA ESPIGA con tu tarjeta *9876',
+          10,
+        ),
+        nequiPush(
+          r'Pagaste $9.500 en PANADERIA LA ESPIGA con tu tarjeta *9876',
+          20,
+        ),
+        nequiPush(r'Pagaste $5.000 en TIENDA X con tu tarjeta *9876', 30),
+        CaptureEvent(
+          source: CaptureSource.notification,
+          at: screensNow.subtract(const Duration(minutes: 40)),
+          app: 'com.some.wallet',
+          text: r'Compraste $12.000 en TIENDAS D1',
+        ),
+      ]);
+      own.dispose();
+      return store;
+    }
+
+    testWidgets('the button says how many of the ready it records', (
+      tester,
+    ) async {
+      final OwnController own = await open(tester, mixed);
+      // Only guessed from being the one peso account: it needs a look.
+      final double needs = top(tester, find.text('NECESITAN INFORMACIÓN'));
+      expect(top(tester, find.text('Tiendas D1')), greaterThan(needs));
+      expect(
+        find.text(
+          'Revisa la cuenta: la elegimos por ser tu única de uso diario en '
+          'COP.',
+        ),
+        findsOneWidget,
+      );
+
+      // The shop without a category is ready, but not as clear as the
+      // bakery: the button names the share it takes.
+      expect(top(tester, find.text('Tienda X')), lessThan(needs));
+      await tester.tap(find.text('Registrar 2 de los 3 listos'));
+      await settle(tester);
+      expect(find.text('2 movimientos registrados.'), findsOneWidget);
+      expect(
+        <String>[
+          for (final Entry e in (await tester.runAsync(own.store.entries))!)
+            e.payee,
+        ],
+        <String>['Panaderia la Espiga', 'Panaderia la Espiga'],
+      );
+      expect(find.text('Tienda X'), findsOneWidget);
+      expect(find.textContaining('listos'), findsNothing);
+    });
+  });
+
   group('many waiting', () {
     /// Nequi, its card and a bakery already known, and twenty purchases
     /// there on the card.

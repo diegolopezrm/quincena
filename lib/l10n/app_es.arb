@@ -586,7 +586,7 @@
   "inboxBannerBody": "{count, plural, =1{Aún no cuenta en lo que puedes gastar.} other{Aún no cuentan en lo que puedes gastar.}}",
   "@inboxBannerBody": {"placeholders": {"count": {"type": "int"}}},
   "inboxEmpty": "Todo al día.",
-  "inboxEmptyBody": "No tienes movimientos pendientes. Cuando llegue un pago de tu banco, aparece aquí para confirmarlo.",
+  "inboxEmptyBody": "No tienes movimientos pendientes. Cuando llegue un pago de tu banco, aparece aquí para registrarlo.",
   "edit": "Editar",
   "dismiss": "Descartar",
   "dismissAndMute": "Descartar y no leer más {app}",
@@ -1686,5 +1686,9 @@
   "inboxAddImage": "Un pantallazo, foto o PDF",
   "inboxAddImageBody": "Se lee en este dispositivo y queda aquí para revisar.",
   "inboxAddPaste": "Un mensaje que copiaste",
-  "inboxAddPasteBody": "Pega la notificación, el SMS o el correo del banco."
+  "inboxAddPasteBody": "Pega la notificación, el SMS o el correo del banco.",
+  "inboxWaiting": "{count, plural, =1{1 movimiento por revisar} other{{count} movimientos por revisar}}",
+  "@inboxWaiting": {"placeholders": {"count": {"type": "int"}}},
+  "inboxRecordSome": "{count, plural, =1{Registrar 1 de los {total} listos} other{Registrar {count} de los {total} listos}}",
+  "@inboxRecordSome": {"placeholders": {"count": {"type": "int"}, "total": {"type": "int"}}}
 }

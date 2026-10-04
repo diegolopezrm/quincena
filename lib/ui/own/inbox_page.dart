@@ -76,6 +76,33 @@ class InboxPage extends StatelessWidget {
     await (paste ? showPasteDialog(context, own) : readImages(context, own));
   }
 
+  /// Whether the title and [action] both fit whole in the bar, beside the
+  /// back button, at the person's text size.
+  static bool _barHolds(BuildContext context, String title, String action) {
+    final TextScaler scaler = MediaQuery.textScalerOf(context);
+    final TextDirection direction = Directionality.of(context);
+    double wide(String text, TextStyle? style) {
+      final TextPainter painter = TextPainter(
+        text: TextSpan(text: text, style: style),
+        textScaler: scaler,
+        textDirection: direction,
+        maxLines: 1,
+      )..layout();
+      final double width = painter.width;
+      painter.dispose();
+      return width;
+    }
+
+    // The back button, when there is one, and the gaps on each side of the
+    // title; then the button's padding, its icon and the space after it.
+    final bool back = ModalRoute.of(context)?.impliesAppBarDismissal ?? false;
+    final double around = (back ? 72 : 16) + 16 + 12 + 18 + 8 + 16 + 8;
+    return around +
+            wide(title, context.type.titleLarge) +
+            wide(action, context.type.labelLarge) <=
+        MediaQuery.sizeOf(context).width;
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -102,27 +129,30 @@ class InboxPage extends StatelessWidget {
           for (final InboxItem i in own.inbox)
             if (i.status == InboxStatus.duplicate) i,
         ];
+        final String addLabel = CaptureChannel.readsImages
+            ? l.inboxAddFrom
+            : l.pasteMessage;
         final Widget add = CaptureChannel.readsImages
             ? TextButton.icon(
                 onPressed: () => _addFrom(context),
                 icon: const Icon(Glyph.scan, size: 18),
-                label: Text(l.inboxAddFrom),
+                label: Text(addLabel),
               )
             : TextButton.icon(
                 onPressed: () => showPasteDialog(context, own),
                 icon: const Icon(Glyph.clipboardText, size: 18),
-                label: Text(l.pasteMessage),
+                label: Text(addLabel),
               );
-        // With large text the title needs the whole bar: the way to read a
-        // payment goes at the top of the list instead.
-        final bool large = MediaQuery.textScalerOf(context).scale(10) > 13;
+        // On a narrow phone or with large text the title needs the whole
+        // bar: the way to read a payment goes at the top of the list instead.
+        final bool crowded = !_barHolds(context, l.inboxTitle, addLabel);
         return Scaffold(
           appBar: AppBar(
             backgroundColor: context.colors.canvas,
             surfaceTintColor: Colors.transparent,
             title: Text(l.inboxTitle, style: context.type.titleLarge),
             actions: <Widget>[
-              if (!large) ...<Widget>[add, const SizedBox(width: 8)],
+              if (!crowded) ...<Widget>[add, const SizedBox(width: 8)],
             ],
           ),
           body: Center(
@@ -131,7 +161,7 @@ class InboxPage extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                 children: <Widget>[
-                  if (large && pending.isNotEmpty)
+                  if (crowded && pending.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Align(alignment: Alignment.centerLeft, child: add),
@@ -175,7 +205,7 @@ class InboxPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            l.inboxBanner(pending.length),
+                            l.inboxWaiting(pending.length),
                             style: context.type.titleMedium,
                           ),
                           Text(
@@ -197,6 +227,7 @@ class InboxPage extends StatelessWidget {
                         key: const ValueKey<String>('record-ready'),
                         own: own,
                         items: clear,
+                        ready: ready.length,
                       ),
                     if (compact) ...<Widget>[
                       Material(
@@ -287,10 +318,19 @@ class InboxPage extends StatelessWidget {
 /// Records every capture that is clear at once, with one way to take them
 /// all back.
 class _RecordReady extends StatefulWidget {
-  const _RecordReady({super.key, required this.own, required this.items});
+  const _RecordReady({
+    super.key,
+    required this.own,
+    required this.items,
+    required this.ready,
+  });
 
   final OwnController own;
   final List<InboxItem> items;
+
+  /// How many are ready in all: a category the app had to guess, or a
+  /// picture's reading, leaves one of them for the person to record.
+  final int ready;
 
   @override
   State<_RecordReady> createState() => _RecordReadyState();
@@ -318,7 +358,11 @@ class _RecordReadyState extends State<_RecordReady> {
       child: TextButton.icon(
         onPressed: _busy ? null : _record,
         icon: const Icon(Glyph.checks, size: 18),
-        label: Text(context.l10n.inboxRecordReady(widget.items.length)),
+        label: Text(
+          widget.items.length < widget.ready
+              ? context.l10n.inboxRecordSome(widget.items.length, widget.ready)
+              : context.l10n.inboxRecordReady(widget.items.length),
+        ),
       ),
     ),
   );
@@ -668,7 +712,9 @@ class _InboxCardState extends State<InboxCard> {
                           dayShortMonth(when),
                         ].join(' · '),
                         style: context.type.bodySmall,
-                        maxLines: large ? 2 : 1,
+                        // The account is what the tick records into: it
+                        // wraps rather than goes.
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       if (large) figures,
@@ -693,72 +739,76 @@ class _InboxCardState extends State<InboxCard> {
         amountText,
         style: context.type.titleMedium?.copyWith(color: amountColor),
       );
-      final Widget day = Text(
-        dayAndTime(when),
-        textAlign: large ? TextAlign.start : TextAlign.end,
-        style: context.type.labelSmall?.copyWith(
-          color: context.colors.inkFaint,
-        ),
-      );
-      final Widget names = Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            payee,
-            style: context.type.titleSmall,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          Text.rich(
-            TextSpan(
-              children: <InlineSpan>[
-                TextSpan(text: categoryName),
-                if (account != null)
-                  TextSpan(text: ' · ${account.name}')
-                else if (waiting)
-                  TextSpan(
-                    text: ' · ${l.accountMissingShort}',
-                    style: TextStyle(color: context.colors.caution),
-                  ),
-              ],
+      // With large text, or on a narrow card, the amount and the day go
+      // under the name, which keeps the room to be read.
+      final Widget main = LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints box) {
+          final bool stack =
+              large ||
+              box.maxWidth < MediaQuery.textScalerOf(context).scale(280);
+          final Widget day = Text(
+            dayAndTime(when),
+            textAlign: stack ? TextAlign.start : TextAlign.end,
+            style: context.type.labelSmall?.copyWith(
+              color: context.colors.inkFaint,
             ),
-            style: context.type.bodySmall,
-          ),
-          if (large) ...<Widget>[const SizedBox(height: 4), amountFigures, day],
-        ],
-      );
-      final Widget main = large
-          ? Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                CategoryDisc(category),
-                const SizedBox(width: 12),
-                Expanded(child: names),
-              ],
-            )
-          : LayoutBuilder(
-              builder: (BuildContext context, BoxConstraints box) => Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  CategoryDisc(category),
-                  const SizedBox(width: 12),
-                  Expanded(child: names),
-                  const SizedBox(width: 12),
-                  // The amount and the day never take more than half the
-                  // row: the name keeps its room.
-                  ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: box.maxWidth / 2),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: <Widget>[
-                        FittedBox(fit: BoxFit.scaleDown, child: amountFigures),
-                        day,
-                      ],
-                    ),
-                  ),
-                ],
+          );
+          final Widget names = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                payee,
+                style: context.type.titleSmall,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-            );
+              Text.rich(
+                TextSpan(
+                  children: <InlineSpan>[
+                    TextSpan(text: categoryName),
+                    if (account != null)
+                      TextSpan(text: ' · ${account.name}')
+                    else if (waiting)
+                      TextSpan(
+                        text: ' · ${l.accountMissingShort}',
+                        style: TextStyle(color: context.colors.caution),
+                      ),
+                  ],
+                ),
+                style: context.type.bodySmall,
+              ),
+              if (stack) ...<Widget>[
+                const SizedBox(height: 4),
+                amountFigures,
+                day,
+              ],
+            ],
+          );
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              CategoryDisc(category),
+              const SizedBox(width: 12),
+              Expanded(child: names),
+              if (!stack) ...<Widget>[
+                const SizedBox(width: 12),
+                // The amount and the day never take more than half the row:
+                // the name keeps its room.
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: box.maxWidth / 2),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: <Widget>[
+                      FittedBox(fit: BoxFit.scaleDown, child: amountFigures),
+                      day,
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          );
+        },
+      );
 
       body = Padding(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),

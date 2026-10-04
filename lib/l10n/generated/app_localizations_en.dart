@@ -1821,7 +1821,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inboxEmptyBody =>
-      'Nothing waiting. When a payment arrives from your bank, it shows up here to confirm.';
+      'Nothing waiting. When a payment arrives from your bank, it shows up here for you to record.';
 
   @override
   String get edit => 'Edit';
@@ -5322,7 +5322,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String pickAccountBankNote(String institution) {
-    return 'Next time, $institution payments will go straight to that account.';
+    return 'Next time, alerts from $institution will go straight to that account.';
   }
 
   @override
@@ -5365,4 +5365,26 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get inboxAddPasteBody =>
       'Paste the bank\'s notification, text or email.';
+
+  @override
+  String inboxWaiting(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count transactions to review',
+      one: '1 transaction to review',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String inboxRecordSome(int count, int total) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Record $count of the $total ready',
+      one: 'Record 1 of the $total ready',
+    );
+    return '$_temp0';
+  }
 }

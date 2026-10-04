@@ -1824,7 +1824,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get inboxEmptyBody =>
-      'No tienes movimientos pendientes. Cuando llegue un pago de tu banco, aparece aquí para confirmarlo.';
+      'No tienes movimientos pendientes. Cuando llegue un pago de tu banco, aparece aquí para registrarlo.';
 
   @override
   String get edit => 'Editar';
@@ -5360,4 +5360,26 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get inboxAddPasteBody =>
       'Pega la notificación, el SMS o el correo del banco.';
+
+  @override
+  String inboxWaiting(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count movimientos por revisar',
+      one: '1 movimiento por revisar',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String inboxRecordSome(int count, int total) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Registrar $count de los $total listos',
+      one: 'Registrar 1 de los $total listos',
+    );
+    return '$_temp0';
+  }
 }

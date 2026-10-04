@@ -2921,7 +2921,7 @@ abstract class AppLocalizations {
   /// No description provided for @inboxEmptyBody.
   ///
   /// In es, this message translates to:
-  /// **'No tienes movimientos pendientes. Cuando llegue un pago de tu banco, aparece aquí para confirmarlo.'**
+  /// **'No tienes movimientos pendientes. Cuando llegue un pago de tu banco, aparece aquí para registrarlo.'**
   String get inboxEmptyBody;
 
   /// No description provided for @edit.
@@ -8315,6 +8315,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Pega la notificación, el SMS o el correo del banco.'**
   String get inboxAddPasteBody;
+
+  /// No description provided for @inboxWaiting.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{1 movimiento por revisar} other{{count} movimientos por revisar}}'**
+  String inboxWaiting(int count);
+
+  /// No description provided for @inboxRecordSome.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Registrar 1 de los {total} listos} other{Registrar {count} de los {total} listos}}'**
+  String inboxRecordSome(int count, int total);
 }
 
 class _AppLocalizationsDelegate
