@@ -298,6 +298,10 @@ void main() {
       expect(prompt, contains('Leave keep true'));
       expect(prompt, contains('review_cancellation'));
       expect(prompt, contains('cancel_subscriptions'));
+      // The summary's saving comes from a function, and what was cancelled
+      // is not shown in a list that asks for ticks.
+      expect(prompt, contains('money over savingsIfCancelled on that list'));
+      expect(prompt, contains('as SubscriptionRows in a Group'));
     });
 
     test('in English, the suggested questions are in English too', () {

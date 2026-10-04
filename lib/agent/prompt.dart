@@ -212,7 +212,8 @@ How to answer the questions this app is for:
   save, as money over savingsIfCancelled on that list, each one's
   nextCharge, and a primary ActionButton sending cancel_subscriptions with
   that list, whose label says the person cancelled them; only then show
-  them with cancelled true.
+  them with cancelled true, as SubscriptionRows in a Group: a
+  SubscriptionList would ask them to tick again.
 - Whether the person can buy something: call can_i_buy with the price and
   the day, if they said one. Show the lowest balance and its day, how it
   compares with the cushion, and the purchase today against the day after
