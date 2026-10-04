@@ -748,6 +748,43 @@ void main() {
       expect(await laptop.contents(), await phone.contents());
     });
 
+    test('a card\'s limit given on one reaches the other, and taken away '
+        'it goes on both', () async {
+      await send(phone, laptop);
+      phone.later();
+      final Account visa = await phone.store.addAccount(
+        name: 'Visa',
+        kind: AccountKind.card,
+        asset: Asset.cop,
+        opening: d('-300000'),
+        creditLimit: d('2000000'),
+      );
+      // An account with no limit reads as it did before limits existed:
+      // a device on either version takes it for the same one.
+      final String bankId = await bank(phone);
+      final Map<String, Object?> bankRecord = (await phone.store.syncRecords())
+          .firstWhere((SyncRecord r) => r.id == bankId)
+          .data!;
+      expect(bankRecord.containsKey('creditLimit'), isFalse);
+
+      await send(phone, laptop);
+      Account there = (await laptop.store.accounts()).firstWhere(
+        (Account a) => a.id == visa.id,
+      );
+      expect(there.creditLimit, d('2000000'));
+      expect(await laptop.contents(), await phone.contents());
+
+      laptop.later();
+      await laptop.store.updateAccount(there.copyWith(clearCreditLimit: true));
+      await send(laptop, phone);
+      there = (await phone.store.accounts()).firstWhere(
+        (Account a) => a.id == visa.id,
+      );
+      expect(there.creditLimit, isNull);
+      expect(await laptop.contents(), await phone.contents());
+      expect(await phone.sync.conflicts(), isEmpty);
+    });
+
     test('stopping forgets the key and keeps the data', () async {
       await send(phone, laptop);
       await laptop.sync.stop();

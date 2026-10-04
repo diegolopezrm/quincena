@@ -21,12 +21,27 @@ BinanceLabels binanceLabels(AppLocalizations l) => BinanceLabels(
   adjustment: l.binanceLabelAdjustment,
 );
 
-/// On the crypto page: an invitation to connect Binance, or how the
-/// connection is doing.
+/// Crypto accounts the person keeps by hand at Binance: what connecting it
+/// would keep up to date.
+List<Account> manualBinanceAccounts(OwnController own) => <Account>[
+  for (final Account a in own.accounts)
+    if (a.syncRef == null &&
+        a.asset.isCrypto &&
+        a.institution.toLowerCase().contains('binance'))
+      a,
+];
+
+/// An invitation to connect Binance, or how the connection is doing: a
+/// card of its own where there is no crypto yet, or, [compact], a row
+/// among the crypto page's sources.
 class BinanceCard extends StatelessWidget {
-  const BinanceCard({super.key, required this.own});
+  const BinanceCard({super.key, required this.own, this.compact = false});
 
   final OwnController own;
+
+  /// A row in a panel, with one line of how it is doing and no list of
+  /// what the key can do, which its page has.
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -36,13 +51,59 @@ class BinanceCard extends StatelessWidget {
       builder: (BuildContext context, _) {
         final AppLocalizations l = context.l10n;
         final DateTime? at = link.syncedAt;
+        // Balances written by hand are the reason to connect it.
+        final bool manual = manualBinanceAccounts(own).isNotEmpty;
         final String body = !link.connected
-            ? l.binanceCardBody
+            ? (manual
+                  ? l.binanceCardManualBody
+                  : compact
+                  ? l.binanceRowOff
+                  : l.binanceCardBody)
             : link.syncing
             ? l.binanceSyncing
             : at == null
             ? l.binanceNeverSynced
             : l.binanceSyncedAt(dayAndTime(at));
+        void open() => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (BuildContext context) => BinancePage(own: own),
+          ),
+        );
+        if (compact) {
+          return InkWell(
+            onTap: open,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: <Widget>[
+                  const _BinanceMark(),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(l.binanceTitle, style: context.type.titleSmall),
+                        Text(body, style: context.type.bodySmall),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  if (link.syncing)
+                    const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else
+                    Icon(
+                      Glyph.caretRight,
+                      size: 18,
+                      color: context.colors.inkFaint,
+                    ),
+                ],
+              ),
+            ),
+          );
+        }
         return Material(
           color: context.colors.surface,
           shape: RoundedRectangleBorder(
@@ -51,11 +112,7 @@ class BinanceCard extends StatelessWidget {
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (BuildContext context) => BinancePage(own: own),
-              ),
-            ),
+            onTap: open,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
               child: Row(
@@ -230,13 +287,7 @@ class _BinancePageState extends State<BinancePage> {
 
   /// Accounts the person kept by hand at Binance, which the synced ones
   /// now count too.
-  List<Account> get _manual => <Account>[
-    for (final Account a in widget.own.accounts)
-      if (a.syncRef == null &&
-          a.asset.isCrypto &&
-          a.institution.toLowerCase().contains('binance'))
-        a,
-  ];
+  List<Account> get _manual => manualBinanceAccounts(widget.own);
 
   Future<void> _archiveManual() async {
     for (final Account a in _manual) {

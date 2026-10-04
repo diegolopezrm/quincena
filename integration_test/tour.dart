@@ -353,10 +353,8 @@ final List<Scene> scenes = <Scene>[
     await t.tap('Cuenta en dólares');
     await t.page('cuenta-en-dolares');
     await t.back();
-    // Shown once prices have been read.
-    if (find.text('Cripto').evaluate().isNotEmpty) {
-      await t.visit('Cripto', 'cripto');
-    }
+    // The way in is the last row of its section, prices read or not.
+    await t.visit('Rendimiento y ganancia', 'cripto');
     await t.tap('Agregar cuenta');
     await t.page('agregar-cuenta');
     await t.back();

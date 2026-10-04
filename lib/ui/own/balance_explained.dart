@@ -73,6 +73,10 @@ class AccountExplained extends StatelessWidget {
       own.today,
     );
     String money(Money m) => moneyText(m, base: base, signed: true);
+    // A card ends where its page starts: on what is owed, not on a balance
+    // of another sign.
+    final bool card = account.kind == AccountKind.card;
+    final Money balance = t.balance;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -92,8 +96,14 @@ class AccountExplained extends StatelessWidget {
                 ExplainSum(label: _kind(l, p), value: money(p.sum)),
               Divider(color: context.colors.line, height: 20),
               ExplainSum(
-                label: l.accountExplainBalance,
-                value: moneyText(t.balance, base: base),
+                label: !card || balance.isZero
+                    ? l.accountExplainBalance
+                    : balance.isNegative
+                    ? l.cardOwedLabel
+                    : l.cardInFavorLabel,
+                value: card && balance.isZero
+                    ? l.cardClear
+                    : moneyText(card ? balance.abs() : balance, base: base),
                 strong: true,
               ),
             ],

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 
+import '../../domain/records.dart';
 import '../../format/dates.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
@@ -21,8 +22,9 @@ import '../kit.dart';
 import '../../exchanges/binance_link.dart';
 import 'account_page.dart';
 import 'binance_page.dart';
-import 'wallets_page.dart';
 import 'look.dart';
+import 'portfolio_chart.dart';
+import 'wallets_page.dart';
 
 /// [fraction] as a percentage: `+1,2 %` in Spanish, `+1.2%` in English.
 String percentText(double fraction, {bool signed = true}) {
@@ -115,22 +117,19 @@ class CoinMark extends StatelessWidget {
   }
 }
 
-/// What the person's crypto is worth now: in the Accounts tab, above the
-/// accounts, and a tap away from the whole portfolio.
-class PortfolioCard extends StatefulWidget {
-  const PortfolioCard({super.key, required this.own, this.compact = false});
+/// The last row of the Cripto section in Accounts: how the crypto did
+/// against what it cost, a tap away from the whole of it. No total: the
+/// rows above it already add up to that.
+class CryptoPerformanceRow extends StatefulWidget {
+  const CryptoPerformanceRow({super.key, required this.own});
 
   final OwnController own;
 
-  /// A row among the other accounts rather than a card of its own, with
-  /// the total gain and not the day's change, which is the page's to show.
-  final bool compact;
-
   @override
-  State<PortfolioCard> createState() => _PortfolioCardState();
+  State<CryptoPerformanceRow> createState() => _CryptoPerformanceRowState();
 }
 
-class _PortfolioCardState extends State<PortfolioCard> {
+class _CryptoPerformanceRowState extends State<CryptoPerformanceRow> {
   PortfolioController get _controller => widget.own.portfolio;
 
   @override
@@ -150,190 +149,60 @@ class _PortfolioCardState extends State<PortfolioCard> {
     listenable: _controller,
     builder: (BuildContext context, _) {
       final AppLocalizations l = context.l10n;
-      final Portfolio? p = _controller.portfolio;
-      if (p == null || p.isEmpty) return const SizedBox.shrink();
-      final Asset base = p.base;
-      final double? day = _controller.day?.change;
-      final double? gain = p.gainRatio;
-      void open() => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (BuildContext context) => PortfolioPage(own: widget.own),
-        ),
-      );
-      if (widget.compact) {
-        return InkWell(
-          onTap: open,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: <Widget>[
-                _Stack(
-                  assets: <Asset>[
-                    for (final (Asset a, Pair _) in p.allocation.take(3)) a,
-                  ],
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(l.portfolioTitle, style: context.type.titleSmall),
-                      if (gain != null)
-                        Text(
-                          '${gain >= 0 ? l.portfolioGain : l.portfolioLoss} '
-                          '${percentText(gain)}',
-                          style: context.type.bodySmall?.copyWith(
-                            color: changeColor(context, gain),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Figures(
-                  moneyText(Money(p.value.base, base), base: base),
-                  style: context.type.titleSmall,
-                ),
-              ],
-            ),
+      final double? gain = _controller.portfolio?.gainRatio;
+      return InkWell(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (BuildContext context) => PortfolioPage(own: widget.own),
           ),
-        );
-      }
-      return Material(
-        color: context.colors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: context.colors.line),
         ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: open,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 16, 14, 16),
-            child: Row(
-              children: <Widget>[
-                _Stack(
-                  assets: <Asset>[
-                    for (final (Asset a, Pair _) in p.allocation.take(3)) a,
-                  ],
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(l.portfolioTitle, style: context.type.titleSmall),
-                      const SizedBox(height: 2),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Figures(
-                          moneyText(Money(p.value.base, base), base: base),
-                          style: context.type.titleLarge,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 4,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: <Widget>[
-                          if (day != null)
-                            _ChangePill(fraction: day, label: l.rangeDay),
-                          if (gain != null)
-                            Text(
-                              '${gain >= 0 ? l.portfolioGain : l.portfolioLoss} '
-                              '${percentText(gain)}',
-                              style: context.type.bodySmall?.copyWith(
-                                color: changeColor(context, gain),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: <Widget>[
+              ExcludeSemantics(
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: context.colors.brandSoft,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Glyph.chartLineUp,
+                    size: 20,
+                    color: context.colors.brand,
                   ),
                 ),
-                const SizedBox(width: 6),
-                Icon(
-                  Glyph.caretRight,
-                  size: 18,
-                  color: context.colors.inkFaint,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      l.cryptoPerformanceRow,
+                      style: context.type.titleSmall,
+                    ),
+                    if (gain != null)
+                      Text(
+                        '${gain >= 0 ? l.portfolioGain : l.portfolioLoss} '
+                        '${percentText(gain)}',
+                        style: context.type.bodySmall?.copyWith(
+                          color: changeColor(context, gain),
+                        ),
+                      ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 6),
+              Icon(Glyph.caretRight, size: 18, color: context.colors.inkFaint),
+            ],
           ),
         ),
       );
     },
   );
-}
-
-/// Up to three coin marks, overlapping.
-class _Stack extends StatelessWidget {
-  const _Stack({required this.assets});
-
-  final List<Asset> assets;
-
-  @override
-  Widget build(BuildContext context) {
-    if (assets.isEmpty) return const CoinMark(Asset.btc);
-    const double size = 34;
-    return SizedBox(
-      width: size + (assets.length - 1) * 16,
-      height: size,
-      child: Stack(
-        children: <Widget>[
-          for (var i = assets.length - 1; i >= 0; i--)
-            Positioned(
-              left: i * 16.0,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: context.colors.surface, width: 2),
-                  color: context.colors.surface,
-                ),
-                child: CoinMark(assets[i], size: size - 4),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-/// A change in a soft pill of its color, with what it measures above.
-class _ChangePill extends StatelessWidget {
-  const _ChangePill({required this.fraction, required this.label});
-
-  final double fraction;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final Color color = changeColor(context, fraction);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Icon(
-            fraction >= 0 ? Glyph.trendUp : Glyph.trendDown,
-            size: 14,
-            color: color,
-          ),
-          const SizedBox(width: 4),
-          Figures(
-            '${percentText(fraction)} $label',
-            style: context.type.labelMedium?.copyWith(color: color),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// Everything the person holds in crypto: what it is worth now, how it
@@ -399,7 +268,12 @@ class _PortfolioPageState extends State<PortfolioPage> {
         title: Text(l.portfolioTitle, style: context.type.titleLarge),
       ),
       body: ListenableBuilder(
-        listenable: _controller,
+        // When Binance or the wallets were read shows beside the coins.
+        listenable: Listenable.merge(<Listenable>[
+          _controller,
+          widget.own.binance,
+          widget.own.wallets,
+        ]),
         builder: (BuildContext context, _) {
           final Portfolio? p = _controller.portfolio;
           if (p == null) return const SizedBox.shrink();
@@ -423,12 +297,6 @@ class _PortfolioPageState extends State<PortfolioPage> {
                   children: <Widget>[
                     _Hero(portfolio: p, controller: _controller),
                     const SizedBox(height: 20),
-                    if (BinanceLink.available) ...<Widget>[
-                      BinanceCard(own: widget.own),
-                      const SizedBox(height: 12),
-                    ],
-                    WalletsCard(own: widget.own),
-                    const SizedBox(height: 16),
                     _ChartCard(
                       portfolio: p,
                       controller: _controller,
@@ -439,25 +307,30 @@ class _PortfolioPageState extends State<PortfolioPage> {
                           setState(() => _performance = on),
                     ),
                     const SizedBox(height: 24),
+                    for (final MapEntry<String, List<Holding>> place
+                        in p.byInstitution.entries)
+                      _Place(
+                        own: widget.own,
+                        name: place.key.isEmpty
+                            ? l.portfolioOtherPlace
+                            : place.key,
+                        holdings: place.value,
+                        base: p.base,
+                      ),
+                    const SizedBox(height: 4),
                     _Allocation(portfolio: p),
                     const SizedBox(height: 24),
-                    for (final MapEntry<String, List<Holding>> place
-                        in p.byInstitution.entries) ...<Widget>[
-                      SectionLabel(
-                        place.key.isEmpty ? l.portfolioOtherPlace : place.key,
-                      ),
-                      Panel(
-                        children: <Widget>[
-                          for (final Holding h in place.value)
-                            HoldingRow(
-                              own: widget.own,
-                              holding: h,
-                              base: p.base,
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                    ],
+                    // Where the balances come from, to connect or follow
+                    // more: after what they show.
+                    SectionLabel(l.portfolioSources),
+                    Panel(
+                      children: <Widget>[
+                        if (BinanceLink.available)
+                          BinanceCard(own: widget.own, compact: true),
+                        WalletsRow(own: widget.own),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
                     _Notes(portfolio: p),
                   ],
                 ),
@@ -679,8 +552,9 @@ class _Figure extends StatelessWidget {
   );
 }
 
-/// The value over a range the person picks, with how much it moved.
-class _ChartCard extends StatelessWidget {
+/// The value over a range the person picks, with how much it moved, and
+/// any moment of it under a finger.
+class _ChartCard extends StatefulWidget {
   const _ChartCard({
     required this.portfolio,
     required this.controller,
@@ -700,6 +574,33 @@ class _ChartCard extends StatelessWidget {
   final bool performance;
   final ValueChanged<bool> onPerformance;
 
+  @override
+  State<_ChartCard> createState() => _ChartCardState();
+}
+
+class _ChartCardState extends State<_ChartCard> {
+  /// The moment picked on the line, while a finger is on it.
+  int? _touched;
+
+  /// Whether the line was touched on this visit: the hint goes after.
+  bool _tried = false;
+
+  @override
+  void didUpdateWidget(_ChartCard old) {
+    super.didUpdateWidget(old);
+    if (old.range != widget.range || old.performance != widget.performance) {
+      _touched = null;
+    }
+  }
+
+  void _select(int? i) {
+    if (i == _touched) return;
+    setState(() {
+      if (i == null) _tried = true;
+      _touched = i;
+    });
+  }
+
   String _short(AppLocalizations l, ChartRange r) => switch (r) {
     ChartRange.day => l.rangeDay,
     ChartRange.week => l.rangeWeek,
@@ -714,54 +615,93 @@ class _ChartCard extends StatelessWidget {
     ChartRange.year => l.rangeYearLong,
   };
 
+  /// A moment of the line as the range reads it: the hour within a day,
+  /// the day within a year, both in between.
+  String _when(DateTime t) => switch (widget.range) {
+    ChartRange.day => timeOfDay(t),
+    ChartRange.year => dayShortMonth(t),
+    _ => dayAndTime(t),
+  };
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
+    final Portfolio portfolio = widget.portfolio;
+    final PortfolioController controller = widget.controller;
+    final ChartRange range = widget.range;
+    final bool performance = widget.performance;
     final Asset base = portfolio.base;
-    final List<ValuePoint>? points = controller.chart(range);
+    // A chart that could not read some coin's prices would show it
+    // standing still: none rather than that.
+    final List<ValuePoint> points = controller.drewAll(range)
+        ? controller.chart(range) ?? const <ValuePoint>[]
+        : const <ValuePoint>[];
     // The last candle can be minutes old: the line ends at the value now,
     // when everything held has a price to count it with.
+    final bool now = points.isNotEmpty && portfolio.unpriced.isEmpty;
     final List<double> worth = <double>[
-      for (final ValuePoint v in points ?? const <ValuePoint>[])
-        v.value.base.toDouble(),
-      if (points != null && points.isNotEmpty && portfolio.unpriced.isEmpty)
-        portfolio.value.base.toDouble(),
+      for (final ValuePoint v in points) v.value.base.toDouble(),
+      if (now) portfolio.value.base.toDouble(),
     ];
     final List<double> values = performance
-        ? <double>[
-            for (final ValuePoint v in points ?? const <ValuePoint>[])
-              v.gain.base.toDouble(),
-          ]
+        ? <double>[for (final ValuePoint v in points) v.gain.base.toDouble()]
         : worth;
+    // Each moment's own amount, as the header says it.
+    Money amountAt(int i) => Money(
+      (performance
+              ? points[i].gain.base
+              : i < points.length
+              ? points[i].value.base
+              : portfolio.value.base)
+          .round(scale: base.decimals),
+      base,
+    );
+    DateTime timeAt(int i) =>
+        i < points.length ? points[i].at : controller.own.now();
+    String describe(int i) => performance
+        ? l.chartPointGain(
+            _when(timeAt(i)),
+            moneyText(amountAt(i), base: base, signed: true),
+          )
+        : l.chartPointValue(
+            _when(timeAt(i)),
+            moneyText(amountAt(i), base: base),
+          );
     final double? first = worth.isEmpty ? null : worth.first;
     // What prices made over the range on what was held, not what was
     // bought or sold in it; as a fraction, step by step, so money put in
     // along the way does not read as a return.
-    final ValuePoint? last = points == null || points.isEmpty
-        ? null
-        : points.last;
+    final ValuePoint? last = points.isEmpty ? null : points.last;
     final Pair made = last?.gain ?? Pair.zero;
     final double moved = made.base.toDouble();
     final double ratio = last?.ratio ?? 0;
+    final String madeText = moneyText(
+      Money(made.base.round(scale: base.decimals), base),
+      base: base,
+      signed: true,
+    );
     final double changed = worth.isEmpty ? 0 : worth.last - worth.first;
     final bool flows =
         !performance &&
         first != null &&
         (changed - moved).abs() > (first.abs() * 0.01 + 1);
     final Color color = changeColor(context, moved);
+    final int? touched = _touched != null && _touched! < values.length
+        ? _touched
+        : null;
     return Block(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          if (last != null)
+          if (touched != null)
+            Text(describe(touched), style: context.type.titleSmall)
+          else if (last != null)
             Text.rich(
               TextSpan(
                 children: <InlineSpan>[
                   TextSpan(
-                    text:
-                        '${moneyText(Money(made.base.round(scale: base.decimals), base), base: base, signed: true)} '
-                        '(${percentText(ratio)}) ',
+                    text: '$madeText (${percentText(ratio)}) ',
                     style: context.type.titleSmall?.copyWith(color: color),
                   ),
                   TextSpan(
@@ -785,50 +725,64 @@ class _ChartCard extends StatelessWidget {
                 ButtonSegment<bool>(value: false, label: Text(l.chartValue)),
               ],
               selected: <bool>{performance},
-              onSelectionChanged: (Set<bool> s) => onPerformance(s.first),
+              onSelectionChanged: (Set<bool> s) =>
+                  widget.onPerformance(s.first),
             ),
           ),
           const SizedBox(height: 12),
-          SizedBox(
-            height: 168,
-            child: values.length < 2
-                ? controller.charting(range)
-                      ? Semantics(
-                          liveRegion: true,
-                          label: l.chartLoading,
-                          child: const Column(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: <Widget>[
-                              Skeleton(height: 120, radius: 12),
-                              SizedBox(height: 8),
-                              Skeleton(height: 10, width: 120),
-                            ],
-                          ),
-                        )
-                      : Center(
-                          child: Text(
-                            l.chartEmpty,
-                            style: context.type.bodySmall,
-                          ),
-                        )
-                : Semantics(
-                    label:
-                        '${l.portfolioWorth} ${_long(l, range)}: '
-                        '${percentText(ratio)}',
-                    child: DrawIn(
-                      key: ValueKey<(ChartRange, bool)>((range, performance)),
-                      builder: (BuildContext context, double progress) =>
-                          CustomPaint(
-                            painter: LinePainter(
-                              values: values,
-                              color: color,
-                              progress: progress,
-                            ),
-                          ),
+          if (values.length < 2)
+            SizedBox(
+              height: 168,
+              child: controller.charting(range)
+                  ? Semantics(
+                      liveRegion: true,
+                      label: l.chartLoading,
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          Skeleton(height: 120, radius: 12),
+                          SizedBox(height: 8),
+                          Skeleton(height: 10, width: 120),
+                        ],
+                      ),
+                    )
+                  : Center(
+                      child: Text(l.chartEmpty, style: context.type.bodySmall),
                     ),
+            )
+          else ...<Widget>[
+            DrawIn(
+              key: ValueKey<(ChartRange, bool)>((range, performance)),
+              builder: (BuildContext context, double progress) =>
+                  PortfolioChart(
+                    values: values,
+                    color: color,
+                    progress: progress,
+                    selected: touched,
+                    onSelect: _select,
+                    describe: describe,
+                    semanticsLabel: performance
+                        ? l.chartSemanticsGain(
+                            _long(l, range),
+                            madeText,
+                            percentText(ratio),
+                          )
+                        : '${l.portfolioWorth} ${_long(l, range)}: '
+                              '${percentText(ratio)}',
+                    zero: performance,
+                    zeroLabel: l.chartZero,
+                    startLabel: range == ChartRange.day
+                        ? timeOfDay(timeAt(0))
+                        : dayShortMonth(timeAt(0)),
+                    endLabel: l.chartNow,
                   ),
-          ),
+            ),
+            if (!_tried) ...<Widget>[
+              const SizedBox(height: 6),
+              Text(l.chartTouchHint, style: context.type.bodySmall),
+            ],
+          ],
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(3),
@@ -843,7 +797,7 @@ class _ChartCard extends StatelessWidget {
                     child: _RangeTab(
                       label: _short(l, r),
                       selected: range == r,
-                      onTap: () => onRange(r),
+                      onTap: () => widget.onRange(r),
                     ),
                   ),
               ],
@@ -1025,6 +979,109 @@ class _Allocation extends StatelessWidget {
   }
 }
 
+/// Where [account]'s balance comes from, in words: written by hand, or
+/// read from Binance or a public address, and when; or read there once and
+/// not from here any more, with no key on this device or the address no
+/// longer followed. Null while that is not known yet.
+String? holdingSourceText(
+  AppLocalizations l,
+  OwnController own,
+  Account account,
+) => switch (HoldingSource.of(account)) {
+  HoldingSource.manual => l.portfolioSourceManual,
+  HoldingSource.binance when own.binance.connected =>
+    switch (own.binance.syncedAt) {
+      final DateTime at => l.portfolioSourceBinance(dayAndTime(at)),
+      null => l.portfolioSourceBinanceNever,
+    },
+  HoldingSource.binance when own.binance.loaded => l.portfolioSourceBinanceOff,
+  HoldingSource.wallet when own.wallets.follows(account) =>
+    switch (own.wallets.syncedAt) {
+      final DateTime at => l.portfolioSourceWallet(dayAndTime(at)),
+      null => l.portfolioSourceWalletNever,
+    },
+  HoldingSource.wallet when own.wallets.loaded => l.portfolioSourceWalletOff,
+  _ => null,
+};
+
+/// Whether [account]'s balance is read again by itself from here.
+bool _updates(OwnController own, Account account) =>
+    switch (HoldingSource.of(account)) {
+      HoldingSource.binance => own.binance.connected,
+      HoldingSource.wallet => own.wallets.follows(account),
+      _ => false,
+    };
+
+/// The coins kept in one place, with where their balances come from: once
+/// under the place's name when they all come the same way, on each coin
+/// when not.
+class _Place extends StatelessWidget {
+  const _Place({
+    required this.own,
+    required this.name,
+    required this.holdings,
+    required this.base,
+  });
+
+  final OwnController own;
+  final String name;
+  final List<Holding> holdings;
+  final Asset base;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    final Set<String?> sources = <String?>{
+      for (final Holding h in holdings) holdingSourceText(l, own, h.account),
+    };
+    final String? shared = sources.length == 1 ? sources.single : null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        SectionLabel(name),
+        if (shared != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Icon(
+                    _updates(own, holdings.first.account)
+                        ? Glyph.arrowsClockwise
+                        : HoldingSource.of(holdings.first.account) ==
+                              HoldingSource.manual
+                        ? Glyph.pencilSimple
+                        : Glyph.pause,
+                    size: 14,
+                    color: context.colors.inkSoft,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(child: Text(shared, style: context.type.bodySmall)),
+              ],
+            ),
+          ),
+        Panel(
+          children: <Widget>[
+            for (final Holding h in holdings)
+              HoldingRow(
+                own: own,
+                holding: h,
+                base: base,
+                source: shared == null
+                    ? holdingSourceText(l, own, h.account)
+                    : null,
+              ),
+          ],
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+}
+
 /// One investment account: the coin, how much, what it is worth and how it
 /// did.
 class HoldingRow extends StatelessWidget {
@@ -1033,11 +1090,16 @@ class HoldingRow extends StatelessWidget {
     required this.own,
     required this.holding,
     required this.base,
+    this.source,
   });
 
   final OwnController own;
   final Holding holding;
   final Asset base;
+
+  /// Where its balance comes from, when the place it is kept does not say
+  /// it once for all its coins.
+  final String? source;
 
   @override
   Widget build(BuildContext context) {
@@ -1094,6 +1156,8 @@ class HoldingRow extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  if (source != null)
+                    Text(source!, style: context.type.bodySmall),
                 ],
               ),
             ),

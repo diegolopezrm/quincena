@@ -12,6 +12,7 @@ import 'package:quincena/own/own_tools.dart';
 import 'package:quincena/portfolio/cost_basis.dart';
 import 'package:quincena/portfolio/market.dart';
 import 'package:quincena/portfolio/portfolio.dart';
+import 'package:quincena/portfolio/portfolio_controller.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
 
@@ -583,6 +584,88 @@ void main() {
     await own.portfolio.refreshIfOlder(const Duration(minutes: 1));
     expect(own.portfolio.day!.moved.base.toDouble(), closeTo(120000, 0.01));
     expect(portfolioAnswer(own)['change24hInBase'], 120000);
+  });
+
+  test('a chart on a screen stays through new prices, and is drawn again '
+      'when what was held changes', () async {
+    final DateTime now = DateTime(2026, 10, 2, 12);
+    final QuincenaStore store = QuincenaStore(
+      QuincenaDatabase(NativeDatabase.memory()),
+      now: () => now,
+    );
+    addTearDown(store.close);
+    await store.ensureCategories();
+    await store.saveProfile(
+      const Profile(name: 'Diego', base: Asset.cop, schedule: TwiceMonthly()),
+    );
+    final Account btc = await store.addAccount(
+      name: 'Binance BTC',
+      kind: AccountKind.exchange,
+      asset: Asset.btc,
+      opening: d('0.01'),
+      institution: 'Binance',
+    );
+    await store.saveRates(<Rate>[trm('4000', now)]);
+    final OwnController own = OwnController(
+      store,
+      now: () => now,
+      readNative: false,
+      market: _DayMarket(),
+    );
+    addTearDown(own.dispose);
+    await own.start();
+    final PortfolioController portfolio = own.portfolio..watch();
+    addTearDown(portfolio.unwatch);
+    Future<void> settled() =>
+        Future<void>.delayed(const Duration(milliseconds: 50));
+
+    await portfolio.loadChart(ChartRange.week);
+    final List<ValuePoint>? drawn = portfolio.chart(ChartRange.week);
+    expect(drawn, isNotNull);
+    // New prices change the app's rates, not what was held.
+    await portfolio.refresh();
+    await settled();
+    expect(identical(portfolio.chart(ChartRange.week), drawn), isTrue);
+
+    // Another 0,01 BTC: the week is drawn again with it, at once.
+    await store.addEntry(
+      accountId: btc.id,
+      amount: d('0.01'),
+      kind: EntryKind.income,
+      date: DateTime(2026, 9, 1),
+    );
+    for (
+      var i = 0;
+      i < 20 && identical(portfolio.chart(ChartRange.week), drawn);
+      i++
+    ) {
+      await settled();
+    }
+    while (portfolio.charting(ChartRange.week)) {
+      await settled();
+    }
+    // 0,02 BTC at 100.000 dollars and 4.000 pesos.
+    expect(portfolio.chart(ChartRange.week)!.last.value.base, d('8000000'));
+
+    // A payment in pesos holds no crypto: the line stays as it was drawn.
+    final List<ValuePoint>? redrawn = portfolio.chart(ChartRange.week);
+    final Account bank = await store.addAccount(
+      name: 'Bancolombia',
+      kind: AccountKind.bank,
+      asset: Asset.cop,
+      opening: d('1000000'),
+    );
+    await store.addEntry(
+      accountId: bank.id,
+      amount: d('-50000'),
+      kind: EntryKind.expense,
+      date: DateTime(2026, 10, 2, 9),
+    );
+    while (!own.snapshot!.entries.any((Entry e) => e.accountId == bank.id)) {
+      await settled();
+    }
+    await settled();
+    expect(identical(portfolio.chart(ChartRange.week), redrawn), isTrue);
   });
 }
 

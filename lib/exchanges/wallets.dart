@@ -338,11 +338,24 @@ class WalletLink extends ChangeNotifier {
   DateTime? _syncedAt;
   bool _syncing = false;
   bool _loaded = false;
+  bool _read = false;
   String? _failed;
 
   List<WalletAddress> get wallets => _wallets;
   DateTime? get syncedAt => _syncedAt;
   bool get syncing => _syncing;
+
+  /// Whether [wallets] was read from the device yet: until then it is
+  /// empty whatever the device keeps.
+  bool get loaded => _read;
+
+  /// Whether [account] holds a coin of an address still followed, rather
+  /// than one stopped, whose account stays as the person's own.
+  bool follows(Account account) => _wallets.any(
+    (WalletAddress w) =>
+        account.syncRef?.startsWith('wallet:${w.chain.name}:${w.address}:') ??
+        false,
+  );
 
   /// The address of the last wallet that could not be read, if any.
   String? get failed => _failed;
@@ -362,6 +375,7 @@ class WalletLink extends ChangeNotifier {
         _syncedAt = DateTime.tryParse('${json['syncedAt']}');
       }
     }
+    _read = true;
     notifyListeners();
   }
 

@@ -579,7 +579,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get groupSpendable => 'Cuentas de uso diario';
 
   @override
-  String get groupSaved => 'Ahorros, inversiones y cripto';
+  String get groupSaved => 'Ahorros e inversiones';
 
   @override
   String get netWorth => 'Patrimonio';
@@ -5203,4 +5203,90 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get subscriptionCancelled => 'Cancelada';
+
+  @override
+  String get cardLimitField => 'Cupo total (opcional)';
+
+  @override
+  String get cardLimitHelp =>
+      'Con el cupo te mostramos cuánto te queda por usar. Nunca se suma a lo que puedes gastar: es plata prestada.';
+
+  @override
+  String cardCreditLeft(String amount) {
+    return 'Cupo libre $amount';
+  }
+
+  @override
+  String cardCreditLeftOf(String left, String limit) {
+    return 'Cupo libre $left de $limit';
+  }
+
+  @override
+  String get groupCrypto => 'Cripto';
+
+  @override
+  String get cryptoPerformanceRow => 'Rendimiento y ganancia';
+
+  @override
+  String get portfolioSources => 'Gestionar fuentes';
+
+  @override
+  String get binanceRowOff => 'Sin conectar · solo lectura, nunca mueve fondos';
+
+  @override
+  String get binanceCardManualBody =>
+      'Tus saldos de Binance están anotados a mano. Conéctala para que se actualicen solos.';
+
+  @override
+  String get portfolioSourceManual => 'Anotado a mano: no se actualiza solo';
+
+  @override
+  String portfolioSourceBinance(String when) {
+    return 'Conectada a Binance · leída $when';
+  }
+
+  @override
+  String get portfolioSourceBinanceNever =>
+      'Conectada a Binance: se actualiza sola';
+
+  @override
+  String portfolioSourceWallet(String when) {
+    return 'Por dirección pública · leída $when';
+  }
+
+  @override
+  String get portfolioSourceWalletNever =>
+      'Por dirección pública: se actualiza sola';
+
+  @override
+  String get chartNow => 'Ahora';
+
+  @override
+  String get chartZero => '0 = como empezó el periodo';
+
+  @override
+  String chartPointGain(String when, String amount) {
+    return '$when: $amount desde el inicio';
+  }
+
+  @override
+  String chartPointValue(String when, String amount) {
+    return '$when: valía $amount';
+  }
+
+  @override
+  String get chartTouchHint =>
+      'Toca la línea y desliza el dedo para ver cada momento.';
+
+  @override
+  String chartSemanticsGain(String range, String amount, String percent) {
+    return 'Ganancia por precio $range: $amount, $percent';
+  }
+
+  @override
+  String get portfolioSourceBinanceOff => 'Leída de Binance · sin conectar';
+
+  @override
+  String get portfolioSourceWalletOff =>
+      'Leída por dirección pública · ya no la sigues';
 }

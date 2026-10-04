@@ -152,25 +152,56 @@ class BarsPainter extends CustomPainter {
 /// lowest and highest points.
 ///
 /// [progress] draws it in from the left. The values are only shapes here:
-/// the screen around the chart says what they are.
+/// the screen around the chart says what they are. A [baseline], such as
+/// zero, is drawn as a dashed guide and kept in the scale; a [selected]
+/// point gets a hairline down to it and a dot, both in [guide] and the
+/// line's color.
 class LinePainter extends CustomPainter {
   LinePainter({
     required this.values,
     required this.color,
     this.progress = 1,
     this.strokeWidth = 2.2,
+    this.selected,
+    this.baseline,
+    this.guide,
+    this.ring,
   });
 
   final List<double> values;
   final Color color;
   final double progress;
   final double strokeWidth;
+  final int? selected;
+  final double? baseline;
+
+  /// The color of the baseline and of the hairline to the selected point.
+  final Color? guide;
+
+  /// The color around the selected dot, to lift it off the line: the
+  /// surface the chart sits on.
+  final Color? ring;
+
+  /// The index of the point nearest [dx] on a chart [width] wide, for
+  /// [count] points spread evenly across it.
+  static int nearest(double dx, double width, int count) {
+    if (count < 2 || width <= 0) return 0;
+    final double step = width / (count - 1);
+    return (dx / step).round().clamp(0, count - 1);
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
     if (values.length < 2) return;
-    final double low = values.reduce(math.min);
-    final double high = values.reduce(math.max);
+    final double? base = baseline;
+    final double low = math.min(
+      values.reduce(math.min),
+      base ?? double.infinity,
+    );
+    final double high = math.max(
+      values.reduce(math.max),
+      base ?? double.negativeInfinity,
+    );
     // A flat line sits in the middle rather than on the floor.
     final double spread = high - low == 0 ? 1 : high - low;
     final double pad = strokeWidth;
@@ -179,6 +210,21 @@ class LinePainter extends CustomPainter {
         : pad + (1 - (v - low) / spread) * (size.height - pad * 2);
     final double step = size.width / (values.length - 1);
     final int shown = math.max(2, (values.length * progress).ceil());
+    final Color guideColor = guide ?? color.withValues(alpha: 0.4);
+
+    if (base != null) {
+      final double at = y(base);
+      final Paint dash = Paint()
+        ..color = guideColor
+        ..strokeWidth = 1;
+      for (double x = 0; x < size.width; x += 8) {
+        canvas.drawLine(
+          Offset(x, at),
+          Offset(math.min(x + 4, size.width), at),
+          dash,
+        );
+      }
+    }
 
     final Path line = Path()..moveTo(0, y(values.first));
     for (var i = 1; i < shown; i++) {
@@ -216,11 +262,37 @@ class LinePainter extends CustomPainter {
         ..drawCircle(end, 5, Paint()..color = color.withValues(alpha: 0.25))
         ..drawCircle(end, 2.8, Paint()..color = color);
     }
+    // The point picked, with a hairline from top to bottom to find it.
+    final int? picked = selected;
+    if (picked != null && picked >= 0 && picked < values.length) {
+      final double x = step * picked;
+      final Offset dot = Offset(x, y(values[picked]));
+      canvas
+        ..drawLine(
+          Offset(x, 0),
+          Offset(x, size.height),
+          Paint()
+            ..color = guideColor
+            ..strokeWidth = 1,
+        )
+        ..drawCircle(
+          dot,
+          6.5,
+          Paint()..color = ring ?? color.withValues(alpha: 0.25),
+        )
+        ..drawCircle(dot, 4.5, Paint()..color = color);
+    }
   }
 
   @override
   bool shouldRepaint(LinePainter old) =>
-      old.progress != progress || old.values != values || old.color != color;
+      old.progress != progress ||
+      old.values != values ||
+      old.color != color ||
+      old.selected != selected ||
+      old.baseline != baseline ||
+      old.guide != guide ||
+      old.ring != ring;
 }
 
 /// Plays a chart in once, the first time it is built.

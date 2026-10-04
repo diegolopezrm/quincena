@@ -106,6 +106,7 @@ class BinanceLink extends ChangeNotifier {
 
   bool _connected = false;
   bool _loaded = false;
+  bool _read = false;
   bool _syncing = false;
   double _progress = 0;
   DateTime? _syncedAt;
@@ -117,6 +118,10 @@ class BinanceLink extends ChangeNotifier {
   static bool get available => !kIsWeb;
 
   bool get connected => _connected;
+
+  /// Whether [connected] was read from the device yet: until then it is
+  /// false whatever the device keeps.
+  bool get loaded => _read;
   bool get syncing => _syncing;
   double get progress => _progress;
   DateTime? get syncedAt => _syncedAt;
@@ -142,6 +147,7 @@ class BinanceLink extends ChangeNotifier {
         _syncedAt = DateTime.tryParse('${json['syncedAt']}');
       }
     }
+    _read = true;
     notifyListeners();
   }
 

@@ -25,6 +25,7 @@ class PortfolioController extends ChangeNotifier {
     MarketData? market,
     this.every = const Duration(seconds: 30),
   }) : _market = market ?? MarketData() {
+    _held = _heldSignature();
     own.addListener(_ownChanged);
   }
 
@@ -106,6 +107,15 @@ class PortfolioController extends ChangeNotifier {
     return (moved: moved, change: change);
   }
 
+  /// Whether the chart of [range] drew every coin with a price that moves:
+  /// one it could not read would draw as standing still.
+  bool drewAll(ChartRange range) {
+    final Portfolio? p = portfolio;
+    final Set<String> drawn = _drawn[range] ?? const <String>{};
+    return p == null ||
+        p.priced.every((Holding h) => h.pegged || drawn.contains(h.asset.code));
+  }
+
   void _ownChanged() {
     _portfolio = null;
     // Movements change what was held, so every chart has to be drawn again;
@@ -113,8 +123,15 @@ class PortfolioController extends ChangeNotifier {
     final int held = _heldSignature();
     if (held != _held) {
       _held = held;
+      // While a screen watches, those drawn already are drawn again at once.
+      final List<ChartRange> shown = _charts.keys.toList();
       _charts.clear();
       _chartedAt.clear();
+      if (_watchers > 0) {
+        for (final ChartRange range in shown) {
+          unawaited(loadChart(range));
+        }
+      }
     }
     // A coin just added is priced now, not at the next tick.
     if (_watchers > 0 && !_pricing && _missingPrices()) unawaited(refresh());
@@ -137,13 +154,19 @@ class PortfolioController extends ChangeNotifier {
   int _heldSignature() {
     final StoreSnapshot? s = own.snapshot;
     if (s == null) return 0;
+    final Set<String> held = <String>{
+      for (final Account a in s.accounts)
+        if (a.asset.isCrypto) a.id,
+    };
     return Object.hash(
       Object.hashAll(<Object>[
         for (final Account a in s.accounts)
           if (a.asset.isCrypto) Object.hash(a.id, a.opening),
       ]),
+      // A movement in pesos changes no coin held, and no chart.
       Object.hashAll(<Object>[
-        for (final Entry e in s.entries) Object.hash(e.id, e.amount, e.date),
+        for (final Entry e in s.entries)
+          if (held.contains(e.accountId)) Object.hash(e.id, e.amount, e.date),
       ]),
     );
   }

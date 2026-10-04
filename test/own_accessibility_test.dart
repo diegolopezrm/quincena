@@ -209,4 +209,74 @@ void main() {
       );
     }
   }
+
+  testWidgets('the buttons inside the lists are 48 points tall at twice '
+      'the text size', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final QuincenaStore store = (await tester.runAsync(() async {
+      final QuincenaStore store = await example();
+      await followLedger(store);
+      return store;
+    }))!;
+    addTearDown(() => tester.runAsync(store.close));
+    final OwnController own = OwnController(
+      store,
+      now: () => _now,
+      readNative: false,
+      market: ExampleMarket(),
+    );
+    addTearDown(own.dispose);
+    await tester.runAsync(own.start);
+    await tester.runAsync(() => own.portfolio.refresh());
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: quincenaTheme(Brightness.light),
+        locale: const Locale('es'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: appLocales,
+        home: tab(AccountsTab(own: own)),
+      ),
+    );
+    await settle(tester);
+
+    Future<double> tall(Finder label, Type type) async {
+      await tester.scrollUntilVisible(
+        label,
+        200,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await settle(tester);
+      return tester
+          .getSize(find.ancestor(of: label, matching: find.byType(type)).first)
+          .height;
+    }
+
+    expect(
+      await tall(find.text('Agregar cuenta'), OutlinedButton),
+      greaterThanOrEqualTo(48),
+    );
+    expect(
+      await tall(find.text('Rendimiento y ganancia'), InkWell),
+      greaterThanOrEqualTo(48),
+    );
+
+    // The sources on the crypto page, rows of a panel now.
+    await tester.tap(find.text('Rendimiento y ganancia'));
+    await settle(tester);
+    expect(find.byType(PortfolioPage), findsOneWidget);
+    expect(
+      await tall(find.text('Billeteras propias'), InkWell),
+      greaterThanOrEqualTo(48),
+    );
+    expect(
+      await tall(find.text('Binance').last, InkWell),
+      greaterThanOrEqualTo(48),
+    );
+    expect(tester.takeException(), isNull);
+  });
 }

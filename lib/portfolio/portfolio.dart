@@ -203,6 +203,28 @@ class Portfolio {
   }
 }
 
+/// Where an account's balance comes from.
+enum HoldingSource {
+  /// Written by the person: it changes only when they change it.
+  manual,
+
+  /// Read from Binance with a key that can only read.
+  binance,
+
+  /// Read from a public address on its blockchain.
+  wallet;
+
+  /// Where [account]'s balance comes from, by what keeps it in sync, as
+  /// `binance:BTC` or `wallet:bitcoin:<address>:BTC`; null for a sync this
+  /// app does not know.
+  static HoldingSource? of(Account account) => switch (account.syncRef) {
+    null => HoldingSource.manual,
+    final String ref when ref.startsWith('binance:') => HoldingSource.binance,
+    final String ref when ref.startsWith('wallet:') => HoldingSource.wallet,
+    _ => null,
+  };
+}
+
 /// The past rates of one dollar in the base currency, for looking up a
 /// day's.
 class DollarHistory {

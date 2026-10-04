@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../domain/records.dart';
 import '../../l10n/l10n.dart';
+import '../../money/asset.dart';
 import '../../money/money.dart';
 import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
@@ -41,6 +42,17 @@ class AccountPage extends StatelessWidget {
         final Money? converted = account.asset == own.profile?.base
             ? null
             : own.inBase(shown);
+        final Asset? base = own.profile?.base;
+        // What is left of a card's limit, under what it owes.
+        final Money? left = account.creditLeft(balance);
+        final String detail = <String>[
+          if (converted != null) '≈ ${moneyText(converted, base: base)}',
+          if (left != null)
+            l.cardCreditLeftOf(
+              moneyText(left, base: base),
+              moneyText(Money(account.creditLimit!, account.asset), base: base),
+            ),
+        ].join('\n');
         final List<Entry> entries = visibleEntries(own, accountId: account.id);
         return Scaffold(
           appBar: AppBar(
@@ -98,9 +110,7 @@ class AccountPage extends StatelessWidget {
                           value: card && balance.isZero
                               ? l.cardClear
                               : moneyText(shown, base: own.profile?.base),
-                          detail: converted == null
-                              ? null
-                              : '≈ ${moneyText(converted, base: own.profile?.base)}',
+                          detail: detail.isEmpty ? null : detail,
                         ),
                       ),
                     ],
