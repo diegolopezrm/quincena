@@ -448,7 +448,7 @@ class _GoalRow extends StatelessWidget {
                   child: Text(goal.name, style: context.type.titleSmall),
                 ),
                 Text(
-                  '${(done * 100).round()} %',
+                  percent((done * 100).round()),
                   style: context.type.bodySmall,
                 ),
               ],

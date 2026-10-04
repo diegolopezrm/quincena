@@ -6,6 +6,7 @@ import '../../domain/records.dart';
 import '../../domain/shared.dart';
 import '../../domain/trips.dart';
 import '../../format/dates.dart';
+import '../../format/money.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
@@ -28,10 +29,6 @@ String rateSourceLabel(AppLocalizations l, String source) => switch (source) {
   'manual' => l.rateSourceManual,
   _ => source,
 };
-
-String _percent(double value) =>
-    '${formatDecimal(Decimal.parse(value.toStringAsFixed(2)), decimals: 2, trim: true)}'
-    '${englishFormatting ? '' : ' '}%';
 
 /// Trips: a budget in the local currency, counted from the person's own
 /// movements, never a copy of them.
@@ -385,7 +382,7 @@ class _TripLineRow extends StatelessWidget {
                 money(foreign.amount, trip.asset),
                 rate(foreign.rate, line.account),
                 dayShortMonth(foreign.rateOn),
-                _percent(foreign.fee),
+                percent(foreign.fee, decimals: 2, trim: true),
                 money(foreign.estimate(line.account.decimals), line.account),
               )
       else if (line.rates.isNotEmpty)

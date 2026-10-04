@@ -682,7 +682,7 @@ class _DayDetail extends StatelessWidget {
                   ),
                 ),
                 Figures(
-                  (e.amount > 0 ? '+' : '') + amount(e.amount),
+                  pesos(ledger.major(e.amount), signed: true),
                   style: context.type.bodyMedium?.copyWith(
                     color: e.amount > 0 ? context.colors.positive : null,
                   ),

@@ -102,8 +102,7 @@ class SpendingDonut extends StatelessWidget {
 }
 
 String _share(double amount, double total) =>
-    '${total <= 0 ? 0 : (amount / total * 100).round()}'
-    '${englishFormatting ? '' : '\u00a0'}%';
+    percent(total <= 0 ? 0 : (amount / total * 100).round());
 
 class _Ring extends StatelessWidget {
   const _Ring({

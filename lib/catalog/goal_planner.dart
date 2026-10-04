@@ -212,7 +212,7 @@ class GoalPlanner extends StatelessWidget {
                 ),
               ),
               Figures(
-                _percent(progress),
+                percent((progress * 100).round()),
                 style: context.type.titleMedium?.copyWith(
                   color: context.colors.brand,
                 ),
@@ -635,7 +635,3 @@ class _NeedMark extends StatelessWidget {
     );
   }
 }
-
-/// A share of the goal: `36 %` in Spanish, `36%` in English.
-String _percent(double share) =>
-    '${(share * 100).round()}${englishFormatting ? '' : '\u00a0'}%';

@@ -5,6 +5,7 @@ import '../../capture/event.dart';
 import '../../domain/commitments.dart';
 import '../../domain/records.dart';
 import '../../format/dates.dart';
+import '../../format/money.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
@@ -203,12 +204,12 @@ class _AlertCard extends StatelessWidget {
         l.detectivePriceUpWhy(
           money(alert.before ?? Decimal.zero, last),
           money(-last.amount, last),
-          switch (alert.before) {
+          percent(switch (alert.before) {
             final Decimal before when before > Decimal.zero =>
               (((-last.amount).toDouble() / before.toDouble() - 1) * 100)
                   .round(),
             _ => 0,
-          },
+          }),
         ),
       ),
       AlertKind.unusual => (

@@ -13,6 +13,7 @@ import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/l10n/l10n.dart';
 import 'package:quincena/money/asset.dart';
+import 'package:quincena/money/money.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
@@ -212,7 +213,7 @@ void main() {
     expect(find.text('Leer un pago'), findsOneWidget);
     // The amount goes under the name rather than squeezing it.
     expect(
-      tester.getTopLeft(find.text(r'+$85.000')).dy,
+      tester.getTopLeft(find.text('+$signJoiner\$85.000')).dy,
       greaterThan(tester.getBottomLeft(find.text('Laura Gómez')).dy),
     );
   });
@@ -229,7 +230,7 @@ void main() {
       findsOneWidget,
     );
     expect(
-      tester.getTopLeft(find.text(r'+$85.000')).dy,
+      tester.getTopLeft(find.text('+$signJoiner\$85.000')).dy,
       lessThan(tester.getBottomLeft(find.text('Laura Gómez')).dy),
     );
   });

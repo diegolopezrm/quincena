@@ -27,11 +27,11 @@ void main() {
       );
       expect(
         plain(formatAmount(d('-4719400'), Asset.cop, base: Asset.cop)),
-        r'−$4.719.400',
+        '−$signJoiner\$4.719.400',
       );
       expect(
         plain(formatAmount(d('12'), Asset.eur, base: Asset.cop, signed: true)),
-        '+€12,00',
+        '+$signJoiner€12,00',
       );
     });
 

@@ -481,8 +481,7 @@ class _ComingDays extends StatelessWidget {
       ProjectedKind.latePay => l.comingLatePay,
       _ => e.label.isEmpty ? l.timelineCharge : e.label,
     };
-    String amount(int minor) =>
-        '${minor > 0 ? '+' : ''}${pesos(ledger.major(minor))}';
+    String amount(int minor) => pesos(ledger.major(minor), signed: true);
     return Block(
       padding: const EdgeInsets.fromLTRB(18, 14, 14, 8),
       child: Column(

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../domain/records.dart';
 import '../../format/dates.dart';
+import '../../format/money.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
@@ -29,15 +30,9 @@ import 'wallets_page.dart';
 /// [fraction] as a percentage: `+1,2 %` in Spanish, `+1.2%` in English.
 String percentText(double fraction, {bool signed = true}) {
   final double value = fraction * 100;
-  final bool en = englishFormatting;
-  final String digits = value.abs() >= 100
-      ? value.abs().toStringAsFixed(0)
-      : value.abs().toStringAsFixed(value.abs() >= 10 ? 1 : 2);
-  final String number = en ? digits : digits.replaceAll('.', ',');
-  final String sign = !signed || value.abs() < 0.005
-      ? ''
-      : (value > 0 ? '+' : '−');
-  return en ? '$sign$number%' : '$sign$number %';
+  final double size = value.abs();
+  final String sign = !signed || size < 0.005 ? '' : (value > 0 ? '+' : '−');
+  return '$sign${percent(size, decimals: size >= 100 ? 0 : (size >= 10 ? 1 : 2))}';
 }
 
 /// The color of a change: up, down or flat.
@@ -616,10 +611,11 @@ class _ChartCardState extends State<_ChartCard> {
   };
 
   /// A moment of the line as the range reads it: the hour within a day,
-  /// the day within a year, both in between.
+  /// the day and its year within a year, which spans two, and both in
+  /// between.
   String _when(DateTime t) => switch (widget.range) {
     ChartRange.day => timeOfDay(t),
-    ChartRange.year => dayShortMonth(t),
+    ChartRange.year => shortDate(t),
     _ => dayAndTime(t),
   };
 
@@ -772,9 +768,11 @@ class _ChartCardState extends State<_ChartCard> {
                               '${percentText(ratio)}',
                     zero: performance,
                     zeroLabel: l.chartZero,
-                    startLabel: range == ChartRange.day
-                        ? timeOfDay(timeAt(0))
-                        : dayShortMonth(timeAt(0)),
+                    startLabel: switch (range) {
+                      ChartRange.day => timeOfDay(timeAt(0)),
+                      ChartRange.year => shortDate(timeAt(0)),
+                      _ => dayShortMonth(timeAt(0)),
+                    },
                     endLabel: l.chartNow,
                   ),
             ),

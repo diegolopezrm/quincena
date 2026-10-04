@@ -220,7 +220,7 @@ void main() {
 
     final int free = own.ledger!.freeUntilPayday;
     await tapText(tester, 'Nada');
-    await tapText(tester, '15 %');
+    await tapText(tester, '15\u00a0%');
     expect(own.freelance.reservePercent, 15);
     expect(own.ledger!.reserved, 150000);
     expect(own.ledger!.freeUntilPayday, free - 150000);

@@ -16,6 +16,7 @@ import 'package:decimal/decimal.dart';
 import 'package:quincena/data/clock.dart';
 import 'package:quincena/format/money.dart' as format;
 import 'package:quincena/money/asset.dart';
+import 'package:quincena/money/money.dart';
 import 'package:quincena/money/rate_sources.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
@@ -46,11 +47,14 @@ RateFetcher fakeRates() => RateFetcher(
   }),
 );
 
+/// Every string on screen, with the space that never breaks read as a
+/// plain one and without the invisible joiner that holds a sign to its `$`.
 String screen(WidgetTester tester) => tester
     .widgetList<RichText>(find.byType(RichText))
     .map((RichText t) => t.text.toPlainText())
     .join('\n')
-    .replaceAll(' ', ' ');
+    .replaceAll(' ', ' ')
+    .replaceAll(signJoiner, '');
 
 void main() {
   setUpAll(() async {

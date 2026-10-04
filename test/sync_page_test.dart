@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/domain/records.dart';
+import 'package:quincena/money/money.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
@@ -125,7 +126,10 @@ void main() {
     addTearDown(() => tester.runAsync(other.close));
     expect(find.text('PARA REVISAR'), findsOneWidget);
     await reveal(tester, find.text('Traer de vuelta'));
-    expect(find.text('Almuerzo con Juan · −\$30.000'), findsOneWidget);
+    expect(
+      find.text('Almuerzo con Juan · −$signJoiner\$30.000'),
+      findsOneWidget,
+    );
     Entry lunch() => own.snapshot!.entries.firstWhere(
       (Entry e) => e.category == 'restaurants',
     );

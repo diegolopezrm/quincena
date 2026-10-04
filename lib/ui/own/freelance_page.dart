@@ -248,7 +248,7 @@ class FreelancePage extends StatelessWidget {
                             DropdownMenuItem<int>(
                               value: p,
                               child: Text(
-                                p == 0 ? l.freelanceNoReserve : '$p %',
+                                p == 0 ? l.freelanceNoReserve : percent(p),
                               ),
                             ),
                         ],

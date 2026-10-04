@@ -75,7 +75,9 @@ void main() {
     expect(find.text('Importar 3 movimientos'), findsOneWidget);
     // What the checked lines bring in and take out.
     expect(
-      find.text('3 seleccionados · entran +\$2.500.000 · salen −\$75.900'),
+      find.text(
+        '3 seleccionados · entran +$signJoiner\$2.500.000 · salen −$signJoiner\$75.900',
+      ),
       findsOneWidget,
     );
     expect(tester.takeException(), isNull);
@@ -91,7 +93,7 @@ void main() {
     );
     expect(
       find.text(
-        'El saldo de Bancolombia sigue en −\$89.900: ya incluía estos '
+        'El saldo de Bancolombia sigue en −$signJoiner\$89.900: ya incluía estos '
         'movimientos.',
       ),
       findsOneWidget,
@@ -99,7 +101,7 @@ void main() {
     await tester.tap(find.text('Sumarlos a mi saldo'));
     await settle(tester);
     expect(
-      find.text('Saldo de Bancolombia: −\$89.900 → \$2.334.200'),
+      find.text('Saldo de Bancolombia: −$signJoiner\$89.900 → \$2.334.200'),
       findsOneWidget,
     );
 
@@ -126,7 +128,9 @@ void main() {
     await settle(tester);
     expect(find.text('Importar 4 movimientos'), findsOneWidget);
     expect(
-      find.text('4 seleccionados · entran +\$2.500.000 · salen −\$165.800'),
+      find.text(
+        '4 seleccionados · entran +$signJoiner\$2.500.000 · salen −$signJoiner\$165.800',
+      ),
       findsOneWidget,
     );
     expect(
@@ -165,7 +169,7 @@ void main() {
     // It ends on what is left to check, not on the list it came from.
     expect(find.text('Se importaron 3 movimientos.'), findsOneWidget);
     expect(
-      find.text('Saldo de Bancolombia: −\$89.900 → \$2.334.200'),
+      find.text('Saldo de Bancolombia: −$signJoiner\$89.900 → \$2.334.200'),
       findsOneWidget,
     );
     expect(own.balances[bank.id]?.amount, Decimal.parse('2334200'));
@@ -237,13 +241,15 @@ void main() {
     await settle(tester);
     await tapOn(tester, find.text('Ingreso'));
     await settle(tester);
-    expect(find.text('+\$45.900'), findsWidgets);
+    expect(find.text('+$signJoiner\$45.900'), findsWidgets);
     await tapOn(tester, find.text('Reembolsos'));
     await tapOn(tester, find.text('Guardar'));
     await settle(tester);
     expect(find.text('1 sept · Reembolsos'), findsOneWidget);
     expect(
-      find.text('2 seleccionados · entran +\$45.900 · salen −\$30.000'),
+      find.text(
+        '2 seleccionados · entran +$signJoiner\$45.900 · salen −$signJoiner\$30.000',
+      ),
       findsOneWidget,
     );
 
@@ -519,7 +525,9 @@ void main() {
     expect(find.text('2 transactions · Sep 1–2, 2026'), findsOneWidget);
     expect(find.text('Sep 1 · Groceries'), findsOneWidget);
     expect(
-      find.text('2 selected · +\$2,500,000 in · −\$45,900 out'),
+      find.text(
+        '2 selected · +$signJoiner\$2,500,000 in · −$signJoiner\$45,900 out',
+      ),
       findsOneWidget,
     );
     expect(
@@ -587,7 +595,7 @@ void main() {
         '01/09/2026;COMPRA EN EXITO LAURELES;-45.900\n',
       ),
     );
-    const String totals = '1 seleccionado · salen −\$45.900';
+    const String totals = '1 seleccionado · salen −$signJoiner\$45.900';
     await open(tester, own, read);
     expect(
       find.descendant(of: find.byType(ListView), matching: find.text(totals)),

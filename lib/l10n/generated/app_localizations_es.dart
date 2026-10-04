@@ -421,7 +421,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get payTwiceMonthly => 'Quincenal';
 
   @override
-  String payTwiceMonthlyDetail(int first, int second) {
+  String payTwiceMonthlyDetail(String first, String second) {
     return 'Los días $first y $second de cada mes';
   }
 
@@ -429,7 +429,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get payMonthly => 'Mensual';
 
   @override
-  String payMonthlyDetail(int day) {
+  String payMonthlyDetail(String day) {
     return 'El día $day de cada mes';
   }
 
@@ -3259,8 +3259,8 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String detectivePriceUpWhy(String before, String now, int percent) {
-    return 'Solía cobrar $before y el último cobro fue $now, un $percent % más. Que suba no quiere decir que esté mal: puede ser un cambio de plan o de tarifa.';
+  String detectivePriceUpWhy(String before, String now, String percent) {
+    return 'Solía cobrar $before y el último cobro fue $now, un $percent más. Que suba no quiere decir que esté mal: puede ser un cambio de plan o de tarifa.';
   }
 
   @override

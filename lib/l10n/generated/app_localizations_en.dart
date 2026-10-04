@@ -420,16 +420,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get payTwiceMonthly => 'Twice a month';
 
   @override
-  String payTwiceMonthlyDetail(int first, int second) {
-    return 'Days $first and $second of each month';
+  String payTwiceMonthlyDetail(String first, String second) {
+    return 'The $first and $second of each month';
   }
 
   @override
   String get payMonthly => 'Monthly';
 
   @override
-  String payMonthlyDetail(int day) {
-    return 'Day $day of each month';
+  String payMonthlyDetail(String day) {
+    return 'The $day of each month';
   }
 
   @override
@@ -3258,8 +3258,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String detectivePriceUpWhy(String before, String now, int percent) {
-    return 'It used to charge $before and the last charge was $now, $percent% more. Going up doesn\'t mean it\'s wrong: it may be a new plan or rate.';
+  String detectivePriceUpWhy(String before, String now, String percent) {
+    return 'It used to charge $before and the last charge was $now, $percent more. Going up doesn\'t mean it\'s wrong: it may be a new plan or rate.';
   }
 
   @override

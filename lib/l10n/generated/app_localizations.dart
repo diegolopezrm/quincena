@@ -762,7 +762,7 @@ abstract class AppLocalizations {
   ///
   /// In es, this message translates to:
   /// **'Los días {first} y {second} de cada mes'**
-  String payTwiceMonthlyDetail(int first, int second);
+  String payTwiceMonthlyDetail(String first, String second);
 
   /// No description provided for @payMonthly.
   ///
@@ -774,7 +774,7 @@ abstract class AppLocalizations {
   ///
   /// In es, this message translates to:
   /// **'El día {day} de cada mes'**
-  String payMonthlyDetail(int day);
+  String payMonthlyDetail(String day);
 
   /// No description provided for @payBiweekly.
   ///
@@ -5225,8 +5225,8 @@ abstract class AppLocalizations {
   /// No description provided for @detectivePriceUpWhy.
   ///
   /// In es, this message translates to:
-  /// **'Solía cobrar {before} y el último cobro fue {now}, un {percent} % más. Que suba no quiere decir que esté mal: puede ser un cambio de plan o de tarifa.'**
-  String detectivePriceUpWhy(String before, String now, int percent);
+  /// **'Solía cobrar {before} y el último cobro fue {now}, un {percent} más. Que suba no quiere decir que esté mal: puede ser un cambio de plan o de tarifa.'**
+  String detectivePriceUpWhy(String before, String now, String percent);
 
   /// No description provided for @detectiveUnusualTitle.
   ///

@@ -288,7 +288,7 @@ class ScriptedAgent {
                       '${lunches - lunchesBefore} almuerzos más que el mes pasado.',
                   'You spent ${pesos(ledger.spentOn(up.key, y, m))}, up from '
                       '${pesos(ledger.spentOn(up.key, py, pm))} in $previous: dinner on the '
-                      '${_ordinal(biggestMeal.date.day)} at ${biggestMeal.merchant} and '
+                      '${ordinal(biggestMeal.date.day)} at ${biggestMeal.merchant} and '
                       '${lunches - lunchesBefore} more lunches than the month before.',
                 )
               : _t(
@@ -677,7 +677,7 @@ class ScriptedAgent {
                 '${onTime ? 'antes' : 'después'} del $deadline.',
             'Quincena doesn\'t move your money: move it to your '
                 '${goal.name} pocket yourself on the '
-                '${_ordinal(contributionDay)} of each month, starting $first. '
+                '${ordinal(contributionDay)} of each month, starting $first. '
                 'With this plan you get there in $arrival, '
                 '${onTime ? 'before' : 'after'} $deadline.',
           ),
@@ -1152,21 +1152,8 @@ String _iso(DateTime d) =>
 ///
 /// Always against the earlier month. A fall from 700 to 616 is 12 %, not the
 /// 14 % that dividing by the later month gives.
-String _change(int now, int before) => before <= 0
-    ? ''
-    : '${((now - before).abs() / before * 100).round()}'
-          '${englishFormatting ? '' : '\u00a0'}%';
-
-/// The 1st, the 2nd, the 19th.
-String _ordinal(int n) {
-  if (n % 100 >= 11 && n % 100 <= 13) return '${n}th';
-  return switch (n % 10) {
-    1 => '${n}st',
-    2 => '${n}nd',
-    3 => '${n}rd',
-    _ => '${n}th',
-  };
-}
+String _change(int now, int before) =>
+    before <= 0 ? '' : percent(((now - before).abs() / before * 100).round());
 
 /// Small counts in words, as they are written in a sentence.
 String _count(int n) => englishFormatting ? _countEn(n) : _countEs(n);

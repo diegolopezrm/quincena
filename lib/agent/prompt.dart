@@ -6,6 +6,7 @@ import '../data/category.dart';
 import '../data/clock.dart';
 import '../data/ledger.dart';
 import '../domain/pay_schedule.dart';
+import '../format/dates.dart';
 
 /// What the model is told before the first question.
 ///
@@ -114,21 +115,11 @@ String _chips(String language) => language == 'en'
 
 String _payday(PaySchedule schedule) => switch (schedule) {
   TwiceMonthly(:final int first, :final int second) =>
-    'Paydays are the ${_nth(first)} and the ${_nth(second)} of each month, or the last day of a shorter month.',
+    'Paydays are the ${ordinal(first)} and the ${ordinal(second)} of each month, or the last day of a shorter month.',
   Monthly(:final int day) =>
-    'Payday is the ${_nth(day)} of each month, or the last day of a shorter month.',
+    'Payday is the ${ordinal(day)} of each month, or the last day of a shorter month.',
   EveryTwoWeeks() => 'Payday comes every two weeks.',
   Weekly() => 'Payday comes every week.',
-};
-
-String _nth(int n) => switch (n % 100) {
-  11 || 12 || 13 => '${n}th',
-  _ => switch (n % 10) {
-    1 => '${n}st',
-    2 => '${n}nd',
-    3 => '${n}rd',
-    _ => '${n}th',
-  },
 };
 
 String _currency(Ledger ledger) => ledger.currency.decimals == 0
