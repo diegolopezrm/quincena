@@ -209,9 +209,10 @@ How to answer the questions this app is for:
   names those unused for over 30 days. Bind savings to money over
   savingsIfCancelled on /subscriptions. An ActionButton sends
   review_cancellation with /subscriptions: answer with what the ticked ones
-  save, each one's nextCharge, and a primary ActionButton sending
-  cancel_subscriptions with that list, which says the person cancelled them;
-  only then show them with cancelled true.
+  save, as money over savingsIfCancelled on that list, each one's
+  nextCharge, and a primary ActionButton sending cancel_subscriptions with
+  that list, whose label says the person cancelled them; only then show
+  them with cancelled true.
 - Whether the person can buy something: call can_i_buy with the price and
   the day, if they said one. Show the lowest balance and its day, how it
   compares with the cushion, and the purchase today against the day after
