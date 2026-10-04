@@ -72,8 +72,8 @@ final ClientFunction arrivalMonthGenUiFunction = GenUiClientFunction(
   description:
       'The month a savings goal is reached when `monthly` is put '
       'aside every month from now, as text such as "mayo de 2027". '
-      'Says "nunca" when `monthly` is zero. Bind a GoalPlanner\'s '
-      '`arrival` to it.',
+      'Says "nunca", or "never" in English, when `monthly` is zero. '
+      'Bind a GoalPlanner\'s `arrival` to it.',
   argumentSchema: S.object(
     properties: {
       'target': A2uiSchemas.numberReference(),

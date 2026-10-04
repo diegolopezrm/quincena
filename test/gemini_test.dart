@@ -7,6 +7,7 @@ import 'package:drift/native.dart';
 import 'package:firebase_ai/firebase_ai.dart' as ai;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/agent/firebase_client.dart';
 import 'package:quincena/agent/model_client.dart';
@@ -18,6 +19,7 @@ import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/domain/shared.dart';
 import 'package:quincena/money/asset.dart';
+import 'package:quincena/money/money.dart';
 import 'package:quincena/money/rates.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/own/own_tools.dart';
@@ -289,6 +291,88 @@ void main() {
       expect(entries.single.accountId, bank.id);
       expect(entries.single.amount, d('-45900'));
       expect(entries.single.payee, 'Éxito');
+    });
+
+    test('a plan saved in a conversation changes the goal, and nothing '
+        'else', () async {
+      await initializeDateFormatting('es');
+      final int free = own.ledger!.freeUntilPayday;
+      await store.addGoal(
+        name: 'Cartagena',
+        target: Money(d('2800000'), Asset.cop),
+        saved: Money(d('1000000'), Asset.cop),
+        monthly: Money(d('250000'), Asset.cop),
+        deadline: DateTime(2026, 12, 20),
+      );
+      for (var i = 0; i < 100 && own.ledger!.goals.isEmpty; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+      final List<dartantic.Tool> tools = ownTools(own);
+      final dartantic.Tool save = tools.firstWhere(
+        (dartantic.Tool t) => t.name == 'save_goal_plan',
+      );
+      expect(
+        (declarationFor(save).toJson()['parameters']! as Map)['required'],
+        <String>['monthly'],
+      );
+
+      final Map<Object?, Object?> saved =
+          await save.call(<String, dynamic>{'monthly': 600000})
+              as Map<Object?, Object?>;
+      expect(saved['saved'], isTrue);
+      expect(saved['monthly'], 600000);
+      expect(saved['arrival'], 'diciembre de 2026');
+      expect(saved['arrivesByDeadline'], isTrue);
+      expect((await store.goals()).single.monthly.amount, d('600000'));
+      // A plan moves no money: what can be spent is what it was.
+      expect(own.ledger!.freeUntilPayday, free);
+      // And the next answer starts from it.
+      final Map<Object?, Object?> goal =
+          await tools
+                  .firstWhere((dartantic.Tool t) => t.name == 'savings_goal')
+                  .call(<String, dynamic>{})
+              as Map<Object?, Object?>;
+      expect(goal['monthly'], 600000);
+      expect(goal['monthlyShort'], 0);
+
+      // A goal it does not know is not saved over another.
+      final Map<Object?, Object?> wrong =
+          await save.call(<String, dynamic>{'monthly': 1, 'goal': 'Japón'})
+              as Map<Object?, Object?>;
+      expect(wrong['error'], contains('Cartagena'));
+      expect((await store.goals()).single.monthly.amount, d('600000'));
+    });
+
+    test('a plan is saved on the goal named, not on one that contains its '
+        'name', () async {
+      await initializeDateFormatting('es');
+      for (final String name in <String>['Viaje largo', 'Viaje']) {
+        await store.addGoal(
+          name: name,
+          target: Money(d('2000000'), Asset.cop),
+          saved: Money(d('0'), Asset.cop),
+          monthly: Money(d('100000'), Asset.cop),
+          deadline: DateTime(2027, 6, 30),
+        );
+      }
+      for (var i = 0; i < 100 && own.ledger!.goals.length < 2; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+      final Map<Object?, Object?> saved =
+          await saveGoalPlanAnswer(own, <String, dynamic>{
+                'monthly': 300000,
+                'goal': 'viaje',
+              })
+              as Map<Object?, Object?>;
+      expect(saved['name'], 'Viaje');
+      final Map<String, Decimal> monthly = <String, Decimal>{
+        for (final SavingsGoal g in await store.goals())
+          g.name: g.monthly.amount,
+      };
+      expect(monthly, <String, Decimal>{
+        'Viaje largo': d('100000'),
+        'Viaje': d('300000'),
+      });
     });
 
     test('through Quincena, a question needs one left for the day', () async {

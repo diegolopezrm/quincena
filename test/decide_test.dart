@@ -11,10 +11,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/catalog/goal_planner.dart';
+import 'package:quincena/data/clock.dart';
 import 'package:quincena/domain/freelance.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/format/money.dart';
+import 'package:quincena/functions/money_functions.dart';
 import 'package:quincena/l10n/l10n.dart';
 import 'package:quincena/money/asset.dart';
 import 'package:quincena/money/money.dart';
@@ -165,9 +167,17 @@ void main() {
   });
 
   group('the goal slider', () {
+    setUp(() => appToday = DateTime(2026, 10, 1));
+    tearDown(() => appToday = DateTime(2026, 10, 1));
+
     Future<List<double>> pump(
       WidgetTester tester, {
       double monthly = 250000,
+      double? current,
+      double needed = 600000,
+      String? deadline,
+      double? spendable,
+      String? payday,
     }) async {
       final List<double> moved = <double>[];
       tester.view.physicalSize = const Size(1170, 2532);
@@ -175,18 +185,24 @@ void main() {
       addTearDown(tester.view.reset);
       await tester.pumpWidget(
         app(
-          GoalPlanner(
-            name: 'Cartagena',
-            target: 2800000,
-            saved: 1000000,
-            monthly: monthly,
-            min: 100000,
-            max: 800000,
-            arrival: 'mayo de 2027',
-            onTime: false,
-            deadlineLabel: '20 de diciembre',
-            needed: 600000,
-            onMonthlyChanged: moved.add,
+          SingleChildScrollView(
+            child: GoalPlanner(
+              name: 'Cartagena',
+              target: 2800000,
+              saved: 1000000,
+              monthly: monthly,
+              min: 100000,
+              max: 800000,
+              arrival: 'mayo de 2027',
+              onTime: false,
+              deadlineLabel: '20 de diciembre',
+              needed: needed,
+              current: current,
+              deadline: deadline,
+              spendable: spendable,
+              payday: payday,
+              onMonthlyChanged: moved.add,
+            ),
           ),
         ),
       );
@@ -227,6 +243,240 @@ void main() {
       // Far from it, the slider moves by notches and stays quiet.
       slider.onChanged!(700000);
       expect(moved.last, 700000);
+    });
+
+    testWidgets('takes an exact amount, typed', (tester) async {
+      final List<double> moved = await pump(tester);
+      await tester.tap(find.byTooltip('Escribir monto'));
+      await tester.pumpAndSettle();
+      expect(find.text('¿Cuánto quieres apartar al mes?'), findsOneWidget);
+      // The field says what it takes, for a screen reader too.
+      expect(
+        tester.getSemantics(find.byType(EditableText)),
+        isSemantics(label: 'Monto', isTextField: true),
+      );
+
+      await tester.enterText(find.byType(TextField), '0');
+      await tester.tap(find.text('Usar este monto'));
+      await tester.pumpAndSettle();
+      expect(find.text('Escribe un monto mayor que cero.'), findsOneWidget);
+      expect(moved, isEmpty);
+
+      // Off the slider's notches, and kept exact.
+      await tester.enterText(find.byType(TextField), '437000');
+      await tester.tap(find.text('Usar este monto'));
+      await tester.pumpAndSettle();
+      expect(moved.last, 437000);
+      expect(find.byType(AlertDialog), findsNothing);
+    });
+
+    testWidgets('uses what it takes in one tap', (tester) async {
+      final List<double> moved = await pump(tester);
+      await tester.tap(find.text(r'Usar $600.000 al mes'));
+      expect(moved.last, 600000);
+
+      // On it already, there is nothing to offer.
+      await pump(tester, monthly: 600000);
+      expect(find.text(r'Usar $600.000 al mes'), findsNothing);
+    });
+
+    testWidgets('says it is a simulation, and goes back to today', (
+      tester,
+    ) async {
+      await pump(tester, current: 250000);
+      expect(screen(tester), isNot(contains('Simulación')));
+
+      final List<double> moved = await pump(
+        tester,
+        monthly: 600000,
+        current: 250000,
+      );
+      expect(screen(tester), contains(r'Simulación · hoy apartas $250.000'));
+      await tester.tap(find.text(r'Volver a $250.000'));
+      expect(moved.last, 250000);
+    });
+
+    testWidgets('counts the contributions as it moves', (tester) async {
+      await pump(tester);
+      expect(
+        screen(tester),
+        contains(
+          r'Son 8 aportes de $250.000, del 16 de octubre al 16 de mayo de '
+          '2027.',
+        ),
+      );
+      await pump(tester, monthly: 600000);
+      expect(
+        screen(tester),
+        contains(
+          r'Son 3 aportes de $600.000, del 16 de octubre al 16 de diciembre.',
+        ),
+      );
+      await pump(tester, monthly: 1800000);
+      expect(screen(tester), contains('Es 1 aporte, el 16 de octubre.'));
+    });
+
+    testWidgets('says what it changes in what can be spent', (tester) async {
+      Future<String> at(double monthly, {String payday = '2026-10-15'}) async {
+        await pump(
+          tester,
+          monthly: monthly,
+          current: 250000,
+          spendable: 1369300,
+          payday: payday,
+        );
+        return screen(tester);
+      }
+
+      String text = await at(250000);
+      expect(text, contains('Qué cambia en lo que puedes gastar'));
+      // The contribution lands the day after payday: until then, nothing.
+      expect(
+        text,
+        contains(
+          r'Hasta el 15 de octubre puedes gastar $1.369.300: el aporte sale '
+          'el 16 de octubre, así que no lo toca.',
+        ),
+      );
+      expect(
+        text,
+        contains('Es lo que ya apartas: lo que puedes gastar no cambia.'),
+      );
+
+      text = await at(600000);
+      expect(
+        text,
+        contains(
+          r'Desde la quincena del 15 de octubre tendrías $350.000 menos al '
+          'mes para gastar que hoy.',
+        ),
+      );
+
+      text = await at(200000);
+      expect(
+        text,
+        contains(
+          r'Desde la quincena del 15 de octubre tendrías $50.000 más al mes '
+          'para gastar que hoy.',
+        ),
+      );
+
+      // Paid at the end of the month, the contribution comes first.
+      text = await at(600000, payday: '2026-10-31');
+      expect(
+        text,
+        contains(
+          r'El aporte del 16 de octubre sale antes de tu pago: hasta el 31 de '
+          r'octubre podrías gastar $769.300.',
+        ),
+      );
+    });
+
+    testWidgets('says by how much it falls short, never a negative to spend', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        current: 250000,
+        spendable: -200000,
+        payday: '2026-10-15',
+      );
+      String text = screen(tester);
+      expect(
+        text,
+        contains(
+          r'Te faltan $200.000 para llegar al 15 de octubre. El aporte sale el '
+          '16 de octubre, después de tu pago.',
+        ),
+      );
+      expect(text, isNot(contains('puedes gastar −')));
+
+      // The contribution first, and more than there is until payday.
+      await pump(
+        tester,
+        monthly: 600000,
+        current: 250000,
+        spendable: 300000,
+        payday: '2026-10-31',
+      );
+      text = screen(tester);
+      expect(
+        text,
+        contains(
+          r'El aporte del 16 de octubre sale antes de tu pago: te faltarían '
+          r'$300.000 para llegar al 31 de octubre.',
+        ),
+      );
+      expect(text, isNot(contains('podrías gastar −')));
+    });
+
+    testWidgets('with nothing going in, says it never gets there', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        app(
+          SingleChildScrollView(
+            child: GoalPlanner(
+              name: 'Cartagena',
+              target: 2800000,
+              saved: 1000000,
+              monthly: 0,
+              max: 800000,
+              arrival: arrivalMonth(2800000, 1000000, 0),
+              onTime: false,
+              deadlineLabel: '20 de diciembre',
+              onMonthlyChanged: (_) {},
+            ),
+          ),
+        ),
+      );
+      final String text = screen(tester);
+      expect(text, contains('Sin aporte al mes no llegas a la meta.'));
+      expect(text, isNot(contains('Llegas en nunca')));
+      expect(text, isNot(contains('aportes')));
+    });
+
+    testWidgets('every control in it is big enough to tap, and named', (
+      tester,
+    ) async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      // Away from today's amount: the amount, the way back and what it
+      // takes are all on screen.
+      await pump(tester, monthly: 400000, current: 250000);
+      expect(find.text(r'Volver a $250.000'), findsOneWidget);
+      expect(find.text(r'Usar $600.000 al mes'), findsOneWidget);
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+      semantics.dispose();
+    });
+
+    testWidgets('never stops on an amount that arrives late', (tester) async {
+      // After the 16th, the next contribution is November's: two fit
+      // before the deadline, and $600.000 a month no longer gets there.
+      appToday = DateTime(2026, 10, 20);
+      final List<double> moved = await pump(
+        tester,
+        needed: 600000,
+        deadline: '2026-12-20',
+      );
+      expect(screen(tester), isNot(contains(r'Necesitas $600.000')));
+      expect(find.text(r'Usar $600.000 al mes'), findsNothing);
+      final Slider slider = tester.widget<Slider>(find.byType(Slider));
+      slider.onChanged!(610000);
+      expect(moved.last, 610000);
+
+      // What the function says it takes now does get there, beyond the
+      // slider's end.
+      await pump(
+        tester,
+        needed: monthlyNeeded(2800000, 1000000, '2026-12-20'),
+        deadline: '2026-12-20',
+      );
+      expect(find.text(r'Usar $900.000 al mes'), findsOneWidget);
     });
   });
 

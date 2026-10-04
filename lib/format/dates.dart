@@ -88,3 +88,19 @@ String dayAndTime(DateTime moment) =>
 /// `2:05 p. m.` or `2:05 PM`: the time of something that happened today,
 /// on the twelve-hour clock people in Colombia read.
 String timeOfDay(DateTime moment) => _format('h:mm a', 'h:mm a').format(moment);
+
+/// `16 de mayo de 2027` or `May 16, 2027`.
+String dayMonthYear(DateTime date) =>
+    _format("d 'de' MMMM 'de' y", 'MMMM d, y').format(date);
+
+/// A day ahead as [dayMonth] writes it, with its year when that is not
+/// this one: `16 de octubre`, but `16 de mayo de 2027`.
+String dayMonthAhead(DateTime date) =>
+    date.year == appToday.year ? dayMonth(date) : dayMonthYear(date);
+
+/// Items in a sentence: `a, b y c` or `a, b and c`.
+String listed(List<String> items) {
+  if (items.length < 2) return items.join();
+  final String and = englishFormatting ? 'and' : 'y';
+  return '${items.sublist(0, items.length - 1).join(', ')} $and ${items.last}';
+}

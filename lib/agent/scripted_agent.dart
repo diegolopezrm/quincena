@@ -6,7 +6,14 @@ import '../data/clock.dart';
 import '../data/ledger.dart';
 import '../format/dates.dart';
 import '../format/money.dart';
-import '../functions/money_functions.dart' show monthlyNeeded;
+import '../functions/money_functions.dart'
+    show
+        arrivalMonth,
+        arrivesBy,
+        contributionDay,
+        contributionDays,
+        contributionOn,
+        monthlyNeeded;
 import '../l10n/l10n.dart';
 import 'understand.dart';
 
@@ -333,14 +340,18 @@ class ScriptedAgent {
       'el ${dayMonth(goal.deadline)}',
       dayMonth(goal.deadline),
     );
-    // The answer to the question comes first: whether the current pace
-    // gets there, and what is missing each month if it does not.
+    // The answer to the question comes first: what it takes each month,
+    // what is set aside today and the contributions counted, none of which
+    // the slider changes. What does change with it lives in the planner.
     final int needed = monthlyNeeded(
       goal.target.toDouble(),
       goal.saved.toDouble(),
       deadline,
     ).round();
     final int gap = needed - goal.monthly;
+    final String counted = _contributions(
+      contributionDays(until: goal.deadline),
+    );
 
     Map<String, Object?> goalArgs([bool withDeadline = false]) => {
       'target': _path('/goal/target'),
@@ -352,42 +363,51 @@ class ScriptedAgent {
     return AgentTurn(
       components: <JsonMap>[
         _c('root', 'Answer', {
-          'children': ['head', 'planner', 'tiles', 'room', 'save', 'next'],
+          'children': ['head', 'planner', 'save', 'room', 'next'],
         }),
         _c('head', 'Headline', {
           'kicker': _t('Tu meta', 'Your goal'),
           'title': gap > 0
               ? _t(
-                  'No con lo que apartas hoy',
-                  'Not with what you put aside now',
+                  'Para llegar $deadlineLabel necesitas ${pesos(needed)} al '
+                      'mes',
+                  'To get there by $deadlineLabel you need ${pesos(needed)} '
+                      'a month',
                 )
               : _t(
-                  'Sí, con lo que apartas llegas',
-                  'Yes, at this pace you get there',
+                  'Sí: con ${pesos(goal.monthly)} al mes llegas antes del '
+                      '${dayMonth(goal.deadline)}',
+                  'Yes: at ${pesos(goal.monthly)} a month you get there '
+                      'before ${dayMonth(goal.deadline)}',
                 ),
-          'body': gap > 0
-              ? _t(
-                  'Te faltan ${pesos(gap)} al mes para llegar $deadlineLabel: '
-                      'necesitas ${pesos(needed)} y hoy apartas '
-                      '${pesos(goal.monthly)}. Mueve el control para ver '
-                      'cuándo llegas.',
-                  'You are ${pesos(gap)} a month short of $deadlineLabel: it '
-                      'takes ${pesos(needed)} and you put aside '
-                      '${pesos(goal.monthly)}. Move the slider to see when '
-                      'you get there.',
-                )
-              : _t(
-                  'Con ${pesos(goal.monthly)} al mes llegas antes de '
-                      '$deadlineLabel.',
-                  'At ${pesos(goal.monthly)} a month you get there before '
-                      '$deadlineLabel.',
-                ),
+          'body': switch (gap) {
+            > 0 => _t(
+              'Hoy apartas ${pesos(goal.monthly)}: te faltan '
+                  '${pesos(gap)} al mes. $counted',
+              'You set aside ${pesos(goal.monthly)} now, so you are '
+                  '${pesos(gap)} a month short. $counted',
+            ),
+            // The title has the amount and the date already.
+            0 => _t(
+              'Es justo lo que hace falta. $counted',
+              "That's exactly what it takes. $counted",
+            ),
+            _ => _t(
+              'Bastan ${pesos(needed)} al mes. $counted',
+              '${pesos(needed)} a month is enough. $counted',
+            ),
+          },
         }),
         _c('planner', 'GoalPlanner', {
           'name': goal.name,
           'target': _path('/goal/target'),
           'saved': _path('/goal/saved'),
           'monthly': _path('/goal/monthly'),
+          'current': _path('/goal/current'),
+          'deadline': _path('/goal/deadline'),
+          'contributionDay': contributionDay,
+          'spendable': _path('/free'),
+          'payday': _path('/payday'),
           'min': 100000,
           'max': 800000,
           'step': 10000,
@@ -400,57 +420,32 @@ class ScriptedAgent {
             'deadline': _path('/goal/deadline'),
           }),
         }),
-        _c('tiles', 'Tiles', {
-          'children': ['need', 'free'],
-        }),
-        _c('need', 'StatTile', {
-          'label': _t('Necesitas al mes', 'You need a month'),
-          'value': _call('money', {
-            'amount': _call('monthlyNeeded', {
-              'target': _path('/goal/target'),
-              'saved': _path('/goal/saved'),
-              'deadline': _path('/goal/deadline'),
-            }),
+        // Right under what it saves: the slider is a simulation until this.
+        _c('save', 'ActionButton', {
+          'label': _t('Guardar este plan', 'Save this plan'),
+          'emphasis': 'primary',
+          'onPressed': _event('save_goal_plan', {
+            'monthly': _path('/goal/monthly'),
           }),
-          'caption': _t(
-            'para llegar $deadlineLabel',
-            'to get there by $deadlineLabel',
-          ),
-        }),
-        _c('free', 'StatTile', {
-          'label': _t(
-            'Puedes gastar hasta el ${ledger.nextPayday.day}',
-            'You can spend until the ${_ordinal(ledger.nextPayday.day)}',
-          ),
-          'value': _call('money', {'amount': _path('/free')}),
-          'caption': _t(
-            'después de arriendo y pagos fijos',
-            'after rent and fixed bills',
-          ),
         }),
         _c('room', 'Insight', {
           'tone': 'good',
           // What could be freed, never what the person should cut: the
           // choice is theirs.
           'title': _t(
-            'Podrías liberar hasta ${pesos(stale + restaurantsBack)}',
-            'You could free up to ${pesos(stale + restaurantsBack)}',
+            'Podrías liberar hasta ${pesos(stale + restaurantsBack)} al mes',
+            'You could free up to ${pesos(stale + restaurantsBack)} a month',
           ),
           'body': _t(
             '${pesos(stale)} de dos suscripciones sin uso hace más de un mes.\n'
                 '${pesos(restaurantsBack)} si restaurantes vuelve a lo de agosto.',
-            '${pesos(stale)} from two subscriptions unused for over a month.\n'
-                '${pesos(restaurantsBack)} if eating out goes back to August.',
+            '${pesos(stale)} from two subscriptions you haven\'t used in over '
+                'a month.\n'
+                '${pesos(restaurantsBack)} if eating out drops back to '
+                'August\'s level.',
           ),
           'actionLabel': _t('Revisar suscripciones', 'Review subscriptions'),
           'onAction': _event('ask', {'question': _questions[2]}),
-        }),
-        _c('save', 'ActionButton', {
-          'label': _t('Apartar esto cada mes', 'Set this aside every month'),
-          'emphasis': 'primary',
-          'onPressed': _event('save_goal_plan', {
-            'monthly': _path('/goal/monthly'),
-          }),
         }),
         ..._suggestions(<String>[_questions[2]]),
       ],
@@ -459,11 +454,31 @@ class ScriptedAgent {
           'target': goal.target,
           'saved': goal.saved,
           'monthly': goal.monthly,
+          'current': goal.monthly,
           'deadline': deadline,
         },
         'free': ledger.freeUntilPayday,
+        'payday': _iso(ledger.nextPayday),
       },
     );
+  }
+
+  /// The contributions that land before a deadline, with their days.
+  String _contributions(List<DateTime> days) {
+    final String dates = listed(<String>[
+      for (final DateTime d in days) dayMonthAhead(d),
+    ]);
+    return switch (days.length) {
+      0 => _t(
+        'Antes de esa fecha no cae ningún aporte.',
+        'No contribution lands before then.',
+      ),
+      1 => _t('Cuento 1 aporte: el $dates.', 'One contribution fits: $dates.'),
+      final int n => _t(
+        'Cuento $n aportes: $dates.',
+        '${_capital(_countEn(n))} contributions fit: $dates.',
+      ),
+    };
   }
 
   AgentTurn _record(int amount, Category category) {
@@ -604,23 +619,54 @@ class ScriptedAgent {
     final num monthly = context['monthly'] is num
         ? context['monthly']! as num
         : 0;
-    final Goal goal = ledger.goal('cartagena');
+    final Goal before = ledger.goal('cartagena');
+    if (monthly <= 0) return _goal();
+    // The plan is what the person chose, kept in the account's memory like
+    // an expense, so the next answer starts from it. The money stays where
+    // it is: the person moves it.
+    final Goal goal = Goal(
+      id: before.id,
+      name: before.name,
+      target: before.target,
+      saved: before.saved,
+      monthly: monthly.round(),
+      deadline: before.deadline,
+    );
+    ledger.goals[ledger.goals.indexOf(before)] = goal;
+    final String arrival = arrivalMonth(
+      goal.target.toDouble(),
+      goal.saved.toDouble(),
+      monthly.toDouble(),
+    );
+    final bool onTime = arrivesBy(
+      goal.target.toDouble(),
+      goal.saved.toDouble(),
+      monthly.toDouble(),
+      _iso(goal.deadline),
+    );
+    final String first = dayMonthAhead(contributionOn(0));
+    final String deadline = dayMonth(goal.deadline);
     return AgentTurn(
       components: <JsonMap>[
         _c('root', 'Answer', {
           'children': ['head', 'next'],
         }),
         _c('head', 'Headline', {
-          'kicker': _t('Meta ${goal.name}', '${goal.name} goal'),
+          'kicker': _t('Plan guardado', 'Plan saved'),
           'title': _t(
-            'Cada día 16 aparto ${pesos(monthly)}',
-            'I will set aside ${pesos(monthly)} every 16th',
+            'Tu plan: ${pesos(monthly)} al mes para ${goal.name}',
+            'Your plan: ${pesos(monthly)} a month for ${goal.name}',
           ),
           'body': _t(
-            'Empiezo el ${dayMonth(DateTime(_year, _month, 16))}. Si un mes '
-                'no alcanza, te aviso antes de mover la plata.',
-            'Starting ${dayMonth(DateTime(_year, _month, 16))}. If a month '
-                'falls short, I will tell you before moving any money.',
+            'Quincena no mueve tu plata: pásala tú a tu bolsillo '
+                '${goal.name} el $contributionDay de cada mes, desde el '
+                '$first. Con este plan llegas en $arrival, '
+                '${onTime ? 'antes' : 'después'} del $deadline.',
+            'Quincena doesn\'t move your money: move it to your '
+                '${goal.name} pocket yourself on the '
+                '${_ordinal(contributionDay)} of each month, starting $first. '
+                'With this plan you get there in $arrival, '
+                '${onTime ? 'before' : 'after'} $deadline.',
           ),
         }),
         ..._suggestions(<String>[_questions[2]]),

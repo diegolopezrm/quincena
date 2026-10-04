@@ -54,7 +54,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get noteSavedExpense => 'Guardaste el gasto';
 
   @override
-  String get noteChoseMonthly => 'Elegiste cuánto apartar';
+  String get noteChoseMonthly => 'Guardaste el plan';
 
   @override
   String get noteAskedCancel => 'Pediste cancelar suscripciones';
@@ -286,7 +286,7 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get setAsideMonthly => 'Apartar al mes';
+  String get setAsideMonthly => 'Si apartas al mes';
 
   @override
   String get arrivesIn => 'Llegas en ';
@@ -5079,4 +5079,87 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get statementSaveFailed =>
       'No se pudo terminar de importar. Lo que sí se guardó aparece como «Ya importado».';
+
+  @override
+  String get goalTypeAmount => 'Escribir monto';
+
+  @override
+  String get goalAmountTitle => '¿Cuánto quieres apartar al mes?';
+
+  @override
+  String get goalAmountUse => 'Usar este monto';
+
+  @override
+  String get goalAmountInvalid => 'Escribe un monto mayor que cero.';
+
+  @override
+  String goalUseNeeded(String amount) {
+    return 'Usar $amount al mes';
+  }
+
+  @override
+  String goalSimulating(String current) {
+    return 'Simulación · hoy apartas $current';
+  }
+
+  @override
+  String goalBackToCurrent(String amount) {
+    return 'Volver a $amount';
+  }
+
+  @override
+  String goalPlanContributions(
+    int count,
+    String amount,
+    String first,
+    String last,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Son $count aportes de $amount, del $first al $last.',
+      one: 'Es 1 aporte, el $first.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get goalEffectTitle => 'Qué cambia en lo que puedes gastar';
+
+  @override
+  String goalEffectUntilPayday(String payday, String free, String day) {
+    return 'Hasta el $payday puedes gastar $free: el aporte sale el $day, así que no lo toca.';
+  }
+
+  @override
+  String goalEffectBeforePay(String day, String payday, String left) {
+    return 'El aporte del $day sale antes de tu pago: hasta el $payday podrías gastar $left.';
+  }
+
+  @override
+  String goalEffectMore(String payday, String amount) {
+    return 'Desde la quincena del $payday tendrías $amount menos al mes para gastar que hoy.';
+  }
+
+  @override
+  String goalEffectLess(String payday, String amount) {
+    return 'Desde la quincena del $payday tendrías $amount más al mes para gastar que hoy.';
+  }
+
+  @override
+  String get goalEffectSame =>
+      'Es lo que ya apartas: lo que puedes gastar no cambia.';
+
+  @override
+  String get goalNeverArrives => 'Sin aporte al mes no llegas a la meta.';
+
+  @override
+  String goalEffectUntilPaydayShort(String short, String payday, String day) {
+    return 'Te faltan $short para llegar al $payday. El aporte sale el $day, después de tu pago.';
+  }
+
+  @override
+  String goalEffectBeforePayShort(String day, String short, String payday) {
+    return 'El aporte del $day sale antes de tu pago: te faltarían $short para llegar al $payday.';
+  }
 }

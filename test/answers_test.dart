@@ -4,6 +4,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/agent/scripted_agent.dart';
 import 'package:quincena/app.dart';
+import 'package:quincena/catalog/goal_planner.dart';
 import 'package:quincena/data/ledger.dart';
 import 'package:quincena/format/money.dart';
 import 'package:quincena/session/session.dart';
@@ -54,6 +55,22 @@ String screen(WidgetTester tester) => tester
     .map((RichText t) => t.text.toPlainText())
     .join('\n')
     .replaceAll('\u00a0', ' ');
+
+/// Every string on screen that is not inside a GoalPlanner.
+List<String> outsideThePlanner(WidgetTester tester) {
+  final Set<RichText> inside = tester
+      .widgetList<RichText>(
+        find.descendant(
+          of: find.byType(GoalPlanner),
+          matching: find.byType(RichText),
+        ),
+      )
+      .toSet();
+  return <String>[
+    for (final RichText t in tester.widgetList<RichText>(find.byType(RichText)))
+      if (!inside.contains(t)) t.text.toPlainText(),
+  ];
+}
 
 void main() {
   setUpAll(() async {
@@ -137,18 +154,78 @@ void main() {
     final Session session = await open(tester);
     await ask(tester, session, ScriptedAgent.starters[1]);
 
-    expect(screen(tester), contains('Llegas en mayo de 2027'));
-    expect(screen(tester), contains('después del 20 de diciembre'));
+    // The answer leads with what it takes, which no slider changes.
+    String text = screen(tester);
+    expect(
+      text,
+      contains(r'Para llegar el 20 de diciembre necesitas $600.000 al mes'),
+    );
+    expect(
+      text,
+      contains(
+        r'Hoy apartas $250.000: te faltan $350.000 al mes. Cuento 3 aportes: '
+        '16 de octubre, 16 de noviembre y 16 de diciembre.',
+      ),
+    );
+    expect(text, contains('Llegas en mayo de 2027'));
+    expect(text, contains('después del 20 de diciembre'));
+    expect(text, contains(r'Son 8 aportes de $250.000'));
+    // $600.000 is in the title, on the slider's mark and on the button that
+    // uses it: no tile repeats it.
+    expect(text, isNot(contains('Necesitas al mes')));
+    expect(r'$600.000'.allMatches(text), hasLength(3));
     final int recorded = session.recorder.build().steps.length;
 
     // Drag to the right end: $800.000 a month.
     final Finder slider = find.byType(Slider);
     await tester.ensureVisible(slider);
+    await settle(tester);
+    final List<String> outside = outsideThePlanner(tester);
     await tester.drag(slider, const Offset(600, 0));
     await settle(tester);
 
-    expect(screen(tester), contains('Llegas en diciembre de 2026'));
-    expect(screen(tester), contains('antes del 20 de diciembre'));
+    text = screen(tester);
+    expect(text, contains('Llegas en diciembre de 2026'));
+    expect(text, contains('antes del 20 de diciembre'));
+    expect(
+      text,
+      contains(
+        r'Son 3 aportes de $800.000, del 16 de octubre al 16 de diciembre.',
+      ),
+    );
+    expect(text, contains(r'Simulación · hoy apartas $250.000'));
+    expect(
+      text,
+      contains(
+        r'Desde la quincena del 15 de octubre tendrías $550.000 menos al mes '
+        'para gastar que hoy.',
+      ),
+    );
+    // Nothing outside the planner says what depends on it, so nothing
+    // outside it changed.
+    expect(outsideThePlanner(tester), outside);
+    expect(text, isNot(contains('No con lo que apartas hoy')));
+    expect(text, isNot(contains('Mueve el control')));
+
+    // What it takes, in one tap: the planner follows, the answer stays.
+    await tester.tap(find.text(r'Usar $600.000 al mes'));
+    await settle(tester);
+    text = screen(tester);
+    expect(
+      text,
+      contains(
+        r'Desde la quincena del 15 de octubre tendrías $350.000 menos al mes '
+        'para gastar que hoy.',
+      ),
+    );
+    expect(
+      text,
+      contains(
+        r'Hasta el 15 de octubre puedes gastar $1.369.300: el aporte sale el '
+        '16 de octubre, así que no lo toca.',
+      ),
+    );
+    expect(outsideThePlanner(tester), outside);
     // The data model changed, and nothing new came from the agent.
     final messages = session.recorder
         .build()
@@ -156,6 +233,43 @@ void main() {
         .skip(recorded)
         .where((step) => step.runtimeType.toString() == 'GenUiMessageStep');
     expect(messages, isEmpty);
+  });
+
+  testWidgets('a saved plan is where the next answer starts', (tester) async {
+    final Session session = await open(tester);
+    await ask(tester, session, ScriptedAgent.starters[1]);
+    final Finder use = find.text(r'Usar $600.000 al mes');
+    await tester.ensureVisible(use);
+    await settle(tester);
+    await tester.tap(use);
+    await settle(tester);
+    await tester.ensureVisible(find.text('Guardar este plan'));
+    await settle(tester);
+    await tester.tap(find.text('Guardar este plan'));
+    await settle(tester);
+    expect(
+      screen(tester),
+      contains(r'Tu plan: $600.000 al mes para Cartagena'),
+    );
+
+    await ask(tester, session, ScriptedAgent.starters[1]);
+    final String text = screen(tester);
+    expect(
+      text,
+      contains(r'Sí: con $600.000 al mes llegas antes del 20 de diciembre'),
+    );
+    // The title has the amount and the date: the body does not say them
+    // again.
+    expect(
+      text,
+      contains(
+        'Es justo lo que hace falta. Cuento 3 aportes: 16 de octubre, 16 de '
+        'noviembre y 16 de diciembre.',
+      ),
+    );
+    expect(text, isNot(contains('bastan')));
+    // On what it takes, there is no simulation and nothing to use.
+    expect(find.text(r'Usar $600.000 al mes'), findsNothing);
   });
 
   testWidgets('switching a subscription off updates the savings', (

@@ -2,12 +2,14 @@ import 'package:dartantic_ai/dartantic_ai.dart';
 import 'package:decimal/decimal.dart';
 
 import '../agent/tools.dart';
+import '../capture/merchants.dart';
 import '../data/ledger.dart';
 import '../domain/freelance.dart';
 import '../domain/net_worth.dart';
 import '../domain/records.dart';
 import '../domain/shared.dart';
 import '../domain/trips.dart';
+import '../functions/money_functions.dart';
 import '../money/asset.dart';
 import '../money/money.dart';
 import '../money/rates.dart';
@@ -71,7 +73,100 @@ List<Tool> ownTools(OwnController own) => <Tool>[
         'until it arrives. No tax is worked out here.',
     onCall: (_) => owedAndVariableAnswer(own),
   ),
+  Tool<Map<String, dynamic>>(
+    name: 'save_goal_plan',
+    description:
+        'Saves the monthly amount the person chose for a savings goal. Call '
+        'it only after a save_goal_plan event arrives, with the amount it '
+        'carries. It saves a plan: no money moves, the person moves it. '
+        'Returns the goal with its new monthly amount and when it is reached.',
+    inputSchema: S.object(
+      properties: <String, Schema>{
+        'monthly': S.number(
+          description: 'In whole units of the base currency, positive.',
+        ),
+        'goal': S.string(
+          description:
+              'The goal\'s name, as savings_goal gives it. Left out, the '
+              'goal savings_goal is about.',
+        ),
+      },
+      required: <String>['monthly'],
+    ),
+    onCall: (Map<String, dynamic> args) => saveGoalPlanAnswer(own, args),
+  ),
 ];
+
+/// The `save_goal_plan` tool's answer, apart so a test can call it.
+Future<Map<String, Object?>> saveGoalPlanAnswer(
+  OwnController own,
+  Map<String, dynamic> args,
+) async {
+  final Object? monthly = args['monthly'];
+  if (monthly is! num || monthly <= 0) {
+    return <String, Object?>{'error': 'monthly must be a positive number'};
+  }
+  final List<SavingsGoal> goals = own.snapshot?.goals ?? const <SavingsGoal>[];
+  final Asset? base = own.profile?.base;
+  if (goals.isEmpty || base == null) {
+    return <String, Object?>{
+      'saved': false,
+      'note': 'There is no savings goal yet.',
+    };
+  }
+  // The goal named, or the first: the one savings_goal answers about. A
+  // name that is exactly a goal's wins over one that is part of another's.
+  final String wanted = normalize((args['goal'] as String?) ?? '');
+  final SavingsGoal? goal = wanted.isEmpty
+      ? goals.first
+      : goals
+                .where((SavingsGoal g) => normalize(g.name) == wanted)
+                .firstOrNull ??
+            goals.where((SavingsGoal g) {
+              final String n = normalize(g.name);
+              return n.contains(wanted) || wanted.contains(n);
+            }).firstOrNull;
+  if (goal == null) {
+    return <String, Object?>{
+      'error':
+          'no goal is called that; the goals are '
+          '${goals.map((SavingsGoal g) => g.name).join(', ')}',
+    };
+  }
+  final Asset asset = goal.target.asset;
+  final Money? amount = own.rates.convert(
+    Money(Decimal.parse('$monthly'), base),
+    asset,
+  );
+  if (amount == null) {
+    return <String, Object?>{
+      'error': 'there is no rate from ${base.code} to ${asset.code}',
+    };
+  }
+  await own.saveGoalMonthly(
+    goal,
+    Money(amount.amount.round(scale: asset.decimals), asset),
+  );
+  final Ledger? ledger = own.ledger;
+  final Goal? now = ledger?.goals
+      .where((Goal g) => g.id == goal.id)
+      .firstOrNull;
+  if (ledger == null || now == null) return <String, Object?>{'saved': true};
+  final double target = ledger.major(now.target).toDouble();
+  final double saved = ledger.major(now.saved).toDouble();
+  final double perMonth = ledger.major(now.monthly).toDouble();
+  final String deadline = now.deadline.toIso8601String().split('T').first;
+  return <String, Object?>{
+    'saved': true,
+    'name': now.name,
+    'monthly': ledger.major(now.monthly),
+    'arrival': arrivalMonth(target, saved, perMonth),
+    'arrivesByDeadline': arrivesBy(target, saved, perMonth, deadline),
+    'deadline': deadline,
+    'contributionDay': contributionDay,
+    'note': 'Only the plan changed: no money moved.',
+  };
+}
 
 /// The `owed_and_variable` tool's answer, apart so a test can read it.
 Map<String, Object?> owedAndVariableAnswer(OwnController own) {

@@ -195,9 +195,9 @@ void main() {
 
       // The screen scrolls to each new answer with an animation; let it
       // finish, or the tap lands where the button was.
-      await tester.ensureVisible(find.text('Apartar esto cada mes'));
+      await tester.ensureVisible(find.text('Guardar este plan'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Apartar esto cada mes'));
+      await tester.tap(find.text('Guardar este plan'));
       for (var i = 0; i < 20; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
@@ -209,7 +209,13 @@ void main() {
       expect(action['name'], 'save_goal_plan');
       // The context arrives resolved: the amount on the slider, not a path.
       expect((action['context']! as Map)['monthly'], 250000);
-      expect(screen(tester), contains(r'Cada día 16 aparto $250.000'));
+      expect(
+        screen(tester),
+        contains(r'Tu plan: $250.000 al mes para Cartagena'),
+      );
+      // A plan, not a transfer: the person moves the money.
+      expect(screen(tester), contains('Quincena no mueve tu plata'));
+      expect(screen(tester), isNot(contains('aparto')));
     });
 
     testWidgets('a surface the catalog rejects goes back to be fixed', (
@@ -318,6 +324,29 @@ void main() {
       // Each turn sends the whole prompt again: six turns cost three times
       // two, and the person waits for every one.
       expect(prompt, contains('Ask for every tool an answer needs at once'));
+    });
+
+    test('it is told how a goal answer is built', () {
+      final String flat = prompt.replaceAll(RegExp(r'\s+'), ' ');
+      expect(flat, contains('what is missing each month (monthlyShort)'));
+      expect(flat, contains('the contributionsBeforeDeadline with their days'));
+      expect(flat, contains('the GoalPlanner alone saves nothing'));
+      // The figure the title gives is not repeated in a tile.
+      expect(flat, isNot(contains('StatTile whose value is money over')));
+      expect(
+        flat,
+        contains('Never repeat in a tile or an Insight a figure already shown'),
+      );
+    });
+
+    test('text outside a control never says what the control changes', () {
+      expect(
+        prompt.replaceAll(RegExp(r'\s+'), ' '),
+        contains(
+          'Text outside a control never states what depends on the value it '
+          'writes',
+        ),
+      );
     });
 
     test('it is told how to put an amount inside a sentence', () {
@@ -470,6 +499,15 @@ void main() {
         final Map<String, Object?> goal = await call('savings_goal');
         expect(goal['missing'], 1800000);
         expect(goal['monthlyNeeded'], 600000);
+        // What is missing each month and the days it lands come worked out,
+        // so the model never subtracts or counts.
+        expect(goal['monthlyShort'], 350000);
+        expect(goal['contributionDay'], 16);
+        expect(goal['contributionsBeforeDeadline'], <String>[
+          '2026-10-16',
+          '2026-11-16',
+          '2026-12-16',
+        ]);
         expect(goal['arrivalAtCurrentPace'], 'mayo de 2027');
       },
     );

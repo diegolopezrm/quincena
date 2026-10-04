@@ -357,6 +357,26 @@
             "needed": {
               "description": "The monthly amount that reaches the goal by the deadline. Bind it to the `monthlyNeeded` function over the same paths: the slider marks it, stops on it when dragged near, and the phone ticks as it is reached.",
               "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicNumber"
+            },
+            "current": {
+              "description": "Today's monthly amount, at a path of its own: away from it, the planner says it is a simulation and offers to go back.",
+              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicNumber"
+            },
+            "deadline": {
+              "description": "The deadline, YYYY-MM-DD, at the path the functions read.",
+              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicString"
+            },
+            "contributionDay": {
+              "description": "The day of the month contributions land.",
+              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicNumber"
+            },
+            "spendable": {
+              "description": "What can be spent until payday: freeUntilPayday. With `payday`, the planner says what the monthly amount changes in it.",
+              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicNumber"
+            },
+            "payday": {
+              "description": "The next payday, YYYY-MM-DD.",
+              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicString"
             }
           },
           "required": [
@@ -1255,7 +1275,7 @@
   "functions": {
     "arrivalMonth": {
       "type": "object",
-      "description": "The month a savings goal is reached when `monthly` is put aside every month from now, as text such as \"mayo de 2027\". Says \"nunca\" when `monthly` is zero. Bind a GoalPlanner's `arrival` to it.",
+      "description": "The month a savings goal is reached when `monthly` is put aside every month from now, as text such as \"mayo de 2027\". Says \"nunca\", or \"never\" in English, when `monthly` is zero. Bind a GoalPlanner's `arrival` to it.",
       "properties": {
         "call": {
           "const": "arrivalMonth"

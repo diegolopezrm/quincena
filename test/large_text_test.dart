@@ -48,4 +48,31 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('the goal planner holds at twice the text size as it moves', (
+    tester,
+  ) async {
+    final Session session = await open(tester);
+    final Future<void> answered = session.ask(ScriptedAgent.starters[1]);
+    await tester.pumpAndSettle();
+    await answered;
+    await tester.pumpAndSettle();
+
+    // Away from today's amount, with the simulation line and its way back.
+    final Finder use = find.text(r'Usar $600.000 al mes');
+    await tester.ensureVisible(use);
+    await tester.pumpAndSettle();
+    await tester.tap(use);
+    await tester.pumpAndSettle();
+    expect(find.text(r'Volver a $250.000'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    // And the dialog that takes an exact amount.
+    await tester.ensureVisible(find.byTooltip('Escribir monto'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Escribir monto'));
+    await tester.pumpAndSettle();
+    expect(find.text('Usar este monto'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

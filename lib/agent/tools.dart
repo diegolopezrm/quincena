@@ -453,8 +453,10 @@ List<Tool> accountTools(
     name: 'savings_goal',
     description:
         'The savings goal: what it is for, the target, what is saved, what '
-        'goes into it each month today, and the deadline. Says so when there '
-        'is none.',
+        'goes into it each month today, and the deadline. Then what it takes '
+        'each month to get there in time, how far short today\'s amount '
+        'falls, and the days contributions land before the deadline. Says '
+        'so when there is none.',
     onCall: (_) {
       final Ledger ledger = current();
       if (ledger.goals.isEmpty) {
@@ -467,17 +469,25 @@ List<Tool> accountTools(
       final num target = ledger.major(goal.target);
       final num saved = ledger.major(goal.saved);
       final num monthly = ledger.major(goal.monthly);
+      final num needed = monthlyNeeded(
+        target.toDouble(),
+        saved.toDouble(),
+        _day(goal.deadline),
+      ).round();
+      final int short = ledger.minor(needed) - goal.monthly;
       return <String, Object?>{
         'name': goal.name,
         'target': target,
         'saved': saved,
         'missing': ledger.major(goal.missing),
         'monthly': monthly,
-        'monthlyNeeded': monthlyNeeded(
-          target.toDouble(),
-          saved.toDouble(),
-          _day(goal.deadline),
-        ).round(),
+        'monthlyNeeded': needed,
+        'monthlyShort': ledger.major(short > 0 ? short : 0),
+        'contributionDay': contributionDay,
+        'contributionsBeforeDeadline': <String>[
+          for (final DateTime d in contributionDays(until: goal.deadline))
+            _day(d),
+        ],
         'arrivalAtCurrentPace': arrivalMonth(
           target.toDouble(),
           saved.toDouble(),
