@@ -179,9 +179,11 @@ void main() {
     expect(text, contains('ANTES DE CANCELAR'));
     expect(text, contains(r'Vas a cancelar dos: te ahorras $153.900 al mes'));
     expect(text, contains('Quincena no las cancela por ti'));
-    // When each one is charged next: Fit24 on the 1st, already past today.
+    // When each one is charged next, soonest first: Lingo Pro on the 20th,
+    // then Fit24 on the 1st, already past today.
     expect(text, contains('1 nov'));
     expect(text, contains('20 oct'));
+    expect(text.indexOf('20 oct'), lessThan(text.indexOf('1 nov')));
     expect(struck, findsNothing);
 
     await press(tester, 'Ya las cancelé');

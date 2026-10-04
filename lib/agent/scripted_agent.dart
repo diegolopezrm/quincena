@@ -761,9 +761,15 @@ class ScriptedAgent {
       for (final Map<Object?, Object?> row in _ticked(context))
         '${row['name']}',
     };
-    final List<Subscription> chosen = ledger.subscriptions
-        .where((Subscription s) => names.contains(s.name))
-        .toList();
+    // The one charged soonest first: that is the one to cancel first.
+    final List<Subscription> chosen =
+        ledger.subscriptions
+            .where((Subscription s) => names.contains(s.name))
+            .toList()
+          ..sort(
+            (Subscription a, Subscription b) =>
+                a.nextCharge(appToday).compareTo(b.nextCharge(appToday)),
+          );
     if (chosen.isEmpty) return _noneTicked();
     final bool one = chosen.length == 1;
     final int saves = chosen.fold(
@@ -780,7 +786,7 @@ class ScriptedAgent {
           'kicker': _t('Antes de cancelar', 'Before you cancel'),
           'title': _t(
             'Vas a cancelar ${_count(chosen.length)}: te ahorras ${pesos(saves)} al mes',
-            "You're canceling ${_count(chosen.length)}: you save ${pesos(saves)} a month",
+            "You're canceling ${_count(chosen.length)}: you'll save ${pesos(saves)} a month",
           ),
           'body': one
               ? _t(
@@ -799,7 +805,7 @@ class ScriptedAgent {
         _c('charges', 'MovementList', {
           'title': one
               ? _t('Su próximo cobro', 'Its next charge')
-              : _t('El próximo cobro de cada una', 'The next charge of each'),
+              : _t('El próximo cobro de cada una', 'Next charge for each'),
           'items': _path('/charges'),
         }),
         _c('change', 'ActionButton', {
@@ -860,8 +866,8 @@ class ScriptedAgent {
           'body': _t(
             'Desde el próximo cobro te ahorras ${pesos(saved)} al mes. En la '
                 'demo esto no cambia tus datos.',
-            'From the next charge on, you save ${pesos(saved)} a month. In '
-                "the demo, this doesn't change your data.",
+            "Starting with the next charge, you'll save ${pesos(saved)} a "
+                "month. In the demo, this doesn't change your data.",
           ),
         }),
         _c('done', 'Group', {

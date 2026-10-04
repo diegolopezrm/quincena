@@ -125,13 +125,17 @@ void main() {
     expect(screen(tester), contains('BEFORE YOU CANCEL'));
     expect(
       screen(tester),
-      contains(r"You're canceling one: you save $119,000 a month"),
+      contains(r"You're canceling one: you'll save $119,000 a month"),
     );
     expect(screen(tester), contains("Quincena can't cancel it for you"));
 
     await tapIn(tester, find.text('I canceled it'));
     expect(screen(tester), contains('DONE BY YOU'));
     expect(screen(tester), contains('Canceled: Fit24 gimnasio'));
+    expect(
+      screen(tester),
+      contains(r"Starting with the next charge, you'll save $119,000 a month"),
+    );
     expect(find.text('Canceled'), findsOneWidget);
   });
 
