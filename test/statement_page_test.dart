@@ -54,10 +54,7 @@ void main() {
 
     // The bank the statement names is the account it goes to.
     expect(find.text('Bancolombia · COP'), findsOneWidget);
-    expect(
-      find.text('4 movimientos, del 1 sept 2026 al 4 sept 2026'),
-      findsOneWidget,
-    );
+    expect(find.text('4 movimientos · 1–4 sept 2026'), findsOneWidget);
     // Before importing: what is new, what was already there, and what
     // comes without a category.
     expect(
@@ -67,6 +64,11 @@ void main() {
     expect(find.text('Exito Laureles'), findsOneWidget);
     expect(find.textContaining('Ya registrado'), findsOneWidget);
     expect(find.text('Importar 3 movimientos'), findsOneWidget);
+    // What the checked lines bring in and take out.
+    expect(
+      find.text('3 seleccionados · entran +\$2.500.000 · salen −\$75.900'),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
 
     // The new ones are checked; the button clears them, and checks the new
@@ -75,6 +77,7 @@ void main() {
     await tester.tap(find.text('Quitar todos'));
     await settle(tester);
     expect(find.text('Nada para importar'), findsOneWidget);
+    expect(find.text('Nada seleccionado'), findsOneWidget);
     await tester.tap(find.text('Marcar los nuevos'));
     await settle(tester);
     expect(find.text('Importar 3 movimientos'), findsOneWidget);
@@ -90,6 +93,10 @@ void main() {
     await tester.tap(find.textContaining('Ya registrado'));
     await settle(tester);
     expect(find.text('Importar 4 movimientos'), findsOneWidget);
+    expect(
+      find.text('4 seleccionados · entran +\$2.500.000 · salen −\$165.800'),
+      findsOneWidget,
+    );
     expect(
       find.text('Marcaste 1 que ya estaba: se contaría dos veces.'),
       findsOneWidget,

@@ -61,6 +61,21 @@ String weekdayDayMonth(DateTime date) =>
 String shortDate(DateTime date) =>
     _format('d MMM y', 'MMM d, y').format(date).replaceAll('.', '');
 
+/// `1–5 sept 2026` or `Sep 1–5, 2026`: the days from [from] to [to], with
+/// the month and the year said once when both ends share them.
+String dayRange(DateTime from, DateTime to) {
+  if (from.year != to.year) return '${shortDate(from)} – ${shortDate(to)}';
+  if (from.month != to.month) {
+    return englishFormatting
+        ? '${dayShortMonth(from)} – ${dayShortMonth(to)}, ${to.year}'
+        : '${dayShortMonth(from)} – ${dayShortMonth(to)} ${to.year}';
+  }
+  if (from.day == to.day) return shortDate(from);
+  return englishFormatting
+      ? '${monthShort(to)} ${from.day}–${to.day}, ${to.year}'
+      : '${from.day}–${to.day} ${monthShort(to)} ${to.year}';
+}
+
 /// `viernes` or `Friday`, for [weekday] from 1 (Monday) to 7 (Sunday).
 String weekdayName(int weekday) =>
     _format('EEEE', 'EEEE').format(DateTime(2026, 9, 28 + weekday - 1));

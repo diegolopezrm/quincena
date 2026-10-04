@@ -4157,8 +4157,8 @@ abstract class AppLocalizations {
   /// No description provided for @statementSummary.
   ///
   /// In es, this message translates to:
-  /// **'{count, plural, =1{Un movimiento} other{{count} movimientos}}, del {from} al {to}'**
-  String statementSummary(int count, String from, String to);
+  /// **'{count, plural, =1{Un movimiento} other{{count} movimientos}} · {range}'**
+  String statementSummary(int count, String range);
 
   /// No description provided for @statementRecorded.
   ///
@@ -7578,6 +7578,24 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{count, plural, =1{Marcaste 1 que ya estaba: se contaría dos veces.} other{Marcaste {count} que ya estaban: se contarían dos veces.}}'**
   String statementRepeatsChosen(int count);
+
+  /// No description provided for @statementSelected.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Nada seleccionado} =1{1 seleccionado} other{{count} seleccionados}}'**
+  String statementSelected(int count);
+
+  /// No description provided for @statementIn.
+  ///
+  /// In es, this message translates to:
+  /// **'entran {amount}'**
+  String statementIn(String amount);
+
+  /// No description provided for @statementOut.
+  ///
+  /// In es, this message translates to:
+  /// **'salen {amount}'**
+  String statementOut(String amount);
 }
 
 class _AppLocalizationsDelegate

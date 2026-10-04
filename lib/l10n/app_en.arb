@@ -684,7 +684,7 @@
   "statementGemini": "Read it with Gemini",
   "statementGeminiNote": "The statement's text, with its dates, descriptions and amounts, goes to Gemini to sort it out. It counts as one of the day's questions.",
   "statementGeminiPdf": "On the web the PDF cannot be read here: the file goes to Gemini to read it. It counts as one of the day's questions.",
-  "statementSummary": "{count, plural, =1{One movement} other{{count} movements}}, from {from} to {to}",
+  "statementSummary": "{count, plural, =1{One transaction} other{{count} transactions}} · {range}",
   "statementRecorded": "Already recorded",
   "statementImportedBefore": "Already imported",
   "statementFlip": "Flip the signs",
@@ -1253,5 +1253,8 @@
   "widgetAdd": "Add to home screen",
   "widgetAddFailed": "Your home screen doesn't allow adding it from here. Touch and hold an empty spot and look for Quincena.",
   "statementSelectNew": "Check the new ones",
-  "statementRepeatsChosen": "{count, plural, =1{You checked 1 that was already there: it would count twice.} other{You checked {count} that were already there: they would count twice.}}"
+  "statementRepeatsChosen": "{count, plural, =1{You checked 1 that was already there: it would count twice.} other{You checked {count} that were already there: they would count twice.}}",
+  "statementSelected": "{count, plural, =0{Nothing selected} =1{1 selected} other{{count} selected}}",
+  "statementIn": "{amount} in",
+  "statementOut": "{amount} out"
 }

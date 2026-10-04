@@ -2572,14 +2572,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'On the web the PDF cannot be read here: the file goes to Gemini to read it. It counts as one of the day\'s questions.';
 
   @override
-  String statementSummary(int count, String from, String to) {
+  String statementSummary(int count, String range) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count movements',
-      one: 'One movement',
+      other: '$count transactions',
+      one: 'One transaction',
     );
-    return '$_temp0, from $from to $to';
+    return '$_temp0 · $range';
   }
 
   @override
@@ -4777,5 +4777,27 @@ class AppLocalizationsEn extends AppLocalizations {
       one: 'You checked 1 that was already there: it would count twice.',
     );
     return '$_temp0';
+  }
+
+  @override
+  String statementSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count selected',
+      one: '1 selected',
+      zero: 'Nothing selected',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String statementIn(String amount) {
+    return '$amount in';
+  }
+
+  @override
+  String statementOut(String amount) {
+    return '$amount out';
   }
 }

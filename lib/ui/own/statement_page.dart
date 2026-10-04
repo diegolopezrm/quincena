@@ -415,6 +415,21 @@ class _StatementPageState extends State<StatementPage> {
     final int repeatsChosen = _chosen.where((int i) => !all[i].proposed).length;
     final bool everything = _chosen.isNotEmpty && _chosen.containsAll(newOnes);
     final Account? account = _account;
+    // What the checked lines bring in and take out.
+    var inflow = Decimal.zero;
+    var outflow = Decimal.zero;
+    for (final int i in _chosen) {
+      final Decimal amount = all[i].line.amount;
+      if (amount > Decimal.zero) {
+        inflow += amount;
+      } else {
+        outflow += amount;
+      }
+    }
+    final Asset? base = own.profile?.base;
+    // A statement within one year says it once, in its summary.
+    final bool oneYear =
+        dates.isNotEmpty && dates.first.year == dates.last.year;
     return Column(
       children: <Widget>[
         Expanded(
@@ -446,8 +461,7 @@ class _StatementPageState extends State<StatementPage> {
                 Text(
                   l.statementSummary(
                     all.length,
-                    shortDate(dates.first),
-                    shortDate(dates.last),
+                    dayRange(dates.first, dates.last),
                   ),
                   style: context.type.titleSmall,
                 ),
@@ -505,7 +519,8 @@ class _StatementPageState extends State<StatementPage> {
                     _CandidateRow(
                       candidate: all[i],
                       account: account,
-                      base: own.profile?.base,
+                      base: base,
+                      oneYear: oneYear,
                       chosen: _chosen.contains(i),
                       onChanged: (bool on) => setState(
                         () => on ? _chosen.add(i) : _chosen.remove(i),
@@ -524,6 +539,29 @@ class _StatementPageState extends State<StatementPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
+                Figures(
+                  <String>[
+                    l.statementSelected(_chosen.length),
+                    if (account != null && inflow > Decimal.zero)
+                      l.statementIn(
+                        moneyText(
+                          Money(inflow, account.asset),
+                          base: base,
+                          signed: true,
+                        ),
+                      ),
+                    if (account != null && outflow < Decimal.zero)
+                      l.statementOut(
+                        moneyText(
+                          Money(outflow, account.asset),
+                          base: base,
+                          signed: true,
+                        ),
+                      ),
+                  ].join(' · '),
+                  style: context.type.bodyMedium,
+                ),
+                const SizedBox(height: 8),
                 if (repeatsChosen > 0) ...<Widget>[
                   Text(
                     l.statementRepeatsChosen(repeatsChosen),
@@ -564,6 +602,7 @@ class _CandidateRow extends StatelessWidget {
     required this.candidate,
     required this.account,
     required this.base,
+    required this.oneYear,
     required this.chosen,
     required this.onChanged,
   });
@@ -571,6 +610,10 @@ class _CandidateRow extends StatelessWidget {
   final ImportCandidate candidate;
   final Account? account;
   final Asset? base;
+
+  /// Whether the statement's lines share a year, which the row then leaves
+  /// out of its date.
+  final bool oneYear;
   final bool chosen;
   final ValueChanged<bool> onChanged;
 
@@ -615,7 +658,7 @@ class _CandidateRow extends StatelessWidget {
       ),
       subtitle: Text(
         <String>[
-          shortDate(c.line.date),
+          if (oneYear) dayShortMonth(c.line.date) else shortDate(c.line.date),
           if (c.payee.isNotEmpty && c.payee != c.line.description)
             c.line.description,
           ?badge,

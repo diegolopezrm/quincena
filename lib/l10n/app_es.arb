@@ -822,8 +822,8 @@
   "statementGemini": "Leer con Gemini",
   "statementGeminiNote": "Se envía a Gemini el texto del extracto, con sus fechas, descripciones y montos, para que lo ordene. Cuenta como una pregunta del día.",
   "statementGeminiPdf": "En la web el PDF no se puede leer aquí: se envía el archivo a Gemini para que lo lea. Cuenta como una pregunta del día.",
-  "statementSummary": "{count, plural, =1{Un movimiento} other{{count} movimientos}}, del {from} al {to}",
-  "@statementSummary": {"placeholders": {"count": {"type": "int"}, "from": {"type": "String"}, "to": {"type": "String"}}},
+  "statementSummary": "{count, plural, =1{Un movimiento} other{{count} movimientos}} · {range}",
+  "@statementSummary": {"placeholders": {"count": {"type": "int"}, "range": {"type": "String"}}},
   "statementRecorded": "Ya registrado",
   "statementImportedBefore": "Ya importado",
   "statementFlip": "Invertir signos",
@@ -1510,5 +1510,11 @@
   "widgetAddFailed": "Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena.",
   "statementSelectNew": "Marcar los nuevos",
   "statementRepeatsChosen": "{count, plural, =1{Marcaste 1 que ya estaba: se contaría dos veces.} other{Marcaste {count} que ya estaban: se contarían dos veces.}}",
-  "@statementRepeatsChosen": {"placeholders": {"count": {"type": "int"}}}
+  "@statementRepeatsChosen": {"placeholders": {"count": {"type": "int"}}},
+  "statementSelected": "{count, plural, =0{Nada seleccionado} =1{1 seleccionado} other{{count} seleccionados}}",
+  "@statementSelected": {"placeholders": {"count": {"type": "int"}}},
+  "statementIn": "entran {amount}",
+  "@statementIn": {"placeholders": {"amount": {"type": "String"}}},
+  "statementOut": "salen {amount}",
+  "@statementOut": {"placeholders": {"amount": {"type": "String"}}}
 }
