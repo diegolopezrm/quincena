@@ -72,21 +72,45 @@ class SubscriptionRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  // The box's own label says the name, with what ticking
-                  // it does.
-                  ExcludeSemantics(
-                    excluding: !cancelled,
-                    child: Text(
-                      name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: context.type.bodyLarge?.copyWith(
-                        decoration: cancelled
-                            ? TextDecoration.lineThrough
-                            : null,
-                        color: cancelled ? context.colors.inkFaint : null,
+                  // The state goes after the name and drops below it when
+                  // the text is large, so the name keeps the whole width.
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: <Widget>[
+                      // The box's own label says the name, with what
+                      // ticking it does.
+                      ExcludeSemantics(
+                        excluding: !cancelled,
+                        child: Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: context.type.bodyLarge?.copyWith(
+                            decoration: cancelled
+                                ? TextDecoration.lineThrough
+                                : null,
+                            color: cancelled ? context.colors.inkFaint : null,
+                          ),
+                        ),
                       ),
-                    ),
+                      if (cancelled)
+                        _Tag(
+                          context.l10n.subscriptionCancelled,
+                          color: context.colors.inkSoft,
+                          background: context.colors.sunken,
+                        )
+                      else if (ticked)
+                        // A ticked box already says so to a screen reader.
+                        ExcludeSemantics(
+                          child: _Tag(
+                            context.l10n.subscriptionToCancel,
+                            color: context.colors.caution,
+                            background: context.colors.cautionSoft,
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 2),
                   Text.rich(
@@ -113,20 +137,8 @@ class SubscriptionRow extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            if (cancelled)
-              _Tag(
-                context.l10n.subscriptionCancelled,
-                color: context.colors.inkSoft,
-                background: context.colors.sunken,
-              )
-            else ...<Widget>[
-              if (ticked)
-                _Tag(
-                  context.l10n.subscriptionToCancel,
-                  color: context.colors.caution,
-                  background: context.colors.cautionSoft,
-                ),
+            if (!cancelled) ...<Widget>[
+              const SizedBox(width: 8),
               Checkbox(
                 value: ticked,
                 semanticLabel: context.l10n.subscriptionSelect(name),
@@ -142,7 +154,7 @@ class SubscriptionRow extends StatelessWidget {
   }
 }
 
-/// A short state next to the box, such as "Para cancelar".
+/// A short state after the name, such as "Para cancelar".
 class _Tag extends StatelessWidget {
   const _Tag(this.text, {required this.color, required this.background});
 

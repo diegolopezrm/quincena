@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
@@ -77,6 +78,17 @@ void main() {
       );
     }
     expect(find.text('Para cancelar'), findsNWidgets(2));
+    // The tag never squeezes the name: the person reads what they ticked.
+    for (final String name in <String>['Fit24 gimnasio', 'Lingo Pro']) {
+      expect(
+        tester.renderObject<RenderParagraph>(find.text(name).last),
+        isA<RenderParagraph>().having(
+          (RenderParagraph p) => p.didExceedMaxLines,
+          'cut short',
+          isFalse,
+        ),
+      );
+    }
     await tap(find.text('Revisar las marcadas'));
     await tap(find.text('Ya las cancelé'));
     expect(find.text('Cancelada'), findsNWidgets(2));
