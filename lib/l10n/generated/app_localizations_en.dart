@@ -132,7 +132,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get geminiNoteNot =>
-      'Your other transactions one by one, your notes, your bank\'s alerts and your location are never sent.';
+      'Your other individual transactions, your notes, your bank\'s alerts and your location are never sent.';
 
   @override
   String get geminiNoteTerms =>
@@ -3047,7 +3047,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get instalPaysFrom => 'Paid with';
 
   @override
-  String get instalOutside => 'Outside Quincena: a shop or a loan';
+  String get instalOutside => 'Outside Quincena: a store or a loan';
 
   @override
   String get instalCountedOnce =>

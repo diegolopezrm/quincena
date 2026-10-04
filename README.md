@@ -10,7 +10,7 @@ the questions on the home screen, and "Lo que respondió Gemini" replays five
 sessions Gemini answered for real.
 
 <p align="center">
-  <img src="docs/screens/inicio.png" width="24%" alt="Home screen: what is free until payday, and the questions to ask">
+  <img src="docs/screens/inicio.png" width="24%" alt="Home screen: what you can spend until payday, and the questions to ask">
   <img src="docs/screens/en-que-se-fue.png" width="24%" alt="Where September's money went: what was spent, the change against August and a donut chart by category">
   <img src="docs/screens/meta-cartagena.png" width="24%" alt="The Cartagena goal in dark mode, with a slider for what to set aside each month and the arrival date it gives">
   <img src="docs/screens/suscripciones.png" width="24%" alt="Six subscriptions with a switch on each, the two unused ones switched off">
@@ -74,8 +74,8 @@ database on the device. Totals convert to the currency you pick, with the
 official TRM for dollars and Binance's prices for crypto.
 
 <p align="center">
-  <img src="docs/screens/mis-cuentas.png" width="24%" alt="Home with your own accounts: what is free until payday, two movements waiting to be reviewed, and the accounts">
-  <img src="docs/screens/por-revisar.png" width="24%" alt="Por revisar: a purchase the alert named no shop for, matched to Éxito Laureles 6 metres away; a transfer from Nequi; and a Spotify charge set apart as a possible repeat">
+  <img src="docs/screens/mis-cuentas.png" width="24%" alt="Home with your own accounts: what you can spend until payday, two transactions waiting for review, and the accounts">
+  <img src="docs/screens/por-revisar.png" width="24%" alt="Por revisar: a purchase the alert named no shop for, matched to Éxito Laureles 6 meters away; a transfer from Nequi; and a Spotify charge set apart as a possible repeat">
   <img src="docs/screens/captura.png" width="24%" alt="Automatic capture settings: notification access on Android, recording what is clear on its own, and the location of payments">
 </p>
 
@@ -104,7 +104,7 @@ card's last four digits, a balance that is not the purchase. A receipt is
 read by its labels: the figure after "Valor" or "¿Cuánto?", who got it after
 "Para", the date and time it says, not the clock at the top of the
 screenshot. A payment seen
-by Wallet, the bank's push and an SMS becomes one movement, and one already
+by Wallet, the bank's push and an SMS becomes one transaction, and one already
 entered by hand is not suggested again. Confirming a capture teaches
 Quincena that card's account and that merchant's category. With "Registrar
 solo lo que esté claro" on, the next one goes straight in, and can be undone.
