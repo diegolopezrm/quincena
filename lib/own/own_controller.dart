@@ -664,8 +664,10 @@ class OwnController extends ChangeNotifier {
       if (id != null && _snapshot?.account(id)?.kind == AccountKind.card) {
         continue;
       }
-      final int? remaining = p.remaining;
-      if (remaining == null || remaining == 0) continue;
+      // Without the instalment there is no schedule, but what was financed
+      // is still owed: that much, less what was paid, as an estimate.
+      final int remaining = p.remaining ?? p.principal - p.paid;
+      if (remaining <= 0) continue;
       left += remaining;
       if (!p.totalKnown) estimated = true;
     }

@@ -7,7 +7,8 @@ import '../money/money.dart';
 /// what is left to pay of purchases in instalments that no card holds.
 ///
 /// Every part is in the base currency. [instalments] counts what is left
-/// with interest included, as the schedule has it.
+/// with interest included, as the schedule has it, or, with no schedule,
+/// what was financed less what was paid.
 @immutable
 class NetWorth {
   const NetWorth({

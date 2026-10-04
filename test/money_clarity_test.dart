@@ -370,6 +370,47 @@ void main() {
       expect(text, contains('Patrimonio\n\$680.000'));
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('a purchase in instalments with no instalment known still '
+        'counts what was financed, as an estimate', (tester) async {
+      final OwnController own = await openPage(
+        tester,
+        (OwnController own) => Scaffold(
+          body: SingleChildScrollView(child: AccountsTab(own: own)),
+        ),
+        data: (QuincenaStore store, Account bank, Account card) =>
+            store.setSetting(
+              'commitments.instalments',
+              jsonEncode(<Object?>[
+                // Neither the rate nor the instalment: no schedule to read.
+                Instalments(
+                  id: 'nevera',
+                  name: 'Nevera',
+                  principal: 900000,
+                  count: 12,
+                  firstDue: DateTime(2026, 11, 5),
+                  payments: <(DateTime, int)>[(DateTime(2026, 10, 1), 100000)],
+                ).toJson(),
+              ]),
+            ),
+      );
+      expect(own.instalments.single.remaining, isNull);
+      // 2.000.000 less the 800.000 still owed of what was financed.
+      expect(own.netWorth().instalments.amount, d('800000'));
+      expect(own.netWorth().estimated, isTrue);
+      expect(screen(tester), contains(r'$1.200.000'));
+
+      await tapText(tester, '¿De dónde sale?');
+      final String text = screen(tester);
+      expect(
+        text,
+        contains(
+          'Compras a cuotas\nLo que falta pagar, fuera de tus tarjetas · '
+          'estimado',
+        ),
+      );
+      expect(text, contains(r'−$800.000'));
+    });
   });
 
   group('captures', () {
