@@ -4,6 +4,7 @@ import 'package:decimal/decimal.dart';
 import '../agent/tools.dart';
 import '../data/ledger.dart';
 import '../domain/freelance.dart';
+import '../domain/net_worth.dart';
 import '../domain/records.dart';
 import '../domain/shared.dart';
 import '../domain/trips.dart';
@@ -27,9 +28,14 @@ List<Tool> ownTools(OwnController own) => <Tool>[
         'exchange. For each, its balance written as it is in its currency '
         '(balanceText, to show as it comes), the same in the base currency '
         'when a rate is known (balanceInBase), and whether it is money to '
-        'spend before payday. Then the totals in the base currency and the '
+        'spend before payday. Then, in the base currency, netWorthInBase: '
+        'the accounts with cards\' debt taken off, plus what others owe the '
+        'person, less what they owe others and what is left of installments '
+        'outside a card, each part apart when there is one. It is their net '
+        'worth, never everything they have. spendableInBase is what their '
+        'everyday accounts hold, everyday cards\' debt taken off. And the '
         'rates behind them. Call it for anything about dollars, crypto, one '
-        'account, or everything the person has.',
+        'account, or the net worth.',
     onCall: (_) => accountsAnswer(own),
   ),
   Tool<Map<String, dynamic>>(
@@ -220,6 +226,7 @@ Map<String, Object?> accountsAnswer(OwnController own) {
       ? amount.round().toBigInt().toInt()
       : double.parse(amount.toStringAsFixed(base.decimals));
   final Set<Rate> used = <Rate>{};
+  final NetWorth worth = own.netWorth();
   return <String, Object?>{
     'baseCurrency': base.code,
     'accounts': <Object?>[
@@ -241,7 +248,12 @@ Map<String, Object?> accountsAnswer(OwnController own) {
           };
         }(),
     ],
-    'totalInBase': inBase(own.total().amount),
+    'netWorthInBase': inBase(worth.total.amount),
+    if (worth.estimated) 'netWorthIsEstimate': true,
+    if (!worth.owed.isZero) 'owedToYouInBase': inBase(worth.owed.amount),
+    if (!worth.owing.isZero) 'youOweOthersInBase': inBase(worth.owing.amount),
+    if (!worth.instalments.isZero)
+      'installmentsLeftInBase': inBase(worth.instalments.amount),
     'spendableInBase': inBase(own.total(spendableOnly: true).amount),
     'withoutRate': <String>[for (final Asset a in own.unconverted) a.code],
     'rates': <Object?>[
