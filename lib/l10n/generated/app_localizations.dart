@@ -1031,7 +1031,7 @@ abstract class AppLocalizations {
   /// No description provided for @groupSaved.
   ///
   /// In es, this message translates to:
-  /// **'Ahorros, inversiones y cripto'**
+  /// **'Ahorros e inversiones'**
   String get groupSaved;
 
   /// No description provided for @netWorth.
@@ -8141,6 +8141,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Cupo libre {left} de {limit}'**
   String cardCreditLeftOf(String left, String limit);
+
+  /// No description provided for @groupCrypto.
+  ///
+  /// In es, this message translates to:
+  /// **'Cripto'**
+  String get groupCrypto;
+
+  /// No description provided for @cryptoPerformanceRow.
+  ///
+  /// In es, this message translates to:
+  /// **'Rendimiento y ganancia'**
+  String get cryptoPerformanceRow;
 }
 
 class _AppLocalizationsDelegate

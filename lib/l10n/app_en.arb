@@ -162,7 +162,7 @@
   "deleteAccountTitle": "Delete {name}?",
   "deleteAccountBody": "{count, plural, =0{It has no movements.} =1{Its movement is deleted too. This can't be undone.} other{Its {count} movements are deleted too. This can't be undone.}}",
   "groupSpendable": "Everyday accounts",
-  "groupSaved": "Savings, investments and crypto",
+  "groupSaved": "Savings and investments",
   "netWorth": "Net worth",
   "noAccounts": "No accounts yet. Add your bank's, your wallet or cash with \"Add account\".",
   "yourAccounts": "Your accounts",
@@ -1345,5 +1345,7 @@
   "cardLimitField": "Credit limit (optional)",
   "cardLimitHelp": "With your limit, we show how much credit you have left. It never counts toward what you can spend: it's borrowed money.",
   "cardCreditLeft": "{amount} credit left",
-  "cardCreditLeftOf": "{left} of {limit} credit left"
+  "cardCreditLeftOf": "{left} of {limit} credit left",
+  "groupCrypto": "Crypto",
+  "cryptoPerformanceRow": "Performance and gains"
 }

@@ -11,6 +11,7 @@ import 'package:quincena/domain/records.dart';
 import 'package:quincena/l10n/l10n.dart';
 import 'package:quincena/money/asset.dart';
 import 'package:quincena/own/own_controller.dart';
+import 'package:quincena/portfolio/market.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
 import 'package:quincena/theme/theme.dart';
@@ -25,12 +26,14 @@ const MethodChannel _share = MethodChannel('dev.dlsoft.quincena/share');
 
 /// [page] over a store with 2.000.000 in the bank after September's pay
 /// and a Visa in the app, plus whatever [data] adds. Calls to the reminder
-/// and share channels land in [calls].
+/// and share channels land in [calls]. Prices, when there is crypto, come
+/// from [market].
 Future<OwnController> openPage(
   WidgetTester tester,
   Widget Function(OwnController own) page, {
   Future<void> Function(QuincenaStore store, Account bank, Account card)? data,
   List<MethodCall>? calls,
+  MarketData? market,
 }) async {
   tester.view.physicalSize = const Size(1170, 2532);
   tester.view.devicePixelRatio = 3;
@@ -58,6 +61,7 @@ Future<OwnController> openPage(
     store,
     now: () => pageNow,
     readNative: false,
+    market: market,
   );
   addTearDown(own.dispose);
   await tester.runAsync(() async {

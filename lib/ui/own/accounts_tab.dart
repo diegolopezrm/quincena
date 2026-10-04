@@ -14,6 +14,7 @@ import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
 import 'account_page.dart';
+import 'account_sheet.dart';
 import 'amount_input.dart';
 import 'balance_explained.dart';
 import 'look.dart';
@@ -164,8 +165,9 @@ class _SpendLine extends StatelessWidget {
 /// Every account, grouped by what it is for: the net worth first, as what
 /// the person has minus what they owe, then what the everyday accounts
 /// hold and what everyday cards owe, the everyday accounts, the credit
-/// cards as what is owed, savings and investments, and a line of the rates
-/// behind the totals.
+/// cards as what is owed, savings and investments, crypto with its total
+/// and a row to how it did, the way to add an account, and a line of the
+/// rates behind the totals.
 class AccountsTab extends StatelessWidget {
   const AccountsTab({super.key, required this.own});
 
@@ -186,8 +188,18 @@ class AccountsTab extends StatelessWidget {
     ];
     final List<Account> kept = <Account>[
       for (final Account a in own.accounts)
-        if (!a.spendable && !card(a)) a,
+        if (!a.spendable && !card(a) && !a.asset.isCrypto) a,
     ];
+    // Crypto in a section of its own, whose total is the sum of its rows,
+    // as each converts: how it did is a row, never the total again.
+    final List<Account> coins = <Account>[
+      for (final Account a in own.accounts)
+        if (!a.spendable && !card(a) && a.asset.isCrypto) a,
+    ];
+    var coinsTotal = Money.zero(base);
+    for (final Account a in coins) {
+      if (own.partOfTotal(a) case final Money part) coinsTotal += part;
+    }
     final bool crypto = own.portfolio.hasHoldings;
     // What the money to spend starts from, as on the home card: what the
     // everyday accounts hold, and apart what everyday cards owe.
@@ -243,20 +255,42 @@ class AccountsTab extends StatelessWidget {
           ),
           const SizedBox(height: 24),
         ],
-        if (kept.isNotEmpty || crypto) ...<Widget>[
+        if (kept.isNotEmpty) ...<Widget>[
           SectionLabel(l.groupSaved),
           Panel(
             children: <Widget>[
-              if (crypto) PortfolioCard(own: own, compact: true),
               for (final Account a in kept) AccountRow(own: own, account: a),
             ],
           ),
           const SizedBox(height: 24),
         ],
-        if (!crypto && BinanceLink.available) ...<Widget>[
+        if (crypto) ...<Widget>[
+          SectionLabel(
+            l.groupCrypto,
+            trailing: coins.isEmpty
+                ? null
+                : Figures(
+                    moneyText(coinsTotal, base: base),
+                    style: context.type.titleSmall,
+                  ),
+          ),
+          Panel(
+            children: <Widget>[
+              for (final Account a in coins) AccountRow(own: own, account: a),
+              CryptoPerformanceRow(own: own),
+            ],
+          ),
+          const SizedBox(height: 24),
+        ] else if (BinanceLink.available) ...<Widget>[
           BinanceCard(own: own),
           const SizedBox(height: 24),
         ],
+        OutlinedButton.icon(
+          onPressed: () => showAccountSheet(context, own: own),
+          icon: const Icon(Glyph.plus, size: 18),
+          label: Text(l.addAccount),
+        ),
+        const SizedBox(height: 24),
         RatesSummary(own: own),
       ],
     );

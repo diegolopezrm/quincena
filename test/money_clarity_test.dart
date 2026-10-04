@@ -23,6 +23,8 @@ import 'package:quincena/format/money.dart';
 import 'package:quincena/l10n/l10n.dart';
 import 'package:quincena/licenses.dart';
 import 'package:quincena/money/asset.dart';
+import 'package:quincena/money/money.dart';
+import 'package:quincena/money/rates.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/store/store.dart';
 import 'package:quincena/theme/theme.dart';
@@ -30,11 +32,13 @@ import 'package:quincena/ui/own/account_page.dart';
 import 'package:quincena/ui/own/accounts_tab.dart';
 import 'package:quincena/ui/own/home_tab.dart';
 import 'package:quincena/ui/own/inbox_page.dart';
+import 'package:quincena/ui/own/portfolio_page.dart';
 import 'package:quincena/ui/standing.dart';
 
 import 'fonts.dart';
 import 'own_flow_test.dart' show screen, settle;
 import 'page_harness.dart';
+import 'portfolio_test.dart' show FakeMarket;
 
 Decimal d(String s) => Decimal.parse(s);
 
@@ -401,6 +405,85 @@ void main() {
       await settle(tester);
       await tapText(tester, 'Banco');
       expect(limit, findsNothing);
+    });
+
+    testWidgets('crypto has a section of its own: its total is what its rows '
+        'add up to, and how it did is a row that repeats no total', (
+      tester,
+    ) async {
+      final OwnController own = await openPage(
+        tester,
+        (OwnController own) => Scaffold(
+          body: SingleChildScrollView(child: AccountsTab(own: own)),
+        ),
+        market: FakeMarket(
+          prices: const <String, (String, String)>{'BTC': ('100000', '98000')},
+        ),
+        data: (QuincenaStore store, Account bank, Account card) async {
+          await store.saveRates(<Rate>[
+            Rate(
+              asset: 'USD',
+              quote: 'COP',
+              value: d('4000'),
+              asOf: DateTime(2026, 10, 3),
+              source: 'trm',
+            ),
+            Rate(
+              asset: 'BTC',
+              quote: 'USDT',
+              value: d('100000'),
+              asOf: pageNow,
+              source: 'binance',
+            ),
+          ]);
+          await store.addAccount(
+            name: 'Cuenta en dólares',
+            kind: AccountKind.bank,
+            asset: Asset.usd,
+            opening: d('100'),
+            spendable: false,
+          );
+          await store.addAccount(
+            name: 'Binance',
+            kind: AccountKind.exchange,
+            asset: Asset.usdt,
+            opening: d('500'),
+            institution: 'Binance',
+          );
+          await store.addAccount(
+            name: 'Bitcoin',
+            kind: AccountKind.exchange,
+            asset: Asset.btc,
+            opening: d('0.01'),
+            institution: 'Binance',
+            openingCost: Money(d('3000000'), Asset.cop),
+          );
+        },
+      );
+      await tester.runAsync(own.portfolio.refresh);
+      await settle(tester);
+      final String text = screen(tester);
+      // The dollars are savings; the coins are not among them.
+      expect(text, contains('AHORROS E INVERSIONES'));
+      expect(text, contains('≈ \$400.000'));
+      // 500 USDT and 0,01 BTC at 100.000 dollars, at 4.000 pesos.
+      expect(text, contains('CRIPTO\n\$6.000.000'));
+      expect(text, contains('500 USDT\n≈ \$2.000.000'));
+      expect(text, contains('0,01 BTC\n≈ \$4.000.000'));
+      expect(find.text(r'$6.000.000'), findsOneWidget);
+      expect(
+        text,
+        contains('Rendimiento y ganancia\nGanancia no realizada +33,3 %'),
+      );
+      // The way to add an account sits after the sections, in the list.
+      expect(
+        tester.getTopLeft(find.text('Agregar cuenta')).dy,
+        greaterThan(tester.getTopLeft(find.text('Rendimiento y ganancia')).dy),
+      );
+
+      await tapText(tester, 'Rendimiento y ganancia');
+      expect(find.byType(PortfolioPage), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('net worth counts shared debts and instalments outside a card, '

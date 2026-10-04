@@ -115,22 +115,19 @@ class CoinMark extends StatelessWidget {
   }
 }
 
-/// What the person's crypto is worth now: in the Accounts tab, above the
-/// accounts, and a tap away from the whole portfolio.
-class PortfolioCard extends StatefulWidget {
-  const PortfolioCard({super.key, required this.own, this.compact = false});
+/// The last row of the Cripto section in Accounts: how the crypto did
+/// against what it cost, a tap away from the whole of it. No total: the
+/// rows above it already add up to that.
+class CryptoPerformanceRow extends StatefulWidget {
+  const CryptoPerformanceRow({super.key, required this.own});
 
   final OwnController own;
 
-  /// A row among the other accounts rather than a card of its own, with
-  /// the total gain and not the day's change, which is the page's to show.
-  final bool compact;
-
   @override
-  State<PortfolioCard> createState() => _PortfolioCardState();
+  State<CryptoPerformanceRow> createState() => _CryptoPerformanceRowState();
 }
 
-class _PortfolioCardState extends State<PortfolioCard> {
+class _CryptoPerformanceRowState extends State<CryptoPerformanceRow> {
   PortfolioController get _controller => widget.own.portfolio;
 
   @override
@@ -150,190 +147,60 @@ class _PortfolioCardState extends State<PortfolioCard> {
     listenable: _controller,
     builder: (BuildContext context, _) {
       final AppLocalizations l = context.l10n;
-      final Portfolio? p = _controller.portfolio;
-      if (p == null || p.isEmpty) return const SizedBox.shrink();
-      final Asset base = p.base;
-      final double? day = _controller.day?.change;
-      final double? gain = p.gainRatio;
-      void open() => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (BuildContext context) => PortfolioPage(own: widget.own),
-        ),
-      );
-      if (widget.compact) {
-        return InkWell(
-          onTap: open,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: <Widget>[
-                _Stack(
-                  assets: <Asset>[
-                    for (final (Asset a, Pair _) in p.allocation.take(3)) a,
-                  ],
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(l.portfolioTitle, style: context.type.titleSmall),
-                      if (gain != null)
-                        Text(
-                          '${gain >= 0 ? l.portfolioGain : l.portfolioLoss} '
-                          '${percentText(gain)}',
-                          style: context.type.bodySmall?.copyWith(
-                            color: changeColor(context, gain),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Figures(
-                  moneyText(Money(p.value.base, base), base: base),
-                  style: context.type.titleSmall,
-                ),
-              ],
-            ),
+      final double? gain = _controller.portfolio?.gainRatio;
+      return InkWell(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (BuildContext context) => PortfolioPage(own: widget.own),
           ),
-        );
-      }
-      return Material(
-        color: context.colors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: context.colors.line),
         ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: open,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 16, 14, 16),
-            child: Row(
-              children: <Widget>[
-                _Stack(
-                  assets: <Asset>[
-                    for (final (Asset a, Pair _) in p.allocation.take(3)) a,
-                  ],
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(l.portfolioTitle, style: context.type.titleSmall),
-                      const SizedBox(height: 2),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Figures(
-                          moneyText(Money(p.value.base, base), base: base),
-                          style: context.type.titleLarge,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 4,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: <Widget>[
-                          if (day != null)
-                            _ChangePill(fraction: day, label: l.rangeDay),
-                          if (gain != null)
-                            Text(
-                              '${gain >= 0 ? l.portfolioGain : l.portfolioLoss} '
-                              '${percentText(gain)}',
-                              style: context.type.bodySmall?.copyWith(
-                                color: changeColor(context, gain),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: <Widget>[
+              ExcludeSemantics(
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: context.colors.brandSoft,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Glyph.chartLineUp,
+                    size: 20,
+                    color: context.colors.brand,
                   ),
                 ),
-                const SizedBox(width: 6),
-                Icon(
-                  Glyph.caretRight,
-                  size: 18,
-                  color: context.colors.inkFaint,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      l.cryptoPerformanceRow,
+                      style: context.type.titleSmall,
+                    ),
+                    if (gain != null)
+                      Text(
+                        '${gain >= 0 ? l.portfolioGain : l.portfolioLoss} '
+                        '${percentText(gain)}',
+                        style: context.type.bodySmall?.copyWith(
+                          color: changeColor(context, gain),
+                        ),
+                      ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 6),
+              Icon(Glyph.caretRight, size: 18, color: context.colors.inkFaint),
+            ],
           ),
         ),
       );
     },
   );
-}
-
-/// Up to three coin marks, overlapping.
-class _Stack extends StatelessWidget {
-  const _Stack({required this.assets});
-
-  final List<Asset> assets;
-
-  @override
-  Widget build(BuildContext context) {
-    if (assets.isEmpty) return const CoinMark(Asset.btc);
-    const double size = 34;
-    return SizedBox(
-      width: size + (assets.length - 1) * 16,
-      height: size,
-      child: Stack(
-        children: <Widget>[
-          for (var i = assets.length - 1; i >= 0; i--)
-            Positioned(
-              left: i * 16.0,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: context.colors.surface, width: 2),
-                  color: context.colors.surface,
-                ),
-                child: CoinMark(assets[i], size: size - 4),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-/// A change in a soft pill of its color, with what it measures above.
-class _ChangePill extends StatelessWidget {
-  const _ChangePill({required this.fraction, required this.label});
-
-  final double fraction;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final Color color = changeColor(context, fraction);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Icon(
-            fraction >= 0 ? Glyph.trendUp : Glyph.trendDown,
-            size: 14,
-            color: color,
-          ),
-          const SizedBox(width: 4),
-          Figures(
-            '${percentText(fraction)} $label',
-            style: context.type.labelMedium?.copyWith(color: color),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// Everything the person holds in crypto: what it is worth now, how it

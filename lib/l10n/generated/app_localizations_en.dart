@@ -578,7 +578,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get groupSpendable => 'Everyday accounts';
 
   @override
-  String get groupSaved => 'Savings, investments and crypto';
+  String get groupSaved => 'Savings and investments';
 
   @override
   String get netWorth => 'Net worth';
@@ -5224,4 +5224,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String cardCreditLeftOf(String left, String limit) {
     return '$left of $limit credit left';
   }
+
+  @override
+  String get groupCrypto => 'Crypto';
+
+  @override
+  String get cryptoPerformanceRow => 'Performance and gains';
 }

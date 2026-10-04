@@ -190,7 +190,7 @@
   "deleteAccountBody": "{count, plural, =0{No tiene movimientos.} =1{Se borra también su movimiento. No se puede deshacer.} other{Se borran también sus {count} movimientos. No se puede deshacer.}}",
   "@deleteAccountBody": {"placeholders": {"count": {"type": "int"}}},
   "groupSpendable": "Cuentas de uso diario",
-  "groupSaved": "Ahorros, inversiones y cripto",
+  "groupSaved": "Ahorros e inversiones",
   "netWorth": "Patrimonio",
   "noAccounts": "Aún no tienes cuentas. Agrega la de tu banco, tu billetera o el efectivo con «Agregar cuenta».",
   "yourAccounts": "Tus cuentas",
@@ -1647,5 +1647,7 @@
   "cardCreditLeft": "Cupo libre {amount}",
   "@cardCreditLeft": {"placeholders": {"amount": {"type": "String"}}},
   "cardCreditLeftOf": "Cupo libre {left} de {limit}",
-  "@cardCreditLeftOf": {"placeholders": {"left": {"type": "String"}, "limit": {"type": "String"}}}
+  "@cardCreditLeftOf": {"placeholders": {"left": {"type": "String"}, "limit": {"type": "String"}}},
+  "groupCrypto": "Cripto",
+  "cryptoPerformanceRow": "Rendimiento y ganancia"
 }

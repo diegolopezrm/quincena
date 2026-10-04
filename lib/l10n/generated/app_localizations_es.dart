@@ -579,7 +579,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get groupSpendable => 'Cuentas de uso diario';
 
   @override
-  String get groupSaved => 'Ahorros, inversiones y cripto';
+  String get groupSaved => 'Ahorros e inversiones';
 
   @override
   String get netWorth => 'Patrimonio';
@@ -5220,4 +5220,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String cardCreditLeftOf(String left, String limit) {
     return 'Cupo libre $left de $limit';
   }
+
+  @override
+  String get groupCrypto => 'Cripto';
+
+  @override
+  String get cryptoPerformanceRow => 'Rendimiento y ganancia';
 }
