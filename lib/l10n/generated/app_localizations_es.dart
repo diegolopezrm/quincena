@@ -57,7 +57,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get noteChoseMonthly => 'Elegiste cuánto apartar';
 
   @override
-  String get noteAskedCancel => 'Pediste cancelar suscripciones';
+  String get noteAskedCancel => 'Marcaste suscripciones como canceladas';
 
   @override
   String get noteAskedPayments => 'Pediste ver los pagos';
@@ -317,7 +317,7 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get cancelSaves => 'Si cancelas lo que apagaste, te ahorras';
+  String get cancelSaves => 'Si cancelas las que marcaste, te ahorras';
 
   @override
   String used(String ago) {
@@ -4762,4 +4762,19 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get widgetAddFailed =>
       'Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena.';
+
+  @override
+  String get cancelPickHint =>
+      'Marca las que quieras cancelar para ver cuánto ahorras';
+
+  @override
+  String subscriptionSelect(String name) {
+    return 'Seleccionar $name para cancelar';
+  }
+
+  @override
+  String get subscriptionToCancel => 'Para cancelar';
+
+  @override
+  String get subscriptionCancelled => 'Cancelada';
 }

@@ -185,7 +185,7 @@ abstract class AppLocalizations {
   /// No description provided for @noteAskedCancel.
   ///
   /// In es, this message translates to:
-  /// **'Pediste cancelar suscripciones'**
+  /// **'Marcaste suscripciones como canceladas'**
   String get noteAskedCancel;
 
   /// No description provided for @noteAskedPayments.
@@ -587,7 +587,7 @@ abstract class AppLocalizations {
   /// No description provided for @cancelSaves.
   ///
   /// In es, this message translates to:
-  /// **'Si cancelas lo que apagaste, te ahorras'**
+  /// **'Si cancelas las que marcaste, te ahorras'**
   String get cancelSaves;
 
   /// No description provided for @used.
@@ -7566,6 +7566,30 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena.'**
   String get widgetAddFailed;
+
+  /// No description provided for @cancelPickHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Marca las que quieras cancelar para ver cuánto ahorras'**
+  String get cancelPickHint;
+
+  /// No description provided for @subscriptionSelect.
+  ///
+  /// In es, this message translates to:
+  /// **'Seleccionar {name} para cancelar'**
+  String subscriptionSelect(String name);
+
+  /// No description provided for @subscriptionToCancel.
+  ///
+  /// In es, this message translates to:
+  /// **'Para cancelar'**
+  String get subscriptionToCancel;
+
+  /// No description provided for @subscriptionCancelled.
+  ///
+  /// In es, this message translates to:
+  /// **'Cancelada'**
+  String get subscriptionCancelled;
 }
 
 class _AppLocalizationsDelegate

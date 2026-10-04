@@ -72,14 +72,15 @@ class MovementItem {
 /// A subscription, as the savings calculation sees it.
 @GenUiData(
   description:
-      'A subscription charged every month, and whether the person wants to '
-      'keep it.',
+      'A subscription charged every month, whether the person wants to keep '
+      'it, and whether they already cancelled it.',
 )
 class SubscriptionItem {
   const SubscriptionItem({
     required this.name,
     required this.price,
     required this.keep,
+    this.cancelled = false,
   });
 
   /// The service, as the statement names it.
@@ -90,4 +91,7 @@ class SubscriptionItem {
 
   /// Whether the person wants to keep paying for it.
   final bool keep;
+
+  /// Whether the person says they already cancelled it with the service.
+  final bool cancelled;
 }

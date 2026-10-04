@@ -16,11 +16,12 @@ final CatalogItem subscriptionListCatalogItem = CatalogItem(
   dataSchema: S.object(
     description:
         'The person\'s subscriptions, one SubscriptionRow per item, '
-        'with a footer saying what cancelling the unticked ones would '
+        'with a footer saying what cancelling the ticked ones would '
         'save. Send the rows as a template over the list in the data '
         'model, and bind `savings` to `money` over '
         '`savingsIfCancelled` on that same list: the footer then '
-        'updates on the device as switches flip.',
+        'updates on the device as boxes are ticked, and asks for a '
+        'tick while none is.',
     properties: {
       'title': A2uiSchemas.stringReference(
         description: 'A heading, such as "Tus suscripciones".',
@@ -30,8 +31,7 @@ final CatalogItem subscriptionListCatalogItem = CatalogItem(
       ),
       'savings': A2uiSchemas.stringReference(
         description:
-            'What cancelling the switched-off rows saves each month, '
-            'formatted.',
+            'What cancelling the ticked rows saves each month, formatted.',
       ),
     },
     required: ['title', 'rows', 'savings'],

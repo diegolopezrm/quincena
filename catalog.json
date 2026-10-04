@@ -24,7 +24,7 @@
               ]
             },
             "label": {
-              "description": "What pressing it does, as a verb: \"Guardar\", \"Apartar cada quincena\".",
+              "description": "What pressing it does, as a verb: \"Guardar\", \"Revisar las marcadas\".",
               "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicString"
             },
             "emphasis": {
@@ -996,7 +996,7 @@
               ]
             },
             "savings": {
-              "description": "What cancelling the switched-off rows saves each month, formatted.",
+              "description": "What cancelling the ticked rows saves each month, formatted.",
               "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicString"
             }
           },
@@ -1037,12 +1037,16 @@
               "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicNumber"
             },
             "keep": {
-              "description": "Whether the person keeps paying for it. The component writes the value the user chooses back to this property, so bind it to a data path if you need to read the result.",
+              "description": "Whether the person keeps paying for it. False while its box is ticked. The component writes the value the user chooses back to this property, so bind it to a data path if you need to read the result.",
               "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicBoolean"
             },
             "lastUsed": {
               "description": "The last day it was used, written as YYYY-MM-DD.",
               "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicString"
+            },
+            "cancelled": {
+              "description": "Whether the person already cancelled it with the service. Quincena cancels nothing: this only shows what they said they did.",
+              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicBoolean"
             }
           },
           "required": [
@@ -1430,7 +1434,7 @@
     },
     "savingsIfCancelled": {
       "type": "object",
-      "description": "What cancelling every subscription whose `keep` is false saves each month, in pesos. Pass it the same list a SubscriptionList repeats over, and wrap it in `money` to show it.",
+      "description": "What cancelling every subscription whose `keep` is false, and that is not cancelled already, saves each month, in pesos. Pass it the same list a SubscriptionList repeats over, and wrap it in `money` to show it.",
       "properties": {
         "call": {
           "const": "savingsIfCancelled"
@@ -1444,7 +1448,7 @@
                   "type": "array",
                   "items": {
                     "type": "object",
-                    "description": "A subscription charged every month, and whether the person wants to keep it.",
+                    "description": "A subscription charged every month, whether the person wants to keep it, and whether they already cancelled it.",
                     "properties": {
                       "name": {
                         "type": "string",
@@ -1457,6 +1461,10 @@
                       "keep": {
                         "type": "boolean",
                         "description": "Whether the person wants to keep paying for it."
+                      },
+                      "cancelled": {
+                        "type": "boolean",
+                        "description": "Whether the person says they already cancelled it with the service."
                       }
                     },
                     "required": [

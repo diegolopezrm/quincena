@@ -17,7 +17,7 @@
 
   "noteSavedExpense": "You saved the expense",
   "noteChoseMonthly": "You chose how much to set aside",
-  "noteAskedCancel": "You asked to cancel subscriptions",
+  "noteAskedCancel": "You marked subscriptions as canceled",
   "noteAskedPayments": "You asked to see the payments",
   "noteTappedAction": "You tapped an action",
   "problemKey": "The key didn't work. Check it in Settings.",
@@ -87,7 +87,7 @@
   "goalProgress": "{percent} percent of the goal saved",
   "goalSlider": "Monthly amount for {name}",
   "perMonth": "{amount} a month",
-  "cancelSaves": "Cancel what you switched off and you save",
+  "cancelSaves": "Cancel the ones you checked and you save",
   "used": "used {ago}",
   "noUsage": "no usage data",
   "limit": "Limit",
@@ -1251,5 +1251,9 @@
   "widgetHide": "Hide amounts in the widget",
   "widgetHideHelp": "It says until when, without the figure.",
   "widgetAdd": "Add to home screen",
-  "widgetAddFailed": "Your home screen doesn't allow adding it from here. Touch and hold an empty spot and look for Quincena."
+  "widgetAddFailed": "Your home screen doesn't allow adding it from here. Touch and hold an empty spot and look for Quincena.",
+  "cancelPickHint": "Check the ones you want to cancel to see how much you'd save",
+  "subscriptionSelect": "Select {name} to cancel",
+  "subscriptionToCancel": "To cancel",
+  "subscriptionCancelled": "Canceled"
 }

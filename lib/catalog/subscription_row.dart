@@ -11,13 +11,15 @@ import '../l10n/l10n.dart';
 
 part 'subscription_row.genui.dart';
 
-/// One subscription, with a switch to keep it or not.
+/// One subscription, with a box to tick it for cancelling.
 @GenUiWidget(
   description:
       'One subscription with its monthly price, when it was last used, and a '
-      'switch to keep it. Bind `keep` to a data path: the switch writes there. '
-      'Meant as the template row of a SubscriptionList, with every property '
-      'bound to a path relative to the row.',
+      'checkbox to tick it for cancelling. Bind `keep` to a data path: ticking '
+      'the box writes false there. Set `cancelled` only after the person says '
+      'they cancelled it with the service: the row is then struck through, '
+      'with no box. Meant as the template row of a SubscriptionList, with '
+      'every property bound to a path relative to the row.',
 )
 class SubscriptionRow extends StatelessWidget {
   const SubscriptionRow({
@@ -27,6 +29,7 @@ class SubscriptionRow extends StatelessWidget {
     required this.keep,
     @GenUiWrites('keep') this.onKeepChanged,
     this.lastUsed,
+    this.cancelled = false,
   });
 
   /// The service, as the statement names it.
@@ -38,11 +41,15 @@ class SubscriptionRow extends StatelessWidget {
   /// The last day it was used, written as YYYY-MM-DD.
   final String? lastUsed;
 
-  /// Whether the person keeps paying for it.
+  /// Whether the person keeps paying for it. False while its box is ticked.
   final bool keep;
 
-  /// Called when the switch is flipped.
+  /// Called when the box is ticked or cleared, with the new [keep].
   final ValueChanged<bool>? onKeepChanged;
+
+  /// Whether the person already cancelled it with the service. Quincena
+  /// cancels nothing: this only shows what they said they did.
+  final bool cancelled;
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +58,8 @@ class SubscriptionRow extends StatelessWidget {
     final String usage = used == null
         ? context.l10n.noUsage
         : context.l10n.used(ago(used));
+    // Ticked is only a choice; struck through is what the person did.
+    final bool ticked = !keep && !cancelled;
 
     return MergeSemantics(
       child: Padding(
@@ -63,13 +72,20 @@ class SubscriptionRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: context.type.bodyLarge?.copyWith(
-                      decoration: keep ? null : TextDecoration.lineThrough,
-                      color: keep ? null : context.colors.inkFaint,
+                  // The box's own label says the name, with what ticking
+                  // it does.
+                  ExcludeSemantics(
+                    excluding: !cancelled,
+                    child: Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.type.bodyLarge?.copyWith(
+                        decoration: cancelled
+                            ? TextDecoration.lineThrough
+                            : null,
+                        color: cancelled ? context.colors.inkFaint : null,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -81,7 +97,7 @@ class SubscriptionRow extends StatelessWidget {
                           text: pesos(price),
                           style: TextStyle(
                             fontFeatures: tabular,
-                            color: keep ? context.colors.inkSoft : null,
+                            color: cancelled ? null : context.colors.inkSoft,
                           ),
                         ),
                         const TextSpan(text: ' · '),
@@ -98,10 +114,49 @@ class SubscriptionRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Switch(value: keep, onChanged: onKeepChanged),
+            if (cancelled)
+              _Tag(
+                context.l10n.subscriptionCancelled,
+                color: context.colors.inkSoft,
+                background: context.colors.sunken,
+              )
+            else ...<Widget>[
+              if (ticked)
+                _Tag(
+                  context.l10n.subscriptionToCancel,
+                  color: context.colors.caution,
+                  background: context.colors.cautionSoft,
+                ),
+              Checkbox(
+                value: ticked,
+                semanticLabel: context.l10n.subscriptionSelect(name),
+                onChanged: onKeepChanged == null
+                    ? null
+                    : (bool? on) => onKeepChanged!(on != true),
+              ),
+            ],
           ],
         ),
       ),
     );
   }
+}
+
+/// A short state next to the box, such as "Para cancelar".
+class _Tag extends StatelessWidget {
+  const _Tag(this.text, {required this.color, required this.background});
+
+  final String text;
+  final Color color;
+  final Color background;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+    decoration: BoxDecoration(
+      color: background,
+      borderRadius: BorderRadius.circular(99),
+    ),
+    child: Text(text, style: context.type.labelSmall?.copyWith(color: color)),
+  );
 }

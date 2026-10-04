@@ -66,6 +66,21 @@ class Subscription {
 
   /// Charged for over a month without being used, as far as is known.
   bool unusedAsOf(DateTime today) => (daysSinceUsed(today) ?? 0) > 30;
+
+  /// The next day it is charged after [today]: this month's [chargeDay]
+  /// while it is ahead, otherwise next month's, on the last day of a
+  /// shorter month.
+  DateTime nextCharge(DateTime today) {
+    DateTime on(int year, int month) => DateTime(
+      year,
+      month,
+      math.min(chargeDay, DateTime(year, month + 1, 0).day),
+    );
+    final DateTime thisMonth = on(today.year, today.month);
+    return thisMonth.isAfter(today)
+        ? thisMonth
+        : on(today.year, today.month + 1);
+  }
 }
 
 /// Money being put aside for one thing.

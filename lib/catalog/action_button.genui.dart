@@ -22,8 +22,8 @@ final CatalogItem actionButtonCatalogItem = CatalogItem(
     properties: {
       'label': A2uiSchemas.stringReference(
         description:
-            'What pressing it does, as a verb: "Guardar", "Apartar cada '
-            'quincena".',
+            'What pressing it does, as a verb: "Guardar", "Revisar las '
+            'marcadas".',
       ),
       'emphasis': A2uiSchemas.stringReference(
         description:

@@ -48,4 +48,37 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('cancelling subscriptions holds at twice the text size', (
+    tester,
+  ) async {
+    final Session session = await open(tester);
+    final Future<void> answered = session.ask(ScriptedAgent.starters[2]);
+    await tester.pumpAndSettle();
+    await answered;
+
+    // Ticked rows carry a tag next to the box; the summary and the receipt
+    // come after.
+    Future<void> tap(Finder found) async {
+      await tester.ensureVisible(found.last);
+      await tester.pumpAndSettle();
+      await tester.tap(found.last);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    }
+
+    for (final String name in <String>['Fit24 gimnasio', 'Lingo Pro']) {
+      await tap(
+        find.byWidgetPredicate(
+          (Widget w) =>
+              w is Checkbox &&
+              w.semanticLabel == 'Seleccionar $name para cancelar',
+        ),
+      );
+    }
+    expect(find.text('Para cancelar'), findsNWidgets(2));
+    await tap(find.text('Revisar las marcadas'));
+    await tap(find.text('Ya las cancelé'));
+    expect(find.text('Cancelada'), findsNWidgets(2));
+  });
 }

@@ -57,7 +57,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noteChoseMonthly => 'You chose how much to set aside';
 
   @override
-  String get noteAskedCancel => 'You asked to cancel subscriptions';
+  String get noteAskedCancel => 'You marked subscriptions as canceled';
 
   @override
   String get noteAskedPayments => 'You asked to see the payments';
@@ -317,7 +317,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get cancelSaves => 'Cancel what you switched off and you save';
+  String get cancelSaves => 'Cancel the ones you checked and you save';
 
   @override
   String used(String ago) {
@@ -4763,4 +4763,19 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get widgetAddFailed =>
       'Your home screen doesn\'t allow adding it from here. Touch and hold an empty spot and look for Quincena.';
+
+  @override
+  String get cancelPickHint =>
+      'Check the ones you want to cancel to see how much you\'d save';
+
+  @override
+  String subscriptionSelect(String name) {
+    return 'Select $name to cancel';
+  }
+
+  @override
+  String get subscriptionToCancel => 'To cancel';
+
+  @override
+  String get subscriptionCancelled => 'Canceled';
 }

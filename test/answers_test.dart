@@ -4,6 +4,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/agent/scripted_agent.dart';
 import 'package:quincena/app.dart';
+import 'package:quincena/catalog/subscription_row.dart';
 import 'package:quincena/session/session.dart';
 
 import 'fonts.dart';
@@ -39,6 +40,38 @@ Future<void> ask(WidgetTester tester, Session session, String question) async {
   final Future<void> answered = session.ask(question);
   await settle(tester);
   await answered;
+}
+
+/// The subscriptions ticked to cancel, in every list on screen.
+final Finder ticked = find.byWidgetPredicate(
+  (Widget w) => w is Checkbox && w.value == true,
+);
+
+/// Names struck through, which only what the person cancelled is.
+final Finder struck = find.byWidgetPredicate(
+  (Widget w) => w is Text && w.style?.decoration == TextDecoration.lineThrough,
+);
+
+/// Ticks [name] to cancel it, in the latest list that has it.
+Future<void> tick(WidgetTester tester, String name) => tapIn(
+  tester,
+  find.byWidgetPredicate(
+    (Widget w) =>
+        w is Checkbox && w.semanticLabel == 'Seleccionar $name para cancelar',
+  ),
+);
+
+/// Presses the latest button labelled [label].
+Future<void> press(WidgetTester tester, String label) =>
+    tapIn(tester, find.text(label));
+
+/// Scrolls the latest of [found] into view and taps it, once the scroll
+/// has been laid out.
+Future<void> tapIn(WidgetTester tester, Finder found) async {
+  await tester.ensureVisible(found.last);
+  await settle(tester);
+  await tester.tap(found.last);
+  await settle(tester);
 }
 
 /// Every string on screen, rich text included, for asserting on content
@@ -116,25 +149,74 @@ void main() {
     expect(messages, isEmpty);
   });
 
-  testWidgets('switching a subscription off updates the savings', (
+  testWidgets('cancelling subscriptions: tick, review, then say it is done', (
     tester,
   ) async {
     final Session session = await open(tester);
     await ask(tester, session, ScriptedAgent.starters[2]);
 
-    // The two nobody has used in a month start switched off.
-    expect(screen(tester), contains(r'$153.900 al mes'));
-
-    // Switch off one more: the row after the two stale ones is Cineplus,
-    // which costs $38.900.
-    final Finder on = find.byWidgetPredicate(
-      (Widget w) => w is Switch && w.value,
+    // Nothing comes ticked: the answer only names the unused ones.
+    expect(screen(tester), contains('Fit24 gimnasio y Lingo Pro'));
+    expect(ticked, findsNothing);
+    expect(
+      screen(tester),
+      contains('Marca las que quieras cancelar para ver cuánto ahorras'),
     );
-    await tester.ensureVisible(on.first);
-    await tester.tap(on.first);
-    await settle(tester);
+    expect(screen(tester), isNot(contains('Si cancelas las que marcaste')));
 
-    expect(screen(tester), contains(r'$192.800 al mes'));
+    await tick(tester, 'Fit24 gimnasio');
+    expect(screen(tester), contains('Si cancelas las que marcaste'));
+    expect(screen(tester), contains(r'$119.000 al mes'));
+    expect(find.text('Para cancelar'), findsOneWidget);
+    await tick(tester, 'Lingo Pro');
+    expect(screen(tester), contains(r'$153.900 al mes'));
+    // A tick is a choice, not something done.
+    expect(struck, findsNothing);
+
+    await press(tester, 'Revisar las marcadas');
+
+    String text = screen(tester);
+    expect(text, contains('ANTES DE CANCELAR'));
+    expect(text, contains(r'Vas a cancelar dos: te ahorras $153.900 al mes'));
+    expect(text, contains('Quincena no las cancela por ti'));
+    // When each one is charged next: Fit24 on the 1st, already past today.
+    expect(text, contains('1 nov'));
+    expect(text, contains('20 oct'));
+    expect(struck, findsNothing);
+
+    await press(tester, 'Ya las cancelé');
+
+    text = screen(tester);
+    expect(text, contains('HECHO POR TI'));
+    expect(text, contains('Canceladas: Fit24 gimnasio y Lingo Pro'));
+    expect(text, contains('En la demo esto no cambia tus datos.'));
+    expect(text, isNot(contains('Cancelo')));
+    expect(find.text('Cancelada'), findsNWidgets(2));
+    expect(struck, findsNWidgets(2));
+  });
+
+  testWidgets('the choice can change before anything is cancelled', (
+    tester,
+  ) async {
+    final Session session = await open(tester);
+    await ask(tester, session, ScriptedAgent.starters[2]);
+
+    // Reviewing with nothing ticked says so, and keeps them all.
+    await press(tester, 'Revisar las marcadas');
+    expect(screen(tester), contains('No marcaste ninguna'));
+
+    await tick(tester, 'Lingo Pro');
+    await press(tester, 'Revisar las marcadas');
+    expect(screen(tester), contains(r'Vas a cancelar una: te ahorras $34.900'));
+    expect(find.text('Ya la cancelé'), findsOneWidget);
+
+    // Back to the list, with the one already ticked still ticked.
+    await press(tester, 'Cambiar selección');
+    final Finder last = find.byWidgetPredicate(
+      (Widget w) => w is SubscriptionRow && w.name == 'Lingo Pro',
+    );
+    expect(tester.widget<SubscriptionRow>(last.last).keep, isFalse);
+    expect(struck, findsNothing);
   });
 
   testWidgets('the expense form checks the amount before saving', (
@@ -161,8 +243,11 @@ void main() {
     await settle(tester);
 
     expect(screen(tester), contains(r'Listo: $52.000 en mercado'));
-    // And the money it took is no longer free.
-    expect(screen(tester), contains(r'$1.317.300 libres'));
+    // And the money it took is no longer there to spend.
+    expect(
+      screen(tester),
+      contains(r'Ahora puedes gastar $1.317.300 hasta el 15 de octubre.'),
+    );
   });
 
   testWidgets('against last month: bars and what moved', (tester) async {

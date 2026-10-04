@@ -20,7 +20,7 @@
 
   "noteSavedExpense": "Guardaste el gasto",
   "noteChoseMonthly": "Elegiste cuánto apartar",
-  "noteAskedCancel": "Pediste cancelar suscripciones",
+  "noteAskedCancel": "Marcaste suscripciones como canceladas",
   "noteAskedPayments": "Pediste ver los pagos",
   "noteTappedAction": "Tocaste una acción",
   "problemKey": "La key no funcionó. Revísala en Ajustes.",
@@ -103,7 +103,7 @@
   "@goalSlider": {"placeholders": {"name": {"type": "String"}}},
   "perMonth": "{amount} al mes",
   "@perMonth": {"placeholders": {"amount": {"type": "String"}}},
-  "cancelSaves": "Si cancelas lo que apagaste, te ahorras",
+  "cancelSaves": "Si cancelas las que marcaste, te ahorras",
   "used": "usado {ago}",
   "@used": {"placeholders": {"ago": {"type": "String"}}},
   "noUsage": "sin datos de uso",
@@ -1507,5 +1507,10 @@
   "widgetHide": "Ocultar montos en el widget",
   "widgetHideHelp": "Dice hasta cuándo, sin la cifra.",
   "widgetAdd": "Agregar a la pantalla de inicio",
-  "widgetAddFailed": "Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena."
+  "widgetAddFailed": "Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena.",
+  "cancelPickHint": "Marca las que quieras cancelar para ver cuánto ahorras",
+  "subscriptionSelect": "Seleccionar {name} para cancelar",
+  "@subscriptionSelect": {"placeholders": {"name": {"type": "String"}}},
+  "subscriptionToCancel": "Para cancelar",
+  "subscriptionCancelled": "Cancelada"
 }
