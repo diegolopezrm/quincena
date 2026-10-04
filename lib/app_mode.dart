@@ -8,6 +8,7 @@ import 'money/asset.dart';
 import 'money/rate_sources.dart';
 import 'ai/allowance.dart';
 import 'own/own_controller.dart';
+import 'portfolio/market.dart';
 import 'store/store.dart';
 import 'widget/home_widget.dart';
 
@@ -37,18 +38,29 @@ class AppModeController extends ChangeNotifier {
     this.startInDemo = false,
     this.fetcher,
     DateTime Function()? now,
+    this.market,
   }) : now = now ?? DateTime.now;
 
   /// Where rates come from; tests pass one that never leaves the machine.
   final RateFetcher? fetcher;
 
+  /// Where crypto prices come from; tests and the store's screenshots pass
+  /// one with fixed prices.
+  final MarketData? market;
+
   /// The clock the person's own accounts are read with.
   final DateTime Function() now;
 
-  /// A controller for the person's own accounts, with this one's clock and
-  /// rates. [readNative] false leaves what was captured where it is.
-  OwnController newOwn({bool readNative = true}) =>
-      OwnController(store!, fetcher: fetcher, now: now, readNative: readNative);
+  /// A controller for the person's own accounts, with this one's clock,
+  /// rates and prices. [readNative] false leaves what was captured where it
+  /// is.
+  OwnController newOwn({bool readNative = true}) => OwnController(
+    store!,
+    fetcher: fetcher,
+    now: now,
+    readNative: readNative,
+    market: market,
+  );
 
   /// Null where the build cannot keep a database: the demo is all there is.
   final QuincenaStore? store;
