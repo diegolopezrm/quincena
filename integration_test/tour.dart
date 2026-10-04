@@ -30,6 +30,7 @@ import '../test/commitments_data.dart';
 import '../test/own_flow_test.dart' show fakeRates, settle;
 import '../test/real_life_data.dart';
 import '../test_screens/accounts.dart';
+import '../test_screens/store_screens_test.dart' show ExampleMarket;
 
 /// Takes the picture of what is on screen now, under [name].
 typedef Shot = Future<void> Function(String name);
@@ -111,6 +112,8 @@ Future<void> playScene(
       startInDemo: scene.demo,
       fetcher: fakeRates(),
       now: () => screensNow,
+      // Fixed prices: a live one would make each picture show another total.
+      market: ExampleMarket(),
     ),
   );
   await settle(tester);
@@ -459,7 +462,9 @@ final List<Scene> scenes = <Scene>[
         '02/09/2026;ABONO NOMINA DL SOFT;2.400.000\n'
         '03/09/2026;PAGO PSE CLARO;-89.900\n'
         '04/09/2026;PAGO A JUAN PEREZ;-30.000\n'
-        '05/09/2026;RETIRO CAJERO;-200.000\n',
+        '05/09/2026;RETIRO CAJERO;-200.000\n'
+        // The card's payment, which goes in as a move to the Visa.
+        '06/09/2026;PAGO TARJETA VISA;-480.000\n',
       ),
     );
     final OwnController own = t.own;
@@ -477,7 +482,7 @@ final List<Scene> scenes = <Scene>[
     );
     await settle(t.tester);
     await t.page('revisar-extracto');
-    await t.tapContaining('Importar 5');
+    await t.tapContaining('Importar 6');
     await t.page('extracto-importado');
     await t.back();
   }),
