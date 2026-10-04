@@ -37,8 +37,9 @@ class Ticker {
   final DateTime at;
 
   /// The change over the last 24 hours, as a fraction: 0.012 is 1,2 %.
-  double get change =>
-      open == Decimal.zero ? 0 : ((price - open) / open).toDouble();
+  /// Null without a price from a day ago, rather than a change of zero.
+  double? get change =>
+      open == Decimal.zero ? null : ((price - open) / open).toDouble();
 }
 
 /// A coin's closing price at one point of a chart, in tether.

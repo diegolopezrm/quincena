@@ -170,10 +170,44 @@ void main() {
     test('adds up what has a price, and names what does not', () {
       expect(p.value, Pair(d('5000000'), d('1250')));
       expect(p.cost.base, d('4000000'));
-      expect(p.gain.base, d('1000000'));
+      expect(p.gain!.base, d('1000000'));
       expect(p.unpriced, <Asset>[Asset.of('PEPE')]);
       expect(p.holdings.last.asset, Asset.of('PEPE'));
+      // Tether is held at one dollar: it moves nothing, and has no 24 hours
+      // of its own to show.
       expect(p.change24h, closeTo(200 / 1050, 1e-9));
+      final Holding tether = p.holdings[1];
+      expect(tether.pegged, isTrue);
+      expect(tether.change24h, isNull);
+    });
+
+    test('without prices from a day ago, the day\'s move is unknown', () {
+      final Portfolio offline = buildPortfolio(
+        snapshot(),
+        tickers: const <String, Ticker>{},
+        history: DollarHistory(<Rate>[trm('4000', march)]),
+      );
+      expect(offline.moved24h, isNull);
+      expect(offline.change24h, isNull);
+
+      // A ticker with no price a day ago is no measurement either.
+      final Portfolio unopened = buildPortfolio(
+        snapshot(),
+        tickers: <String, Ticker>{
+          'BTC': Ticker(
+            asset: 'BTC',
+            price: d('100000'),
+            open: Decimal.zero,
+            high: d('100000'),
+            low: d('100000'),
+            at: DateTime(2026, 10, 2, 12),
+          ),
+          'USDT': Ticker.peg('USDT', DateTime(2026, 10, 2, 12)),
+        },
+        history: DollarHistory(<Rate>[trm('4000', march)]),
+      );
+      expect(unopened.holdings.first.change24h, isNull);
+      expect(unopened.change24h, isNull);
     });
 
     test('splits by coin, largest first, and by place', () {
@@ -185,6 +219,101 @@ void main() {
         p.byInstitution.keys,
         containsAll(<String>['Binance', 'MetaMask']),
       );
+    });
+  });
+
+  group('what came in with no purchase price', () {
+    final Account btc = Account(
+      id: 'btc',
+      name: 'Bitcoin',
+      kind: AccountKind.exchange,
+      asset: Asset.btc,
+      opening: Decimal.zero,
+      institution: 'Binance',
+      spendable: false,
+    );
+    final Account usdt = Account(
+      id: 'usdt',
+      name: 'Tether',
+      kind: AccountKind.exchange,
+      asset: Asset.usdt,
+      opening: d('500'),
+      institution: 'Binance',
+      spendable: false,
+    );
+    StoreSnapshot snapshot(List<Entry> entries) => StoreSnapshot(
+      profile: const Profile(
+        name: 'Diego',
+        base: Asset.cop,
+        schedule: TwiceMonthly(),
+      ),
+      accounts: <Account>[btc, usdt],
+      entries: entries,
+      recurring: const <RecurringCharge>[],
+      goals: const <SavingsGoal>[],
+      rates: <Rate>[trm('4000', DateTime(2026, 10, 2))],
+      categories: const <CategoryItem>[],
+    );
+    final Map<String, Ticker> tickers = <String, Ticker>{
+      'BTC': Ticker(
+        asset: 'BTC',
+        price: d('100000'),
+        open: d('100000'),
+        high: d('100000'),
+        low: d('100000'),
+        at: DateTime(2026, 10, 2, 12),
+      ),
+      'USDT': Ticker.peg('USDT', DateTime(2026, 10, 2, 12)),
+    };
+    final DollarHistory history = DollarHistory(<Rate>[
+      trm('4000', DateTime(2026, 3, 10)),
+    ]);
+
+    test('is left out of the gain, and its value said apart', () {
+      final Portfolio p = buildPortfolio(
+        snapshot(<Entry>[
+          // A reward with no cost, then a purchase for 3.000.000.
+          Entry(
+            id: 'reward',
+            accountId: 'btc',
+            amount: d('0.01'),
+            date: DateTime(2026, 4, 1),
+            kind: EntryKind.income,
+          ),
+          Entry(
+            id: 'bought',
+            accountId: 'btc',
+            amount: d('0.01'),
+            date: DateTime(2026, 3, 10),
+            kind: EntryKind.income,
+            cost: Money(d('3000000'), Asset.cop),
+          ),
+        ]),
+        tickers: tickers,
+        history: history,
+      );
+      final Holding bitcoin = p.holdings.first;
+      expect(bitcoin.value!.base, d('8000000'));
+      expect(bitcoin.uncostedValue!.base, d('4000000'));
+      // 4.000.000 for what cost 3.000.000, not 8.000.000.
+      expect(bitcoin.gain!.base, d('1000000'));
+      expect(bitcoin.gainRatio, closeTo(1 / 3, 1e-9));
+      // The tether the account started with has no cost either.
+      expect(p.uncostedValue.base, d('6000000'));
+      expect(p.gain!.base, d('1000000'));
+      expect(p.gainRatio, closeTo(1 / 3, 1e-9));
+    });
+
+    test('with nothing of known cost, there is no gain to tell', () {
+      final Portfolio p = buildPortfolio(
+        snapshot(const <Entry>[]),
+        tickers: tickers,
+        history: history,
+      );
+      expect(p.gain, isNull);
+      expect(p.gainRatio, isNull);
+      // Only tether: its day is the peg, and that is all there is.
+      expect(p.moved24h, Pair.zero);
     });
   });
 
@@ -234,6 +363,77 @@ void main() {
       d('200'),
     ]);
     expect(points.last.gain.base, d('800000'));
+    // Step by step, 10 % and then 9,09 % on what was held: 20 % in all,
+    // as against the first value, since the purchase came after the rise.
+    expect(points[1].ratio, closeTo(0.1, 1e-9));
+    expect(points.last.ratio, closeTo(0.2, 1e-9));
+  });
+
+  test('money put in before a rise is not counted as a return', () {
+    final Account btc = Account(
+      id: 'btc',
+      name: 'Bitcoin',
+      kind: AccountKind.exchange,
+      asset: Asset.btc,
+      opening: d('0.01'),
+      spendable: false,
+    );
+    final DateTime t0 = DateTime(2026, 10, 1, 10);
+    final DateTime t1 = DateTime(2026, 10, 1, 11);
+    final DateTime t2 = DateTime(2026, 10, 1, 12);
+    final List<ValuePoint> points = valueOverTime(
+      accounts: <Account>[btc],
+      entries: <Entry>[
+        // Nine times as much bought while the price stood still.
+        Entry(
+          id: 'more',
+          accountId: 'btc',
+          amount: d('0.09'),
+          date: DateTime(2026, 10, 1, 10, 30),
+          kind: EntryKind.income,
+        ),
+      ],
+      candles: <String, List<Candle>>{
+        'BTC': <Candle>[
+          Candle(t0, d('100000')),
+          Candle(t1, d('100000')),
+          Candle(t2, d('110000')),
+        ],
+      },
+      dollarOn: (_) => d('4000'),
+      base: Asset.cop,
+    );
+    // The rise made 1.000 dollars on 0,1 BTC: the whole first value, but
+    // only 10 % on what was held when it came.
+    expect(points.last.gain.usd, d('1000'));
+    final double againstFirst =
+        points.last.gain.base.toDouble() / points.first.value.base.toDouble();
+    expect(againstFirst, closeTo(1, 1e-9));
+    expect(points.last.ratio, closeTo(0.1, 1e-9));
+  });
+
+  test('the dollar\'s own move counts in the return in pesos', () {
+    final Account usdt = Account(
+      id: 'usdt',
+      name: 'Tether',
+      kind: AccountKind.exchange,
+      asset: Asset.usdt,
+      opening: d('100'),
+      spendable: false,
+    );
+    final DateTime t0 = DateTime(2026, 9, 1);
+    final DateTime t1 = DateTime(2026, 9, 2);
+    final List<ValuePoint> points = valueOverTime(
+      accounts: <Account>[usdt],
+      entries: const <Entry>[],
+      candles: <String, List<Candle>>{
+        'USDT': <Candle>[Candle(t0, Decimal.one), Candle(t1, Decimal.one)],
+      },
+      dollarOn: (DateTime day) => day == t0 ? d('4000') : d('4200'),
+      base: Asset.cop,
+    );
+    expect(points.last.gain, Pair(d('20000'), Decimal.zero));
+    expect(points.last.ratio, closeTo(0.05, 1e-9));
   });
 
   group('the portfolio tool', () {
@@ -288,6 +488,10 @@ void main() {
     test('answers with prices read for it, and the gain in pesos', () async {
       final Map<String, Object?> answer = portfolioAnswer(own);
       expect(answer['holdings'], isNotEmpty);
+      // Before any price, the day's move is unknown, not zero.
+      expect(answer.containsKey('change24hInBase'), isTrue);
+      expect(answer['change24hInBase'], isNull);
+      expect(answer['change24hPercent'], isNull);
       await own.portfolio.refreshIfOlder(const Duration(minutes: 1));
       final Map<String, Object?> priced = portfolioAnswer(own);
       expect(priced['baseCurrency'], 'COP');
@@ -296,8 +500,13 @@ void main() {
       expect(priced['totalValueInBase'], 8400000);
       expect(priced['totalValueInUsd'], 2100);
       expect(priced['totalCostInBase'], 6000000);
-      expect(priced['gainInBase'], 2400000);
-      expect(priced['gainPercent'], 40);
+      // The 0,001 BTC with no purchase price is not gain: 0,02 BTC are
+      // worth 8.000.000 and cost 6.000.000.
+      expect(priced['gainInBase'], 2000000);
+      expect(priced['gainPercent'], 33.33);
+      expect(priced['valueWithoutCostInBase'], 400000);
+      // 0,021 BTC a day ago at 98.000 dollars were worth 8.232.000.
+      expect(priced['change24hInBase'], 168000);
       final Map<Object?, Object?> held =
           (priced['holdings']! as List<Object?>).single!
               as Map<Object?, Object?>;

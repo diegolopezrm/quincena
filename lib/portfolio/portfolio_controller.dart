@@ -8,6 +8,7 @@ import '../money/asset.dart';
 import '../money/rates.dart';
 import '../own/own_controller.dart';
 import '../store/store.dart';
+import 'cost_basis.dart';
 import 'market.dart';
 import 'portfolio.dart';
 
@@ -71,6 +72,22 @@ class PortfolioController extends ChangeNotifier {
   /// The portfolio's value over [range], or null while it is being read.
   List<ValuePoint>? chart(ChartRange range) => _charts[range];
   bool charting(ChartRange range) => _charting.contains(range);
+
+  /// What prices made over the last 24 hours on what was held, and as a
+  /// fraction: from the day's chart, so the figure and the chart are one
+  /// calculation, or from the tickers while it is read. Null when neither
+  /// knows.
+  ({Pair moved, double change})? get day {
+    final List<ValuePoint>? points = _charts[ChartRange.day];
+    if (points != null && points.length > 1) {
+      return (moved: points.last.gain, change: points.last.ratio);
+    }
+    final Portfolio? p = portfolio;
+    final Pair? moved = p?.moved24h;
+    final double? change = p?.change24h;
+    if (moved == null || change == null) return null;
+    return (moved: moved, change: change);
+  }
 
   void _ownChanged() {
     _portfolio = null;
@@ -182,6 +199,8 @@ class PortfolioController extends ChangeNotifier {
       _portfolio = null;
       _notify();
     }
+    // The day's move comes from the day's candles while someone looks.
+    if (_watchers > 0) await loadChart(ChartRange.day);
   }
 
   /// The past dollar rates from the first movement in an investment on,
@@ -245,8 +264,11 @@ class PortfolioController extends ChangeNotifier {
     }
     _charting.add(range);
     _notify();
+    // Within a week the peso barely moves against the dollar: today's TRM,
+    // which also covers the hours before the day's is published.
+    final bool recent = range == ChartRange.day || range == ChartRange.week;
     try {
-      if (!_historyLoaded) await _loadHistory(s.profile.base);
+      if (!recent && !_historyLoaded) await _loadHistory(s.profile.base);
       final Set<String> codes = <String>{
         for (final Account a in s.accounts)
           if (a.asset.isCrypto) a.asset.code,
@@ -262,9 +284,6 @@ class PortfolioController extends ChangeNotifier {
       final Decimal? dollarNow = base.code == 'USD'
           ? Decimal.one
           : RateTable(s.rates).rate(Asset.usd, base);
-      // Within a week the peso barely moves against the dollar: today's
-      // TRM, which also covers the hours before the day's is published.
-      final bool recent = range == ChartRange.day || range == ChartRange.week;
       _charts[range] = valueOverTime(
         accounts: s.accounts,
         entries: s.entries,

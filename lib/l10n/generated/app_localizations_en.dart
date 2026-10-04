@@ -2224,17 +2224,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get portfolioToday => 'In 24 hours';
 
   @override
-  String get portfolioGain => 'Total gain';
+  String get portfolioGain => 'Unrealized gain';
 
   @override
-  String get portfolioLoss => 'Total loss';
+  String get portfolioLoss => 'Unrealized loss';
 
   @override
-  String get portfolioSinceBought => 'against what you paid';
+  String get portfolioSinceBought => 'on what you paid';
 
   @override
-  String portfolioPricedAt(String time) {
-    return 'Binance prices at $time';
+  String portfolioPricedAt(String when) {
+    return 'Binance prices from $when';
   }
 
   @override
@@ -2300,7 +2300,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String portfolioUncosted(String amount) {
-    return '$amount came in with no purchase price and count as gain. You can add what they cost in their account.';
+    return '$amount came in with no purchase price and are left out of the gain. You can add what they cost in their account.';
   }
 
   @override
@@ -4597,7 +4597,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chartPerformanceNote =>
-      'Only what prices did: buying or selling doesn\'t move this line.';
+      'Only what your coins\' prices did, at today\'s dollar: buying or selling doesn\'t move this line.';
 
   @override
   String get binancePromiseRead => 'Read only';
@@ -4763,4 +4763,42 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get widgetAddFailed =>
       'Your home screen doesn\'t allow adding it from here. Touch and hold an empty spot and look for Quincena.';
+
+  @override
+  String get portfolioNoData => 'No data';
+
+  @override
+  String get portfolioNoData24h => 'No price from 24 hours ago yet.';
+
+  @override
+  String get portfolioNoPrice => 'No price';
+
+  @override
+  String portfolioDayDetail(String percent) {
+    return '$percent from prices';
+  }
+
+  @override
+  String get portfolioGainMeaning =>
+      'What you still hold is worth today minus what you paid for it, in pesos. It includes the dollar\'s move against the peso and Binance fees; what you already sold is shown separately.';
+
+  @override
+  String portfolioGainUncosted(String amount) {
+    return 'Not counting $amount that came in with no purchase price.';
+  }
+
+  @override
+  String portfolioConvertedWith(String day) {
+    return 'Converted to pesos at the official rate (TRM) of $day';
+  }
+
+  @override
+  String get portfolioRefresh => 'Refresh';
+
+  @override
+  String get portfolioRefreshLabel => 'Refresh prices';
+
+  @override
+  String get chartPerformanceNoteFx =>
+      'What prices and the dollar against the peso did: buying or selling doesn\'t move this line.';
 }

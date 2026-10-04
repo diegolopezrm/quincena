@@ -20,6 +20,7 @@ class Holding {
     required this.price,
     required this.value,
     required this.change24h,
+    this.pegged = false,
   });
 
   final Position position;
@@ -33,11 +34,37 @@ class Holding {
   /// The fraction its price moved in the last 24 hours, when known.
   final double? change24h;
 
+  /// A stablecoin, held at one dollar: its price does not move by the day,
+  /// so it has no [change24h] to show.
+  final bool pegged;
+
   Account get account => position.account;
   Asset get asset => position.asset;
 
-  /// What it gained against what it cost, while held. Null without a price.
-  Pair? get gain => value == null ? null : value! - position.cost;
+  /// What the part of it with a known cost is worth; null without a price.
+  Pair? get costedValue {
+    final Pair? v = value;
+    final Decimal q = position.quantity;
+    if (v == null || position.uncosted <= Decimal.zero) return v;
+    return v.share(q - position.uncosted, q);
+  }
+
+  /// What the part of it that came in with no known cost is worth, left out
+  /// of [gain]; null without a price.
+  Pair? get uncostedValue {
+    final Pair? v = value;
+    final Pair? costed = costedValue;
+    return v == null || costed == null ? null : v - costed;
+  }
+
+  /// What it gained against what it cost, while held, on the part whose
+  /// cost is known: what came in with no purchase price is not gain. Null
+  /// without a price, or when none of it has a known cost.
+  Pair? get gain {
+    final Pair? costed = costedValue;
+    if (costed == null || position.quantity <= position.uncosted) return null;
+    return costed - position.cost;
+  }
 
   /// [gain] as a fraction of the cost; null when nothing of it cost
   /// anything known.
@@ -99,22 +126,53 @@ class Portfolio {
   Pair get cost =>
       priced.fold(Pair.zero, (Pair s, Holding h) => s + h.position.cost);
 
-  Pair get gain => value - cost;
+  /// What the priced holdings hold that came in with no known cost: left
+  /// out of [gain], and said apart.
+  Pair get uncostedValue =>
+      priced.fold(Pair.zero, (Pair s, Holding h) => s + h.uncostedValue!);
 
-  double? get gainRatio => cost.base <= Decimal.zero
-      ? null
-      : _divide(gain.base, cost.base).toDouble();
+  /// What is still held gained against what it cost, on the part whose cost
+  /// is known; null when nothing priced has a known cost.
+  Pair? get gain {
+    Pair? sum;
+    for (final Holding h in priced) {
+      if (h.gain case final Pair g) sum = (sum ?? Pair.zero) + g;
+    }
+    return sum;
+  }
 
-  Pair get moved24h => priced.fold(
-    Pair.zero,
-    (Pair s, Holding h) => s + (h.moved24h ?? Pair.zero),
-  );
+  double? get gainRatio {
+    final Pair? g = gain;
+    if (g == null || cost.base <= Decimal.zero) return null;
+    return _divide(g.base, cost.base).toDouble();
+  }
 
-  /// The fraction the whole moved in the last 24 hours.
+  /// What the value moved in the last 24 hours, from each coin's ticker; a
+  /// stablecoin moves nothing. Null when some coin has no price from a day
+  /// ago, or when only stablecoins have a price and there is more, so that
+  /// a missing price never reads as no change.
+  Pair? get moved24h {
+    var sum = Pair.zero;
+    var measured = false;
+    for (final Holding h in priced) {
+      if (h.pegged) continue;
+      final Pair? moved = h.moved24h;
+      if (moved == null) return null;
+      sum = sum + moved;
+      measured = true;
+    }
+    if (priced.isEmpty) return null;
+    if (!measured && holdings.any((Holding h) => !h.pegged)) return null;
+    return sum;
+  }
+
+  /// The fraction the whole moved in the last 24 hours, when known.
   double? get change24h {
-    final Pair before = value - moved24h;
+    final Pair? moved = moved24h;
+    if (moved == null) return null;
+    final Pair before = value - moved;
     if (before.base <= Decimal.zero) return null;
-    return _divide(moved24h.base, before.base).toDouble();
+    return _divide(moved.base, before.base).toDouble();
   }
 
   /// Whether some cost had to be converted with another day's rate.
@@ -215,13 +273,16 @@ Portfolio buildPortfolio(
           if (!p.account.archived && p.quantity != Decimal.zero)
             () {
               final Pair? price = priceOf(p.asset);
+              final bool pegged = MarketData.pegged.contains(p.asset.code);
               return Holding(
                 position: p,
                 price: price,
                 value: price == null
                     ? null
                     : Pair(price.base * p.quantity, price.usd * p.quantity),
-                change24h: tickers[p.asset.code]?.change,
+                // A stablecoin's ticker is its peg, not a measurement.
+                change24h: pegged ? null : tickers[p.asset.code]?.change,
+                pegged: pegged,
               );
             }(),
       ]..sort((Holding a, Holding b) {
@@ -243,7 +304,8 @@ Portfolio buildPortfolio(
 /// One point of the portfolio's value over time.
 @immutable
 class ValuePoint {
-  ValuePoint(this.at, this.value, [Pair? gain]) : gain = gain ?? Pair.zero;
+  ValuePoint(this.at, this.value, [Pair? gain, this.ratio = 0])
+    : gain = gain ?? Pair.zero;
 
   final DateTime at;
   final Pair value;
@@ -251,6 +313,11 @@ class ValuePoint {
   /// What prices made since the first point, on what was held at each
   /// moment: buying or selling moves [value], not this.
   final Pair gain;
+
+  /// [gain] as a fraction, in the base currency: each step's against what
+  /// was held at its start, chained. Money put in along the way neither
+  /// inflates nor dilutes it, as it would against the first point's value.
+  final double ratio;
 }
 
 /// What the portfolio was worth at every candle of [candles], with what
@@ -306,6 +373,7 @@ List<ValuePoint> valueOverTime({
   final Map<String, Decimal> priceBefore = <String, Decimal>{};
   Decimal? dollarBefore;
   var gain = Pair.zero;
+  var ratio = 0.0;
   for (final DateTime t in axis) {
     var usd = Decimal.zero;
     var complete = true;
@@ -342,14 +410,19 @@ List<ValuePoint> valueOverTime({
     if (before != null) {
       var stepUsd = Decimal.zero;
       var stepBase = Decimal.zero;
+      var startBase = Decimal.zero;
       for (final MapEntry<String, Decimal> h in heldBefore.entries) {
         final Decimal? was = priceBefore[h.key];
         final Decimal? now = priceNow[h.key];
         if (was == null || now == null) continue;
         stepUsd += h.value * (now - was);
         stepBase += h.value * (now * dollar - was * before);
+        startBase += h.value * was * before;
       }
       gain = gain + Pair(stepBase, stepUsd);
+      if (startBase > Decimal.zero) {
+        ratio = (1 + ratio) * (1 + _divide(stepBase, startBase).toDouble()) - 1;
+      }
     }
     heldBefore
       ..clear()
@@ -361,7 +434,7 @@ List<ValuePoint> valueOverTime({
       ..clear()
       ..addAll(priceNow);
     dollarBefore = dollar;
-    out.add(ValuePoint(t, Pair(usd * dollar, usd), gain));
+    out.add(ValuePoint(t, Pair(usd * dollar, usd), gain, ratio));
   }
   return out;
 }

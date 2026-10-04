@@ -39,9 +39,11 @@ List<Tool> ownTools(OwnController own) => <Tool>[
         'moment. Each holding with where it is kept, how much is held '
         '(quantityText, to show as it comes), its price, what it is worth in '
         'the base currency and in dollars, how its price moved in the last '
-        '24 hours, what it cost and the gain or loss against that cost. The '
-        'cost follows the money that went in: bitcoin bought with tether '
-        'bought with pesos cost those pesos. Then the totals, how the value '
+        '24 hours, what it cost and the unrealized gain or loss against that '
+        'cost, which leaves out what came in with no purchase price. The '
+        'cost follows the money that went in, Binance fees included: bitcoin '
+        'bought with tether bought with pesos cost those pesos. A null '
+        'figure is unknown, never zero. Then the totals, how the value '
         'splits between coins, what sales and conversions already gained, '
         'and when the prices were read. Call it for anything about crypto, '
         'an exchange, prices, or gains and losses on investments.',
@@ -153,6 +155,8 @@ Map<String, Object?> portfolioAnswer(OwnController own) {
       ? null
       : double.parse((fraction * 100).toStringAsFixed(2));
   final Decimal total = p.value.base;
+  // The same 24 hours the screen shows.
+  final ({Pair moved, double change})? day = own.portfolio.day;
   return <String, Object?>{
     'baseCurrency': base.code,
     'pricesFrom': 'Binance',
@@ -160,10 +164,12 @@ Map<String, Object?> portfolioAnswer(OwnController own) {
     'totalValueInBase': inBase(total),
     'totalValueInUsd': dollars(p.value.usd),
     'totalCostInBase': inBase(p.cost.base),
-    'gainInBase': inBase(p.gain.base),
+    'gainInBase': p.gain == null ? null : inBase(p.gain!.base),
     'gainPercent': percent(p.gainRatio),
-    'change24hInBase': inBase(p.moved24h.base),
-    'change24hPercent': percent(p.change24h),
+    if (p.uncostedValue.base > Decimal.zero)
+      'valueWithoutCostInBase': inBase(p.uncostedValue.base),
+    'change24hInBase': day == null ? null : inBase(day.moved.base),
+    'change24hPercent': percent(day?.change),
     'realizedInBase': inBase(p.realized.base),
     'holdings': <Object?>[
       for (final Holding h in p.holdings)

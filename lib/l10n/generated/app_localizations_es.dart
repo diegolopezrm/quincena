@@ -2225,17 +2225,17 @@ class AppLocalizationsEs extends AppLocalizations {
   String get portfolioToday => 'En 24 horas';
 
   @override
-  String get portfolioGain => 'Ganancia total';
+  String get portfolioGain => 'Ganancia no realizada';
 
   @override
-  String get portfolioLoss => 'Pérdida total';
+  String get portfolioLoss => 'Pérdida no realizada';
 
   @override
-  String get portfolioSinceBought => 'frente a lo que pagaste';
+  String get portfolioSinceBought => 'sobre lo que pagaste';
 
   @override
-  String portfolioPricedAt(String time) {
-    return 'Precios de Binance a las $time';
+  String portfolioPricedAt(String when) {
+    return 'Precios de Binance del $when';
   }
 
   @override
@@ -2300,7 +2300,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String portfolioUncosted(String amount) {
-    return '$amount llegaron sin precio de compra y cuentan como ganancia. Puedes poner lo que costaron en su cuenta.';
+    return '$amount llegaron sin precio de compra y no cuentan en la ganancia. Puedes poner lo que costaron en su cuenta.';
   }
 
   @override
@@ -4595,7 +4595,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get chartPerformanceNote =>
-      'Solo lo que movieron los precios: comprar o vender no cambia esta línea.';
+      'Solo lo que movieron los precios de tus monedas, con el dólar de hoy: comprar o vender no cambia esta línea.';
 
   @override
   String get binancePromiseRead => 'Solo lectura';
@@ -4762,4 +4762,42 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get widgetAddFailed =>
       'Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena.';
+
+  @override
+  String get portfolioNoData => 'Sin dato';
+
+  @override
+  String get portfolioNoData24h => 'Aún no hay precio de hace 24 horas.';
+
+  @override
+  String get portfolioNoPrice => 'Sin precio';
+
+  @override
+  String portfolioDayDetail(String percent) {
+    return '$percent por precio';
+  }
+
+  @override
+  String get portfolioGainMeaning =>
+      'Lo que vale hoy lo que aún tienes menos lo que pagaste por eso, en pesos. Incluye cuánto se movió el dólar frente al peso y las comisiones de Binance; lo que ya vendiste va aparte.';
+
+  @override
+  String portfolioGainUncosted(String amount) {
+    return 'Sin contar $amount que llegó sin precio de compra.';
+  }
+
+  @override
+  String portfolioConvertedWith(String day) {
+    return 'Pasados a pesos con la TRM del $day';
+  }
+
+  @override
+  String get portfolioRefresh => 'Actualizar';
+
+  @override
+  String get portfolioRefreshLabel => 'Actualizar precios';
+
+  @override
+  String get chartPerformanceNoteFx =>
+      'Lo que movieron los precios y el dólar frente al peso: comprar o vender no cambia esta línea.';
 }
