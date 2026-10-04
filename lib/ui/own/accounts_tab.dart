@@ -339,29 +339,52 @@ class RatesPage extends StatelessWidget {
   );
 }
 
-/// Where the rates converting [asset] to [base] come from, as a person
-/// knows them: `TRM`, `Binance`, or typed by hand.
-String rateSources(
+/// The conversion of [asset] to [base], one leg per line, as a person
+/// reads it: the market price of a coin, a stablecoin counted as a dollar,
+/// and the rate that takes it to [base], each with where and when it comes
+/// from. Each rate is written as its source gives it, with its currency
+/// named, so a `$` beside pesos is never a dollar.
+List<String> rateStepLines(
   AppLocalizations l,
   RateTable rates,
   Asset asset,
   Asset base,
-) {
-  final List<Rate> used = rates.used(asset, base);
-  if (used.any((Rate r) => r.manual)) return l.rateManual;
-  final List<String> names = <String>[
-    for (final Rate r in used)
-      switch (r.source) {
-        'trm' => l.rateSourceTrm,
-        'binance' => l.rateSourceBinance,
-        'ecb' => l.rateSourceEcb,
-        _ => r.source,
-      },
-  ];
-  if (asset.code == 'USDT' || asset.code == 'USDC') {
-    names.insert(0, l.stablecoinPeg(asset.code));
+) => <String>[
+  for (final RateStep step in rates.steps(asset, base))
+    _stepLine(l, step, base),
+];
+
+/// One leg of a conversion, as [rateStepLines] writes it.
+String _stepLine(AppLocalizations l, RateStep step, Asset base) {
+  final Rate? r = step.rate;
+  if (r == null) {
+    // Only a stablecoin and the dollar meet without a rate.
+    return l.stablecoinPeg(step.from == 'USD' ? step.to : step.from);
   }
-  return names.toSet().join(' · ');
+  final Asset one = Asset.of(r.asset);
+  final String unit = one.isCrypto ? one.code : one.symbol ?? one.code;
+  final String value = formatAmount(
+    r.value,
+    Asset.of(r.quote),
+    base: base,
+    decimals: r.value < Decimal.fromInt(10) ? 4 : 2,
+  );
+  final String source = switch (r.source) {
+    'trm' => l.rateSourceTrm,
+    'binance' => l.rateSourceBinance,
+    'ecb' => l.rateSourceEcb,
+    _ => r.source,
+  };
+  return switch (step.kind) {
+    RateStepKind.manual => l.rateStepManual(unit, value),
+    RateStepKind.price => l.rateStepPrice(
+      unit,
+      value,
+      source,
+      dayAndTime(r.asOf),
+    ),
+    _ => l.rateStepConvert(step.to, unit, value, source, dayShortMonth(r.asOf)),
+  };
 }
 
 /// How current the conversions are, and each rate the totals use.
@@ -449,8 +472,6 @@ class _RateLine extends StatelessWidget {
       .where((Rate r) => r.manual && r.pair == '${asset.code}/${_quote.code}')
       .firstOrNull;
 
-  String _sources(AppLocalizations l) => rateSources(l, own.rates, asset, base);
-
   Future<void> _edit(BuildContext context) async {
     final Asset quote = _quote;
     final _RateChoice? choice = await showDialog<_RateChoice>(
@@ -490,6 +511,7 @@ class _RateLine extends StatelessWidget {
     final Decimal? fetched = typed == null
         ? null
         : own.fetchedRate(asset, _quote);
+    final List<String> steps = rateStepLines(l, own.rates, asset, base);
     final String text = r == null
         ? l.ratesMissing(asset.code)
         : '1 ${asset.code} = ${formatAmount(r, base, base: base, decimals: r < Decimal.fromInt(10) ? 4 : 2)}';
@@ -520,6 +542,11 @@ class _RateLine extends StatelessWidget {
                       if (typed != null) const _ManualTag(),
                     ],
                   ),
+                  // A rate typed for the pair itself is the line above:
+                  // its one step would only say it again.
+                  if (typed == null || steps.length > 1)
+                    for (final String step in steps)
+                      Figures(step, style: context.type.bodySmall),
                   if (typed != null) ...<Widget>[
                     Text(
                       l.rateManualOn(dayShortMonth(typed.asOf)),
@@ -544,8 +571,7 @@ class _RateLine extends StatelessWidget {
                       ),
                       child: Text(l.rateUseFetchedShort),
                     ),
-                  ] else if (r != null)
-                    Text(_sources(l), style: context.type.bodySmall),
+                  ],
                 ],
               ),
             ),

@@ -204,7 +204,6 @@
   "ratesFailed": "No se pudieron actualizar. Se usan las últimas guardadas.",
   "ratesMissing": "Sin tasa para {assets}: cuenta como cero en los totales.",
   "@ratesMissing": {"placeholders": {"assets": {"type": "String"}}},
-  "rateManual": "Escrita a mano",
   "rateSourceTrm": "TRM oficial",
   "rateSourceBinance": "Binance",
   "rateSourceEcb": "Banco Central Europeo",
@@ -212,7 +211,7 @@
   "rateEditBody": "Cuánto vale 1 {asset} en {quote}. Una tasa escrita a mano no se reemplaza al actualizar.",
   "@rateEditBody": {"placeholders": {"asset": {"type": "String"}, "quote": {"type": "String"}}},
   "rateUseFetched": "Volver a la tasa automática",
-  "stablecoinPeg": "{asset} se cuenta como un dólar.",
+  "stablecoinPeg": "{asset} se cuenta como 1 US$",
   "@stablecoinPeg": {"placeholders": {"asset": {"type": "String"}}},
   "addMovement": "Agregar movimiento",
   "editMovement": "Editar movimiento",
@@ -564,8 +563,6 @@
   "freeExplainEstimate": "Es una estimación: cuenta lo que ya pasó y lo que está programado hasta el pago. Lo que gastes o recibas sin programarlo la cambia.",
   "freeExplainHeldAt": "{held} a {rate}",
   "@freeExplainHeldAt": {"placeholders": {"held": {"type": "String"}, "rate": {"type": "String"}}},
-  "freeExplainRateOf": "tasa del {date}",
-  "@freeExplainRateOf": {"placeholders": {"date": {"type": "String"}}},
   "importData": "Importar un archivo",
   "importConfirmTitle": "¿Reemplazar todo con este archivo?",
   "importConfirmBody": "Lo que tienes ahora en Quincena se borra y queda lo del archivo.",
@@ -1514,5 +1511,11 @@
   "rateAutomaticNow": "La automática hoy: {value}",
   "@rateAutomaticNow": {"placeholders": {"value": {"type": "String"}}},
   "rateUseFetchedShort": "Usar la automática",
-  "rateRestoreFailed": "No se pudo traer la tasa automática. Sigue la tuya; intenta de nuevo con conexión."
+  "rateRestoreFailed": "No se pudo traer la tasa automática. Sigue la tuya; intenta de nuevo con conexión.",
+  "rateStepPrice": "Precio de mercado: 1 {asset} = {value} · {source}, {when}",
+  "@rateStepPrice": {"placeholders": {"asset": {"type": "String"}, "value": {"type": "String"}, "source": {"type": "String"}, "when": {"type": "String"}}},
+  "rateStepConvert": "Conversión a {base}: 1 {asset} = {value} · {source} del {date}",
+  "@rateStepConvert": {"placeholders": {"base": {"type": "String"}, "asset": {"type": "String"}, "value": {"type": "String"}, "source": {"type": "String"}, "date": {"type": "String"}}},
+  "rateStepManual": "1 {asset} = {value} · escrita a mano",
+  "@rateStepManual": {"placeholders": {"asset": {"type": "String"}, "value": {"type": "String"}}}
 }

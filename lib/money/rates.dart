@@ -35,6 +35,50 @@ class Rate {
   String get pair => '$asset/$quote';
 }
 
+/// What one leg of a conversion is, for a person reading it.
+enum RateStepKind {
+  /// What a coin trades at on an exchange: bitcoin in tether.
+  price,
+
+  /// A stablecoin counted as one dollar, with no rate behind it.
+  peg,
+
+  /// One currency in another, from an official source: the TRM.
+  conversion,
+
+  /// A rate the person typed.
+  manual,
+}
+
+/// One leg of a conversion: what one [from] is worth in [to], and the rate
+/// behind it.
+@immutable
+class RateStep {
+  const RateStep({
+    required this.from,
+    required this.to,
+    required this.value,
+    this.rate,
+  });
+
+  final String from;
+  final String to;
+
+  /// One [from] in [to], in the direction the conversion goes.
+  final Decimal value;
+
+  /// The rate this leg comes from; null for a stablecoin's dollar peg.
+  final Rate? rate;
+
+  RateStepKind get kind => switch (rate) {
+    null => RateStepKind.peg,
+    Rate(manual: true) => RateStepKind.manual,
+    Rate(:final String asset) when Asset.of(asset).isCrypto =>
+      RateStepKind.price,
+    _ => RateStepKind.conversion,
+  };
+}
+
 /// The rates the app knows, and conversions through them.
 ///
 /// A conversion takes the shortest path through known rates, in either
@@ -75,9 +119,12 @@ class RateTable {
   /// known rates connects them.
   Decimal? rate(Asset from, Asset to) {
     if (from == to) return Decimal.one;
-    final List<_Edge>? path = _path(from.code, to.code);
+    final List<RateStep>? path = _path(from.code, to.code);
     if (path == null) return null;
-    return path.fold<Decimal>(Decimal.one, (Decimal v, _Edge e) => v * e.value);
+    return path.fold<Decimal>(
+      Decimal.one,
+      (Decimal v, RateStep s) => v * s.value,
+    );
   }
 
   /// [money] in [to], or null when it cannot be converted.
@@ -90,11 +137,17 @@ class RateTable {
   /// The rates a conversion from [from] to [to] went through, oldest first,
   /// so a screen can say how current a total is.
   List<Rate> used(Asset from, Asset to) => <Rate>[
-    for (final _Edge e in _path(from.code, to.code) ?? const <_Edge>[])
-      if (e.rate != null) e.rate!,
+    for (final RateStep s in steps(from, to))
+      if (s.rate != null) s.rate!,
   ]..sort((Rate a, Rate b) => a.asOf.compareTo(b.asOf));
 
-  List<_Edge>? _path(String from, String to) {
+  /// The legs of a conversion from [from] to [to], in the order it goes:
+  /// for bitcoin in pesos, its price in tether, tether as a dollar, and the
+  /// dollar in pesos. Empty when they are the same or nothing connects them.
+  List<RateStep> steps(Asset from, Asset to) =>
+      _path(from.code, to.code) ?? const <RateStep>[];
+
+  List<RateStep>? _path(String from, String to) {
     final Map<String, (String, _Edge)> came = <String, (String, _Edge)>{};
     final Queue<String> queue = Queue<String>()..add(from);
     final Set<String> seen = <String>{from};
@@ -109,9 +162,10 @@ class RateTable {
       }
     }
     if (!came.containsKey(to)) return null;
-    final List<_Edge> path = <_Edge>[];
+    final List<RateStep> path = <RateStep>[];
     for (var at = to; at != from; at = came[at]!.$1) {
-      path.add(came[at]!.$2);
+      final (String before, _Edge e) = came[at]!;
+      path.add(RateStep(from: before, to: at, value: e.value, rate: e.rate));
     }
     return path.reversed.toList();
   }

@@ -619,9 +619,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get rateManual => 'Typed by hand';
-
-  @override
   String get rateSourceTrm => 'Official TRM';
 
   @override
@@ -643,7 +640,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String stablecoinPeg(String asset) {
-    return '$asset counts as one dollar.';
+    return '$asset counts as US\$1';
   }
 
   @override
@@ -1738,11 +1735,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String freeExplainHeldAt(String held, String rate) {
     return '$held at $rate';
-  }
-
-  @override
-  String freeExplainRateOf(String date) {
-    return 'rate from $date';
   }
 
   @override
@@ -4783,4 +4775,25 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get rateRestoreFailed =>
       'Couldn\'t get the automatic rate. Yours stays; try again when you\'re online.';
+
+  @override
+  String rateStepPrice(String asset, String value, String source, String when) {
+    return 'Market price: 1 $asset = $value · $source, $when';
+  }
+
+  @override
+  String rateStepConvert(
+    String base,
+    String asset,
+    String value,
+    String source,
+    String date,
+  ) {
+    return 'Conversion to $base: 1 $asset = $value · $source, $date';
+  }
+
+  @override
+  String rateStepManual(String asset, String value) {
+    return '1 $asset = $value · typed by hand';
+  }
 }

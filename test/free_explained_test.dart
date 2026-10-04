@@ -148,7 +148,14 @@ void main() {
     expect(inSheet(find.text(pesos(1200000))), findsOneWidget);
     // The rate that converted the dollars, where it came from and its day.
     expect(inSheet(find.textContaining('TRM oficial')), findsOneWidget);
-    expect(inSheet(find.textContaining('tasa del 3 oct')), findsOneWidget);
+    expect(
+      inSheet(
+        find.textContaining(
+          r'Conversión a COP: 1 US$ = $4.000 · TRM oficial del 3 oct',
+        ),
+      ),
+      findsOneWidget,
+    );
     expect(inSheet(find.text('Netflix')), findsOneWidget);
     expect(
       inSheet(find.textContaining('Ahorro: las marcaste')),
