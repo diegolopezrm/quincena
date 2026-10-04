@@ -30,21 +30,39 @@ Checked against each provider's published requirements on 2 October 2026.
 with `dart format`, `flutter analyze --fatal-infos` and a check that the
 generated catalog is current.
 
-- **Accessibility.** `test/own_accessibility_test.dart` opens 27 screens
-  of someone's own money (home, movements, accounts, crypto, Binance,
-  wallets, a statement, "Por revisar", automatic capture, the next 30 days,
-  "¿Me alcanza?", the close, Plan, envelopes, the cushion in days, wishes,
-  what if, fixed payments, purchases in instalments, one of them, the
-  charges to check, shared expenses, a group, variable income, trips, one
-  trip, and more than one device) on a 360-point
-  phone with the system text at twice its size, in both themes, and holds
-  each to Flutter's guidelines: every tap target labeled, 48 by 48 on
-  Android and 44 by 44 on iOS, and text contrast of at least 4.5:1. It
-  found the faint ink at 3.5:1 on the light canvas and 4.3:1 on dark cards;
-  it is now at least 4.5:1 on every ground it sits on.
+- **Accessibility.** `test/own_accessibility_test.dart` opens 51 screens
+  of someone's own money (home, movements, accounts, where the net worth
+  and the money to spend come from, a card, crypto, Binance, wallets, a
+  statement, "Por revisar", automatic capture, the next 30 days, "¿Me
+  alcanza?", the close, Plan, envelopes, the cushion in days, wishes, what
+  if, fixed payments, purchases in instalments, one of them, the charges
+  to check, shared expenses, a group, variable income, trips, one trip,
+  more than one device; the first screen, the four steps of onboarding,
+  settings, the app's frame on each of its four tabs, asking about one's
+  money and an answer, the three "¿De dónde sale?" sheets, and the sheets
+  for a new movement, account, goal and fixed payment and for changing a
+  movement and a card) on a 360-point phone with the system text at twice
+  its size, the most Android offers, in both themes and both languages.
+  It scrolls each from top to end and holds it to Flutter's guidelines:
+  nothing overflows, every tap target labeled, 48 by 48 on Android and 44
+  by 44 on iOS, and text contrast of at least 4.5:1. It found the faint
+  ink at 3.5:1 on the light canvas and 4.3:1 on dark cards; it is now at
+  least 4.5:1 on every ground it sits on. No words are squeezed into a
+  column a few letters wide, except on the twelve screens the test still
+  lists (crypto, the close, fixed payments, instalments, trips and others).
+  Inicio, Cuentas, Por revisar, Plan, the frame on each tab, the first
+  screen and onboarding also hold at iOS's largest text size, AX5, about
+  3.1 times the default, with no text cut short: with large text a row's
+  amount goes under its name.
   `test/large_text_test.dart` holds the sample account and its five answers
-  to the same text size, and `test/catalog_test.dart` audits what every
-  component tells a screen reader.
+  at twice the text size in both languages, and `test/catalog_test.dart`
+  audits what every component tells a screen reader.
+- **Keyboard and long lists.** `test/keyboard_test.dart` raises a 336-point
+  keyboard over the forms at twice the text size: the field being typed in
+  stays above it, and the button that saves or goes on is in sight or a
+  scroll away. `test/long_lists_test.dart` loads 1,500 movements:
+  Movimientos and an account's page build only the days near the screen,
+  go down to the oldest and search all of it.
 - **No signal by color alone.** Gains and losses carry a sign, the free and
   committed bar has a legend, and categories are named next to their color.
 - **Sync between devices.** `test/sync_test.dart` runs two and three
@@ -213,6 +231,10 @@ For 1.1.0, on TestFlight and the internal track, before production:
 - Reporting a Gemini answer from a phone, with App Check's real providers.
 - The five home questions with Gemini on a phone, after the prompt changed
   shape.
+- VoiceOver and TalkBack over the lines under the figure on Inicio, the
+  "Por hacer" rows and the "Próximos días" line.
+- The largest text on each phone, AX5 on iOS and the largest font on
+  Android, over Inicio, Cuentas, Por revisar, Plan and onboarding.
 
 The closed test with people, over two fortnights, is planned in
 [`CLOSED_TEST.md`](CLOSED_TEST.md).
