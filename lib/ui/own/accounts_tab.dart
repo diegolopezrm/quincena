@@ -556,7 +556,10 @@ class _RateLine extends StatelessWidget {
                         style: context.type.bodySmall,
                       ),
                     TextButton(
-                      onPressed: () => _restore(context),
+                      // One way back at a time: it waits for any fetch.
+                      onPressed: own.refreshingRates
+                          ? null
+                          : () => _restore(context),
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                       ),

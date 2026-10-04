@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -198,6 +201,65 @@ void main() {
     await settle(tester);
     expect(find.text(r'1 USD = $4.000'), findsOneWidget);
     expect((await storedDollar(tester)).source, 'trm');
+  });
+
+  testWidgets('going back waits for its fetch before it can be asked again', (
+    tester,
+  ) async {
+    Completer<void>? gate;
+    final RateFetcher slow = RateFetcher(
+      client: MockClient((http.Request request) async {
+        await gate?.future;
+        if (request.url.host != 'www.datos.gov.co') {
+          return http.Response('{}', 404);
+        }
+        return http.Response(
+          jsonEncode(<Object>[
+            <String, String>{
+              'valor': '4000',
+              'vigenciadesde': '2026-10-03T00:00:00.000',
+            },
+          ]),
+          200,
+        );
+      }),
+    );
+    await open(tester, fetcher: slow, typed: '3400');
+
+    gate = Completer<void>();
+    await tester.tap(find.text('Usar la automática'));
+    await tester.pump();
+    expect(
+      tester
+          .widget<TextButton>(
+            find.widgetWithText(TextButton, 'Usar la automática'),
+          )
+          .onPressed,
+      isNull,
+    );
+    // The typed rate holds until the automatic one is here.
+    expect(find.text(r'1 USD = $3.400'), findsOneWidget);
+
+    gate.complete();
+    await settle(tester);
+    expect(find.text(r'1 USD = $4.000'), findsOneWidget);
+    expect(find.text('Manual'), findsNothing);
+  });
+
+  testWidgets('the automatic rate beside a typed one is only today\'s', (
+    tester,
+  ) async {
+    final OwnController own = await open(
+      tester,
+      fetcher: fakeRates(),
+      typed: '3400',
+    );
+    expect(own.fetchedRate(Asset.usd, Asset.cop), d('4000'));
+    expect(find.text(r'La automática hoy: $4.000'), findsOneWidget);
+
+    // The next morning, before anything is fetched again.
+    clock = now.add(const Duration(days: 1));
+    expect(own.fetchedRate(Asset.usd, Asset.cop), isNull);
   });
 
   testWidgets('Cuentas folds the rates into one row that opens them', (
