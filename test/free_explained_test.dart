@@ -233,8 +233,16 @@ void main() {
           find.descendant(of: find.byType(FreeExplained), matching: f);
       expect(inSheet(find.text('Lo que debes en tarjetas')), findsOneWidget);
       expect(inSheet(find.text(pesos(2200000))), findsOneWidget);
-      // The Visa among the accounts, and as the sum's own line.
+      // The Visa under what is owed on cards, not among the accounts, so
+      // each panel adds up to its line of the sum.
+      expect(inSheet(find.text('LO QUE DEBES EN TARJETAS')), findsOneWidget);
       expect(inSheet(find.text(pesos(-300000))), findsNWidgets(2));
+      expect(
+        tester.getTopLeft(inSheet(find.text('Visa'))).dy,
+        greaterThan(
+          tester.getTopLeft(inSheet(find.text('LO QUE DEBES EN TARJETAS'))).dy,
+        ),
+      );
       expect(
         inSheet(find.text(pesos(2200000 - 300000 - 26900))),
         findsOneWidget,

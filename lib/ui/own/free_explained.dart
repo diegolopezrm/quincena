@@ -59,22 +59,28 @@ class FreeExplained extends StatelessWidget {
         if (!a.spendable && !a.archived) a,
     ];
     final Set<Asset> unpriced = own.unconverted;
+    // A card that owes goes under what is owed on cards, so each panel
+    // adds up to its own line of the sum.
+    bool owes(Account a) =>
+        a.kind == AccountKind.card && (own.spendableParts[a.id] ?? 0) < 0;
+    Widget panel(Iterable<Account> accounts) => Panel(
+      children: <Widget>[
+        for (final Account a in accounts)
+          _AccountPart(
+            own: own,
+            account: a,
+            base: base,
+            value: pesos(ledger.major(own.spendableParts[a.id] ?? 0)),
+          ),
+      ],
+    );
     return LedgerExplained(
       ledger: ledger,
       cardDebt: own.spendableCardDebt,
       pending: own.pendingInbox.length,
       latePay: own.projection?.latePay,
-      accounts: Panel(
-        children: <Widget>[
-          for (final Account a in spendable)
-            _AccountPart(
-              own: own,
-              account: a,
-              base: base,
-              value: pesos(ledger.major(own.spendableParts[a.id] ?? 0)),
-            ),
-        ],
-      ),
+      accounts: panel(spendable.where((Account a) => !owes(a))),
+      cards: spendable.any(owes) ? panel(spendable.where(owes)) : null,
       leftOut: <String>[
         if (leftOut.isNotEmpty)
           l.freeExplainLeftOutBody(
@@ -102,6 +108,7 @@ class LedgerExplained extends StatelessWidget {
     this.pending = 0,
     this.latePay,
     this.accounts,
+    this.cards,
     this.leftOut = const <String>[],
   });
 
@@ -120,6 +127,9 @@ class LedgerExplained extends StatelessWidget {
 
   /// Each everyday account with what it adds.
   final Widget? accounts;
+
+  /// Each everyday card with what it owes, the part of [cardDebt] it adds.
+  final Widget? cards;
 
   /// What the figure leaves out, a line each.
   final List<String> leftOut;
@@ -187,6 +197,11 @@ class LedgerExplained extends StatelessWidget {
           if (accounts case final Widget panel) ...<Widget>[
             const SizedBox(height: 24),
             SectionLabel(l.freeExplainSpendableSection),
+            panel,
+          ],
+          if (cards case final Widget panel) ...<Widget>[
+            const SizedBox(height: 24),
+            SectionLabel(l.standingCardDebtLine),
             panel,
           ],
           const SizedBox(height: 24),
