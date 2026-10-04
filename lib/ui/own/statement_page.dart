@@ -355,42 +355,46 @@ class _StatementPageState extends State<StatementPage> {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: context.colors.canvas,
-        surfaceTintColor: Colors.transparent,
-        title: Text(l.statementTitle, style: context.type.titleLarge),
-        actions: <Widget>[
-          if (_stage == _Stage.review)
-            IconButton(
-              tooltip: l.statementFlip,
-              onPressed: _flip,
-              icon: const Icon(Glyph.arrowsDownUp),
-            ),
-        ],
-      ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 760),
-          child: switch (_stage) {
-            _Stage.pick => _pickView(l),
-            _Stage.reading => Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  const CircularProgressIndicator(),
-                  const SizedBox(height: 16),
-                  Text(l.statementReading, style: context.type.bodyMedium),
-                ],
+    // A write that started finishes: leaving would only hide how it went.
+    return PopScope(
+      canPop: !_saving,
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: context.colors.canvas,
+          surfaceTintColor: Colors.transparent,
+          title: Text(l.statementTitle, style: context.type.titleLarge),
+          actions: <Widget>[
+            if (_stage == _Stage.review)
+              IconButton(
+                tooltip: l.statementFlip,
+                onPressed: _saving ? null : _flip,
+                icon: const Icon(Glyph.arrowsDownUp),
               ),
-            ),
-            _Stage.nothing => _nothingView(l),
-            _Stage.review => _reviewView(l),
-            _Stage.done => ListenableBuilder(
-              listenable: own,
-              builder: (BuildContext context, _) => _doneView(l),
-            ),
-          },
+          ],
+        ),
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 760),
+            child: switch (_stage) {
+              _Stage.pick => _pickView(l),
+              _Stage.reading => Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    Text(l.statementReading, style: context.type.bodyMedium),
+                  ],
+                ),
+              ),
+              _Stage.nothing => _nothingView(l),
+              _Stage.review => _reviewView(l),
+              _Stage.done => ListenableBuilder(
+                listenable: own,
+                builder: (BuildContext context, _) => _doneView(l),
+              ),
+            },
+          ),
         ),
       ),
     );
@@ -710,6 +714,42 @@ class _StatementPageState extends State<StatementPage> {
     }
     final bool mismatch =
         closing != null && wouldBe != null && wouldBe.amount != closing.amount;
+    // What the checked lines bring in and take out, and what they leave in
+    // the account.
+    final List<Widget> effect = <Widget>[
+      Figures(
+        <String>[
+          l.statementSelected(_chosen.length),
+          if (account != null && inflow > Decimal.zero)
+            l.statementIn(
+              moneyText(Money(inflow, account.asset), base: base, signed: true),
+            ),
+          if (account != null && outflow < Decimal.zero)
+            l.statementOut(
+              moneyText(
+                Money(outflow, account.asset),
+                base: base,
+                signed: true,
+              ),
+            ),
+        ].join(' · '),
+        style: context.type.bodyMedium,
+      ),
+      if (account != null && chosen.isNotEmpty)
+        Figures(
+          _balanceText(
+            l,
+            account,
+            own.balances[account.id] ?? account.openingMoney,
+            _after(account, chosen, _rule),
+            _rule,
+          ),
+          style: context.type.bodyMedium,
+        ),
+    ];
+    // With large text they would leave the lines no room above the
+    // button: they go under the lines instead.
+    final bool large = MediaQuery.textScalerOf(context).scale(10) > 13;
     // A statement within one year says it once, in its summary.
     final bool oneYear =
         dates.isNotEmpty && dates.first.year == dates.last.year;
@@ -781,13 +821,6 @@ class _StatementPageState extends State<StatementPage> {
                   ),
                 ),
               ],
-              if (account != null && older > 0 && !_matchClosing)
-                _olderBlock(l, account, older),
-              if (account != null &&
-                  closing != null &&
-                  wouldBe != null &&
-                  (mismatch || _matchClosing))
-                _closingBlock(l, account, closing, wouldBe, mismatch),
               // Checking everything checks what is new: a line already there
               // is checked only on purpose, one by one.
               if (newOnes.isNotEmpty || _chosen.isNotEmpty)
@@ -832,6 +865,16 @@ class _StatementPageState extends State<StatementPage> {
                     ),
                 ],
               ),
+              // What to do with the balance the person wrote, once the
+              // lines are seen.
+              if (account != null && older > 0 && !_matchClosing)
+                _olderBlock(l, account, older),
+              if (account != null &&
+                  closing != null &&
+                  wouldBe != null &&
+                  (mismatch || _matchClosing))
+                _closingBlock(l, account, closing, wouldBe, mismatch),
+              if (large) ...<Widget>[const SizedBox(height: 16), ...effect],
             ],
           ),
         ),
@@ -843,40 +886,7 @@ class _StatementPageState extends State<StatementPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                Figures(
-                  <String>[
-                    l.statementSelected(_chosen.length),
-                    if (account != null && inflow > Decimal.zero)
-                      l.statementIn(
-                        moneyText(
-                          Money(inflow, account.asset),
-                          base: base,
-                          signed: true,
-                        ),
-                      ),
-                    if (account != null && outflow < Decimal.zero)
-                      l.statementOut(
-                        moneyText(
-                          Money(outflow, account.asset),
-                          base: base,
-                          signed: true,
-                        ),
-                      ),
-                  ].join(' · '),
-                  style: context.type.bodyMedium,
-                ),
-                if (account != null && chosen.isNotEmpty)
-                  Figures(
-                    _balanceText(
-                      l,
-                      account,
-                      own.balances[account.id] ?? account.openingMoney,
-                      _after(account, chosen, _rule),
-                      _rule,
-                    ),
-                    style: context.type.bodyMedium,
-                  ),
-                const SizedBox(height: 8),
+                if (!large) ...<Widget>[...effect, const SizedBox(height: 8)],
                 if (repeatsChosen > 0) ...<Widget>[
                   Text(
                     l.statementRepeatsChosen(repeatsChosen),

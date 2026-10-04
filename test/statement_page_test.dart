@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +10,7 @@ import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/l10n/l10n.dart';
 import 'package:quincena/money/asset.dart';
+import 'package:quincena/money/money.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/statements/statement.dart';
 import 'package:quincena/statements/tables.dart';
@@ -433,6 +436,69 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   });
+  testWidgets('the page cannot be left while it saves', (tester) async {
+    final Completer<void> saved = Completer<void>();
+    final (QuincenaStore store, OwnController own, Account bank) = await world(
+      tester,
+      saving: saved.future,
+    );
+    await open(
+      tester,
+      own,
+      readTable(
+        parseCsv(
+          'Fecha;Descripción;Valor\n'
+          '01/09/2026;COMPRA EN EXITO LAURELES;-45.900\n',
+        ),
+      ),
+    );
+    expect(find.byType(BackButton), findsOneWidget);
+    await tester.tap(find.text('Importar un movimiento'));
+    await tester.pump();
+    expect(find.text('Importando…'), findsOneWidget);
+    // Back does nothing until the import is done.
+    await tester.tap(find.byType(BackButton));
+    await tester.pump();
+    expect(find.byType(StatementPage), findsOneWidget);
+    expect(find.text('Importando…'), findsOneWidget);
+
+    saved.complete();
+    await settle(tester);
+    expect(find.text('Se importó un movimiento.'), findsOneWidget);
+    final List<Entry> entries =
+        await tester.runAsync(() => store.entries(accountId: bank.id)) ??
+        const <Entry>[];
+    expect(entries.length, 1);
+    await tester.tap(find.byType(BackButton));
+    await settle(tester);
+    expect(find.text('abrir'), findsOneWidget);
+  });
+  testWidgets('with large text, the totals go under the lines', (tester) async {
+    final (_, OwnController own, _) = await world(tester);
+    final StatementRead read = readTable(
+      parseCsv(
+        'Fecha;Descripción;Valor\n'
+        '01/09/2026;COMPRA EN EXITO LAURELES;-45.900\n',
+      ),
+    );
+    const String totals = '1 seleccionado · salen −\$45.900';
+    await open(tester, own, read);
+    expect(
+      find.descendant(of: find.byType(ListView), matching: find.text(totals)),
+      findsNothing,
+    );
+    expect(find.text(totals), findsOneWidget);
+
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await settle(tester);
+    await tester.drag(find.byType(ListView), const Offset(0, -3000));
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(of: find.byType(ListView), matching: find.text(totals)),
+      findsOneWidget,
+    );
+  });
 }
 
 /// Taps [finder] once it is scrolled into view.
@@ -450,16 +516,18 @@ Finder box(String name) => find.byWidgetPredicate(
 
 /// A person with a Bancolombia account, added on 2 October 2026.
 Future<(QuincenaStore, OwnController, Account)> world(
-  WidgetTester tester,
-) async {
+  WidgetTester tester, {
+  Future<void>? saving,
+}) async {
   // A tall phone, so the whole statement fits without scrolling.
   tester.view.physicalSize = const Size(1170, 4200);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
   final DateTime now = DateTime(2026, 10, 2, 10);
-  final QuincenaStore store = QuincenaStore(
+  final QuincenaStore store = _Store(
     QuincenaDatabase(NativeDatabase.memory()),
     now: () => now,
+    saving: saving,
   );
   addTearDown(() => tester.runAsync(store.close));
   final OwnController own = OwnController(
@@ -525,5 +593,41 @@ Future<void> settle(WidgetTester tester) async {
       () => Future<void>.delayed(const Duration(milliseconds: 30)),
     );
     await tester.pumpAndSettle();
+  }
+}
+
+/// A store whose movements wait for [saving] before they are written, to
+/// see the page while it saves.
+class _Store extends QuincenaStore {
+  _Store(super.db, {super.now, this.saving});
+
+  final Future<void>? saving;
+
+  @override
+  Future<Entry> addEntry({
+    required String accountId,
+    required Decimal amount,
+    required EntryKind kind,
+    required DateTime date,
+    String? category,
+    String payee = '',
+    String note = '',
+    String source = 'manual',
+    String? sourceRef,
+    Money? cost,
+  }) async {
+    if (source == 'statement') await saving;
+    return super.addEntry(
+      accountId: accountId,
+      amount: amount,
+      kind: kind,
+      date: date,
+      category: category,
+      payee: payee,
+      note: note,
+      source: source,
+      sourceRef: sourceRef,
+      cost: cost,
+    );
   }
 }
