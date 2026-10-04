@@ -51,6 +51,7 @@ void main() {
     expect(entry.cost, isNull);
     await db.close();
   });
+
   test('upgrading from 2 keeps a card as it was, with no limit until one is '
       'given', () async {
     final InitializedSchema schema = await verifier.schemaAt(2);

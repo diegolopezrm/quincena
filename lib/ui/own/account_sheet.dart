@@ -332,7 +332,7 @@ class _AccountFormState extends State<_AccountForm> {
                 decoration: InputDecoration(
                   labelText: l.cardLimitField,
                   helperText: l.cardLimitHelp,
-                  helperMaxLines: 3,
+                  helperMaxLines: 6,
                   suffixText: asset.code,
                   errorText: _limitError,
                 ),

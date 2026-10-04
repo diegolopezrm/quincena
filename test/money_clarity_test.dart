@@ -364,6 +364,37 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('what is left of a card\'s limit wraps at twice the text '
+        'size rather than pushing the amount out', (tester) async {
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await openPage(
+        tester,
+        (OwnController own) => Scaffold(
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: AccountsTab(own: own),
+          ),
+        ),
+        data: (QuincenaStore store, Account bank, Account card) async {
+          await store.updateAccount(card.copyWith(creditLimit: d('12000000')));
+          await store.addEntry(
+            accountId: card.id,
+            amount: d('1300000'),
+            kind: EntryKind.expense,
+            date: DateTime(2026, 10, 1, 12),
+            category: 'shopping',
+            payee: 'Falabella',
+          );
+        },
+      );
+      // Google Play's smallest screenshot phone, 360 by 800.
+      tester.view.physicalSize = const Size(1080, 2400);
+      await settle(tester);
+      expect(find.text(r'Cupo libre $10.700.000'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('a card takes its limit in its sheet, and gives it back', (
       tester,
     ) async {

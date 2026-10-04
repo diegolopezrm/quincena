@@ -66,65 +66,76 @@ class AccountRow extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            if (account.asset.isCrypto)
-              CoinMark(account.asset)
-            else
-              AccountTile(account.kind),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    account.name,
-                    style: context.type.titleSmall,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    detail.join(' · '),
-                    style: context.type.bodySmall,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+            Row(
               children: <Widget>[
-                if (card && !balance.isZero)
-                  Text(
-                    balance.isNegative
-                        ? context.l10n.cardOwedLabel
-                        : context.l10n.cardInFavorLabel,
-                    style: context.type.bodySmall,
-                  ),
-                Figures(
-                  card && balance.isZero
-                      ? context.l10n.cardClear
-                      : moneyText(card ? balance.abs() : balance, base: base),
-                  style: context.type.titleSmall?.copyWith(
-                    color: balance.isNegative && !card
-                        ? context.colors.negative
-                        : context.colors.ink,
+                if (account.asset.isCrypto)
+                  CoinMark(account.asset)
+                else
+                  AccountTile(account.kind),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        account.name,
+                        style: context.type.titleSmall,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        detail.join(' · '),
+                        style: context.type.bodySmall,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
-                if (converted != null)
-                  Figures(
-                    '≈ ${moneyText(converted, base: base)}',
-                    style: context.type.bodySmall,
-                  ),
-                if (left != null)
-                  Figures(
-                    context.l10n.cardCreditLeft(moneyText(left, base: base)),
-                    style: context.type.bodySmall,
-                  ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: <Widget>[
+                    if (card && !balance.isZero)
+                      Text(
+                        balance.isNegative
+                            ? context.l10n.cardOwedLabel
+                            : context.l10n.cardInFavorLabel,
+                        style: context.type.bodySmall,
+                      ),
+                    Figures(
+                      card && balance.isZero
+                          ? context.l10n.cardClear
+                          : moneyText(
+                              card ? balance.abs() : balance,
+                              base: base,
+                            ),
+                      style: context.type.titleSmall?.copyWith(
+                        color: balance.isNegative && !card
+                            ? context.colors.negative
+                            : context.colors.ink,
+                      ),
+                    ),
+                    if (converted != null)
+                      Figures(
+                        '≈ ${moneyText(converted, base: base)}',
+                        style: context.type.bodySmall,
+                      ),
+                  ],
+                ),
               ],
             ),
+            // Under the amount, across the whole row: at a large text size
+            // it wraps rather than pushing the amount past the edge.
+            if (left != null)
+              Figures(
+                context.l10n.cardCreditLeft(moneyText(left, base: base)),
+                style: context.type.bodySmall,
+                textAlign: TextAlign.end,
+              ),
           ],
         ),
       ),
