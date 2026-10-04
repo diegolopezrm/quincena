@@ -298,4 +298,30 @@ void main() {
     expect(l.committedUntilPayday, 20000 + 1650000 + 26900);
     expect(l.freeUntilPayday, 4158000 - 1696900);
   });
+
+  test('a subscription says when it is charged next, by its cadence', () async {
+    await store.addRecurring(
+      name: 'Dominio',
+      amount: Money(d('60000'), Asset.cop),
+      cadence: Cadence.yearly,
+      nextDate: DateTime(2027, 3, 14),
+      category: 'subscriptions',
+    );
+    await store.addRecurring(
+      name: 'Prensa',
+      amount: Money(d('9900'), Asset.cop),
+      cadence: Cadence.weekly,
+      nextDate: DateTime(2026, 9, 28),
+      category: 'subscriptions',
+    );
+
+    final Map<String, DateTime> next = <String, DateTime>{
+      for (final Subscription s in (await ledger()).subscriptions)
+        s.name: s.nextCharge(today),
+    };
+    // Not the 14th of this month: a yearly charge comes once a year.
+    expect(next['Dominio'], DateTime(2027, 3, 14));
+    // A week after the last one, not a month.
+    expect(next['Prensa'], DateTime(2026, 10, 5));
+  });
 }

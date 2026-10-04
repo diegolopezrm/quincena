@@ -183,6 +183,7 @@ LedgerBuild buildLedger(
             name: r.name,
             price: inBase(_monthly(r)),
             chargeDay: r.nextDate.day,
+            next: nextCharge(r, today),
             since: r.since ?? today,
           ),
     ],

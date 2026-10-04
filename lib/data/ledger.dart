@@ -48,12 +48,18 @@ class Subscription {
     required this.chargeDay,
     required this.since,
     this.lastUsed,
+    this.next,
   });
 
   final String id;
   final String name;
   final int price;
   final int chargeDay;
+
+  /// The next day it is charged, when its source counts by its own
+  /// cadence: a yearly or weekly charge is not due every month on
+  /// [chargeDay].
+  final DateTime? next;
 
   /// The last day the person actually used it, when the app can tell. A
   /// charge read from a bank says nothing about use.
@@ -67,10 +73,11 @@ class Subscription {
   /// Charged for over a month without being used, as far as is known.
   bool unusedAsOf(DateTime today) => (daysSinceUsed(today) ?? 0) > 30;
 
-  /// The next day it is charged after [today]: this month's [chargeDay]
-  /// while it is ahead, otherwise next month's, on the last day of a
-  /// shorter month.
+  /// The next day it is charged after [today]: [next] when known, otherwise
+  /// this month's [chargeDay] while it is ahead, otherwise next month's, on
+  /// the last day of a shorter month.
   DateTime nextCharge(DateTime today) {
+    if (next case final DateTime known) return known;
     DateTime on(int year, int month) => DateTime(
       year,
       month,
