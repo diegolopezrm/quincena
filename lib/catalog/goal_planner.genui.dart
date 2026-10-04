@@ -23,7 +23,8 @@ final CatalogItem goalPlannerCatalogItem = CatalogItem(
         'the device as the person drags, with no new message from '
         'you. Bind `needed` to the `monthlyNeeded` function over the '
         'same paths and deadline: the slider marks the amount that '
-        'reaches the goal in time and stops on it.',
+        'reaches the goal in time and stops on it. Moving it saves '
+        'nothing.',
     properties: {
       'name': A2uiSchemas.stringReference(
         description: 'What the money is for, such as "Cartagena".',
@@ -72,6 +73,27 @@ final CatalogItem goalPlannerCatalogItem = CatalogItem(
             'Bind it to the `monthlyNeeded` function over the same paths: '
             'the slider marks it, stops on it when dragged near, and the '
             'phone ticks as it is reached.',
+      ),
+      'current': A2uiSchemas.numberReference(
+        description:
+            'Today\'s monthly amount, at a path of its own: away from it, '
+            'the planner says it is a simulation and offers to go back.',
+      ),
+      'deadline': A2uiSchemas.stringReference(
+        description:
+            'The deadline, YYYY-MM-DD, at the path the functions read.',
+      ),
+      'contributionDay': A2uiSchemas.numberReference(
+        description: 'The day of the month contributions land.',
+      ),
+      'spendable': A2uiSchemas.numberReference(
+        description:
+            'What can be spent until payday: freeUntilPayday. With '
+            '`payday`, the planner says what the monthly amount changes '
+            'in it.',
+      ),
+      'payday': A2uiSchemas.stringReference(
+        description: 'The next payday, YYYY-MM-DD.',
       ),
     },
     required: [
@@ -125,6 +147,11 @@ final CatalogItem goalPlannerCatalogItem = CatalogItem(
         'min': GenUiBinding.number(data['min']),
         'step': GenUiBinding.number(data['step']),
         'needed': GenUiBinding.number(data['needed']),
+        'current': GenUiBinding.number(data['current']),
+        'deadline': GenUiBinding.string(data['deadline']),
+        'contributionDay': GenUiBinding.number(data['contributionDay']),
+        'spendable': GenUiBinding.number(data['spendable']),
+        'payday': GenUiBinding.string(data['payday']),
       },
       builder: (context, v) => GoalPlanner(
         name: v.string('name') ?? missing<String>('name', ''),
@@ -147,6 +174,11 @@ final CatalogItem goalPlannerCatalogItem = CatalogItem(
         min: v.number('min')?.toDouble() ?? 0,
         step: v.number('step')?.toDouble() ?? 10000,
         needed: v.number('needed')?.toDouble(),
+        current: v.number('current')?.toDouble(),
+        deadline: v.string('deadline'),
+        contributionDay: v.number('contributionDay')?.toInt() ?? 16,
+        spendable: v.number('spendable')?.toDouble(),
+        payday: v.string('payday'),
       ),
     );
   },

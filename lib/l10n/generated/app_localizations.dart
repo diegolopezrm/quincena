@@ -179,7 +179,7 @@ abstract class AppLocalizations {
   /// No description provided for @noteChoseMonthly.
   ///
   /// In es, this message translates to:
-  /// **'Elegiste cuánto apartar'**
+  /// **'Guardaste el plan'**
   String get noteChoseMonthly;
 
   /// No description provided for @noteAskedCancel.
@@ -545,7 +545,7 @@ abstract class AppLocalizations {
   /// No description provided for @setAsideMonthly.
   ///
   /// In es, this message translates to:
-  /// **'Apartar al mes'**
+  /// **'Si apartas al mes'**
   String get setAsideMonthly;
 
   /// No description provided for @arrivesIn.
@@ -7566,6 +7566,95 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena.'**
   String get widgetAddFailed;
+
+  /// No description provided for @goalTypeAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribir monto'**
+  String get goalTypeAmount;
+
+  /// No description provided for @goalAmountTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto quieres apartar al mes?'**
+  String get goalAmountTitle;
+
+  /// No description provided for @goalAmountUse.
+  ///
+  /// In es, this message translates to:
+  /// **'Usar este monto'**
+  String get goalAmountUse;
+
+  /// No description provided for @goalAmountInvalid.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe un monto mayor que cero.'**
+  String get goalAmountInvalid;
+
+  /// No description provided for @goalUseNeeded.
+  ///
+  /// In es, this message translates to:
+  /// **'Usar {amount} al mes'**
+  String goalUseNeeded(String amount);
+
+  /// No description provided for @goalSimulating.
+  ///
+  /// In es, this message translates to:
+  /// **'Simulación · hoy apartas {current}'**
+  String goalSimulating(String current);
+
+  /// No description provided for @goalBackToCurrent.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver a {amount}'**
+  String goalBackToCurrent(String amount);
+
+  /// No description provided for @goalPlanContributions.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Es 1 aporte, el {first}.} other{Son {count} aportes de {amount}, del {first} al {last}.}}'**
+  String goalPlanContributions(
+    int count,
+    String amount,
+    String first,
+    String last,
+  );
+
+  /// No description provided for @goalEffectTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Qué cambia en lo que puedes gastar'**
+  String get goalEffectTitle;
+
+  /// No description provided for @goalEffectUntilPayday.
+  ///
+  /// In es, this message translates to:
+  /// **'Hasta el {payday} puedes gastar {free}: el aporte sale el {day}, así que no lo toca.'**
+  String goalEffectUntilPayday(String payday, String free, String day);
+
+  /// No description provided for @goalEffectBeforePay.
+  ///
+  /// In es, this message translates to:
+  /// **'El aporte del {day} sale antes de tu pago: hasta el {payday} podrías gastar {left}.'**
+  String goalEffectBeforePay(String day, String payday, String left);
+
+  /// No description provided for @goalEffectMore.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde la quincena del {payday} tendrías {amount} menos al mes para gastar que hoy.'**
+  String goalEffectMore(String payday, String amount);
+
+  /// No description provided for @goalEffectLess.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde la quincena del {payday} tendrías {amount} más al mes para gastar que hoy.'**
+  String goalEffectLess(String payday, String amount);
+
+  /// No description provided for @goalEffectSame.
+  ///
+  /// In es, this message translates to:
+  /// **'Es lo que ya apartas: lo que puedes gastar no cambia.'**
+  String get goalEffectSame;
 }
 
 class _AppLocalizationsDelegate

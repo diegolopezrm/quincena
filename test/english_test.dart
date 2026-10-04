@@ -73,9 +73,62 @@ void main() {
     final Session session = await open(tester);
     await ask(tester, session, ScriptedAgent.startersEn[1]);
 
-    expect(screen(tester), contains('You get there in May 2027'));
-    expect(screen(tester), contains('after December 20'));
-    expect(screen(tester), contains('Set aside each month'));
+    final String text = screen(tester);
+    expect(
+      text,
+      contains(r'To get there by December 20 you need $600,000 a month'),
+    );
+    expect(
+      text,
+      contains(
+        r'You set aside $250,000 now, so you are $350,000 a month short. '
+        'Three contributions fit: October 16, November 16 and December 16.',
+      ),
+    );
+    expect(text, contains('You get there in May 2027'));
+    expect(text, contains('after December 20'));
+    expect(text, contains('If you set aside each month'));
+    expect(text, contains(r'$600,000 needed'));
+    expect(
+      text,
+      contains(
+        r"That's 8 contributions of $250,000, from October 16 to May 16, "
+        '2027.',
+      ),
+    );
+    expect(
+      text,
+      contains(
+        r'You can spend $1,369,300 until October 15: the contribution goes '
+        "out on October 16, so it doesn't touch that.",
+      ),
+    );
+    expect(text, contains(r'You could free up to $409,200 a month'));
+    expect(text, contains('Save this plan'));
+  });
+
+  testWidgets('a saved plan says the person moves the money', (tester) async {
+    final Session session = await open(tester);
+    await ask(tester, session, ScriptedAgent.startersEn[1]);
+    await tester.ensureVisible(find.text(r'Use $600,000 a month'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(r'Use $600,000 a month'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Save this plan'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save this plan'));
+    await tester.pumpAndSettle();
+
+    final String text = screen(tester);
+    expect(text, contains(r'Your plan: $600,000 a month for Cartagena'));
+    expect(
+      text,
+      contains(
+        "Quincena doesn't move your money: move it to your Cartagena pocket "
+        'yourself on the 16th of each month, starting October 16. With this '
+        'plan you get there in December 2026, before December 20.',
+      ),
+    );
   });
 
   testWidgets('the expense form checks in English', (tester) async {

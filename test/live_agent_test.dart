@@ -195,9 +195,9 @@ void main() {
 
       // The screen scrolls to each new answer with an animation; let it
       // finish, or the tap lands where the button was.
-      await tester.ensureVisible(find.text('Apartar esto cada mes'));
+      await tester.ensureVisible(find.text('Guardar este plan'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Apartar esto cada mes'));
+      await tester.tap(find.text('Guardar este plan'));
       for (var i = 0; i < 20; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
@@ -209,7 +209,13 @@ void main() {
       expect(action['name'], 'save_goal_plan');
       // The context arrives resolved: the amount on the slider, not a path.
       expect((action['context']! as Map)['monthly'], 250000);
-      expect(screen(tester), contains(r'Cada día 16 aparto $250.000'));
+      expect(
+        screen(tester),
+        contains(r'Tu plan: $250.000 al mes para Cartagena'),
+      );
+      // A plan, not a transfer: the person moves the money.
+      expect(screen(tester), contains('Quincena no mueve tu plata'));
+      expect(screen(tester), isNot(contains('aparto')));
     });
 
     testWidgets('a surface the catalog rejects goes back to be fixed', (

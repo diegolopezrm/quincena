@@ -19,7 +19,7 @@
   "thinking": "Revisando tus movimientos",
 
   "noteSavedExpense": "Guardaste el gasto",
-  "noteChoseMonthly": "Elegiste cuánto apartar",
+  "noteChoseMonthly": "Guardaste el plan",
   "noteAskedCancel": "Pediste cancelar suscripciones",
   "noteAskedPayments": "Pediste ver los pagos",
   "noteTappedAction": "Tocaste una acción",
@@ -91,7 +91,7 @@
   "stepSemantics": "Paso {position} de {length}",
   "@stepSemantics": {"placeholders": {"position": {"type": "int"}, "length": {"type": "int"}}},
 
-  "setAsideMonthly": "Apartar al mes",
+  "setAsideMonthly": "Si apartas al mes",
   "arrivesIn": "Llegas en ",
   "beforeDeadline": ", antes del {deadline}.",
   "@beforeDeadline": {"placeholders": {"deadline": {"type": "String"}}},
@@ -1507,5 +1507,28 @@
   "widgetHide": "Ocultar montos en el widget",
   "widgetHideHelp": "Dice hasta cuándo, sin la cifra.",
   "widgetAdd": "Agregar a la pantalla de inicio",
-  "widgetAddFailed": "Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena."
+  "widgetAddFailed": "Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena.",
+
+  "goalTypeAmount": "Escribir monto",
+  "goalAmountTitle": "¿Cuánto quieres apartar al mes?",
+  "goalAmountUse": "Usar este monto",
+  "goalAmountInvalid": "Escribe un monto mayor que cero.",
+  "goalUseNeeded": "Usar {amount} al mes",
+  "@goalUseNeeded": {"placeholders": {"amount": {"type": "String"}}},
+  "goalSimulating": "Simulación · hoy apartas {current}",
+  "@goalSimulating": {"placeholders": {"current": {"type": "String"}}},
+  "goalBackToCurrent": "Volver a {amount}",
+  "@goalBackToCurrent": {"placeholders": {"amount": {"type": "String"}}},
+  "goalPlanContributions": "{count, plural, =1{Es 1 aporte, el {first}.} other{Son {count} aportes de {amount}, del {first} al {last}.}}",
+  "@goalPlanContributions": {"placeholders": {"count": {"type": "int"}, "amount": {"type": "String"}, "first": {"type": "String"}, "last": {"type": "String"}}},
+  "goalEffectTitle": "Qué cambia en lo que puedes gastar",
+  "goalEffectUntilPayday": "Hasta el {payday} puedes gastar {free}: el aporte sale el {day}, así que no lo toca.",
+  "@goalEffectUntilPayday": {"placeholders": {"payday": {"type": "String"}, "free": {"type": "String"}, "day": {"type": "String"}}},
+  "goalEffectBeforePay": "El aporte del {day} sale antes de tu pago: hasta el {payday} podrías gastar {left}.",
+  "@goalEffectBeforePay": {"placeholders": {"day": {"type": "String"}, "payday": {"type": "String"}, "left": {"type": "String"}}},
+  "goalEffectMore": "Desde la quincena del {payday} tendrías {amount} menos al mes para gastar que hoy.",
+  "@goalEffectMore": {"placeholders": {"payday": {"type": "String"}, "amount": {"type": "String"}}},
+  "goalEffectLess": "Desde la quincena del {payday} tendrías {amount} más al mes para gastar que hoy.",
+  "@goalEffectLess": {"placeholders": {"payday": {"type": "String"}, "amount": {"type": "String"}}},
+  "goalEffectSame": "Es lo que ya apartas: lo que puedes gastar no cambia."
 }
