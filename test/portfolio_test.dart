@@ -646,6 +646,26 @@ void main() {
     }
     // 0,02 BTC at 100.000 dollars and 4.000 pesos.
     expect(portfolio.chart(ChartRange.week)!.last.value.base, d('8000000'));
+
+    // A payment in pesos holds no crypto: the line stays as it was drawn.
+    final List<ValuePoint>? redrawn = portfolio.chart(ChartRange.week);
+    final Account bank = await store.addAccount(
+      name: 'Bancolombia',
+      kind: AccountKind.bank,
+      asset: Asset.cop,
+      opening: d('1000000'),
+    );
+    await store.addEntry(
+      accountId: bank.id,
+      amount: d('-50000'),
+      kind: EntryKind.expense,
+      date: DateTime(2026, 10, 2, 9),
+    );
+    while (!own.snapshot!.entries.any((Entry e) => e.accountId == bank.id)) {
+      await settled();
+    }
+    await settled();
+    expect(identical(portfolio.chart(ChartRange.week), redrawn), isTrue);
   });
 }
 

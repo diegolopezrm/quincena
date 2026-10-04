@@ -123,7 +123,7 @@ class PortfolioController extends ChangeNotifier {
     final int held = _heldSignature();
     if (held != _held) {
       _held = held;
-      // Those on a screen now are drawn again at once.
+      // While a screen watches, those drawn already are drawn again at once.
       final List<ChartRange> shown = _charts.keys.toList();
       _charts.clear();
       _chartedAt.clear();
@@ -154,13 +154,19 @@ class PortfolioController extends ChangeNotifier {
   int _heldSignature() {
     final StoreSnapshot? s = own.snapshot;
     if (s == null) return 0;
+    final Set<String> held = <String>{
+      for (final Account a in s.accounts)
+        if (a.asset.isCrypto) a.id,
+    };
     return Object.hash(
       Object.hashAll(<Object>[
         for (final Account a in s.accounts)
           if (a.asset.isCrypto) Object.hash(a.id, a.opening),
       ]),
+      // A movement in pesos changes no coin held, and no chart.
       Object.hashAll(<Object>[
-        for (final Entry e in s.entries) Object.hash(e.id, e.amount, e.date),
+        for (final Entry e in s.entries)
+          if (held.contains(e.accountId)) Object.hash(e.id, e.amount, e.date),
       ]),
     );
   }
