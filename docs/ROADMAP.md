@@ -560,6 +560,138 @@ caché de prompts y el límite en el servidor; y la validación con personas.
   automática, leer fotos en el dispositivo, Binance, sincronización,
   recordatorios y el widget.
 
+### Segunda revisión de claridad
+
+El 4 de octubre llegó una segunda revisión externa, sobre las capturas de
+la 1.1 y la demo web ([texto completo](reviews/2026-10-04-claridad.md)).
+De sus 70 puntos ninguno estaba resuelto del todo: 37 quedaban a medias y
+30 eran nuevos. No eran solo textos. También había errores de datos:
+- volver a la tasa automática sin conexión borraba la tasa;
+- "Seleccionar todos" marcaba también los repetidos de un extracto;
+- un pago de tarjeta importado del banco contaba como gasto doble;
+- un formulario del chat se podía guardar dos veces.
+
+Las fases 20 a 24 siguen las prioridades del revisor. Las de un mismo
+momento se construyen en ramas separadas que se unen en `main` antes de
+cerrar.
+
+**Glosario único, para la app, el prompt y las fichas:**
+- **"Puedes gastar {X} hasta el {fecha}":** la cifra para gastar. Nunca
+  "libre" ni "disponible".
+- **"En tus cuentas de uso diario":** el saldo de lo que cuenta para gastar.
+- **"Lo que debes en tarjetas":** la deuda de tarjetas.
+- **"Pagos hasta el {fecha}":** lo que sale antes del pago. Incluye el día
+  del pago.
+- **"Reserva de ingresos variables":** la reserva.
+- **"Saldo mínimo estimado":** el mínimo proyectado.
+- **En inglés:**
+  - "You can spend… until"
+  - "everyday accounts"
+  - "transaction"
+  - "safety buffer"
+  - "installments"
+  - "recurring payments"
+  - "Needs review"
+
+### 20. Qué significa cada cifra
+
+**Estado:** en construcción.
+
+- **Inicio:**
+  - La cuenta de "Puedes gastar" separa "En tus cuentas de uso diario" de
+    "Lo que debes en tarjetas", en lugar de restar la tarjeta en silencio.
+  - "¿De dónde sale?" está también en la demo y cuenta los movimientos que
+    esperan revisión.
+  - La quincena que llegó dice monto, fecha y cuenta.
+- **Patrimonio:** también resta lo que debes en gastos compartidos y lo
+  que falta de cuotas pagadas por fuera de una tarjeta, y suma lo que te
+  deben.
+- **Tasas:**
+  - Volver a la tasa automática trae la nueva antes de soltar la manual.
+  - Se ve cuál es manual.
+  - Cada paso de una conversión va en su propia línea.
+  - En Cuentas quedan plegadas en "Ver tasas usadas".
+- **Cripto:**
+  - "Sin dato" en vez de un 0 % inventado.
+  - "Ganancia no realizada" sin los saldos que llegaron sin precio de
+    compra, y con las comisiones dentro del costo.
+  - La TRM aparece con su fecha.
+  - El rendimiento es ponderado en el tiempo.
+
+### 21. Simular no es guardar
+
+**Estado:** en construcción.
+
+- **La meta:**
+  - La respuesta dice cuánto hace falta al mes y en qué fechas.
+  - El control simula: "Simulación · hoy apartas…", con "Volver a…",
+    escribir un monto y "Usar $600.000 al mes".
+  - El control explica qué le pasa a lo que puedes gastar.
+  - "Guardar este plan" guarda de verdad, también con Gemini.
+  - Un plan guardado no baja "Puedes gastar"; llenar el sobre de metas es
+    el paso siguiente.
+- **Formularios del chat:** se guardan una sola vez y quedan como
+  comprobante. "Editar" reemplaza el movimiento, no lo duplica.
+- **Suscripciones:**
+  - Se marcan con casillas.
+  - Pasan por "Antes de cancelar" y terminan en "Ya las cancelé".
+- **Lo que la app no hace:** ninguna respuesta promete mover plata,
+  apartarla, avisar o cancelar. Los avisos de meta quedan para la 1.2.
+- **La conversación:**
+  - No salta mientras lees.
+  - "Nueva" deja volver a la anterior.
+
+### 22. Inicio y Cuentas en orden, nada tapado
+
+**Estado:** pendiente.
+
+- **Botón de agregar:**
+  - Se oculta al bajar.
+  - En Cuentas y Plan pasa a ser un botón dentro de la página.
+- **Inicio:**
+  - Sin saludo en modo propio.
+  - Muestra el próximo pago.
+  - "Por hacer" queda en orden de prioridad.
+  - La tarjeta es unos 95 pt más baja.
+- **Cuentas:**
+  - Primero uso diario, luego tarjetas, ahorros y Cripto.
+  - El cupo de las tarjetas, como dato opcional (esquema v3).
+- **Plan:** queda en cuatro grupos.
+- **Cripto:** la gráfica va antes que las conexiones.
+- **Onboarding:**
+  - Pregunta los pagos fijos.
+  - Dice cuándo la cifra todavía es provisional.
+
+### 23. Por revisar e importar con menos lectura
+
+**Estado:** importar en construcción. Por revisar, pendiente.
+
+- **Importar extracto:**
+  - Los repetidos no se marcan solos.
+  - Se ven los totales de lo seleccionado y el saldo antes y después.
+  - Cada línea se puede editar.
+  - Un pago de tarjeta entra como transferencia.
+  - Con movimientos anteriores al saldo que escribiste, se pregunta si
+    ese saldo ya los incluye.
+- **Por revisar:**
+  - Dos grupos: "Listos para registrar" y "Necesitan información".
+  - El botón dice lo que hace.
+  - Siempre se puede deshacer.
+  - Los listos se registran en conjunto cuando son dos o más.
+
+### 24. Inglés, accesibilidad y capturas
+
+**Estado:** pendiente.
+
+- **El inglés:**
+  - Sigue el glosario también en el atajo de iOS, la web y las fichas.
+  - Usa un solo formato de porcentajes y ordinales.
+- **Texto grande:** hasta el tamaño más grande de iOS.
+- **Listas:** las listas largas se construyen a medida que se ven.
+- **Capturas:**
+  - Las de tienda se regeneran con precios fijos.
+  - Ninguna captura de tienda muestra 0 % por no leer precios.
+
 ## Trazabilidad de las 15 ideas
 
 Los números conservan la referencia del [registro de ideación](IDEAS_PRODUCTO.md).
