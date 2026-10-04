@@ -19,8 +19,11 @@ import 'package:quincena/store/store.dart';
 import 'package:quincena/theme/theme.dart';
 import 'package:quincena/ui/own/statement_page.dart';
 
+import 'fonts.dart';
+
 void main() {
   setUpAll(() async {
+    await loadAppFonts();
     await initializeDateFormatting('es_CO');
     Intl.defaultLocale = 'es_CO';
   });
@@ -601,6 +604,64 @@ void main() {
       find.descendant(of: find.byType(ListView), matching: find.text(totals)),
       findsOneWidget,
     );
+  });
+  testWidgets('at twice the text size on a small phone, every part fits', (
+    tester,
+  ) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    final (QuincenaStore store, OwnController own, _) = await world(tester);
+    // Google Play's smallest screenshot phone, 360 by 800.
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await tester.runAsync(() async {
+      for (final String card in <String>['Visa', 'Mastercard']) {
+        await store.addAccount(
+          name: card,
+          kind: AccountKind.card,
+          asset: Asset.cop,
+        );
+      }
+    });
+    Future<void> holds() async {
+      expect(tester.takeException(), isNull);
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(textContrastGuideline));
+    }
+
+    await open(
+      tester,
+      own,
+      readTable(
+        parseCsv(
+          'Fecha;Descripción;Valor;Saldo\n'
+          '01/10/2026;COMPRA EN EXITO LAURELES;-45.900;954.100\n'
+          '02/10/2026;PAGO TARJETA CREDITO;-480.000;474.100\n',
+        ),
+      ),
+    );
+    await holds();
+    // Under the lines: the older line's question and the statement's own
+    // balance.
+    await tester.drag(find.byType(ListView), const Offset(0, -3000));
+    await tester.pumpAndSettle();
+    expect(find.text('Mi saldo ya los incluye (recomendado)'), findsOneWidget);
+    expect(find.text('Ajustar al saldo del extracto'), findsOneWidget);
+    await holds();
+
+    // The card payment's sheet, as a move to a card.
+    await tester.drag(find.byType(ListView), const Offset(0, 3000));
+    await tester.pumpAndSettle();
+    await tapOn(tester, find.text('Tarjeta Credito'));
+    await settle(tester);
+    expect(find.text('Revisar movimiento'), findsOneWidget);
+    await holds();
+    await tapOn(tester, find.text('Transferencia'));
+    await settle(tester);
+    expect(find.text('Visa'), findsOneWidget);
+    await holds();
+    semantics.dispose();
   });
 }
 
