@@ -127,6 +127,13 @@ class _PositionPanelState extends State<PositionPanel> {
                     : '${inBase(gain.base, signed: true)} · ${percentText(ratio)}',
                 color: changeColor(context, gain.base.toDouble()),
               ),
+            if (gain != null &&
+                !noCost &&
+                h!.uncostedValue!.base > Decimal.zero)
+              Text(
+                l.portfolioGainUncosted(inBase(h.uncostedValue!.base)),
+                style: context.type.bodySmall,
+              ),
             if (noCost) ...<Widget>[
               const SizedBox(height: 6),
               Text(l.holdingNoCostHelp, style: context.type.bodySmall),

@@ -22,6 +22,7 @@ import 'package:quincena/theme/theme.dart';
 import 'package:quincena/ui/icons.dart';
 import 'package:quincena/ui/kit.dart';
 import 'package:quincena/ui/own/portfolio_page.dart';
+import 'package:quincena/ui/own/position_panel.dart';
 
 import 'fonts.dart';
 import 'own_flow_test.dart' show screen, settle;
@@ -80,6 +81,7 @@ Future<OwnController> openCrypto(
   WidgetTester tester,
   MarketData market, {
   double textScale = 1,
+  bool reward = false,
 }) async {
   tester.view.physicalSize = const Size(1080, 2400);
   tester.view.devicePixelRatio = 3;
@@ -112,7 +114,7 @@ Future<OwnController> openCrypto(
         source: 'binance',
       ),
     ]);
-    await store.addAccount(
+    final Account bitcoin = await store.addAccount(
       name: 'Bitcoin',
       kind: AccountKind.exchange,
       asset: Asset.btc,
@@ -121,6 +123,15 @@ Future<OwnController> openCrypto(
       spendable: false,
       openingCost: Money(Decimal.fromInt(3000000), Asset.cop),
     );
+    // As much again, from a reward with no purchase price.
+    if (reward) {
+      await store.addEntry(
+        accountId: bitcoin.id,
+        amount: Decimal.parse('0.01'),
+        kind: EntryKind.income,
+        date: DateTime(2026, 9, 1),
+      );
+    }
     await store.addAccount(
       name: 'Tether',
       kind: AccountKind.exchange,
@@ -255,6 +266,41 @@ void main() {
       findsOneWidget,
     );
     semantics.dispose();
+  });
+
+  testWidgets('one account tells its gain the way the page does', (
+    tester,
+  ) async {
+    final OwnController own = await openCrypto(
+      tester,
+      CandleMarket(),
+      reward: true,
+    );
+    final Account bitcoin = own.accounts.firstWhere(
+      (Account a) => a.asset == Asset.btc,
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: quincenaTheme(Brightness.light),
+        locale: const Locale('es'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: appLocales,
+        home: Scaffold(
+          body: PositionPanel(own: own, account: bitcoin),
+        ),
+      ),
+    );
+    await settle(tester);
+
+    // 0,02 BTC worth 8.000.000, half of it bought for 3.000.000 and half a
+    // reward: the gain and the average are on the half that was bought.
+    expect(screen(tester), contains('\$8.000.000'));
+    expect(screen(tester), contains('+\$1.000.000 · +33,3 %'));
+    expect(screen(tester), contains('\$300.000.000'));
+    expect(
+      find.text('Sin contar \$4.000.000 que llegó sin precio de compra.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('it says where the prices and the dollar come from, and when', (

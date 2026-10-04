@@ -512,6 +512,8 @@ void main() {
               as Map<Object?, Object?>;
       expect(held['quantityText'], '0,021 BTC');
       expect(held['heldWithoutCostText'], '0,001 BTC');
+      // The average is of the 0,02 BTC that cost something.
+      expect(held['averageCostInBase'], 300000000);
       expect(held['change24hPercent'], 2.04);
     });
 

@@ -82,10 +82,15 @@ class Position {
 
   Asset get asset => account.asset;
 
-  /// What one unit cost on average, or null with nothing held.
-  Pair? get averageCost => quantity <= Decimal.zero
-      ? null
-      : Pair(_divide(cost.base, quantity), _divide(cost.usd, quantity));
+  /// What one unit with a known cost cost on average, or null with none
+  /// held: what came in with no purchase price does not pull it down, as it
+  /// is not in the gain either.
+  Pair? get averageCost {
+    final Decimal costed = quantity - uncosted;
+    return costed <= Decimal.zero
+        ? null
+        : Pair(_divide(cost.base, costed), _divide(cost.usd, costed));
+  }
 }
 
 /// The rate of one dollar in the base currency on a past day, or null when
