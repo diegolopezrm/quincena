@@ -184,6 +184,13 @@ class Tour {
     await settle(tester);
   }
 
+  /// Back to the top of the list, where a floating button that stepped
+  /// aside shows again.
+  Future<void> top() async {
+    _list()?.position.jumpTo(0);
+    await settle(tester);
+  }
+
   /// Scrolls the top list until [finder] shows.
   Future<void> reveal(Finder finder) async {
     try {
@@ -323,6 +330,7 @@ final List<Scene> scenes = <Scene>[
     await t.tap('Éxito Laureles');
     await t.page('editar-movimiento');
     await t.back();
+    await t.top();
     await t.tapTip('Agregar movimiento');
     await t.page('nuevo-gasto');
     await t.tap('Ingreso');

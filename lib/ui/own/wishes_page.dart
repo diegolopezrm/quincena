@@ -14,6 +14,7 @@ import '../icons.dart';
 import '../kit.dart';
 import 'amount_input.dart';
 import 'coming_days_page.dart';
+import 'look.dart';
 
 /// Things wanted for later: a price typed by hand, a priority, and maybe a
 /// wait before deciding. No shop is watched and nothing is bought here.
@@ -46,10 +47,12 @@ class WishesPage extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           title: Text(l.wishesTitle, style: context.type.titleLarge),
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => _add(context),
-          icon: const Icon(Glyph.plus),
-          label: Text(l.wishAdd),
+        floatingActionButton: ScrollAwareFab(
+          child: FloatingActionButton.extended(
+            onPressed: () => _add(context),
+            icon: const Icon(Glyph.plus),
+            label: Text(l.wishAdd),
+          ),
         ),
         body: Center(
           child: ConstrainedBox(

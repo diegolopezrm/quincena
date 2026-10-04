@@ -10,13 +10,12 @@ import '../../theme/tokens.dart';
 import '../../widget/home_widget.dart';
 import '../icons.dart';
 import '../mark.dart';
-import 'account_sheet.dart';
 import 'accounts_tab.dart';
 import 'ask_page.dart';
 import 'entry_sheet.dart';
-import 'goal_sheet.dart';
 import 'home_tab.dart';
 import 'inbox_page.dart';
+import 'look.dart';
 import 'own_settings_page.dart';
 import 'plan_tab.dart';
 
@@ -159,23 +158,19 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
         );
       },
     );
-    final Widget fab = _tab == 2
-        ? FloatingActionButton.extended(
-            onPressed: () => showAccountSheet(context, own: own),
-            icon: const Icon(Glyph.plus),
-            label: Text(l.addAccount),
-          )
-        : _tab == 3
-        ? FloatingActionButton.extended(
-            onPressed: () => showGoalSheet(context, own: own),
-            icon: const Icon(Glyph.plus),
-            label: Text(l.goalAdd),
-          )
-        : FloatingActionButton.extended(
-            tooltip: l.addMovement,
-            onPressed: () => showEntrySheet(context, own: own),
-            icon: const Icon(Glyph.plus),
-            label: Text(l.fabMovement),
+    // Accounts and goals are added in place, on their own tabs: nothing
+    // floats over the amounts there.
+    final Widget? fab = _tab >= 2
+        ? null
+        : ScrollAwareFab(
+            child: FloatingActionButton.extended(
+              // Each tab starts with it in sight.
+              key: ValueKey<int>(_tab),
+              tooltip: l.addMovement,
+              onPressed: () => showEntrySheet(context, own: own),
+              icon: const Icon(Glyph.plus),
+              label: Text(l.fabMovement),
+            ),
           );
     return Scaffold(
       appBar: AppBar(
@@ -209,6 +204,9 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
         ],
       ),
       floatingActionButton: fab,
+      floatingActionButtonAnimator: MediaQuery.disableAnimationsOf(context)
+          ? FloatingActionButtonAnimator.noAnimation
+          : null,
       body: wide
           ? Row(
               children: <Widget>[
