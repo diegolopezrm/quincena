@@ -294,6 +294,14 @@ void main() {
       );
       expect(words, contains('"saldo mínimo estimado"'));
       expect(words, isNot(contains('lowest point')));
+      // The balance it gets has a card's debt off, which the home card
+      // shows on a line of its own.
+      expect(
+        words,
+        contains(
+          'what everyday cards owe ("lo que debes en tarjetas") already',
+        ),
+      );
       // With someone's own accounts, the net worth is defined.
       final String own = flat(
         quincenaPrompt(quincenaCatalog, demoLedger(), own: true),

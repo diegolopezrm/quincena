@@ -43,7 +43,12 @@ class AccountRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final Money balance = own.balances[account.id] ?? account.openingMoney;
     final Asset? base = own.profile?.base;
-    final Money? converted = account.asset == base ? null : own.inBase(balance);
+    // A card's debt in pesos too reads as owed, not as money of another sign.
+    final Money? converted = account.asset == base
+        ? null
+        : own.inBase(
+            account.kind == AccountKind.card ? balance.abs() : balance,
+          );
     final bool card = account.kind == AccountKind.card;
     final List<String> detail = <String>[
       // A card sits under its own heading, which already says what it is.

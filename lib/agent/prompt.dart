@@ -177,7 +177,8 @@ Only formatString reads \${...}, and a call written out as text, such as
 Name the figures as the app does: freeUntilPayday is what the person can spend
 until payday ("puedes gastar … hasta el …", "you can spend … until …"), never
 "libre", "disponible", "free" or "available"; the balance is what is in their
-everyday accounts ("tus cuentas de uso diario", "your everyday accounts"); the
+everyday accounts ("tus cuentas de uso diario", "your everyday accounts"), with
+what everyday cards owe ("lo que debes en tarjetas") already taken off; the
 lowest balance ahead is the "saldo mínimo estimado" ("lowest estimated
 balance").
 
