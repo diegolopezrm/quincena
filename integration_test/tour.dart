@@ -328,10 +328,17 @@ final List<Scene> scenes = <Scene>[
     await t.tester.tap(find.byTooltip('Más acciones').first);
     await settle(t.tester);
     await t.shot('mas-acciones');
+    await t.tap('Detalles de detección');
+    await t.page('detalles-de-deteccion');
+    await t.tap('Elegir la cuenta');
+    await t.shot('elegir-la-cuenta');
     await t.back();
     await t.tester.tap(find.text('Editar').first);
     await settle(t.tester);
     await t.page('editar-captura');
+    await t.back();
+    await t.tap('Leer un pago');
+    await t.shot('leer-un-pago');
     await t.back();
   }),
   Scene('04-movimientos', data: fullAccount, (Tour t) async {

@@ -2921,14 +2921,8 @@ abstract class AppLocalizations {
   /// No description provided for @inboxEmptyBody.
   ///
   /// In es, this message translates to:
-  /// **'No tienes movimientos pendientes. Cuando llegue un pago de tu banco, aparece aquí para confirmarlo.'**
+  /// **'No tienes movimientos pendientes. Cuando llegue un pago de tu banco, aparece aquí para registrarlo.'**
   String get inboxEmptyBody;
-
-  /// No description provided for @confirm.
-  ///
-  /// In es, this message translates to:
-  /// **'Confirmar'**
-  String get confirm;
 
   /// No description provided for @edit.
   ///
@@ -3245,7 +3239,7 @@ abstract class AppLocalizations {
   /// No description provided for @readScreenshot.
   ///
   /// In es, this message translates to:
-  /// **'Leer una captura'**
+  /// **'Leer un pantallazo o PDF'**
   String get readScreenshot;
 
   /// No description provided for @pickImages.
@@ -3277,12 +3271,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'No encontré un monto con su moneda. Prueba con una captura donde se vea el valor.'**
   String get readNothing;
-
-  /// No description provided for @showOriginal.
-  ///
-  /// In es, this message translates to:
-  /// **'Ver el mensaje'**
-  String get showOriginal;
 
   /// No description provided for @captureTitle.
   ///
@@ -7015,12 +7003,6 @@ abstract class AppLocalizations {
   /// **'Más acciones'**
   String get moreActions;
 
-  /// No description provided for @hideOriginal.
-  ///
-  /// In es, this message translates to:
-  /// **'Ocultar el mensaje'**
-  String get hideOriginal;
-
   /// No description provided for @statementNew.
   ///
   /// In es, this message translates to:
@@ -8393,6 +8375,234 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Una suscripción'**
   String get fixedSuggestSubscription;
+
+  /// No description provided for @inboxReadySection.
+  ///
+  /// In es, this message translates to:
+  /// **'Listos para registrar'**
+  String get inboxReadySection;
+
+  /// No description provided for @inboxNeedsInfoSection.
+  ///
+  /// In es, this message translates to:
+  /// **'Necesitan información'**
+  String get inboxNeedsInfoSection;
+
+  /// No description provided for @inboxReadyCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{1 listo} other{{count} listos}}'**
+  String inboxReadyCount(int count);
+
+  /// No description provided for @inboxNeedsCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{1 necesita información} other{{count} necesitan información}}'**
+  String inboxNeedsCount(int count);
+
+  /// No description provided for @inboxRecordReady.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Registrar el que está listo} other{Registrar los {count} listos}}'**
+  String inboxRecordReady(int count);
+
+  /// No description provided for @inboxRecordedMany.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Un movimiento registrado.} other{{count} movimientos registrados.}}'**
+  String inboxRecordedMany(int count);
+
+  /// No description provided for @recordExpense.
+  ///
+  /// In es, this message translates to:
+  /// **'Registrar gasto'**
+  String get recordExpense;
+
+  /// No description provided for @recordIncome.
+  ///
+  /// In es, this message translates to:
+  /// **'Registrar ingreso'**
+  String get recordIncome;
+
+  /// No description provided for @recordTransfer.
+  ///
+  /// In es, this message translates to:
+  /// **'Registrar transferencia'**
+  String get recordTransfer;
+
+  /// No description provided for @reviewMovement.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisar movimiento'**
+  String get reviewMovement;
+
+  /// No description provided for @recordedExpenseIn.
+  ///
+  /// In es, this message translates to:
+  /// **'Gasto registrado en {account}.'**
+  String recordedExpenseIn(String account);
+
+  /// No description provided for @recordedIncomeIn.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingreso registrado en {account}.'**
+  String recordedIncomeIn(String account);
+
+  /// No description provided for @recordedTransfer.
+  ///
+  /// In es, this message translates to:
+  /// **'Transferencia registrada.'**
+  String get recordedTransfer;
+
+  /// No description provided for @accountMissingShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Falta la cuenta'**
+  String get accountMissingShort;
+
+  /// No description provided for @kindMissing.
+  ///
+  /// In es, this message translates to:
+  /// **'No sabemos si es un gasto o un ingreso.'**
+  String get kindMissing;
+
+  /// No description provided for @accountGuessed.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisa la cuenta: la elegimos por ser tu única de uso diario en {asset}.'**
+  String accountGuessed(String asset);
+
+  /// No description provided for @whichAccountCard.
+  ///
+  /// In es, this message translates to:
+  /// **'Detectamos {institution} y la tarjeta *{digits}, pero falta asociarla a una de tus cuentas.'**
+  String whichAccountCard(String institution, String digits);
+
+  /// No description provided for @whichAccountBankMany.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =2{Detectamos {institution}, pero tienes dos cuentas ahí: elige cuál fue.} other{Detectamos {institution}, pero tienes {count} cuentas ahí: elige cuál fue.}}'**
+  String whichAccountBankMany(int count, String institution);
+
+  /// No description provided for @whichAccountBankNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Detectamos {institution}, pero no tienes una cuenta de ese banco en Quincena.'**
+  String whichAccountBankNone(String institution);
+
+  /// No description provided for @pickAccountOut.
+  ///
+  /// In es, this message translates to:
+  /// **'¿De qué cuenta salió?'**
+  String get pickAccountOut;
+
+  /// No description provided for @pickAccountIn.
+  ///
+  /// In es, this message translates to:
+  /// **'¿A qué cuenta llegó?'**
+  String get pickAccountIn;
+
+  /// No description provided for @pickAccountCardNote.
+  ///
+  /// In es, this message translates to:
+  /// **'La próxima vez, lo de la tarjeta *{digits} irá directo a esa cuenta.'**
+  String pickAccountCardNote(String digits);
+
+  /// No description provided for @pickAccountBankNote.
+  ///
+  /// In es, this message translates to:
+  /// **'La próxima vez, lo de {institution} irá directo a esa cuenta.'**
+  String pickAccountBankNote(String institution);
+
+  /// No description provided for @accountRequired.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige la cuenta.'**
+  String get accountRequired;
+
+  /// No description provided for @detectionDetails.
+  ///
+  /// In es, this message translates to:
+  /// **'Detalles de detección'**
+  String get detectionDetails;
+
+  /// No description provided for @hideDetectionDetails.
+  ///
+  /// In es, this message translates to:
+  /// **'Ocultar detalles'**
+  String get hideDetectionDetails;
+
+  /// No description provided for @detectionHow.
+  ///
+  /// In es, this message translates to:
+  /// **'Cómo llegó'**
+  String get detectionHow;
+
+  /// No description provided for @detectionWhy.
+  ///
+  /// In es, this message translates to:
+  /// **'Por qué lo sugerimos'**
+  String get detectionWhy;
+
+  /// No description provided for @detectionMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'El mensaje'**
+  String get detectionMessage;
+
+  /// No description provided for @placeShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Por ubicación · © OpenStreetMap'**
+  String get placeShort;
+
+  /// No description provided for @inboxAddFrom.
+  ///
+  /// In es, this message translates to:
+  /// **'Leer un pago'**
+  String get inboxAddFrom;
+
+  /// No description provided for @inboxAddTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Dónde está el pago?'**
+  String get inboxAddTitle;
+
+  /// No description provided for @inboxAddImage.
+  ///
+  /// In es, this message translates to:
+  /// **'Un pantallazo, foto o PDF'**
+  String get inboxAddImage;
+
+  /// No description provided for @inboxAddImageBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Se lee en este dispositivo y queda aquí para revisar.'**
+  String get inboxAddImageBody;
+
+  /// No description provided for @inboxAddPaste.
+  ///
+  /// In es, this message translates to:
+  /// **'Un mensaje que copiaste'**
+  String get inboxAddPaste;
+
+  /// No description provided for @inboxAddPasteBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Pega la notificación, el SMS o el correo del banco.'**
+  String get inboxAddPasteBody;
+
+  /// No description provided for @inboxWaiting.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{1 movimiento por revisar} other{{count} movimientos por revisar}}'**
+  String inboxWaiting(int count);
+
+  /// No description provided for @inboxRecordSome.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Registrar 1 de los {total} listos} other{Registrar {count} de los {total} listos}}'**
+  String inboxRecordSome(int count, int total);
 }
 
 class _AppLocalizationsDelegate

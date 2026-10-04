@@ -1821,10 +1821,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inboxEmptyBody =>
-      'Nothing waiting. When a payment arrives from your bank, it shows up here to confirm.';
-
-  @override
-  String get confirm => 'Confirm';
+      'Nothing waiting. When a payment arrives from your bank, it shows up here for you to record.';
 
   @override
   String get edit => 'Edit';
@@ -2032,7 +2029,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pasteDuplicate => 'That payment was already there.';
 
   @override
-  String get readScreenshot => 'Read a screenshot';
+  String get readScreenshot => 'Read a screenshot or PDF';
 
   @override
   String get pickImages => 'Screenshots or photos';
@@ -2057,9 +2054,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get readNothing =>
       'No amount with its currency was found. Try a screenshot where the amount shows.';
-
-  @override
-  String get showOriginal => 'See the message';
 
   @override
   String get captureTitle => 'Automatic capture';
@@ -4418,9 +4412,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moreActions => 'More actions';
 
   @override
-  String get hideOriginal => 'Hide the message';
-
-  @override
   String statementNew(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -5403,4 +5394,193 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fixedSuggestSubscription => 'A subscription';
+
+  @override
+  String get inboxReadySection => 'Ready to record';
+
+  @override
+  String get inboxNeedsInfoSection => 'Need more information';
+
+  @override
+  String inboxReadyCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ready',
+      one: '1 ready',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String inboxNeedsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count need information',
+      one: '1 needs information',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String inboxRecordReady(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Record all $count ready',
+      one: 'Record the ready one',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String inboxRecordedMany(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count transactions recorded.',
+      one: 'One transaction recorded.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get recordExpense => 'Record expense';
+
+  @override
+  String get recordIncome => 'Record income';
+
+  @override
+  String get recordTransfer => 'Record transfer';
+
+  @override
+  String get reviewMovement => 'Review transaction';
+
+  @override
+  String recordedExpenseIn(String account) {
+    return 'Expense recorded in $account.';
+  }
+
+  @override
+  String recordedIncomeIn(String account) {
+    return 'Income recorded in $account.';
+  }
+
+  @override
+  String get recordedTransfer => 'Transfer recorded.';
+
+  @override
+  String get accountMissingShort => 'Account missing';
+
+  @override
+  String get kindMissing =>
+      'We can\'t tell whether it\'s an expense or income.';
+
+  @override
+  String accountGuessed(String asset) {
+    return 'Check the account: we picked it because it\'s your only everyday account in $asset.';
+  }
+
+  @override
+  String whichAccountCard(String institution, String digits) {
+    return 'We detected $institution and card *$digits, but it isn\'t linked to one of your accounts yet.';
+  }
+
+  @override
+  String whichAccountBankMany(int count, String institution) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'We detected $institution, but you have $count accounts there: choose which one.',
+      two:
+          'We detected $institution, but you have two accounts there: choose which one.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String whichAccountBankNone(String institution) {
+    return 'We detected $institution, but you don\'t have an account from that bank in Quincena.';
+  }
+
+  @override
+  String get pickAccountOut => 'Which account did it come from?';
+
+  @override
+  String get pickAccountIn => 'Which account did it go into?';
+
+  @override
+  String pickAccountCardNote(String digits) {
+    return 'Next time, payments with card *$digits will go straight to that account.';
+  }
+
+  @override
+  String pickAccountBankNote(String institution) {
+    return 'Next time, alerts from $institution will go straight to that account.';
+  }
+
+  @override
+  String get accountRequired => 'Choose the account.';
+
+  @override
+  String get detectionDetails => 'Detection details';
+
+  @override
+  String get hideDetectionDetails => 'Hide details';
+
+  @override
+  String get detectionHow => 'How it arrived';
+
+  @override
+  String get detectionWhy => 'Why we suggested it';
+
+  @override
+  String get detectionMessage => 'The message';
+
+  @override
+  String get placeShort => 'From your location · © OpenStreetMap';
+
+  @override
+  String get inboxAddFrom => 'Read a payment';
+
+  @override
+  String get inboxAddTitle => 'Where is the payment?';
+
+  @override
+  String get inboxAddImage => 'A screenshot, photo or PDF';
+
+  @override
+  String get inboxAddImageBody =>
+      'It\'s read on this device and waits here for review.';
+
+  @override
+  String get inboxAddPaste => 'A message you copied';
+
+  @override
+  String get inboxAddPasteBody =>
+      'Paste the bank\'s notification, text or email.';
+
+  @override
+  String inboxWaiting(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count transactions to review',
+      one: '1 transaction to review',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String inboxRecordSome(int count, int total) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Record $count of the $total ready',
+      one: 'Record 1 of the $total ready',
+    );
+    return '$_temp0';
+  }
 }

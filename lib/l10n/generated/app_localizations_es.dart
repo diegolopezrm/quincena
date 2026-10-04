@@ -1824,10 +1824,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get inboxEmptyBody =>
-      'No tienes movimientos pendientes. Cuando llegue un pago de tu banco, aparece aquí para confirmarlo.';
-
-  @override
-  String get confirm => 'Confirmar';
+      'No tienes movimientos pendientes. Cuando llegue un pago de tu banco, aparece aquí para registrarlo.';
 
   @override
   String get edit => 'Editar';
@@ -2034,7 +2031,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get pasteDuplicate => 'Ese pago ya estaba.';
 
   @override
-  String get readScreenshot => 'Leer una captura';
+  String get readScreenshot => 'Leer un pantallazo o PDF';
 
   @override
   String get pickImages => 'Capturas o fotos';
@@ -2059,9 +2056,6 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get readNothing =>
       'No encontré un monto con su moneda. Prueba con una captura donde se vea el valor.';
-
-  @override
-  String get showOriginal => 'Ver el mensaje';
 
   @override
   String get captureTitle => 'Captura automática';
@@ -4417,9 +4411,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get moreActions => 'Más acciones';
 
   @override
-  String get hideOriginal => 'Ocultar el mensaje';
-
-  @override
   String statementNew(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -5397,4 +5388,192 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get fixedSuggestSubscription => 'Una suscripción';
+
+  @override
+  String get inboxReadySection => 'Listos para registrar';
+
+  @override
+  String get inboxNeedsInfoSection => 'Necesitan información';
+
+  @override
+  String inboxReadyCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count listos',
+      one: '1 listo',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String inboxNeedsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count necesitan información',
+      one: '1 necesita información',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String inboxRecordReady(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Registrar los $count listos',
+      one: 'Registrar el que está listo',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String inboxRecordedMany(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count movimientos registrados.',
+      one: 'Un movimiento registrado.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get recordExpense => 'Registrar gasto';
+
+  @override
+  String get recordIncome => 'Registrar ingreso';
+
+  @override
+  String get recordTransfer => 'Registrar transferencia';
+
+  @override
+  String get reviewMovement => 'Revisar movimiento';
+
+  @override
+  String recordedExpenseIn(String account) {
+    return 'Gasto registrado en $account.';
+  }
+
+  @override
+  String recordedIncomeIn(String account) {
+    return 'Ingreso registrado en $account.';
+  }
+
+  @override
+  String get recordedTransfer => 'Transferencia registrada.';
+
+  @override
+  String get accountMissingShort => 'Falta la cuenta';
+
+  @override
+  String get kindMissing => 'No sabemos si es un gasto o un ingreso.';
+
+  @override
+  String accountGuessed(String asset) {
+    return 'Revisa la cuenta: la elegimos por ser tu única de uso diario en $asset.';
+  }
+
+  @override
+  String whichAccountCard(String institution, String digits) {
+    return 'Detectamos $institution y la tarjeta *$digits, pero falta asociarla a una de tus cuentas.';
+  }
+
+  @override
+  String whichAccountBankMany(int count, String institution) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Detectamos $institution, pero tienes $count cuentas ahí: elige cuál fue.',
+      two:
+          'Detectamos $institution, pero tienes dos cuentas ahí: elige cuál fue.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String whichAccountBankNone(String institution) {
+    return 'Detectamos $institution, pero no tienes una cuenta de ese banco en Quincena.';
+  }
+
+  @override
+  String get pickAccountOut => '¿De qué cuenta salió?';
+
+  @override
+  String get pickAccountIn => '¿A qué cuenta llegó?';
+
+  @override
+  String pickAccountCardNote(String digits) {
+    return 'La próxima vez, lo de la tarjeta *$digits irá directo a esa cuenta.';
+  }
+
+  @override
+  String pickAccountBankNote(String institution) {
+    return 'La próxima vez, lo de $institution irá directo a esa cuenta.';
+  }
+
+  @override
+  String get accountRequired => 'Elige la cuenta.';
+
+  @override
+  String get detectionDetails => 'Detalles de detección';
+
+  @override
+  String get hideDetectionDetails => 'Ocultar detalles';
+
+  @override
+  String get detectionHow => 'Cómo llegó';
+
+  @override
+  String get detectionWhy => 'Por qué lo sugerimos';
+
+  @override
+  String get detectionMessage => 'El mensaje';
+
+  @override
+  String get placeShort => 'Por ubicación · © OpenStreetMap';
+
+  @override
+  String get inboxAddFrom => 'Leer un pago';
+
+  @override
+  String get inboxAddTitle => '¿Dónde está el pago?';
+
+  @override
+  String get inboxAddImage => 'Un pantallazo, foto o PDF';
+
+  @override
+  String get inboxAddImageBody =>
+      'Se lee en este dispositivo y queda aquí para revisar.';
+
+  @override
+  String get inboxAddPaste => 'Un mensaje que copiaste';
+
+  @override
+  String get inboxAddPasteBody =>
+      'Pega la notificación, el SMS o el correo del banco.';
+
+  @override
+  String inboxWaiting(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count movimientos por revisar',
+      one: '1 movimiento por revisar',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String inboxRecordSome(int count, int total) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Registrar $count de los $total listos',
+      one: 'Registrar 1 de los $total listos',
+    );
+    return '$_temp0';
+  }
 }

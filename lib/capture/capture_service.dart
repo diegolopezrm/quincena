@@ -154,16 +154,85 @@ class CaptureService {
       kind: kind,
       date: date,
     );
-    await store.saveInboxItem(
-      item.copyWith(status: InboxStatus.accepted, entryId: entry.id),
+    final InboxItem recorded = item.copyWith(
+      status: InboxStatus.accepted,
+      entryId: entry.id,
     );
+    await store.saveInboxItem(recorded);
     final List<RuleChange> learned = await _learn(
       item,
       accountId: accountId,
       category: category ?? entry.category,
       payee: entry.payee,
     );
-    return Accepted(entry, learned);
+    return Accepted(entry, learned, item: recorded);
+  }
+
+  /// Records each of [items] as the app proposes it, as [accept] would one
+  /// at a time. One that stopped waiting meanwhile is left as it is.
+  Future<List<Accepted>> acceptAll(Iterable<InboxItem> items) async {
+    final Set<String> waiting = <String>{
+      for (final InboxItem i in await store.inbox(
+        statuses: <InboxStatus>{InboxStatus.pending},
+      ))
+        i.id,
+    };
+    return <Accepted>[
+      for (final InboxItem i in items)
+        if (waiting.contains(i.id) && i.suggestion.accountId != null)
+          await accept(
+            i,
+            accountId: i.suggestion.accountId!,
+            category: i.suggestion.category,
+            payee: i.suggestion.payee,
+          ),
+    ];
+  }
+
+  /// Records [item] as money the person moved between their own accounts:
+  /// a transfer, neither income nor spending, so nothing is learned from
+  /// it.
+  Future<Accepted> acceptTransfer(
+    InboxItem item, {
+    required String fromAccountId,
+    required String toAccountId,
+    required Decimal sent,
+    Decimal? received,
+    required DateTime date,
+    String note = '',
+  }) async {
+    final String transferId = await store.addTransfer(
+      fromAccountId: fromAccountId,
+      toAccountId: toAccountId,
+      sent: sent,
+      received: received,
+      date: date,
+      note: note,
+      source: item.event.source.name,
+      sourceRef: item.id,
+    );
+    final Entry left = (await store.entries(
+      accountId: fromAccountId,
+    )).firstWhere((Entry e) => e.transferId == transferId);
+    final InboxItem recorded = item.copyWith(
+      status: InboxStatus.accepted,
+      entryId: left.id,
+    );
+    await store.saveInboxItem(recorded);
+    return Accepted(left, const <RuleChange>[], item: recorded);
+  }
+
+  /// Takes back what [accept], [acceptAll] or [acceptTransfer] did: each
+  /// movement goes, its capture waits in the inbox again, and every rule
+  /// they taught says what it said before, the last one first.
+  Future<void> takeBack(List<Accepted> done) async {
+    for (final Accepted a in done) {
+      await undo(a.item);
+    }
+    final List<RuleChange> learned = <RuleChange>[
+      for (final Accepted a in done.reversed) ...a.learned.reversed,
+    ];
+    if (learned.isNotEmpty) await forget(learned);
   }
 
   /// Takes back what a confirmation taught: each rule goes back to what it
@@ -229,12 +298,27 @@ class CaptureService {
 
   /// Whether [p] can be recorded without asking. An account guessed only
   /// because it is the one in pesos is proposed, never assumed.
-  bool _clear(ParsedCapture p, Suggestion s) =>
+  static bool _clear(ParsedCapture p, Suggestion s) =>
       p.isMovement &&
       p.confidence >= 0.8 &&
       s.accountId != null &&
       !s.why.contains('only') &&
       s.category != null;
+
+  /// Whether [item] can be recorded in one tap: it says how much and which
+  /// way, and its account is one of [accounts], not only guessed. A missing
+  /// category does not stop it: it goes to Otros, or Otros ingresos.
+  static bool isReady(InboxItem item, Iterable<Account> accounts) =>
+      item.parsed.isMovement &&
+      !item.suggestion.why.contains('only') &&
+      accounts.any((Account a) => a.id == item.suggestion.accountId);
+
+  /// Whether [item] is as clear as what is recorded without asking, and is
+  /// not a possible repeat: what can be recorded with others in one go.
+  static bool isClear(InboxItem item, Iterable<Account> accounts) =>
+      item.status == InboxStatus.pending &&
+      _clear(item.parsed, item.suggestion) &&
+      isReady(item, accounts);
 
   Future<Suggestion> _suggest(
     CaptureEvent event,
@@ -254,12 +338,7 @@ class CaptureService {
     if (accountId == null && institution != null) {
       accountId = settings.use(RuleKind.institution, institution);
       if (accountId == null) {
-        final List<Account> same = <Account>[
-          for (final Account a in accounts)
-            if (normalize(a.institution) == normalize(institution) ||
-                normalize(a.name) == normalize(institution))
-              a,
-        ];
+        final List<Account> same = accountsAt(institution, accounts);
         if (same.length == 1) accountId = same.single.id;
       }
       if (accountId != null) why.add('institution');
@@ -460,8 +539,21 @@ class CaptureService {
 
 /// A capture recorded, and the rules recording it taught.
 class Accepted {
-  const Accepted(this.entry, this.learned);
+  const Accepted(this.entry, this.learned, {required this.item});
 
   final Entry entry;
   final List<RuleChange> learned;
+
+  /// The capture as it stands now: recorded, pointing at [entry].
+  final InboxItem item;
 }
+
+/// The person's accounts at [institution], by the bank they were set up
+/// with or by their name: the ones an alert from it may be about.
+List<Account> accountsAt(String institution, Iterable<Account> accounts) =>
+    <Account>[
+      for (final Account a in accounts)
+        if (normalize(a.institution) == normalize(institution) ||
+            normalize(a.name) == normalize(institution))
+          a,
+    ];

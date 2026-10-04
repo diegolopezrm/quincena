@@ -889,7 +889,7 @@ void main() {
         // The form opens as a transfer into Nequi, where the money arrived.
         expect(find.text('Transferencia'), findsOneWidget);
         expect(screen(tester), contains('Nequi'));
-        await tapText(tester, 'Guardar');
+        await tapText(tester, 'Registrar transferencia');
 
         final List<Entry> entries = (await tester.runAsync(own.store.entries))!;
         final List<Entry> moved = <Entry>[

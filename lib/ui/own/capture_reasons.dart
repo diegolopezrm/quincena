@@ -1,5 +1,7 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 
+import '../../capture/capture_service.dart';
 import '../../capture/inbox.dart';
 import '../../capture/merchants.dart';
 import '../../domain/records.dart';
@@ -22,6 +24,16 @@ String _accountName(AppLocalizations l, OwnController own, String? id) {
 /// belongs to an account, the person's rule for a merchant. Null when it
 /// had no reason to give.
 String? reasonsText(BuildContext context, OwnController own, InboxItem item) {
+  final List<String> reasons = reasonList(context, own, item);
+  return reasons.isEmpty ? null : context.l10n.whyLabel(reasons.join(' · '));
+}
+
+/// Each reason the app had for what it suggested for [item], on its own.
+List<String> reasonList(
+  BuildContext context,
+  OwnController own,
+  InboxItem item,
+) {
   final AppLocalizations l = context.l10n;
   final Suggestion s = item.suggestion;
   final String account = _accountName(l, own, s.accountId);
@@ -33,7 +45,7 @@ String? reasonsText(BuildContext context, OwnController own, InboxItem item) {
           .map((Account a) => a.asset.code)
           .firstOrNull ??
       '';
-  final List<String> reasons = <String>[
+  return <String>[
     for (final String why in s.why)
       ?switch (why) {
         'card' when item.parsed.card != null => l.whyCard(
@@ -52,7 +64,27 @@ String? reasonsText(BuildContext context, OwnController own, InboxItem item) {
         _ => null,
       },
   ];
-  return reasons.isEmpty ? null : l.whyLabel(reasons.join(' · '));
+}
+
+/// Why [item] has no account yet, from what the alert gave away: the bank
+/// and the card it names, and how many of the person's accounts are there.
+String missingAccountText(
+  BuildContext context,
+  OwnController own,
+  InboxItem item,
+) {
+  final AppLocalizations l = context.l10n;
+  final String? institution = item.parsed.institution;
+  final String? card = item.parsed.card;
+  if (institution != null) {
+    final int there = accountsAt(institution, own.accounts).length;
+    if (there == 0) return l.whichAccountBankNone(institution);
+    if (card != null) return l.whichAccountCard(institution, card);
+    if (there > 1) return l.whichAccountBankMany(there, institution);
+  }
+  return item.parsed.kind == EntryKind.income
+      ? l.whichAccountIn
+      : l.whichAccountOut;
 }
 
 /// What [rule] does, the way the person would say it.
@@ -91,24 +123,68 @@ String learnedText(
       : '$said ${l.ruleLearnedMore(changes.length - 1)}';
 }
 
-/// Tells the person what confirming [changes] taught, with a way to take
-/// it back.
-void showLearned(
+/// Says where [done] was recorded and what it taught, with one way to take
+/// both back: the movement goes, and the capture waits in Por revisar
+/// again. It is written from [messenger]'s context, so it shows even when
+/// the card that recorded it has already folded away.
+void showRecorded(
   ScaffoldMessengerState messenger,
-  BuildContext context,
   OwnController own,
-  List<RuleChange> changes,
+  Accepted done,
 ) {
-  if (changes.isEmpty) return;
+  final BuildContext context = messenger.context;
   final AppLocalizations l = context.l10n;
-  messenger.showSnackBar(
-    SnackBar(
-      content: Text(learnedText(context, own, changes)),
-      duration: const Duration(seconds: 6),
-      action: SnackBarAction(
-        label: l.undo,
-        onPressed: () => own.capture.forget(changes),
-      ),
-    ),
+  final Entry entry = done.entry;
+  final String account = _accountName(l, own, entry.accountId);
+  final String said = switch (entry.kind) {
+    EntryKind.transfer => l.recordedTransfer,
+    _ when entry.amount > Decimal.zero => l.recordedIncomeIn(account),
+    _ => l.recordedExpenseIn(account),
+  };
+  _offerUndo(messenger, own, <Accepted>[done], said);
+}
+
+/// Says how many of [done] were recorded at once, with one way to take
+/// them all back.
+void showRecordedMany(
+  ScaffoldMessengerState messenger,
+  OwnController own,
+  List<Accepted> done,
+) {
+  if (done.isEmpty) return;
+  _offerUndo(
+    messenger,
+    own,
+    done,
+    messenger.context.l10n.inboxRecordedMany(done.length),
   );
+}
+
+/// [said], then what [done] taught, with a way to take all of it back.
+void _offerUndo(
+  ScaffoldMessengerState messenger,
+  OwnController own,
+  List<Accepted> done,
+  String said,
+) {
+  final BuildContext context = messenger.context;
+  final List<RuleChange> learned = <RuleChange>[
+    for (final Accepted a in done) ...a.learned,
+  ];
+  messenger
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        content: Text(
+          learned.isEmpty
+              ? said
+              : '$said ${learnedText(context, own, learned)}',
+        ),
+        duration: const Duration(seconds: 6),
+        action: SnackBarAction(
+          label: context.l10n.undo,
+          onPressed: () => own.capture.takeBack(done),
+        ),
+      ),
+    );
 }
