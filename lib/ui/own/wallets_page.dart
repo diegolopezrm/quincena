@@ -145,18 +145,20 @@ class _WalletsPageState extends State<WalletsPage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showModalBottomSheet<void>(
-          context: context,
-          isScrollControlled: true,
-          showDragHandle: true,
-          useSafeArea: true,
-          backgroundColor: context.colors.surface,
-          constraints: const BoxConstraints(maxWidth: 560),
-          builder: (BuildContext context) => _AddWallet(own: own),
+      floatingActionButton: ScrollAwareFab(
+        child: FloatingActionButton.extended(
+          onPressed: () => showModalBottomSheet<void>(
+            context: context,
+            isScrollControlled: true,
+            showDragHandle: true,
+            useSafeArea: true,
+            backgroundColor: context.colors.surface,
+            constraints: const BoxConstraints(maxWidth: 560),
+            builder: (BuildContext context) => _AddWallet(own: own),
+          ),
+          icon: const Icon(Glyph.plus),
+          label: Text(l.walletsAdd),
         ),
-        icon: const Icon(Glyph.plus),
-        label: Text(l.walletsAdd),
       ),
       body: ListenableBuilder(
         listenable: Listenable.merge(<Listenable>[own.wallets, own]),

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +16,6 @@ import 'package:quincena/store/store.dart';
 import 'package:quincena/theme/theme.dart';
 import 'package:quincena/ui/own/cushion_page.dart';
 import 'package:quincena/ui/own/envelopes_page.dart';
-import 'package:quincena/ui/own/goal_sheet.dart';
 import 'package:quincena/ui/own/plan_tab.dart';
 import 'package:quincena/ui/own/what_if_page.dart';
 import 'package:quincena/ui/own/wishes_page.dart';
@@ -119,6 +116,56 @@ void main() {
     ),
   );
 
+  testWidgets('four groups: the budget, goals, payments and tools', (
+    tester,
+  ) async {
+    await open(tester, tab);
+    // Each row under its group, top to bottom.
+    final List<String> order = <String>[
+      'PRESUPUESTO HASTA EL 15 DE OCTUBRE',
+      'Repartir en sobres',
+      'Ingresos variables',
+      'Viajes',
+      'METAS',
+      'Cartagena',
+      'Lo quiero, pero después',
+      'PAGOS',
+      'Pagos fijos',
+      'Compras a cuotas',
+      'Gastos compartidos',
+      'Cargos para revisar',
+      'HERRAMIENTAS',
+      'Próximos 30 días',
+      '¿Y si…?',
+      'Colchón en días',
+    ];
+    final List<double> tops = <double>[
+      for (final String text in order) tester.getTopLeft(find.text(text)).dy,
+    ];
+    for (var i = 1; i < order.length; i++) {
+      expect(tops[i], greaterThan(tops[i - 1]), reason: order[i]);
+    }
+    for (final String gone in <String>['SI TE SIRVE', 'PARA DECIDIR']) {
+      expect(find.text(gone), findsNothing);
+    }
+
+    // The way to a new goal sits in the goals' own header.
+    final Finder add = find.text('Agregar meta');
+    expect(
+      tester.getCenter(add).dy,
+      closeTo(tester.getCenter(find.text('METAS')).dy, 4),
+    );
+    expect(
+      tester
+          .getSize(find.ancestor(of: add, matching: find.byType(TextButton)))
+          .height,
+      greaterThanOrEqualTo(48),
+    );
+    await tester.tap(add);
+    await settle(tester);
+    expect(find.widgetWithText(TextField, '¿Para qué es?'), findsOneWidget);
+  });
+
   testWidgets(
     'the fortnight split into envelopes, set aside and not free twice',
     (tester) async {
@@ -181,8 +228,7 @@ void main() {
     // 1.500.000 to go at 300.000 a month: five months.
     expect(find.textContaining('llega en marzo de 2027'), findsOneWidget);
 
-    // As the Plan tab's button opens it.
-    unawaited(showGoalSheet(tester.element(find.byType(PlanTab)), own: own));
+    await tester.tap(find.text('Agregar meta'));
     await settle(tester);
     await tester.enterText(
       find.widgetWithText(TextField, '¿Para qué es?'),

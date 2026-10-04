@@ -226,13 +226,13 @@ void main() {
     }
 
     await tester.scrollUntilVisible(
-      find.text('COMPROMISOS'),
+      find.text('PAGOS'),
       200,
       scrollable: find.byType(Scrollable).first,
     );
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -260));
     await settle(tester);
-    await shoot('plan-commitments');
+    await shoot('plan-payments');
     await visit('Pagos fijos', 'fixed');
     await tester.tap(find.text('Netflix'));
     await settle(tester);
@@ -264,27 +264,17 @@ void main() {
     final Finder list = find.byType(Scrollable).first;
     Future<void> visit(String row, String name) async {
       await tester.scrollUntilVisible(find.text(row), 200, scrollable: list);
+      // A row above the screen too.
+      await tester.ensureVisible(find.text(row));
+      await settle(tester);
       await tester.tap(find.text(row));
       await settle(tester);
       await shoot(name);
     }
 
-    await tester.scrollUntilVisible(
-      find.text('SI TE SIRVE'),
-      200,
-      scrollable: list,
-    );
-    await tester.drag(list, const Offset(0, -200));
+    await tester.scrollUntilVisible(find.text('Viajes'), 200, scrollable: list);
     await settle(tester);
-    await shoot('plan-optional');
-    await visit('Gastos compartidos', 'shared');
-    await tester.tap(find.text('Paseo a Guatapé'));
-    await settle(tester);
-    await shoot('group');
-    await tester.tap(find.byTooltip('Atrás'));
-    await settle(tester);
-    await tester.tap(find.byTooltip('Atrás'));
-    await settle(tester);
+    await shoot('plan-budget');
     await visit('Ingresos variables', 'freelance');
     await tester.tap(find.byTooltip('Atrás'));
     await settle(tester);
@@ -292,6 +282,14 @@ void main() {
     await tester.tap(find.text('Nueva York'));
     await settle(tester);
     await shoot('trip');
+    await tester.tap(find.byTooltip('Atrás'));
+    await settle(tester);
+    await tester.tap(find.byTooltip('Atrás'));
+    await settle(tester);
+    await visit('Gastos compartidos', 'shared');
+    await tester.tap(find.text('Paseo a Guatapé'));
+    await settle(tester);
+    await shoot('group');
   });
 
   testWidgets('explained', (tester) async {

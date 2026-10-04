@@ -198,6 +198,103 @@ class Panel extends StatelessWidget {
   );
 }
 
+/// A screen's floating button, out of the way while the list under it
+/// scrolls down, so it never sits on an amount, and back when the list
+/// scrolls up or reaches its top or its end. It follows every scroll of
+/// its Scaffold, a jump included. With a screen reader on it stays, and
+/// with reduced motion it goes and comes without moving.
+class ScrollAwareFab extends StatefulWidget {
+  const ScrollAwareFab({super.key, required this.child});
+
+  /// The button; one with another key, as on another tab, starts in sight.
+  final Widget child;
+
+  @override
+  State<ScrollAwareFab> createState() => _ScrollAwareFabState();
+}
+
+class _ScrollAwareFabState extends State<ScrollAwareFab> {
+  ScrollNotificationObserverState? _observer;
+  bool _shown = true;
+
+  /// How far the list has gone in its latest direction, down positive.
+  double _run = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _observer?.removeListener(_onScroll);
+    _observer = ScrollNotificationObserver.maybeOf(context);
+    _observer?.addListener(_onScroll);
+  }
+
+  @override
+  void didUpdateWidget(ScrollAwareFab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.child.key != oldWidget.child.key) {
+      _shown = true;
+      _run = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _observer?.removeListener(_onScroll);
+    super.dispose();
+  }
+
+  void _onScroll(ScrollNotification notification) {
+    if (notification is! ScrollUpdateNotification ||
+        notification.depth != 0 ||
+        notification.metrics.axis != Axis.vertical) {
+      return;
+    }
+    final ScrollMetrics m = notification.metrics;
+    final double delta = notification.scrollDelta ?? 0;
+    _run = delta.sign == _run.sign ? _run + delta : delta;
+    // A few points of slack, so a finger at rest does not flicker it.
+    final bool shown = switch (_run) {
+      _ when m.extentBefore <= 0 || m.extentAfter < 24 => true,
+      > 16 => false,
+      < -16 => true,
+      _ => _shown,
+    };
+    if (shown != _shown) setState(() => _shown = shown);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // A screen reader moves through the screen without scrolling it.
+    final bool shown = _shown || MediaQuery.accessibleNavigationOf(context);
+    final Duration duration = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 200);
+    return IgnorePointer(
+      ignoring: !shown,
+      child: ExcludeFocus(
+        excluding: !shown,
+        child: ExcludeSemantics(
+          excluding: !shown,
+          // Out of sight, it does not fly to the next page's button either.
+          child: HeroMode(
+            enabled: shown,
+            child: AnimatedSlide(
+              offset: shown ? Offset.zero : const Offset(0, 2),
+              duration: duration,
+              curve: Curves.easeOutCubic,
+              child: AnimatedOpacity(
+                opacity: shown ? 1 : 0,
+                duration: duration,
+                child: widget.child,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// The large figure at the top of a screen, with a caption above it.
 class Headline extends StatelessWidget {
   const Headline({

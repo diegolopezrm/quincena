@@ -184,6 +184,13 @@ class Tour {
     await settle(tester);
   }
 
+  /// Back to the top of the list, where a floating button that stepped
+  /// aside shows again.
+  Future<void> top() async {
+    _list()?.position.jumpTo(0);
+    await settle(tester);
+  }
+
   /// Scrolls the top list until [finder] shows.
   Future<void> reveal(Finder finder) async {
     try {
@@ -323,6 +330,7 @@ final List<Scene> scenes = <Scene>[
     await t.tap('Éxito Laureles');
     await t.page('editar-movimiento');
     await t.back();
+    await t.top();
     await t.tapTip('Agregar movimiento');
     await t.page('nuevo-gasto');
     await t.tap('Ingreso');
@@ -369,8 +377,14 @@ final List<Scene> scenes = <Scene>[
     await t.tap('Agregar meta');
     await t.page('agregar-meta');
     await t.back();
+    await t.tap('Lo quiero, pero después');
+    await t.page('lo-quiero-pero-despues');
+    await t.tap('Agregar deseo');
+    await t.page('agregar-deseo');
+    await t.back();
+    await t.back();
   }),
-  Scene('07-compromisos', data: fullAccount, (Tour t) async {
+  Scene('07-pagos', data: fullAccount, (Tour t) async {
     await t.tap('Plan');
     await t.tap('Pagos fijos');
     await t.page('pagos-fijos');
@@ -384,10 +398,6 @@ final List<Scene> scenes = <Scene>[
     await t.page('compra-a-cuotas');
     await t.back();
     await t.back();
-    await t.visit('Cargos para revisar', 'cargos-para-revisar');
-  }),
-  Scene('08-si-te-sirve', data: fullAccount, (Tour t) async {
-    await t.tap('Plan');
     await t.tap('Gastos compartidos');
     await t.page('gastos-compartidos');
     await t.tap('Paseo a Guatapé');
@@ -400,6 +410,10 @@ final List<Scene> scenes = <Scene>[
     await t.page('me-prestaron');
     await t.back();
     await t.back();
+    await t.visit('Cargos para revisar', 'cargos-para-revisar');
+  }),
+  Scene('08-presupuesto', data: fullAccount, (Tour t) async {
+    await t.tap('Plan');
     await t.visit('Ingresos variables', 'ingresos-variables');
     await t.tap('Viajes');
     await t.page('viajes');
@@ -408,15 +422,9 @@ final List<Scene> scenes = <Scene>[
     await t.back();
     await t.back();
   }),
-  Scene('09-para-decidir', data: fullAccount, (Tour t) async {
+  Scene('09-herramientas', data: fullAccount, (Tour t) async {
     await t.tap('Plan');
     await t.visit('Colchón en días', 'colchon-en-dias');
-    await t.tap('Lo quiero, pero después');
-    await t.page('lo-quiero-pero-despues');
-    await t.tap('Agregar deseo');
-    await t.page('agregar-deseo');
-    await t.back();
-    await t.back();
     await t.tap('¿Y si…?');
     await t.page('y-si');
     await t.back();

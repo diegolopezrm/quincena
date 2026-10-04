@@ -319,15 +319,20 @@ void main() {
         body: SingleChildScrollView(child: PlanTab(own: own)),
       ),
     );
-    expect(find.text('SI TE SIRVE'), findsOneWidget);
+    double top(String text) => tester.getTopLeft(find.text(text)).dy;
+    // Variable income and trips in the budget, ahead of the goals; what is
+    // shared with the payments.
     expect(
-      find.text('Divide una cuenta y lleva lo que te deben'),
-      findsOneWidget,
+      top('Cobros pendientes, estimados y una reserva'),
+      lessThan(top('METAS')),
     );
     expect(
-      find.text('Cobros pendientes, estimados y una reserva'),
-      findsOneWidget,
+      top('Un presupuesto en la moneda del viaje'),
+      lessThan(top('METAS')),
     );
-    expect(find.text('Un presupuesto en la moneda del viaje'), findsOneWidget);
+    expect(
+      top('Divide una cuenta y lleva lo que te deben'),
+      greaterThan(top('PAGOS')),
+    );
   });
 }

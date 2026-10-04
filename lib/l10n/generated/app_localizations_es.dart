@@ -1627,7 +1627,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String planPeriod(String date) {
-    return 'Tu plata hasta el $date';
+    return 'Presupuesto hasta el $date';
   }
 
   @override
@@ -1638,7 +1638,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Todavía no tienes metas. Una meta con aporte al mes te dice cuándo llegas.';
 
   @override
-  String get planTools => 'Para decidir';
+  String get planTools => 'Herramientas';
 
   @override
   String get planCushionChoose => 'Elige dónde está tu fondo de emergencia';
@@ -3304,7 +3304,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sourceOther => 'Otra fuente';
 
   @override
-  String get planCommitments => 'Compromisos';
+  String get planCommitments => 'Pagos';
 
   @override
   String planFixedNext30(String amount) {
@@ -3372,9 +3372,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get rateSourceManual => 'tu tasa';
-
-  @override
-  String get planOptional => 'Si te sirve';
 
   @override
   String get planSharedNone => 'Divide una cuenta y lleva lo que te deben';

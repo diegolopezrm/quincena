@@ -52,10 +52,12 @@ class TripsPage extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           title: Text(l.tripsTitle, style: context.type.titleLarge),
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => showTripSheet(context, own: own),
-          icon: const Icon(Glyph.plus),
-          label: Text(l.tripsNew),
+        floatingActionButton: ScrollAwareFab(
+          child: FloatingActionButton.extended(
+            onPressed: () => showTripSheet(context, own: own),
+            icon: const Icon(Glyph.plus),
+            label: Text(l.tripsNew),
+          ),
         ),
         body: Center(
           child: ConstrainedBox(
@@ -186,10 +188,13 @@ class TripPage extends StatelessWidget {
             ),
           ],
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => showTripExpenseSheet(context, own: own, trip: trip),
-          icon: const Icon(Glyph.plus),
-          label: Text(l.tripAddExpense),
+        floatingActionButton: ScrollAwareFab(
+          child: FloatingActionButton.extended(
+            onPressed: () =>
+                showTripExpenseSheet(context, own: own, trip: trip),
+            icon: const Icon(Glyph.plus),
+            label: Text(l.tripAddExpense),
+          ),
         ),
         body: Center(
           child: ConstrainedBox(
