@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'package:quincena/app.dart';
 import 'package:quincena/catalog/goal_planner.dart';
 import 'package:quincena/data/clock.dart';
 import 'package:quincena/domain/freelance.dart';
@@ -27,10 +28,14 @@ import 'package:quincena/ui/ask_bar.dart';
 import 'package:quincena/ui/own/coming_days_page.dart';
 import 'package:quincena/ui/own/home_tab.dart';
 import 'package:quincena/ui/own/shared_page.dart';
+import 'package:quincena/ui/standing.dart';
 
+import '../test_screens/accounts.dart' show screensNow, withCaptures;
+import 'commitments_data.dart';
 import 'fonts.dart';
-import 'own_flow_test.dart' show screen;
+import 'own_flow_test.dart' show fakeRates, screen, settle;
 import 'page_harness.dart';
+import 'real_life_data.dart';
 
 Decimal d(String s) => Decimal.parse(s);
 
@@ -88,7 +93,9 @@ void main() {
       ),
     );
     expect(text, isNot(contains('sin contar lo que esperas recibir')));
-    expect(text, contains('Hoy'));
+    // What there is today is the card's first line, not a row here again.
+    expect(find.text('Hoy'), findsNothing);
+    expect(find.text('Saldo'), findsNothing);
     expect(text, contains('Netflix'));
     expect(text, contains(r'−$26.900'));
     // The pay is on the line, as expected money, not as money yet.
@@ -145,6 +152,66 @@ void main() {
           'octubre, sin contar lo que esperas recibir.',
         ),
       );
+    },
+  );
+
+  testWidgets(
+    'on a phone, the figure, the next payment and the first thing to do are '
+    'in the first view, clear of the bar and the button',
+    (tester) async {
+      // An iPhone 17 Pro, on the account of the screenshots.
+      tester.view.physicalSize = const Size(402, 874) * 3;
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      tester.platformDispatcher.localesTestValue = const <Locale>[Locale('es')];
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+      addTearDown(() {
+        appToday = DateTime(2026, 10, 1);
+        baseCurrency = Asset.cop;
+      });
+      final QuincenaStore store = (await tester.runAsync(() async {
+        final QuincenaStore store = await withCaptures();
+        await addCommitments(store);
+        await addRealLife(store);
+        return store;
+      }))!;
+      addTearDown(() => tester.runAsync(store.close));
+      await tester.pumpWidget(
+        QuincenaApp(
+          store: store,
+          startInDemo: false,
+          fetcher: fakeRates(),
+          now: () => screensNow,
+        ),
+      );
+      await settle(tester);
+
+      final Rect top = tester.getRect(find.byType(AppBar));
+      final Rect bar = tester.getRect(find.byType(NavigationBar));
+      final Rect button = tester.getRect(find.byTooltip('Agregar movimiento'));
+      final Map<String, Finder> seen = <String, Finder>{
+        'the figure': find.descendant(
+          of: find.byType(StandingCard),
+          matching: find.byType(FittedBox),
+        ),
+        'the next payment': find.text(
+          r'El próximo: Televisor, $226.939 el 5 oct',
+        ),
+        'the first thing to do': find.text(
+          'Revisa 2 movimientos para actualizar tu saldo',
+        ),
+      };
+      for (final MapEntry<String, Finder> e in seen.entries) {
+        final Rect r = tester.getRect(e.value);
+        expect(r.top, greaterThanOrEqualTo(top.bottom), reason: e.key);
+        expect(r.bottom, lessThanOrEqualTo(bar.top), reason: e.key);
+        expect(r.overlaps(button), isFalse, reason: e.key);
+      }
+      // No greeting on someone's own home: the figure comes first.
+      expect(find.text('Hola, Diego'), findsNothing);
+      // Unmount before the store closes.
+      await tester.pumpWidget(const SizedBox());
+      await settle(tester);
     },
   );
 

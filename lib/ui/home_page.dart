@@ -87,17 +87,30 @@ class _HomePageState extends State<HomePage> {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                   child: _session.turns.isEmpty
-                      ? Welcome(
-                          ledger: _session.ledger,
-                          onAsk: _session.ask,
-                          onRecordings: _recordings.isEmpty
-                              ? null
-                              : () => Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (BuildContext context) =>
-                                        RecordedPage(recordings: _recordings),
-                                  ),
-                                ),
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: <Widget>[
+                            if (widget.onUseOwn case final VoidCallback use)
+                              _SampleNotice(
+                                owner: _session.ledger.owner,
+                                hasOwn: widget.hasOwn,
+                                onUseOwn: use,
+                              ),
+                            Welcome(
+                              ledger: _session.ledger,
+                              onAsk: _session.ask,
+                              onRecordings: _recordings.isEmpty
+                                  ? null
+                                  : () => Navigator.of(context).push(
+                                      MaterialPageRoute<void>(
+                                        builder: (BuildContext context) =>
+                                            RecordedPage(
+                                              recordings: _recordings,
+                                            ),
+                                      ),
+                                    ),
+                            ),
+                          ],
                         )
                       : Conversation(session: _session, follower: _follower),
                 ),
@@ -166,6 +179,67 @@ class _HomePageState extends State<HomePage> {
           ),
         );
       },
+    );
+  }
+}
+
+/// Whose account this is, and the way to the person's own: the sample is
+/// not theirs, and what it shows is what their own accounts would.
+class _SampleNotice extends StatelessWidget {
+  const _SampleNotice({
+    required this.owner,
+    required this.hasOwn,
+    required this.onUseOwn,
+  });
+
+  final String owner;
+  final bool hasOwn;
+  final VoidCallback onUseOwn;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: context.colors.line),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Icon(Glyph.wallet, size: 22, color: context.colors.brand),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      l.demoBannerTitle(owner),
+                      style: context.type.titleSmall,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(l.demoBannerBody, style: context.type.bodySmall),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          FilledButton.tonal(
+            onPressed: onUseOwn,
+            child: Text(
+              hasOwn ? l.backToOwn : l.useOwn,
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

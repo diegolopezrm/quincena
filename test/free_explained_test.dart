@@ -41,6 +41,7 @@ void main() {
     WidgetTester tester, {
     String? pay,
     String? cushion,
+    bool fixed = true,
     Future<void> Function(QuincenaStore store)? data,
   }) async {
     tester.view.physicalSize = const Size(1170, 2532);
@@ -96,14 +97,16 @@ void main() {
         opening: d('500000'),
         spendable: false,
       );
-      await store.addRecurring(
-        name: 'Netflix',
-        amount: Money(d('26900'), Asset.cop),
-        cadence: Cadence.monthly,
-        nextDate: DateTime(2026, 10, 12),
-        accountId: bank.id,
-        category: 'subscriptions',
-      );
+      if (fixed) {
+        await store.addRecurring(
+          name: 'Netflix',
+          amount: Money(d('26900'), Asset.cop),
+          cadence: Cadence.monthly,
+          nextDate: DateTime(2026, 10, 12),
+          accountId: bank.id,
+          category: 'subscriptions',
+        );
+      }
       await data?.call(store);
       await own.start();
     });
@@ -295,13 +298,24 @@ void main() {
     );
     final Ledger ledger = own.ledger!;
     expect(ledger.freeUntilPayday, 2200000 - 26900 - 100000);
+    // On the home, the first thing to do, and it opens on an income.
+    expect(find.text('Registra tu pago del 30 de septiembre'), findsOneWidget);
     expect(
-      find.text(
-        'Tu pago del 30 de septiembre todavía no aparece. '
-        'Si ya llegó, regístralo.',
-      ),
+      find.text('Todavía no aparece. Si ya llegó, regístralo para que cuente.'),
       findsOneWidget,
     );
+    await tester.tap(find.widgetWithText(FilledButton, 'Registrar'));
+    await settle(tester);
+    expect(
+      tester
+          .widget<SegmentedButton<EntryKind>>(
+            find.byType(SegmentedButton<EntryKind>),
+          )
+          .selected,
+      <EntryKind>{EntryKind.income},
+    );
+    Navigator.of(tester.element(find.byType(SegmentedButton<EntryKind>))).pop();
+    await settle(tester);
 
     await tester.tap(find.text('¿De dónde sale?'));
     await settle(tester);
@@ -327,5 +341,68 @@ void main() {
       );
       expect(inSheet(find.textContaining(line)), findsOneWidget);
     }
+    // The late pay is still said among what the figure assumes.
+    const String late =
+        'Tu pago del 30 de septiembre todavía no aparece. '
+        'Si ya llegó, regístralo.';
+    await tester.scrollUntilVisible(
+      inSheet(find.text(late)),
+      120,
+      scrollable: sheetScroll,
+    );
+    expect(inSheet(find.text(late)), findsOneWidget);
+  });
+
+  testWidgets('with no fixed payment told, the figure says what it assumes', (
+    tester,
+  ) async {
+    final OwnController own = await open(tester, fixed: false);
+    expect(own.provisional, isTrue);
+    // On the card, under the figure, and heard with it.
+    expect(find.text('Provisional: faltan tus pagos fijos'), findsOneWidget);
+    expect(find.text('Agrega tus pagos fijos'), findsOneWidget);
+
+    await tester.tap(find.text('¿De dónde sale?'));
+    await settle(tester);
+    final Finder sheetScroll = find
+        .descendant(
+          of: find.byType(FreeExplained),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    final Finder noFixed = find.descendant(
+      of: find.byType(FreeExplained),
+      matching: find.textContaining('No tiene pagos fijos'),
+    );
+    // First among the assumptions: the one that moves the figure most.
+    final Finder today = find.descendant(
+      of: find.byType(FreeExplained),
+      matching: find.textContaining('Cuenta lo que hay hoy'),
+    );
+    await tester.scrollUntilVisible(today, 120, scrollable: sheetScroll);
+    expect(noFixed, findsOneWidget);
+    expect(
+      tester.getTopLeft(noFixed).dy,
+      lessThan(tester.getTopLeft(today).dy),
+    );
+  });
+
+  testWidgets('saying there are none, where they are added, ends it', (
+    tester,
+  ) async {
+    final OwnController own = await open(tester, fixed: false);
+    // The first thing to do opens the fixed payments.
+    await tester.tap(find.widgetWithText(FilledButton, 'Agregar'));
+    await settle(tester);
+    expect(find.text('Pagos fijos'), findsOneWidget);
+    await tester.tap(find.text('No tengo pagos fijos'));
+    await settle(tester);
+    expect(
+      find.text('Listo. Lo que puedes gastar ya no es provisional.'),
+      findsOneWidget,
+    );
+    expect(find.text('No tengo pagos fijos'), findsNothing);
+    expect(own.noFixedPayments, isTrue);
+    expect(own.provisional, isFalse);
   });
 }

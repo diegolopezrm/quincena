@@ -43,11 +43,12 @@ import 'portfolio_test.dart' show FakeMarket;
 Decimal d(String s) => Decimal.parse(s);
 
 /// A ledger on 3 October, paid on [schedule], with [balance] in the bank,
-/// [due] to pay before payday, and what is kept apart.
+/// [due] to pay before payday to [merchant], and what is kept apart.
 Ledger ledgerOf({
   int balance = 500000,
   int due = 26900,
   DateTime? dueOn,
+  String merchant = 'Claro',
   int cushion = 0,
   int setAside = 0,
   PaySchedule schedule = const TwiceMonthly(),
@@ -66,14 +67,19 @@ Ledger ledgerOf({
       Movement(
         id: 'internet',
         date: dueOn ?? DateTime(2026, 10, 12),
-        merchant: 'Claro',
+        merchant: merchant,
         amount: due,
         category: Category.subscriptions,
       ),
   ],
 );
 
-Future<void> showCard(WidgetTester tester, Ledger ledger) async {
+Future<void> showCard(
+  WidgetTester tester,
+  Ledger ledger, {
+  bool greet = true,
+  String? caveat,
+}) async {
   tester.view.physicalSize = const Size(1170, 2532);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
@@ -84,7 +90,9 @@ Future<void> showCard(WidgetTester tester, Ledger ledger) async {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: appLocales,
       home: Scaffold(
-        body: SingleChildScrollView(child: StandingCard(ledger: ledger)),
+        body: SingleChildScrollView(
+          child: StandingCard(ledger: ledger, greet: greet, caveat: caveat),
+        ),
       ),
     ),
   );
@@ -114,6 +122,8 @@ void main() {
       // Payday's own charges are in it too: until, not before.
       expect(text, contains('Pagos hasta el 15 oct'));
       expect(text, contains(r'−$26.900'));
+      // And the one that comes first, not only their total.
+      expect(text, contains(r'El próximo: Claro, $26.900 el 12 oct'));
       expect(text, contains('Colchón'));
       expect(text, contains(r'−$100.000'));
       expect(text, contains('Apartado en sobres'));
@@ -128,6 +138,7 @@ void main() {
       final String text = screen(tester);
       expect(text, contains('En tus cuentas de uso diario'));
       expect(text, isNot(contains('Pagos hasta')));
+      expect(text, isNot(contains('El próximo')));
       expect(text, isNot(contains('Lo que debes en tarjetas')));
       expect(text, isNot(contains('Colchón')));
     });
@@ -260,6 +271,181 @@ void main() {
       expect(text, contains('Tu próximo pago llega en 27 días'));
       expect(text, isNot(contains('quincena')));
     });
+
+    testWidgets('the sample greets its person; someone\'s own card does not', (
+      tester,
+    ) async {
+      await showCard(tester, ledgerOf());
+      expect(screen(tester), contains('Hola, Ana'));
+      await showCard(tester, ledgerOf(), greet: false);
+      expect(screen(tester), isNot(contains('Hola')));
+      expect(screen(tester), contains('Puedes gastar'));
+    });
+
+    testWidgets('what the figure still leaves out is said, and heard', (
+      tester,
+    ) async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      await showCard(
+        tester,
+        ledgerOf(due: 0),
+        caveat: 'Provisional: faltan tus pagos fijos',
+      );
+      expect(screen(tester), contains('Provisional: faltan tus pagos fijos'));
+      expect(
+        find.bySemanticsLabel(
+          'Puedes gastar \$500.000 hasta el 15 de octubre; tu quincena llega '
+          'en 12 días. Provisional: faltan tus pagos fijos',
+        ),
+        findsOneWidget,
+      );
+      semantics.dispose();
+    });
+
+    testWidgets('a next payment with no name is said as one, mid-sentence', (
+      tester,
+    ) async {
+      await showCard(tester, ledgerOf(merchant: ''));
+      expect(
+        screen(tester),
+        contains(r'El próximo: un cobro programado, $26.900 el 12 oct'),
+      );
+    });
+
+    testWidgets(
+      'on a phone the way to ask sits beside its label, in either language',
+      (tester) async {
+        // An iPhone 17 Pro, the card as wide as on the home.
+        tester.view.physicalSize = const Size(402, 874) * 3;
+        tester.view.devicePixelRatio = 3;
+        addTearDown(tester.view.reset);
+        for (final (String lang, String label, String ask)
+            in <(String, String, String)>[
+              ('es', 'Puedes gastar', '¿De dónde sale?'),
+              ('en', 'You can spend', 'Where does it come from?'),
+            ]) {
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: quincenaTheme(Brightness.light),
+              locale: Locale(lang),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: appLocales,
+              home: Scaffold(
+                body: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: StandingCard(
+                    ledger: ledgerOf(),
+                    greet: false,
+                    onExplain: () {},
+                  ),
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          final Rect said = tester.getRect(find.text(label));
+          final Rect button = tester.getRect(find.text(ask));
+          // On the label's line, not a line of its own under it.
+          expect(button.left, greaterThan(said.right), reason: lang);
+          expect(
+            (button.center.dy - said.center.dy).abs(),
+            lessThan(4),
+            reason: lang,
+          );
+        }
+      },
+    );
+
+    testWidgets(
+      'what changes the figure comes first, and the pay to split after it',
+      (tester) async {
+        await openPage(
+          tester,
+          (OwnController own) => Scaffold(
+            body: ListenableBuilder(
+              listenable: own,
+              builder: (BuildContext context, _) => SingleChildScrollView(
+                child: OwnHomeTab(own: own, onSeeAll: () {}),
+              ),
+            ),
+          ),
+          data: (QuincenaStore store, Account bank, Account card) =>
+              CaptureService(store, now: () => pageNow).ingest(<CaptureEvent>[
+                CaptureEvent(
+                  source: CaptureSource.notification,
+                  at: pageNow,
+                  app: 'com.todo1.mobile',
+                  text:
+                      r'Bancolombia: Compraste $45.900,00 en EXITO LAURELES '
+                      r'con tu T.Deb *1234',
+                ),
+              ]),
+        );
+        // The capture waits for review, and the salary of the 30th arrived.
+        const String review = 'Revisa 1 movimiento para actualizar tu saldo';
+        const String split = r'Te llegó la quincena: $2.000.000';
+        expect(find.text(review), findsOneWidget);
+        expect(find.text(split), findsOneWidget);
+        // The first has the button; the pay to split waits under "Después".
+        expect(find.widgetWithText(FilledButton, 'Revisar'), findsOneWidget);
+        expect(find.widgetWithText(FilledButton, 'Repartir'), findsNothing);
+        final double then = tester.getTopLeft(find.text('Después')).dy;
+        expect(tester.getTopLeft(find.text(review)).dy, lessThan(then));
+        expect(then, lessThan(tester.getTopLeft(find.text(split)).dy));
+      },
+    );
+
+    testWidgets(
+      'with no fixed payment told the home is provisional, and the first one '
+      'told ends it',
+      (tester) async {
+        final OwnController own = await openPage(
+          tester,
+          (OwnController own) => Scaffold(
+            body: ListenableBuilder(
+              listenable: own,
+              builder: (BuildContext context, _) => SingleChildScrollView(
+                child: OwnHomeTab(own: own, onSeeAll: () {}),
+              ),
+            ),
+          ),
+        );
+        String text = screen(tester);
+        expect(own.provisional, isTrue);
+        expect(text, contains('Provisional: faltan tus pagos fijos'));
+        // A thing to do, after the pay that arrived and wants its envelopes.
+        expect(text, contains('Agrega tus pagos fijos'));
+        expect(
+          text,
+          contains(
+            'Lo que pagues hasta el 15 oct sale de lo que puedes gastar.',
+          ),
+        );
+        expect(text, contains('Después'));
+        expect(
+          tester.getTopLeft(find.text('Después')).dy,
+          lessThan(tester.getTopLeft(find.text('Agrega tus pagos fijos')).dy),
+        );
+
+        await tester.runAsync(
+          () => own.store.addRecurring(
+            name: 'Arriendo',
+            amount: Money(d('900000'), Asset.cop),
+            cadence: Cadence.monthly,
+            nextDate: DateTime(2026, 10, 5),
+            accountId: own.accounts.first.id,
+            category: 'housing',
+          ),
+        );
+        await settle(tester);
+        text = screen(tester);
+        expect(own.provisional, isFalse);
+        expect(text, isNot(contains('Provisional')));
+        expect(text, isNot(contains('Agrega tus pagos fijos')));
+        expect(text, contains(r'El próximo: Arriendo, $900.000 el 5 oct'));
+        expect(text, contains(r'$1.100.000'));
+      },
+    );
   });
 
   group('accounts', () {

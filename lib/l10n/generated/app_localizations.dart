@@ -2903,7 +2903,7 @@ abstract class AppLocalizations {
   /// No description provided for @inboxBanner.
   ///
   /// In es, this message translates to:
-  /// **'{count, plural, =1{Un movimiento por revisar} other{{count} movimientos por revisar}}'**
+  /// **'{count, plural, =1{Revisa 1 movimiento para actualizar tu saldo} other{Revisa {count} movimientos para actualizar tu saldo}}'**
   String inboxBanner(int count);
 
   /// No description provided for @inboxBannerBody.
@@ -7099,12 +7099,6 @@ abstract class AppLocalizations {
   /// **'Tu saldo mínimo estimado será {amount} el {date}.'**
   String comingLowestLine(String amount, String date);
 
-  /// No description provided for @timelineToday.
-  ///
-  /// In es, this message translates to:
-  /// **'Hoy'**
-  String get timelineToday;
-
   /// No description provided for @timelineFortnight.
   ///
   /// In es, this message translates to:
@@ -7158,12 +7152,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Movimiento'**
   String get fabMovement;
-
-  /// No description provided for @timelineAvailable.
-  ///
-  /// In es, this message translates to:
-  /// **'Saldo'**
-  String get timelineAvailable;
 
   /// No description provided for @goalSoFar.
   ///
@@ -8243,6 +8231,168 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Leída por dirección pública · ya no la sigues'**
   String get portfolioSourceWalletOff;
+
+  /// No description provided for @demoBannerTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Estás viendo la cuenta de ejemplo de {name}'**
+  String demoBannerTitle(String name);
+
+  /// No description provided for @demoBannerBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Con tus cuentas, Quincena te dice cuánto puedes gastar tú. Se guardan solo en este dispositivo.'**
+  String get demoBannerBody;
+
+  /// No description provided for @standingNextCharge.
+  ///
+  /// In es, this message translates to:
+  /// **'El próximo: {name}, {amount} el {date}'**
+  String standingNextCharge(String name, String amount, String date);
+
+  /// No description provided for @homeTodoThen.
+  ///
+  /// In es, this message translates to:
+  /// **'Después'**
+  String get homeTodoThen;
+
+  /// No description provided for @todoLatePay.
+  ///
+  /// In es, this message translates to:
+  /// **'Registra tu pago del {date}'**
+  String todoLatePay(String date);
+
+  /// No description provided for @todoLatePayBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no aparece. Si ya llegó, regístralo para que cuente.'**
+  String get todoLatePayBody;
+
+  /// No description provided for @todoRecord.
+  ///
+  /// In es, this message translates to:
+  /// **'Registrar'**
+  String get todoRecord;
+
+  /// No description provided for @todoRates.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Falta la tasa de {codes}} other{Faltan las tasas de {codes}}}'**
+  String todoRates(int count, String codes);
+
+  /// No description provided for @todoRatesBody.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Mientras tanto cuenta como cero en tus totales.} other{Mientras tanto cuentan como cero en tus totales.}}'**
+  String todoRatesBody(int count);
+
+  /// No description provided for @todoSeeRates.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver tasas'**
+  String get todoSeeRates;
+
+  /// No description provided for @standingProvisional.
+  ///
+  /// In es, this message translates to:
+  /// **'Provisional: faltan tus pagos fijos'**
+  String get standingProvisional;
+
+  /// No description provided for @todoFixedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Agrega tus pagos fijos'**
+  String get todoFixedTitle;
+
+  /// No description provided for @todoFixedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que pagues hasta el {date} sale de lo que puedes gastar.'**
+  String todoFixedBody(String date);
+
+  /// No description provided for @todoAdd.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar'**
+  String get todoAdd;
+
+  /// No description provided for @noFixedPayments.
+  ///
+  /// In es, this message translates to:
+  /// **'No tengo pagos fijos'**
+  String get noFixedPayments;
+
+  /// No description provided for @fixedNoneDone.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo. Lo que puedes gastar ya no es provisional.'**
+  String get fixedNoneDone;
+
+  /// No description provided for @freeExplainAssumeNoFixed.
+  ///
+  /// In es, this message translates to:
+  /// **'No tiene pagos fijos: si pagas arriendo, servicios o suscripciones, agrégalos en Plan › Pagos fijos y saldrán de esta cifra antes de llegar.'**
+  String get freeExplainAssumeNoFixed;
+
+  /// No description provided for @onboardingPayAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'{kind, select, fortnight{¿Cuánto te llega cada quincena?} other{¿Cuánto te llega cada pago?}}'**
+  String onboardingPayAmount(String kind);
+
+  /// No description provided for @onboardingPayAmountHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Opcional. No cuenta como plata hasta que llega; sirve para ver los días que vienen.'**
+  String get onboardingPayAmountHelp;
+
+  /// No description provided for @onboardingFixedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Qué pagas fijo?'**
+  String get onboardingFixedTitle;
+
+  /// No description provided for @onboardingFixedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Arriendo, servicios, celular, suscripciones. Quincena los resta de lo que puedes gastar antes de que lleguen.'**
+  String get onboardingFixedBody;
+
+  /// No description provided for @fixedSuggestRent.
+  ///
+  /// In es, this message translates to:
+  /// **'Arriendo'**
+  String get fixedSuggestRent;
+
+  /// No description provided for @fixedSuggestAdmin.
+  ///
+  /// In es, this message translates to:
+  /// **'Administración'**
+  String get fixedSuggestAdmin;
+
+  /// No description provided for @fixedSuggestUtilities.
+  ///
+  /// In es, this message translates to:
+  /// **'Servicios'**
+  String get fixedSuggestUtilities;
+
+  /// No description provided for @fixedSuggestInternet.
+  ///
+  /// In es, this message translates to:
+  /// **'Internet'**
+  String get fixedSuggestInternet;
+
+  /// No description provided for @fixedSuggestPhone.
+  ///
+  /// In es, this message translates to:
+  /// **'Plan del celular'**
+  String get fixedSuggestPhone;
+
+  /// No description provided for @fixedSuggestSubscription.
+  ///
+  /// In es, this message translates to:
+  /// **'Una suscripción'**
+  String get fixedSuggestSubscription;
 }
 
 class _AppLocalizationsDelegate

@@ -5,16 +5,19 @@
 import 'dart:convert';
 
 import 'package:decimal/decimal.dart';
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/l10n/l10n.dart';
 import 'package:quincena/money/asset.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/portfolio/market.dart';
 import 'package:quincena/statements/tables.dart';
+import 'package:quincena/store/database.dart';
 import 'package:quincena/sync/sync_service.dart';
 import 'package:quincena/store/store.dart';
 import 'package:quincena/theme/theme.dart';
@@ -279,4 +282,73 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   });
+
+  // Just set up: one account, nothing paid regularly yet, so the figure is
+  // provisional and the first thing to do is to add the fixed payments.
+  for (final Brightness brightness in Brightness.values) {
+    testWidgets(
+      'home, new account, holds at twice the text size, ${brightness.name}',
+      (WidgetTester tester) async {
+        final SemanticsHandle semantics = tester.ensureSemantics();
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 3;
+        addTearDown(tester.view.reset);
+        tester.platformDispatcher.textScaleFactorTestValue = 2;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+        final QuincenaStore store = (await tester.runAsync(() async {
+          final QuincenaStore store = QuincenaStore(
+            QuincenaDatabase(NativeDatabase.memory()),
+            now: () => _now,
+          );
+          await store.ensureCategories();
+          await store.saveProfile(
+            const Profile(
+              name: 'Diego',
+              base: Asset.cop,
+              schedule: TwiceMonthly(),
+            ),
+          );
+          await store.addAccount(
+            name: 'Nequi',
+            kind: AccountKind.wallet,
+            asset: Asset.cop,
+            opening: Decimal.parse('850000'),
+          );
+          return store;
+        }))!;
+        addTearDown(() => tester.runAsync(store.close));
+        final OwnController own = OwnController(
+          store,
+          now: () => _now,
+          readNative: false,
+        );
+        addTearDown(own.dispose);
+        await tester.runAsync(own.start);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: quincenaTheme(brightness),
+            locale: const Locale('es'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: appLocales,
+            home: tab(
+              OwnHomeTab(own: own, onSeeAll: () {}, onAsk: ([String? _]) {}),
+            ),
+          ),
+        );
+        await settle(tester);
+
+        expect(find.text('Provisional: faltan tus pagos fijos'), findsOne);
+        expect(find.text('Agrega tus pagos fijos'), findsOne);
+        expect(tester.takeException(), isNull);
+        await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(textContrastGuideline));
+        semantics.dispose();
+      },
+    );
+  }
 }

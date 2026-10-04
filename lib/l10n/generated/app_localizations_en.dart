@@ -1694,7 +1694,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paydayArrived => 'Your pay arrived';
 
   @override
-  String get freeExplainAction => 'Where does this come from?';
+  String get freeExplainAction => 'Where does it come from?';
 
   @override
   String get freeExplainTitle => 'How what you can spend is worked out';
@@ -1799,8 +1799,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count movements to review',
-      one: 'One movement to review',
+      other: 'Review $count transactions to update your balance',
+      one: 'Review 1 transaction to update your balance',
     );
     return '$_temp0';
   }
@@ -4498,9 +4498,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get timelineToday => 'Today';
-
-  @override
   String get timelineFortnight => 'Your pay';
 
   @override
@@ -4535,9 +4532,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fabMovement => 'Movement';
-
-  @override
-  String get timelineAvailable => 'Balance';
 
   @override
   String goalSoFar(String saved) {
@@ -5291,4 +5285,122 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get portfolioSourceWalletOff =>
       'Read by public address · no longer followed';
+
+  @override
+  String demoBannerTitle(String name) {
+    return 'You\'re looking at $name\'s sample account';
+  }
+
+  @override
+  String get demoBannerBody =>
+      'With your own accounts, Quincena tells you what you can spend. They stay on this device only.';
+
+  @override
+  String standingNextCharge(String name, String amount, String date) {
+    return 'Next: $name, $amount on $date';
+  }
+
+  @override
+  String get homeTodoThen => 'After that';
+
+  @override
+  String todoLatePay(String date) {
+    return 'Record your pay from $date';
+  }
+
+  @override
+  String get todoLatePayBody =>
+      'It hasn\'t shown up yet. If it arrived, record it so it counts.';
+
+  @override
+  String get todoRecord => 'Record';
+
+  @override
+  String todoRates(int count, String codes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'No rates yet for $codes',
+      one: 'No rate yet for $codes',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String todoRatesBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Until then they count as zero in your totals.',
+      one: 'Until then it counts as zero in your totals.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get todoSeeRates => 'See rates';
+
+  @override
+  String get standingProvisional =>
+      'Provisional: your recurring payments aren\'t in yet';
+
+  @override
+  String get todoFixedTitle => 'Add your recurring payments';
+
+  @override
+  String todoFixedBody(String date) {
+    return 'Anything you pay until $date comes out of what you can spend.';
+  }
+
+  @override
+  String get todoAdd => 'Add';
+
+  @override
+  String get noFixedPayments => 'I don\'t have recurring payments';
+
+  @override
+  String get fixedNoneDone =>
+      'Done. What you can spend is no longer provisional.';
+
+  @override
+  String get freeExplainAssumeNoFixed =>
+      'It has no recurring payments: if you pay rent, bills or subscriptions, add them in Plan › Recurring payments and they\'ll come out of this figure before they\'re due.';
+
+  @override
+  String onboardingPayAmount(String kind) {
+    String _temp0 = intl.Intl.selectLogic(kind, {
+      'fortnight': 'How much do you get each payday?',
+      'other': 'How much do you get each payday?',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get onboardingPayAmountHelp =>
+      'Optional. It doesn\'t count as money until it arrives; it\'s used to show the days ahead.';
+
+  @override
+  String get onboardingFixedTitle => 'What do you pay regularly?';
+
+  @override
+  String get onboardingFixedBody =>
+      'Rent, bills, phone, subscriptions. Quincena takes them out of what you can spend before they\'re due.';
+
+  @override
+  String get fixedSuggestRent => 'Rent';
+
+  @override
+  String get fixedSuggestAdmin => 'Building fee';
+
+  @override
+  String get fixedSuggestUtilities => 'Utilities';
+
+  @override
+  String get fixedSuggestInternet => 'Internet';
+
+  @override
+  String get fixedSuggestPhone => 'Phone plan';
+
+  @override
+  String get fixedSuggestSubscription => 'A subscription';
 }
