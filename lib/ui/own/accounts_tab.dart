@@ -239,41 +239,36 @@ class RatesSummary extends StatelessWidget {
       for (final Asset a in held)
         if (table.rate(a, base) == null) a,
     ];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Panel(
       children: <Widget>[
-        Panel(
-          children: <Widget>[
-            ListTile(
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (BuildContext context) => RatesPage(own: own),
-                ),
-              ),
-              leading: Icon(Glyph.arrowsLeftRight, color: context.colors.brand),
-              title: Text(l.ratesSeeAll, style: context.type.titleSmall),
-              subtitle: Text(
-                ratesStatus(l, own),
-                style: context.type.bodySmall,
-              ),
-              trailing: Icon(
-                Glyph.caretRight,
-                size: 18,
-                color: context.colors.inkFaint,
-              ),
-            ),
-          ],
-        ),
-        if (missing.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
-            child: Text(
-              l.ratesMissing(missing.map((Asset a) => a.code).join(', ')),
-              style: context.type.bodySmall?.copyWith(
-                color: context.colors.caution,
-              ),
+        ListTile(
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (BuildContext context) => RatesPage(own: own),
             ),
           ),
+          leading: Icon(Glyph.arrowsLeftRight, color: context.colors.brand),
+          title: Text(l.ratesSeeAll, style: context.type.titleSmall),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(ratesStatus(l, own), style: context.type.bodySmall),
+              // In the panel: caution text is too faint on the canvas.
+              if (missing.isNotEmpty)
+                Text(
+                  l.ratesMissing(missing.map((Asset a) => a.code).join(', ')),
+                  style: context.type.bodySmall?.copyWith(
+                    color: context.colors.caution,
+                  ),
+                ),
+            ],
+          ),
+          trailing: Icon(
+            Glyph.caretRight,
+            size: 18,
+            color: context.colors.inkFaint,
+          ),
+        ),
       ],
     );
   }

@@ -21,6 +21,7 @@ import 'package:quincena/theme/theme.dart';
 import 'package:quincena/ui/own/accounts_tab.dart';
 import 'package:quincena/ui/own/free_explained.dart';
 
+import 'fonts.dart';
 import 'own_flow_test.dart' show fakeRates, settle;
 
 Decimal d(String s) => Decimal.parse(s);
@@ -31,35 +32,50 @@ RateFetcher downRates() =>
 
 void main() {
   final DateTime now = DateTime(2026, 10, 4, 10);
+  late DateTime clock;
   late QuincenaStore store;
 
   setUpAll(() async {
+    await loadAppFonts();
     Intl.defaultLocale = 'es_CO';
     await initializeDateFormatting('es');
   });
 
+  setUp(() => clock = now);
+
   /// The rates page for someone with an account in [held], and its rate
   /// typed by hand when [typed]: a dollar in pesos, a coin in dollars. The
-  /// Cuentas tab instead when [tab].
+  /// Cuentas tab instead when [tab]. [others] are more accounts, with no
+  /// rate typed. When [large], on the smallest common phone with the text
+  /// at twice its size.
   Future<OwnController> open(
     WidgetTester tester, {
     required RateFetcher fetcher,
     Asset held = Asset.usd,
     String? typed,
     bool tab = false,
+    List<Asset> others = const <Asset>[],
+    Brightness brightness = Brightness.light,
+    bool large = false,
   }) async {
-    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.physicalSize = large
+        ? const Size(1080, 2400)
+        : const Size(1170, 2532);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
+    if (large) {
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    }
     store = QuincenaStore(
       QuincenaDatabase(NativeDatabase.memory()),
-      now: () => now,
+      now: () => clock,
     );
     addTearDown(() => tester.runAsync(store.close));
     final OwnController own = OwnController(
       store,
       fetcher: fetcher,
-      now: () => now,
+      now: () => clock,
       readNative: false,
     );
     addTearDown(own.dispose);
@@ -68,13 +84,15 @@ void main() {
       await store.saveProfile(
         const Profile(name: 'Ana', base: Asset.cop, schedule: TwiceMonthly()),
       );
-      await store.addAccount(
-        name: held.code,
-        kind: held.isCrypto ? AccountKind.wallet : AccountKind.bank,
-        asset: held,
-        opening: d(held.isCrypto ? '0.01' : '100'),
-        spendable: false,
-      );
+      for (final Asset a in <Asset>[held, ...others]) {
+        await store.addAccount(
+          name: a.code,
+          kind: a.isCrypto ? AccountKind.wallet : AccountKind.bank,
+          asset: a,
+          opening: d(a.isCrypto ? '0.01' : '100'),
+          spendable: false,
+        );
+      }
       if (typed != null) {
         await store.setManualRate(
           held.code,
@@ -86,7 +104,7 @@ void main() {
     });
     await tester.pumpWidget(
       MaterialApp(
-        theme: quincenaTheme(Brightness.light),
+        theme: quincenaTheme(brightness),
         locale: const Locale('es'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: appLocales,
@@ -274,6 +292,45 @@ void main() {
       isEmpty,
     );
   });
+
+  for (final Brightness brightness in Brightness.values) {
+    for (final bool tab in <bool>[false, true]) {
+      testWidgets(
+        '${tab ? 'Cuentas' : 'the rates page'} holds at twice the text size, '
+        '${brightness.name}',
+        (tester) async {
+          final SemanticsHandle semantics = tester.ensureSemantics();
+          // A coin priced by hand, a dollar fetched, and euros without a
+          // rate: the pill, the way back, the steps and the warning.
+          await open(
+            tester,
+            fetcher: fakeRates(),
+            held: Asset.btc,
+            typed: '90000',
+            others: <Asset>[Asset.usd, Asset.eur],
+            tab: tab,
+            brightness: brightness,
+            large: true,
+          );
+          if (tab) {
+            await tester.scrollUntilVisible(find.text('Ver tasas usadas'), 300);
+            await settle(tester);
+            expect(find.textContaining('Sin tasa para EUR'), findsOneWidget);
+          } else {
+            expect(find.text('Manual'), findsOneWidget);
+            expect(find.text('Usar la automática'), findsOneWidget);
+          }
+
+          expect(tester.takeException(), isNull);
+          await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+          await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+          await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+          await expectLater(tester, meetsGuideline(textContrastGuideline));
+          semantics.dispose();
+        },
+      );
+    }
+  }
 
   test('the sheets explain a conversion with the same steps', () {
     final AppLocalizations l = lookupAppLocalizations(const Locale('es'));
