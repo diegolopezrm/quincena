@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:genui/genui.dart';
 import 'package:genui_gen/tracing.dart';
 import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
 
 import 'package:dartantic_ai/dartantic_ai.dart' as dartantic;
 
@@ -66,6 +67,57 @@ class Turn {
 
   /// Whether the person reported the answer to DL SOFT.
   bool reported = false;
+}
+
+/// A surface whose committing action arrived: what it committed, when, and
+/// the turn that answered it. It takes nothing more until it is reopened.
+class Settled {
+  Settled._(this.action, this.at, this.id, this.turn);
+
+  /// The event, such as `save_expense`.
+  final String action;
+  final DateTime at;
+
+  /// What names the thing committed, the same through every edit of the
+  /// surface, so that saving it again corrects it.
+  final String id;
+
+  /// The turn the action started.
+  final Turn turn;
+
+  /// Whether the person reopened the surface to change what they sent.
+  bool get open => _open;
+  bool _open = false;
+
+  /// What the action added to the conversation's account, to take out
+  /// again when the person corrects it.
+  List<Movement> _recorded = const <Movement>[];
+}
+
+/// A conversation [Session.startOver] put aside: its turns, its surfaces,
+/// its account and whoever was answering, whole, so it can come back.
+class Previous {
+  Previous._(
+    this._ledger,
+    this._controller,
+    this._recorder,
+    this._source,
+    this._turns,
+    this._settled,
+  );
+
+  final Ledger _ledger;
+  final SurfaceController _controller;
+  final GenUiTraceRecorder _recorder;
+  final AnswerSource _source;
+  final List<Turn> _turns;
+  final Map<String, Settled> _settled;
+
+  void _dispose() {
+    _source.dispose();
+    _recorder.dispose();
+    _controller.dispose();
+  }
 }
 
 /// A conversation with the agent about an account: the demo's, unless
@@ -170,6 +222,41 @@ class Session extends ChangeNotifier {
   bool _busy = false;
   bool get busy => _busy;
 
+  /// The events that commit something. The first to arrive from a surface
+  /// settles it, and it takes no more: two taps save one expense.
+  static const Set<String> commits = <String>{
+    'save_expense',
+    'save_goal_plan',
+    'cancel_subscriptions',
+  };
+
+  static const Uuid _ids = Uuid();
+
+  /// The surfaces a committing action settled, by id.
+  Map<String, Settled> _settled = <String, Settled>{};
+
+  /// What settled the surface [surfaceId], or null while it takes actions.
+  Settled? settledOf(String surfaceId) {
+    final Settled? settled = _settled[surfaceId];
+    return settled == null || settled.open ? null : settled;
+  }
+
+  /// Opens a settled surface again for the person to change what they
+  /// sent. Sending it again replaces what it committed.
+  void reopen(String surfaceId) {
+    final Settled? settled = _settled[surfaceId];
+    if (settled == null || settled.open) return;
+    settled._open = true;
+    notifyListeners();
+  }
+
+  /// The conversation [startOver] put aside, until the person asks
+  /// something in the new one.
+  Previous? _previous;
+
+  /// Whether there is a conversation to [restore].
+  bool get canRestore => _previous != null;
+
   /// Errors genui reported about the current answer, waiting to go back to
   /// the model once it has finished writing.
   final List<String> _errors = <String>[];
@@ -241,6 +328,10 @@ class Session extends ChangeNotifier {
         own: own,
       ),
     };
+    _listen();
+  }
+
+  void _listen() {
     _submissions = controller.onSubmit.listen(_onSubmit);
     _surfaces = controller.surfaceUpdates.listen(_onSurface);
   }
@@ -356,6 +447,8 @@ class Session extends ChangeNotifier {
   }
 
   Future<void> _run(Turn turn, Future<void> Function() answer) async {
+    // Once the new conversation has a question, the old one stays gone.
+    _forgetPrevious();
     turns.add(turn);
     _busy = true;
     _corrections = 0;
@@ -371,6 +464,9 @@ class Session extends ChangeNotifier {
     }
     try {
       await answer();
+      // genui announces a new surface a moment after it takes it in, and a
+      // turn is only known to have an answer once the announcement is in.
+      await Future<void>.delayed(Duration.zero);
       // genui validates each surface against the catalog as it arrives, and
       // reports what fails back through onSubmit for the agent to fix. The
       // model hears about it once it has finished, within the same turn.
@@ -436,6 +532,10 @@ class Session extends ChangeNotifier {
         unawaited(ask(context['question']! as String));
         continue;
       }
+      if (commits.contains(name) && action['surfaceId'] is String) {
+        _commit(action['surfaceId']! as String, name, context, decoded);
+        continue;
+      }
       final action0 = UserAction(
         name: name,
         context: context,
@@ -445,6 +545,74 @@ class Session extends ChangeNotifier {
         _run(Turn(note: _describe(name)), () => _source.react(action0)),
       );
     }
+  }
+
+  /// Sends a committing action from [surfaceId], once.
+  ///
+  /// An expense carries an id that stays with its form, so a model that
+  /// saves it again after an edit corrects it. Whoever answers, what the
+  /// first save added to this account comes out before the correction is
+  /// counted. When nothing was committed, the surface opens again.
+  void _commit(
+    String surfaceId,
+    String name,
+    Map<String, Object?> context,
+    Map<Object?, Object?> interaction,
+  ) {
+    final Map<String, Settled> settled = _settled;
+    final Settled? earlier = settled[surfaceId];
+    if (earlier != null && !earlier.open) return;
+    final String id = switch (context['id']) {
+      final String given when given.isNotEmpty => given,
+      _ => earlier?.id ?? _ids.v4(),
+    };
+    if (name == 'save_expense') {
+      context['id'] = id;
+      (interaction['action']! as Map<Object?, Object?>)['context'] = context;
+    }
+    final Turn turn = Turn(note: _describe(name));
+    final Settled now = settled[surfaceId] = Settled._(
+      name,
+      DateTime.now(),
+      id,
+      turn,
+    );
+    final Ledger account = ledger;
+    final List<Movement> taken = <Movement>[
+      for (final Movement m in earlier?._recorded ?? const <Movement>[])
+        if (account.remove(m)) m,
+    ];
+    final Set<Movement> before = Set<Movement>.identity()
+      ..addAll(account.movements);
+    final UserAction action = UserAction(
+      name: name,
+      context: context,
+      interaction: jsonEncode(interaction),
+    );
+    unawaited(() async {
+      await _run(turn, () => _source.react(action));
+      final List<Movement> added = <Movement>[
+        for (final Movement m in account.movements)
+          if (!before.contains(m)) m,
+      ];
+      final bool done =
+          turn.error == null &&
+          turns.contains(turn) &&
+          (name != 'save_expense' ||
+              added.isNotEmpty ||
+              turn.computed.any((Computed c) => c.tool == 'record_expense'));
+      if (done) {
+        now._recorded = added;
+        return;
+      }
+      taken.forEach(account.record);
+      if (earlier == null) {
+        settled.remove(surfaceId);
+      } else {
+        settled[surfaceId] = earlier;
+      }
+      notifyListeners();
+    }());
   }
 
   /// A surface the model sent failed validation or a function failed.
@@ -572,16 +740,77 @@ class Session extends ChangeNotifier {
 
   /// Back to the untouched demo account and an empty conversation.
   void restart() {
+    _forgetPrevious();
     _teardown();
     turns.clear();
+    _settled = <String, Settled>{};
     _busy = false;
     _start();
     notifyListeners();
   }
 
-  void _teardown() {
+  /// Starts an empty conversation over the untouched account, and puts this
+  /// one aside for [restore] to bring back. Null when there was nothing to
+  /// keep, or an answer was still on its way, which goes with the rest.
+  Previous? startOver() {
+    if (turns.isEmpty || _busy) {
+      restart();
+      return null;
+    }
+    _forgetPrevious();
+    _quiet();
+    final Previous previous = _previous = Previous._(
+      ledger,
+      controller,
+      recorder,
+      _source,
+      List<Turn>.of(turns),
+      _settled,
+    );
+    turns.clear();
+    _settled = <String, Settled>{};
+    _start();
+    notifyListeners();
+    return previous;
+  }
+
+  /// Brings back the conversation [startOver] put aside, in place of the
+  /// new one. Nothing once the person asked something in the new one.
+  void restore(Previous previous) {
+    if (!identical(previous, _previous)) return;
+    _previous = null;
+    _teardown();
+    ledger = previous._ledger;
+    controller = previous._controller;
+    recorder = previous._recorder;
+    _source = previous._source;
+    turns
+      ..clear()
+      ..addAll(previous._turns);
+    _settled = previous._settled;
+    _busy = false;
+    _listen();
+    notifyListeners();
+  }
+
+  /// Lets go of [previous] for good, once the offer to bring it back ends.
+  void forget(Previous previous) {
+    if (identical(previous, _previous)) _forgetPrevious();
+  }
+
+  void _forgetPrevious() {
+    final Previous? previous = _previous;
+    _previous = null;
+    previous?._dispose();
+  }
+
+  void _quiet() {
     unawaited(_submissions.cancel());
     unawaited(_surfaces.cancel());
+  }
+
+  void _teardown() {
+    _quiet();
     _source.dispose();
     recorder.dispose();
     controller.dispose();
@@ -589,6 +818,7 @@ class Session extends ChangeNotifier {
 
   @override
   void dispose() {
+    _forgetPrevious();
     _teardown();
     super.dispose();
   }

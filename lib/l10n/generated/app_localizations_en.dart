@@ -4763,4 +4763,33 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get widgetAddFailed =>
       'Your home screen doesn\'t allow adding it from here. Touch and hold an empty spot and look for Quincena.';
+
+  @override
+  String get newConversationShort => 'New';
+
+  @override
+  String get conversationCleared => 'You started a new conversation.';
+
+  @override
+  String get conversationRestore => 'Go back to it';
+
+  @override
+  String get seeResult => 'See result';
+
+  @override
+  String get newAnswerBelow => 'There\'s a new answer below';
+
+  @override
+  String get settledExpense => 'Expense saved';
+
+  @override
+  String get settledPlan => 'Plan saved';
+
+  @override
+  String get settledCancelled => 'Marked as canceled';
+
+  @override
+  String settledAt(String what, String time) {
+    return '$what · $time';
+  }
 }

@@ -38,10 +38,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final ScrollController _scroll = ScrollController();
-  final GlobalKey _latest = GlobalKey();
-  int _seenTurns = 0;
-  bool _wasBusy = false;
+  late final ConversationFollower _follower = ConversationFollower(_session);
 
   /// Sessions Gemini answered for real, if the app ships any.
   List<Recording> _recordings = const <Recording>[];
@@ -51,7 +48,6 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _session.addListener(_follow);
     loadRecordings().then((List<Recording> found) {
       if (mounted && found.isNotEmpty) setState(() => _recordings = found);
     }, onError: (Object _) {});
@@ -72,30 +68,8 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
-    _session.removeListener(_follow);
-    _scroll.dispose();
+    _follower.dispose();
     super.dispose();
-  }
-
-  /// Brings a new question, and then its answer, to the top of the view, so
-  /// a long answer is read from its headline rather than from its last line.
-  void _follow() {
-    final int count = _session.turns.length;
-    final bool arrived = _wasBusy && !_session.busy;
-    final bool asked = count > _seenTurns;
-    _seenTurns = count;
-    _wasBusy = _session.busy;
-    if (!asked && !arrived) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final BuildContext? target = _latest.currentContext;
-      if (target == null || !mounted) return;
-      Scrollable.ensureVisible(
-        target,
-        alignment: 0,
-        duration: const Duration(milliseconds: 380),
-        curve: Curves.easeOutCubic,
-      );
-    });
   }
 
   @override
@@ -103,8 +77,10 @@ class _HomePageState extends State<HomePage> {
     return ListenableBuilder(
       listenable: Listenable.merge(<Listenable>[_session, widget.settings]),
       builder: (BuildContext context, _) {
-        final Widget content = CustomScrollView(
-          controller: _scroll,
+        // A new question, and then its answer, come to the top of the view,
+        // so a long answer is read from its headline.
+        final Widget content = FollowedScroll(
+          follower: _follower,
           slivers: <Widget>[
             SliverToBoxAdapter(
               child: _Column(
@@ -123,7 +99,7 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                 ),
                         )
-                      : Conversation(session: _session, latest: _latest),
+                      : Conversation(session: _session, follower: _follower),
                 ),
               ),
             ),
@@ -149,7 +125,9 @@ class _HomePageState extends State<HomePage> {
                     onUseOwn: widget.onUseOwn,
                     hasOwn: widget.hasOwn,
                   ),
-                  onRestart: _session.turns.isEmpty ? null : _session.restart,
+                  onRestart: _session.turns.isEmpty
+                      ? null
+                      : () => startNewConversation(context, _session),
                   live: _session.mode == AgentMode.live,
                 ),
                 Expanded(
@@ -260,12 +238,8 @@ class _TopBar extends StatelessWidget {
                 ),
               ),
             ),
-            if (onRestart != null)
-              IconButton(
-                onPressed: onRestart,
-                tooltip: context.l10n.newConversation,
-                icon: const Icon(Glyph.arrowCounterClockwise),
-              ),
+            if (onRestart case final VoidCallback restart)
+              NewConversationButton(onPressed: restart),
             IconButton(
               onPressed: onSettings,
               tooltip: context.l10n.settings,

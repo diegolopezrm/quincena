@@ -198,11 +198,8 @@ void main() {
             body: SingleChildScrollView(
               child: ListenableBuilder(
                 listenable: session,
-                builder: (BuildContext context, _) => Conversation(
-                  session: session,
-                  latest: GlobalKey(),
-                  reports: reports,
-                ),
+                builder: (BuildContext context, _) =>
+                    Conversation(session: session, reports: reports),
               ),
             ),
           ),

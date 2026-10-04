@@ -14,6 +14,7 @@ class ExpenseToRecord {
     required this.category,
     required this.note,
     this.account,
+    this.id,
   });
 
   /// In the smallest unit of the ledger's currency.
@@ -25,6 +26,10 @@ class ExpenseToRecord {
 
   /// The account the person named, if they did.
   final String? account;
+
+  /// The id the conversation gave the expense, if it did: saving one with
+  /// the same id again corrects it instead of adding another.
+  final String? id;
 }
 
 /// Saves an expense: in the sample account's memory, or in the person's
@@ -35,15 +40,20 @@ typedef RecordExpense = Future<void> Function(ExpenseToRecord expense);
 /// goes into the account's memory and is gone on restart.
 List<Tool> ledgerTools(Ledger ledger) => accountTools(
   () => ledger,
-  record: (ExpenseToRecord e) async => ledger.record(
-    Movement(
-      id: 'manual-${ledger.movements.length}',
+  record: (ExpenseToRecord e) async {
+    final Movement movement = Movement(
+      id: e.id ?? 'manual-${ledger.movements.length}',
       date: appToday,
       merchant: e.note.isEmpty ? e.category.label : e.note,
       amount: e.amount,
       category: e.category,
-    ),
-  ),
+    );
+    if (e.id == null) {
+      ledger.record(movement);
+    } else {
+      ledger.replace(movement);
+    }
+  },
 );
 
 /// The questions a model can ask an account.
@@ -492,8 +502,10 @@ List<Tool> accountTools(
     description:
         'Records an expense the person confirmed, dated today. Call it only '
         'after a save_expense event arrives, never on the first request. '
-        'Returns what is free until payday afterwards and the month so far '
-        'in that category.',
+        'Pass the id the event carries: the person can edit the form and '
+        'save again, and the same id corrects that expense instead of '
+        'adding another. Returns what is free until payday afterwards and '
+        'the month so far in that category.',
     inputSchema: S.object(
       properties: <String, Schema>{
         'amount': S.number(
@@ -515,6 +527,7 @@ List<Tool> accountTools(
               'The account it was paid from, if the person named one. Left '
               'out, it goes to the main account to spend from.',
         ),
+        'id': S.string(description: 'The id in the save_expense event.'),
       },
       required: <String>['amount', 'category'],
     ),
@@ -532,12 +545,14 @@ List<Tool> accountTools(
       }
       final String note = (args['note'] as String?)?.trim() ?? '';
       final String? account = (args['account'] as String?)?.trim();
+      final String? id = (args['id'] as String?)?.trim();
       await record(
         ExpenseToRecord(
           amount: ledger.minor(amount),
           category: category,
           note: note,
           account: account == null || account.isEmpty ? null : account,
+          id: id == null || id.isEmpty ? null : id,
         ),
       );
       final Ledger after = current();

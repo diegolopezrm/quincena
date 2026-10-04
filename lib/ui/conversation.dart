@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:genui/genui.dart';
 
 import '../ai/reports.dart';
+import '../format/dates.dart';
 import '../session/session.dart';
 import '../l10n/l10n.dart';
 import '../theme/tokens.dart';
@@ -10,20 +14,266 @@ import 'icons.dart';
 import 'mark.dart';
 import 'report_sheet.dart';
 
+/// Keeps a conversation's newest turn in view without taking the page from
+/// someone reading.
+///
+/// A question, or something done on a surface, comes into view as it
+/// starts, with the top of its turn at the top of the screen. Its answer
+/// does too, unless the person scrolled while it was on its way: then the
+/// page stays where they put it, and [behind] says there is an answer below
+/// to offer them.
+class ConversationFollower extends ChangeNotifier {
+  ConversationFollower(this.session)
+    : _seenTurns = session.turns.length,
+      _wasBusy = session.busy {
+    session.addListener(_follow);
+  }
+
+  final Session session;
+
+  /// The controller of the scroll view the conversation is in.
+  final ScrollController scroll = ScrollController();
+
+  final Expando<GlobalKey> _keys = Expando<GlobalKey>();
+  int _seenTurns;
+  bool _wasBusy;
+
+  /// Whether the person scrolled since the newest turn started.
+  bool _scrolled = false;
+  bool _disposed = false;
+
+  /// Whether an answer arrived below where the person is reading.
+  bool get behind => _behind;
+  bool _behind = false;
+
+  /// The key on [turn], to find it on the page.
+  GlobalKey keyOf(Turn turn) => _keys[turn] ??= GlobalKey();
+
+  void _follow() {
+    final List<Turn> turns = session.turns;
+    final bool arrived = _wasBusy && !session.busy;
+    final bool started = turns.length > _seenTurns;
+    _seenTurns = turns.length;
+    _wasBusy = session.busy;
+    if (turns.isEmpty) {
+      _setBehind(false);
+      return;
+    }
+    final Turn latest = turns.last;
+    if (started) {
+      _scrolled = false;
+      _setBehind(false);
+      _afterLayout(() => _reveal(latest));
+    } else if (arrived) {
+      _afterLayout(() {
+        if (!_scrolled) {
+          _reveal(latest);
+        } else if (identical(session.turns.lastOrNull, latest) &&
+            !_inView(latest)) {
+          _setBehind(true);
+        }
+      });
+    }
+  }
+
+  /// Brings [turn] to the top of the view, as the bubble or a receipt asks.
+  void show(Turn turn) {
+    _reveal(turn);
+    if (identical(turn, session.turns.lastOrNull)) _setBehind(false);
+  }
+
+  /// Brings the newest turn to the top of the view.
+  void showLatest() {
+    if (session.turns.lastOrNull case final Turn latest) show(latest);
+  }
+
+  /// What the person does with the page: scrolling while an answer is on
+  /// its way keeps the page where they put it, and reaching the newest turn
+  /// puts the bubble away. For a [NotificationListener] over the view.
+  bool onScroll(ScrollNotification notification) {
+    if (notification.depth != 0) return false;
+    if (notification is UserScrollNotification &&
+        notification.direction != ScrollDirection.idle) {
+      _scrolled = true;
+    }
+    if (_behind && notification is ScrollUpdateNotification) {
+      final Turn? latest = session.turns.lastOrNull;
+      if (latest == null || _inView(latest)) _setBehind(false);
+    }
+    return false;
+  }
+
+  void _afterLayout(VoidCallback then) =>
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_disposed) then();
+      });
+
+  void _reveal(Turn turn) {
+    final BuildContext? target = _keys[turn]?.currentContext;
+    if (target == null || !target.mounted) return;
+    unawaited(
+      Scrollable.ensureVisible(
+        target,
+        alignment: 0,
+        duration: MediaQuery.maybeDisableAnimationsOf(target) ?? false
+            ? Duration.zero
+            : const Duration(milliseconds: 380),
+        curve: Curves.easeOutCubic,
+      ),
+    );
+  }
+
+  /// Whether the top of [turn] shows in the upper part of the view, or is
+  /// above it, with the person reading inside the turn.
+  bool _inView(Turn turn) {
+    final RenderObject? box = _keys[turn]?.currentContext?.findRenderObject();
+    if (box == null || !box.attached || !scroll.hasClients) return true;
+    final ScrollPosition position = scroll.position;
+    final double top =
+        RenderAbstractViewport.of(box).getOffsetToReveal(box, 0).offset -
+        position.pixels;
+    return top < position.viewportDimension * 0.6;
+  }
+
+  void _setBehind(bool value) {
+    if (_behind == value || _disposed) return;
+    _behind = value;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    session.removeListener(_follow);
+    scroll.dispose();
+    super.dispose();
+  }
+}
+
+/// The conversation's scroll view, with a bubble over its foot when an
+/// answer arrived below where the person is reading.
+class FollowedScroll extends StatelessWidget {
+  const FollowedScroll({
+    super.key,
+    required this.follower,
+    required this.slivers,
+  });
+
+  final ConversationFollower follower;
+  final List<Widget> slivers;
+
+  @override
+  Widget build(BuildContext context) => Stack(
+    fit: StackFit.expand,
+    children: <Widget>[
+      NotificationListener<ScrollNotification>(
+        onNotification: follower.onScroll,
+        child: CustomScrollView(controller: follower.scroll, slivers: slivers),
+      ),
+      Positioned(
+        left: 16,
+        right: 16,
+        bottom: 12,
+        child: Center(
+          child: ListenableBuilder(
+            listenable: follower,
+            builder: (BuildContext context, _) => follower.behind
+                ? _SeeResult(onPressed: follower.showLatest)
+                : const SizedBox.shrink(),
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+/// Offers the answer that arrived below.
+class _SeeResult extends StatelessWidget {
+  const _SeeResult({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    container: true,
+    liveRegion: true,
+    label: context.l10n.newAnswerBelow,
+    child: FilledButton.icon(
+      onPressed: onPressed,
+      style: FilledButton.styleFrom(elevation: 3),
+      icon: const Icon(Glyph.arrowDown, size: 18),
+      label: Text(context.l10n.seeResult),
+    ),
+  );
+}
+
+/// Starts a new conversation, with a short label beside the icon so it
+/// does not read as undo or reload.
+class NewConversationButton extends StatelessWidget {
+  const NewConversationButton({super.key, required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => Tooltip(
+    message: context.l10n.newConversation,
+    child: TextButton.icon(
+      onPressed: onPressed,
+      icon: const Icon(Glyph.notePencil, size: 20),
+      label: Text(context.l10n.newConversationShort),
+    ),
+  );
+}
+
+/// Starts a new conversation and keeps the one on screen aside for a few
+/// seconds, with a way back to it. The way back goes as soon as the new
+/// conversation has a question.
+void startNewConversation(BuildContext context, Session session) {
+  final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+  final AppLocalizations l = context.l10n;
+  final Previous? previous = session.startOver();
+  if (previous == null) return;
+  messenger.hideCurrentSnackBar();
+  final ScaffoldFeatureController<SnackBar, SnackBarClosedReason> bar =
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(l.conversationCleared),
+          duration: const Duration(seconds: 6),
+          persist: false,
+          action: SnackBarAction(
+            label: l.conversationRestore,
+            onPressed: () => session.restore(previous),
+          ),
+        ),
+      );
+  void gone() {
+    if (!session.canRestore) bar.close();
+  }
+
+  session.addListener(gone);
+  unawaited(
+    bar.closed.then((SnackBarClosedReason reason) {
+      session.removeListener(gone);
+      if (reason != SnackBarClosedReason.action) session.forget(previous);
+    }),
+  );
+}
+
 /// The exchange so far: each question and the surface that answered it.
 class Conversation extends StatelessWidget {
   const Conversation({
     super.key,
     required this.session,
-    required this.latest,
+    this.follower,
     this.onExplainFree,
     this.reports,
   });
 
   final Session session;
 
-  /// Attached to the newest turn, so the screen can bring it into view.
-  final GlobalKey latest;
+  /// Keeps the newest turn in view and finds each turn on the page; none
+  /// where nothing scrolls to them.
+  final ConversationFollower? follower;
 
   /// Shows how the free amount is worked out, where there is one to show.
   final VoidCallback? onExplainFree;
@@ -41,13 +291,14 @@ class Conversation extends StatelessWidget {
       children: <Widget>[
         for (var i = 0; i < turns.length; i++)
           KeyedSubtree(
-            key: i == turns.length - 1 ? latest : null,
+            key: follower?.keyOf(turns[i]),
             child: _TurnView(
               turn: turns[i],
               session: session,
               waiting: session.busy && i == turns.length - 1,
               onExplainFree: onExplainFree,
               reports: reports,
+              onShow: follower?.show,
             ),
           ),
       ],
@@ -62,6 +313,7 @@ class _TurnView extends StatelessWidget {
     required this.waiting,
     this.onExplainFree,
     this.reports,
+    this.onShow,
   });
 
   final Turn turn;
@@ -69,6 +321,9 @@ class _TurnView extends StatelessWidget {
   final bool waiting;
   final VoidCallback? onExplainFree;
   final AnswerReports? reports;
+
+  /// Brings another turn into view.
+  final void Function(Turn turn)? onShow;
 
   @override
   Widget build(BuildContext context) {
@@ -94,16 +349,35 @@ class _TurnView extends StatelessWidget {
               TurnNote.other => context.l10n.noteTappedAction,
             }),
           const SizedBox(height: 14),
-          const _Speaker(),
-          const SizedBox(height: 10),
+          // A surface opens with its own headline; the name above it would
+          // only take a line.
+          if (turn.surfaceIds.isEmpty) ...<Widget>[
+            const _Speaker(),
+            const SizedBox(height: 10),
+          ],
           if (turn.text.isNotEmpty) ...<Widget>[
             Text(turn.text.toString().trim(), style: context.type.bodyLarge),
             const SizedBox(height: 12),
           ],
           for (final String id in turn.surfaceIds) ...<Widget>[
+            if (_receipt(id) case final Settled settled) ...<Widget>[
+              _Receipt(
+                settled: settled,
+                onEdit: () => session.reopen(id),
+                onSeeResult: onShow == null
+                    ? null
+                    : () => onShow!(settled.turn),
+              ),
+              const SizedBox(height: 6),
+            ],
             _Arrive(
               key: ValueKey<String>(id),
-              child: Surface(surfaceContext: session.controller.contextFor(id)),
+              child: _Closed(
+                closed: session.settledOf(id) != null,
+                child: Surface(
+                  surfaceContext: session.controller.contextFor(id),
+                ),
+              ),
             ),
             const SizedBox(height: 12),
           ],
@@ -161,6 +435,102 @@ class _TurnView extends StatelessWidget {
             const _Thinking(),
         ],
       ),
+    );
+  }
+
+  /// What settled the surface [id], once the answer to it arrived and is
+  /// still in the conversation.
+  Settled? _receipt(String id) {
+    final Settled? settled = session.settledOf(id);
+    if (settled == null || !session.turns.contains(settled.turn)) return null;
+    final bool answering =
+        session.busy && identical(settled.turn, session.turns.lastOrNull);
+    return answering ? null : settled;
+  }
+}
+
+/// A surface that took what it commits: it shows what was sent, and takes
+/// nothing more.
+class _Closed extends StatelessWidget {
+  const _Closed({required this.closed, required this.child});
+
+  final bool closed;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+    ignoring: closed,
+    child: ExcludeFocus(
+      excluding: closed,
+      child: AnimatedOpacity(
+        opacity: closed ? 0.5 : 1,
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 200),
+        child: child,
+      ),
+    ),
+  );
+}
+
+/// Over a settled surface: what was committed and when, a way to change it,
+/// and a way to the answer it got.
+class _Receipt extends StatelessWidget {
+  const _Receipt({
+    required this.settled,
+    required this.onEdit,
+    this.onSeeResult,
+  });
+
+  final Settled settled;
+  final VoidCallback onEdit;
+  final VoidCallback? onSeeResult;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    final String what = switch (settled.action) {
+      'save_goal_plan' => l.settledPlan,
+      'cancel_subscriptions' => l.settledCancelled,
+      _ => l.settledExpense,
+    };
+    final ButtonStyle compact = TextButton.styleFrom(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+    );
+    return Wrap(
+      spacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: <Widget>[
+        Semantics(
+          liveRegion: true,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Icon(Glyph.checkCircle, size: 20, color: context.colors.positive),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  l.settledAt(what, timeOfDay(settled.at)),
+                  style: context.type.labelLarge,
+                ),
+              ),
+            ],
+          ),
+        ),
+        TextButton.icon(
+          onPressed: onEdit,
+          style: compact,
+          icon: const Icon(Glyph.pencilSimple, size: 18),
+          label: Text(l.edit),
+        ),
+        if (onSeeResult case final VoidCallback see)
+          TextButton.icon(
+            onPressed: see,
+            style: compact,
+            icon: const Icon(Glyph.arrowDown, size: 18),
+            label: Text(l.seeResult),
+          ),
+      ],
     );
   }
 }

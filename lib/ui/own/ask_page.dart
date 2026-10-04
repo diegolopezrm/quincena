@@ -78,11 +78,8 @@ class AskPage extends StatefulWidget {
 }
 
 class _AskPageState extends State<AskPage> {
-  final ScrollController _scroll = ScrollController();
-  final GlobalKey _latest = GlobalKey();
   Session? _session;
-  int _seenTurns = 0;
-  bool _wasBusy = false;
+  late final ConversationFollower _follower = ConversationFollower(session);
 
   Session get session => _session!;
 
@@ -100,7 +97,6 @@ class _AskPageState extends State<AskPage> {
           own: true,
           allowance: widget.allowance,
         );
-    session.addListener(_follow);
     // App Check and the anonymous sign-in take a moment the first time;
     // better while the person reads the questions than after they ask.
     if (widget.session == null) unawaited(Cloud.start());
@@ -113,30 +109,9 @@ class _AskPageState extends State<AskPage> {
 
   @override
   void dispose() {
-    session.removeListener(_follow);
+    _follower.dispose();
     if (widget.session == null) session.dispose();
-    _scroll.dispose();
     super.dispose();
-  }
-
-  /// Brings a new question, and then its answer, to the top of the view.
-  void _follow() {
-    final int count = session.turns.length;
-    final bool arrived = _wasBusy && !session.busy;
-    final bool asked = count > _seenTurns;
-    _seenTurns = count;
-    _wasBusy = session.busy;
-    if (!asked && !arrived) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final BuildContext? target = _latest.currentContext;
-      if (target == null || !mounted) return;
-      Scrollable.ensureVisible(
-        target,
-        alignment: 0,
-        duration: const Duration(milliseconds: 380),
-        curve: Curves.easeOutCubic,
-      );
-    });
   }
 
   void _openNote() => Navigator.of(context).push(
@@ -158,10 +133,8 @@ class _AskPageState extends State<AskPage> {
           title: Text(l.askTitle, style: context.type.titleLarge),
           actions: <Widget>[
             if (session.turns.isNotEmpty)
-              IconButton(
-                tooltip: l.newConversation,
-                onPressed: session.restart,
-                icon: const Icon(Glyph.arrowCounterClockwise),
+              NewConversationButton(
+                onPressed: () => startNewConversation(context, session),
               ),
             IconButton(
               tooltip: l.askWhatSees,
@@ -174,8 +147,8 @@ class _AskPageState extends State<AskPage> {
         body: Column(
           children: <Widget>[
             Expanded(
-              child: CustomScrollView(
-                controller: _scroll,
+              child: FollowedScroll(
+                follower: _follower,
                 slivers: <Widget>[
                   SliverToBoxAdapter(
                     child: _Column(
@@ -195,7 +168,7 @@ class _AskPageState extends State<AskPage> {
                               )
                             : Conversation(
                                 session: session,
-                                latest: _latest,
+                                follower: _follower,
                                 onExplainFree: () =>
                                     showFreeExplained(context, widget.own),
                               ),

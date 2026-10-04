@@ -687,7 +687,8 @@ class OwnController extends ChangeNotifier {
   ///
   /// It goes to the account the person named, or else the first one to
   /// spend from in the base currency. An account in another currency gets
-  /// the amount converted, when there is a rate for it.
+  /// the amount converted, when there is a rate for it. One saved before
+  /// with the same id is corrected instead of added again.
   Future<void> recordExpense(ExpenseToRecord expense) async {
     final Profile? p = profile;
     final Ledger? l = ledger;
@@ -708,6 +709,25 @@ class OwnController extends ChangeNotifier {
     }
     account ??= _mainAccount(p.base);
     if (account == null) return;
+    final Entry? earlier = expense.id == null
+        ? null
+        : _snapshot?.entries
+              .where(
+                (Entry e) => e.source == 'gemini' && e.sourceRef == expense.id,
+              )
+              .firstOrNull;
+    if (earlier != null) {
+      await store.updateEntry(
+        earlier.copyWith(
+          accountId: account.id,
+          amount: -amount.amount.abs(),
+          category: expense.category.name,
+          payee: expense.note,
+        ),
+      );
+      _pending?.cancel();
+      return _reload();
+    }
     await store.addEntry(
       accountId: account.id,
       amount: amount.amount.abs(),
@@ -716,6 +736,7 @@ class OwnController extends ChangeNotifier {
       category: expense.category.name,
       payee: expense.note,
       source: 'gemini',
+      sourceRef: expense.id,
     );
     _pending?.cancel();
     await _reload();

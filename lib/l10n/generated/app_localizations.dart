@@ -7566,6 +7566,60 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena.'**
   String get widgetAddFailed;
+
+  /// No description provided for @newConversationShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Nueva'**
+  String get newConversationShort;
+
+  /// No description provided for @conversationCleared.
+  ///
+  /// In es, this message translates to:
+  /// **'Empezaste una conversación nueva.'**
+  String get conversationCleared;
+
+  /// No description provided for @conversationRestore.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver a la anterior'**
+  String get conversationRestore;
+
+  /// No description provided for @seeResult.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver resultado'**
+  String get seeResult;
+
+  /// No description provided for @newAnswerBelow.
+  ///
+  /// In es, this message translates to:
+  /// **'Hay una respuesta nueva abajo'**
+  String get newAnswerBelow;
+
+  /// No description provided for @settledExpense.
+  ///
+  /// In es, this message translates to:
+  /// **'Gasto guardado'**
+  String get settledExpense;
+
+  /// No description provided for @settledPlan.
+  ///
+  /// In es, this message translates to:
+  /// **'Plan guardado'**
+  String get settledPlan;
+
+  /// No description provided for @settledCancelled.
+  ///
+  /// In es, this message translates to:
+  /// **'Marcadas como canceladas'**
+  String get settledCancelled;
+
+  /// No description provided for @settledAt.
+  ///
+  /// In es, this message translates to:
+  /// **'{what} · {time}'**
+  String settledAt(String what, String time);
 }
 
 class _AppLocalizationsDelegate

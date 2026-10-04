@@ -1507,5 +1507,15 @@
   "widgetHide": "Ocultar montos en el widget",
   "widgetHideHelp": "Dice hasta cuándo, sin la cifra.",
   "widgetAdd": "Agregar a la pantalla de inicio",
-  "widgetAddFailed": "Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena."
+  "widgetAddFailed": "Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena.",
+  "newConversationShort": "Nueva",
+  "conversationCleared": "Empezaste una conversación nueva.",
+  "conversationRestore": "Volver a la anterior",
+  "seeResult": "Ver resultado",
+  "newAnswerBelow": "Hay una respuesta nueva abajo",
+  "settledExpense": "Gasto guardado",
+  "settledPlan": "Plan guardado",
+  "settledCancelled": "Marcadas como canceladas",
+  "settledAt": "{what} · {time}",
+  "@settledAt": {"placeholders": {"what": {"type": "String"}, "time": {"type": "String"}}}
 }

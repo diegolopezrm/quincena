@@ -4762,4 +4762,33 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get widgetAddFailed =>
       'Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena.';
+
+  @override
+  String get newConversationShort => 'Nueva';
+
+  @override
+  String get conversationCleared => 'Empezaste una conversación nueva.';
+
+  @override
+  String get conversationRestore => 'Volver a la anterior';
+
+  @override
+  String get seeResult => 'Ver resultado';
+
+  @override
+  String get newAnswerBelow => 'Hay una respuesta nueva abajo';
+
+  @override
+  String get settledExpense => 'Gasto guardado';
+
+  @override
+  String get settledPlan => 'Plan guardado';
+
+  @override
+  String get settledCancelled => 'Marcadas como canceladas';
+
+  @override
+  String settledAt(String what, String time) {
+    return '$what · $time';
+  }
 }
