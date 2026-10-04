@@ -7,9 +7,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/app.dart';
+import 'package:quincena/capture/event.dart';
+import 'package:quincena/capture/inbox.dart';
+import 'package:quincena/domain/records.dart';
 import 'package:quincena/l10n/l10n.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/session/session.dart';
+import 'package:quincena/store/store.dart';
 import 'package:quincena/ui/own/account_sheet.dart';
 import 'package:quincena/ui/own/ask_page.dart';
 import 'package:quincena/ui/own/charge_sheet.dart';
@@ -31,12 +35,13 @@ const double _keyboard = 336;
 const double _above = 800 - _keyboard;
 
 /// [page] on Google Play's smallest screenshot phone, 360 by 800, with the
-/// text at twice its size and the keyboard down.
+/// text at twice its size and the keyboard down, over what [data] adds.
 Future<OwnController> _open(
   WidgetTester tester,
-  Widget Function(OwnController own) page,
-) async {
-  final OwnController own = await openPage(tester, page);
+  Widget Function(OwnController own) page, {
+  Future<void> Function(QuincenaStore store, Account bank, Account card)? data,
+}) async {
+  final OwnController own = await openPage(tester, page, data: data);
   tester.view.physicalSize = const Size(1080, 2400);
   tester.platformDispatcher.textScaleFactorTestValue = 2;
   addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
@@ -150,6 +155,50 @@ void main() {
     await _typesIn(tester, _field(l.amount), go: save, scroll: true);
     // The note is the last field: the button comes up with it.
     await _typesIn(tester, _field(l.note), go: save);
+  });
+
+  testWidgets('a payment to review: its amount and its note', (tester) async {
+    final OwnController own = await _open(
+      tester,
+      (OwnController own) => _opener(
+        (BuildContext context) => showEntrySheet(
+          context,
+          own: own,
+          fromInbox: own.pendingInbox.single,
+        ),
+      ),
+      data: (QuincenaStore store, Account bank, Account card) async {
+        await store.saveCaptureSettings(
+          const CaptureSettings().copyWith(
+            cardAccounts: <String, String>{'9876': card.id},
+          ),
+        );
+        final OwnController own = OwnController(
+          store,
+          now: () => pageNow,
+          readNative: false,
+        );
+        await own.capture.ingest(<CaptureEvent>[
+          CaptureEvent(
+            source: CaptureSource.notification,
+            at: pageNow.subtract(const Duration(minutes: 5)),
+            app: 'com.todo1.mobile',
+            appName: 'Bancolombia',
+            text:
+                'Bancolombia: Compraste \$45.900 en EXITO LAURELES con tu '
+                'T.Cred *9876',
+          ),
+        ]);
+        own.dispose();
+      },
+    );
+    expect(own.pendingInbox, hasLength(1));
+    await _openSheet(tester);
+    final Finder record = _inSheet(
+      find.widgetWithText(FilledButton, l.recordExpense),
+    );
+    await _typesIn(tester, _field(l.amount), go: record, scroll: true);
+    await _typesIn(tester, _field(l.note), go: record);
   });
 
   testWidgets('a new account: its name and its balance', (tester) async {
