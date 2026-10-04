@@ -32,7 +32,7 @@ class PortfolioChart extends StatelessWidget {
   /// The moment picked, or null.
   final int? selected;
 
-  /// A moment picked, or null when the finger lifts.
+  /// A moment picked, or null when the finger lifts, even if nothing was.
   final ValueChanged<int?> onSelect;
 
   /// What the line shows as a whole, for a screen reader.
@@ -58,9 +58,9 @@ class PortfolioChart extends StatelessWidget {
     onSelect(i);
   }
 
-  void _lift() {
-    if (selected != null) onSelect(null);
-  }
+  // Told even when nothing seems picked: a quick tap lifts before the
+  // moment it picked is built here.
+  void _lift() => onSelect(null);
 
   @override
   Widget build(BuildContext context) {

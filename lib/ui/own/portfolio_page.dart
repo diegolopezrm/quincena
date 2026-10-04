@@ -593,10 +593,13 @@ class _ChartCardState extends State<_ChartCard> {
     }
   }
 
-  void _select(int? i) => setState(() {
-    if (i == null && _touched != null) _tried = true;
-    _touched = i;
-  });
+  void _select(int? i) {
+    if (i == _touched) return;
+    setState(() {
+      if (i == null) _tried = true;
+      _touched = i;
+    });
+  }
 
   String _short(AppLocalizations l, ChartRange r) => switch (r) {
     ChartRange.day => l.rangeDay,

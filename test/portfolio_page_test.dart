@@ -534,6 +534,12 @@ void main() {
     expect(screen(tester), contains('${dayAndTime(start)}: valía \$5.920.000'));
     await again.up();
     await settle(tester);
+    expect(find.textContaining('valía'), findsNothing);
+
+    // A quick tap lifts as soon as it lands: the range comes back too.
+    await tester.tapAt(line.center);
+    await settle(tester);
+    expect(find.textContaining('valía'), findsNothing);
   });
 
   testWidgets('a screen reader steps through the chart\'s moments', (
