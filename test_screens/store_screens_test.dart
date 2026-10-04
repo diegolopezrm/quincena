@@ -6,6 +6,7 @@
 //   flutter test test_screens/store_screens_test.dart --update-goldens
 //
 // They are written straight into docs/store/screenshots.
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:decimal/decimal.dart';
@@ -169,6 +170,7 @@ Future<QuincenaStore> example() async {
     asset: Asset.cop,
     opening: d('-480000'),
     institution: 'Bancolombia',
+    creditLimit: d('3000000'),
   );
   await store.addAccount(
     name: 'Cuenta en dólares',
@@ -317,6 +319,7 @@ void main() {
 
       testWidgets('own $tag', (tester) async {
         device(tester, s.value, language);
+        final AppLocalizations l = lookupAppLocalizations(Locale(language));
         final QuincenaStore store = (await tester.runAsync(example))!;
         addTearDown(() => tester.runAsync(store.close));
         await tester.pumpWidget(
@@ -325,20 +328,18 @@ void main() {
             startInDemo: false,
             fetcher: fakeRates(),
             now: () => _now,
+            // Cuentas shows how the crypto did, from these prices.
+            market: ExampleMarket(),
           ),
         );
         await settle(tester);
         await shoot(s.key, language, '02-home');
-        await tester.tap(
-          find.byTooltip(language == 'en' ? 'To review' : 'Por revisar'),
-        );
+        await tester.tap(find.byTooltip(l.inboxTitle));
         await settle(tester);
         await shoot(s.key, language, '03-inbox');
         tester.state<NavigatorState>(find.byType(Navigator).first).pop();
         await settle(tester);
-        await tester.tap(
-          find.text(language == 'en' ? 'Accounts' : 'Cuentas').last,
-        );
+        await tester.tap(find.text(l.tabAccounts).last);
         await settle(tester);
         await shoot(s.key, language, '06-accounts');
       });
@@ -355,16 +356,31 @@ void main() {
         );
         addTearDown(own.dispose);
         await tester.runAsync(own.start);
-        Widget app(Widget home) => MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: quincenaTheme(Brightness.light),
-          locale: Locale(language),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: appLocales,
-          home: home,
+        await tester.pumpWidget(
+          MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: quincenaTheme(Brightness.light),
+            locale: Locale(language),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: appLocales,
+            home: const SizedBox(),
+          ),
         );
-        await tester.pumpWidget(app(PortfolioPage(own: own)));
-        await settle(tester);
+        // Pushed over the app, the way the app opens it, with its way back.
+        Future<void> open(Widget page) async {
+          final NavigatorState navigator = tester.state<NavigatorState>(
+            find.byType(Navigator).first,
+          );
+          navigator.popUntil((Route<dynamic> route) => route.isFirst);
+          unawaited(
+            navigator.push(
+              MaterialPageRoute<void>(builder: (BuildContext context) => page),
+            ),
+          );
+          await settle(tester);
+        }
+
+        await open(PortfolioPage(own: own));
         await tester.runAsync(() => own.portfolio.refresh());
         await tester.runAsync(() => own.portfolio.loadChart(ChartRange.week));
         await settle(tester);
@@ -373,26 +389,23 @@ void main() {
         final Account bank = own.accounts.firstWhere(
           (Account a) => a.name == 'Bancolombia',
         );
-        await tester.pumpWidget(
-          app(
-            StatementPage(
-              own: own,
-              accountId: bank.id,
-              statement: readTable(
-                parseCsv(
-                  'Fecha;Descripción;Valor;Saldo\n'
-                  '28/09/2026;COMPRA EN D1 LAURELES;-32.400;1.245.600\n'
-                  '27/09/2026;PAGO PSE CLARO HOGAR;-98.900;1.278.000\n'
-                  '26/09/2026;TRANSFERENCIA DE CAMILO RIOS;150.000;1.376.900\n'
-                  '25/09/2026;COMPRA EN RAPPI RESTAURANTES;-41.500;1.226.900\n'
-                  '24/09/2026;PAGO TARJETA VISA;-480.000;1.268.400\n'
-                  '23/09/2026;COMPRA EN TERPEL LAS PALMAS;-120.000;1.748.400\n',
-                ),
+        await open(
+          StatementPage(
+            own: own,
+            accountId: bank.id,
+            statement: readTable(
+              parseCsv(
+                'Fecha;Descripción;Valor;Saldo\n'
+                '28/09/2026;COMPRA EN D1 LAURELES;-32.400;1.245.600\n'
+                '27/09/2026;PAGO PSE CLARO HOGAR;-98.900;1.278.000\n'
+                '26/09/2026;TRANSFERENCIA DE CAMILO RIOS;150.000;1.376.900\n'
+                '25/09/2026;COMPRA EN RAPPI RESTAURANTES;-41.500;1.226.900\n'
+                '24/09/2026;PAGO TARJETA VISA;-480.000;1.268.400\n'
+                '23/09/2026;COMPRA EN TERPEL LAS PALMAS;-120.000;1.748.400\n',
               ),
             ),
           ),
         );
-        await settle(tester);
         await shoot(s.key, language, '05-statement');
       });
     }
