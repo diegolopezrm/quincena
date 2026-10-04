@@ -19,7 +19,7 @@ import 'look.dart';
 import 'split_sheet.dart';
 
 /// Records a movement, or edits [entry]. A transfer is edited as one move,
-/// whichever of its legs was tapped.
+/// whichever of its legs was tapped. A new one opens as [kind] when given.
 Future<void> showEntrySheet(
   BuildContext context, {
   required OwnController own,
@@ -27,6 +27,7 @@ Future<void> showEntrySheet(
   String? accountId,
   InboxItem? fromInbox,
   bool ownTransfer = false,
+  EntryKind? kind,
 }) {
   if (own.accounts.isEmpty) {
     ScaffoldMessenger.of(
@@ -47,6 +48,7 @@ Future<void> showEntrySheet(
       accountId: accountId,
       fromInbox: fromInbox,
       ownTransfer: ownTransfer,
+      kind: kind,
     ),
   );
 }
@@ -58,6 +60,7 @@ class _EntryForm extends StatefulWidget {
     this.accountId,
     this.fromInbox,
     this.ownTransfer = false,
+    this.kind,
   });
 
   final OwnController own;
@@ -73,6 +76,10 @@ class _EntryForm extends StatefulWidget {
   /// where the money arrived for an income and where it left otherwise.
   /// Recorded that way, it is neither income nor spending.
   final bool ownTransfer;
+
+  /// What a new movement starts as: an income for the pay that has not
+  /// shown up yet.
+  final EntryKind? kind;
 
   @override
   State<_EntryForm> createState() => _EntryFormState();
@@ -94,6 +101,8 @@ class _EntryFormState extends State<_EntryForm> {
       ? (_capture!.parsed.kind ?? EntryKind.expense)
       : _editing?.kind == EntryKind.transfer
       ? EntryKind.transfer
+      : _editing == null && widget.kind != null
+      ? widget.kind!
       : (_editing == null || _editing!.amount < Decimal.zero)
       ? EntryKind.expense
       : EntryKind.income;

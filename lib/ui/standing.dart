@@ -27,6 +27,7 @@ class StandingCard extends StatelessWidget {
     required this.ledger,
     this.cardDebt = 0,
     this.onExplain,
+    this.greet = true,
   });
 
   final Ledger ledger;
@@ -39,6 +40,11 @@ class StandingCard extends StatelessWidget {
   /// Shows the sum account by account. Without it the card has no way to
   /// ask.
   final VoidCallback? onExplain;
+
+  /// Whether the card opens with the owner's name: the sample's does, to
+  /// introduce the person it is about; someone's own card goes straight to
+  /// the figure.
+  final bool greet;
 
   @override
   Widget build(BuildContext context) {
@@ -56,20 +62,54 @@ class StandingCard extends StatelessWidget {
     final String until = short
         ? l.standingShortUntil(dayMonth(payday))
         : l.standingUntil(dayMonth(payday));
+    // The payment that comes first, under the payments line, so the next
+    // thing due is in view and not only their total.
+    final String? next = switch (ledger.committed.firstOrNull) {
+      final Movement m => l.standingNextCharge(
+        m.merchant.isEmpty ? l.timelineCharge : m.merchant,
+        pesos(ledger.major(m.amount)),
+        dayShortMonth(m.date),
+      ),
+      null => null,
+    };
     // What is held back from what is there, each only when there is some.
-    final List<(String, int)> held = <(String, int)>[
+    final List<(String, int, String?)> held = <(String, int, String?)>[
       (
         l.standingPaymentsBefore(dayShortMonth(payday)),
         ledger.committedUntilPayday,
+        next,
       ),
-      (l.standingCushionLine, ledger.cushion),
-      (l.standingEnvelopesLine, ledger.setAside),
-      (l.standingReserveLine, ledger.reserved),
-    ].where(((String, int) h) => h.$2 > 0).toList();
+      (l.standingCushionLine, ledger.cushion, null),
+      (l.standingEnvelopesLine, ledger.setAside, null),
+      (l.standingReserveLine, ledger.reserved, null),
+    ].where(((String, int, String?) h) => h.$2 > 0).toList();
     final Color heldColor = context.colors.inkFaint.withValues(alpha: 0.35);
+    final String summary = short
+        ? l.standingShortSemantics(figure, dayMonth(payday), when)
+        : l.standingSemantics(figure, dayMonth(payday), when);
+    // Beside the label it asks about, at the size a finger needs; with large
+    // text it drops under the label instead of squeezing it.
+    final Widget? explain = switch (onExplain) {
+      final VoidCallback explain => TextButton.icon(
+        onPressed: explain,
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+        ),
+        icon: const Icon(Glyph.info, size: 18),
+        label: Text(l.freeExplainAction),
+      ),
+      null => null,
+    };
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
+      // Beside the label, the room the button needs around it is the
+      // card's top margin.
+      padding: EdgeInsets.fromLTRB(
+        20,
+        greet || explain == null ? 16 : 4,
+        20,
+        14,
+      ),
       decoration: BoxDecoration(
         color: context.colors.surface,
         borderRadius: BorderRadius.circular(24),
@@ -78,60 +118,93 @@ class StandingCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          // Read as one sentence, with the way to ask where it comes from
+          // a button of its own inside it.
           Semantics(
             container: true,
-            label: short
-                ? l.standingShortSemantics(figure, dayMonth(payday), when)
-                : l.standingSemantics(figure, dayMonth(payday), when),
-            excludeSemantics: true,
+            label: summary,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(
-                  l.greeting(ledger.owner),
-                  style: context.type.titleMedium?.copyWith(
-                    color: context.colors.inkSoft,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  short ? l.standingShort : l.standingCanSpend,
-                  style: context.type.labelMedium,
-                ),
-                const SizedBox(height: 2),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  // A new figure counts its way there from the one before,
-                  // so a change reads as a change; at once with animations
-                  // turned down.
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween<double>(end: free.abs().toDouble()),
-                    duration: MediaQuery.disableAnimationsOf(context)
-                        ? Duration.zero
-                        : const Duration(milliseconds: 450),
-                    curve: Curves.easeOutCubic,
-                    builder: (BuildContext context, double value, _) => Figures(
-                      pesos(ledger.major(value.round())),
-                      style: context.type.displayLarge?.copyWith(
-                        color: short ? context.colors.negative : null,
+                if (greet)
+                  ExcludeSemantics(
+                    child: Text(
+                      l.greeting(ledger.owner),
+                      style: context.type.titleMedium?.copyWith(
+                        color: context.colors.inkSoft,
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  until,
-                  style: context.type.bodyLarge?.copyWith(
-                    color: context.colors.ink,
+                SizedBox(
+                  width: double.infinity,
+                  child: Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    children: <Widget>[
+                      // As tall as the button, so the label keeps its room
+                      // above it when large text puts the button below.
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: explain == null ? 0 : 48,
+                        ),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: 1,
+                          child: ExcludeSemantics(
+                            child: Text(
+                              short ? l.standingShort : l.standingCanSpend,
+                              style: context.type.labelMedium,
+                            ),
+                          ),
+                        ),
+                      ),
+                      ?explain,
+                    ],
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(sentence(when), style: context.type.bodySmall),
+                ExcludeSemantics(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      if (explain == null) const SizedBox(height: 2),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        // A new figure counts its way there from the one
+                        // before, so a change reads as a change; at once with
+                        // animations turned down.
+                        child: TweenAnimationBuilder<double>(
+                          tween: Tween<double>(end: free.abs().toDouble()),
+                          duration: MediaQuery.disableAnimationsOf(context)
+                              ? Duration.zero
+                              : const Duration(milliseconds: 450),
+                          curve: Curves.easeOutCubic,
+                          builder: (BuildContext context, double value, _) =>
+                              Figures(
+                                pesos(ledger.major(value.round())),
+                                style: context.type.displayLarge?.copyWith(
+                                  color: short ? context.colors.negative : null,
+                                ),
+                              ),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        until,
+                        style: context.type.bodyLarge?.copyWith(
+                          color: context.colors.ink,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(sentence(when), style: context.type.bodySmall),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           ExcludeSemantics(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(99),
@@ -156,7 +229,7 @@ class StandingCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           _Line(
             label: l.standingAvailable,
             value: pesos(ledger.major(balance + cardDebt)),
@@ -166,24 +239,14 @@ class StandingCard extends StatelessWidget {
               label: l.standingCardDebtLine,
               value: pesos(-ledger.major(cardDebt)),
             ),
-          for (final (String label, int amount) in held)
+          for (final (String label, int amount, String? detail) in held)
             _Line(
               label: label,
               value: pesos(-ledger.major(amount)),
               key: ValueKey<String>(label),
               swatch: heldColor,
+              detail: detail,
             ),
-          if (onExplain case final VoidCallback explain) ...<Widget>[
-            const SizedBox(height: 4),
-            TextButton.icon(
-              onPressed: explain,
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-              ),
-              icon: const Icon(Glyph.info, size: 18),
-              label: Text(l.freeExplainAction),
-            ),
-          ],
         ],
       ),
     );
@@ -191,41 +254,54 @@ class StandingCard extends StatelessWidget {
 }
 
 /// One line of the sum under the figure: what it is and how much, with
-/// the bar's color beside what the bar shows held back.
+/// the bar's color beside what the bar shows held back, and what explains
+/// it under it, heard with it.
 class _Line extends StatelessWidget {
   const _Line({
     super.key,
     required this.label,
     required this.value,
     this.swatch,
+    this.detail,
   });
 
   final String label;
   final String value;
   final Color? swatch;
+  final String? detail;
 
   @override
   Widget build(BuildContext context) {
     final TextStyle? style = context.type.bodyMedium;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: MergeSemantics(
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            if (swatch case final Color color) ...<Widget>[
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+            Row(
+              children: <Widget>[
+                if (swatch case final Color color) ...<Widget>[
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Expanded(child: Text(label, style: style)),
+                const SizedBox(width: 12),
+                Figures(value, style: style),
+              ],
+            ),
+            if (detail case final String text)
+              Padding(
+                padding: EdgeInsets.only(left: swatch == null ? 0 : 16),
+                child: Text(text, style: context.type.bodySmall),
               ),
-              const SizedBox(width: 8),
-            ],
-            Expanded(child: Text(label, style: style)),
-            const SizedBox(width: 12),
-            Figures(value, style: style),
           ],
         ),
       ),

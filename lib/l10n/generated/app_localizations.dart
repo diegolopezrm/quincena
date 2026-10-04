@@ -2903,7 +2903,7 @@ abstract class AppLocalizations {
   /// No description provided for @inboxBanner.
   ///
   /// In es, this message translates to:
-  /// **'{count, plural, =1{Un movimiento por revisar} other{{count} movimientos por revisar}}'**
+  /// **'{count, plural, =1{Revisa 1 movimiento para actualizar tu saldo} other{Revisa {count} movimientos para actualizar tu saldo}}'**
   String inboxBanner(int count);
 
   /// No description provided for @inboxBannerBody.
@@ -7105,12 +7105,6 @@ abstract class AppLocalizations {
   /// **'Tu saldo mínimo estimado será {amount} el {date}.'**
   String comingLowestLine(String amount, String date);
 
-  /// No description provided for @timelineToday.
-  ///
-  /// In es, this message translates to:
-  /// **'Hoy'**
-  String get timelineToday;
-
   /// No description provided for @timelineFortnight.
   ///
   /// In es, this message translates to:
@@ -7164,12 +7158,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Movimiento'**
   String get fabMovement;
-
-  /// No description provided for @timelineAvailable.
-  ///
-  /// In es, this message translates to:
-  /// **'Saldo'**
-  String get timelineAvailable;
 
   /// No description provided for @goalSoFar.
   ///
@@ -8129,6 +8117,54 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Con tus cuentas, Quincena te dice cuánto puedes gastar tú. Se guardan solo en este dispositivo.'**
   String get demoBannerBody;
+
+  /// No description provided for @standingNextCharge.
+  ///
+  /// In es, this message translates to:
+  /// **'El próximo: {name}, {amount} el {date}'**
+  String standingNextCharge(String name, String amount, String date);
+
+  /// No description provided for @homeTodoThen.
+  ///
+  /// In es, this message translates to:
+  /// **'Después'**
+  String get homeTodoThen;
+
+  /// No description provided for @todoLatePay.
+  ///
+  /// In es, this message translates to:
+  /// **'Registra tu pago del {date}'**
+  String todoLatePay(String date);
+
+  /// No description provided for @todoLatePayBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no aparece. Si ya llegó, regístralo para que cuente.'**
+  String get todoLatePayBody;
+
+  /// No description provided for @todoRecord.
+  ///
+  /// In es, this message translates to:
+  /// **'Registrar'**
+  String get todoRecord;
+
+  /// No description provided for @todoRates.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Falta la tasa de {codes}} other{Faltan las tasas de {codes}}}'**
+  String todoRates(int count, String codes);
+
+  /// No description provided for @todoRatesBody.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Mientras tanto cuenta como cero en tus totales.} other{Mientras tanto cuentan como cero en tus totales.}}'**
+  String todoRatesBody(int count);
+
+  /// No description provided for @todoSeeRates.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver tasas'**
+  String get todoSeeRates;
 }
 
 class _AppLocalizationsDelegate

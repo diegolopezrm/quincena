@@ -20,6 +20,7 @@ import '../standing.dart';
 import 'accounts_tab.dart';
 import 'close_page.dart';
 import 'coming_days_page.dart';
+import 'entry_sheet.dart';
 import 'envelopes_page.dart';
 import 'free_explained.dart';
 import 'inbox_page.dart';
@@ -52,7 +53,7 @@ class OwnHomeTab extends StatelessWidget {
     final Ledger? ledger = own.ledger;
     if (ledger == null) return const SizedBox.shrink();
     final List<Entry> recent = visibleEntries(own).take(5).toList();
-    final Set<Asset> missing = own.unconverted;
+    final List<_Todo> todos = _todos(l, ledger);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -60,38 +61,32 @@ class OwnHomeTab extends StatelessWidget {
           ledger: ledger,
           cardDebt: own.spendableCardDebt,
           onExplain: () => showFreeExplained(context, own),
+          greet: false,
         ),
-        if (own.projection?.latePay case final DateTime late) ...<Widget>[
-          const SizedBox(height: 12),
-          _Notice(text: l.payLate(dayMonth(late))),
-        ],
-        if (own.pendingInbox.isNotEmpty || own.paidWithoutPlan) ...<Widget>[
+        // One thing first, given room and a button; the rest after it.
+        if (todos.isNotEmpty) ...<Widget>[
           const SizedBox(height: 24),
           SectionLabel(l.homeTodo),
-          Panel(
-            children: <Widget>[
-              if (own.pendingInbox.isNotEmpty)
-                _TodoRow(
-                  icon: Glyph.tray,
-                  title: l.inboxBanner(own.pendingInbox.length),
-                  body: l.inboxBannerBody(own.pendingInbox.length),
-                  action: l.todoReview,
-                  open: (_) => InboxPage(own: own),
-                ),
-              if (own.paidWithoutPlan) _PayArrivedRow(own: own, ledger: ledger),
-            ],
-          ),
+          _MainTodo(todo: todos.first),
+          if (todos.length > 1) ...<Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
+              child: Semantics(
+                header: true,
+                child: Text(l.homeTodoThen, style: context.type.labelMedium),
+              ),
+            ),
+            Panel(
+              children: <Widget>[
+                for (final _Todo todo in todos.skip(1)) _TodoRow(todo: todo),
+              ],
+            ),
+          ],
         ],
         const SizedBox(height: 24),
         _ComingDays(own: own, ledger: ledger),
         const SizedBox(height: 12),
         _CanIBuy(own: own, ledger: ledger),
-        if (missing.isNotEmpty) ...<Widget>[
-          const SizedBox(height: 12),
-          _Notice(
-            text: l.ratesMissing(missing.map((Asset a) => a.code).join(', ')),
-          ),
-        ],
         if (onAsk case final void Function([String? question]) ask) ...<Widget>[
           const SizedBox(height: 24),
           SectionLabel(l.askYourMoneyLabel),
@@ -134,60 +129,111 @@ class OwnHomeTab extends StatelessWidget {
       ],
     );
   }
+
+  /// What there is to do, the most pressing first: what the figure waits
+  /// for, the pay to split, then what it leaves out.
+  List<_Todo> _todos(AppLocalizations l, Ledger ledger) {
+    final int pending = own.pendingInbox.length;
+    final List<String> unpriced = <String>[
+      for (final Asset a in own.unconverted) a.code,
+    ];
+    return <_Todo>[
+      if (pending > 0)
+        _Todo(
+          icon: Glyph.tray,
+          title: l.inboxBanner(pending),
+          body: l.inboxBannerBody(pending),
+          action: l.todoReview,
+          open: _push((_) => InboxPage(own: own)),
+        ),
+      if (own.projection?.latePay case final DateTime late)
+        _Todo(
+          icon: Glyph.hourglass,
+          title: l.todoLatePay(dayMonth(late)),
+          body: l.todoLatePayBody,
+          action: l.todoRecord,
+          open: (BuildContext context) =>
+              showEntrySheet(context, own: own, kind: EntryKind.income),
+        ),
+      if (own.paidWithoutPlan) _payArrived(l, own, ledger),
+      if (unpriced.isNotEmpty)
+        _Todo(
+          icon: Glyph.arrowsLeftRight,
+          title: l.todoRates(unpriced.length, unpriced.join(', ')),
+          body: l.todoRatesBody(unpriced.length),
+          action: l.todoSeeRates,
+          open: _push((_) => RatesPage(own: own)),
+        ),
+    ];
+  }
 }
+
+/// Something to do on the home: what, why it matters, what doing it is
+/// called, and where it is done.
+class _Todo {
+  const _Todo({
+    required this.icon,
+    required this.title,
+    required this.body,
+    required this.action,
+    required this.open,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
+  final String action;
+  final void Function(BuildContext context) open;
+}
+
+/// Opens [page] over the home.
+void Function(BuildContext context) _push(WidgetBuilder page) =>
+    (BuildContext context) =>
+        Navigator.of(context).push(MaterialPageRoute<void>(builder: page));
 
 /// The pay that arrived with no envelopes yet: how much, when and where,
 /// and the way to split it.
-class _PayArrivedRow extends StatelessWidget {
-  const _PayArrivedRow({required this.own, required this.ledger});
-
-  final OwnController own;
-  final Ledger ledger;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations l = context.l10n;
-    final bool fortnight = ledger.schedule is TwiceMonthly;
-    // The earliest first, so the accounts read in the order the money came.
-    final List<Entry> arrivals = own.payArrivals.reversed.toList();
-    final int? total = own.payArrivedTotal;
-    final String? amount = total == null ? null : pesos(ledger.major(total));
-    final List<String> names = <String>{
-      for (final Entry e in arrivals) ?own.snapshot?.account(e.accountId)?.name,
-    }.toList();
-    final String where = names.length < 2
-        ? names.join()
-        : l.listAnd(
-            names.take(names.length - 1).join(', '),
-            names.last,
-            _sound(names.last),
-          );
-    final String from = dayShortMonth(arrivals.first.date);
-    final String to = dayShortMonth(arrivals.last.date);
-    return _TodoRow(
-      icon: Glyph.wallet,
-      title: amount == null
-          ? (fortnight ? l.paydayArrived : l.paydayArrivedPay)
-          : fortnight
-          ? l.paydayArrivedAmount(amount)
-          : l.paydayArrivedPayAmount(amount),
-      // On two days, both: the latest alone would date all of it.
-      body: from == to
-          ? l.paydayArrivedDetail(to, where)
-          : l.paydayArrivedDetailRange(from, to, where),
-      action: l.todoSplit,
-      open: (_) => EnvelopesPage(own: own),
-    );
-  }
-
-  /// The sound [word] starts with, as listAnd picks its conjunction: "i"
-  /// for an i, so Spanish says "Nequi e Itaú" and not "y Itaú"; an i
-  /// opening a diphthong, as in "hielo", keeps the y.
-  static String _sound(String word) =>
-      RegExp(r'^h?[ií](?![aeoáéó])', caseSensitive: false).hasMatch(word)
-      ? 'i'
-      : 'other';
+_Todo _payArrived(AppLocalizations l, OwnController own, Ledger ledger) {
+  final bool fortnight = ledger.schedule is TwiceMonthly;
+  // The earliest first, so the accounts read in the order the money came.
+  final List<Entry> arrivals = own.payArrivals.reversed.toList();
+  final int? total = own.payArrivedTotal;
+  final String? amount = total == null ? null : pesos(ledger.major(total));
+  final List<String> names = <String>{
+    for (final Entry e in arrivals) ?own.snapshot?.account(e.accountId)?.name,
+  }.toList();
+  final String where = names.length < 2
+      ? names.join()
+      : l.listAnd(
+          names.take(names.length - 1).join(', '),
+          names.last,
+          _sound(names.last),
+        );
+  final String from = dayShortMonth(arrivals.first.date);
+  final String to = dayShortMonth(arrivals.last.date);
+  return _Todo(
+    icon: Glyph.wallet,
+    title: amount == null
+        ? (fortnight ? l.paydayArrived : l.paydayArrivedPay)
+        : fortnight
+        ? l.paydayArrivedAmount(amount)
+        : l.paydayArrivedPayAmount(amount),
+    // On two days, both: the latest alone would date all of it.
+    body: from == to
+        ? l.paydayArrivedDetail(to, where)
+        : l.paydayArrivedDetailRange(from, to, where),
+    action: l.todoSplit,
+    open: _push((_) => EnvelopesPage(own: own)),
+  );
 }
+
+/// The sound [word] starts with, as listAnd picks its conjunction: "i"
+/// for an i, so Spanish says "Nequi e Itaú" and not "y Itaú"; an i
+/// opening a diphthong, as in "hielo", keeps the y.
+String _sound(String word) =>
+    RegExp(r'^h?[ií](?![aeoáéó])', caseSensitive: false).hasMatch(word)
+    ? 'i'
+    : 'other';
 
 /// One question to ask, or the way to ask another.
 class _AskRow extends StatelessWidget {
@@ -206,45 +252,69 @@ class _AskRow extends StatelessWidget {
   );
 }
 
-/// Something to do now, with what doing it is called: the whole row opens
-/// it, and the word at its end says what that is.
-class _TodoRow extends StatelessWidget {
-  const _TodoRow({
-    required this.icon,
-    required this.title,
-    required this.body,
-    required this.action,
-    required this.open,
-  });
+/// The thing to do first: what and why, with room, and a button that says
+/// what doing it is called.
+class _MainTodo extends StatelessWidget {
+  const _MainTodo({required this.todo});
 
-  final IconData icon;
-  final String title;
-  final String body;
-  final String action;
-  final WidgetBuilder open;
+  final _Todo todo;
+
+  @override
+  Widget build(BuildContext context) => Block(
+    padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Icon(todo.icon, size: 24, color: context.colors.brand),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(todo.title, style: context.type.titleMedium),
+              const SizedBox(height: 2),
+              Text(todo.body, style: context.type.bodySmall),
+              const SizedBox(height: 10),
+              FilledButton.tonal(
+                onPressed: () => todo.open(context),
+                child: Text(todo.action),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Something to do after the first, with what doing it is called: the
+/// whole row opens it, and the word at its end says what that is.
+class _TodoRow extends StatelessWidget {
+  const _TodoRow({required this.todo});
+
+  final _Todo todo;
 
   @override
   Widget build(BuildContext context) => InkWell(
-    onTap: () =>
-        Navigator.of(context).push(MaterialPageRoute<void>(builder: open)),
+    onTap: () => todo.open(context),
     child: Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
       child: Row(
         children: <Widget>[
-          Icon(icon, size: 24, color: context.colors.brand),
+          Icon(todo.icon, size: 24, color: context.colors.brand),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(title, style: context.type.titleSmall),
-                Text(body, style: context.type.bodySmall),
+                Text(todo.title, style: context.type.titleSmall),
+                Text(todo.body, style: context.type.bodySmall),
               ],
             ),
           ),
           const SizedBox(width: 8),
           Text(
-            action,
+            todo.action,
             style: context.type.labelLarge?.copyWith(
               color: context.colors.brand,
             ),
@@ -252,28 +322,6 @@ class _TodoRow extends StatelessWidget {
           Icon(Glyph.caretRight, size: 16, color: context.colors.brand),
         ],
       ),
-    ),
-  );
-}
-
-class _Notice extends StatelessWidget {
-  const _Notice({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(14),
-    decoration: BoxDecoration(
-      color: context.colors.cautionSoft,
-      borderRadius: BorderRadius.circular(16),
-    ),
-    child: Row(
-      children: <Widget>[
-        Icon(Glyph.warningCircle, size: 20, color: context.colors.caution),
-        const SizedBox(width: 10),
-        Expanded(child: Text(text, style: context.type.bodyMedium)),
-      ],
     ),
   );
 }
@@ -369,9 +417,10 @@ class _MovementsTabState extends State<MovementsTab> {
   }
 }
 
-/// What comes until payday, as a line of days: what there is today, each
-/// charge on its day, and the pay, with the lowest balance said first. In
-/// the week after a payday, the close of the period that ended.
+/// What comes until payday, as a line of days: each charge on its day and
+/// the pay, with the lowest balance said first. What there is today is the
+/// card's first line, so the line starts tomorrow. In the week after a
+/// payday, the close of the period that ended.
 class _ComingDays extends StatelessWidget {
   const _ComingDays({required this.own, required this.ledger});
 
@@ -442,13 +491,7 @@ class _ComingDays extends StatelessWidget {
                 color: context.colors.caution,
               ),
             ),
-          const SizedBox(height: 10),
-          _TimelineRow(
-            when: l.timelineToday,
-            what: l.timelineAvailable,
-            amount: pesos(ledger.major(projection.start)),
-            strong: true,
-          ),
+          const SizedBox(height: 6),
           for (final ProjectedEvent e in events.take(_shown))
             _TimelineRow(
               when: dayShortMonth(e.date),
@@ -498,7 +541,6 @@ class _TimelineRow extends StatelessWidget {
     required this.what,
     required this.amount,
     this.note,
-    this.strong = false,
     this.income = false,
   });
 
@@ -506,14 +548,11 @@ class _TimelineRow extends StatelessWidget {
   final String what;
   final String amount;
   final String? note;
-  final bool strong;
   final bool income;
 
   @override
   Widget build(BuildContext context) {
-    final TextStyle? style = strong
-        ? context.type.titleSmall
-        : context.type.bodyMedium;
+    final TextStyle? style = context.type.bodyMedium;
     return MergeSemantics(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),

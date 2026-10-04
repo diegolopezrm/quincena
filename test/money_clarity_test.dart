@@ -68,7 +68,11 @@ Ledger ledgerOf({
   ],
 );
 
-Future<void> showCard(WidgetTester tester, Ledger ledger) async {
+Future<void> showCard(
+  WidgetTester tester,
+  Ledger ledger, {
+  bool greet = true,
+}) async {
   tester.view.physicalSize = const Size(1170, 2532);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
@@ -79,7 +83,9 @@ Future<void> showCard(WidgetTester tester, Ledger ledger) async {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: appLocales,
       home: Scaffold(
-        body: SingleChildScrollView(child: StandingCard(ledger: ledger)),
+        body: SingleChildScrollView(
+          child: StandingCard(ledger: ledger, greet: greet),
+        ),
       ),
     ),
   );
@@ -109,6 +115,8 @@ void main() {
       // Payday's own charges are in it too: until, not before.
       expect(text, contains('Pagos hasta el 15 oct'));
       expect(text, contains(r'−$26.900'));
+      // And the one that comes first, not only their total.
+      expect(text, contains(r'El próximo: Claro, $26.900 el 12 oct'));
       expect(text, contains('Colchón'));
       expect(text, contains(r'−$100.000'));
       expect(text, contains('Apartado en sobres'));
@@ -123,6 +131,7 @@ void main() {
       final String text = screen(tester);
       expect(text, contains('En tus cuentas de uso diario'));
       expect(text, isNot(contains('Pagos hasta')));
+      expect(text, isNot(contains('El próximo')));
       expect(text, isNot(contains('Lo que debes en tarjetas')));
       expect(text, isNot(contains('Colchón')));
     });
@@ -254,6 +263,16 @@ void main() {
       expect(text, contains('hasta el 30 de octubre'));
       expect(text, contains('Tu próximo pago llega en 27 días'));
       expect(text, isNot(contains('quincena')));
+    });
+
+    testWidgets('the sample greets its person; someone\'s own card does not', (
+      tester,
+    ) async {
+      await showCard(tester, ledgerOf());
+      expect(screen(tester), contains('Hola, Ana'));
+      await showCard(tester, ledgerOf(), greet: false);
+      expect(screen(tester), isNot(contains('Hola')));
+      expect(screen(tester), contains('Puedes gastar'));
     });
   });
 

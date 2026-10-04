@@ -140,6 +140,8 @@ void main() {
     expect(screen(tester), contains('Puedes gastar'));
     expect(screen(tester), contains('hasta el 15 de octubre'));
     expect(screen(tester), contains(r'$1.500.000'));
+    // The greeting is the sample's, not the person's own home.
+    expect(screen(tester), isNot(contains('Hola, Diego')));
     expect(
       screen(tester),
       contains('Aquí aparecerá tu plata entrando y saliendo.'),
@@ -234,14 +236,18 @@ void main() {
       );
       await settle(tester);
 
-      expect(screen(tester), contains('Un movimiento por revisar'));
+      // The first thing to do, with what doing it changes.
+      expect(
+        screen(tester),
+        contains('Revisa 1 movimiento para actualizar tu saldo'),
+      );
       // Until it is confirmed, the figure leaves it out, and says so.
       expect(
         screen(tester),
         contains('Aún no cuenta en lo que puedes gastar.'),
       );
       expect(screen(tester), contains(r'$1.000.000'));
-      await tester.tap(find.text('Un movimiento por revisar'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Revisar'));
       await settle(tester);
       expect(screen(tester), contains('Exito Laureles'));
       expect(screen(tester), contains('Mercado · Bancolombia'));
@@ -253,7 +259,7 @@ void main() {
 
       await tester.tap(find.byTooltip('Atrás'));
       await settle(tester);
-      expect(screen(tester), isNot(contains('por revisar')));
+      expect(screen(tester), isNot(contains('Revisa 1 movimiento')));
       expect(screen(tester), contains(r'$954.100'));
     },
   );

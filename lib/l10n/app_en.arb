@@ -475,7 +475,7 @@
   "settingsTitle": "Settings",
 
   "inboxTitle": "To review",
-  "inboxBanner": "{count, plural, =1{One movement to review} other{{count} movements to review}}",
+  "inboxBanner": "{count, plural, =1{Review 1 transaction to update your balance} other{Review {count} transactions to update your balance}}",
   "inboxBannerBody": "{count, plural, =1{It isn't counted in what you can spend yet.} other{They aren't counted in what you can spend yet.}}",
   "inboxEmpty": "All caught up.",
   "inboxEmptyBody": "Nothing waiting. When a payment arrives from your bank, it shows up here to confirm.",
@@ -1174,7 +1174,6 @@
   "licensesTitle": "Licenses and credits",
   "licensesLegalese": "© 2026 DL SOFT TECHNOLOGIES SAS. Nearby shops come from © OpenStreetMap contributors (ODbL).",
   "comingLowestLine": "Your lowest estimated balance will be {amount} on {date}.",
-  "timelineToday": "Today",
   "timelineFortnight": "Your pay",
   "timelineCharge": "A scheduled charge",
   "timelineExpected": "expected",
@@ -1184,7 +1183,6 @@
   "buyAskHint": "Price",
   "buyAskGo": "Check",
   "fabMovement": "Movement",
-  "timelineAvailable": "Balance",
   "goalSoFar": "{saved} saved",
   "goalMissing": "{missing} to go",
   "goalReached": "Goal reached",
@@ -1343,5 +1341,13 @@
   "subscriptionToCancel": "To cancel",
   "subscriptionCancelled": "Canceled",
   "demoBannerTitle": "You're looking at {name}'s sample account",
-  "demoBannerBody": "With your own accounts, Quincena tells you what you can spend. They stay on this device only."
+  "demoBannerBody": "With your own accounts, Quincena tells you what you can spend. They stay on this device only.",
+  "standingNextCharge": "Next: {name}, {amount} on {date}",
+  "homeTodoThen": "After that",
+  "todoLatePay": "Record your pay from {date}",
+  "todoLatePayBody": "It hasn't shown up yet. If it arrived, record it so it counts.",
+  "todoRecord": "Record",
+  "todoRates": "{count, plural, =1{No rate yet for {codes}} other{No rates yet for {codes}}}",
+  "todoRatesBody": "{count, plural, =1{Until then it counts as zero in your totals.} other{Until then they count as zero in your totals.}}",
+  "todoSeeRates": "See rates"
 }

@@ -295,13 +295,24 @@ void main() {
     );
     final Ledger ledger = own.ledger!;
     expect(ledger.freeUntilPayday, 2200000 - 26900 - 100000);
+    // On the home, the first thing to do, and it opens on an income.
+    expect(find.text('Registra tu pago del 30 de septiembre'), findsOneWidget);
     expect(
-      find.text(
-        'Tu pago del 30 de septiembre todavía no aparece. '
-        'Si ya llegó, regístralo.',
-      ),
+      find.text('Todavía no aparece. Si ya llegó, regístralo para que cuente.'),
       findsOneWidget,
     );
+    await tester.tap(find.widgetWithText(FilledButton, 'Registrar'));
+    await settle(tester);
+    expect(
+      tester
+          .widget<SegmentedButton<EntryKind>>(
+            find.byType(SegmentedButton<EntryKind>),
+          )
+          .selected,
+      <EntryKind>{EntryKind.income},
+    );
+    Navigator.of(tester.element(find.byType(SegmentedButton<EntryKind>))).pop();
+    await settle(tester);
 
     await tester.tap(find.text('¿De dónde sale?'));
     await settle(tester);
@@ -327,5 +338,15 @@ void main() {
       );
       expect(inSheet(find.textContaining(line)), findsOneWidget);
     }
+    // The late pay is still said among what the figure assumes.
+    const String late =
+        'Tu pago del 30 de septiembre todavía no aparece. '
+        'Si ya llegó, regístralo.';
+    await tester.scrollUntilVisible(
+      inSheet(find.text(late)),
+      120,
+      scrollable: sheetScroll,
+    );
+    expect(inSheet(find.text(late)), findsOneWidget);
   });
 }

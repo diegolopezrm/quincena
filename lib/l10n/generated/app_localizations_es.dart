@@ -1802,8 +1802,8 @@ class AppLocalizationsEs extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count movimientos por revisar',
-      one: 'Un movimiento por revisar',
+      other: 'Revisa $count movimientos para actualizar tu saldo',
+      one: 'Revisa 1 movimiento para actualizar tu saldo',
     );
     return '$_temp0';
   }
@@ -4500,9 +4500,6 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get timelineToday => 'Hoy';
-
-  @override
   String get timelineFortnight => 'Tu quincena';
 
   @override
@@ -4537,9 +4534,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get fabMovement => 'Movimiento';
-
-  @override
-  String get timelineAvailable => 'Saldo';
 
   @override
   String goalSoFar(String saved) {
@@ -5212,4 +5206,49 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get demoBannerBody =>
       'Con tus cuentas, Quincena te dice cuánto puedes gastar tú. Se guardan solo en este dispositivo.';
+
+  @override
+  String standingNextCharge(String name, String amount, String date) {
+    return 'El próximo: $name, $amount el $date';
+  }
+
+  @override
+  String get homeTodoThen => 'Después';
+
+  @override
+  String todoLatePay(String date) {
+    return 'Registra tu pago del $date';
+  }
+
+  @override
+  String get todoLatePayBody =>
+      'Todavía no aparece. Si ya llegó, regístralo para que cuente.';
+
+  @override
+  String get todoRecord => 'Registrar';
+
+  @override
+  String todoRates(int count, String codes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Faltan las tasas de $codes',
+      one: 'Falta la tasa de $codes',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String todoRatesBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Mientras tanto cuentan como cero en tus totales.',
+      one: 'Mientras tanto cuenta como cero en tus totales.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get todoSeeRates => 'Ver tasas';
 }

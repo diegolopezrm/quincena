@@ -1799,8 +1799,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count movements to review',
-      one: 'One movement to review',
+      other: 'Review $count transactions to update your balance',
+      one: 'Review 1 transaction to update your balance',
     );
     return '$_temp0';
   }
@@ -4501,9 +4501,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get timelineToday => 'Today';
-
-  @override
   String get timelineFortnight => 'Your pay';
 
   @override
@@ -4538,9 +4535,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fabMovement => 'Movement';
-
-  @override
-  String get timelineAvailable => 'Balance';
 
   @override
   String goalSoFar(String saved) {
@@ -5216,4 +5210,49 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get demoBannerBody =>
       'With your own accounts, Quincena tells you what you can spend. They stay on this device only.';
+
+  @override
+  String standingNextCharge(String name, String amount, String date) {
+    return 'Next: $name, $amount on $date';
+  }
+
+  @override
+  String get homeTodoThen => 'After that';
+
+  @override
+  String todoLatePay(String date) {
+    return 'Record your pay from $date';
+  }
+
+  @override
+  String get todoLatePayBody =>
+      'It hasn\'t shown up yet. If it arrived, record it so it counts.';
+
+  @override
+  String get todoRecord => 'Record';
+
+  @override
+  String todoRates(int count, String codes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'No rates yet for $codes',
+      one: 'No rate yet for $codes',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String todoRatesBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Until then they count as zero in your totals.',
+      one: 'Until then it counts as zero in your totals.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get todoSeeRates => 'See rates';
 }
