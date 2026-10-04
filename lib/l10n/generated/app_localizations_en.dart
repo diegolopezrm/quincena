@@ -128,7 +128,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get geminiNoteSends =>
-      'Gemini does not get your database. It asks tools that run on your phone or computer for the figures it needs, and what travels is their answers: your totals by category and by month, what is free until payday, your subscriptions, your savings goal, your accounts with their balances and, when the question calls for it, a month\'s largest payments with their merchants.';
+      'Gemini does not get your database. It asks tools that run on your phone or computer for the figures it needs, and what travels is their answers: your totals by category and by month, what you can spend until payday, your subscriptions, your savings goal, your accounts with their balances and, when the question calls for it, a month\'s largest payments with their merchants.';
 
   @override
   String get geminiNoteNot =>
@@ -392,7 +392,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingPayBody =>
-      'Quincena uses this to work out what is free until your next payday.';
+      'Quincena uses this to calculate how much you can spend until your next payday.';
 
   @override
   String get onboardingAccountsTitle => 'Add your accounts';
@@ -538,11 +538,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountDebtNow => 'How much do you owe today?';
 
   @override
-  String get accountSpendable => 'Money to spend';
+  String get accountSpendable => 'Everyday account';
 
   @override
   String get accountSpendableHelp =>
-      'Its balance counts toward what is free until payday. Turn it off for savings, investments and crypto.';
+      'Its balance counts toward what you can spend until payday. Turn this off for savings, investments and crypto.';
 
   @override
   String get accountAssetLocked =>
@@ -575,7 +575,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get groupSpendable => 'To spend';
+  String get groupSpendable => 'Everyday accounts';
 
   @override
   String get groupSaved => 'Savings, investments and crypto';
@@ -775,7 +775,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsCushionBody =>
-      'What you want to keep untouched. The free amount until payday leaves it out.';
+      'Money you want to leave untouched. It isn\'t included in what you can spend until payday.';
 
   @override
   String get settingsNotSet => 'Not set';
@@ -791,7 +791,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String freeExplainAssumeToday(String payday) {
-    return 'It counts what your spending accounts hold today and takes away what\'s due by $payday.';
+    return 'It counts what your everyday accounts hold today and takes away what\'s due by $payday.';
   }
 
   @override
@@ -935,7 +935,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get computedOverview =>
-      'Your balances, what\'s committed, the cushion and what\'s free until payday';
+      'Your balances, upcoming payments, your safety buffer and what you can spend until payday';
 
   @override
   String computedMonth(String month) {
@@ -967,14 +967,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get computedPortfolio => 'Your crypto portfolio at market prices';
 
   @override
-  String get computedSeeFree => 'See how the free amount is worked out';
+  String get computedSeeFree => 'See how \"You can spend\" is calculated';
 
   @override
   String get comingTitle => 'Next 30 days';
 
   @override
   String comingLowest(String amount, String date) {
-    return 'Lowest before payday: $amount on $date';
+    return 'Lowest estimated balance before payday: $amount on $date';
   }
 
   @override
@@ -1060,12 +1060,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String buyFitsBody(String amount, String date) {
-    return 'The lowest you\'d get is $amount on $date, above your cushion.';
+    return 'Your lowest estimated balance would be $amount on $date, above your safety buffer.';
   }
 
   @override
   String buyFitsBodyNoCushion(String amount, String date) {
-    return 'The lowest you\'d get is $amount on $date.';
+    return 'Your lowest estimated balance would be $amount on $date.';
   }
 
   @override
@@ -1107,7 +1107,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String buyLowest(String amount) {
-    return 'lowest: $amount';
+    return 'lowest balance: $amount';
   }
 
   @override
@@ -1174,7 +1174,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String closeFree(String amount) {
-    return 'Free until payday: $amount';
+    return 'You can spend until payday: $amount';
   }
 
   @override
@@ -1192,7 +1192,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String closeActionGoal(String amount) {
-    return 'You have $amount free until payday. If you want, part of it can go to your goal.';
+    return 'You can spend $amount until payday. If you like, part of it can go to your goal.';
   }
 
   @override
@@ -1220,7 +1220,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String comingLowestWithout(String amount, String date) {
-    return 'Without what you try, lowest before payday: $amount on $date';
+    return 'Without what you\'re trying out, lowest estimated balance before payday: $amount on $date';
   }
 
   @override
@@ -1356,10 +1356,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get envelopeGoalHelp =>
-      'Set aside for your goal: no longer counted as free.';
+      'Set aside for your goal: no longer included in what you can spend.';
 
   @override
-  String get envelopeAsideHelp => 'Set aside: no longer counted as free.';
+  String get envelopeAsideHelp =>
+      'Set aside: no longer included in what you can spend.';
 
   @override
   String get envelopeRemove => 'Remove envelope';
@@ -1368,11 +1369,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get envelopesOverShort => 'Over by';
 
   @override
-  String get envelopesFree => 'Free, not assigned';
+  String get envelopesFree => 'Not assigned yet';
 
   @override
   String get envelopesOnPaper =>
-      'Envelopes don\'t move money: your bank knows nothing of them. They only say which part of what you have is for what, and what\'s set aside leaves the free amount until payday.';
+      'Envelopes don\'t move money, and your bank doesn\'t see them. They only say what each part of your money is for, and what you set aside comes out of what you can spend until payday.';
 
   @override
   String get envelopesSave => 'Save the split';
@@ -1579,7 +1580,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get whatIfMoreDays => 'More days';
 
   @override
-  String get whatIfLowest => 'The lowest in 45 days';
+  String get whatIfLowest => 'Lowest balance in 45 days';
 
   @override
   String get whatIfTight => 'First day under your cushion';
@@ -1612,7 +1613,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String whatIfSavedOutcome(String amount, String date) {
-    return 'Lowest: $amount on $date';
+    return 'Lowest balance: $amount on $date';
   }
 
   @override
@@ -1696,26 +1697,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paydayArrived => 'Your pay arrived';
 
   @override
-  String get paydayArrivedBody =>
-      'Give each part its envelope before you spend.';
-
-  @override
   String get freeExplainAction => 'Where does this come from?';
 
   @override
   String get freeExplainTitle => 'How what you can spend is worked out';
 
   @override
-  String get freeExplainSpendable => 'Available today';
+  String get freeExplainSpendable => 'In your everyday accounts';
 
   @override
   String freeExplainCommitted(String date) {
-    return 'Payments before $date';
+    return 'Payments until $date';
   }
 
   @override
   String freeExplainNothingCommitted(String date) {
-    return 'Nothing scheduled before $date.';
+    return 'Nothing scheduled until $date.';
   }
 
   @override
@@ -1817,8 +1814,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get inboxBannerBody =>
-      'They came from your notifications and messages.';
+  String inboxBannerBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'They aren\'t counted in what you can spend yet.',
+      one: 'It isn\'t counted in what you can spend yet.',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get inboxEmpty => 'All caught up.';
@@ -1906,7 +1910,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String whyOnly(String asset) {
-    return 'it\'s your only spending account in $asset; check it';
+    return 'it\'s your only everyday account in $asset; check it';
   }
 
   @override
@@ -3369,7 +3373,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'What you\'re owed, your clients\' payments and your trips';
 
   @override
-  String get freeExplainReserved => 'Reserve from your payments';
+  String get freeExplainReserved => 'Kept from variable income';
 
   @override
   String get messageCopied =>
@@ -3549,7 +3553,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sharedNotCash =>
-      'What you\'re owed isn\'t added to your free money until it arrives.';
+      'What you\'re owed isn\'t counted as money to spend until it\'s paid back.';
 
   @override
   String get sharedGroups => 'Groups';
@@ -3747,7 +3751,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get scenarioPendingBody =>
-      'Also what\'s billed, on the day you expect it. If it\'s late it moves to the next day, and it never counts as free until it arrives.';
+      'Also what you\'ve billed, on the day you expect it. If it\'s late, it moves to the next day, and it never counts as money to spend until it arrives.';
 
   @override
   String get scenarioEstimatedBody =>
@@ -3761,12 +3765,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String freelanceReserveNow(String amount, String date) {
-    return 'You\'ve kept $amount since $date. It doesn\'t count as free, but it stays in your accounts.';
+    return 'You\'ve set aside $amount since $date. It stays in your accounts but isn\'t counted as money to spend.';
   }
 
   @override
   String get freelanceReserveOff =>
-      'No reserve: everything you collect counts as free.';
+      'No reserve: everything you collect counts as money to spend.';
 
   @override
   String get freelanceNoTax =>
@@ -4345,11 +4349,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get standingAvailable => 'Available today';
+  String get standingAvailable => 'In your everyday accounts';
 
   @override
   String standingPaymentsBefore(String date) {
-    return 'Payments before $date';
+    return 'Payments until $date';
   }
 
   @override
@@ -4501,7 +4505,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String comingLowestLine(String amount, String date) {
-    return 'Your lowest point will be $amount on $date.';
+    return 'Your lowest estimated balance will be $amount on $date.';
   }
 
   @override
@@ -4544,7 +4548,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fabMovement => 'Movement';
 
   @override
-  String get timelineAvailable => 'Available';
+  String get timelineAvailable => 'Balance';
 
   @override
   String goalSoFar(String saved) {
@@ -4763,4 +4767,67 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get widgetAddFailed =>
       'Your home screen doesn\'t allow adding it from here. Touch and hold an empty spot and look for Quincena.';
+
+  @override
+  String get freeExplainSpendableSection => 'Your everyday accounts';
+
+  @override
+  String get standingCardDebtLine => 'What you owe on cards';
+
+  @override
+  String get cardSpendableHelp =>
+      'When it\'s on, what you owe on this card comes off what you can spend, since you pay it from your everyday accounts.';
+
+  @override
+  String freeExplainAssumePending(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'It leaves out $count transactions waiting for review. Once you confirm them, the figure may change.',
+      one:
+          'It leaves out 1 transaction waiting for review. Once you confirm it, the figure may change.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String paydayArrivedAmount(String amount) {
+    return 'Your paycheck arrived: $amount';
+  }
+
+  @override
+  String paydayArrivedPayAmount(String amount) {
+    return 'Your pay arrived: $amount';
+  }
+
+  @override
+  String paydayArrivedDetail(String date, String account) {
+    return 'On $date, in $account. Give each part its envelope before you spend.';
+  }
+
+  @override
+  String listAnd(String a, String b) {
+    return '$a and $b';
+  }
+
+  @override
+  String comingLowestLineSure(String amount, String date) {
+    return 'Your lowest estimated balance will be $amount on $date, not counting money you\'re still expecting.';
+  }
+
+  @override
+  String get totalExplainOwedToYou => 'Owed to you';
+
+  @override
+  String get totalExplainYouOwe => 'You owe other people';
+
+  @override
+  String get totalExplainShared => 'Shared expenses and loans';
+
+  @override
+  String get totalExplainInstallments => 'Installment purchases';
+
+  @override
+  String get totalExplainInstallmentsLeft => 'Left to pay, outside your cards';
 }

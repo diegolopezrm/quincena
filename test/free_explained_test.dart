@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'package:quincena/capture/capture_service.dart';
+import 'package:quincena/capture/event.dart';
 import 'package:quincena/data/ledger.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
@@ -39,6 +41,7 @@ void main() {
     WidgetTester tester, {
     String? pay,
     String? cushion,
+    Future<void> Function(QuincenaStore store)? data,
   }) async {
     tester.view.physicalSize = const Size(1170, 2532);
     tester.view.devicePixelRatio = 3;
@@ -101,6 +104,7 @@ void main() {
         accountId: bank.id,
         category: 'subscriptions',
       );
+      await data?.call(store);
       await own.start();
     });
     await tester.pumpWidget(
@@ -179,6 +183,72 @@ void main() {
     await expectLater(tester, meetsGuideline(textContrastGuideline));
     semantics.dispose();
   });
+
+  testWidgets(
+    'what waits in Por revisar and what a card owes are said, not hidden',
+    (tester) async {
+      final OwnController own = await open(
+        tester,
+        data: (QuincenaStore store) async {
+          final Account visa = await store.addAccount(
+            name: 'Visa',
+            kind: AccountKind.card,
+            asset: Asset.cop,
+            opening: d('-300000'),
+          );
+          expect(visa.spendable, isTrue);
+          await CaptureService(store, now: () => now).ingest(<CaptureEvent>[
+            CaptureEvent(
+              source: CaptureSource.notification,
+              at: now,
+              app: 'com.todo1.mobile',
+              text:
+                  r'Bancolombia: Compraste $45.900,00 en EXITO LAURELES con '
+                  r'tu T.Deb *1234',
+            ),
+          ]);
+        },
+      );
+      expect(own.pendingInbox, hasLength(1));
+      // The capture is not in the figure yet, and the row says so.
+      expect(own.ledger!.balance, 2200000 - 300000);
+      expect(
+        find.text('Aún no cuenta en lo que puedes gastar.'),
+        findsOneWidget,
+      );
+      // On the card, the accounts and the Visa's debt apart.
+      expect(find.text(pesos(2200000)), findsOneWidget);
+      expect(find.text(pesos(-300000)), findsOneWidget);
+
+      await tester.tap(find.text('¿De dónde sale?'));
+      await settle(tester);
+      Finder inSheet(Finder f) =>
+          find.descendant(of: find.byType(FreeExplained), matching: f);
+      expect(inSheet(find.text('Lo que debes en tarjetas')), findsOneWidget);
+      expect(inSheet(find.text(pesos(2200000))), findsOneWidget);
+      // The Visa among the accounts, and as the sum's own line.
+      expect(inSheet(find.text(pesos(-300000))), findsNWidgets(2));
+      expect(
+        inSheet(find.text(pesos(2200000 - 300000 - 26900))),
+        findsOneWidget,
+      );
+      final Finder sheetScroll = find
+          .descendant(
+            of: find.byType(FreeExplained),
+            matching: find.byType(Scrollable),
+          )
+          .first;
+      const String pending =
+          'No cuenta 1 movimiento que espera en Por revisar. Cuando lo '
+          'confirmes, la cifra puede cambiar.';
+      await tester.scrollUntilVisible(
+        inSheet(find.text(pending)),
+        120,
+        scrollable: sheetScroll,
+      );
+      expect(inSheet(find.text(pending)), findsOneWidget);
+    },
+  );
 
   testWidgets('a screen reader can reach the question from the card', (
     tester,

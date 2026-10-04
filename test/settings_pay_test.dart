@@ -73,7 +73,7 @@ void main() {
     await tester.tap(find.text('Colchón'));
     await settle(tester);
     expect(
-      find.textContaining('Lo libre hasta el pago lo deja por fuera'),
+      find.textContaining('No cuenta en lo que puedes gastar hasta el pago'),
       findsOneWidget,
     );
     await tester.enterText(find.byType(TextField), '150000');

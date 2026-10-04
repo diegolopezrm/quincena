@@ -224,6 +224,12 @@ void main() {
       await settle(tester);
 
       expect(screen(tester), contains('Un movimiento por revisar'));
+      // Until it is confirmed, the figure leaves it out, and says so.
+      expect(
+        screen(tester),
+        contains('Aún no cuenta en lo que puedes gastar.'),
+      );
+      expect(screen(tester), contains(r'$1.000.000'));
       await tester.tap(find.text('Un movimiento por revisar'));
       await settle(tester);
       expect(screen(tester), contains('Exito Laureles'));

@@ -15,8 +15,16 @@ import '../kit.dart';
 import 'accounts_tab.dart';
 import 'look.dart';
 
-/// Shows how the money free until payday is worked out.
+/// Shows how the money to spend until payday is worked out.
 Future<void> showFreeExplained(BuildContext context, OwnController own) =>
+    _explain(context, FreeExplained(own: own));
+
+/// Shows how the money to spend until payday is worked out from [ledger]
+/// alone, for a card with no accounts of its own behind it: the sample's.
+Future<void> showLedgerExplained(BuildContext context, Ledger ledger) =>
+    _explain(context, LedgerExplained(ledger: ledger));
+
+Future<void> _explain(BuildContext context, Widget sheet) =>
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -24,15 +32,13 @@ Future<void> showFreeExplained(BuildContext context, OwnController own) =>
       useSafeArea: true,
       backgroundColor: context.colors.surface,
       constraints: const BoxConstraints(maxWidth: 640),
-      builder: (BuildContext context) => FreeExplained(own: own),
+      builder: (BuildContext context) => sheet,
     );
 
-/// The free amount taken apart: what each spendable account holds today
-/// and the rate that converted it, what is committed before payday, and
-/// what the figure leaves out.
-///
-/// Every amount comes from the ledger's own arithmetic, so the parts add up
-/// to the figure on the home screen.
+/// The amount to spend taken apart with the person's accounts: what each
+/// everyday account holds today and the rate that converted it, what the
+/// figure leaves out, and what waits in Por revisar, around the ledger's
+/// own sum.
 class FreeExplained extends StatelessWidget {
   const FreeExplained({super.key, required this.own});
 
@@ -44,7 +50,6 @@ class FreeExplained extends StatelessWidget {
     final Ledger? ledger = own.ledger;
     final Asset? base = own.profile?.base;
     if (ledger == null || base == null) return const SizedBox.shrink();
-    String amount(int minor) => pesos(ledger.major(minor));
     final List<Account> spendable = <Account>[
       for (final Account a in own.accounts)
         if (a.spendable && !a.archived) a,
@@ -53,8 +58,77 @@ class FreeExplained extends StatelessWidget {
       for (final Account a in own.accounts)
         if (!a.spendable && !a.archived) a,
     ];
-    final List<Movement> committed = ledger.committed;
     final Set<Asset> unpriced = own.unconverted;
+    return LedgerExplained(
+      ledger: ledger,
+      cardDebt: own.spendableCardDebt,
+      pending: own.pendingInbox.length,
+      latePay: own.projection?.latePay,
+      accounts: Panel(
+        children: <Widget>[
+          for (final Account a in spendable)
+            _AccountPart(
+              own: own,
+              account: a,
+              base: base,
+              value: pesos(ledger.major(own.spendableParts[a.id] ?? 0)),
+            ),
+        ],
+      ),
+      leftOut: <String>[
+        if (leftOut.isNotEmpty)
+          l.freeExplainLeftOutBody(
+            leftOut.map((Account a) => a.name).join(', '),
+          ),
+        if (unpriced.isNotEmpty)
+          l.freeExplainUnpriced(unpriced.map((Asset a) => a.code).join(', ')),
+      ],
+    );
+  }
+}
+
+/// The amount to spend taken apart from the ledger alone: the sum behind
+/// it, what is due until payday, and what it assumes.
+///
+/// Every amount comes from the ledger's own arithmetic, so the parts add up
+/// to the figure on the home card. Where the money is kept and what does
+/// not count come from someone's own accounts, in [accounts] and
+/// [leftOut]; the sample has neither.
+class LedgerExplained extends StatelessWidget {
+  const LedgerExplained({
+    super.key,
+    required this.ledger,
+    this.cardDebt = 0,
+    this.pending = 0,
+    this.latePay,
+    this.accounts,
+    this.leftOut = const <String>[],
+  });
+
+  final Ledger ledger;
+
+  /// What the credit cards counted here owe, in the ledger's smallest unit:
+  /// with some, the sum starts from what the accounts hold and takes the
+  /// debt off in a line of its own, as the home card does.
+  final int cardDebt;
+
+  /// How many movements wait in Por revisar, which the figure leaves out.
+  final int pending;
+
+  /// The payday that passed without the pay, when there is one.
+  final DateTime? latePay;
+
+  /// Each everyday account with what it adds.
+  final Widget? accounts;
+
+  /// What the figure leaves out, a line each.
+  final List<String> leftOut;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    String amount(int minor) => pesos(ledger.major(minor));
+    final List<Movement> committed = ledger.committed;
 
     return DraggableScrollableSheet(
       expand: false,
@@ -73,8 +147,13 @@ class FreeExplained extends StatelessWidget {
               children: <Widget>[
                 ExplainSum(
                   label: l.freeExplainSpendable,
-                  value: amount(ledger.balance),
+                  value: amount(ledger.balance + cardDebt),
                 ),
+                if (cardDebt > 0)
+                  ExplainSum(
+                    label: l.standingCardDebtLine,
+                    value: amount(-cardDebt),
+                  ),
                 ExplainSum(
                   label: l.freeExplainCommitted(
                     dayShortMonth(ledger.nextPayday),
@@ -105,19 +184,11 @@ class FreeExplained extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 24),
-          SectionLabel(l.freeExplainSpendable),
-          Panel(
-            children: <Widget>[
-              for (final Account a in spendable)
-                _AccountPart(
-                  own: own,
-                  account: a,
-                  base: base,
-                  value: amount(own.spendableParts[a.id] ?? 0),
-                ),
-            ],
-          ),
+          if (accounts case final Widget panel) ...<Widget>[
+            const SizedBox(height: 24),
+            SectionLabel(l.freeExplainSpendableSection),
+            panel,
+          ],
           const SizedBox(height: 24),
           SectionLabel(
             l.freeExplainCommitted(dayShortMonth(ledger.nextPayday)),
@@ -138,36 +209,25 @@ class FreeExplained extends StatelessWidget {
                   ),
               ],
             ),
-          if (leftOut.isNotEmpty || unpriced.isNotEmpty) ...<Widget>[
+          if (leftOut.isNotEmpty) ...<Widget>[
             const SizedBox(height: 24),
             SectionLabel(l.freeExplainLeftOut),
-            if (leftOut.isNotEmpty)
-              Text(
-                l.freeExplainLeftOutBody(
-                  leftOut.map((Account a) => a.name).join(', '),
-                ),
-                style: context.type.bodyMedium,
+            for (final (int i, String line) in leftOut.indexed)
+              Padding(
+                padding: EdgeInsets.only(top: i == 0 ? 0 : 8),
+                child: Text(line, style: context.type.bodyMedium),
               ),
-            if (unpriced.isNotEmpty) ...<Widget>[
-              const SizedBox(height: 8),
-              Text(
-                l.freeExplainUnpriced(
-                  unpriced.map((Asset a) => a.code).join(', '),
-                ),
-                style: context.type.bodyMedium,
-              ),
-            ],
           ],
           const SizedBox(height: 24),
           SectionLabel(l.freeExplainAssumptions),
           for (final String line in <String>[
             l.freeExplainAssumeToday(dayMonth(ledger.nextPayday)),
+            if (pending > 0) l.freeExplainAssumePending(pending),
             if (ledger.pay case final int pay)
               l.freeExplainAssumePay(amount(pay), dayMonth(ledger.nextPayday))
             else
               l.freeExplainAssumeNoPay,
-            if (own.projection?.latePay case final DateTime late)
-              l.payLate(dayMonth(late)),
+            if (latePay case final DateTime late) l.payLate(dayMonth(late)),
             if (ledger.cushion > 0)
               l.freeExplainAssumeCushion(amount(ledger.cushion))
             else

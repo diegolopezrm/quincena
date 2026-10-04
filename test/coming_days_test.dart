@@ -113,7 +113,9 @@ void main() {
     );
     expect(own.ledger!.balance, 900000);
     expect(
-      find.text('Lo más bajo antes del pago: ${pesos(600000)} el 10 oct'),
+      find.text(
+        'Saldo mínimo estimado antes del pago: ${pesos(600000)} el 10 oct',
+      ),
       findsOneWidget,
     );
 

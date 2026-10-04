@@ -299,7 +299,7 @@ abstract class AppLocalizations {
   /// No description provided for @geminiNoteSends.
   ///
   /// In es, this message translates to:
-  /// **'Gemini no recibe tu base de datos. Pide las cifras que necesita a herramientas que corren en tu teléfono o tu computador, y lo que viaja son sus respuestas: tus totales por categoría y por mes, lo libre hasta el pago, tus suscripciones, tu meta de ahorro, tus cuentas con su saldo y, cuando la pregunta lo pide, los pagos más grandes de un mes con su comercio.'**
+  /// **'Gemini no recibe tu base de datos. Pide las cifras que necesita a herramientas que corren en tu teléfono o tu computador, y lo que viaja son sus respuestas: tus totales por categoría y por mes, lo que puedes gastar hasta el pago, tus suscripciones, tu meta de ahorro, tus cuentas con su saldo y, cuando la pregunta lo pide, los pagos más grandes de un mes con su comercio.'**
   String get geminiNoteSends;
 
   /// No description provided for @geminiNoteNot.
@@ -707,7 +707,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingPayBody.
   ///
   /// In es, this message translates to:
-  /// **'Con esto Quincena calcula cuánto tienes libre hasta el próximo pago.'**
+  /// **'Con esto Quincena calcula cuánto puedes gastar hasta el próximo pago.'**
   String get onboardingPayBody;
 
   /// No description provided for @onboardingAccountsTitle.
@@ -977,13 +977,13 @@ abstract class AppLocalizations {
   /// No description provided for @accountSpendable.
   ///
   /// In es, this message translates to:
-  /// **'Cuenta para gastar'**
+  /// **'Cuenta de uso diario'**
   String get accountSpendable;
 
   /// No description provided for @accountSpendableHelp.
   ///
   /// In es, this message translates to:
-  /// **'Su saldo cuenta en lo que tienes libre hasta el próximo pago. Apágalo para ahorros, inversiones y cripto.'**
+  /// **'Su saldo cuenta en lo que puedes gastar hasta el próximo pago. Apágalo para ahorros, inversiones y cripto.'**
   String get accountSpendableHelp;
 
   /// No description provided for @accountAssetLocked.
@@ -1025,7 +1025,7 @@ abstract class AppLocalizations {
   /// No description provided for @groupSpendable.
   ///
   /// In es, this message translates to:
-  /// **'Para gastar'**
+  /// **'Cuentas de uso diario'**
   String get groupSpendable;
 
   /// No description provided for @groupSaved.
@@ -1397,7 +1397,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsCushionBody.
   ///
   /// In es, this message translates to:
-  /// **'Lo que quieres guardar sin tocar. Lo libre hasta el pago lo deja por fuera.'**
+  /// **'Lo que quieres guardar sin tocar. No cuenta en lo que puedes gastar hasta el pago.'**
   String get settingsCushionBody;
 
   /// No description provided for @settingsNotSet.
@@ -1427,7 +1427,7 @@ abstract class AppLocalizations {
   /// No description provided for @freeExplainAssumeToday.
   ///
   /// In es, this message translates to:
-  /// **'Cuenta lo que hay hoy en tus cuentas para gastar y resta lo que vence hasta el {payday}.'**
+  /// **'Cuenta lo que hay hoy en tus cuentas de uso diario y resta lo que vence hasta el {payday}.'**
   String freeExplainAssumeToday(String payday);
 
   /// No description provided for @freeExplainAssumePay.
@@ -1559,7 +1559,7 @@ abstract class AppLocalizations {
   /// No description provided for @computedOverview.
   ///
   /// In es, this message translates to:
-  /// **'Tus saldos, lo comprometido, el colchón y lo libre hasta el pago'**
+  /// **'Tus saldos, lo comprometido, el colchón y lo que puedes gastar hasta el pago'**
   String get computedOverview;
 
   /// No description provided for @computedMonth.
@@ -1613,7 +1613,7 @@ abstract class AppLocalizations {
   /// No description provided for @computedSeeFree.
   ///
   /// In es, this message translates to:
-  /// **'Ver el desglose de lo libre'**
+  /// **'Ver cómo se calcula lo que puedes gastar'**
   String get computedSeeFree;
 
   /// No description provided for @comingTitle.
@@ -1625,7 +1625,7 @@ abstract class AppLocalizations {
   /// No description provided for @comingLowest.
   ///
   /// In es, this message translates to:
-  /// **'Lo más bajo antes del pago: {amount} el {date}'**
+  /// **'Saldo mínimo estimado antes del pago: {amount} el {date}'**
   String comingLowest(String amount, String date);
 
   /// No description provided for @comingTight.
@@ -1775,13 +1775,13 @@ abstract class AppLocalizations {
   /// No description provided for @buyFitsBody.
   ///
   /// In es, this message translates to:
-  /// **'Lo más bajo que quedarías es {amount} el {date}, por encima de tu colchón.'**
+  /// **'Tu saldo mínimo estimado sería {amount} el {date}, por encima de tu colchón.'**
   String buyFitsBody(String amount, String date);
 
   /// No description provided for @buyFitsBodyNoCushion.
   ///
   /// In es, this message translates to:
-  /// **'Lo más bajo que quedarías es {amount} el {date}.'**
+  /// **'Tu saldo mínimo estimado sería {amount} el {date}.'**
   String buyFitsBodyNoCushion(String amount, String date);
 
   /// No description provided for @buyBelow.
@@ -1841,7 +1841,7 @@ abstract class AppLocalizations {
   /// No description provided for @buyLowest.
   ///
   /// In es, this message translates to:
-  /// **'lo más bajo: {amount}'**
+  /// **'saldo mínimo: {amount}'**
   String buyLowest(String amount);
 
   /// No description provided for @closeTitle.
@@ -1925,7 +1925,7 @@ abstract class AppLocalizations {
   /// No description provided for @closeFree.
   ///
   /// In es, this message translates to:
-  /// **'Libre hasta el pago: {amount}'**
+  /// **'Puedes gastar hasta el pago: {amount}'**
   String closeFree(String amount);
 
   /// No description provided for @closeSeeDays.
@@ -1949,7 +1949,7 @@ abstract class AppLocalizations {
   /// No description provided for @closeActionGoal.
   ///
   /// In es, this message translates to:
-  /// **'Te quedan {amount} libres hasta el pago. Si quieres, una parte puede ir a tu meta.'**
+  /// **'Puedes gastar {amount} hasta el pago. Si quieres, una parte puede ir a tu meta.'**
   String closeActionGoal(String amount);
 
   /// No description provided for @closeActionNone.
@@ -1997,7 +1997,7 @@ abstract class AppLocalizations {
   /// No description provided for @comingLowestWithout.
   ///
   /// In es, this message translates to:
-  /// **'Sin lo que pruebas, lo más bajo antes del pago: {amount} el {date}'**
+  /// **'Sin lo que pruebas, saldo mínimo estimado antes del pago: {amount} el {date}'**
   String comingLowestWithout(String amount, String date);
 
   /// No description provided for @computedBuy.
@@ -2225,13 +2225,13 @@ abstract class AppLocalizations {
   /// No description provided for @envelopeGoalHelp.
   ///
   /// In es, this message translates to:
-  /// **'Apartado para tu meta: deja de contar como libre.'**
+  /// **'Apartado para tu meta: deja de contar en lo que puedes gastar.'**
   String get envelopeGoalHelp;
 
   /// No description provided for @envelopeAsideHelp.
   ///
   /// In es, this message translates to:
-  /// **'Apartado: deja de contar como libre.'**
+  /// **'Apartado: deja de contar en lo que puedes gastar.'**
   String get envelopeAsideHelp;
 
   /// No description provided for @envelopeRemove.
@@ -2249,13 +2249,13 @@ abstract class AppLocalizations {
   /// No description provided for @envelopesFree.
   ///
   /// In es, this message translates to:
-  /// **'Libre sin asignar'**
+  /// **'Sin asignar'**
   String get envelopesFree;
 
   /// No description provided for @envelopesOnPaper.
   ///
   /// In es, this message translates to:
-  /// **'Los sobres no mueven plata: tu banco no se entera. Solo dicen qué parte de lo que tienes es para qué, y lo apartado sale de lo libre hasta el pago.'**
+  /// **'Los sobres no mueven plata: tu banco no se entera. Solo dicen qué parte de lo que tienes es para qué, y lo apartado sale de lo que puedes gastar hasta el pago.'**
   String get envelopesOnPaper;
 
   /// No description provided for @envelopesSave.
@@ -2555,7 +2555,7 @@ abstract class AppLocalizations {
   /// No description provided for @whatIfLowest.
   ///
   /// In es, this message translates to:
-  /// **'Lo más bajo en 45 días'**
+  /// **'Saldo mínimo en 45 días'**
   String get whatIfLowest;
 
   /// No description provided for @whatIfTight.
@@ -2609,7 +2609,7 @@ abstract class AppLocalizations {
   /// No description provided for @whatIfSavedOutcome.
   ///
   /// In es, this message translates to:
-  /// **'Lo más bajo: {amount} el {date}'**
+  /// **'Saldo mínimo: {amount} el {date}'**
   String whatIfSavedOutcome(String amount, String date);
 
   /// No description provided for @whatIfRemove.
@@ -2738,12 +2738,6 @@ abstract class AppLocalizations {
   /// **'Te llegó la quincena'**
   String get paydayArrived;
 
-  /// No description provided for @paydayArrivedBody.
-  ///
-  /// In es, this message translates to:
-  /// **'Ponle a cada parte su sobre antes de gastar.'**
-  String get paydayArrivedBody;
-
   /// No description provided for @freeExplainAction.
   ///
   /// In es, this message translates to:
@@ -2759,19 +2753,19 @@ abstract class AppLocalizations {
   /// No description provided for @freeExplainSpendable.
   ///
   /// In es, this message translates to:
-  /// **'Disponible hoy'**
+  /// **'En tus cuentas de uso diario'**
   String get freeExplainSpendable;
 
   /// No description provided for @freeExplainCommitted.
   ///
   /// In es, this message translates to:
-  /// **'Pagos antes del {date}'**
+  /// **'Pagos hasta el {date}'**
   String freeExplainCommitted(String date);
 
   /// No description provided for @freeExplainNothingCommitted.
   ///
   /// In es, this message translates to:
-  /// **'Nada programado antes del {date}.'**
+  /// **'Nada programado hasta el {date}.'**
   String freeExplainNothingCommitted(String date);
 
   /// No description provided for @freeExplainLeftOut.
@@ -2927,8 +2921,8 @@ abstract class AppLocalizations {
   /// No description provided for @inboxBannerBody.
   ///
   /// In es, this message translates to:
-  /// **'Llegaron de tus notificaciones y mensajes.'**
-  String get inboxBannerBody;
+  /// **'{count, plural, =1{Aún no cuenta en lo que puedes gastar.} other{Aún no cuentan en lo que puedes gastar.}}'**
+  String inboxBannerBody(int count);
 
   /// No description provided for @inboxEmpty.
   ///
@@ -3071,7 +3065,7 @@ abstract class AppLocalizations {
   /// No description provided for @whyOnly.
   ///
   /// In es, this message translates to:
-  /// **'es tu única cuenta para gastar en {asset}; revísala'**
+  /// **'es tu única cuenta de uso diario en {asset}; revísala'**
   String whyOnly(String asset);
 
   /// No description provided for @whyLearned.
@@ -5393,7 +5387,7 @@ abstract class AppLocalizations {
   /// No description provided for @freeExplainReserved.
   ///
   /// In es, this message translates to:
-  /// **'Reserva de tus cobros'**
+  /// **'Reserva de ingresos variables'**
   String get freeExplainReserved;
 
   /// No description provided for @messageCopied.
@@ -5465,7 +5459,7 @@ abstract class AppLocalizations {
   /// No description provided for @splitBody.
   ///
   /// In es, this message translates to:
-  /// **'Nadie más necesita la app: escribe los nombres. Lo que te deben no cuenta como plata disponible hasta que te paguen.'**
+  /// **'Nadie más necesita la app: escribe los nombres. Lo que te deben no cuenta como plata para gastar hasta que te paguen.'**
   String get splitBody;
 
   /// No description provided for @splitGroup.
@@ -5627,7 +5621,7 @@ abstract class AppLocalizations {
   /// No description provided for @sharedBody.
   ///
   /// In es, this message translates to:
-  /// **'Divide gastos con quien sea, sin que tenga la app. Lo que te deben no es plata disponible: vuelve a serlo cuando te pagan.'**
+  /// **'Divide gastos con quien sea, sin que tenga la app. Lo que te deben no es plata para gastar: vuelve a serlo cuando te pagan.'**
   String get sharedBody;
 
   /// No description provided for @sharedEmpty.
@@ -5681,7 +5675,7 @@ abstract class AppLocalizations {
   /// No description provided for @sharedNotCash.
   ///
   /// In es, this message translates to:
-  /// **'Lo que te deben no se suma a lo libre hasta que llega.'**
+  /// **'Lo que te deben no se suma a lo que puedes gastar hasta que llega.'**
   String get sharedNotCash;
 
   /// No description provided for @sharedGroups.
@@ -5993,7 +5987,7 @@ abstract class AppLocalizations {
   /// No description provided for @scenarioPendingBody.
   ///
   /// In es, this message translates to:
-  /// **'También lo facturado, el día que lo esperas. Si se atrasa, se corre al día siguiente, y nunca cuenta en lo libre hasta que llega.'**
+  /// **'También lo facturado, el día que lo esperas. Si se atrasa, se corre al día siguiente, y nunca cuenta en lo que puedes gastar hasta que llega.'**
   String get scenarioPendingBody;
 
   /// No description provided for @scenarioEstimatedBody.
@@ -6017,13 +6011,13 @@ abstract class AppLocalizations {
   /// No description provided for @freelanceReserveNow.
   ///
   /// In es, this message translates to:
-  /// **'Tienes apartados {amount} desde el {date}. No cuentan en lo libre, pero siguen en tus cuentas.'**
+  /// **'Tienes apartados {amount} desde el {date}. No cuentan en lo que puedes gastar, pero siguen en tus cuentas.'**
   String freelanceReserveNow(String amount, String date);
 
   /// No description provided for @freelanceReserveOff.
   ///
   /// In es, this message translates to:
-  /// **'Sin reserva: todo lo que cobras cuenta como libre.'**
+  /// **'Sin reserva: todo lo que cobras cuenta en lo que puedes gastar.'**
   String get freelanceReserveOff;
 
   /// No description provided for @freelanceNoTax.
@@ -6898,13 +6892,13 @@ abstract class AppLocalizations {
   /// No description provided for @standingAvailable.
   ///
   /// In es, this message translates to:
-  /// **'Disponible hoy'**
+  /// **'En tus cuentas de uso diario'**
   String get standingAvailable;
 
   /// No description provided for @standingPaymentsBefore.
   ///
   /// In es, this message translates to:
-  /// **'Pagos antes del {date}'**
+  /// **'Pagos hasta el {date}'**
   String standingPaymentsBefore(String date);
 
   /// No description provided for @standingCushionLine.
@@ -7120,7 +7114,7 @@ abstract class AppLocalizations {
   /// No description provided for @comingLowestLine.
   ///
   /// In es, this message translates to:
-  /// **'Tu punto más bajo será {amount} el {date}.'**
+  /// **'Tu saldo mínimo estimado será {amount} el {date}.'**
   String comingLowestLine(String amount, String date);
 
   /// No description provided for @timelineToday.
@@ -7186,7 +7180,7 @@ abstract class AppLocalizations {
   /// No description provided for @timelineAvailable.
   ///
   /// In es, this message translates to:
-  /// **'Disponible'**
+  /// **'Saldo'**
   String get timelineAvailable;
 
   /// No description provided for @goalSoFar.
@@ -7566,6 +7560,90 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena.'**
   String get widgetAddFailed;
+
+  /// No description provided for @freeExplainSpendableSection.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus cuentas de uso diario'**
+  String get freeExplainSpendableSection;
+
+  /// No description provided for @standingCardDebtLine.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que debes en tarjetas'**
+  String get standingCardDebtLine;
+
+  /// No description provided for @cardSpendableHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Si está encendido, lo que debes en esta tarjeta se resta de lo que puedes gastar, porque lo pagas con tus cuentas de uso diario.'**
+  String get cardSpendableHelp;
+
+  /// No description provided for @freeExplainAssumePending.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{No cuenta 1 movimiento que espera en Por revisar. Cuando lo confirmes, la cifra puede cambiar.} other{No cuenta {count} movimientos que esperan en Por revisar. Cuando los confirmes, la cifra puede cambiar.}}'**
+  String freeExplainAssumePending(int count);
+
+  /// No description provided for @paydayArrivedAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'Te llegó la quincena: {amount}'**
+  String paydayArrivedAmount(String amount);
+
+  /// No description provided for @paydayArrivedPayAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'Te llegó el pago: {amount}'**
+  String paydayArrivedPayAmount(String amount);
+
+  /// No description provided for @paydayArrivedDetail.
+  ///
+  /// In es, this message translates to:
+  /// **'El {date} en {account}. Ponle a cada parte su sobre antes de gastar.'**
+  String paydayArrivedDetail(String date, String account);
+
+  /// No description provided for @listAnd.
+  ///
+  /// In es, this message translates to:
+  /// **'{a} y {b}'**
+  String listAnd(String a, String b);
+
+  /// No description provided for @comingLowestLineSure.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu saldo mínimo estimado será {amount} el {date}, sin contar lo que esperas recibir.'**
+  String comingLowestLineSure(String amount, String date);
+
+  /// No description provided for @totalExplainOwedToYou.
+  ///
+  /// In es, this message translates to:
+  /// **'Te deben'**
+  String get totalExplainOwedToYou;
+
+  /// No description provided for @totalExplainYouOwe.
+  ///
+  /// In es, this message translates to:
+  /// **'Le debes a otras personas'**
+  String get totalExplainYouOwe;
+
+  /// No description provided for @totalExplainShared.
+  ///
+  /// In es, this message translates to:
+  /// **'Gastos compartidos y préstamos'**
+  String get totalExplainShared;
+
+  /// No description provided for @totalExplainInstallments.
+  ///
+  /// In es, this message translates to:
+  /// **'Compras a cuotas'**
+  String get totalExplainInstallments;
+
+  /// No description provided for @totalExplainInstallmentsLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que falta pagar, fuera de tus tarjetas'**
+  String get totalExplainInstallmentsLeft;
 }
 
 class _AppLocalizationsDelegate
