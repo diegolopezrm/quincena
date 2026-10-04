@@ -4763,4 +4763,24 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get widgetAddFailed =>
       'Your home screen doesn\'t allow adding it from here. Touch and hold an empty spot and look for Quincena.';
+
+  @override
+  String get rateManualTag => 'Manual';
+
+  @override
+  String rateManualOn(String date) {
+    return 'Typed by hand on $date';
+  }
+
+  @override
+  String rateAutomaticNow(String value) {
+    return 'Automatic today: $value';
+  }
+
+  @override
+  String get rateUseFetchedShort => 'Use automatic rate';
+
+  @override
+  String get rateRestoreFailed =>
+      'Couldn\'t get the automatic rate. Yours stays; try again when you\'re online.';
 }

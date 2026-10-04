@@ -7566,6 +7566,36 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena.'**
   String get widgetAddFailed;
+
+  /// No description provided for @rateManualTag.
+  ///
+  /// In es, this message translates to:
+  /// **'Manual'**
+  String get rateManualTag;
+
+  /// No description provided for @rateManualOn.
+  ///
+  /// In es, this message translates to:
+  /// **'Escrita a mano el {date}'**
+  String rateManualOn(String date);
+
+  /// No description provided for @rateAutomaticNow.
+  ///
+  /// In es, this message translates to:
+  /// **'La automática hoy: {value}'**
+  String rateAutomaticNow(String value);
+
+  /// No description provided for @rateUseFetchedShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Usar la automática'**
+  String get rateUseFetchedShort;
+
+  /// No description provided for @rateRestoreFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo traer la tasa automática. Sigue la tuya; intenta de nuevo con conexión.'**
+  String get rateRestoreFailed;
 }
 
 class _AppLocalizationsDelegate

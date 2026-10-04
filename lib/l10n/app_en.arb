@@ -1251,5 +1251,10 @@
   "widgetHide": "Hide amounts in the widget",
   "widgetHideHelp": "It says until when, without the figure.",
   "widgetAdd": "Add to home screen",
-  "widgetAddFailed": "Your home screen doesn't allow adding it from here. Touch and hold an empty spot and look for Quincena."
+  "widgetAddFailed": "Your home screen doesn't allow adding it from here. Touch and hold an empty spot and look for Quincena.",
+  "rateManualTag": "Manual",
+  "rateManualOn": "Typed by hand on {date}",
+  "rateAutomaticNow": "Automatic today: {value}",
+  "rateUseFetchedShort": "Use automatic rate",
+  "rateRestoreFailed": "Couldn't get the automatic rate. Yours stays; try again when you're online."
 }

@@ -4762,4 +4762,24 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get widgetAddFailed =>
       'Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena.';
+
+  @override
+  String get rateManualTag => 'Manual';
+
+  @override
+  String rateManualOn(String date) {
+    return 'Escrita a mano el $date';
+  }
+
+  @override
+  String rateAutomaticNow(String value) {
+    return 'La automática hoy: $value';
+  }
+
+  @override
+  String get rateUseFetchedShort => 'Usar la automática';
+
+  @override
+  String get rateRestoreFailed =>
+      'No se pudo traer la tasa automática. Sigue la tuya; intenta de nuevo con conexión.';
 }

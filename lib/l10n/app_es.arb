@@ -1507,5 +1507,12 @@
   "widgetHide": "Ocultar montos en el widget",
   "widgetHideHelp": "Dice hasta cuándo, sin la cifra.",
   "widgetAdd": "Agregar a la pantalla de inicio",
-  "widgetAddFailed": "Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena."
+  "widgetAddFailed": "Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena.",
+  "rateManualTag": "Manual",
+  "rateManualOn": "Escrita a mano el {date}",
+  "@rateManualOn": {"placeholders": {"date": {"type": "String"}}},
+  "rateAutomaticNow": "La automática hoy: {value}",
+  "@rateAutomaticNow": {"placeholders": {"value": {"type": "String"}}},
+  "rateUseFetchedShort": "Usar la automática",
+  "rateRestoreFailed": "No se pudo traer la tasa automática. Sigue la tuya; intenta de nuevo con conexión."
 }

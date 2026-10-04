@@ -439,73 +439,57 @@ class _RateLine extends StatelessWidget {
   final Asset base;
   final Decimal? rate;
 
+  /// The pair typed by hand is the one the person thinks in: dollars in
+  /// pesos, bitcoin in dollars.
+  Asset get _quote => asset.isCrypto && base.code != 'USD' ? Asset.usd : base;
+
+  /// The rate the person typed for [asset], when the totals use one.
+  Rate? get _typed => own.rates
+      .used(asset, base)
+      .where((Rate r) => r.manual && r.pair == '${asset.code}/${_quote.code}')
+      .firstOrNull;
+
   String _sources(AppLocalizations l) => rateSources(l, own.rates, asset, base);
 
   Future<void> _edit(BuildContext context) async {
-    final AppLocalizations l = context.l10n;
-    // The pair typed by hand is the one the person thinks in: dollars in
-    // pesos, bitcoin in dollars.
-    final Asset quote = asset.isCrypto && base.code != 'USD' ? Asset.usd : base;
-    final Decimal? current = own.rates.rate(asset, quote);
-    final TextEditingController value = TextEditingController(
-      text: current == null
-          ? ''
-          : formatDecimal(
-              current,
-              decimals: quote.decimals > 0 ? 6 : 2,
-              trim: true,
-            ),
-    );
-    final String? typed = await showDialog<String>(
+    final Asset quote = _quote;
+    final _RateChoice? choice = await showDialog<_RateChoice>(
       context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text(l.rateEdit),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Text(
-              l.rateEditBody(asset.code, quote.code),
-              style: context.type.bodyMedium,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: value,
-              autofocus: true,
-              inputFormatters: <TextInputFormatter>[
-                AmountInputFormatter(maxDecimals: 8),
-              ],
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: InputDecoration(suffixText: quote.code),
-            ),
-          ],
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(''),
-            child: Text(l.rateUseFetched),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(value.text),
-            child: Text(l.save),
-          ),
-        ],
+      builder: (BuildContext context) => _RateDialog(
+        asset: asset,
+        quote: quote,
+        current: own.rates.rate(asset, quote),
+        typedByHand: _typed != null,
       ),
     );
-    value.dispose();
-    if (typed == null) return;
-    final Decimal? parsed = typed.isEmpty ? null : parseAmount(typed);
-    if (typed.isNotEmpty && (parsed == null || parsed <= Decimal.zero)) return;
-    await own.store.setManualRate(asset.code, quote.code, parsed);
-    if (parsed == null) await own.refreshRates(force: true);
+    if (choice == null) return;
+    if (choice.restore) {
+      if (context.mounted) await _restore(context);
+      return;
+    }
+    final Decimal? typed = choice.typed;
+    if (typed == null || typed <= Decimal.zero) return;
+    await own.store.setManualRate(asset.code, quote.code, typed);
+  }
+
+  /// Back to the automatic rate, or a word that the typed one stays when
+  /// the automatic one could not be fetched.
+  Future<void> _restore(BuildContext context) async {
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final String failed = context.l10n.rateRestoreFailed;
+    if (!await own.restoreAutomaticRate(asset.code, _quote.code)) {
+      messenger.showSnackBar(SnackBar(content: Text(failed)));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
     final Decimal? r = rate;
+    final Rate? typed = _typed;
+    final Decimal? fetched = typed == null
+        ? null
+        : own.fetchedRate(asset, _quote);
     final String text = r == null
         ? l.ratesMissing(asset.code)
         : '1 ${asset.code} = ${formatAmount(r, base, base: base, decimals: r < Decimal.fromInt(10) ? 4 : 2)}';
@@ -520,15 +504,47 @@ class _RateLine extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Figures(
-                    text,
-                    style: context.type.bodyMedium?.copyWith(
-                      color: r == null
-                          ? context.colors.caution
-                          : context.colors.ink,
-                    ),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: <Widget>[
+                      Figures(
+                        text,
+                        style: context.type.bodyMedium?.copyWith(
+                          color: r == null
+                              ? context.colors.caution
+                              : context.colors.ink,
+                        ),
+                      ),
+                      if (typed != null) const _ManualTag(),
+                    ],
                   ),
-                  if (r != null)
+                  if (typed != null) ...<Widget>[
+                    Text(
+                      l.rateManualOn(dayShortMonth(typed.asOf)),
+                      style: context.type.bodySmall,
+                    ),
+                    if (fetched != null)
+                      Figures(
+                        l.rateAutomaticNow(
+                          formatAmount(
+                            fetched,
+                            _quote,
+                            base: base,
+                            decimals: fetched < Decimal.fromInt(10) ? 4 : 2,
+                          ),
+                        ),
+                        style: context.type.bodySmall,
+                      ),
+                    TextButton(
+                      onPressed: () => _restore(context),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                      ),
+                      child: Text(l.rateUseFetchedShort),
+                    ),
+                  ] else if (r != null)
                     Text(_sources(l), style: context.type.bodySmall),
                 ],
               ),
@@ -546,4 +562,109 @@ class _RateLine extends StatelessWidget {
       ),
     );
   }
+}
+
+/// What the rate dialog ended in: a rate typed, or the way back to the
+/// automatic one.
+typedef _RateChoice = ({Decimal? typed, bool restore});
+
+/// One unit of [asset] in [quote], typed by hand.
+class _RateDialog extends StatefulWidget {
+  const _RateDialog({
+    required this.asset,
+    required this.quote,
+    required this.current,
+    required this.typedByHand,
+  });
+
+  final Asset asset;
+  final Asset quote;
+  final Decimal? current;
+
+  /// Whether the rate in use was typed by hand: only then is there an
+  /// automatic one to go back to.
+  final bool typedByHand;
+
+  @override
+  State<_RateDialog> createState() => _RateDialogState();
+}
+
+class _RateDialogState extends State<_RateDialog> {
+  late final TextEditingController _value = TextEditingController(
+    text: switch (widget.current) {
+      null => '',
+      final Decimal current => formatDecimal(
+        current,
+        decimals: widget.quote.decimals > 0 ? 6 : 2,
+        trim: true,
+      ),
+    },
+  );
+
+  @override
+  void dispose() {
+    _value.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    return AlertDialog(
+      title: Text(l.rateEdit),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            l.rateEditBody(widget.asset.code, widget.quote.code),
+            style: context.type.bodyMedium,
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _value,
+            autofocus: true,
+            inputFormatters: <TextInputFormatter>[
+              AmountInputFormatter(maxDecimals: 8),
+            ],
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(suffixText: widget.quote.code),
+          ),
+        ],
+      ),
+      actions: <Widget>[
+        if (widget.typedByHand)
+          TextButton(
+            onPressed: () => Navigator.of(
+              context,
+            ).pop<_RateChoice>((typed: null, restore: true)),
+            child: Text(l.rateUseFetched),
+          ),
+        TextButton(
+          onPressed: () => Navigator.of(
+            context,
+          ).pop<_RateChoice>((typed: parseAmount(_value.text), restore: false)),
+          child: Text(l.save),
+        ),
+      ],
+    );
+  }
+}
+
+/// Says a rate was typed by hand, in a soft pill beside it.
+class _ManualTag extends StatelessWidget {
+  const _ManualTag();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+    decoration: BoxDecoration(
+      color: context.colors.cautionSoft,
+      borderRadius: BorderRadius.circular(99),
+    ),
+    child: Text(
+      context.l10n.rateManualTag,
+      style: context.type.labelSmall?.copyWith(color: context.colors.caution),
+    ),
+  );
 }
