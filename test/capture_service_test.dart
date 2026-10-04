@@ -495,5 +495,98 @@ Fecha
       );
       expect(again.learned, isEmpty);
     });
+
+    test('what is clear is recorded at once, and taken back at once', () async {
+      await confirmFirst();
+      final CaptureSettings before = await store.captureSettings();
+      await capture.ingest(<CaptureEvent>[
+        bakery('9.500', day: 2),
+        // A shop the app knows, on the card it learned: one rule more.
+        push(
+          r'Pagaste $23.500 en CREPES Y WAFFLES OVIEDO con tu tarjeta *9876',
+          app: 'com.nequi.MobileApp',
+          at: DateTime(2026, 10, 2, 13),
+        ),
+        // Ready, but its category is a guess.
+        push(
+          r'Nequi · Laura Gómez te envió $85.000',
+          app: 'com.nequi.MobileApp',
+          at: DateTime(2026, 10, 2, 15),
+        ),
+        // No telling which of two peso accounts it was.
+        push(
+          r'Compraste $5.000 en TIENDA X',
+          app: 'com.some.shop',
+          at: DateTime(2026, 10, 2, 17),
+        ),
+      ]);
+      final List<InboxItem> waiting = await pending();
+      final List<Account> accounts = await store.accounts();
+      expect(
+        <String?>[
+          for (final InboxItem i in waiting)
+            if (CaptureService.isReady(i, accounts)) i.parsed.merchant,
+        ],
+        unorderedEquals(<String?>[
+          'Panaderia la Espiga',
+          'Crepes y Waffles Oviedo',
+          'Laura Gómez',
+        ]),
+      );
+      final List<InboxItem> clear = <InboxItem>[
+        for (final InboxItem i in waiting)
+          if (CaptureService.isClear(i, accounts)) i,
+      ];
+      expect(clear, hasLength(2));
+
+      final List<Accepted> done = await capture.acceptAll(clear);
+      expect(done, hasLength(2));
+      expect(
+        <String>[
+          for (final Accepted a in done)
+            for (final RuleChange c in a.learned) c.rule.id,
+        ],
+        <String>['merchant:crepes y waffles'],
+      );
+      expect(await pending(), hasLength(2));
+      expect(await store.entries(), hasLength(3));
+      // Once recorded, the same list records nothing twice.
+      expect(await capture.acceptAll(clear), isEmpty);
+      expect(await store.entries(), hasLength(3));
+
+      await capture.takeBack(done);
+      expect(await pending(), hasLength(4));
+      // Only the first bakery, recorded by hand, is left.
+      expect(await store.entries(), hasLength(1));
+      expect((await store.captureSettings()).rules, before.rules);
+    });
+  });
+
+  test('money moved in from another own account is recorded as a transfer, '
+      'and taken back whole', () async {
+    await capture.ingest(<CaptureEvent>[
+      push(r'Nequi · Laura Gómez te envió $85.000', app: 'com.nequi.MobileApp'),
+    ]);
+    final Accepted done = await capture.acceptTransfer(
+      (await pending()).single,
+      fromAccountId: bancolombia.id,
+      toAccountId: nequi.id,
+      sent: d('85000'),
+      date: now,
+    );
+    expect(done.entry.kind, EntryKind.transfer);
+    expect(done.learned, isEmpty);
+    expect(
+      (await store.entries()).where((Entry e) => e.transferId != null),
+      hasLength(2),
+    );
+    expect(await pending(), isEmpty);
+
+    await capture.takeBack(<Accepted>[done]);
+    expect(
+      (await store.entries()).where((Entry e) => e.transferId != null),
+      isEmpty,
+    );
+    expect(await pending(), hasLength(1));
   });
 }
