@@ -349,6 +349,11 @@ void main() {
     final double day = tester.getSize(figure('En 24 horas')).height;
     final double gain = tester.getSize(figure('Ganancia no realizada')).height;
     expect(day, gain);
+
+    // Nothing further down overflows either: the price line and its
+    // button, the coins with no price, the notes.
+    await reveal(tester, find.textContaining('asesoría de inversión'));
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('in another currency, nothing speaks of pesos', (tester) async {
