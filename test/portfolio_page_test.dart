@@ -13,6 +13,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
+import 'package:quincena/exchanges/binance_link.dart';
 import 'package:quincena/format/dates.dart';
 import 'package:quincena/l10n/l10n.dart';
 import 'package:quincena/money/asset.dart';
@@ -30,6 +31,7 @@ import 'package:quincena/ui/own/portfolio_chart.dart';
 import 'package:quincena/ui/own/portfolio_page.dart';
 import 'package:quincena/ui/own/position_panel.dart';
 
+import 'binance_page_test.dart' show MemoryVault;
 import 'fonts.dart';
 import 'own_flow_test.dart' show screen, settle;
 import 'portfolio_test.dart' show FakeMarket;
@@ -527,6 +529,50 @@ void main() {
     expect(top('LEDGER'), lessThan(top(read)));
     expect(top(read), lessThan(top('TREZOR')));
     expect(top('TREZOR'), lessThan(top(stopped)));
+  });
+
+  test('a coin read from Binance says when while the key is here, and that '
+      'it is not connected once the key goes', () async {
+    final QuincenaStore store = QuincenaStore(
+      QuincenaDatabase(NativeDatabase.memory()),
+      now: () => _now,
+    );
+    addTearDown(store.close);
+    await store.setSetting(
+      'binance',
+      jsonEncode(<String, Object?>{'syncedAt': _now.toIso8601String()}),
+    );
+    final Account btc = await store.addAccount(
+      name: 'Bitcoin',
+      kind: AccountKind.exchange,
+      asset: Asset.btc,
+      opening: Decimal.parse('0.01'),
+      institution: 'Binance',
+      syncRef: 'binance:BTC',
+    );
+    final OwnController own = OwnController(
+      store,
+      now: () => _now,
+      readNative: false,
+      binance: BinanceLink(
+        store,
+        vault: MemoryVault(('key', 'secret')),
+        now: () => _now,
+      ),
+    );
+    addTearDown(own.dispose);
+    final AppLocalizations l = lookupAppLocalizations(const Locale('es'));
+
+    // Not read yet: nothing rather than a guess.
+    expect(holdingSourceText(l, own, btc), isNull);
+    await own.binance.load();
+    expect(
+      holdingSourceText(l, own, btc),
+      'Conectada a Binance · leída ${dayAndTime(_now)}',
+    );
+    // What it brought stays, and no longer updates from here.
+    await own.binance.disconnect();
+    expect(holdingSourceText(l, own, btc), 'Leída de Binance · sin conectar');
   });
 
   testWidgets('dragging along the chart shows each moment and what it was, '
