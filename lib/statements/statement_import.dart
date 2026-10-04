@@ -511,62 +511,70 @@ class StatementImporter {
     final List<Entry> before = rule == BalanceRule.statement
         ? await store.entries(accountId: account.id)
         : const <Entry>[];
-    var n = 0;
-    for (final ImportCandidate c in chosen) {
-      final bool out = c.line.amount < Decimal.zero;
-      final String? other = c.otherAccountId;
-      final Entry? leg = c.otherLeg;
-      if (c.kind == EntryKind.transfer && leg != null) {
-        // Its other side is already there: the two become one move.
-        final Entry entry = await store.addEntry(
-          accountId: account.id,
-          amount: c.line.amount.abs(),
-          kind: out ? EntryKind.expense : EntryKind.income,
-          date: c.line.date,
-          payee: c.payee,
-          note: c.line.description,
-          source: 'statement',
-          sourceRef: c.ref,
-        );
-        await store.linkAsTransfer(
-          out: out ? entry : leg,
-          into: out ? leg : entry,
-        );
-        n++;
-        continue;
+    // What was saved keeps the balances right, also when a line fails
+    // halfway: importing again finds it and does not save it twice.
+    final List<ImportCandidate> saved = <ImportCandidate>[];
+    try {
+      for (final ImportCandidate c in chosen) {
+        await _save(account, c);
+        saved.add(c);
       }
-      if (c.kind == EntryKind.transfer && other != null) {
-        await store.addTransfer(
-          fromAccountId: out ? account.id : other,
-          toAccountId: out ? other : account.id,
-          sent: c.line.amount.abs(),
-          date: c.line.date,
-          note: c.line.description,
-          source: 'statement',
-          sourceRef: c.ref,
-        );
-        n++;
-        continue;
-      }
-      final EntryKind kind = c.kind == EntryKind.transfer
-          ? (out ? EntryKind.expense : EntryKind.income)
-          : c.kind;
-      final bool income = kind == EntryKind.income;
-      await store.addEntry(
+    } finally {
+      await _keepBalances(account, saved, rule, before, closing);
+    }
+    return saved.length;
+  }
+
+  /// Saves the line [c] in [account].
+  Future<void> _save(Account account, ImportCandidate c) async {
+    final bool out = c.line.amount < Decimal.zero;
+    final String? other = c.otherAccountId;
+    final Entry? leg = c.otherLeg;
+    if (c.kind == EntryKind.transfer && leg != null) {
+      // Its other side is already there: the two become one move.
+      final Entry entry = await store.addEntry(
         accountId: account.id,
         amount: c.line.amount.abs(),
-        kind: kind,
+        kind: out ? EntryKind.expense : EntryKind.income,
         date: c.line.date,
-        category: c.category ?? (income ? 'other_income' : 'other'),
         payee: c.payee,
         note: c.line.description,
         source: 'statement',
         sourceRef: c.ref,
       );
-      n++;
+      await store.linkAsTransfer(
+        out: out ? entry : leg,
+        into: out ? leg : entry,
+      );
+      return;
     }
-    await _keepBalances(account, chosen, rule, before, closing);
-    return n;
+    if (c.kind == EntryKind.transfer && other != null) {
+      await store.addTransfer(
+        fromAccountId: out ? account.id : other,
+        toAccountId: out ? other : account.id,
+        sent: c.line.amount.abs(),
+        date: c.line.date,
+        note: c.line.description,
+        source: 'statement',
+        sourceRef: c.ref,
+      );
+      return;
+    }
+    final EntryKind kind = c.kind == EntryKind.transfer
+        ? (out ? EntryKind.expense : EntryKind.income)
+        : c.kind;
+    final bool income = kind == EntryKind.income;
+    await store.addEntry(
+      accountId: account.id,
+      amount: c.line.amount.abs(),
+      kind: kind,
+      date: c.line.date,
+      category: c.category ?? (income ? 'other_income' : 'other'),
+      payee: c.payee,
+      note: c.line.description,
+      source: 'statement',
+      sourceRef: c.ref,
+    );
   }
 
   /// Moves the openings [rule] asks for: this account's, and for a move to

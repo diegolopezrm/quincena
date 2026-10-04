@@ -398,6 +398,104 @@ void main() {
     );
   });
 
+  testWidgets('a save that stops halfway can be left and tried again', (
+    tester,
+  ) async {
+    final (QuincenaStore store, OwnController own, Account bank) = await world(
+      tester,
+      failing: true,
+    );
+    await open(
+      tester,
+      own,
+      readTable(
+        parseCsv(
+          'Fecha;Descripción;Valor\n'
+          '01/09/2026;COMPRA EN EXITO LAURELES;-45.900\n'
+          '02/09/2026;ABONO NOMINA DL SOFT;2.500.000\n',
+        ),
+      ),
+    );
+    await tester.tap(find.text('Importar 2 movimientos'));
+    await settle(tester);
+    expect(
+      find.text(
+        'No se pudo terminar de importar. Lo que sí se guardó aparece como '
+        '«Ya importado».',
+      ),
+      findsOneWidget,
+    );
+    // What was saved is not offered again, and the balance written on 2
+    // October still has it.
+    expect(find.text('1 sept · Ya importado'), findsOneWidget);
+    expect(find.text('Importar un movimiento'), findsOneWidget);
+    expect(own.balances[bank.id]?.amount, Decimal.zero);
+
+    await tester.tap(find.text('Importar un movimiento'));
+    await settle(tester);
+    expect(find.text('Se importó un movimiento.'), findsOneWidget);
+    final List<Entry> entries =
+        await tester.runAsync(() => store.entries(accountId: bank.id)) ??
+        const <Entry>[];
+    expect(entries.length, 2);
+    expect(own.balances[bank.id]?.amount, Decimal.zero);
+  });
+  testWidgets('a card\'s statement asks which account paid it', (tester) async {
+    final (QuincenaStore store, OwnController own, _) = await world(tester);
+    late Account visa;
+    await tester.runAsync(() async {
+      visa = await store.addAccount(
+        name: 'Visa',
+        kind: AccountKind.card,
+        asset: Asset.cop,
+      );
+      await store.addAccount(
+        name: 'Nequi',
+        kind: AccountKind.wallet,
+        asset: Asset.cop,
+      );
+    });
+    await open(
+      tester,
+      own,
+      readTable(
+        parseCsv(
+          'Fecha;Descripción;Valor\n'
+          '15/10/2026;RAPPI;45.900\n'
+          '16/10/2026;NETFLIX;26.900\n'
+          '20/10/2026;PAGO RECIBIDO;-480.000\n',
+        ),
+      ),
+      accountId: visa.id,
+    );
+    expect(
+      find.text(
+        '20 oct · Sin categoría\n¿De cuál de tus cuentas salió este pago?',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('¿Es el pago de una tarjeta tuya?'), findsNothing);
+  });
+  testWidgets(
+    'lines that add up to nothing do not claim to be in the balance',
+    (tester) async {
+      final (_, OwnController own, _) = await world(tester);
+      await open(
+        tester,
+        own,
+        readTable(
+          parseCsv(
+            'Fecha;Descripción;Valor\n'
+            '02/10/2026;TRANSFERENCIA DE ANA GOMEZ;50.000\n'
+            '02/10/2026;PAGO A ANA GOMEZ;-50.000\n',
+          ),
+        ),
+      );
+      expect(find.text('Saldo de Bancolombia: \$0 → \$0'), findsOneWidget);
+      expect(find.textContaining('ya incluía'), findsNothing);
+    },
+  );
+
   testWidgets('in English', (tester) async {
     await initializeDateFormatting('en_US');
     Intl.defaultLocale = 'en_US';
@@ -523,6 +621,7 @@ Finder box(String name) => find.byWidgetPredicate(
 Future<(QuincenaStore, OwnController, Account)> world(
   WidgetTester tester, {
   Future<void>? saving,
+  bool failing = false,
 }) async {
   // A tall phone, so the whole statement fits without scrolling.
   tester.view.physicalSize = const Size(1170, 4200);
@@ -533,6 +632,7 @@ Future<(QuincenaStore, OwnController, Account)> world(
     QuincenaDatabase(NativeDatabase.memory()),
     now: () => now,
     saving: saving,
+    failing: failing,
   );
   addTearDown(() => tester.runAsync(store.close));
   final OwnController own = OwnController(
@@ -557,12 +657,14 @@ Future<(QuincenaStore, OwnController, Account)> world(
   return (store, own, bank);
 }
 
-/// The statement [read] opened over a page, the way the app pushes it.
+/// The statement [read] opened over a page, the way the app pushes it,
+/// into [accountId] when given.
 Future<void> open(
   WidgetTester tester,
   OwnController own,
   StatementRead read, {
   Locale locale = const Locale('es'),
+  String? accountId,
 }) async {
   await tester.runAsync(own.start);
   await tester.pumpWidget(
@@ -577,8 +679,11 @@ Future<void> open(
             child: TextButton(
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (BuildContext context) =>
-                      StatementPage(own: own, statement: read),
+                  builder: (BuildContext context) => StatementPage(
+                    own: own,
+                    statement: read,
+                    accountId: accountId,
+                  ),
                 ),
               ),
               child: const Text('abrir'),
@@ -602,11 +707,14 @@ Future<void> settle(WidgetTester tester) async {
 }
 
 /// A store whose movements wait for [saving] before they are written, to
-/// see the page while it saves.
+/// see the page while it saves, and when [failing], whose second line of a
+/// statement fails once.
 class _Store extends QuincenaStore {
-  _Store(super.db, {super.now, this.saving});
+  _Store(super.db, {super.now, this.saving, this.failing = false});
 
   final Future<void>? saving;
+  final bool failing;
+  int _lines = 0;
 
   @override
   Future<Entry> addEntry({
@@ -621,7 +729,10 @@ class _Store extends QuincenaStore {
     String? sourceRef,
     Money? cost,
   }) async {
-    if (source == 'statement') await saving;
+    if (source == 'statement') {
+      await saving;
+      if (failing && ++_lines == 2) throw StateError('The disk is full.');
+    }
     return super.addEntry(
       accountId: accountId,
       amount: amount,

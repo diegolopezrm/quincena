@@ -7716,6 +7716,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'El saldo de {account} sigue en {amount}: ya incluía estos movimientos.'**
   String statementBalanceSame(String account, String amount);
+
+  /// No description provided for @statementPaidFrom.
+  ///
+  /// In es, this message translates to:
+  /// **'¿De cuál de tus cuentas salió este pago?'**
+  String get statementPaidFrom;
+
+  /// No description provided for @statementSaveFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo terminar de importar. Lo que sí se guardó aparece como «Ya importado».'**
+  String get statementSaveFailed;
 }
 
 class _AppLocalizationsDelegate

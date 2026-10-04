@@ -1547,5 +1547,7 @@
   "statementDebtEffect": "Lo que debes en {account}: {before} → {after}",
   "@statementDebtEffect": {"placeholders": {"account": {"type": "String"}, "before": {"type": "String"}, "after": {"type": "String"}}},
   "statementBalanceSame": "El saldo de {account} sigue en {amount}: ya incluía estos movimientos.",
-  "@statementBalanceSame": {"placeholders": {"account": {"type": "String"}, "amount": {"type": "String"}}}
+  "@statementBalanceSame": {"placeholders": {"account": {"type": "String"}, "amount": {"type": "String"}}},
+  "statementPaidFrom": "¿De cuál de tus cuentas salió este pago?",
+  "statementSaveFailed": "No se pudo terminar de importar. Lo que sí se guardó aparece como «Ya importado»."
 }

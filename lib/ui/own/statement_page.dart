@@ -68,6 +68,9 @@ class _StatementPageState extends State<StatementPage> {
   final Set<int> _chosen = <int>{};
   bool _saving = false;
 
+  /// The last import stopped before saving every line.
+  bool _saveFailed = false;
+
   /// What the import does with lines older than the balance the person
   /// wrote, and whether it matches the statement's own last balance
   /// instead, when the statement prints one that adds up.
@@ -85,10 +88,10 @@ class _StatementPageState extends State<StatementPage> {
   int _transfers = 0;
   Set<String> _uncategorized = const <String>{};
 
-  /// The account's balance before the import and the rule it followed, to
-  /// show what it did.
+  /// The account's balance before the import, and whether that balance
+  /// already had the lines, to show what the import did.
   Money? _before;
-  BalanceRule _applied = BalanceRule.add;
+  bool _included = false;
 
   OwnController get own => widget.own;
 
@@ -238,23 +241,40 @@ class _StatementPageState extends State<StatementPage> {
   Future<void> _import() async {
     final Account? account = _account;
     if (account == null || _chosen.isEmpty || _saving) return;
-    setState(() => _saving = true);
+    setState(() {
+      _saving = true;
+      _saveFailed = false;
+    });
     final List<ImportCandidate> chosen = <ImportCandidate>[
       for (final int i in _chosen.toList()..sort()) _candidates[i],
     ];
     final Money before = own.balances[account.id] ?? account.openingMoney;
     final BalanceRule rule = _rule;
-    final int n = await StatementImporter(
-      own.store,
-    ).record(account, chosen, rule: rule, closing: _closing);
-    await own.joinTransfers();
+    final int n;
+    try {
+      n = await StatementImporter(
+        own.store,
+      ).record(account, chosen, rule: rule, closing: _closing);
+      await own.joinTransfers();
+    } on Object catch (e) {
+      if (kDebugMode) debugPrint('Statement could not be saved: $e');
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _saveFailed = true;
+      });
+      // What was saved before it stopped reads as imported now, so trying
+      // again does not save it twice.
+      await _prepare(flip: _flipped);
+      return;
+    }
     if (!mounted) return;
     // The person checks the exceptions, not every line: what came without
     // a category is what is left to look at.
     setState(() {
       _imported = n;
       _before = before;
-      _applied = rule;
+      _included = _alreadyIn(account, chosen, rule);
       _transfers = chosen
           .where((ImportCandidate c) => c.kind == EntryKind.transfer)
           .length;
@@ -298,15 +318,30 @@ class _StatementPageState extends State<StatementPage> {
     );
   }
 
+  /// Whether, under [rule], the balance of [account] already had [chosen]:
+  /// the statement's own balance, or lines older than the one written.
+  static bool _alreadyIn(
+    Account account,
+    List<ImportCandidate> chosen,
+    BalanceRule rule,
+  ) => switch (rule) {
+    BalanceRule.add => false,
+    BalanceRule.statement => true,
+    BalanceRule.keep => chosen.any(
+      (ImportCandidate c) => StatementImporter.older(account, c.line.date),
+    ),
+  };
+
   /// The balance of [account] from [before] to [after], or that it stays
-  /// because it already had these lines. A card says what is owed on it.
+  /// because it [included] these lines already. A card says what is owed
+  /// on it.
   String _balanceText(
     AppLocalizations l,
     Account account,
     Money before,
-    Money after,
-    BalanceRule rule,
-  ) {
+    Money after, {
+    required bool included,
+  }) {
     final Asset? base = own.profile?.base;
     if (account.kind == AccountKind.card) {
       return l.statementDebtEffect(
@@ -315,7 +350,7 @@ class _StatementPageState extends State<StatementPage> {
         moneyText(-after, base: base),
       );
     }
-    if (before == after && rule != BalanceRule.add) {
+    if (before == after && included) {
       return l.statementBalanceSame(
         account.name,
         moneyText(before, base: base),
@@ -501,7 +536,7 @@ class _StatementPageState extends State<StatementPage> {
               account,
               before,
               own.balances[account.id] ?? account.openingMoney,
-              _applied,
+              included: _included,
             ),
             style: context.type.bodyMedium,
           ),
@@ -669,6 +704,13 @@ class _StatementPageState extends State<StatementPage> {
     final bool hasCards = own.accounts.any(
       (Account a) => a.kind == AccountKind.card && a.id != account?.id,
     );
+    // A card payment with nothing on its other side asks where it goes
+    // when there is somewhere: a card for a bank's, an account for a card's.
+    final bool askCard = account?.kind == AccountKind.card
+        ? own.accounts.any(
+            (Account a) => a.id != account?.id && a.asset == account?.asset,
+          )
+        : hasCards;
     // A card payment checked as a move: say why it is not spending.
     final bool cardMoves = _chosen.any((int i) {
       final ImportCandidate c = all[i];
@@ -742,7 +784,7 @@ class _StatementPageState extends State<StatementPage> {
             account,
             own.balances[account.id] ?? account.openingMoney,
             _after(account, chosen, _rule),
-            _rule,
+            included: _alreadyIn(account, chosen, _rule),
           ),
           style: context.type.bodyMedium,
         ),
@@ -774,10 +816,12 @@ class _StatementPageState extends State<StatementPage> {
                       ),
                     ),
                 ],
-                onChanged: (String? id) {
-                  setState(() => _accountId = id);
-                  _prepare(flip: _flipped);
-                },
+                onChanged: _saving
+                    ? null
+                    : (String? id) {
+                        setState(() => _accountId = id);
+                        _prepare(flip: _flipped);
+                      },
               ),
               const SizedBox(height: 16),
               if (dates.isNotEmpty)
@@ -854,7 +898,7 @@ class _StatementPageState extends State<StatementPage> {
                       candidate: all[i],
                       account: account,
                       other: _accountOf(all[i].otherAccountId),
-                      askCard: hasCards || account?.kind == AccountKind.card,
+                      askCard: askCard,
                       base: base,
                       oneYear: oneYear,
                       chosen: _chosen.contains(i),
@@ -887,6 +931,15 @@ class _StatementPageState extends State<StatementPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 if (!large) ...<Widget>[...effect, const SizedBox(height: 8)],
+                if (_saveFailed) ...<Widget>[
+                  Text(
+                    l.statementSaveFailed,
+                    style: context.type.bodySmall?.copyWith(
+                      color: context.colors.negative,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
                 if (repeatsChosen > 0) ...<Widget>[
                   Text(
                     l.statementRepeatsChosen(repeatsChosen),
@@ -944,8 +997,8 @@ class _CandidateRow extends StatelessWidget {
   /// The other account of a move between the person's accounts.
   final Account? other;
 
-  /// Whether a card payment with no account on its other side asks which
-  /// it is: there is an account it could be.
+  /// Whether a card payment with no account on its other side asks where
+  /// it goes: there is an account it could be.
   final bool askCard;
   final Asset? base;
 
@@ -1041,7 +1094,12 @@ class _CandidateRow extends StatelessWidget {
             else
               TextSpan(text: ' · ${l.statementGiveCategory}', style: caution),
             if (badge == null && move == null && c.cardPayment && askCard)
-              TextSpan(text: '\n${l.statementIsCardPayment}', style: caution),
+              TextSpan(
+                text: a?.kind == AccountKind.card
+                    ? '\n${l.statementPaidFrom}'
+                    : '\n${l.statementIsCardPayment}',
+                style: caution,
+              ),
           ],
         ),
         style: context.type.bodySmall,

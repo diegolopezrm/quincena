@@ -676,10 +676,10 @@
   "binanceLabelAdjustment": "Adjustment with Binance",
   "statementTitle": "Import a statement",
   "statementSubtitle": "Your bank's CSV, Excel or PDF",
-  "statementIntro": "Bring in the movements from a bank or card statement: CSV, Excel (.xlsx) or PDF. It is read on this device, and you review every movement before it is saved.",
+  "statementIntro": "Bring in the transactions from a bank or card statement: CSV, Excel (.xlsx) or PDF. It is read on this device, and you review every transaction before it is saved.",
   "statementPick": "Choose a file",
   "statementReading": "Reading the statement…",
-  "statementNothing": "No movements were found in this file.",
+  "statementNothing": "No transactions were found in this file.",
   "statementFailed": "The file could not be read. Try a CSV, an Excel (.xlsx) or a PDF.",
   "statementGemini": "Read it with Gemini",
   "statementGeminiNote": "The statement's text, with its dates, descriptions and amounts, goes to Gemini to sort it out. It counts as one of the day's questions.",
@@ -688,8 +688,8 @@
   "statementRecorded": "Already recorded",
   "statementImportedBefore": "Already imported",
   "statementFlip": "Swap money in and out",
-  "statementImport": "{count, plural, =0{Nothing to import} =1{Import one movement} other{Import {count} movements}}",
-  "statementDone": "{count, plural, =1{One movement was imported.} other{{count} movements were imported.}}",
+  "statementImport": "{count, plural, =0{Nothing to import} =1{Import one transaction} other{Import {count} transactions}}",
+  "statementDone": "{count, plural, =1{One transaction was imported.} other{{count} transactions were imported.}}",
   "statementByGemini": "Read by Gemini: check it well before importing.",
   "walletsTitle": "Your own wallets",
   "walletsCardBody": "Ledger, MetaMask, Trust Wallet: by their public address.",
@@ -1276,5 +1276,7 @@
   "statementUseBalance": "Match the statement's balance",
   "statementBalanceEffect": "{account} balance: {before} → {after}",
   "statementDebtEffect": "What you owe on {account}: {before} → {after}",
-  "statementBalanceSame": "The {account} balance stays at {amount}: it already included these transactions."
+  "statementBalanceSame": "The {account} balance stays at {amount}: it already included these transactions.",
+  "statementPaidFrom": "Which of your accounts did this payment come from?",
+  "statementSaveFailed": "The import didn't finish. What was saved shows as \"Already imported\"."
 }

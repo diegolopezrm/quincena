@@ -2545,7 +2545,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statementIntro =>
-      'Bring in the movements from a bank or card statement: CSV, Excel (.xlsx) or PDF. It is read on this device, and you review every movement before it is saved.';
+      'Bring in the transactions from a bank or card statement: CSV, Excel (.xlsx) or PDF. It is read on this device, and you review every transaction before it is saved.';
 
   @override
   String get statementPick => 'Choose a file';
@@ -2554,7 +2554,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statementReading => 'Reading the statement…';
 
   @override
-  String get statementNothing => 'No movements were found in this file.';
+  String get statementNothing => 'No transactions were found in this file.';
 
   @override
   String get statementFailed =>
@@ -2596,8 +2596,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Import $count movements',
-      one: 'Import one movement',
+      other: 'Import $count transactions',
+      one: 'Import one transaction',
       zero: 'Nothing to import',
     );
     return '$_temp0';
@@ -2608,8 +2608,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count movements were imported.',
-      one: 'One movement was imported.',
+      other: '$count transactions were imported.',
+      one: 'One transaction was imported.',
     );
     return '$_temp0';
   }
@@ -4907,4 +4907,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String statementBalanceSame(String account, String amount) {
     return 'The $account balance stays at $amount: it already included these transactions.';
   }
+
+  @override
+  String get statementPaidFrom =>
+      'Which of your accounts did this payment come from?';
+
+  @override
+  String get statementSaveFailed =>
+      'The import didn\'t finish. What was saved shows as \"Already imported\".';
 }

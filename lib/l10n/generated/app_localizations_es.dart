@@ -4902,4 +4902,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String statementBalanceSame(String account, String amount) {
     return 'El saldo de $account sigue en $amount: ya incluía estos movimientos.';
   }
+
+  @override
+  String get statementPaidFrom => '¿De cuál de tus cuentas salió este pago?';
+
+  @override
+  String get statementSaveFailed =>
+      'No se pudo terminar de importar. Lo que sí se guardó aparece como «Ya importado».';
 }
