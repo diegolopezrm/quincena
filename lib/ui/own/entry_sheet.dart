@@ -578,6 +578,14 @@ class _EntryFormState extends State<_EntryForm> {
             TextField(
               controller: _note,
               textCapitalization: TextCapitalization.sentences,
+              // The last field: the button that saves comes above the
+              // keyboard with it.
+              scrollPadding: EdgeInsets.fromLTRB(
+                20,
+                20,
+                20,
+                40 + MediaQuery.textScalerOf(context).scale(48),
+              ),
               decoration: InputDecoration(labelText: l.note),
             ),
             const SizedBox(height: 20),

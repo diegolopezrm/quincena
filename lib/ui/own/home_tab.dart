@@ -687,6 +687,16 @@ class _CanIBuyState extends State<_CanIBuy> {
       ],
       textInputAction: TextInputAction.go,
       onSubmitted: (_) => _check(),
+      // With large text the button is under it: it comes above the
+      // keyboard with the field.
+      scrollPadding: largeText(context)
+          ? EdgeInsets.fromLTRB(
+              20,
+              20,
+              20,
+              30 + MediaQuery.textScalerOf(context).scale(48),
+            )
+          : const EdgeInsets.all(20),
       decoration: InputDecoration(
         hintText: l.buyAskHint,
         prefixText: r'$',
