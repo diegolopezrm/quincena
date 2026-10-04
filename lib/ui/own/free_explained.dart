@@ -287,14 +287,24 @@ class ExplainSum extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: MergeSemantics(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Expanded(child: Text(label, style: style)),
-            const SizedBox(width: 12),
-            Figures(value, style: style),
-          ],
-        ),
+        // With large text the amount goes under what it is: beside it, the
+        // words would have no room.
+        child: largeText(context)
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(label, style: style),
+                  Figures(value, style: style),
+                ],
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Expanded(child: Text(label, style: style)),
+                  const SizedBox(width: 12),
+                  Figures(value, style: style),
+                ],
+              ),
       ),
     );
   }
@@ -340,28 +350,34 @@ class ExplainLine extends StatelessWidget {
   final String value;
 
   @override
-  Widget build(BuildContext context) => MergeSemantics(
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(title, style: context.type.titleSmall),
-                if (detail case final String text)
-                  Text(text, style: context.type.bodySmall),
-              ],
+  Widget build(BuildContext context) {
+    // With large text the amount goes under the name: beside it, the words
+    // would have no room.
+    final bool large = largeText(context);
+    final Widget figure = Figures(value, style: context.type.titleSmall);
+    return MergeSemantics(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(title, style: context.type.titleSmall),
+                  if (large) figure,
+                  if (detail case final String text)
+                    Text(text, style: context.type.bodySmall),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Figures(value, style: context.type.titleSmall),
-        ],
+            if (!large) ...<Widget>[const SizedBox(width: 12), figure],
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// How [held] became the base currency: at what rate, then each step of

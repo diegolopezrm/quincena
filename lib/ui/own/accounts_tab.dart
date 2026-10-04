@@ -57,6 +57,68 @@ class AccountRow extends StatelessWidget {
         accountKindLabel(context, account.kind),
       if (account.institution.isNotEmpty) account.institution,
     ];
+    // With large text the row is read top to bottom, as iOS lays out its
+    // own at those sizes: the tile, the name whole, then the amounts. Side
+    // by side neither could be read whole.
+    final bool large = largeText(context);
+    final Widget tile = account.asset.isCrypto
+        ? CoinMark(account.asset)
+        : AccountTile(account.kind);
+    final Widget names = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          account.name,
+          style: context.type.titleSmall,
+          maxLines: large ? null : 1,
+          overflow: large ? null : TextOverflow.ellipsis,
+        ),
+        Text(
+          detail.join(' · '),
+          style: context.type.bodySmall,
+          maxLines: large ? null : 1,
+          overflow: large ? null : TextOverflow.ellipsis,
+        ),
+      ],
+    );
+    final Widget amounts = Column(
+      crossAxisAlignment: large
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.end,
+      children: <Widget>[
+        if (card && !balance.isZero)
+          Text(
+            balance.isNegative
+                ? context.l10n.cardOwedLabel
+                : context.l10n.cardInFavorLabel,
+            style: context.type.bodySmall,
+          ),
+        Figures(
+          card && balance.isZero
+              ? context.l10n.cardClear
+              : moneyText(card ? balance.abs() : balance, base: base),
+          style: context.type.titleSmall?.copyWith(
+            color: balance.isNegative && !card
+                ? context.colors.negative
+                : context.colors.ink,
+          ),
+        ),
+        if (converted != null)
+          Figures(
+            '≈ ${moneyText(converted, base: base)}',
+            style: context.type.bodySmall,
+          ),
+      ],
+    );
+    // Under the amount, across the whole row: at a large text size it
+    // wraps rather than pushing the amount past the edge.
+    final Widget? creditLeft = left == null
+        ? null
+        : Figures(
+            context.l10n.cardCreditLeft(moneyText(left, base: base)),
+            style: context.type.bodySmall,
+            textAlign: large ? TextAlign.start : TextAlign.end,
+          );
     return InkWell(
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
@@ -67,75 +129,27 @@ class AccountRow extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: large
+              ? CrossAxisAlignment.start
+              : CrossAxisAlignment.stretch,
           children: <Widget>[
-            Row(
-              children: <Widget>[
-                if (account.asset.isCrypto)
-                  CoinMark(account.asset)
-                else
-                  AccountTile(account.kind),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        account.name,
-                        style: context.type.titleSmall,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        detail.join(' · '),
-                        style: context.type.bodySmall,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: <Widget>[
-                    if (card && !balance.isZero)
-                      Text(
-                        balance.isNegative
-                            ? context.l10n.cardOwedLabel
-                            : context.l10n.cardInFavorLabel,
-                        style: context.type.bodySmall,
-                      ),
-                    Figures(
-                      card && balance.isZero
-                          ? context.l10n.cardClear
-                          : moneyText(
-                              card ? balance.abs() : balance,
-                              base: base,
-                            ),
-                      style: context.type.titleSmall?.copyWith(
-                        color: balance.isNegative && !card
-                            ? context.colors.negative
-                            : context.colors.ink,
-                      ),
-                    ),
-                    if (converted != null)
-                      Figures(
-                        '≈ ${moneyText(converted, base: base)}',
-                        style: context.type.bodySmall,
-                      ),
-                  ],
-                ),
-              ],
-            ),
-            // Under the amount, across the whole row: at a large text size
-            // it wraps rather than pushing the amount past the edge.
-            if (left != null)
-              Figures(
-                context.l10n.cardCreditLeft(moneyText(left, base: base)),
-                style: context.type.bodySmall,
-                textAlign: TextAlign.end,
+            if (large) ...<Widget>[
+              tile,
+              const SizedBox(height: 8),
+              names,
+              const SizedBox(height: 4),
+              amounts,
+            ] else
+              Row(
+                children: <Widget>[
+                  tile,
+                  const SizedBox(width: 12),
+                  Expanded(child: names),
+                  const SizedBox(width: 12),
+                  amounts,
+                ],
               ),
+            ?creditLeft,
           ],
         ),
       ),
@@ -157,20 +171,33 @@ class _SpendLine extends StatelessWidget {
   final Asset base;
 
   @override
-  Widget build(BuildContext context) => MergeSemantics(
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-      child: Row(
-        children: <Widget>[
-          Expanded(child: Text(label, style: context.type.bodyMedium)),
-          Figures(
-            moneyText(value, base: base),
-            style: context.type.titleMedium,
-          ),
-        ],
+  Widget build(BuildContext context) {
+    final Widget figure = Figures(
+      moneyText(value, base: base),
+      style: context.type.titleMedium,
+    );
+    return MergeSemantics(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        // With large text the amount goes under what it is: beside it, the
+        // words would have no room.
+        child: largeText(context)
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(label, style: context.type.bodyMedium),
+                  figure,
+                ],
+              )
+            : Row(
+                children: <Widget>[
+                  Expanded(child: Text(label, style: context.type.bodyMedium)),
+                  figure,
+                ],
+              ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// Every account, grouped by what it is for: the net worth first, as what
@@ -330,6 +357,11 @@ class RatesSummary extends StatelessWidget {
       for (final Asset a in held)
         if (table.rate(a, base) == null) a,
     ];
+    final Widget mark = Icon(
+      Glyph.arrowsLeftRight,
+      color: context.colors.brand,
+    );
+    final Widget name = Text(l.ratesSeeAll, style: context.type.titleSmall);
     return Panel(
       children: <Widget>[
         ListTile(
@@ -338,8 +370,14 @@ class RatesSummary extends StatelessWidget {
               builder: (BuildContext context) => RatesPage(own: own),
             ),
           ),
-          leading: Icon(Glyph.arrowsLeftRight, color: context.colors.brand),
-          title: Text(l.ratesSeeAll, style: context.type.titleSmall),
+          // With large text the icon goes above the title, as in Plan.
+          leading: largeText(context) ? null : mark,
+          title: largeText(context)
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[mark, const SizedBox(height: 4), name],
+                )
+              : name,
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[

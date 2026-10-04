@@ -285,13 +285,29 @@ class _ToolRow extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => ListTile(
-    onTap: onTap,
-    leading: Icon(icon, color: context.colors.brand),
-    title: Text(title, style: context.type.titleSmall),
-    subtitle: Text(detail, style: context.type.bodySmall),
-    trailing: Icon(Glyph.caretRight, size: 18, color: context.colors.inkFaint),
-  );
+  Widget build(BuildContext context) {
+    final Widget mark = Icon(icon, color: context.colors.brand);
+    final Widget name = Text(title, style: context.type.titleSmall);
+    // With large text the icon goes above the title, as iOS lays out its
+    // own rows at those sizes, and the words have the whole width.
+    final bool large = largeText(context);
+    return ListTile(
+      onTap: onTap,
+      leading: large ? null : mark,
+      title: large
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[mark, const SizedBox(height: 4), name],
+            )
+          : name,
+      subtitle: Text(detail, style: context.type.bodySmall),
+      trailing: Icon(
+        Glyph.caretRight,
+        size: 18,
+        color: context.colors.inkFaint,
+      ),
+    );
+  }
 }
 
 /// This period's envelopes, or the way to make them.

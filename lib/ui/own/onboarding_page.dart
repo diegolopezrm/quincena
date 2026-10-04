@@ -316,18 +316,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 Panel(
                   children: <Widget>[
                     for (final RecurringCharge r in own.recurring)
-                      ListTile(
+                      _FixedRow(
+                        charge: r,
+                        base: _base,
                         onTap: () =>
                             showChargeSheet(context, own: own, charge: r),
-                        title: Text(r.name, style: context.type.titleSmall),
-                        subtitle: Text(
-                          l.fixedNextOn(dayShortMonth(r.nextDate)),
-                          style: context.type.bodySmall,
-                        ),
-                        trailing: Figures(
-                          moneyText(r.amount, base: _base),
-                          style: context.type.titleSmall,
-                        ),
                       ),
                   ],
                 ),
@@ -484,6 +477,45 @@ class _OnboardingPageState extends State<OnboardingPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// A fixed payment told during onboarding: what, when it is next charged
+/// and how much. With large text the amount goes under the date: beside
+/// them, the name would have no room.
+class _FixedRow extends StatelessWidget {
+  const _FixedRow({
+    required this.charge,
+    required this.base,
+    required this.onTap,
+  });
+
+  final RecurringCharge charge;
+  final Asset base;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool large = largeText(context);
+    final Widget amount = Figures(
+      moneyText(charge.amount, base: base),
+      style: context.type.titleSmall,
+    );
+    final Widget next = Text(
+      context.l10n.fixedNextOn(dayShortMonth(charge.nextDate)),
+      style: context.type.bodySmall,
+    );
+    return ListTile(
+      onTap: onTap,
+      title: Text(charge.name, style: context.type.titleSmall),
+      subtitle: large
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[next, amount],
+            )
+          : next,
+      trailing: large ? null : amount,
     );
   }
 }

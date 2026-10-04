@@ -12,6 +12,7 @@ import '../../money/money.dart';
 import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
+import '../kit.dart';
 import 'amount_input.dart';
 import 'capture_reasons.dart';
 import 'category_choices.dart';
@@ -464,6 +465,8 @@ class _EntryFormState extends State<_EntryForm> {
               ],
               selected: <EntryKind>{_kind},
               showSelectedIcon: false,
+              // With large text one kind under the other, each word whole.
+              direction: largeText(context) ? Axis.vertical : Axis.horizontal,
               onSelectionChanged: (Set<EntryKind> s) => setState(() {
                 if (_kind != EntryKind.transfer &&
                     s.first != EntryKind.transfer &&

@@ -116,6 +116,27 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
     ),
   );
 
+  /// How large the tab labels may grow. Material stops them at 1.3 times;
+  /// on a narrow phone the longest would break mid-word before that, so
+  /// they stop where it still fits.
+  double _labelScale(BuildContext context, List<String> labels) {
+    final TextStyle? style = NavigationBarTheme.of(
+      context,
+    ).labelTextStyle?.resolve(<WidgetState>{WidgetState.selected});
+    final double room = MediaQuery.sizeOf(context).width / labels.length - 4;
+    double widest = 0;
+    for (final String label in labels) {
+      final TextPainter painter = TextPainter(
+        text: TextSpan(text: label, style: style),
+        textDirection: Directionality.of(context),
+        maxLines: 1,
+      )..layout();
+      widest = math.max(widest, painter.width);
+      painter.dispose();
+    }
+    return widest == 0 ? 1.3 : math.max(1, room / widest);
+  }
+
   /// The tab as a sliver: Movimientos builds its days as they scroll into
   /// view, the others are laid out whole.
   Widget _tabBody() => switch (_tab) {
@@ -234,13 +255,18 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
           : content,
       bottomNavigationBar: wide
           ? null
-          : NavigationBar(
-              selectedIndex: _tab,
-              onDestinationSelected: (int i) => setState(() => _tab = i),
-              destinations: <NavigationDestination>[
-                for (final (IconData icon, String label) in destinations)
-                  NavigationDestination(icon: Icon(icon), label: label),
-              ],
+          : MediaQuery.withClampedTextScaling(
+              maxScaleFactor: _labelScale(context, <String>[
+                for (final (_, String label) in destinations) label,
+              ]),
+              child: NavigationBar(
+                selectedIndex: _tab,
+                onDestinationSelected: (int i) => setState(() => _tab = i),
+                destinations: <NavigationDestination>[
+                  for (final (IconData icon, String label) in destinations)
+                    NavigationDestination(icon: Icon(icon), label: label),
+                ],
+              ),
             ),
     );
   }

@@ -301,6 +301,7 @@ class _Line extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextStyle? style = context.type.bodyMedium;
+    final bool large = largeText(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: MergeSemantics(
@@ -321,10 +322,19 @@ class _Line extends StatelessWidget {
                   const SizedBox(width: 8),
                 ],
                 Expanded(child: Text(label, style: style)),
-                const SizedBox(width: 12),
-                Figures(value, style: style),
+                if (!large) ...<Widget>[
+                  const SizedBox(width: 12),
+                  Figures(value, style: style),
+                ],
               ],
             ),
+            // With large text the amount goes under what it is: beside it,
+            // the words would have no room.
+            if (large)
+              Padding(
+                padding: EdgeInsets.only(left: swatch == null ? 0 : 16),
+                child: Figures(value, style: style),
+              ),
             if (detail case final String text)
               Padding(
                 padding: EdgeInsets.only(left: swatch == null ? 0 : 16),

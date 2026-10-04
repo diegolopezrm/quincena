@@ -103,56 +103,76 @@ class MovementRow extends StatelessWidget {
         : entry.amount > Decimal.zero
         ? context.colors.positive
         : context.colors.ink;
+    // With large text the row is read top to bottom, as iOS lays out its
+    // own at those sizes: the category, the name whole, then the amount.
+    // Side by side neither could be read whole.
+    final bool large = largeText(context);
+    final Widget disc = CategoryDisc(
+      transfer || cost != null ? null : category,
+    );
+    final Widget names = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          title,
+          style: context.type.titleSmall,
+          maxLines: large ? null : 1,
+          overflow: large ? null : TextOverflow.ellipsis,
+        ),
+        if (detail.isNotEmpty)
+          Text(
+            detail.join(' · '),
+            style: context.type.bodySmall,
+            maxLines: large ? null : 1,
+            overflow: large ? null : TextOverflow.ellipsis,
+          ),
+      ],
+    );
+    final Widget amounts = Column(
+      crossAxisAlignment: large
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.end,
+      children: <Widget>[
+        Figures(
+          moneyText(
+            transfer && !inAccount ? money.abs() : money,
+            base: own.profile?.base,
+            signed: !transfer || inAccount,
+          ),
+          style: context.type.titleSmall?.copyWith(color: amountColor),
+        ),
+        if (base != null)
+          Figures(
+            '≈ ${moneyText(transfer && !inAccount ? base.abs() : base, base: own.profile?.base)}',
+            style: context.type.bodySmall,
+          ),
+      ],
+    );
 
     return InkWell(
       onTap: () => showEntrySheet(context, own: own, entry: entry),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: <Widget>[
-            CategoryDisc(transfer || cost != null ? null : category),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
+        child: large
+            ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(
-                    title,
-                    style: context.type.titleSmall,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (detail.isNotEmpty)
-                    Text(
-                      detail.join(' · '),
-                      style: context.type.bodySmall,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                  disc,
+                  const SizedBox(height: 8),
+                  names,
+                  const SizedBox(height: 4),
+                  amounts,
+                ],
+              )
+            : Row(
+                children: <Widget>[
+                  disc,
+                  const SizedBox(width: 12),
+                  Expanded(child: names),
+                  const SizedBox(width: 12),
+                  amounts,
                 ],
               ),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: <Widget>[
-                Figures(
-                  moneyText(
-                    transfer && !inAccount ? money.abs() : money,
-                    base: own.profile?.base,
-                    signed: !transfer || inAccount,
-                  ),
-                  style: context.type.titleSmall?.copyWith(color: amountColor),
-                ),
-                if (base != null)
-                  Figures(
-                    '≈ ${moneyText(transfer && !inAccount ? base.abs() : base, base: own.profile?.base)}',
-                    style: context.type.bodySmall,
-                  ),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }

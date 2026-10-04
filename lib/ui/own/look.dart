@@ -142,20 +142,32 @@ class SectionLabel extends StatelessWidget {
   final Widget? trailing;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
-    child: Row(
-      children: <Widget>[
-        Expanded(
-          child: Semantics(
-            header: true,
-            child: Text(text.toUpperCase(), style: context.type.labelSmall),
-          ),
-        ),
-        ?trailing,
-      ],
-    ),
-  );
+  Widget build(BuildContext context) {
+    final Widget label = Semantics(
+      header: true,
+      child: Text(text.toUpperCase(), style: context.type.labelSmall),
+    );
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+      // With large text the button goes under the title when the two do
+      // not fit side by side.
+      child: trailing != null && largeText(context)
+          ? SizedBox(
+              width: double.infinity,
+              child: Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: <Widget>[label, ?trailing],
+              ),
+            )
+          : Row(
+              children: <Widget>[
+                Expanded(child: label),
+                ?trailing,
+              ],
+            ),
+    );
+  }
 }
 
 /// A rounded group of rows on the surface color.

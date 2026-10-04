@@ -273,31 +273,40 @@ class _MainTodo extends StatelessWidget {
   final _Todo todo;
 
   @override
-  Widget build(BuildContext context) => Block(
-    padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-    child: Row(
+  Widget build(BuildContext context) {
+    final Widget icon = Icon(todo.icon, size: 24, color: context.colors.brand);
+    final Widget words = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Icon(todo.icon, size: 24, color: context.colors.brand),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(todo.title, style: context.type.titleMedium),
-              const SizedBox(height: 2),
-              Text(todo.body, style: context.type.bodySmall),
-              const SizedBox(height: 10),
-              FilledButton.tonal(
-                onPressed: () => todo.open(context),
-                child: Text(todo.action),
-              ),
-            ],
-          ),
+        Text(todo.title, style: context.type.titleMedium),
+        const SizedBox(height: 2),
+        Text(todo.body, style: context.type.bodySmall),
+        const SizedBox(height: 10),
+        FilledButton.tonal(
+          onPressed: () => todo.open(context),
+          child: Text(todo.action),
         ),
       ],
-    ),
-  );
+    );
+    return Block(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      // With large text the icon goes above, as iOS lays out its own at
+      // those sizes, and the words have the whole width.
+      child: largeText(context)
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[icon, const SizedBox(height: 8), words],
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                icon,
+                const SizedBox(width: 14),
+                Expanded(child: words),
+              ],
+            ),
+    );
+  }
 }
 
 /// Something to do after the first, with what doing it is called: the
@@ -308,35 +317,51 @@ class _TodoRow extends StatelessWidget {
   final _Todo todo;
 
   @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: () => todo.open(context),
-    child: Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
-      child: Row(
-        children: <Widget>[
-          Icon(todo.icon, size: 24, color: context.colors.brand),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(todo.title, style: context.type.titleSmall),
-                Text(todo.body, style: context.type.bodySmall),
-              ],
+  Widget build(BuildContext context) {
+    final bool large = largeText(context);
+    final Widget action = Text(
+      todo.action,
+      style: context.type.labelLarge?.copyWith(color: context.colors.brand),
+    );
+    final Widget caret = Icon(
+      Glyph.caretRight,
+      size: 16,
+      color: context.colors.brand,
+    );
+    return InkWell(
+      onTap: () => todo.open(context),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+        child: Row(
+          children: <Widget>[
+            Icon(todo.icon, size: 24, color: context.colors.brand),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(todo.title, style: context.type.titleSmall),
+                  Text(todo.body, style: context.type.bodySmall),
+                  // With large text what doing it is called goes under
+                  // what it is: beside it, the words would have no room.
+                  if (large) ...<Widget>[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: <Widget>[
+                        Flexible(child: action),
+                        caret,
+                      ],
+                    ),
+                  ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            todo.action,
-            style: context.type.labelLarge?.copyWith(
-              color: context.colors.brand,
-            ),
-          ),
-          Icon(Glyph.caretRight, size: 16, color: context.colors.brand),
-        ],
+            if (!large) ...<Widget>[const SizedBox(width: 8), action, caret],
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _Empty extends StatelessWidget {
@@ -418,6 +443,8 @@ class _MovementsTabState extends State<MovementsTab> {
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
                 hintText: l.searchMovements,
+                // Whole with large text too.
+                hintMaxLines: largeText(context) ? 3 : null,
                 prefixIcon: const Icon(Glyph.magnifyingGlass, size: 20),
               ),
             ),
@@ -574,37 +601,40 @@ class _TimelineRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextStyle? style = context.type.bodyMedium;
+    final Widget day = Text(when, style: context.type.bodySmall);
+    final Widget label = Text.rich(
+      TextSpan(
+        text: what,
+        children: <InlineSpan>[
+          if (note case final String n)
+            TextSpan(text: ' · $n', style: context.type.bodySmall),
+        ],
+      ),
+      style: style,
+    );
+    final Widget figure = Figures(
+      amount,
+      style: style?.copyWith(color: income ? context.colors.positive : null),
+    );
     return MergeSemantics(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            SizedBox(
-              width: 64,
-              child: Text(when, style: context.type.bodySmall),
-            ),
-            Expanded(
-              child: Text.rich(
-                TextSpan(
-                  text: what,
-                  children: <InlineSpan>[
-                    if (note case final String n)
-                      TextSpan(text: ' · $n', style: context.type.bodySmall),
-                  ],
-                ),
-                style: style,
+        // With large text the day, what and how much go one under the
+        // other: in columns none of them would fit.
+        child: largeText(context)
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[day, label, figure],
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  SizedBox(width: 64, child: day),
+                  Expanded(child: label),
+                  const SizedBox(width: 12),
+                  figure,
+                ],
               ),
-            ),
-            const SizedBox(width: 12),
-            Figures(
-              amount,
-              style: style?.copyWith(
-                color: income ? context.colors.positive : null,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -649,6 +679,21 @@ class _CanIBuyState extends State<_CanIBuy> {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
+    final Widget field = TextField(
+      controller: _price,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: <TextInputFormatter>[
+        AmountInputFormatter(maxDecimals: widget.ledger.currency.decimals),
+      ],
+      textInputAction: TextInputAction.go,
+      onSubmitted: (_) => _check(),
+      decoration: InputDecoration(
+        hintText: l.buyAskHint,
+        prefixText: r'$',
+        isDense: true,
+      ),
+    );
+    final Widget go = FilledButton(onPressed: _check, child: Text(l.buyAskGo));
     return Block(
       padding: const EdgeInsets.fromLTRB(18, 14, 14, 14),
       child: Column(
@@ -657,32 +702,20 @@ class _CanIBuyState extends State<_CanIBuy> {
           Text(l.buyAsk, style: context.type.titleSmall),
           Text(l.buyAskBody, style: context.type.bodySmall),
           const SizedBox(height: 10),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: TextField(
-                  controller: _price,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  inputFormatters: <TextInputFormatter>[
-                    AmountInputFormatter(
-                      maxDecimals: widget.ledger.currency.decimals,
-                    ),
-                  ],
-                  textInputAction: TextInputAction.go,
-                  onSubmitted: (_) => _check(),
-                  decoration: InputDecoration(
-                    hintText: l.buyAskHint,
-                    prefixText: r'$',
-                    isDense: true,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              FilledButton(onPressed: _check, child: Text(l.buyAskGo)),
-            ],
-          ),
+          // With large text the button goes under the field, which keeps
+          // the room to read what to type.
+          if (largeText(context)) ...<Widget>[
+            field,
+            const SizedBox(height: 10),
+            Align(alignment: AlignmentDirectional.centerEnd, child: go),
+          ] else
+            Row(
+              children: <Widget>[
+                Expanded(child: field),
+                const SizedBox(width: 10),
+                go,
+              ],
+            ),
         ],
       ),
     );
