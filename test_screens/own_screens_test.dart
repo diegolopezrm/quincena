@@ -11,7 +11,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/app.dart';
+import 'package:quincena/capture/capture_service.dart';
+import 'package:quincena/capture/event.dart';
 import 'package:quincena/data/clock.dart';
+import 'package:quincena/domain/records.dart';
 import 'package:quincena/format/money.dart' as format;
 import 'package:quincena/money/asset.dart';
 import 'package:quincena/money/money.dart';
@@ -157,6 +160,46 @@ void main() {
     await tester.tap(find.text('Reglas aprendidas'));
     await settle(tester);
     await shoot('rules');
+  });
+
+  testWidgets('many to review', (tester) async {
+    final QuincenaStore store = (await tester.runAsync(() async {
+      final QuincenaStore store = await seeded();
+      final Account nequi = (await store.accounts()).firstWhere(
+        (Account a) => a.name == 'Nequi',
+      );
+      await store.saveCaptureSettings(
+        (await store.captureSettings()).copyWith(
+          cardAccounts: <String, String>{'9876': nequi.id},
+        ),
+      );
+      // A week of Nequi's card, read in one go from screenshots' worth of
+      // alerts: twenty waiting.
+      const List<String> shops = <String>[
+        'PANADERIA LA ESPIGA',
+        'D1 LAURELES',
+        'CREPES Y WAFFLES',
+        'EXITO LAURELES',
+        'JUAN VALDEZ',
+      ];
+      await CaptureService(store, now: () => screensNow).ingest(<CaptureEvent>[
+        for (var k = 0; k < 20; k++)
+          CaptureEvent(
+            source: CaptureSource.notification,
+            at: screensNow.subtract(Duration(hours: 3 * k + 1)),
+            app: 'com.nequi.MobileApp',
+            appName: 'Nequi',
+            text:
+                'Pagaste \$${4 + k}.${k % 10}00 en ${shops[k % shops.length]} '
+                'con tu tarjeta *9876',
+          ),
+      ]);
+      return store;
+    }))!;
+    await open(tester, store, phone, Brightness.light);
+    await tester.tap(find.byTooltip('Por revisar'));
+    await settle(tester);
+    await shoot('inbox-many');
   });
 
   testWidgets('coming days', (tester) async {

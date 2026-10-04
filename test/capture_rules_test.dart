@@ -80,35 +80,90 @@ void main() {
     return (own, store);
   }
 
-  testWidgets('confirming says what it learned, and the rule can be undone', (
-    tester,
-  ) async {
-    final (OwnController own, QuincenaStore store) = await open(
-      tester,
-      (OwnController own) => InboxPage(own: own),
-    );
-    await tester.runAsync(
-      () => own.capture.ingest(<CaptureEvent>[bakery('8.000', 8)]),
-    );
-    await settle(tester);
-    // The account comes from Nequi's alerts going to the only Nequi account.
-    expect(find.textContaining('Sugerido porque'), findsOneWidget);
+  testWidgets(
+    'recording says where and what it learned, and one undo takes back both',
+    (tester) async {
+      final (OwnController own, QuincenaStore store) = await open(
+        tester,
+        (OwnController own) => InboxPage(own: own),
+      );
+      await tester.runAsync(
+        () => own.capture.ingest(<CaptureEvent>[bakery('8.000', 8)]),
+      );
+      await settle(tester);
+      // Why the app suggested it waits in the menu, not on the card.
+      expect(find.textContaining('de tu cuenta de Nequi'), findsNothing);
+      await tester.tap(find.byTooltip('Más acciones'));
+      await settle(tester);
+      await tester.tap(find.text('Detalles de detección'));
+      await settle(tester);
+      // The account comes from Nequi's alerts going to the only Nequi
+      // account.
+      expect(find.text('Llegó de tu cuenta de Nequi.'), findsOneWidget);
+      expect(find.text('Cómo llegó'), findsOneWidget);
+      expect(find.textContaining('PANADERIA LA ESPIGA'), findsOneWidget);
 
-    await tester.tap(find.text('Confirmar'));
-    await settle(tester);
-    expect(
-      find.textContaining('Desde ahora, «Panaderia la Espiga» va a'),
-      findsOneWidget,
-    );
-    expect((await tester.runAsync(store.captureSettings))!.rules, isNotEmpty);
+      await tester.tap(find.text('Registrar gasto'));
+      await settle(tester);
+      expect(
+        find.textContaining(
+          'Gasto registrado en Nequi. Desde ahora, «Panaderia la Espiga» va a',
+        ),
+        findsOneWidget,
+      );
+      expect((await tester.runAsync(store.captureSettings))!.rules, isNotEmpty);
+      expect((await tester.runAsync(store.entries))!, hasLength(1));
 
-    await tester.tap(find.text('Deshacer'));
-    await settle(tester);
-    expect(
-      (await tester.runAsync(store.captureSettings))!.merchantCategories,
-      isEmpty,
-    );
-  });
+      await tester.tap(find.text('Deshacer'));
+      await settle(tester);
+      expect((await tester.runAsync(store.captureSettings))!.rules, isEmpty);
+      expect((await tester.runAsync(store.entries))!, isEmpty);
+      expect(find.text('Registrar gasto'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'what teaches nothing new still says where it went, and comes back',
+    (tester) async {
+      final (OwnController own, QuincenaStore store) = await open(
+        tester,
+        (OwnController own) => InboxPage(own: own),
+      );
+      // The bakery and its card are known from a first time.
+      await tester.runAsync(() async {
+        await own.capture.ingest(<CaptureEvent>[bakery('8.000', 8)]);
+        await own.capture.accept(
+          (await store.inbox(
+            statuses: <InboxStatus>{InboxStatus.pending},
+          )).single,
+          accountId: own.accounts.single.id,
+          category: 'groceries',
+        );
+        await own.capture.ingest(<CaptureEvent>[bakery('9.500', 9)]);
+      });
+      await settle(tester);
+      final CaptureSettings taught = (await tester.runAsync(
+        store.captureSettings,
+      ))!;
+
+      await tester.tap(find.text('Registrar gasto'));
+      await settle(tester);
+      expect(find.text('Gasto registrado en Nequi.'), findsOneWidget);
+      expect(find.text('Todo al día.'), findsOneWidget);
+      expect((await tester.runAsync(store.entries))!, hasLength(2));
+
+      await tester.tap(find.text('Deshacer'));
+      await settle(tester);
+      // The movement is gone and the card is back; what was known stays.
+      expect((await tester.runAsync(store.entries))!, hasLength(1));
+      expect(find.text('Panaderia la Espiga'), findsOneWidget);
+      expect(find.text('Registrar gasto'), findsOneWidget);
+      expect(
+        (await tester.runAsync(store.captureSettings))!.rules,
+        taught.rules,
+      );
+    },
+  );
 
   testWidgets('what was recorded on its own says why, and can be undone', (
     tester,
@@ -147,7 +202,7 @@ void main() {
     // The movement is gone, and the capture waits for the person again.
     expect((await tester.runAsync(store.entries))!, hasLength(1));
     expect(find.text('REGISTRADO AUTOMÁTICAMENTE'), findsNothing);
-    expect(find.text('Confirmar'), findsOneWidget);
+    expect(find.text('Registrar gasto'), findsOneWidget);
   });
 
   testWidgets('a rule can be turned off and deleted', (tester) async {

@@ -65,6 +65,7 @@ abstract final class Glyph {
   static const IconData user = IconData(0xe4c2, fontFamily: _family);
   static const IconData x = IconData(0xe4f6, fontFamily: _family);
   static const IconData check = IconData(0xe182, fontFamily: _family);
+  static const IconData checks = IconData(0xe53a, fontFamily: _family);
   static const IconData caretRight = IconData(0xe13a, fontFamily: _family);
   static const IconData caretDown = IconData(0xe136, fontFamily: _family);
   static const IconData export = IconData(0xeaf0, fontFamily: _family);
@@ -80,6 +81,7 @@ abstract final class Glyph {
   static const IconData squaresFour = IconData(0xe464, fontFamily: _family);
   static const IconData listBullets = IconData(0xe2f2, fontFamily: _family);
   static const IconData notePencil = IconData(0xe34c, fontFamily: _family);
+  static const IconData clipboardText = IconData(0xe198, fontFamily: _family);
   static const IconData arrowLeft = IconData(0xe058, fontFamily: _family);
   static const IconData dotsThreeVertical = IconData(
     0xe208,

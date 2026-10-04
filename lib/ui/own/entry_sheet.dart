@@ -103,13 +103,15 @@ class _EntryFormState extends State<_EntryForm> {
   late final bool _arrived =
       widget.ownTransfer && _capture?.parsed.kind == EntryKind.income;
 
-  late String _accountId = _arrived
+  /// Null for a capture the app could not place: the person chooses,
+  /// since whatever account the form guessed would be learned from.
+  late String? _accountId = _arrived
       ? _otherThan(_capture?.suggestion.accountId)
       : _legs?.$1.accountId ??
             _editing?.accountId ??
             _capture?.suggestion.accountId ??
             widget.accountId ??
-            own.accounts.first.id;
+            (_capture == null ? own.accounts.first.id : null);
   late String? _toAccountId = _arrived
       ? (_capture?.suggestion.accountId ?? _secondAccount())
       : widget.ownTransfer
@@ -144,6 +146,7 @@ class _EntryFormState extends State<_EntryForm> {
       _capture?.event.at ??
       own.today;
   String? _amountError;
+  String? _fromError;
   String? _accountError;
   bool _saving = false;
 
@@ -232,38 +235,39 @@ class _EntryFormState extends State<_EntryForm> {
         ? parseAmount(_received.text)
         : null;
     final bool badAmount = amount == null || amount <= Decimal.zero;
+    final String? from = _accountId;
     final bool badAccounts =
         _kind == EntryKind.transfer &&
         (_toAccountId == null || _toAccountId == _accountId);
     setState(() {
       _amountError = badAmount ? l.invalidAmount : null;
+      _fromError = from == null ? l.accountRequired : null;
       _accountError = badAccounts ? l.sameAccount : null;
     });
-    if (badAmount || badAccounts || _saving) return;
+    if (badAmount || from == null || badAccounts || _saving) return;
     if (_crossCurrency && (received == null || received <= Decimal.zero)) {
       setState(() => _amountError = l.invalidAmount);
       return;
     }
     setState(() => _saving = true);
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     final DateTime when = _stamp(_date);
     final String? category = _kind == EntryKind.transfer
         ? null
         : (_category ?? (_kind == EntryKind.income ? 'other_income' : 'other'));
     final InboxItem? capture = _capture;
     if (capture != null && _kind != EntryKind.transfer) {
-      final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
       final Accepted done = await own.capture.accept(
         capture,
-        accountId: _accountId,
+        accountId: from,
         category: category,
         payee: _payee.text,
         amount: amount,
         kind: _kind,
         date: when,
       );
-      if (!mounted) return;
-      showLearned(messenger, context, own, done.learned);
-      Navigator.of(context).pop();
+      showRecorded(messenger, own, done);
+      if (mounted) Navigator.of(context).pop();
       return;
     }
     if (_kind == EntryKind.transfer) {
@@ -271,7 +275,7 @@ class _EntryFormState extends State<_EntryForm> {
       if (editingTransfer != null) {
         await own.store.updateTransfer(
           editingTransfer,
-          fromAccountId: _accountId,
+          fromAccountId: from,
           toAccountId: _toAccountId!,
           sent: amount,
           received: received,
@@ -280,24 +284,35 @@ class _EntryFormState extends State<_EntryForm> {
         );
       } else {
         if (_editing != null) await own.store.deleteEntry(_editing!);
-        await own.store.addTransfer(
-          fromAccountId: _accountId,
-          toAccountId: _toAccountId!,
-          sent: amount,
-          received: received,
-          date: when,
-          note: _note.text,
-        );
         if (capture != null) {
-          await own.store.saveInboxItem(
-            capture.copyWith(status: InboxStatus.accepted),
+          showRecorded(
+            messenger,
+            own,
+            await own.capture.acceptTransfer(
+              capture,
+              fromAccountId: from,
+              toAccountId: _toAccountId!,
+              sent: amount,
+              received: received,
+              date: when,
+              note: _note.text,
+            ),
+          );
+        } else {
+          await own.store.addTransfer(
+            fromAccountId: from,
+            toAccountId: _toAccountId!,
+            sent: amount,
+            received: received,
+            date: when,
+            note: _note.text,
           );
         }
       }
     } else if (_editing == null || _editing!.transferId != null) {
       if (_editing != null) await own.store.deleteEntry(_editing!);
       await own.store.addEntry(
-        accountId: _accountId,
+        accountId: from,
         amount: amount,
         kind: _kind,
         date: when,
@@ -308,7 +323,7 @@ class _EntryFormState extends State<_EntryForm> {
     } else {
       await own.store.updateEntry(
         _editing!.copyWith(
-          accountId: _accountId,
+          accountId: from,
           amount: _kind == EntryKind.expense ? -amount : amount,
           kind: _kind,
           date: when,
@@ -414,7 +429,11 @@ class _EntryFormState extends State<_EntryForm> {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Text(
-              _editing == null ? l.addMovement : l.editMovement,
+              _editing != null
+                  ? l.editMovement
+                  : _capture != null
+                  ? l.reviewMovement
+                  : l.addMovement,
               style: context.type.headlineMedium,
             ),
             const SizedBox(height: 16),
@@ -473,8 +492,10 @@ class _EntryFormState extends State<_EntryForm> {
               _accountId,
               (String? id) => setState(() {
                 if (id != null) _accountId = id;
+                _fromError = null;
                 _suggestReceived();
               }),
+              error: _fromError,
             ),
             if (transfer) ...<Widget>[
               const SizedBox(height: 12),
@@ -550,7 +571,15 @@ class _EntryFormState extends State<_EntryForm> {
             const SizedBox(height: 20),
             FilledButton(
               onPressed: _saving ? null : _save,
-              child: Text(l.save),
+              child: Text(
+                _capture == null
+                    ? l.save
+                    : switch (_kind) {
+                        EntryKind.income => l.recordIncome,
+                        EntryKind.transfer => l.recordTransfer,
+                        _ => l.recordExpense,
+                      },
+              ),
             ),
             if (_editing case final Entry editing
                 when editing.kind == EntryKind.expense &&

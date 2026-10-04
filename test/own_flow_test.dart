@@ -247,7 +247,7 @@ void main() {
       expect(screen(tester), contains('Mercado · Bancolombia'));
       expect(screen(tester), contains(r'−$45.900'));
 
-      await tester.tap(find.text('Confirmar'));
+      await tester.tap(find.text('Registrar gasto'));
       await settle(tester);
       expect(screen(tester), contains('Todo al día.'));
 
