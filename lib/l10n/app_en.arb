@@ -1251,5 +1251,7 @@
   "widgetHide": "Hide amounts in the widget",
   "widgetHideHelp": "It says until when, without the figure.",
   "widgetAdd": "Add to home screen",
-  "widgetAddFailed": "Your home screen doesn't allow adding it from here. Touch and hold an empty spot and look for Quincena."
+  "widgetAddFailed": "Your home screen doesn't allow adding it from here. Touch and hold an empty spot and look for Quincena.",
+  "statementSelectNew": "Check the new ones",
+  "statementRepeatsChosen": "{count, plural, =1{You checked 1 that was already there: it would count twice.} other{You checked {count} that were already there: they would count twice.}}"
 }

@@ -7566,6 +7566,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena.'**
   String get widgetAddFailed;
+
+  /// No description provided for @statementSelectNew.
+  ///
+  /// In es, this message translates to:
+  /// **'Marcar los nuevos'**
+  String get statementSelectNew;
+
+  /// No description provided for @statementRepeatsChosen.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Marcaste 1 que ya estaba: se contaría dos veces.} other{Marcaste {count} que ya estaban: se contarían dos veces.}}'**
+  String statementRepeatsChosen(int count);
 }
 
 class _AppLocalizationsDelegate

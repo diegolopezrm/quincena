@@ -1507,5 +1507,8 @@
   "widgetHide": "Ocultar montos en el widget",
   "widgetHideHelp": "Dice hasta cuándo, sin la cifra.",
   "widgetAdd": "Agregar a la pantalla de inicio",
-  "widgetAddFailed": "Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena."
+  "widgetAddFailed": "Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena.",
+  "statementSelectNew": "Marcar los nuevos",
+  "statementRepeatsChosen": "{count, plural, =1{Marcaste 1 que ya estaba: se contaría dos veces.} other{Marcaste {count} que ya estaban: se contarían dos veces.}}",
+  "@statementRepeatsChosen": {"placeholders": {"count": {"type": "int"}}}
 }

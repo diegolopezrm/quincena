@@ -25,33 +25,10 @@ void main() {
   testWidgets('a statement is reviewed line by line and imported', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(1170, 2532);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
-    final DateTime now = DateTime(2026, 10, 2, 10);
-    final QuincenaStore store = QuincenaStore(
-      QuincenaDatabase(NativeDatabase.memory()),
-      now: () => now,
+    final (QuincenaStore store, OwnController own, Account bank) = await world(
+      tester,
     );
-    addTearDown(() => tester.runAsync(store.close));
-    final OwnController own = OwnController(
-      store,
-      now: () => now,
-      readNative: false,
-    );
-    addTearDown(own.dispose);
-    late Account bank;
     await tester.runAsync(() async {
-      await store.ensureCategories();
-      await store.saveProfile(
-        const Profile(name: 'Diego', base: Asset.cop, schedule: TwiceMonthly()),
-      );
-      bank = await store.addAccount(
-        name: 'Bancolombia',
-        kind: AccountKind.bank,
-        asset: Asset.cop,
-        institution: 'Bancolombia',
-      );
       // Already caught from the bank's notification.
       await store.addEntry(
         accountId: bank.id,
@@ -60,42 +37,20 @@ void main() {
         date: DateTime(2026, 9, 3, 9),
         payee: 'Comcel',
       );
-      await own.start();
     });
-    final StatementRead read = readTable(
-      parseCsv(
-        'Fecha;Descripción;Valor\n'
-        '01/09/2026;COMPRA EN EXITO LAURELES;-45.900\n'
-        '02/09/2026;ABONO NOMINA DL SOFT;2.500.000\n'
-        '03/09/2026;PAGO PSE COMCEL;-89.900\n'
-        '04/09/2026;PAGO A JUAN PEREZ;-30.000\n',
-      ),
-    );
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: quincenaTheme(Brightness.light),
-        locale: const Locale('es'),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: appLocales,
-        home: Builder(
-          builder: (BuildContext context) => Scaffold(
-            body: Center(
-              child: TextButton(
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (BuildContext context) =>
-                        StatementPage(own: own, statement: read),
-                  ),
-                ),
-                child: const Text('abrir'),
-              ),
-            ),
-          ),
+    await open(
+      tester,
+      own,
+      readTable(
+        parseCsv(
+          'Fecha;Descripción;Valor\n'
+          '01/09/2026;COMPRA EN EXITO LAURELES;-45.900\n'
+          '02/09/2026;ABONO NOMINA DL SOFT;2.500.000\n'
+          '03/09/2026;PAGO PSE COMCEL;-89.900\n'
+          '04/09/2026;PAGO A JUAN PEREZ;-30.000\n',
         ),
       ),
     );
-    await tester.tap(find.text('abrir'));
-    await settle(tester);
 
     // The bank the statement names is the account it goes to.
     expect(find.text('Bancolombia · COP'), findsOneWidget);
@@ -114,17 +69,43 @@ void main() {
     expect(find.text('Importar 3 movimientos'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
-    // All of them, then back to what was proposed.
-    await tester.tap(find.text('Seleccionar todos'));
-    await settle(tester);
-    expect(find.text('Importar 4 movimientos'), findsOneWidget);
+    // The new ones are checked; the button clears them, and checks the new
+    // ones again, never what was already there.
+    expect(find.text('Seleccionar todos'), findsNothing);
     await tester.tap(find.text('Quitar todos'));
     await settle(tester);
     expect(find.text('Nada para importar'), findsOneWidget);
-    await tester.tap(find.text('Seleccionar todos'));
+    await tester.tap(find.text('Marcar los nuevos'));
     await settle(tester);
+    expect(find.text('Importar 3 movimientos'), findsOneWidget);
+    expect(
+      find.text(
+        'Lo que ya estaba quedó sin marcar, para no contarlo dos veces.',
+      ),
+      findsOneWidget,
+    );
+
+    // What was already there can still be checked by hand, and the page
+    // says it would count twice.
     await tester.tap(find.textContaining('Ya registrado'));
     await settle(tester);
+    expect(find.text('Importar 4 movimientos'), findsOneWidget);
+    expect(
+      find.text('Marcaste 1 que ya estaba: se contaría dos veces.'),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'Lo que ya estaba quedó sin marcar, para no contarlo dos veces.',
+      ),
+      findsNothing,
+    );
+    await tester.tap(find.textContaining('Ya registrado'));
+    await settle(tester);
+    expect(
+      find.text('Marcaste 1 que ya estaba: se contaría dos veces.'),
+      findsNothing,
+    );
 
     await tester.tap(find.text('Importar 3 movimientos'));
     await settle(tester);
@@ -154,6 +135,97 @@ void main() {
     await settle(tester);
     expect(find.text('abrir'), findsOneWidget);
   });
+  testWidgets('without repeats, the button selects every line', (tester) async {
+    final (_, OwnController own, _) = await world(tester);
+    await open(
+      tester,
+      own,
+      readTable(
+        parseCsv(
+          'Fecha;Descripción;Valor\n'
+          '01/09/2026;COMPRA EN EXITO LAURELES;-45.900\n'
+          '02/09/2026;ABONO NOMINA DL SOFT;2.500.000\n',
+        ),
+      ),
+    );
+    expect(find.text('Importar 2 movimientos'), findsOneWidget);
+    await tester.tap(find.text('Quitar todos'));
+    await settle(tester);
+    expect(find.text('Marcar los nuevos'), findsNothing);
+    await tester.tap(find.text('Seleccionar todos'));
+    await settle(tester);
+    expect(find.text('Importar 2 movimientos'), findsOneWidget);
+  });
+}
+
+/// A person with a Bancolombia account, added on 2 October 2026.
+Future<(QuincenaStore, OwnController, Account)> world(
+  WidgetTester tester,
+) async {
+  tester.view.physicalSize = const Size(1170, 2532);
+  tester.view.devicePixelRatio = 3;
+  addTearDown(tester.view.reset);
+  final DateTime now = DateTime(2026, 10, 2, 10);
+  final QuincenaStore store = QuincenaStore(
+    QuincenaDatabase(NativeDatabase.memory()),
+    now: () => now,
+  );
+  addTearDown(() => tester.runAsync(store.close));
+  final OwnController own = OwnController(
+    store,
+    now: () => now,
+    readNative: false,
+  );
+  addTearDown(own.dispose);
+  late Account bank;
+  await tester.runAsync(() async {
+    await store.ensureCategories();
+    await store.saveProfile(
+      const Profile(name: 'Diego', base: Asset.cop, schedule: TwiceMonthly()),
+    );
+    bank = await store.addAccount(
+      name: 'Bancolombia',
+      kind: AccountKind.bank,
+      asset: Asset.cop,
+      institution: 'Bancolombia',
+    );
+  });
+  return (store, own, bank);
+}
+
+/// The statement [read] opened over a page, the way the app pushes it.
+Future<void> open(
+  WidgetTester tester,
+  OwnController own,
+  StatementRead read, {
+  Locale locale = const Locale('es'),
+}) async {
+  await tester.runAsync(own.start);
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: quincenaTheme(Brightness.light),
+      locale: locale,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: appLocales,
+      home: Builder(
+        builder: (BuildContext context) => Scaffold(
+          body: Center(
+            child: TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (BuildContext context) =>
+                      StatementPage(own: own, statement: read),
+                ),
+              ),
+              child: const Text('abrir'),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.tap(find.text('abrir'));
+  await settle(tester);
 }
 
 Future<void> settle(WidgetTester tester) async {

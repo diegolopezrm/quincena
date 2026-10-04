@@ -402,11 +402,18 @@ class _StatementPageState extends State<StatementPage> {
     final int recorded = all
         .where((ImportCandidate c) => c.recorded || c.importedBefore)
         .length;
-    final int fresh = all.where((ImportCandidate c) => c.proposed).length;
+    final List<int> newOnes = <int>[
+      for (var i = 0; i < all.length; i++)
+        if (all[i].proposed) i,
+    ];
+    final int fresh = newOnes.length;
     final int unsorted = all
         .where((ImportCandidate c) => c.proposed && c.category == null)
         .length;
-    final bool everything = _chosen.length == all.length;
+    // What was already there and the person checked anyway: it would be
+    // recorded a second time.
+    final int repeatsChosen = _chosen.where((int i) => !all[i].proposed).length;
+    final bool everything = _chosen.isNotEmpty && _chosen.containsAll(newOnes);
     final Account? account = _account;
     return Column(
       children: <Widget>[
@@ -453,7 +460,7 @@ class _StatementPageState extends State<StatementPage> {
                 ].join(' · '),
                 style: context.type.bodyMedium,
               ),
-              if (recorded > 0)
+              if (recorded > 0 && repeatsChosen == 0)
                 Text(
                   l.statementAlreadyUnchecked,
                   style: context.type.bodySmall,
@@ -467,22 +474,30 @@ class _StatementPageState extends State<StatementPage> {
                   ),
                 ),
               ],
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => setState(() {
-                    _chosen.clear();
-                    if (!everything) {
-                      _chosen.addAll(<int>[
-                        for (var i = 0; i < all.length; i++) i,
-                      ]);
-                    }
-                  }),
-                  child: Text(
-                    everything ? l.statementSelectNone : l.statementSelectAll,
+              // Checking everything checks what is new: a line already there
+              // is checked only on purpose, one by one.
+              if (newOnes.isNotEmpty || _chosen.isNotEmpty)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => setState(() {
+                      if (everything) {
+                        _chosen.clear();
+                      } else {
+                        _chosen.addAll(newOnes);
+                      }
+                    }),
+                    child: Text(
+                      everything
+                          ? l.statementSelectNone
+                          : recorded > 0
+                          ? l.statementSelectNew
+                          : l.statementSelectAll,
+                    ),
                   ),
-                ),
-              ),
+                )
+              else
+                const SizedBox(height: 12),
               Panel(
                 indent: 56,
                 children: <Widget>[
@@ -505,24 +520,36 @@ class _StatementPageState extends State<StatementPage> {
           top: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            child: SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _chosen.isEmpty || _saving ? null : _import,
-                child: _saving
-                    ? Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          const SizedBox.square(
-                            dimension: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(l.statementImporting),
-                        ],
-                      )
-                    : Text(l.statementImport(_chosen.length)),
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                if (repeatsChosen > 0) ...<Widget>[
+                  Text(
+                    l.statementRepeatsChosen(repeatsChosen),
+                    style: context.type.bodySmall?.copyWith(
+                      color: context.colors.caution,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                FilledButton(
+                  onPressed: _chosen.isEmpty || _saving ? null : _import,
+                  child: _saving
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            const SizedBox.square(
+                              dimension: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(l.statementImporting),
+                          ],
+                        )
+                      : Text(l.statementImport(_chosen.length)),
+                ),
+              ],
             ),
           ),
         ),

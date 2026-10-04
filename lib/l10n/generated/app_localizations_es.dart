@@ -4762,4 +4762,18 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get widgetAddFailed =>
       'Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena.';
+
+  @override
+  String get statementSelectNew => 'Marcar los nuevos';
+
+  @override
+  String statementRepeatsChosen(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Marcaste $count que ya estaban: se contarían dos veces.',
+      one: 'Marcaste 1 que ya estaba: se contaría dos veces.',
+    );
+    return '$_temp0';
+  }
 }

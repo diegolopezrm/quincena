@@ -4763,4 +4763,19 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get widgetAddFailed =>
       'Your home screen doesn\'t allow adding it from here. Touch and hold an empty spot and look for Quincena.';
+
+  @override
+  String get statementSelectNew => 'Check the new ones';
+
+  @override
+  String statementRepeatsChosen(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'You checked $count that were already there: they would count twice.',
+      one: 'You checked 1 that was already there: it would count twice.',
+    );
+    return '$_temp0';
+  }
 }
