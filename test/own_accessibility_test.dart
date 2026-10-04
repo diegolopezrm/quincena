@@ -248,7 +248,7 @@ void main() {
       await tester.scrollUntilVisible(
         label,
         200,
-        scrollable: find.byType(Scrollable).first,
+        scrollable: find.byType(Scrollable).last,
       );
       await settle(tester);
       return tester
@@ -262,6 +262,19 @@ void main() {
     );
     expect(
       await tall(find.text('Rendimiento y ganancia'), InkWell),
+      greaterThanOrEqualTo(48),
+    );
+
+    // The sources on the crypto page, rows of a panel now.
+    await tester.tap(find.text('Rendimiento y ganancia'));
+    await settle(tester);
+    expect(find.byType(PortfolioPage), findsOneWidget);
+    expect(
+      await tall(find.text('Billeteras propias'), InkWell),
+      greaterThanOrEqualTo(48),
+    );
+    expect(
+      await tall(find.text('Binance').last, InkWell),
       greaterThanOrEqualTo(48),
     );
     expect(tester.takeException(), isNull);

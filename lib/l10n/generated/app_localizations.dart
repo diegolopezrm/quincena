@@ -8153,6 +8153,90 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Rendimiento y ganancia'**
   String get cryptoPerformanceRow;
+
+  /// No description provided for @portfolioSources.
+  ///
+  /// In es, this message translates to:
+  /// **'Gestionar fuentes'**
+  String get portfolioSources;
+
+  /// No description provided for @binanceRowOff.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin conectar · solo lectura, nunca mueve fondos'**
+  String get binanceRowOff;
+
+  /// No description provided for @binanceCardManualBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus saldos de Binance están anotados a mano. Conéctala para que se actualicen solos.'**
+  String get binanceCardManualBody;
+
+  /// No description provided for @portfolioSourceManual.
+  ///
+  /// In es, this message translates to:
+  /// **'Anotado a mano: no se actualiza solo'**
+  String get portfolioSourceManual;
+
+  /// No description provided for @portfolioSourceBinance.
+  ///
+  /// In es, this message translates to:
+  /// **'Conectada a Binance · leída {when}'**
+  String portfolioSourceBinance(String when);
+
+  /// No description provided for @portfolioSourceBinanceNever.
+  ///
+  /// In es, this message translates to:
+  /// **'Conectada a Binance: se actualiza sola'**
+  String get portfolioSourceBinanceNever;
+
+  /// No description provided for @portfolioSourceWallet.
+  ///
+  /// In es, this message translates to:
+  /// **'Por dirección pública · leída {when}'**
+  String portfolioSourceWallet(String when);
+
+  /// No description provided for @portfolioSourceWalletNever.
+  ///
+  /// In es, this message translates to:
+  /// **'Por dirección pública: se actualiza sola'**
+  String get portfolioSourceWalletNever;
+
+  /// No description provided for @chartNow.
+  ///
+  /// In es, this message translates to:
+  /// **'Ahora'**
+  String get chartNow;
+
+  /// No description provided for @chartZero.
+  ///
+  /// In es, this message translates to:
+  /// **'0 = como empezó el periodo'**
+  String get chartZero;
+
+  /// No description provided for @chartPointGain.
+  ///
+  /// In es, this message translates to:
+  /// **'{when}: {amount} desde el inicio'**
+  String chartPointGain(String when, String amount);
+
+  /// No description provided for @chartPointValue.
+  ///
+  /// In es, this message translates to:
+  /// **'{when}: valía {amount}'**
+  String chartPointValue(String when, String amount);
+
+  /// No description provided for @chartTouchHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Toca la línea y desliza el dedo para ver cada momento.'**
+  String get chartTouchHint;
+
+  /// No description provided for @chartSemanticsGain.
+  ///
+  /// In es, this message translates to:
+  /// **'Ganancia por precio {range}: {amount}, {percent}'**
+  String chartSemanticsGain(String range, String amount, String percent);
 }
 
 class _AppLocalizationsDelegate

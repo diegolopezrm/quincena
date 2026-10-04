@@ -1347,5 +1347,19 @@
   "cardCreditLeft": "{amount} credit left",
   "cardCreditLeftOf": "{left} of {limit} credit left",
   "groupCrypto": "Crypto",
-  "cryptoPerformanceRow": "Performance and gains"
+  "cryptoPerformanceRow": "Performance and gains",
+  "portfolioSources": "Manage sources",
+  "binanceRowOff": "Not connected · read only, never moves funds",
+  "binanceCardManualBody": "Your Binance balances are entered by hand. Connect it so they update by themselves.",
+  "portfolioSourceManual": "Entered by hand: doesn't update by itself",
+  "portfolioSourceBinance": "Connected to Binance · read {when}",
+  "portfolioSourceBinanceNever": "Connected to Binance: updates by itself",
+  "portfolioSourceWallet": "By public address · read {when}",
+  "portfolioSourceWalletNever": "By public address: updates by itself",
+  "chartNow": "Now",
+  "chartZero": "0 = where the period started",
+  "chartPointGain": "{when}: {amount} since the start",
+  "chartPointValue": "{when}: worth {amount}",
+  "chartTouchHint": "Touch the line and slide your finger to see each moment.",
+  "chartSemanticsGain": "Gain from prices {range}: {amount}, {percent}"
 }

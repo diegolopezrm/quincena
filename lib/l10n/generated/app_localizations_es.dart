@@ -5226,4 +5226,60 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get cryptoPerformanceRow => 'Rendimiento y ganancia';
+
+  @override
+  String get portfolioSources => 'Gestionar fuentes';
+
+  @override
+  String get binanceRowOff => 'Sin conectar · solo lectura, nunca mueve fondos';
+
+  @override
+  String get binanceCardManualBody =>
+      'Tus saldos de Binance están anotados a mano. Conéctala para que se actualicen solos.';
+
+  @override
+  String get portfolioSourceManual => 'Anotado a mano: no se actualiza solo';
+
+  @override
+  String portfolioSourceBinance(String when) {
+    return 'Conectada a Binance · leída $when';
+  }
+
+  @override
+  String get portfolioSourceBinanceNever =>
+      'Conectada a Binance: se actualiza sola';
+
+  @override
+  String portfolioSourceWallet(String when) {
+    return 'Por dirección pública · leída $when';
+  }
+
+  @override
+  String get portfolioSourceWalletNever =>
+      'Por dirección pública: se actualiza sola';
+
+  @override
+  String get chartNow => 'Ahora';
+
+  @override
+  String get chartZero => '0 = como empezó el periodo';
+
+  @override
+  String chartPointGain(String when, String amount) {
+    return '$when: $amount desde el inicio';
+  }
+
+  @override
+  String chartPointValue(String when, String amount) {
+    return '$when: valía $amount';
+  }
+
+  @override
+  String get chartTouchHint =>
+      'Toca la línea y desliza el dedo para ver cada momento.';
+
+  @override
+  String chartSemanticsGain(String range, String amount, String percent) {
+    return 'Ganancia por precio $range: $amount, $percent';
+  }
 }

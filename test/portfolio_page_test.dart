@@ -4,11 +4,14 @@
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show SemanticsNode;
+import 'package:flutter/semantics.dart' show SemanticsAction;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
+import 'package:quincena/format/dates.dart';
 import 'package:quincena/l10n/l10n.dart';
 import 'package:quincena/money/asset.dart';
 import 'package:quincena/money/money.dart';
@@ -21,6 +24,7 @@ import 'package:quincena/store/store.dart';
 import 'package:quincena/theme/theme.dart';
 import 'package:quincena/ui/icons.dart';
 import 'package:quincena/ui/kit.dart';
+import 'package:quincena/ui/own/portfolio_chart.dart';
 import 'package:quincena/ui/own/portfolio_page.dart';
 import 'package:quincena/ui/own/position_panel.dart';
 
@@ -76,13 +80,15 @@ class OfflineMarket extends DownMarket {
 }
 
 /// The Cripto page over 0,01 BTC bought for 3.000.000, 500 USDT with no
-/// purchase price and some PEPE that Binance has no price for.
+/// purchase price and some PEPE that Binance has no price for, all written
+/// by hand but, with [syncedTether], the tether.
 Future<OwnController> openCrypto(
   WidgetTester tester,
   MarketData market, {
   double textScale = 1,
   bool reward = false,
   Asset base = Asset.cop,
+  bool syncedTether = false,
 }) async {
   tester.view.physicalSize = const Size(1080, 2400);
   tester.view.devicePixelRatio = 3;
@@ -140,6 +146,7 @@ Future<OwnController> openCrypto(
       opening: Decimal.fromInt(500),
       institution: 'Binance',
       spendable: false,
+      syncRef: syncedTether ? 'binance:USDT' : null,
     );
     await store.addAccount(
       name: 'Pepe',
@@ -402,5 +409,149 @@ void main() {
     await tester.tap(find.text('7 d'));
     await settle(tester);
     expect(find.text(prices), findsOneWidget);
+  });
+  testWidgets('the chart and the coins come before where they are read from', (
+    tester,
+  ) async {
+    await openCrypto(tester, CandleMarket());
+    // Tall enough for the whole page at once.
+    tester.view.physicalSize = const Size(1080, 9000);
+    await settle(tester);
+
+    double top(String text) => tester.getTopLeft(find.text(text).first).dy;
+    expect(top('Rendimiento'), lessThan(top('BINANCE')));
+    expect(top('BINANCE'), lessThan(top('METAMASK')));
+    expect(top('METAMASK'), lessThan(top('DISTRIBUCIÓN')));
+    expect(top('DISTRIBUCIÓN'), lessThan(top('GESTIONAR FUENTES')));
+    expect(top('GESTIONAR FUENTES'), lessThan(top('Billeteras propias')));
+    expect(
+      top('Billeteras propias'),
+      lessThan(
+        top(
+          'Precios de mercado de Binance, que cambian a cada '
+          'momento. Quincena no da asesoría de inversión.',
+        ),
+      ),
+    );
+    // Among the sources, no list of promises: Binance's own page has it.
+    expect(find.text('No permite retiros'), findsNothing);
+  });
+
+  testWidgets('a balance written by hand says so, and connecting Binance '
+      'says why', (tester) async {
+    await openCrypto(tester, CandleMarket());
+    tester.view.physicalSize = const Size(1080, 9000);
+    await settle(tester);
+
+    // Once for each place, as every coin in it was written by hand.
+    expect(find.text('Anotado a mano: no se actualiza solo'), findsNWidgets(2));
+    expect(
+      find.text(
+        'Tus saldos de Binance están anotados a mano. Conéctala para que se '
+        'actualicen solos.',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('coins of one place read different ways each say their own', (
+    tester,
+  ) async {
+    await openCrypto(tester, CandleMarket(), syncedTether: true);
+    tester.view.physicalSize = const Size(1080, 9000);
+    await settle(tester);
+
+    final String text = screen(tester);
+    // Binance holds a coin kept by hand and one it reads: each says so.
+    expect(
+      text,
+      contains(
+        'Bitcoin\n0,01 BTC · +3,09 % 24 h\nAnotado a mano: no se '
+        'actualiza solo',
+      ),
+    );
+    expect(text, contains('500 USDT\nConectada a Binance: se actualiza sola'));
+    // MetaMask's one coin says it once, for the place.
+    expect(text, contains('Anotado a mano: no se actualiza solo\nPEPE'));
+    expect(find.text('Anotado a mano: no se actualiza solo'), findsNWidgets(2));
+  });
+
+  testWidgets('dragging along the chart shows each moment and what it was, '
+      'and letting go brings the range back', (tester) async {
+    await openCrypto(tester, CandleMarket());
+    const String hint =
+        'Toca la línea y desliza el dedo para ver cada momento.';
+    expect(find.text(hint), findsOneWidget);
+    expect(find.text('Ahora'), findsOneWidget);
+    // Zero is drawn while the chart shows what prices made.
+    expect(find.text('0 = como empezó el periodo'), findsOneWidget);
+    // A week of hourly closes: the first one, 167 hours ago.
+    final DateTime start = _now.subtract(const Duration(hours: 167));
+    expect(find.text(dayShortMonth(start)), findsOneWidget);
+
+    final Rect line = tester.getRect(
+      find
+          .descendant(
+            of: find.byType(PortfolioChart),
+            matching: find.byType(CustomPaint),
+          )
+          .first,
+    );
+    final TestGesture finger = await tester.startGesture(
+      line.centerLeft + const Offset(0.4, 0),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(
+      screen(tester),
+      contains('${dayAndTime(start)}: \$0 desde el inicio'),
+    );
+    for (var i = 0; i < 10; i++) {
+      await finger.moveBy(Offset(line.width / 10, 0));
+      await tester.pump();
+    }
+    // The end of the line: what prices made over the week.
+    expect(
+      screen(tester),
+      contains('${dayAndTime(_now)}: +\$80.000 desde el inicio'),
+    );
+    expect(screen(tester), isNot(contains('en 7 días')));
+
+    await finger.up();
+    await settle(tester);
+    expect(screen(tester), contains('+\$80.000 (+1,35 %) en 7 días'));
+    expect(find.textContaining('desde el inicio'), findsNothing);
+    // Tried once, the hint goes.
+    expect(find.text(hint), findsNothing);
+
+    // The value, at the first moment: the bitcoin and the tether then.
+    await tester.tap(find.text('Valor'));
+    await settle(tester);
+    expect(find.text('0 = como empezó el periodo'), findsNothing);
+    final TestGesture again = await tester.startGesture(
+      line.centerLeft + const Offset(0.4, 0),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(screen(tester), contains('${dayAndTime(start)}: valía \$5.920.000'));
+    await again.up();
+    await settle(tester);
+  });
+
+  testWidgets('a screen reader steps through the chart\'s moments', (
+    tester,
+  ) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    await openCrypto(tester, CandleMarket());
+    final SemanticsNode node = tester.getSemantics(find.byType(PortfolioChart));
+    expect(node.label, 'Ganancia por precio en 7 días: +\$80.000, +1,35 %');
+    expect(node.value, '${dayAndTime(_now)}: +\$80.000 desde el inicio');
+
+    node.owner!.performAction(node.id, SemanticsAction.decrease);
+    await settle(tester);
+    final DateTime hourBefore = _now.subtract(const Duration(hours: 1));
+    expect(
+      tester.getSemantics(find.byType(PortfolioChart)).value,
+      startsWith('${dayAndTime(hourBefore)}: +\$'),
+    );
+    semantics.dispose();
   });
 }

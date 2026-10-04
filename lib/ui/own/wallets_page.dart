@@ -12,9 +12,10 @@ import '../kit.dart';
 import 'look.dart';
 import 'portfolio_page.dart';
 
-/// On the crypto page: the wallets followed by address, a tap away.
-class WalletsCard extends StatelessWidget {
-  const WalletsCard({super.key, required this.own});
+/// Among the crypto page's sources: the wallets followed by address, a
+/// tap away.
+class WalletsRow extends StatelessWidget {
+  const WalletsRow({super.key, required this.own});
 
   final OwnController own;
 
@@ -25,64 +26,53 @@ class WalletsCard extends StatelessWidget {
       final AppLocalizations l = context.l10n;
       final WalletLink link = own.wallets;
       final DateTime? at = link.syncedAt;
-      return Material(
-        color: context.colors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: context.colors.line),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (BuildContext context) => WalletsPage(own: own),
-            ),
+      return InkWell(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (BuildContext context) => WalletsPage(own: own),
           ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-            child: Row(
-              children: <Widget>[
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: context.colors.brandSoft,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Glyph.vault,
-                    size: 20,
-                    color: context.colors.brand,
-                  ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: <Widget>[
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: context.colors.brandSoft,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(l.walletsTitle, style: context.type.titleSmall),
-                      Text(
-                        link.wallets.isEmpty || at == null
-                            ? l.walletsCardBody
-                            : l.walletsSyncedAt(dayAndTime(at)),
-                        style: context.type.bodySmall,
-                      ),
-                    ],
-                  ),
+                child: Icon(Glyph.vault, size: 20, color: context.colors.brand),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(l.walletsTitle, style: context.type.titleSmall),
+                    Text(
+                      link.wallets.isEmpty || at == null
+                          ? l.walletsCardBody
+                          : l.walletsSyncedAt(dayAndTime(at)),
+                      style: context.type.bodySmall,
+                    ),
+                  ],
                 ),
-                if (link.syncing)
-                  const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                else
-                  Icon(
-                    Glyph.caretRight,
-                    size: 18,
-                    color: context.colors.inkFaint,
-                  ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 6),
+              if (link.syncing)
+                const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                Icon(
+                  Glyph.caretRight,
+                  size: 18,
+                  color: context.colors.inkFaint,
+                ),
+            ],
           ),
         ),
       );

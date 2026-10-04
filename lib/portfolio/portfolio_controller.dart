@@ -25,6 +25,7 @@ class PortfolioController extends ChangeNotifier {
     MarketData? market,
     this.every = const Duration(seconds: 30),
   }) : _market = market ?? MarketData() {
+    _held = _heldSignature();
     own.addListener(_ownChanged);
   }
 
@@ -106,6 +107,15 @@ class PortfolioController extends ChangeNotifier {
     return (moved: moved, change: change);
   }
 
+  /// Whether the chart of [range] drew every coin with a price that moves:
+  /// one it could not read would draw as standing still.
+  bool drewAll(ChartRange range) {
+    final Portfolio? p = portfolio;
+    final Set<String> drawn = _drawn[range] ?? const <String>{};
+    return p == null ||
+        p.priced.every((Holding h) => h.pegged || drawn.contains(h.asset.code));
+  }
+
   void _ownChanged() {
     _portfolio = null;
     // Movements change what was held, so every chart has to be drawn again;
@@ -113,8 +123,15 @@ class PortfolioController extends ChangeNotifier {
     final int held = _heldSignature();
     if (held != _held) {
       _held = held;
+      // Those on a screen now are drawn again at once.
+      final List<ChartRange> shown = _charts.keys.toList();
       _charts.clear();
       _chartedAt.clear();
+      if (_watchers > 0) {
+        for (final ChartRange range in shown) {
+          unawaited(loadChart(range));
+        }
+      }
     }
     // A coin just added is priced now, not at the next tick.
     if (_watchers > 0 && !_pricing && _missingPrices()) unawaited(refresh());
