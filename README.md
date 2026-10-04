@@ -83,7 +83,7 @@ official TRM for dollars and Binance's prices for crypto.
 
 Payments reach Quincena without anyone typing them.
 
-- **iPhone.** The app adds a "Record a movement" action to Shortcuts. An
+- **iPhone.** The app adds a "Record a transaction" action to Shortcuts. An
   automation on Wallet hands it each Apple Pay payment, one on Message the
   bank's texts and, from iOS 27, one on Notification the banks' apps. It runs
   without opening Quincena.

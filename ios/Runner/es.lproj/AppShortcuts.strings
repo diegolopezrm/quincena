@@ -1,2 +1,2 @@
-"Record a movement in ${applicationName}" = "Registrar un movimiento en ${applicationName}";
+"Record a transaction in ${applicationName}" = "Registrar un movimiento en ${applicationName}";
 "Read a receipt in ${applicationName}" = "Leer un comprobante en ${applicationName}";

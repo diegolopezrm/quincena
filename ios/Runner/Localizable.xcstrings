@@ -41,17 +41,17 @@
         }
       }
     },
-    "Hands Quincena a payment or a bank's message. It waits in the inbox until you confirm it, or is recorded on its own when everything about it is clear." : {
+    "Hands Quincena a payment or a bank's message. It waits in Needs review until you record it, or is recorded on its own when everything about it is clear." : {
       "localizations" : {
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Le pasa a Quincena un pago o un mensaje del banco. Queda en Por revisar hasta que lo confirmes, o se registra solo cuando todo está claro."
+            "value" : "Le pasa a Quincena un pago o un mensaje del banco. Queda en Por revisar hasta que lo registres, o se registra solo cuando todo está claro."
           }
         }
       }
     },
-    "It is waiting in Quincena's inbox." : {
+    "It's waiting in Quincena, in Needs review." : {
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -121,12 +121,12 @@
         }
       }
     },
-    "Reads screenshots, photos, PDFs or texts of payments on the device and leaves them in Quincena's inbox to confirm." : {
+    "Reads screenshots, photos, PDFs or texts of payments on the device and leaves them in Needs review for you to record." : {
       "localizations" : {
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lee en el teléfono capturas, fotos, PDF o textos de pagos y los deja en Por revisar de Quincena para que los confirmes."
+            "value" : "Lee en el teléfono capturas, fotos, PDF o textos de pagos y los deja en Por revisar de Quincena para que los registres."
           }
         }
       }
@@ -161,7 +161,7 @@
         }
       }
     },
-    "Record a movement" : {
+    "Record a transaction" : {
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -241,7 +241,7 @@
         }
       }
     },
-    "They are waiting in Quincena's inbox." : {
+    "They're waiting in Quincena, in Needs review." : {
       "localizations" : {
         "es" : {
           "stringUnit" : {

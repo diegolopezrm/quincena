@@ -143,7 +143,7 @@ you can touch. Your finances stay on your phone.
 
 **Description:**
 
-> Quincena tells you how much money is free until your next payday, and
+> Quincena tells you how much you can spend until your next payday, and
 > helps you decide before you spend it.
 >
 > YOUR ACCOUNTS, IN ANY CURRENCY
@@ -151,48 +151,48 @@ you can touch. Your finances stay on your phone.
 > with the total converted at official and market rates.
 >
 > ASK YOUR MONEY
-> "Where did my money go this month?", "How much is free until payday?"
-> Every answer arrives as an interface: charts, lists and plans you can
-> touch, with figures worked out on your phone.
+> "Where did my money go this month?", "How much can I spend before I get
+> paid?" Every answer arrives as an interface: charts, lists and plans you
+> can touch, with figures calculated on your phone.
 >
 > PAYMENTS RECORD THEMSELVES
 > Ready shortcuts for your banks' notifications, texts, Apple Pay and
-> receipt screenshots. What is unclear waits in "To review", and repeats
-> are recognized.
+> receipt screenshots. What is unclear waits in "Needs review", and
+> duplicates are recognized.
 >
 > STATEMENTS
 > Import your bank or card statement as CSV, Excel or PDF. It is read on
-> your phone, and you review every movement before it is saved.
+> your phone, and you review every transaction before it is saved.
 >
 > DECIDE BEFORE YOU SPEND
 > "Can I afford it?" shows the lowest your money would get until payday if
 > you buy today or wait; you see the next 30 days with the tight ones
-> marked, and the close of each fortnight in three cards. Every figure
+> marked, and a summary of each pay period in three cards. Every figure
 > shows where it comes from. They're estimates from what's scheduled, never
 > a guarantee.
 >
-> PLAN YOUR FORTNIGHT
+> PLAN YOUR PAYCHECK
 > Split what you're paid into envelopes for the day to day, your goals and
 > whatever you want to set aside, without moving money. See when you'll
-> reach each goal, how many days your cushion covers, and what would
+> reach each goal, how many days your emergency fund covers, and what would
 > happen if you saved more, a charge went up or your pay came late. Keep
 > what you want for later and see what buying it would do to your goals.
 >
 > YOUR COMMITMENTS, IN SIGHT
-> Your subscriptions and fixed payments with their next renewal, the end of
+> Your subscriptions and recurring payments with their next renewal, the end of
 > each free trial, price changes and a reminder before they charge; see
 > what pausing one would save, and the app never cancels anything for you.
-> Track instalment purchases with their schedule, what's left and what they
-> cost against paying at once, keeping what you know apart from what's
+> Track installment purchases with their schedule, what's left and what they
+> cost compared with paying up front, keeping what you know apart from what's
 > estimated. A charge detective shows repeated payments, price increases
 > and unusual charges, with the evidence, and deletes nothing.
 >
 > FOR REAL LIFE
 > Split a bill with anyone, no app needed on their side: your part is your
 > spending, and the rest is money you're owed, which doesn't count as
-> available. If your income changes from month to month, keep collected,
+> money to spend. If your income changes from month to month, keep collected,
 > billed and estimated apart, choose what counts ahead and keep a reserve.
-> On a trip, keep a budget in the local currency with your own movements,
+> On a trip, keep a budget in the local currency with your own transactions,
 > each day's rate and the bank's real charge.
 >
 > CRYPTO, LIKE A PRO
@@ -202,7 +202,7 @@ you can touch. Your finances stay on your phone.
 > public address.
 >
 > PRIVATE BY DESIGN
-> Your accounts and movements are kept only on your phone. No ads, no
+> Your accounts and transactions are kept only on your phone. No ads, no
 > selling of data. Export everything whenever you want. If you use Quincena
 > on more than one device, changes travel in an encrypted file only your
 > devices can open.
@@ -222,7 +222,7 @@ serving the request. Published on 2 October 2026:
 | User Content: Other user content (the question's text, a statement read with Gemini) | Yes, when the person asks | App Functionality | No | No |
 | Location: Precise location | Yes, only with the option on | App Functionality (finding the shop of a payment) | No | No |
 
-Everything else (accounts, movements, contacts, health, browsing,
+Everything else (accounts, transactions, contacts, health, browsing,
 diagnostics, usage data) is not collected: it stays on the device or is
 not handled at all. No tracking, no ads, no third-party analytics.
 
@@ -238,7 +238,7 @@ only about the person's money, through tools, inside the app.
 
 ### Review notes
 
-> Quincena keeps every account and movement on the device. To try it
+> Quincena keeps every account and transaction on the device. To try it
 > without entering anything, tap "Con datos de ejemplo" on the first
 > screen. "Pregúntale a tu plata" uses Gemini through Firebase AI Logic,
 > protected by App Check; questions are limited to 30 a day per person.
@@ -276,7 +276,7 @@ which on Android reads:
 > PAYMENTS RECORD THEMSELVES
 > If you allow it, Quincena reads your banks' and wallets' notifications,
 > only those with an amount, never security codes. What is unclear waits
-> in "To review".
+> in "Needs review".
 
 ### Data safety
 
@@ -393,8 +393,8 @@ can touch.
 **What's new** (en):
 
 > What you can spend until payday now comes first, with the sum under it,
-> and what is coming day by day. Credit cards show what you owe, "To
-> review" asks for one decision per movement and whether money that
+> and what is coming day by day. Credit cards show what you owe, "Needs
+> review" asks for one decision per transaction and whether money that
 > arrives comes from another account of yours. Answers start with their
 > conclusion, and you can report a Gemini answer. There is a home screen
 > widget, which can hide amounts, and backups are encrypted with a code of

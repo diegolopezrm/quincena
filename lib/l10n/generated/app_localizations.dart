@@ -1052,12 +1052,6 @@ abstract class AppLocalizations {
   /// **'Tus cuentas'**
   String get yourAccounts;
 
-  /// No description provided for @accountMovements.
-  ///
-  /// In es, this message translates to:
-  /// **'Movimientos de la cuenta'**
-  String get accountMovements;
-
   /// No description provided for @balanceToday.
   ///
   /// In es, this message translates to:
@@ -3113,13 +3107,13 @@ abstract class AppLocalizations {
   /// No description provided for @rulesBody.
   ///
   /// In es, this message translates to:
-  /// **'Se crean cuando confirmas algo en Por revisar. Una regla solo cambia lo que llegue después: lo ya registrado se queda como está.'**
+  /// **'Se crean cuando registras algo en Por revisar. Una regla solo cambia lo que llegue después: lo ya registrado se queda como está.'**
   String get rulesBody;
 
   /// No description provided for @rulesEmpty.
   ///
   /// In es, this message translates to:
-  /// **'Todavía no hay reglas. Aparecen cuando confirmas tus primeros movimientos.'**
+  /// **'Todavía no hay reglas. Aparecen cuando registras tus primeros movimientos.'**
   String get rulesEmpty;
 
   /// No description provided for @rulesMerchants.
@@ -3371,7 +3365,7 @@ abstract class AppLocalizations {
   /// No description provided for @captureImagesAndroid.
   ///
   /// In es, this message translates to:
-  /// **'Comparte con Quincena una captura, una foto, un PDF o un texto desde cualquier app, o elígelos en Por revisar. Se leen en el teléfono y quedan para que los confirmes.'**
+  /// **'Comparte con Quincena una captura, una foto, un PDF o un texto desde cualquier app, o elígelos en Por revisar. Se leen en el teléfono y quedan ahí para que los registres.'**
   String get captureImagesAndroid;
 
   /// No description provided for @captureImagesDesktop.
@@ -3686,23 +3680,11 @@ abstract class AppLocalizations {
   /// **'Precios de mercado de Binance, que cambian a cada momento. Quincena no da asesoría de inversión.'**
   String get portfolioDisclaimer;
 
-  /// No description provided for @portfolioOpen.
-  ///
-  /// In es, this message translates to:
-  /// **'Ver cripto'**
-  String get portfolioOpen;
-
   /// No description provided for @portfolioEmpty.
   ///
   /// In es, this message translates to:
   /// **'Aún no tienes cripto. Agrega una billetera o conecta Binance.'**
   String get portfolioEmpty;
-
-  /// No description provided for @holdingQuantity.
-  ///
-  /// In es, this message translates to:
-  /// **'Tienes'**
-  String get holdingQuantity;
 
   /// No description provided for @holdingPrice.
   ///
@@ -3805,12 +3787,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'En Binance P2P, en otro exchange o en efectivo. Si sale de una de tus cuentas, elígela y su saldo también cambia.'**
   String get tradeOutsideHelp;
-
-  /// No description provided for @tradeCurrency.
-  ///
-  /// In es, this message translates to:
-  /// **'Moneda'**
-  String get tradeCurrency;
 
   /// No description provided for @tradePriceEach.
   ///
@@ -7672,7 +7648,7 @@ abstract class AppLocalizations {
   /// No description provided for @freeExplainAssumePending.
   ///
   /// In es, this message translates to:
-  /// **'{count, plural, =1{No cuenta 1 movimiento que espera en Por revisar. Cuando lo confirmes, la cifra puede cambiar.} other{No cuenta {count} movimientos que esperan en Por revisar. Cuando los confirmes, la cifra puede cambiar.}}'**
+  /// **'{count, plural, =1{No cuenta 1 movimiento que espera en Por revisar. Cuando lo registres, la cifra puede cambiar.} other{No cuenta {count} movimientos que esperan en Por revisar. Cuando los registres, la cifra puede cambiar.}}'**
   String freeExplainAssumePending(int count);
 
   /// No description provided for @paydayArrivedAmount.

@@ -552,6 +552,14 @@ final List<Scene> scenes = <Scene>[
   }),
   Scene('16-ingles', data: fullAccount, english: true, (Tour t) async {
     await t.page('home', most: 3);
+    if (find.text('Pay-period summary').evaluate().isNotEmpty) {
+      await t.visit('Pay-period summary', 'pay-period-summary');
+    }
+    await t.tapTip('Needs review');
+    await t.page('needs-review', most: 2);
+    await t.back();
+    await t.tap('Transactions');
+    await t.shot('transactions');
     await t.tap('Accounts');
     await t.page('accounts', most: 3);
     await t.tap('Plan');
