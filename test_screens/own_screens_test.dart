@@ -61,6 +61,27 @@ void main() {
         now: () => screensNow,
       ),
     );
+    // Gone before its store closes, so nothing reads a closed database.
+    addTearDown(() => tester.pumpWidget(const SizedBox()));
+    await settle(tester);
+  }
+
+  // Scrolls the page on top until [finder] is built and on screen: the
+  // lists build lazily, so it may not exist yet.
+  Future<void> reach(WidgetTester tester, Finder finder) async {
+    if (finder.evaluate().isEmpty) {
+      Finder? page;
+      for (final Element e in find.byType(Scrollable).evaluate()) {
+        final ScrollableState s =
+            (e as StatefulElement).state as ScrollableState;
+        final RenderBox? box = e.renderObject as RenderBox?;
+        if (s.position.axis != Axis.vertical) continue;
+        if (box == null || !box.hasSize || box.size.height < 240) continue;
+        page = find.byWidget(s.widget);
+      }
+      await tester.scrollUntilVisible(finder, 240, scrollable: page);
+    }
+    await tester.ensureVisible(finder.last);
     await settle(tester);
   }
 
@@ -166,9 +187,11 @@ void main() {
     await tester.tap(find.byTooltip('Ajustes'));
     await settle(tester);
     await shoot('settings');
+    await reach(tester, find.text('Captura automática'));
     await tester.tap(find.text('Captura automática'));
     await settle(tester);
     await shoot('capture');
+    await reach(tester, find.text('Reglas aprendidas'));
     await tester.tap(find.text('Reglas aprendidas'));
     await settle(tester);
     await shoot('rules');
@@ -223,19 +246,22 @@ void main() {
     await shoot('coming');
     tester.state<NavigatorState>(find.byType(Navigator).first).pop();
     await settle(tester);
-    await tester.tap(find.text('¿Me alcanza?'));
+    // ¿Me alcanza? starts on Inicio, with the price at hand.
+    await reach(tester, find.widgetWithText(TextField, 'Precio'));
+    await tester.enterText(find.widgetWithText(TextField, 'Precio'), '350000');
+    await tester.tap(find.text('Ver'));
     await settle(tester);
-    await tester.enterText(
-      find.widgetWithText(TextField, '¿Cuánto cuesta?'),
-      '350.000',
-    );
     await tester.enterText(
       find.widgetWithText(TextField, '¿Qué es? (opcional)'),
       'Audífonos',
     );
+    FocusManager.instance.primaryFocus?.unfocus();
     await settle(tester);
     await shoot('buy');
-    await tester.tap(find.byTooltip('Cierre de la quincena'));
+    tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+    await settle(tester);
+    await reach(tester, find.text('Cierre de la quincena'));
+    await tester.tap(find.text('Cierre de la quincena'));
     await settle(tester);
     await shoot('close');
   });

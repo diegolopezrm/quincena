@@ -13,15 +13,16 @@ sessions Gemini answered for real.
   <img src="docs/screens/inicio.png" width="24%" alt="Home screen: what you can spend until payday, and the questions to ask">
   <img src="docs/screens/en-que-se-fue.png" width="24%" alt="Where September's money went: what was spent, the change against August and a donut chart by category">
   <img src="docs/screens/meta-cartagena.png" width="24%" alt="The Cartagena goal in dark mode, with a slider for what to set aside each month and the arrival date it gives">
-  <img src="docs/screens/suscripciones.png" width="24%" alt="Six subscriptions with a switch on each, the two unused ones switched off">
+  <img src="docs/screens/suscripciones.png" width="24%" alt="Six subscriptions with a box to tick on each, the two unused for over a month marked">
 </p>
 
 Ask where September's money went and you get a donut chart, the two things
 that moved and the five largest payments. Ask whether you can afford
 Cartagena in December and you get a goal with a slider: drag it and the
 arrival date recalculates on the device, with no new message from the agent.
-Ask what subscriptions you have and you get a list with a switch on each row
-and a footer that says what cancelling the switched-off ones would save.
+Ask what subscriptions you have and you get a list with a box on each row and
+a footer that says what cancelling the ticked ones would save; you cancel them
+yourself and say so, because the app never cancels anything.
 
 None of those screens is in the source. An agent composes each one at runtime
 from a catalog of components, with [genui](https://pub.dev/packages/genui)
@@ -48,7 +49,7 @@ outside the app sees it, checked against the Dart on every test run.
 **Interfaces that keep working after the agent is done.** The goal planner's
 slider writes to the data model, and two catalog functions read from it to say
 when the goal is reached and whether that is in time. The subscription list is
-a template repeated over the data, each row's switch writes to its own entry,
+a template repeated over the data, each row's box writes to its own entry,
 and a function over the whole list totals the savings. A form validates with
 rules the agent wrote, and the message of the first failing rule shows under
 the field.
@@ -74,8 +75,8 @@ database on the device. Totals convert to the currency you pick, with the
 official TRM for dollars and Binance's prices for crypto.
 
 <p align="center">
-  <img src="docs/screens/mis-cuentas.png" width="24%" alt="Home with your own accounts: what you can spend until payday, two transactions waiting for review, and the accounts">
-  <img src="docs/screens/por-revisar.png" width="24%" alt="Por revisar: a purchase the alert named no shop for, matched to Éxito Laureles 6 meters away; a transfer from Nequi; and a Spotify charge set apart as a possible repeat">
+  <img src="docs/screens/mis-cuentas.png" width="24%" alt="Cuentas with your own accounts: net worth, the everyday accounts and what is owed on cards, then each account by kind">
+  <img src="docs/screens/por-revisar.png" width="24%" alt="Por revisar: ready to record, money from Laura on Nequi; needing information, a purchase named Éxito Laureles by its location with no account yet; and a Spotify charge set apart as a possible repeat">
   <img src="docs/screens/captura.png" width="24%" alt="Automatic capture settings: notification access on Android, recording what is clear on its own, and the location of payments">
 </p>
 

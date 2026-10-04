@@ -646,7 +646,9 @@ avisos de meta existan.
 
 ### 22. Inicio y Cuentas en orden, nada tapado
 
-**Estado:** en construcción.
+**Estado:** construida, build 19 (1.1.0). La tarjeta de Inicio bajó de unos
+390 a 324 pt, no a 265: "¿De dónde sale?" necesita 48 pt de toque junto a la
+etiqueta, y bajarla más pide moverlo; queda a decisión de Diego.
 
 - **Botón de agregar:**
   - Se oculta al bajar.
@@ -667,8 +669,7 @@ avisos de meta existan.
 
 ### 23. Por revisar e importar con menos lectura
 
-**Estado:** importar construido, build 19 (1.1.0). Por revisar, en
-construcción.
+**Estado:** construida, build 19 (1.1.0).
 
 - **Importar extracto:**
   - Los repetidos no se marcan solos.
@@ -685,7 +686,9 @@ construcción.
 
 ### 24. Inglés, accesibilidad y capturas
 
-**Estado:** pendiente.
+**Estado:** construida, build 19 (1.1.0). El atajo de iOS cambió de nombre
+("Record a transaction") y falta probarlo en un dispositivo; lo demás que
+pide un teléfono real está en [`QUALITY.md`](QUALITY.md).
 
 - **El inglés:**
   - Sigue el glosario también en el atajo de iOS, la web y las fichas.

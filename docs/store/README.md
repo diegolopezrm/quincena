@@ -383,23 +383,27 @@ can touch.
 **What's new** (es):
 
 > Ahora ves en grande lo que puedes gastar hasta el pago, con su cuenta
-> debajo, y lo que viene día a día. Las tarjetas de crédito aparecen como lo
-> que debes, «Por revisar» pide una sola decisión por movimiento y pregunta
-> si una plata que llega viene de otra cuenta tuya. Las respuestas empiezan
-> por la conclusión, y puedes reportar una respuesta de Gemini. Hay un
-> widget para la pantalla de inicio, que puede ocultar los montos, y los
-> respaldos salen cifrados con un código tuyo.
+> debajo: lo que tienes en tus cuentas de uso diario, lo que debes en
+> tarjetas y los pagos que vienen. El patrimonio cuenta también lo que te
+> deben y lo que debes por fuera de tus cuentas. «Por revisar» separa lo que
+> está listo de lo que necesita información, y siempre deja deshacer. Las
+> metas dicen cuánto falta al mes: el control simula y «Guardar este plan»
+> guarda. Importar un extracto ya no marca los repetidos y entiende el pago
+> de la tarjeta. Hay un widget para la pantalla de inicio, que puede ocultar
+> los montos, y los respaldos salen cifrados con un código tuyo.
 
 **What's new** (en):
 
-> What you can spend until payday now comes first, with the sum under it,
-> and what is coming day by day. Credit cards show what you owe, "Needs
-> review" asks for one decision per transaction and whether money that
-> arrives comes from another account of yours. Answers start with their
-> conclusion, and you can report a Gemini answer. There is a home screen
-> widget, which can hide amounts, and backups are encrypted with a code of
-> your own.
+> What you can spend until payday now comes first, with the sum under it:
+> what your everyday accounts hold, what you owe on cards and the payments
+> coming up. Net worth also counts what others owe you and what you owe
+> outside your accounts. "Needs review" keeps what is ready apart from what
+> needs information, and you can always undo. Goals say what is missing
+> each month: the slider simulates and "Save this plan" saves it. Importing
+> a statement no longer checks repeats and understands a card payment.
+> There is a home screen widget, which can hide amounts, and backups are
+> encrypted with a code of your own.
 
-The screenshots are rendered again from `test_screens/store_screens_test.dart`
-before submitting: the 1.0 ones in `screenshots/` are what the stores show
-today.
+The 1.1.0 screenshots in `screenshots/` were rendered on 4 October 2026
+from `test_screens/store_screens_test.dart`, with fixed prices so Spanish
+and English show the same figures.
