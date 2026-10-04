@@ -433,8 +433,9 @@ class StatementImporter {
 
   /// The balance the statement [all] ends on: the one printed after its
   /// last line, when every line prints one and each follows from the one
-  /// before it and the line's amount. Null otherwise, and for a card,
-  /// whose statement prints its debt its own way.
+  /// before it and the line's amount. Null otherwise; for a card, whose
+  /// statement prints its debt its own way; and when it ends before the
+  /// balance the person wrote, which is newer than it.
   static ClosingBalance? closing(Account account, List<ImportCandidate> all) {
     if (account.kind == AccountKind.card) return null;
     final List<StatementLine> lines = <StatementLine>[
@@ -459,7 +460,7 @@ class StatementImporter {
         : follows(newestFirst)
         ? newestFirst.last
         : null;
-    if (last == null) return null;
+    if (last == null || older(account, last.date)) return null;
     return (day: last.date, amount: last.balance!);
   }
 

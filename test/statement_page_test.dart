@@ -366,16 +366,21 @@ void main() {
       readTable(
         parseCsv(
           'Fecha;Descripción;Valor;Saldo\n'
-          '01/09/2026;COMPRA EN EXITO LAURELES;-45.900;954.100\n'
-          '02/09/2026;ABONO NOMINA DL SOFT;2.500.000;3.454.100\n',
+          '01/10/2026;COMPRA EN EXITO LAURELES;-45.900;954.100\n'
+          '02/10/2026;ABONO NOMINA DL SOFT;2.500.000;3.454.100\n',
         ),
       ),
     );
     expect(
-      find.text('Según el extracto, el 2 de septiembre tenías \$3.454.100.'),
+      find.text('Según el extracto, el 2 de octubre tenías \$3.454.100.'),
       findsOneWidget,
     );
-    expect(find.text('Quincena tendría \$0 ese día.'), findsOneWidget);
+    expect(find.text('Quincena tendría \$2.500.000 ese día.'), findsOneWidget);
+    expect(find.text('Mi saldo ya los incluye (recomendado)'), findsOneWidget);
+    expect(
+      find.text('Saldo de Bancolombia: \$0 → \$2.500.000'),
+      findsOneWidget,
+    );
     await tester.tap(find.text('Ajustar al saldo del extracto'));
     await settle(tester);
     // The statement decides: the question about older lines goes away.

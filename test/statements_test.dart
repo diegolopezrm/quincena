@@ -692,10 +692,30 @@ void main() {
             '02/09/2026;ABONO NOMINA;2.500.000;3.454.100\n'
             '01/09/2026;COMPRA EN EXITO LAURELES;-45.900;954.100\n';
         final StatementImporter importer = StatementImporter(store);
+        // A statement that ends before the balance the person wrote, on 2
+        // October, would take that balance back to September.
+        expect(
+          StatementImporter.closing(
+            bank,
+            await importer.prepare(bank, read(oldestFirst)),
+          ),
+          isNull,
+        );
+
+        // An account added in August, with what it had then.
+        final Account davivienda =
+            await QuincenaStore(
+              store.db,
+              now: () => DateTime(2026, 8, 1),
+            ).addAccount(
+              name: 'Davivienda',
+              kind: AccountKind.bank,
+              asset: Asset.cop,
+            );
         for (final String rows in <String>[oldestFirst, newestFirst]) {
           final ClosingBalance? end = StatementImporter.closing(
-            bank,
-            await importer.prepare(bank, read(rows)),
+            davivienda,
+            await importer.prepare(davivienda, read(rows)),
           );
           expect(end?.day, DateTime(2026, 9, 2));
           expect(end?.amount, d('3454100'));
@@ -703,9 +723,9 @@ void main() {
         // Balances that do not add up are not trusted.
         expect(
           StatementImporter.closing(
-            bank,
+            davivienda,
             await importer.prepare(
-              bank,
+              davivienda,
               read(
                 '01/09/2026;COMPRA;-45.900;954.100\n'
                 '02/09/2026;ABONO;2.500.000;9.999.999\n',
@@ -717,29 +737,29 @@ void main() {
 
         // A movement after the statement keeps counting on top of it.
         await store.addEntry(
-          accountId: bank.id,
+          accountId: davivienda.id,
           amount: d('100000'),
           kind: EntryKind.expense,
           date: DateTime(2026, 9, 20),
           payee: 'Arriendo',
         );
         final List<ImportCandidate> all = await importer.prepare(
-          bank,
+          davivienda,
           read(oldestFirst),
         );
         await importer.record(
-          bank,
+          davivienda,
           all,
           rule: BalanceRule.statement,
-          closing: StatementImporter.closing(bank, all),
+          closing: StatementImporter.closing(davivienda, all),
         );
         final Map<String, Money> onTheDay = balancesOf(
           await store.accounts(),
           await store.entries(),
           DateTime(2026, 9, 2),
         );
-        expect(onTheDay[bank.id]!.amount, d('3454100'));
-        expect(await balance(bank), d('3354100'));
+        expect(onTheDay[davivienda.id]!.amount, d('3454100'));
+        expect(await balance(davivienda), d('3354100'));
       });
     });
 
