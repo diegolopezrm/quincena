@@ -380,19 +380,23 @@ class ScriptedAgent {
                   'Yes: at ${pesos(goal.monthly)} a month you get there '
                       'before ${dayMonth(goal.deadline)}',
                 ),
-          'body': gap > 0
-              ? _t(
-                  'Hoy apartas ${pesos(goal.monthly)}: te faltan '
-                      '${pesos(gap)} al mes. $counted',
-                  'You set aside ${pesos(goal.monthly)} now, so you are '
-                      '${pesos(gap)} a month short. $counted',
-                )
-              : _t(
-                  'Para llegar $deadlineLabel bastan ${pesos(needed)} al '
-                      'mes. $counted',
-                  'To get there by $deadlineLabel, ${pesos(needed)} a month '
-                      'is enough. $counted',
-                ),
+          'body': switch (gap) {
+            > 0 => _t(
+              'Hoy apartas ${pesos(goal.monthly)}: te faltan '
+                  '${pesos(gap)} al mes. $counted',
+              'You set aside ${pesos(goal.monthly)} now, so you are '
+                  '${pesos(gap)} a month short. $counted',
+            ),
+            // The title has the amount and the date already.
+            0 => _t(
+              'Es justo lo que hace falta. $counted',
+              "That's exactly what it takes. $counted",
+            ),
+            _ => _t(
+              'Bastan ${pesos(needed)} al mes. $counted',
+              '${pesos(needed)} a month is enough. $counted',
+            ),
+          },
         }),
         _c('planner', 'GoalPlanner', {
           'name': goal.name,

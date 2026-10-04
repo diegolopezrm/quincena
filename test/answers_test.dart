@@ -193,6 +193,43 @@ void main() {
     expect(messages, isEmpty);
   });
 
+  testWidgets('a saved plan is where the next answer starts', (tester) async {
+    final Session session = await open(tester);
+    await ask(tester, session, ScriptedAgent.starters[1]);
+    final Finder use = find.text(r'Usar $600.000 al mes');
+    await tester.ensureVisible(use);
+    await settle(tester);
+    await tester.tap(use);
+    await settle(tester);
+    await tester.ensureVisible(find.text('Guardar este plan'));
+    await settle(tester);
+    await tester.tap(find.text('Guardar este plan'));
+    await settle(tester);
+    expect(
+      screen(tester),
+      contains(r'Tu plan: $600.000 al mes para Cartagena'),
+    );
+
+    await ask(tester, session, ScriptedAgent.starters[1]);
+    final String text = screen(tester);
+    expect(
+      text,
+      contains(r'Sí: con $600.000 al mes llegas antes del 20 de diciembre'),
+    );
+    // The title has the amount and the date: the body does not say them
+    // again.
+    expect(
+      text,
+      contains(
+        'Es justo lo que hace falta. Cuento 3 aportes: 16 de octubre, 16 de '
+        'noviembre y 16 de diciembre.',
+      ),
+    );
+    expect(text, isNot(contains('bastan')));
+    // On what it takes, there is no simulation and nothing to use.
+    expect(find.text(r'Usar $600.000 al mes'), findsNothing);
+  });
+
   testWidgets('switching a subscription off updates the savings', (
     tester,
   ) async {
