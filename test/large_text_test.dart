@@ -1,3 +1,4 @@
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,8 +7,11 @@ import 'package:intl/intl.dart';
 import 'package:quincena/agent/scripted_agent.dart';
 import 'package:quincena/app.dart';
 import 'package:quincena/session/session.dart';
+import 'package:quincena/store/database.dart';
+import 'package:quincena/store/store.dart';
 
 import 'fonts.dart';
+import 'own_flow_test.dart' show fakeRates, settle;
 
 /// A phone with the system text size at twice the default, which is as far
 /// as the accessibility settings of both platforms go.
@@ -37,6 +41,39 @@ void main() {
     await open(tester);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'the sample, with whose it is and the way to one\'s own, holds at twice '
+    'the text size',
+    (tester) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      tester.platformDispatcher.localesTestValue = const <Locale>[Locale('es')];
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      final QuincenaStore store = QuincenaStore(
+        QuincenaDatabase(NativeDatabase.memory()),
+      );
+      addTearDown(() => tester.runAsync(store.close));
+      // The app with somewhere to keep one's own accounts, opening on the
+      // sample as the web does.
+      await tester.pumpWidget(
+        QuincenaApp(store: store, startInDemo: true, fetcher: fakeRates()),
+      );
+      await settle(tester);
+      expect(
+        find.text('Estás viendo la cuenta de ejemplo de Valentina'),
+        findsOneWidget,
+      );
+      expect(find.text('Usar con mis cuentas'), findsOneWidget);
+      expect(find.text('¿De dónde sale?'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await settle(tester);
+    },
+  );
 
   for (var i = 0; i < ScriptedAgent.starters.length; i++) {
     testWidgets('answer ${i + 1} holds at twice the text size', (tester) async {

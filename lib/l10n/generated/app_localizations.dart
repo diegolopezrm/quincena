@@ -8117,6 +8117,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Cancelada'**
   String get subscriptionCancelled;
+
+  /// No description provided for @demoBannerTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Estás viendo la cuenta de ejemplo de {name}'**
+  String demoBannerTitle(String name);
+
+  /// No description provided for @demoBannerBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Con tus cuentas, Quincena te dice cuánto puedes gastar tú. Se guardan solo en este dispositivo.'**
+  String get demoBannerBody;
 }
 
 class _AppLocalizationsDelegate

@@ -265,9 +265,64 @@ void main() {
       await tester.tap(find.text('Con datos de ejemplo'));
       await settle(tester);
       expect(screen(tester), contains('Hola, Valentina'));
+      // On its home, whose account it is and the way to one's own.
+      expect(
+        screen(tester),
+        contains('Estás viendo la cuenta de ejemplo de Valentina'),
+      );
+      expect(find.text('Usar con mis cuentas'), findsOneWidget);
 
       await tester.tap(find.byTooltip('Ajustes'));
       await settle(tester);
+      expect(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.text('Usar con mis cuentas'),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'where the app opens on the sample, its notice leads to onboarding and '
+    'back',
+    (tester) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      tester.platformDispatcher.localesTestValue = const <Locale>[Locale('es')];
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+      final store = QuincenaStore(
+        QuincenaDatabase(NativeDatabase.memory()),
+        now: () => DateTime(2026, 10, 3, 10),
+      );
+      addTearDown(() => tester.runAsync(store.close));
+      // As the web does: no first screen, straight to the sample.
+      await tester.pumpWidget(
+        QuincenaApp(
+          store: store,
+          startInDemo: true,
+          fetcher: fakeRates(),
+          now: () => DateTime(2026, 10, 3, 10),
+        ),
+      );
+      await settle(tester);
+      expect(find.text('Con mis cuentas'), findsNothing);
+      expect(
+        screen(tester),
+        contains('Estás viendo la cuenta de ejemplo de Valentina'),
+      );
+
+      await tester.tap(find.text('Usar con mis cuentas'));
+      await settle(tester);
+      expect(find.text('Paso 1 de 3'), findsOneWidget);
+
+      // Backing out returns to the sample, not to a first screen the web
+      // never showed.
+      await tester.tap(find.byTooltip('Atrás'));
+      await settle(tester);
+      expect(find.text('Con mis cuentas'), findsNothing);
       expect(find.text('Usar con mis cuentas'), findsOneWidget);
     },
   );

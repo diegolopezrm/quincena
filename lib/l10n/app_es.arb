@@ -1641,5 +1641,8 @@
   "subscriptionSelect": "Seleccionar {name} para cancelar",
   "@subscriptionSelect": {"placeholders": {"name": {"type": "String"}}},
   "subscriptionToCancel": "Para cancelar",
-  "subscriptionCancelled": "Cancelada"
+  "subscriptionCancelled": "Cancelada",
+  "demoBannerTitle": "Estás viendo la cuenta de ejemplo de {name}",
+  "@demoBannerTitle": {"placeholders": {"name": {"type": "String"}}},
+  "demoBannerBody": "Con tus cuentas, Quincena te dice cuánto puedes gastar tú. Se guardan solo en este dispositivo."
 }

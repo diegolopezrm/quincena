@@ -115,17 +115,20 @@ class AppModeController extends ChangeNotifier {
     await _enterOwn();
   }
 
-  /// The person backed out of onboarding: back to the first screen.
-  void cancelOnboarding() => _set(AppMode.choosing);
+  /// The person backed out of onboarding: back to the first screen, or to
+  /// the sample where the app opens on it, as the web does.
+  void cancelOnboarding() =>
+      startInDemo ? unawaited(useDemo()) : _set(AppMode.choosing);
 
-  /// Everything was deleted: back to the first screen.
+  /// Everything was deleted: back to the first screen, or to the sample
+  /// where the app opens on it.
   Future<void> wiped() async {
     _leaveOwn();
     unawaited(HomeWidget.show(null));
     _hasOwn = false;
     appToday = DateTime(2026, 10, 1);
     format.baseCurrency = Asset.cop;
-    _set(AppMode.choosing);
+    _set(startInDemo ? AppMode.demo : AppMode.choosing);
   }
 
   Future<void> _enterOwn() async {

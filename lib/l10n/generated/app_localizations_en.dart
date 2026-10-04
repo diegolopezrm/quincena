@@ -5207,4 +5207,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get subscriptionCancelled => 'Canceled';
+
+  @override
+  String demoBannerTitle(String name) {
+    return 'You\'re looking at $name\'s sample account';
+  }
+
+  @override
+  String get demoBannerBody =>
+      'With your own accounts, Quincena tells you what you can spend. They stay on this device only.';
 }

@@ -1341,5 +1341,7 @@
   "cancelPickHint": "Check the ones you want to cancel to see how much you'd save",
   "subscriptionSelect": "Select {name} to cancel",
   "subscriptionToCancel": "To cancel",
-  "subscriptionCancelled": "Canceled"
+  "subscriptionCancelled": "Canceled",
+  "demoBannerTitle": "You're looking at {name}'s sample account",
+  "demoBannerBody": "With your own accounts, Quincena tells you what you can spend. They stay on this device only."
 }
