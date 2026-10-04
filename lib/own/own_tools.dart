@@ -106,14 +106,18 @@ Future<Map<String, Object?>> saveGoalPlanAnswer(
       'note': 'There is no savings goal yet.',
     };
   }
-  // The goal named, or the first: the one savings_goal answers about.
+  // The goal named, or the first: the one savings_goal answers about. A
+  // name that is exactly a goal's wins over one that is part of another's.
   final String wanted = normalize((args['goal'] as String?) ?? '');
   final SavingsGoal? goal = wanted.isEmpty
       ? goals.first
-      : goals.where((SavingsGoal g) {
-          final String n = normalize(g.name);
-          return n == wanted || n.contains(wanted) || wanted.contains(n);
-        }).firstOrNull;
+      : goals
+                .where((SavingsGoal g) => normalize(g.name) == wanted)
+                .firstOrNull ??
+            goals.where((SavingsGoal g) {
+              final String n = normalize(g.name);
+              return n.contains(wanted) || wanted.contains(n);
+            }).firstOrNull;
   if (goal == null) {
     return <String, Object?>{
       'error':

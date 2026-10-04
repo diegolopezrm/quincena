@@ -275,6 +275,38 @@ void main() {
       expect((await store.goals()).single.monthly.amount, d('600000'));
     });
 
+    test('a plan is saved on the goal named, not on one that contains its '
+        'name', () async {
+      await initializeDateFormatting('es');
+      for (final String name in <String>['Viaje largo', 'Viaje']) {
+        await store.addGoal(
+          name: name,
+          target: Money(d('2000000'), Asset.cop),
+          saved: Money(d('0'), Asset.cop),
+          monthly: Money(d('100000'), Asset.cop),
+          deadline: DateTime(2027, 6, 30),
+        );
+      }
+      for (var i = 0; i < 100 && own.ledger!.goals.length < 2; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+      final Map<Object?, Object?> saved =
+          await saveGoalPlanAnswer(own, <String, dynamic>{
+                'monthly': 300000,
+                'goal': 'viaje',
+              })
+              as Map<Object?, Object?>;
+      expect(saved['name'], 'Viaje');
+      final Map<String, Decimal> monthly = <String, Decimal>{
+        for (final SavingsGoal g in await store.goals())
+          g.name: g.monthly.amount,
+      };
+      expect(monthly, <String, Decimal>{
+        'Viaje largo': d('100000'),
+        'Viaje': d('300000'),
+      });
+    });
+
     test('through Quincena, a question needs one left for the day', () async {
       final Allowance allowance = Allowance(store, perDay: 1, now: () => now);
       await allowance.load();
