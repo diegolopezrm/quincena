@@ -1531,5 +1531,21 @@
   "statementIsCardPayment": "¿Es el pago de una tarjeta tuya?",
   "statementAddCard": "Parece el pago de una tarjeta. Agrégala en Cuentas para que Quincena no cuente dos veces lo que compraste con ella.",
   "statementDoneTransfers": "{count, plural, =1{Uno quedó como movimiento entre tus cuentas: no cuenta como gasto.} other{{count} quedaron como movimientos entre tus cuentas: no cuentan como gasto.}}",
-  "@statementDoneTransfers": {"placeholders": {"count": {"type": "int"}}}
+  "@statementDoneTransfers": {"placeholders": {"count": {"type": "int"}}},
+  "statementOlder": "{count, plural, =1{Un movimiento es de antes del {date}} other{{count} movimientos son de antes del {date}}}, cuando escribiste el saldo de {account}.",
+  "@statementOlder": {"placeholders": {"count": {"type": "int"}, "date": {"type": "String"}, "account": {"type": "String"}}},
+  "statementOlderKeep": "Mi saldo ya los incluye (recomendado)",
+  "statementOlderAdd": "Sumarlos a mi saldo",
+  "statementOlderNote": "Se guardan para ver en qué se fue la plata, sin cambiar lo que tienes hoy.",
+  "statementEndsAt": "Según el extracto, el {date} tenías {amount}.",
+  "@statementEndsAt": {"placeholders": {"date": {"type": "String"}, "amount": {"type": "String"}}},
+  "statementMismatch": "Quincena tendría {amount} ese día.",
+  "@statementMismatch": {"placeholders": {"amount": {"type": "String"}}},
+  "statementUseBalance": "Ajustar al saldo del extracto",
+  "statementBalanceEffect": "Saldo de {account}: {before} → {after}",
+  "@statementBalanceEffect": {"placeholders": {"account": {"type": "String"}, "before": {"type": "String"}, "after": {"type": "String"}}},
+  "statementDebtEffect": "Lo que debes en {account}: {before} → {after}",
+  "@statementDebtEffect": {"placeholders": {"account": {"type": "String"}, "before": {"type": "String"}, "after": {"type": "String"}}},
+  "statementBalanceSame": "El saldo de {account} sigue en {amount}: ya incluía estos movimientos.",
+  "@statementBalanceSame": {"placeholders": {"account": {"type": "String"}, "amount": {"type": "String"}}}
 }

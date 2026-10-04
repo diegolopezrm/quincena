@@ -4851,10 +4851,60 @@ class AppLocalizationsEn extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          '$count were saved as moves between your accounts: they don\'t count as spending.',
+          '$count were saved as transfers between your accounts: they don\'t count as spending.',
       one:
-          'One was saved as a move between your accounts: it doesn\'t count as spending.',
+          'One was saved as a transfer between your accounts: it doesn\'t count as spending.',
     );
     return '$_temp0';
+  }
+
+  @override
+  String statementOlder(int count, String date, String account) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count transactions are from before $date',
+      one: 'One transaction is from before $date',
+    );
+    return '$_temp0, when you entered the $account balance.';
+  }
+
+  @override
+  String get statementOlderKeep =>
+      'My balance already includes them (recommended)';
+
+  @override
+  String get statementOlderAdd => 'Add them to my balance';
+
+  @override
+  String get statementOlderNote =>
+      'They\'re saved to show where the money went, without changing what you have today.';
+
+  @override
+  String statementEndsAt(String date, String amount) {
+    return 'The statement says you had $amount on $date.';
+  }
+
+  @override
+  String statementMismatch(String amount) {
+    return 'Quincena would show $amount that day.';
+  }
+
+  @override
+  String get statementUseBalance => 'Match the statement\'s balance';
+
+  @override
+  String statementBalanceEffect(String account, String before, String after) {
+    return '$account balance: $before → $after';
+  }
+
+  @override
+  String statementDebtEffect(String account, String before, String after) {
+    return 'What you owe on $account: $before → $after';
+  }
+
+  @override
+  String statementBalanceSame(String account, String amount) {
+    return 'The $account balance stays at $amount: it already included these transactions.';
   }
 }

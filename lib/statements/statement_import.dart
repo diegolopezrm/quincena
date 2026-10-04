@@ -163,6 +163,23 @@ String payeeOf(String description) {
   return prettyMerchant(s);
 }
 
+/// What an import does with the balance the person wrote for an account.
+enum BalanceRule {
+  /// A line dated before [Account.balanceSince] was already in the balance
+  /// the person wrote: it is saved to show where the money went, and
+  /// today's balance stays.
+  keep,
+
+  /// Every line moves the balance, an older one too.
+  add,
+
+  /// The balance at the statement's last line is the one it prints.
+  statement,
+}
+
+/// What a statement says an account held at the end of [day].
+typedef ClosingBalance = ({DateTime day, Decimal amount});
+
 /// Turns a statement into movements of one account.
 class StatementImporter {
   StatementImporter(this.store);
@@ -256,11 +273,12 @@ class StatementImporter {
       // A card payment moves money between two of the person's accounts:
       // a move when its other side is clear, a question otherwise.
       final bool card = match == null && !before && _isCardPayment(l, account);
-      final Entry? leg = card ? _mirror(l, elsewhere) : null;
+      final List<Account> sides = card
+          ? _sides(account, accounts)
+          : const <Account>[];
+      final Entry? leg = card ? _mirror(l, elsewhere, sides) : null;
       if (leg != null) elsewhere.remove(leg);
-      final String? other = !card
-          ? null
-          : leg?.accountId ?? _otherSide(l, account, accounts);
+      final String? other = !card ? null : leg?.accountId ?? _named(l, sides);
       out.add(
         ImportCandidate(
           line: l,
@@ -326,13 +344,15 @@ class StatementImporter {
     return l.amount < Decimal.zero && _cardPaymentWords.hasMatch(plain);
   }
 
-  /// The one movement in another account that is the other side of [l]:
+  /// The one movement in one of [sides] that is the other side of [l]:
   /// the opposite amount within [window] days. Null when there is none or
   /// more than one.
-  Entry? _mirror(StatementLine l, List<Entry> elsewhere) {
+  Entry? _mirror(StatementLine l, List<Entry> elsewhere, List<Account> sides) {
+    final Set<String> ids = <String>{for (final Account a in sides) a.id};
     final List<Entry> found = <Entry>[
       for (final Entry e in elsewhere)
-        if (e.amount == -l.amount &&
+        if (ids.contains(e.accountId) &&
+            e.amount == -l.amount &&
             DateTime(
                   e.date.year,
                   e.date.month,
@@ -344,13 +364,12 @@ class StatementImporter {
     return found.length == 1 ? found.single : null;
   }
 
-  /// The other account of the card payment [l]: the card a bank account
-  /// paid, or the account a card's payment came from. The one the
-  /// description names best, or the only one there is; null when that
-  /// leaves more than one.
-  String? _otherSide(StatementLine l, Account account, List<Account> all) {
+  /// The accounts that can be the other side of a card payment in
+  /// [account]: the cards a bank account pays, or the accounts a card's
+  /// payment comes from.
+  List<Account> _sides(Account account, List<Account> all) {
     final bool card = account.kind == AccountKind.card;
-    final List<Account> fits = <Account>[
+    return <Account>[
       for (final Account a in all)
         if (a.id != account.id &&
             a.asset == account.asset &&
@@ -361,6 +380,12 @@ class StatementImporter {
                 : a.kind == AccountKind.card))
           a,
     ];
+  }
+
+  /// The one of [fits] the card payment [l] goes with: the one its
+  /// description names best, or the only one there is; null when that
+  /// leaves more than one.
+  String? _named(StatementLine l, List<Account> fits) {
     final Set<String> words = normalize(l.description).split(' ').toSet();
     int named(Account a) => normalize('${a.name} ${a.institution}')
         .split(' ')
@@ -392,9 +417,93 @@ class StatementImporter {
     return null;
   }
 
+  /// Whether a line dated [date] is from before the balance the person
+  /// wrote for [account].
+  static bool older(Account account, DateTime date) {
+    final DateTime? since = account.balanceSince;
+    return since != null &&
+        date.isBefore(DateTime(since.year, since.month, since.day));
+  }
+
+  /// The balance the statement [all] ends on: the one printed after its
+  /// last line, when every line prints one and each follows from the one
+  /// before it and the line's amount. Null otherwise, and for a card,
+  /// whose statement prints its debt its own way.
+  static ClosingBalance? closing(Account account, List<ImportCandidate> all) {
+    if (account.kind == AccountKind.card) return null;
+    final List<StatementLine> lines = <StatementLine>[
+      for (final ImportCandidate c in all) c.line,
+    ];
+    if (lines.length < 2 || lines.any((StatementLine l) => l.balance == null)) {
+      return null;
+    }
+    // Oldest first or newest first: whichever the balances follow.
+    bool follows(List<StatementLine> ordered) {
+      for (var i = 1; i < ordered.length; i++) {
+        if (ordered[i - 1].balance! + ordered[i].amount != ordered[i].balance) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    final List<StatementLine> newestFirst = lines.reversed.toList();
+    final StatementLine? last = follows(lines)
+        ? lines.last
+        : follows(newestFirst)
+        ? newestFirst.last
+        : null;
+    if (last == null) return null;
+    return (day: last.date, amount: last.balance!);
+  }
+
+  /// What [account] opens with once [chosen] are recorded under [rule].
+  /// [entries] are the movements already in the account, and [closing]
+  /// the statement's last balance, which [BalanceRule.statement] matches.
+  static Decimal openingAfter(
+    Account account,
+    Iterable<ImportCandidate> chosen,
+    BalanceRule rule, {
+    Iterable<Entry> entries = const <Entry>[],
+    ClosingBalance? closing,
+  }) {
+    switch (rule) {
+      case BalanceRule.add:
+        return account.opening;
+      case BalanceRule.keep:
+        var before = Decimal.zero;
+        for (final ImportCandidate c in chosen) {
+          if (older(account, c.line.date)) before += c.line.amount;
+        }
+        return account.opening - before;
+      case BalanceRule.statement:
+        if (closing == null) return account.opening;
+        final DateTime until = endOfDay(closing.day);
+        var held = Decimal.zero;
+        for (final Entry e in entries) {
+          if (e.accountId == account.id && !e.date.isAfter(until)) {
+            held += e.amount;
+          }
+        }
+        for (final ImportCandidate c in chosen) {
+          if (!c.line.date.isAfter(until)) held += c.line.amount;
+        }
+        return closing.amount - held;
+    }
+  }
+
   /// Records [chosen] in [account], a move between accounts with both its
-  /// sides. Returns how many lines were recorded.
-  Future<int> record(Account account, List<ImportCandidate> chosen) async {
+  /// sides, and keeps the balances the person wrote as [rule] says.
+  /// Returns how many lines were recorded.
+  Future<int> record(
+    Account account,
+    List<ImportCandidate> chosen, {
+    BalanceRule rule = BalanceRule.add,
+    ClosingBalance? closing,
+  }) async {
+    final List<Entry> before = rule == BalanceRule.statement
+        ? await store.entries(accountId: account.id)
+        : const <Entry>[];
     var n = 0;
     for (final ImportCandidate c in chosen) {
       final bool out = c.line.amount < Decimal.zero;
@@ -449,6 +558,49 @@ class StatementImporter {
       );
       n++;
     }
+    await _keepBalances(account, chosen, rule, before, closing);
     return n;
+  }
+
+  /// Moves the openings [rule] asks for: this account's, and for a move to
+  /// another account whose balance was also written after it, that one's.
+  Future<void> _keepBalances(
+    Account account,
+    List<ImportCandidate> chosen,
+    BalanceRule rule,
+    List<Entry> before,
+    ClosingBalance? closing,
+  ) async {
+    if (rule == BalanceRule.add) return;
+    final List<Account> all = await store.accounts(archived: true);
+    final Map<String, Decimal> shifts = <String, Decimal>{
+      account.id:
+          openingAfter(
+            account,
+            chosen,
+            rule,
+            entries: before,
+            closing: closing,
+          ) -
+          account.opening,
+    };
+    for (final ImportCandidate c in chosen) {
+      final String? other = c.otherAccountId;
+      if (c.kind != EntryKind.transfer || c.otherLeg != null || other == null) {
+        continue;
+      }
+      final Account? there = all
+          .where((Account a) => a.id == other)
+          .firstOrNull;
+      // Its side there moved that account by the opposite amount.
+      if (there != null && older(there, c.line.date)) {
+        shifts[other] = (shifts[other] ?? Decimal.zero) + c.line.amount;
+      }
+    }
+    for (final Account a in all) {
+      final Decimal? shift = shifts[a.id];
+      if (shift == null || shift == Decimal.zero) continue;
+      await store.updateAccount(a.copyWith(opening: a.opening + shift));
+    }
   }
 }

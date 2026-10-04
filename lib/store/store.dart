@@ -252,6 +252,7 @@ class QuincenaStore {
     sortOrder: r.sortOrder,
     openingCost: _money(r.openingCost, r.openingCostAsset),
     syncRef: r.syncRef,
+    balanceSince: r.createdAt,
   );
 
   /// The amount stored as [amount] in [asset], when both are there.
@@ -272,6 +273,7 @@ class QuincenaStore {
   }) async {
     final String id = _newId();
     final int order = (await accounts(archived: true)).length;
+    final DateTime now = _now();
     final Account account = Account(
       id: id,
       name: name.trim(),
@@ -283,6 +285,7 @@ class QuincenaStore {
       sortOrder: order,
       openingCost: openingCost,
       syncRef: syncRef,
+      balanceSince: now,
     );
     await db
         .into(db.accounts)
@@ -299,7 +302,7 @@ class QuincenaStore {
             openingCost: Value(openingCost?.amount.toString()),
             openingCostAsset: Value(openingCost?.asset.code),
             syncRef: Value(syncRef),
-            createdAt: _now(),
+            createdAt: now,
           ),
         );
     return account;

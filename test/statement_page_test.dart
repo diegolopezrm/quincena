@@ -74,6 +74,29 @@ void main() {
     );
     expect(tester.takeException(), isNull);
 
+    // The account was added on 2 October with what it had then: by
+    // default, the September lines are already in that balance.
+    expect(
+      find.text(
+        '3 movimientos son de antes del 2 de octubre, cuando escribiste el '
+        'saldo de Bancolombia.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'El saldo de Bancolombia sigue en −\$89.900: ya incluía estos '
+        'movimientos.',
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Sumarlos a mi saldo'));
+    await settle(tester);
+    expect(
+      find.text('Saldo de Bancolombia: −\$89.900 → \$2.334.200'),
+      findsOneWidget,
+    );
+
     // The new ones are checked; the button clears them, and checks the new
     // ones again, never what was already there.
     expect(find.text('Seleccionar todos'), findsNothing);
@@ -135,6 +158,11 @@ void main() {
     );
     // It ends on what is left to check, not on the list it came from.
     expect(find.text('Se importaron 3 movimientos.'), findsOneWidget);
+    expect(
+      find.text('Saldo de Bancolombia: −\$89.900 → \$2.334.200'),
+      findsOneWidget,
+    );
+    expect(own.balances[bank.id]?.amount, Decimal.parse('2334200'));
     expect(
       find.text('Uno quedó sin categoría: tócalo para ponérsela.'),
       findsOneWidget,
@@ -229,6 +257,14 @@ void main() {
     );
     expect(find.text('Todos quedaron con su categoría.'), findsOneWidget);
     expect(find.text('SIN CATEGORÍA'), findsNothing);
+    // The balance written on 2 October already had these lines.
+    expect(
+      find.text(
+        'El saldo de Bancolombia sigue en \$0: ya incluía estos movimientos.',
+      ),
+      findsOneWidget,
+    );
+    expect(own.balances[bank.id]?.amount, Decimal.zero);
   });
   testWidgets('a card payment is a move to the card, not spending', (
     tester,
@@ -317,6 +353,86 @@ void main() {
     );
     expect(find.text('24 sept · Sin categoría'), findsOneWidget);
   });
+  testWidgets('a statement\'s own balance can set the account\'s', (
+    tester,
+  ) async {
+    final (_, OwnController own, Account bank) = await world(tester);
+    await open(
+      tester,
+      own,
+      readTable(
+        parseCsv(
+          'Fecha;Descripción;Valor;Saldo\n'
+          '01/09/2026;COMPRA EN EXITO LAURELES;-45.900;954.100\n'
+          '02/09/2026;ABONO NOMINA DL SOFT;2.500.000;3.454.100\n',
+        ),
+      ),
+    );
+    expect(
+      find.text('Según el extracto, el 2 de septiembre tenías \$3.454.100.'),
+      findsOneWidget,
+    );
+    expect(find.text('Quincena tendría \$0 ese día.'), findsOneWidget);
+    await tester.tap(find.text('Ajustar al saldo del extracto'));
+    await settle(tester);
+    // The statement decides: the question about older lines goes away.
+    expect(find.text('Mi saldo ya los incluye (recomendado)'), findsNothing);
+    expect(
+      find.text('Saldo de Bancolombia: \$0 → \$3.454.100'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Importar 2 movimientos'));
+    await settle(tester);
+    expect(own.balances[bank.id]?.amount, Decimal.parse('3454100'));
+    expect(
+      find.text('Saldo de Bancolombia: \$0 → \$3.454.100'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('in English', (tester) async {
+    await initializeDateFormatting('en_US');
+    Intl.defaultLocale = 'en_US';
+    addTearDown(() => Intl.defaultLocale = 'es_CO');
+    final (_, OwnController own, _) = await world(tester);
+    await open(
+      tester,
+      own,
+      readTable(
+        parseCsv(
+          'Fecha;Descripción;Valor\n'
+          '01/09/2026;COMPRA EN EXITO LAURELES;-45.900\n'
+          '02/09/2026;ABONO NOMINA DL SOFT;2.500.000\n',
+        ),
+      ),
+      locale: const Locale('en'),
+    );
+    expect(find.text('2 transactions · Sep 1–2, 2026'), findsOneWidget);
+    expect(find.text('Sep 1 · Groceries'), findsOneWidget);
+    expect(
+      find.text('2 selected · +\$2,500,000 in · −\$45,900 out'),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        '2 transactions are from before October 2, when you entered the '
+        'Bancolombia balance.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text('My balance already includes them (recommended)'),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'The Bancolombia balance stays at \$0: it already included these '
+        'transactions.',
+      ),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
 }
 
 /// Taps [finder] once it is scrolled into view.
@@ -336,7 +452,8 @@ Finder box(String name) => find.byWidgetPredicate(
 Future<(QuincenaStore, OwnController, Account)> world(
   WidgetTester tester,
 ) async {
-  tester.view.physicalSize = const Size(1170, 2532);
+  // A tall phone, so the whole statement fits without scrolling.
+  tester.view.physicalSize = const Size(1170, 4200);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
   final DateTime now = DateTime(2026, 10, 2, 10);

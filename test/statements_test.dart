@@ -551,6 +551,149 @@ void main() {
       });
     });
 
+    group('the balance the person wrote', () {
+      Future<Decimal> balance(Account a) async => balancesOf(
+        await store.accounts(archived: true),
+        await store.entries(),
+        DateTime(2026, 10, 2),
+      )[a.id]!.amount;
+      StatementRead nequiStatement() => readTable(
+        parseCsv(
+          'Fecha;Descripción;Valor\n'
+          '30/09/2026;COMPRA EN D1;-50.000\n'
+          '01/10/2026;ABONO NOMINA;2.000.000\n'
+          '02/10/2026;COMPRA EN EXITO;-20.000\n',
+        ),
+      );
+
+      test(
+        'already has what came before it: "Mi saldo ya los incluye"',
+        () async {
+          final Account nequi = await store.addAccount(
+            name: 'Nequi',
+            kind: AccountKind.wallet,
+            asset: Asset.cop,
+            opening: d('1000000'),
+          );
+          expect(nequi.balanceSince, DateTime(2026, 10, 2));
+          expect(
+            (await store.accounts()).last.balanceSince,
+            DateTime(2026, 10, 2),
+          );
+          final StatementImporter importer = StatementImporter(store);
+          final List<ImportCandidate> all = await importer.prepare(
+            nequi,
+            nequiStatement(),
+          );
+          expect(
+            all.map(
+              (ImportCandidate c) =>
+                  StatementImporter.older(nequi, c.line.date),
+            ),
+            <bool>[true, true, false],
+          );
+          await importer.record(nequi, all, rule: BalanceRule.keep);
+          // The two lines before it were in the 1.000.000 already; the one
+          // of the day moves it.
+          expect(await balance(nequi), d('980000'));
+          expect((await store.entries(accountId: nequi.id)).length, 3);
+        },
+      );
+
+      test('"Sumarlos a mi saldo" moves it by every line', () async {
+        final Account nequi = await store.addAccount(
+          name: 'Nequi',
+          kind: AccountKind.wallet,
+          asset: Asset.cop,
+          opening: d('1000000'),
+        );
+        final StatementImporter importer = StatementImporter(store);
+        await importer.record(
+          nequi,
+          await importer.prepare(nequi, nequiStatement()),
+          rule: BalanceRule.add,
+        );
+        expect(await balance(nequi), d('2930000'));
+      });
+
+      test('a card payment before both balances moves neither', () async {
+        final StatementImporter importer = StatementImporter(store);
+        final List<ImportCandidate> all = await importer.prepare(
+          bank,
+          readTable(
+            parseCsv(
+              'Fecha;Descripción;Valor\n24/09/2026;PAGO TARJETA VISA;-480.000\n',
+            ),
+          ),
+        );
+        expect(all.single.kind, EntryKind.transfer);
+        await importer.record(bank, all, rule: BalanceRule.keep);
+        expect(await balance(bank), Decimal.zero);
+        expect(await balance(card), Decimal.zero);
+        expect((await store.entries()).length, 2);
+      });
+
+      test('the statement\'s own balance is matched when asked', () async {
+        StatementRead read(String rows) =>
+            readTable(parseCsv('Fecha;Descripción;Valor;Saldo\n$rows'));
+        const String oldestFirst =
+            '01/09/2026;COMPRA EN EXITO LAURELES;-45.900;954.100\n'
+            '02/09/2026;ABONO NOMINA;2.500.000;3.454.100\n';
+        const String newestFirst =
+            '02/09/2026;ABONO NOMINA;2.500.000;3.454.100\n'
+            '01/09/2026;COMPRA EN EXITO LAURELES;-45.900;954.100\n';
+        final StatementImporter importer = StatementImporter(store);
+        for (final String rows in <String>[oldestFirst, newestFirst]) {
+          final ClosingBalance? end = StatementImporter.closing(
+            bank,
+            await importer.prepare(bank, read(rows)),
+          );
+          expect(end?.day, DateTime(2026, 9, 2));
+          expect(end?.amount, d('3454100'));
+        }
+        // Balances that do not add up are not trusted.
+        expect(
+          StatementImporter.closing(
+            bank,
+            await importer.prepare(
+              bank,
+              read(
+                '01/09/2026;COMPRA;-45.900;954.100\n'
+                '02/09/2026;ABONO;2.500.000;9.999.999\n',
+              ),
+            ),
+          ),
+          isNull,
+        );
+
+        // A movement after the statement keeps counting on top of it.
+        await store.addEntry(
+          accountId: bank.id,
+          amount: d('100000'),
+          kind: EntryKind.expense,
+          date: DateTime(2026, 9, 20),
+          payee: 'Arriendo',
+        );
+        final List<ImportCandidate> all = await importer.prepare(
+          bank,
+          read(oldestFirst),
+        );
+        await importer.record(
+          bank,
+          all,
+          rule: BalanceRule.statement,
+          closing: StatementImporter.closing(bank, all),
+        );
+        final Map<String, Money> onTheDay = balancesOf(
+          await store.accounts(),
+          await store.entries(),
+          DateTime(2026, 9, 2),
+        );
+        expect(onTheDay[bank.id]!.amount, d('3454100'));
+        expect(await balance(bank), d('3354100'));
+      });
+    });
+
     test('a card statement\'s positive purchases are debt', () async {
       final StatementRead read = readTable(
         parseCsv(

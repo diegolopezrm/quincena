@@ -4853,4 +4853,53 @@ class AppLocalizationsEs extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String statementOlder(int count, String date, String account) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count movimientos son de antes del $date',
+      one: 'Un movimiento es de antes del $date',
+    );
+    return '$_temp0, cuando escribiste el saldo de $account.';
+  }
+
+  @override
+  String get statementOlderKeep => 'Mi saldo ya los incluye (recomendado)';
+
+  @override
+  String get statementOlderAdd => 'Sumarlos a mi saldo';
+
+  @override
+  String get statementOlderNote =>
+      'Se guardan para ver en qué se fue la plata, sin cambiar lo que tienes hoy.';
+
+  @override
+  String statementEndsAt(String date, String amount) {
+    return 'Según el extracto, el $date tenías $amount.';
+  }
+
+  @override
+  String statementMismatch(String amount) {
+    return 'Quincena tendría $amount ese día.';
+  }
+
+  @override
+  String get statementUseBalance => 'Ajustar al saldo del extracto';
+
+  @override
+  String statementBalanceEffect(String account, String before, String after) {
+    return 'Saldo de $account: $before → $after';
+  }
+
+  @override
+  String statementDebtEffect(String account, String before, String after) {
+    return 'Lo que debes en $account: $before → $after';
+  }
+
+  @override
+  String statementBalanceSame(String account, String amount) {
+    return 'El saldo de $account sigue en $amount: ya incluía estos movimientos.';
+  }
 }

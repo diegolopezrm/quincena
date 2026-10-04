@@ -17,6 +17,7 @@ import '../../statements/statement.dart';
 import '../../statements/statement_import.dart';
 import '../../statements/tables.dart';
 import '../../statements/text_statement.dart';
+import '../../store/store.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
@@ -67,12 +68,27 @@ class _StatementPageState extends State<StatementPage> {
   final Set<int> _chosen = <int>{};
   bool _saving = false;
 
+  /// What the import does with lines older than the balance the person
+  /// wrote, and whether it matches the statement's own last balance
+  /// instead, when the statement prints one that adds up.
+  BalanceRule _olderRule = BalanceRule.keep;
+  bool _matchClosing = false;
+  ClosingBalance? _closing;
+
+  BalanceRule get _rule =>
+      _matchClosing && _closing != null ? BalanceRule.statement : _olderRule;
+
   /// What the import recorded: how many, how many of them as moves
   /// between the person's accounts, and the statement references of those
   /// that came without a category, to give them one before leaving.
   int _imported = 0;
   int _transfers = 0;
   Set<String> _uncategorized = const <String>{};
+
+  /// The account's balance before the import and the rule it followed, to
+  /// show what it did.
+  Money? _before;
+  BalanceRule _applied = BalanceRule.add;
 
   OwnController get own => widget.own;
 
@@ -200,6 +216,8 @@ class _StatementPageState extends State<StatementPage> {
     if (!mounted) return;
     setState(() {
       _candidates = all;
+      _closing = StatementImporter.closing(account, all);
+      _matchClosing = false;
       _chosen
         ..clear()
         ..addAll(<int>[
@@ -224,13 +242,19 @@ class _StatementPageState extends State<StatementPage> {
     final List<ImportCandidate> chosen = <ImportCandidate>[
       for (final int i in _chosen.toList()..sort()) _candidates[i],
     ];
-    final int n = await StatementImporter(own.store).record(account, chosen);
+    final Money before = own.balances[account.id] ?? account.openingMoney;
+    final BalanceRule rule = _rule;
+    final int n = await StatementImporter(
+      own.store,
+    ).record(account, chosen, rule: rule, closing: _closing);
     await own.joinTransfers();
     if (!mounted) return;
     // The person checks the exceptions, not every line: what came without
     // a category is what is left to look at.
     setState(() {
       _imported = n;
+      _before = before;
+      _applied = rule;
       _transfers = chosen
           .where((ImportCandidate c) => c.kind == EntryKind.transfer)
           .length;
@@ -241,6 +265,67 @@ class _StatementPageState extends State<StatementPage> {
       _saving = false;
       _stage = _Stage.done;
     });
+  }
+
+  List<Entry> _entriesOf(Account account) => <Entry>[
+    for (final Entry e in own.snapshot?.entries ?? const <Entry>[])
+      if (e.accountId == account.id) e,
+  ];
+
+  /// What [account] would hold today after recording [chosen] under
+  /// [rule].
+  Money _after(
+    Account account,
+    List<ImportCandidate> chosen,
+    BalanceRule rule,
+  ) {
+    final Money before = own.balances[account.id] ?? account.openingMoney;
+    final DateTime today = endOfDay(own.today);
+    var moved = Decimal.zero;
+    for (final ImportCandidate c in chosen) {
+      if (!c.line.date.isAfter(today)) moved += c.line.amount;
+    }
+    final Decimal opening = StatementImporter.openingAfter(
+      account,
+      chosen,
+      rule,
+      entries: _entriesOf(account),
+      closing: _closing,
+    );
+    return Money(
+      before.amount + moved + opening - account.opening,
+      account.asset,
+    );
+  }
+
+  /// The balance of [account] from [before] to [after], or that it stays
+  /// because it already had these lines. A card says what is owed on it.
+  String _balanceText(
+    AppLocalizations l,
+    Account account,
+    Money before,
+    Money after,
+    BalanceRule rule,
+  ) {
+    final Asset? base = own.profile?.base;
+    if (account.kind == AccountKind.card) {
+      return l.statementDebtEffect(
+        account.name,
+        moneyText(-before, base: base),
+        moneyText(-after, base: base),
+      );
+    }
+    if (before == after && rule != BalanceRule.add) {
+      return l.statementBalanceSame(
+        account.name,
+        moneyText(before, base: base),
+      );
+    }
+    return l.statementBalanceEffect(
+      account.name,
+      moneyText(before, base: base),
+      moneyText(after, base: base),
+    );
   }
 
   /// Opens line [i] to change what it is recorded as.
@@ -401,6 +486,22 @@ class _StatementPageState extends State<StatementPage> {
             ),
           ],
         ),
+        if ((_account, _before) case (
+          final Account account,
+          final Money before,
+        )) ...<Widget>[
+          const SizedBox(height: 8),
+          Figures(
+            _balanceText(
+              l,
+              account,
+              before,
+              own.balances[account.id] ?? account.openingMoney,
+              _applied,
+            ),
+            style: context.type.bodyMedium,
+          ),
+        ],
         const SizedBox(height: 8),
         if (_transfers > 0) ...<Widget>[
           Text(
@@ -430,6 +531,94 @@ class _StatementPageState extends State<StatementPage> {
           child: Text(l.statementFinish),
         ),
       ],
+    );
+  }
+
+  /// Lines older than the balance the person wrote: whether that balance
+  /// already has them.
+  Widget _olderBlock(AppLocalizations l, Account account, int older) => Padding(
+    padding: const EdgeInsets.only(top: 12),
+    child: Panel(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+      children: <Widget>[
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              l.statementOlder(
+                older,
+                dayMonth(account.balanceSince!),
+                account.name,
+              ),
+              style: context.type.bodyMedium,
+            ),
+            RadioGroup<BalanceRule>(
+              groupValue: _olderRule,
+              onChanged: (BalanceRule? rule) {
+                if (rule != null) setState(() => _olderRule = rule);
+              },
+              child: Column(
+                children: <Widget>[
+                  RadioListTile<BalanceRule>(
+                    value: BalanceRule.keep,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l.statementOlderKeep),
+                    subtitle: Text(l.statementOlderNote),
+                  ),
+                  RadioListTile<BalanceRule>(
+                    value: BalanceRule.add,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l.statementOlderAdd),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+
+  /// The statement's last balance next to what the app would show that
+  /// day, and a way to take the statement's.
+  Widget _closingBlock(
+    AppLocalizations l,
+    Account account,
+    ClosingBalance closing,
+    Money wouldBe,
+    bool mismatch,
+  ) {
+    final Asset? base = own.profile?.base;
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Panel(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+        children: <Widget>[
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Figures(
+                l.statementEndsAt(
+                  dayMonth(closing.day),
+                  moneyText(Money(closing.amount, account.asset), base: base),
+                ),
+                style: context.type.bodyMedium,
+              ),
+              if (mismatch)
+                Figures(
+                  l.statementMismatch(moneyText(wouldBe, base: base)),
+                  style: context.type.bodySmall,
+                ),
+              SwitchListTile(
+                value: _matchClosing,
+                onChanged: (bool on) => setState(() => _matchClosing = on),
+                contentPadding: EdgeInsets.zero,
+                title: Text(l.statementUseBalance),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -491,6 +680,36 @@ class _StatementPageState extends State<StatementPage> {
           (ImportCandidate c) =>
               c.proposed && c.cardPayment && c.kind != EntryKind.transfer,
         );
+    final List<ImportCandidate> chosen = <ImportCandidate>[
+      for (final int i in _chosen.toList()..sort()) all[i],
+    ];
+    // Lines from before the balance the person wrote, which it may
+    // already have.
+    final int older = account == null
+        ? 0
+        : chosen
+              .where(
+                (ImportCandidate c) =>
+                    StatementImporter.older(account, c.line.date),
+              )
+              .length;
+    // What the statement says the account ended on, next to what the app
+    // would show that day.
+    final ClosingBalance? closing = _closing;
+    Money? wouldBe;
+    if (account != null && closing != null) {
+      final DateTime until = endOfDay(closing.day);
+      var held = StatementImporter.openingAfter(account, chosen, _olderRule);
+      for (final Entry e in _entriesOf(account)) {
+        if (!e.date.isAfter(until)) held += e.amount;
+      }
+      for (final ImportCandidate c in chosen) {
+        if (!c.line.date.isAfter(until)) held += c.line.amount;
+      }
+      wouldBe = Money(held, account.asset);
+    }
+    final bool mismatch =
+        closing != null && wouldBe != null && wouldBe.amount != closing.amount;
     // A statement within one year says it once, in its summary.
     final bool oneYear =
         dates.isNotEmpty && dates.first.year == dates.last.year;
@@ -562,6 +781,13 @@ class _StatementPageState extends State<StatementPage> {
                   ),
                 ),
               ],
+              if (account != null && older > 0 && !_matchClosing)
+                _olderBlock(l, account, older),
+              if (account != null &&
+                  closing != null &&
+                  wouldBe != null &&
+                  (mismatch || _matchClosing))
+                _closingBlock(l, account, closing, wouldBe, mismatch),
               // Checking everything checks what is new: a line already there
               // is checked only on purpose, one by one.
               if (newOnes.isNotEmpty || _chosen.isNotEmpty)
@@ -639,6 +865,17 @@ class _StatementPageState extends State<StatementPage> {
                   ].join(' · '),
                   style: context.type.bodyMedium,
                 ),
+                if (account != null && chosen.isNotEmpty)
+                  Figures(
+                    _balanceText(
+                      l,
+                      account,
+                      own.balances[account.id] ?? account.openingMoney,
+                      _after(account, chosen, _rule),
+                      _rule,
+                    ),
+                    style: context.type.bodyMedium,
+                  ),
                 const SizedBox(height: 8),
                 if (repeatsChosen > 0) ...<Widget>[
                   Text(

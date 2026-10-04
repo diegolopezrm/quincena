@@ -1266,5 +1266,15 @@
   "statementTransferNote": "A card payment moves money between your own accounts: it doesn't count as spending, because the purchases are already on the card.",
   "statementIsCardPayment": "Is this a payment to one of your cards?",
   "statementAddCard": "This looks like a card payment. Add the card in Accounts so Quincena doesn't count what you bought with it twice.",
-  "statementDoneTransfers": "{count, plural, =1{One was saved as a move between your accounts: it doesn't count as spending.} other{{count} were saved as moves between your accounts: they don't count as spending.}}"
+  "statementDoneTransfers": "{count, plural, =1{One was saved as a transfer between your accounts: it doesn't count as spending.} other{{count} were saved as transfers between your accounts: they don't count as spending.}}",
+  "statementOlder": "{count, plural, =1{One transaction is from before {date}} other{{count} transactions are from before {date}}}, when you entered the {account} balance.",
+  "statementOlderKeep": "My balance already includes them (recommended)",
+  "statementOlderAdd": "Add them to my balance",
+  "statementOlderNote": "They're saved to show where the money went, without changing what you have today.",
+  "statementEndsAt": "The statement says you had {amount} on {date}.",
+  "statementMismatch": "Quincena would show {amount} that day.",
+  "statementUseBalance": "Match the statement's balance",
+  "statementBalanceEffect": "{account} balance: {before} → {after}",
+  "statementDebtEffect": "What you owe on {account}: {before} → {after}",
+  "statementBalanceSame": "The {account} balance stays at {amount}: it already included these transactions."
 }

@@ -7656,6 +7656,66 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{count, plural, =1{Uno quedó como movimiento entre tus cuentas: no cuenta como gasto.} other{{count} quedaron como movimientos entre tus cuentas: no cuentan como gasto.}}'**
   String statementDoneTransfers(int count);
+
+  /// No description provided for @statementOlder.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Un movimiento es de antes del {date}} other{{count} movimientos son de antes del {date}}}, cuando escribiste el saldo de {account}.'**
+  String statementOlder(int count, String date, String account);
+
+  /// No description provided for @statementOlderKeep.
+  ///
+  /// In es, this message translates to:
+  /// **'Mi saldo ya los incluye (recomendado)'**
+  String get statementOlderKeep;
+
+  /// No description provided for @statementOlderAdd.
+  ///
+  /// In es, this message translates to:
+  /// **'Sumarlos a mi saldo'**
+  String get statementOlderAdd;
+
+  /// No description provided for @statementOlderNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Se guardan para ver en qué se fue la plata, sin cambiar lo que tienes hoy.'**
+  String get statementOlderNote;
+
+  /// No description provided for @statementEndsAt.
+  ///
+  /// In es, this message translates to:
+  /// **'Según el extracto, el {date} tenías {amount}.'**
+  String statementEndsAt(String date, String amount);
+
+  /// No description provided for @statementMismatch.
+  ///
+  /// In es, this message translates to:
+  /// **'Quincena tendría {amount} ese día.'**
+  String statementMismatch(String amount);
+
+  /// No description provided for @statementUseBalance.
+  ///
+  /// In es, this message translates to:
+  /// **'Ajustar al saldo del extracto'**
+  String get statementUseBalance;
+
+  /// No description provided for @statementBalanceEffect.
+  ///
+  /// In es, this message translates to:
+  /// **'Saldo de {account}: {before} → {after}'**
+  String statementBalanceEffect(String account, String before, String after);
+
+  /// No description provided for @statementDebtEffect.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que debes en {account}: {before} → {after}'**
+  String statementDebtEffect(String account, String before, String after);
+
+  /// No description provided for @statementBalanceSame.
+  ///
+  /// In es, this message translates to:
+  /// **'El saldo de {account} sigue en {amount}: ya incluía estos movimientos.'**
+  String statementBalanceSame(String account, String amount);
 }
 
 class _AppLocalizationsDelegate
