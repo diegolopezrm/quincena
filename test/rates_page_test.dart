@@ -262,6 +262,17 @@ void main() {
     );
     expect(find.textContaining('Precio de mercado'), findsNothing);
     expect(find.text(r'La automática hoy: US$80.000'), findsOneWidget);
+
+    // Back to the market: no BTC/USD comes back, but tether reaches it.
+    await tester.tap(find.text('Usar la automática'));
+    await settle(tester);
+    expect(find.text(r'1 BTC = $320.000.000'), findsOneWidget);
+    expect(find.textContaining('Precio de mercado: 1 BTC'), findsOneWidget);
+    expect(find.text('Manual'), findsNothing);
+    expect(
+      (await tester.runAsync(store.rates))!.where((Rate r) => r.manual),
+      isEmpty,
+    );
   });
 
   test('the sheets explain a conversion with the same steps', () {
