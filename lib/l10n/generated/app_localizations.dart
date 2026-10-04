@@ -7579,12 +7579,6 @@ abstract class AppLocalizations {
   /// **'Empezaste una conversación nueva.'**
   String get conversationCleared;
 
-  /// No description provided for @conversationRestore.
-  ///
-  /// In es, this message translates to:
-  /// **'Volver a la anterior'**
-  String get conversationRestore;
-
   /// No description provided for @seeResult.
   ///
   /// In es, this message translates to:

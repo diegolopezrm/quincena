@@ -92,6 +92,9 @@ class Settled {
   /// What the action added to the conversation's account, to take out
   /// again when the person corrects it.
   List<Movement> _recorded = const <Movement>[];
+
+  /// Whether a model's record_expense saved the expense while answering.
+  bool _saved = false;
 }
 
 /// A conversation [Session.startOver] put aside: its turns, its surfaces,
@@ -248,6 +251,16 @@ class Session extends ChangeNotifier {
     if (settled == null || settled.open) return;
     settled._open = true;
     notifyListeners();
+  }
+
+  /// The expense form whose save [turn] is answering, if it is one.
+  Settled? _savingIn(Turn? turn) {
+    for (final Settled settled in _settled.values) {
+      if (identical(settled.turn, turn) && settled.action == 'save_expense') {
+        return settled;
+      }
+    }
+    return null;
   }
 
   /// The conversation [startOver] put aside, until the person asks
@@ -427,14 +440,26 @@ class Session extends ChangeNotifier {
         name: t.name,
         description: t.description,
         inputSchema: t.inputSchema,
-        onCall: (Map<String, dynamic> args) {
+        onCall: (Map<String, dynamic> args) async {
+          // An expense saved from a form goes with the form's id, whatever
+          // the model passed, so saving the form again corrects it.
+          final Settled? saving = t.name == 'record_expense'
+              ? _savingIn(turns.lastOrNull)
+              : null;
+          final Map<String, dynamic> call = saving == null
+              ? args
+              : <String, dynamic>{...args, 'id': saving.id};
           if (turns.isNotEmpty) {
             turns.last.computed.add(
-              Computed(t.name, Map<String, Object?>.of(args), DateTime.now()),
+              Computed(t.name, Map<String, Object?>.of(call), DateTime.now()),
             );
             notifyListeners();
           }
-          return t.call(args);
+          final Object? result = await t.call(call);
+          if (saving != null && result is Map && result['recorded'] == true) {
+            saving._saved = true;
+          }
+          return result;
         },
       ),
   ];
@@ -550,9 +575,11 @@ class Session extends ChangeNotifier {
   /// Sends a committing action from [surfaceId], once.
   ///
   /// An expense carries an id that stays with its form, so a model that
-  /// saves it again after an edit corrects it. Whoever answers, what the
-  /// first save added to this account comes out before the correction is
-  /// counted. When nothing was committed, the surface opens again.
+  /// saves it again after an edit corrects it. The id is the session's own:
+  /// one a form brings could be on another form too, and saving that one
+  /// would overwrite this expense. Whoever answers, what the first save
+  /// added to this account comes out before the correction is counted.
+  /// When nothing was committed, the surface opens again.
   void _commit(
     String surfaceId,
     String name,
@@ -562,10 +589,7 @@ class Session extends ChangeNotifier {
     final Map<String, Settled> settled = _settled;
     final Settled? earlier = settled[surfaceId];
     if (earlier != null && !earlier.open) return;
-    final String id = switch (context['id']) {
-      final String given when given.isNotEmpty => given,
-      _ => earlier?.id ?? _ids.v4(),
-    };
+    final String id = earlier?.id ?? _ids.v4();
     if (name == 'save_expense') {
       context['id'] = id;
       (interaction['action']! as Map<Object?, Object?>)['context'] = context;
@@ -598,9 +622,7 @@ class Session extends ChangeNotifier {
       final bool done =
           turn.error == null &&
           turns.contains(turn) &&
-          (name != 'save_expense' ||
-              added.isNotEmpty ||
-              turn.computed.any((Computed c) => c.tool == 'record_expense'));
+          (name != 'save_expense' || added.isNotEmpty || now._saved);
       if (done) {
         now._recorded = added;
         return;

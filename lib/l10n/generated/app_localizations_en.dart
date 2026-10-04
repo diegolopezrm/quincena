@@ -4771,9 +4771,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get conversationCleared => 'You started a new conversation.';
 
   @override
-  String get conversationRestore => 'Go back to it';
-
-  @override
   String get seeResult => 'See result';
 
   @override

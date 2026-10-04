@@ -227,10 +227,11 @@ class NewConversationButton extends StatelessWidget {
 
 /// Starts a new conversation and keeps the one on screen aside for a few
 /// seconds, with a way back to it. The way back goes as soon as the new
-/// conversation has a question.
+/// conversation has a question, or the person leaves the page.
 void startNewConversation(BuildContext context, Session session) {
   final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
   final AppLocalizations l = context.l10n;
+  final ModalRoute<Object?>? page = ModalRoute.of(context);
   final Previous? previous = session.startOver();
   if (previous == null) return;
   messenger.hideCurrentSnackBar();
@@ -241,18 +242,28 @@ void startNewConversation(BuildContext context, Session session) {
           duration: const Duration(seconds: 6),
           persist: false,
           action: SnackBarAction(
-            label: l.conversationRestore,
+            label: l.undo,
             onPressed: () => session.restore(previous),
           ),
         ),
       );
+  var showing = true;
+  void close() {
+    if (!showing) return;
+    showing = false;
+    bar.close();
+  }
+
   void gone() {
-    if (!session.canRestore) bar.close();
+    if (!session.canRestore) close();
   }
 
   session.addListener(gone);
+  // Over another page, the way back would lead nowhere.
+  unawaited(page?.popped.then((_) => close()));
   unawaited(
     bar.closed.then((SnackBarClosedReason reason) {
+      showing = false;
       session.removeListener(gone);
       if (reason != SnackBarClosedReason.action) session.forget(previous);
     }),

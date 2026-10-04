@@ -1254,7 +1254,6 @@
   "widgetAddFailed": "Your home screen doesn't allow adding it from here. Touch and hold an empty spot and look for Quincena.",
   "newConversationShort": "New",
   "conversationCleared": "You started a new conversation.",
-  "conversationRestore": "Go back to it",
   "seeResult": "See result",
   "newAnswerBelow": "There's a new answer below",
   "settledExpense": "Expense saved",

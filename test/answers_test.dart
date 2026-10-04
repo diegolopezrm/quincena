@@ -210,6 +210,8 @@ void main() {
     expect(session.ledger.freeUntilPayday, 1369300 - 52000);
     expect(screen(tester), contains(r'$1.317.300'));
     expect(find.textContaining('Gasto guardado · '), findsOneWidget);
+    // The answer keeps a turn of its own, under what the person did.
+    expect(find.text('Guardaste el gasto'), findsOneWidget);
 
     // The form takes nothing more: not a tap, not an action sent to it.
     await tester.tap(save, warnIfMissed: false);
@@ -291,7 +293,7 @@ void main() {
     expect(session.ledger.freeUntilPayday, 1369300);
     expect(find.text('Empezaste una conversación nueva.'), findsOneWidget);
 
-    await tester.tap(find.text('Volver a la anterior'));
+    await tester.tap(find.text('Deshacer'));
     await settle(tester);
     expect(session.turns, hasLength(2));
     expect(session.turns.first.question, ScriptedAgent.starters[4]);
@@ -302,7 +304,7 @@ void main() {
     await tester.tap(find.text('Nueva'));
     await settle(tester);
     await ask(tester, session, ScriptedAgent.starters[2]);
-    expect(find.text('Volver a la anterior'), findsNothing);
+    expect(find.text('Deshacer'), findsNothing);
     expect(session.canRestore, isFalse);
 
     // And it lasts only a few seconds.
@@ -310,7 +312,7 @@ void main() {
     await settle(tester);
     await tester.pump(const Duration(seconds: 7));
     await settle(tester);
-    expect(find.text('Volver a la anterior'), findsNothing);
+    expect(find.text('Deshacer'), findsNothing);
     expect(session.canRestore, isFalse);
     expect(session.turns, isEmpty);
   });

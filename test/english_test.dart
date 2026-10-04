@@ -76,7 +76,7 @@ void main() {
     await tester.tap(find.text('New'));
     await tester.pumpAndSettle();
     expect(find.text('You started a new conversation.'), findsOneWidget);
-    await tester.tap(find.text('Go back to it'));
+    await tester.tap(find.text('Undo'));
     await tester.pumpAndSettle();
     expect(session.turns.single.question, ScriptedAgent.startersEn[2]);
   });

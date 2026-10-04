@@ -4770,9 +4770,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get conversationCleared => 'Empezaste una conversación nueva.';
 
   @override
-  String get conversationRestore => 'Volver a la anterior';
-
-  @override
   String get seeResult => 'Ver resultado';
 
   @override

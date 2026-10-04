@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:dartantic_ai/dartantic_ai.dart' as dartantic;
+import 'package:decimal/decimal.dart';
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart' show ChatMessage, JsonMap;
@@ -16,16 +18,34 @@ import 'package:quincena/data/category.dart';
 import 'package:quincena/data/clock.dart';
 import 'package:quincena/data/ledger.dart';
 import 'package:quincena/data/seed.dart';
+import 'package:quincena/domain/pay_schedule.dart';
+import 'package:quincena/domain/records.dart';
+import 'package:quincena/l10n/l10n.dart';
+import 'package:quincena/money/asset.dart';
+import 'package:quincena/own/own_controller.dart';
+import 'package:quincena/own/own_tools.dart';
 import 'package:quincena/session/session.dart';
+import 'package:quincena/store/database.dart';
+import 'package:quincena/store/store.dart';
+import 'package:quincena/theme/theme.dart';
+import 'package:quincena/ui/own/ask_page.dart';
 
 import 'fonts.dart';
+import 'own_flow_test.dart' show settle;
 
 /// A model that writes the expense form, and on its save event records the
 /// expense with the id the event carries, as the tool asks.
 class ExpenseModel implements ModelClient {
-  ExpenseModel(this.tools);
+  ExpenseModel(this.tools, {this.formId, this.passesId = true});
 
   final List<dartantic.Tool> tools;
+
+  /// An id the model writes into every form's save event, the same each
+  /// time, as a model might.
+  final String? formId;
+
+  /// Whether the model passes the event's id on to record_expense.
+  final bool passesId;
   final List<String> prompts = <String>[];
   final ScriptedAgent _script = ScriptedAgent(demoLedger());
   int _serial = 0;
@@ -59,7 +79,7 @@ class ExpenseModel implements ModelClient {
           .call(<String, dynamic>{
             'amount': context['amount'],
             'category': context['category'],
-            'id': context['id'],
+            if (passesId) 'id': context['id'],
           });
       turn = const AgentTurn(
         components: <JsonMap>[
@@ -77,6 +97,17 @@ class ExpenseModel implements ModelClient {
       );
     } else {
       turn = _script.answer(prompt);
+      for (final JsonMap c in turn.components) {
+        if (formId != null && c['id'] == 'save') {
+          final Map<String, Object?> event =
+              (c['onPressed']! as Map<String, Object?>)['event']!
+                  as Map<String, Object?>;
+          event['context'] = <String, Object?>{
+            ...event['context']! as Map<String, Object?>,
+            'id': formId,
+          };
+        }
+      }
     }
     for (final message in turn.messages(
       'model-${++_serial}',
@@ -263,11 +294,44 @@ void main() {
       expect(session.ledger.freeUntilPayday, 1369300 - 60000);
     });
 
+    testWidgets('keeps its own id, whatever id the model wrote into it', (
+      tester,
+    ) async {
+      late ExpenseModel model;
+      final Session session = Session(
+        mode: AgentMode.live,
+        clientFor: (List<dartantic.Tool> tools) =>
+            model = ExpenseModel(tools, formId: 'expense-1'),
+        errorWindow: Duration.zero,
+      );
+      await open(tester, session);
+      final int before = session.ledger.movements.length;
+      for (var i = 0; i < 2; i++) {
+        unawaited(session.ask(ScriptedAgent.starters[4]));
+        await answer(tester);
+        await tester.ensureVisible(find.text('Guardar gasto').last);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Guardar gasto').last);
+        await answer(tester);
+      }
+
+      // Two forms, two expenses: the second does not overwrite the first.
+      expect(session.ledger.movements, hasLength(before + 2));
+      expect(session.ledger.freeUntilPayday, 1369300 - 2 * 45000);
+      final List<Object?> ids = <Object?>[
+        for (final Map<Object?, Object?> save in model.saves) save['id'],
+      ];
+      expect(ids.toSet(), hasLength(2));
+      expect(ids, isNot(contains('expense-1')));
+    });
+
     testWidgets('its receipt holds at twice the text size', (tester) async {
       tester.platformDispatcher.textScaleFactorTestValue = 2;
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       final Session session = Session(thinking: Duration.zero);
       await open(tester, session);
+      // Google Play's smallest screenshot phone.
+      tester.view.physicalSize = const Size(1080, 2400);
       unawaited(session.ask(ScriptedAgent.starters[4]));
       await tester.pumpAndSettle();
       await tap(tester, 'Guardar gasto');
@@ -276,6 +340,143 @@ void main() {
       expect(find.textContaining('Gasto guardado · '), findsOneWidget);
       expect(find.text('Nueva'), findsOneWidget);
       expect(tester.takeException(), isNull);
+
+      // And so does the way back to it, once a new one starts.
+      await tester.tap(find.text('Nueva'));
+      await tester.pumpAndSettle();
+      expect(find.text('Empezaste una conversación nueva.'), findsOneWidget);
+      expect(find.text('Deshacer'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('the questions page, over the person\'s own accounts', () {
+    final DateTime now = DateTime(2026, 10, 3, 10);
+
+    /// A bank with a million pesos, and the page that asks about it, opened
+    /// from another on Google Play's smallest screenshot phone.
+    Future<(Session, QuincenaStore)> openAsk(
+      WidgetTester tester, {
+      bool passesId = true,
+    }) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      final QuincenaStore store = (await tester.runAsync(() async {
+        final QuincenaStore store = QuincenaStore(
+          QuincenaDatabase(NativeDatabase.memory()),
+          now: () => now,
+        );
+        await store.ensureCategories();
+        await store.saveProfile(
+          const Profile(
+            name: 'Diego',
+            base: Asset.cop,
+            schedule: TwiceMonthly(),
+          ),
+        );
+        await store.addAccount(
+          name: 'Bancolombia',
+          kind: AccountKind.bank,
+          asset: Asset.cop,
+          opening: Decimal.parse('1000000'),
+          institution: 'Bancolombia',
+        );
+        return store;
+      }))!;
+      addTearDown(() => tester.runAsync(store.close));
+      final OwnController own = OwnController(
+        store,
+        now: () => now,
+        readNative: false,
+      );
+      addTearDown(own.dispose);
+      await tester.runAsync(own.start);
+      final Session session = Session(
+        mode: AgentMode.gemini,
+        clientFor: (List<dartantic.Tool> tools) =>
+            ExpenseModel(tools, passesId: passesId),
+        errorWindow: Duration.zero,
+        ledgerOf: () => own.ledger!,
+        toolsFor: (_) => ownTools(own),
+        own: true,
+      );
+      addTearDown(session.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: quincenaTheme(Brightness.light),
+          locale: const Locale('es'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: appLocales,
+          home: Builder(
+            builder: (BuildContext context) => Scaffold(
+              body: Center(
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (BuildContext context) =>
+                          AskPage(own: own, session: session),
+                    ),
+                  ),
+                  child: const Text('Preguntar'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Preguntar'));
+      await settle(tester);
+      unawaited(session.ask(ScriptedAgent.starters[4]));
+      await settle(tester);
+      return (session, store);
+    }
+
+    testWidgets('Editar corrects the entry, even with a model that '
+        'leaves the id out', (tester) async {
+      final (Session _, QuincenaStore store) = await openAsk(
+        tester,
+        passesId: false,
+      );
+      await tap(tester, 'Guardar gasto');
+      await settle(tester);
+      expect((await tester.runAsync(store.entries))!.single.amount, d(-45000));
+
+      await tap(tester, 'Editar');
+      await settle(tester);
+      await tester.enterText(find.byType(TextField).first, '60000');
+      await settle(tester);
+      await tap(tester, 'Guardar gasto');
+      await settle(tester);
+      final List<Entry> entries = (await tester.runAsync(store.entries))!;
+      expect(entries.single.amount, d(-60000));
+    });
+
+    testWidgets('Nueva holds at twice the text size, and its way back '
+        'leaves with the page', (tester) async {
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      final (Session session, QuincenaStore _) = await openAsk(tester);
+      final Finder button = find.ancestor(
+        of: find.text('Nueva'),
+        matching: find.byType(TextButton),
+      );
+      expect(tester.getSize(button).height, greaterThanOrEqualTo(48));
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(button);
+      await settle(tester);
+      expect(find.text('Empezaste una conversación nueva.'), findsOneWidget);
+      expect(session.canRestore, isTrue);
+
+      // Over the page it came from, the way back would lead nowhere.
+      await tester.tap(find.byType(BackButton));
+      await settle(tester);
+      expect(find.text('Preguntar'), findsOneWidget);
+      expect(find.text('Empezaste una conversación nueva.'), findsNothing);
+      expect(session.canRestore, isFalse);
     });
   });
 }
+
+Decimal d(int amount) => Decimal.fromInt(amount);
