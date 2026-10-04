@@ -1266,5 +1266,8 @@
   "goalEffectBeforePay": "The contribution on {day} goes out before payday: you could spend {left} until {payday}.",
   "goalEffectMore": "From the pay period starting {payday}, you'd have {amount} less a month to spend than now.",
   "goalEffectLess": "From the pay period starting {payday}, you'd have {amount} more a month to spend than now.",
-  "goalEffectSame": "It's what you already set aside: what you can spend stays the same."
+  "goalEffectSame": "It's what you already set aside: what you can spend stays the same.",
+  "goalNeverArrives": "With nothing set aside each month, you don't reach the goal.",
+  "goalEffectUntilPaydayShort": "You're {short} short of {payday}. The contribution goes out on {day}, after payday.",
+  "goalEffectBeforePayShort": "The contribution on {day} goes out before payday: you'd be {short} short of {payday}."
 }

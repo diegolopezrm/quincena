@@ -1530,5 +1530,10 @@
   "@goalEffectMore": {"placeholders": {"payday": {"type": "String"}, "amount": {"type": "String"}}},
   "goalEffectLess": "Desde la quincena del {payday} tendrías {amount} más al mes para gastar que hoy.",
   "@goalEffectLess": {"placeholders": {"payday": {"type": "String"}, "amount": {"type": "String"}}},
-  "goalEffectSame": "Es lo que ya apartas: lo que puedes gastar no cambia."
+  "goalEffectSame": "Es lo que ya apartas: lo que puedes gastar no cambia.",
+  "goalNeverArrives": "Sin aporte al mes no llegas a la meta.",
+  "goalEffectUntilPaydayShort": "Te faltan {short} para llegar al {payday}. El aporte sale el {day}, después de tu pago.",
+  "@goalEffectUntilPaydayShort": {"placeholders": {"short": {"type": "String"}, "payday": {"type": "String"}, "day": {"type": "String"}}},
+  "goalEffectBeforePayShort": "El aporte del {day} sale antes de tu pago: te faltarían {short} para llegar al {payday}.",
+  "@goalEffectBeforePayShort": {"placeholders": {"day": {"type": "String"}, "short": {"type": "String"}, "payday": {"type": "String"}}}
 }

@@ -7655,6 +7655,24 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Es lo que ya apartas: lo que puedes gastar no cambia.'**
   String get goalEffectSame;
+
+  /// No description provided for @goalNeverArrives.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin aporte al mes no llegas a la meta.'**
+  String get goalNeverArrives;
+
+  /// No description provided for @goalEffectUntilPaydayShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Te faltan {short} para llegar al {payday}. El aporte sale el {day}, después de tu pago.'**
+  String goalEffectUntilPaydayShort(String short, String payday, String day);
+
+  /// No description provided for @goalEffectBeforePayShort.
+  ///
+  /// In es, this message translates to:
+  /// **'El aporte del {day} sale antes de tu pago: te faltarían {short} para llegar al {payday}.'**
+  String goalEffectBeforePayShort(String day, String short, String payday);
 }
 
 class _AppLocalizationsDelegate

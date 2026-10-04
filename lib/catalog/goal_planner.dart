@@ -233,9 +233,10 @@ class GoalPlanner extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: 12),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: <Widget>[
               Expanded(
                 child: Text(l.setAsideMonthly, style: context.type.labelMedium),
@@ -251,11 +252,11 @@ class GoalPlanner extends StatelessWidget {
                         ? null
                         : () => _type(context),
                     borderRadius: BorderRadius.circular(10),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 2,
-                      ),
+                    // As tall as a finger, with the amount where it was:
+                    // the spacing around the row gives the height back.
+                    child: Container(
+                      constraints: const BoxConstraints(minHeight: 48),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
@@ -279,7 +280,6 @@ class GoalPlanner extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 6),
           // A slider announces its value on its own, and nothing else; the
           // name is what tells a screen reader user what the value is of.
           // Merged, so the name lands on the slider's own node; a label on a
@@ -373,32 +373,46 @@ class GoalPlanner extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Text.rich(
-                          TextSpan(
+                        // With nothing going in there is no month to name,
+                        // and "you get there in never" is no sentence.
+                        if (contributions < 0)
+                          Text(
+                            l.goalNeverArrives,
                             style: context.type.bodyMedium?.copyWith(
                               color: context.colors.ink,
                             ),
-                            children: <InlineSpan>[
-                              TextSpan(text: context.l10n.arrivesIn),
-                              TextSpan(
-                                text: arrival,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontVariations: const <FontVariation>[
-                                    FontVariation('wght', 620),
-                                  ],
-                                  fontFeatures: tabular,
-                                  color: status,
+                          )
+                        else
+                          Text.rich(
+                            TextSpan(
+                              style: context.type.bodyMedium?.copyWith(
+                                color: context.colors.ink,
+                              ),
+                              children: <InlineSpan>[
+                                TextSpan(text: context.l10n.arrivesIn),
+                                TextSpan(
+                                  text: arrival,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontVariations: const <FontVariation>[
+                                      FontVariation('wght', 620),
+                                    ],
+                                    fontFeatures: tabular,
+                                    color: status,
+                                  ),
                                 ),
-                              ),
-                              TextSpan(
-                                text: onTime
-                                    ? context.l10n.beforeDeadline(deadlineLabel)
-                                    : context.l10n.afterDeadline(deadlineLabel),
-                              ),
-                            ],
+                                TextSpan(
+                                  text: onTime
+                                      ? context.l10n.beforeDeadline(
+                                          deadlineLabel,
+                                        )
+                                      : context.l10n.afterDeadline(
+                                          deadlineLabel,
+                                        ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
                         // Fifty years of them is no plan worth dating.
                         if (contributions > 0 &&
                             contributions <= 600) ...<Widget>[
@@ -458,9 +472,27 @@ class GoalPlanner extends StatelessWidget {
     final AppLocalizations l = context.l10n;
     final DateTime first = contributionOn(0, day: contributionDay);
     final double? now = current;
+    // Short of payday, it says by how much, as the home does: never "you
+    // can spend" a negative amount.
     return <String>[
       if (first.isAfter(next))
-        l.goalEffectUntilPayday(dayMonth(next), pesos(free), dayMonth(first))
+        free < 0
+            ? l.goalEffectUntilPaydayShort(
+                pesos(-free),
+                dayMonth(next),
+                dayMonth(first),
+              )
+            : l.goalEffectUntilPayday(
+                dayMonth(next),
+                pesos(free),
+                dayMonth(first),
+              )
+      else if (free - monthly < 0)
+        l.goalEffectBeforePayShort(
+          dayMonth(first),
+          pesos(monthly - free),
+          dayMonth(next),
+        )
       else
         l.goalEffectBeforePay(
           dayMonth(first),

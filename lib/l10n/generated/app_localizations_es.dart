@@ -4832,4 +4832,17 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get goalEffectSame =>
       'Es lo que ya apartas: lo que puedes gastar no cambia.';
+
+  @override
+  String get goalNeverArrives => 'Sin aporte al mes no llegas a la meta.';
+
+  @override
+  String goalEffectUntilPaydayShort(String short, String payday, String day) {
+    return 'Te faltan $short para llegar al $payday. El aporte sale el $day, después de tu pago.';
+  }
+
+  @override
+  String goalEffectBeforePayShort(String day, String short, String payday) {
+    return 'El aporte del $day sale antes de tu pago: te faltarían $short para llegar al $payday.';
+  }
 }

@@ -306,6 +306,88 @@ void main() {
       );
     });
 
+    testWidgets('says by how much it falls short, never a negative to spend', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        current: 250000,
+        spendable: -200000,
+        payday: '2026-10-15',
+      );
+      String text = screen(tester);
+      expect(
+        text,
+        contains(
+          r'Te faltan $200.000 para llegar al 15 de octubre. El aporte sale el '
+          '16 de octubre, después de tu pago.',
+        ),
+      );
+      expect(text, isNot(contains('puedes gastar −')));
+
+      // The contribution first, and more than there is until payday.
+      await pump(
+        tester,
+        monthly: 600000,
+        current: 250000,
+        spendable: 300000,
+        payday: '2026-10-31',
+      );
+      text = screen(tester);
+      expect(
+        text,
+        contains(
+          r'El aporte del 16 de octubre sale antes de tu pago: te faltarían '
+          r'$300.000 para llegar al 31 de octubre.',
+        ),
+      );
+      expect(text, isNot(contains('podrías gastar −')));
+    });
+
+    testWidgets('with nothing going in, says it never gets there', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        app(
+          SingleChildScrollView(
+            child: GoalPlanner(
+              name: 'Cartagena',
+              target: 2800000,
+              saved: 1000000,
+              monthly: 0,
+              max: 800000,
+              arrival: arrivalMonth(2800000, 1000000, 0),
+              onTime: false,
+              deadlineLabel: '20 de diciembre',
+              onMonthlyChanged: (_) {},
+            ),
+          ),
+        ),
+      );
+      final String text = screen(tester);
+      expect(text, contains('Sin aporte al mes no llegas a la meta.'));
+      expect(text, isNot(contains('Llegas en nunca')));
+      expect(text, isNot(contains('aportes')));
+    });
+
+    testWidgets('every control in it is big enough to tap, and named', (
+      tester,
+    ) async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      // Away from today's amount: the amount, the way back and what it
+      // takes are all on screen.
+      await pump(tester, monthly: 400000, current: 250000);
+      expect(find.text(r'Volver a $250.000'), findsOneWidget);
+      expect(find.text(r'Usar $600.000 al mes'), findsOneWidget);
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+      semantics.dispose();
+    });
+
     testWidgets('never stops on an amount that arrives late', (tester) async {
       // After the 16th, the next contribution is November's: two fit
       // before the deadline, and $600.000 a month no longer gets there.
