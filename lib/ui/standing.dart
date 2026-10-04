@@ -28,6 +28,7 @@ class StandingCard extends StatelessWidget {
     this.cardDebt = 0,
     this.onExplain,
     this.greet = true,
+    this.caveat,
   });
 
   final Ledger ledger;
@@ -45,6 +46,11 @@ class StandingCard extends StatelessWidget {
   /// introduce the person it is about; someone's own card goes straight to
   /// the figure.
   final bool greet;
+
+  /// What the figure still leaves out, said under it in caution: the fixed
+  /// payments of someone who has not told them yet. Null when nothing is
+  /// missing.
+  final String? caveat;
 
   @override
   Widget build(BuildContext context) {
@@ -122,7 +128,7 @@ class StandingCard extends StatelessWidget {
           // a button of its own inside it.
           Semantics(
             container: true,
-            label: summary,
+            label: caveat == null ? summary : '$summary $caveat',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
@@ -198,6 +204,27 @@ class StandingCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(sentence(when), style: context.type.bodySmall),
+                      if (caveat case final String text) ...<Widget>[
+                        const SizedBox(height: 6),
+                        Row(
+                          children: <Widget>[
+                            Icon(
+                              Glyph.warningCircle,
+                              size: 16,
+                              color: context.colors.caution,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                text,
+                                style: context.type.bodySmall?.copyWith(
+                                  color: context.colors.caution,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),

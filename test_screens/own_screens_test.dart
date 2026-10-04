@@ -89,6 +89,18 @@ void main() {
     await tester.tap(find.text('Siguiente'));
     await settle(tester);
     await shoot('onboarding-3');
+    await tester.tap(find.text('Bancolombia · COP'));
+    await settle(tester);
+    await tester.enterText(
+      find.widgetWithText(TextField, '¿Cuánto tiene hoy?'),
+      '1.500.000',
+    );
+    await tester.ensureVisible(find.text('Guardar'));
+    await tester.tap(find.text('Guardar'));
+    await settle(tester);
+    await tester.tap(find.text('Siguiente'));
+    await settle(tester);
+    await shoot('onboarding-4');
   });
 
   for (final Brightness b in Brightness.values) {

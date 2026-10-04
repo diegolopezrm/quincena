@@ -81,6 +81,23 @@ class CommitmentsPage extends StatelessWidget {
                   Block(
                     child: Text(l.fixedEmpty, style: context.type.bodyMedium),
                   ),
+                // Until then the money to spend on the home is provisional.
+                if (own.provisional)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton(
+                      onPressed: () async {
+                        final ScaffoldMessengerState messenger =
+                            ScaffoldMessenger.of(context);
+                        final String done = l.fixedNoneDone;
+                        await own.sayNoFixedPayments(true);
+                        messenger.showSnackBar(
+                          SnackBar(content: Text(done)),
+                        );
+                      },
+                      child: Text(l.noFixedPayments),
+                    ),
+                  ),
                 if (guesses.isNotEmpty && ledger != null) ...<Widget>[
                   const SizedBox(height: 24),
                   SectionLabel(l.guessTitle),

@@ -1349,5 +1349,22 @@
   "todoRecord": "Record",
   "todoRates": "{count, plural, =1{No rate yet for {codes}} other{No rates yet for {codes}}}",
   "todoRatesBody": "{count, plural, =1{Until then it counts as zero in your totals.} other{Until then they count as zero in your totals.}}",
-  "todoSeeRates": "See rates"
+  "todoSeeRates": "See rates",
+  "standingProvisional": "Provisional: your recurring payments aren't in yet",
+  "todoFixedTitle": "Add your recurring payments",
+  "todoFixedBody": "Anything you pay until {date} comes out of what you can spend.",
+  "todoAdd": "Add",
+  "noFixedPayments": "I don't have recurring payments",
+  "fixedNoneDone": "Done. What you can spend is no longer provisional.",
+  "freeExplainAssumeNoFixed": "It has no recurring payments: if you pay rent, bills or subscriptions, add them in Plan › Recurring payments and they'll come out of this figure before they're due.",
+  "onboardingPayAmount": "{kind, select, fortnight{How much do you get each payday?} other{How much do you get each payday?}}",
+  "onboardingPayAmountHelp": "Optional. It doesn't count as money until it arrives; it's used to show the days ahead.",
+  "onboardingFixedTitle": "What do you pay regularly?",
+  "onboardingFixedBody": "Rent, bills, phone, subscriptions. Quincena takes them out of what you can spend before they're due.",
+  "fixedSuggestRent": "Rent",
+  "fixedSuggestAdmin": "Building fee",
+  "fixedSuggestUtilities": "Utilities",
+  "fixedSuggestInternet": "Internet",
+  "fixedSuggestPhone": "Phone plan",
+  "fixedSuggestSubscription": "A subscription"
 }

@@ -5251,4 +5251,67 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get todoSeeRates => 'Ver tasas';
+
+  @override
+  String get standingProvisional => 'Provisional: faltan tus pagos fijos';
+
+  @override
+  String get todoFixedTitle => 'Agrega tus pagos fijos';
+
+  @override
+  String todoFixedBody(String date) {
+    return 'Lo que pagues hasta el $date sale de lo que puedes gastar.';
+  }
+
+  @override
+  String get todoAdd => 'Agregar';
+
+  @override
+  String get noFixedPayments => 'No tengo pagos fijos';
+
+  @override
+  String get fixedNoneDone =>
+      'Listo. Lo que puedes gastar ya no es provisional.';
+
+  @override
+  String get freeExplainAssumeNoFixed =>
+      'No tiene pagos fijos: si pagas arriendo, servicios o suscripciones, agrégalos en Plan › Pagos fijos y saldrán de esta cifra antes de llegar.';
+
+  @override
+  String onboardingPayAmount(String kind) {
+    String _temp0 = intl.Intl.selectLogic(kind, {
+      'fortnight': '¿Cuánto te llega cada quincena?',
+      'other': '¿Cuánto te llega cada pago?',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get onboardingPayAmountHelp =>
+      'Opcional. No cuenta como plata hasta que llega; sirve para ver los días que vienen.';
+
+  @override
+  String get onboardingFixedTitle => '¿Qué pagas fijo?';
+
+  @override
+  String get onboardingFixedBody =>
+      'Arriendo, servicios, celular, suscripciones. Quincena los resta de lo que puedes gastar antes de que lleguen.';
+
+  @override
+  String get fixedSuggestRent => 'Arriendo';
+
+  @override
+  String get fixedSuggestAdmin => 'Administración';
+
+  @override
+  String get fixedSuggestUtilities => 'Servicios';
+
+  @override
+  String get fixedSuggestInternet => 'Internet';
+
+  @override
+  String get fixedSuggestPhone => 'Plan del celular';
+
+  @override
+  String get fixedSuggestSubscription => 'Una suscripción';
 }

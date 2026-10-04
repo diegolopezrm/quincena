@@ -1415,6 +1415,7 @@ class QuincenaStore {
     'shared.groups',
     'freelance',
     'trips',
+    'setup.noFixed',
   ];
 
   /// Replaces everything with what [exportJson] wrote, or throws an

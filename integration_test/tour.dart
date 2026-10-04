@@ -280,7 +280,8 @@ final List<Scene> scenes = <Scene>[
     await t.tester.enterText(find.byType(TextField).first, 'Diego');
     await t.shot('nombre-y-moneda');
     await t.tap('Siguiente');
-    await t.shot('como-te-pagan');
+    // How much is paid sits under when.
+    await t.page('como-te-pagan');
     await t.tap('Mensual');
     await t.shot('como-te-pagan-mensual');
     await t.tap('Quincenal');
@@ -291,6 +292,15 @@ final List<Scene> scenes = <Scene>[
     await t.back();
     await t.tap('Tarjeta de crédito · COP');
     await t.page('tarjeta-sugerida');
+    await t.back();
+    // The fixed payments come after an account to pay them from.
+    await t.tap('Bancolombia · COP');
+    await t.type('¿Cuánto tiene hoy?', '1.500.000');
+    await t.tap('Guardar');
+    await t.tap('Siguiente');
+    await t.shot('pagos-fijos');
+    await t.tap('Arriendo');
+    await t.page('pago-fijo-sugerido');
     await t.back();
   }),
   Scene('02-inicio', data: fullAccount, (Tour t) async {

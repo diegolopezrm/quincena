@@ -79,6 +79,7 @@ class FreeExplained extends StatelessWidget {
       cardDebt: own.spendableCardDebt,
       pending: own.pendingInbox.length,
       latePay: own.projection?.latePay,
+      provisional: own.provisional,
       accounts: panel(spendable.where((Account a) => !owes(a))),
       cards: spendable.any(owes) ? panel(spendable.where(owes)) : null,
       leftOut: <String>[
@@ -107,6 +108,7 @@ class LedgerExplained extends StatelessWidget {
     this.cardDebt = 0,
     this.pending = 0,
     this.latePay,
+    this.provisional = false,
     this.accounts,
     this.cards,
     this.leftOut = const <String>[],
@@ -124,6 +126,10 @@ class LedgerExplained extends StatelessWidget {
 
   /// The payday that passed without the pay, when there is one.
   final DateTime? latePay;
+
+  /// Whether no fixed payment has been told yet, which the figure would
+  /// otherwise take off before payday.
+  final bool provisional;
 
   /// Each everyday account with what it adds.
   final Widget? accounts;
@@ -236,6 +242,7 @@ class LedgerExplained extends StatelessWidget {
           const SizedBox(height: 24),
           SectionLabel(l.freeExplainAssumptions),
           for (final String line in <String>[
+            if (provisional) l.freeExplainAssumeNoFixed,
             l.freeExplainAssumeToday(dayMonth(ledger.nextPayday)),
             if (pending > 0) l.freeExplainAssumePending(pending),
             if (ledger.pay case final int pay)

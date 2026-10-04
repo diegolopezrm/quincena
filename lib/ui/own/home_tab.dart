@@ -20,6 +20,7 @@ import '../standing.dart';
 import 'accounts_tab.dart';
 import 'close_page.dart';
 import 'coming_days_page.dart';
+import 'commitments_page.dart';
 import 'entry_sheet.dart';
 import 'envelopes_page.dart';
 import 'free_explained.dart';
@@ -62,6 +63,7 @@ class OwnHomeTab extends StatelessWidget {
           cardDebt: own.spendableCardDebt,
           onExplain: () => showFreeExplained(context, own),
           greet: false,
+          caveat: own.provisional ? l.standingProvisional : null,
         ),
         // One thing first, given room and a button; the rest after it.
         if (todos.isNotEmpty) ...<Widget>[
@@ -131,12 +133,13 @@ class OwnHomeTab extends StatelessWidget {
   }
 
   /// What there is to do, the most pressing first: what the figure waits
-  /// for, the pay to split, then what it leaves out.
+  /// for, the pay to split, then what it still leaves out.
   List<_Todo> _todos(AppLocalizations l, Ledger ledger) {
     final int pending = own.pendingInbox.length;
     final List<String> unpriced = <String>[
       for (final Asset a in own.unconverted) a.code,
     ];
+    final int guesses = own.provisional ? own.recurringGuesses.length : 0;
     return <_Todo>[
       if (pending > 0)
         _Todo(
@@ -156,6 +159,16 @@ class OwnHomeTab extends StatelessWidget {
               showEntrySheet(context, own: own, kind: EntryKind.income),
         ),
       if (own.paidWithoutPlan) _payArrived(l, own, ledger),
+      if (own.provisional)
+        _Todo(
+          icon: Glyph.repeat,
+          title: l.todoFixedTitle,
+          body: guesses > 0
+              ? l.planFixedGuesses(guesses)
+              : l.todoFixedBody(dayShortMonth(ledger.nextPayday)),
+          action: l.todoAdd,
+          open: _push((_) => CommitmentsPage(own: own)),
+        ),
       if (unpriced.isNotEmpty)
         _Todo(
           icon: Glyph.arrowsLeftRight,

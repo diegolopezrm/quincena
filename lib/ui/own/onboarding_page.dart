@@ -1,21 +1,29 @@
 import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../domain/pay_schedule.dart';
 import '../../domain/records.dart';
+import '../../format/dates.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
+import '../../money/money.dart';
 import '../../own/own_controller.dart';
 import '../../store/store.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
+import '../kit.dart';
 import 'account_sheet.dart';
 import 'accounts_tab.dart';
+import 'amount_input.dart';
+import 'charge_sheet.dart';
 import 'look.dart';
 import 'pay_schedule_editor.dart';
 
-/// Three steps: who, how they get paid, and where their money is.
+/// Four steps: who, how and how much they get paid, where their money is,
+/// and what they pay regularly.
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({
     super.key,
@@ -43,14 +51,22 @@ class OnboardingPage extends StatefulWidget {
 }
 
 class _OnboardingPageState extends State<OnboardingPage> {
-  static const int _steps = 3;
+  static const int _steps = 4;
+
+  /// The step that adds accounts: the fixed payments after it are paid
+  /// from one.
+  static const int _accountsStep = 2;
   int _step = 0;
   final TextEditingController _name = TextEditingController();
+
+  /// What arrives each payday, when the person says.
+  final TextEditingController _pay = TextEditingController();
   Asset _base = Asset.cop;
   PaySchedule _schedule = const TwiceMonthly();
   String? _nameError;
 
-  /// Created on the last step, once there is a profile to hang accounts on.
+  /// Created on the accounts step, once there is a profile to hang accounts
+  /// on.
   OwnController? _own;
 
   DateTime get _today {
@@ -72,12 +88,16 @@ class _OnboardingPageState extends State<OnboardingPage> {
       _name.text = p.name;
       _base = p.base;
       _schedule = p.schedule;
+      if (p.pay case final Decimal pay) {
+        _pay.text = formatDecimal(pay, decimals: p.base.decimals, trim: true);
+      }
     });
   }
 
   @override
   void dispose() {
     _name.dispose();
+    _pay.dispose();
     _own?.dispose();
     super.dispose();
   }
@@ -90,8 +110,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
       if (missing) return;
     }
     if (_step == 1) {
+      final Decimal? pay = parseAmount(_pay.text);
       await widget.store.saveProfile(
-        Profile(name: _name.text.trim(), base: _base, schedule: _schedule),
+        Profile(
+          name: _name.text.trim(),
+          base: _base,
+          schedule: _schedule,
+          pay: pay != null && pay > Decimal.zero ? pay : null,
+        ),
       );
       if (_own == null) {
         final OwnController own =
@@ -102,17 +128,25 @@ class _OnboardingPageState extends State<OnboardingPage> {
       }
     }
     if (!mounted) return;
+    if (_step == _accountsStep &&
+        (_own?.accounts ?? const <Account>[]).isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.onboardingNeedAccount)));
+      return;
+    }
     if (_step == _steps - 1) {
-      if ((_own?.accounts ?? const <Account>[]).isEmpty) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l.onboardingNeedAccount)));
-        return;
-      }
       widget.onDone();
       return;
     }
     if (mounted) setState(() => _step++);
+  }
+
+  /// Done, having said there is nothing paid regularly: the money to spend
+  /// is not waiting for anything.
+  Future<void> _noFixed() async {
+    await _own?.sayNoFixedPayments(true);
+    if (mounted) widget.onDone();
   }
 
   void _back() {
@@ -157,6 +191,27 @@ class _OnboardingPageState extends State<OnboardingPage> {
         asset: Asset.usdt,
         institution: 'Binance',
       ),
+    ];
+  }
+
+  /// What most people pay each month, to start one from. The first of next
+  /// month is a guess the sheet lets them change.
+  List<ChargeDraft> _fixedSuggestions(AppLocalizations l, DateTime today) {
+    final DateTime next = DateTime(today.year, today.month + 1, 1);
+    ChargeDraft draft(String name, String category) => ChargeDraft(
+      name: name,
+      amount: Money(Decimal.zero, _base),
+      next: next,
+      category: category,
+    );
+    return <ChargeDraft>[
+      draft(l.fixedSuggestRent, 'housing'),
+      draft(l.fixedSuggestAdmin, 'housing'),
+      draft(l.fixedSuggestUtilities, 'utilities'),
+      draft(l.fixedSuggestInternet, 'utilities'),
+      draft(l.fixedSuggestPhone, 'utilities'),
+      // The name is the person's own: Netflix, Spotify.
+      draft('', 'subscriptions'),
     ];
   }
 
@@ -215,7 +270,93 @@ class _OnboardingPageState extends State<OnboardingPage> {
               today: _today,
               onChanged: (PaySchedule s) => setState(() => _schedule = s),
             ),
+            const SizedBox(height: 36),
+            Text(
+              l.onboardingPayAmount(
+                _schedule is TwiceMonthly ? 'fortnight' : 'other',
+              ),
+              style: context.type.headlineSmall,
+            ),
+            const SizedBox(height: 6),
+            Text(l.onboardingPayAmountHelp, style: context.type.bodyMedium),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _pay,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: <TextInputFormatter>[
+                AmountInputFormatter(maxDecimals: _base.decimals),
+              ],
+              decoration: InputDecoration(
+                labelText: l.amount,
+                prefixText: switch (_base.localSymbol ?? _base.symbol) {
+                  final String sign => '$sign ',
+                  null => null,
+                },
+                suffixText: _base.code,
+              ),
+            ),
           ],
+        );
+      case 3:
+        final OwnController? own = _own;
+        if (own == null) return const SizedBox.shrink();
+        final String suggestionSubscription = l.fixedSuggestSubscription;
+        return ListenableBuilder(
+          listenable: own,
+          builder: (BuildContext context, _) => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Text(l.onboardingFixedTitle, style: context.type.displaySmall),
+              const SizedBox(height: 8),
+              Text(l.onboardingFixedBody, style: context.type.bodyMedium),
+              const SizedBox(height: 24),
+              if (own.recurring.isNotEmpty) ...<Widget>[
+                Panel(
+                  children: <Widget>[
+                    for (final RecurringCharge r in own.recurring)
+                      ListTile(
+                        onTap: () =>
+                            showChargeSheet(context, own: own, charge: r),
+                        title: Text(r.name, style: context.type.titleSmall),
+                        subtitle: Text(
+                          l.fixedNextOn(dayShortMonth(r.nextDate)),
+                          style: context.type.bodySmall,
+                        ),
+                        trailing: Figures(
+                          moneyText(r.amount, base: _base),
+                          style: context.type.titleSmall,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
+              OutlinedButton.icon(
+                onPressed: () => showChargeSheet(context, own: own),
+                icon: const Icon(Glyph.plus, size: 18),
+                label: Text(l.chargeAdd),
+              ),
+              const SizedBox(height: 24),
+              SectionLabel(l.onboardingSuggestions),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: <Widget>[
+                  for (final ChargeDraft d in _fixedSuggestions(l, own.today))
+                    ActionChip(
+                      avatar: Icon(categoryIconFor(d.category!), size: 18),
+                      label: Text(
+                        d.name.isEmpty ? suggestionSubscription : d.name,
+                      ),
+                      onPressed: () =>
+                          showChargeSheet(context, own: own, draft: d),
+                    ),
+                ],
+              ),
+            ],
+          ),
         );
       default:
         final OwnController? own = _own;
@@ -313,12 +454,29 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: _next,
-                      child: Text(last ? l.finish : l.next),
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      FilledButton(
+                        onPressed: _next,
+                        child: Text(last ? l.finish : l.next),
+                      ),
+                      // Only before any is added: with one, there are some.
+                      if (_own case final OwnController own when last)
+                        ListenableBuilder(
+                          listenable: own,
+                          builder: (BuildContext context, _) =>
+                              own.recurring.isNotEmpty
+                              ? const SizedBox.shrink()
+                              : Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: TextButton(
+                                    onPressed: _noFixed,
+                                    child: Text(l.noFixedPayments),
+                                  ),
+                                ),
+                        ),
+                    ],
                   ),
                 ),
               ],

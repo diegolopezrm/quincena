@@ -536,6 +536,26 @@ class OwnController extends ChangeNotifier {
 
   static const String _widgetHideKey = 'widget.hideAmounts';
 
+  /// Whether the person said they have no fixed payments, so a figure
+  /// without any is not waiting for them.
+  bool get noFixedPayments => _noFixed;
+  bool _noFixed = false;
+
+  Future<void> sayNoFixedPayments(bool none) =>
+      store.setSetting(_noFixedKey, none ? 'yes' : '');
+
+  /// Whether the money to spend is provisional: nothing is set to be paid
+  /// regularly, neither fixed payments nor instalments, and the person has
+  /// not said there is nothing. Rent or a phone plan not told yet would
+  /// come out of it unannounced.
+  bool get provisional =>
+      ledger != null &&
+      !recurring.any((RecurringCharge r) => r.active) &&
+      _instalments.isEmpty &&
+      !_noFixed;
+
+  static const String _noFixedKey = 'setup.noFixed';
+
   static List<Object?> _list(String? text) => switch (_json(text)) {
     final List<Object?> list => list,
     _ => const <Object?>[],
@@ -970,6 +990,7 @@ class OwnController extends ChangeNotifier {
       _ => null,
     };
     _widgetHides = await store.setting(_widgetHideKey) == 'yes';
+    _noFixed = await store.setting(_noFixedKey) == 'yes';
     if (_disposed) return;
     _configureListener();
     unawaited(_remind());

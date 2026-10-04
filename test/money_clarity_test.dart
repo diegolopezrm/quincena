@@ -23,6 +23,7 @@ import 'package:quincena/format/money.dart';
 import 'package:quincena/l10n/l10n.dart';
 import 'package:quincena/licenses.dart';
 import 'package:quincena/money/asset.dart';
+import 'package:quincena/money/money.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/store/store.dart';
 import 'package:quincena/theme/theme.dart';
@@ -72,6 +73,7 @@ Future<void> showCard(
   WidgetTester tester,
   Ledger ledger, {
   bool greet = true,
+  String? caveat,
 }) async {
   tester.view.physicalSize = const Size(1170, 2532);
   tester.view.devicePixelRatio = 3;
@@ -84,7 +86,7 @@ Future<void> showCard(
       supportedLocales: appLocales,
       home: Scaffold(
         body: SingleChildScrollView(
-          child: StandingCard(ledger: ledger, greet: greet),
+          child: StandingCard(ledger: ledger, greet: greet, caveat: caveat),
         ),
       ),
     ),
@@ -274,6 +276,78 @@ void main() {
       expect(screen(tester), isNot(contains('Hola')));
       expect(screen(tester), contains('Puedes gastar'));
     });
+
+    testWidgets('what the figure still leaves out is said, and heard', (
+      tester,
+    ) async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      await showCard(
+        tester,
+        ledgerOf(due: 0),
+        caveat: 'Provisional: faltan tus pagos fijos',
+      );
+      expect(screen(tester), contains('Provisional: faltan tus pagos fijos'));
+      expect(
+        find.bySemanticsLabel(
+          'Puedes gastar \$500.000 hasta el 15 de octubre; tu quincena llega '
+          'en 12 días. Provisional: faltan tus pagos fijos',
+        ),
+        findsOneWidget,
+      );
+      semantics.dispose();
+    });
+
+    testWidgets(
+      'with no fixed payment told the home is provisional, and the first one '
+      'told ends it',
+      (tester) async {
+        final OwnController own = await openPage(
+          tester,
+          (OwnController own) => Scaffold(
+            body: ListenableBuilder(
+              listenable: own,
+              builder: (BuildContext context, _) => SingleChildScrollView(
+                child: OwnHomeTab(own: own, onSeeAll: () {}),
+              ),
+            ),
+          ),
+        );
+        String text = screen(tester);
+        expect(own.provisional, isTrue);
+        expect(text, contains('Provisional: faltan tus pagos fijos'));
+        // A thing to do, after the pay that arrived and wants its envelopes.
+        expect(text, contains('Agrega tus pagos fijos'));
+        expect(
+          text,
+          contains(
+            'Lo que pagues hasta el 15 oct sale de lo que puedes gastar.',
+          ),
+        );
+        expect(text, contains('Después'));
+        expect(
+          tester.getTopLeft(find.text('Después')).dy,
+          lessThan(tester.getTopLeft(find.text('Agrega tus pagos fijos')).dy),
+        );
+
+        await tester.runAsync(
+          () => own.store.addRecurring(
+            name: 'Arriendo',
+            amount: Money(d('900000'), Asset.cop),
+            cadence: Cadence.monthly,
+            nextDate: DateTime(2026, 10, 5),
+            accountId: own.accounts.first.id,
+            category: 'housing',
+          ),
+        );
+        await settle(tester);
+        text = screen(tester);
+        expect(own.provisional, isFalse);
+        expect(text, isNot(contains('Provisional')));
+        expect(text, isNot(contains('Agrega tus pagos fijos')));
+        expect(text, contains(r'El próximo: Arriendo, $900.000 el 5 oct'));
+        expect(text, contains(r'$1.100.000'));
+      },
+    );
   });
 
   group('accounts', () {

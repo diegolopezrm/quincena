@@ -5255,4 +5255,68 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get todoSeeRates => 'See rates';
+
+  @override
+  String get standingProvisional =>
+      'Provisional: your recurring payments aren\'t in yet';
+
+  @override
+  String get todoFixedTitle => 'Add your recurring payments';
+
+  @override
+  String todoFixedBody(String date) {
+    return 'Anything you pay until $date comes out of what you can spend.';
+  }
+
+  @override
+  String get todoAdd => 'Add';
+
+  @override
+  String get noFixedPayments => 'I don\'t have recurring payments';
+
+  @override
+  String get fixedNoneDone =>
+      'Done. What you can spend is no longer provisional.';
+
+  @override
+  String get freeExplainAssumeNoFixed =>
+      'It has no recurring payments: if you pay rent, bills or subscriptions, add them in Plan › Recurring payments and they\'ll come out of this figure before they\'re due.';
+
+  @override
+  String onboardingPayAmount(String kind) {
+    String _temp0 = intl.Intl.selectLogic(kind, {
+      'fortnight': 'How much do you get each payday?',
+      'other': 'How much do you get each payday?',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get onboardingPayAmountHelp =>
+      'Optional. It doesn\'t count as money until it arrives; it\'s used to show the days ahead.';
+
+  @override
+  String get onboardingFixedTitle => 'What do you pay regularly?';
+
+  @override
+  String get onboardingFixedBody =>
+      'Rent, bills, phone, subscriptions. Quincena takes them out of what you can spend before they\'re due.';
+
+  @override
+  String get fixedSuggestRent => 'Rent';
+
+  @override
+  String get fixedSuggestAdmin => 'Building fee';
+
+  @override
+  String get fixedSuggestUtilities => 'Utilities';
+
+  @override
+  String get fixedSuggestInternet => 'Internet';
+
+  @override
+  String get fixedSuggestPhone => 'Phone plan';
+
+  @override
+  String get fixedSuggestSubscription => 'A subscription';
 }
