@@ -275,14 +275,18 @@ class _ScrollAwareFabState extends State<ScrollAwareFab> {
         excluding: !shown,
         child: ExcludeSemantics(
           excluding: !shown,
-          child: AnimatedSlide(
-            offset: shown ? Offset.zero : const Offset(0, 2),
-            duration: duration,
-            curve: Curves.easeOutCubic,
-            child: AnimatedOpacity(
-              opacity: shown ? 1 : 0,
+          // Out of sight, it does not fly to the next page's button either.
+          child: HeroMode(
+            enabled: shown,
+            child: AnimatedSlide(
+              offset: shown ? Offset.zero : const Offset(0, 2),
               duration: duration,
-              child: widget.child,
+              curve: Curves.easeOutCubic,
+              child: AnimatedOpacity(
+                opacity: shown ? 1 : 0,
+                duration: duration,
+                child: widget.child,
+              ),
             ),
           ),
         ),

@@ -1,6 +1,8 @@
 // The floating button steps aside while the list under it scrolls down, so
 // it never covers an amount, and comes back going up, at the top and at
 // the end. A screen reader keeps it; reduced motion takes it away still.
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -200,6 +202,47 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.semantics.byLabel('Agregar'), findsNothing);
       semantics.dispose();
+    });
+
+    testWidgets('hidden, it does not fly to the next page', (tester) async {
+      await open(tester);
+      // A page with a button of its own, where a button in sight flies to.
+      Future<void> push() async {
+        unawaited(
+          tester
+              .state<NavigatorState>(find.byType(Navigator))
+              .push(
+                MaterialPageRoute<void>(
+                  builder: (BuildContext context) => Scaffold(
+                    floatingActionButton: FloatingActionButton(
+                      onPressed: () {},
+                      child: const Icon(Glyph.plus),
+                    ),
+                    body: const SizedBox.expand(),
+                  ),
+                ),
+              ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 60));
+      }
+
+      // In sight, it flies to that button and leaves its own place.
+      final Finder inPlace = find.descendant(
+        of: find.byType(ScrollAwareFab),
+        matching: button,
+      );
+      await push();
+      expect(inPlace, findsNothing);
+      await tester.pumpAndSettle();
+      tester.state<NavigatorState>(find.byType(Navigator)).pop();
+      await tester.pumpAndSettle();
+
+      // Out of sight, it stays where it is.
+      list(tester).jumpTo(600);
+      await tester.pumpAndSettle();
+      await push();
+      expect(inPlace, findsOneWidget);
     });
 
     testWidgets('with reduced motion it goes at once, without sliding', (
