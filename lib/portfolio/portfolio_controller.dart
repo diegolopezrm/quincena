@@ -8,6 +8,7 @@ import '../money/asset.dart';
 import '../money/rates.dart';
 import '../own/own_controller.dart';
 import '../store/store.dart';
+import 'cost_basis.dart';
 import 'market.dart';
 import 'portfolio.dart';
 
@@ -49,6 +50,9 @@ class PortfolioController extends ChangeNotifier {
   final Map<ChartRange, DateTime> _chartedAt = <ChartRange, DateTime>{};
   final Set<ChartRange> _charting = <ChartRange>{};
 
+  /// The coins each chart had candles for.
+  final Map<ChartRange, Set<String>> _drawn = <ChartRange, Set<String>>{};
+
   /// What the person holds now, or null before onboarding.
   Portfolio? get portfolio {
     final StoreSnapshot? s = own.snapshot;
@@ -71,6 +75,36 @@ class PortfolioController extends ChangeNotifier {
   /// The portfolio's value over [range], or null while it is being read.
   List<ValuePoint>? chart(ChartRange range) => _charts[range];
   bool charting(ChartRange range) => _charting.contains(range);
+
+  /// What prices made over the last 24 hours on what was held, and as a
+  /// fraction: from the day's chart, so the figure and the chart are one
+  /// calculation, or from the tickers while it is read. Null when neither
+  /// knows.
+  ({Pair moved, double change})? get day {
+    final Portfolio? p = portfolio;
+    if (p == null) return null;
+    final List<ValuePoint>? points = _charts[ChartRange.day];
+    final DateTime? at = _chartedAt[ChartRange.day];
+    final Set<String> drawn = _drawn[ChartRange.day] ?? const <String>{};
+    final List<Holding> moving = <Holding>[
+      for (final Holding h in p.priced)
+        if (!h.pegged) h,
+    ];
+    // The chart tells the day while it is recent and drew every coin with a
+    // price that moves: one it could not read would count as standing still.
+    if (points != null &&
+        points.length > 1 &&
+        at != null &&
+        own.now().difference(at) <= ChartRange.day.step * 2 &&
+        moving.every((Holding h) => drawn.contains(h.asset.code)) &&
+        (moving.isNotEmpty || p.holdings.every((Holding h) => h.pegged))) {
+      return (moved: points.last.gain, change: points.last.ratio);
+    }
+    final Pair? moved = p.moved24h;
+    final double? change = p.change24h;
+    if (moved == null || change == null) return null;
+    return (moved: moved, change: change);
+  }
 
   void _ownChanged() {
     _portfolio = null;
@@ -182,6 +216,8 @@ class PortfolioController extends ChangeNotifier {
       _portfolio = null;
       _notify();
     }
+    // The day's move comes from the day's candles while someone looks.
+    if (_watchers > 0) await loadChart(ChartRange.day);
   }
 
   /// The past dollar rates from the first movement in an investment on,
@@ -245,8 +281,11 @@ class PortfolioController extends ChangeNotifier {
     }
     _charting.add(range);
     _notify();
+    // Within a week the peso barely moves against the dollar: today's TRM,
+    // which also covers the hours before the day's is published.
+    final bool recent = range == ChartRange.day || range == ChartRange.week;
     try {
-      if (!_historyLoaded) await _loadHistory(s.profile.base);
+      if (!recent && !_historyLoaded) await _loadHistory(s.profile.base);
       final Set<String> codes = <String>{
         for (final Account a in s.accounts)
           if (a.asset.isCrypto) a.asset.code,
@@ -262,9 +301,6 @@ class PortfolioController extends ChangeNotifier {
       final Decimal? dollarNow = base.code == 'USD'
           ? Decimal.one
           : RateTable(s.rates).rate(Asset.usd, base);
-      // Within a week the peso barely moves against the dollar: today's
-      // TRM, which also covers the hours before the day's is published.
-      final bool recent = range == ChartRange.day || range == ChartRange.week;
       _charts[range] = valueOverTime(
         accounts: s.accounts,
         entries: s.entries,
@@ -273,6 +309,10 @@ class PortfolioController extends ChangeNotifier {
             recent ? dollarNow : (_history.on(day) ?? dollarNow),
         base: base,
       );
+      _drawn[range] = <String>{
+        for (final MapEntry<String, List<Candle>> c in candles.entries)
+          if (c.value.isNotEmpty) c.key,
+      };
       _chartedAt[range] = own.now();
     } finally {
       _charting.remove(range);

@@ -206,6 +206,7 @@ class Headline extends StatelessWidget {
     required this.value,
     this.detail,
     this.onExplain,
+    this.unit,
   });
 
   final String caption;
@@ -214,6 +215,11 @@ class Headline extends StatelessWidget {
 
   /// Shows where [value] comes from.
   final VoidCallback? onExplain;
+
+  /// The currency of [value], written as its code after it on a screen
+  /// that mixes currencies, where a bare `$` could be any of them; read out
+  /// by its name.
+  final Asset? unit;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -224,7 +230,29 @@ class Headline extends StatelessWidget {
       FittedBox(
         fit: BoxFit.scaleDown,
         alignment: Alignment.centerLeft,
-        child: Figures(value, style: context.type.displayMedium),
+        child: switch (unit) {
+          null => Figures(value, style: context.type.displayMedium),
+          final Asset unit => MergeSemantics(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: <Widget>[
+                Figures(value, style: context.type.displayMedium),
+                const SizedBox(width: 6),
+                Text(
+                  unit.code,
+                  semanticsLabel: unit.name(
+                    Localizations.localeOf(context).languageCode,
+                  ),
+                  style: context.type.labelLarge?.copyWith(
+                    color: context.colors.inkSoft,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        },
       ),
       if (detail != null) ...<Widget>[
         const SizedBox(height: 4),

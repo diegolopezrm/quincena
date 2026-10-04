@@ -3557,26 +3557,26 @@ abstract class AppLocalizations {
   /// No description provided for @portfolioGain.
   ///
   /// In es, this message translates to:
-  /// **'Ganancia total'**
+  /// **'Ganancia no realizada'**
   String get portfolioGain;
 
   /// No description provided for @portfolioLoss.
   ///
   /// In es, this message translates to:
-  /// **'Pérdida total'**
+  /// **'Pérdida no realizada'**
   String get portfolioLoss;
 
   /// No description provided for @portfolioSinceBought.
   ///
   /// In es, this message translates to:
-  /// **'frente a lo que pagaste'**
+  /// **'sobre lo que pagaste'**
   String get portfolioSinceBought;
 
   /// No description provided for @portfolioPricedAt.
   ///
   /// In es, this message translates to:
-  /// **'Precios de Binance a las {time}'**
-  String portfolioPricedAt(String time);
+  /// **'Precios de Binance del {when}'**
+  String portfolioPricedAt(String when);
 
   /// No description provided for @portfolioPricing.
   ///
@@ -3689,7 +3689,7 @@ abstract class AppLocalizations {
   /// No description provided for @portfolioUncosted.
   ///
   /// In es, this message translates to:
-  /// **'{amount} llegaron sin precio de compra y cuentan como ganancia. Puedes poner lo que costaron en su cuenta.'**
+  /// **'{amount} llegaron sin precio de compra y no cuentan en la ganancia. Puedes poner lo que costaron en su cuenta.'**
   String portfolioUncosted(String amount);
 
   /// No description provided for @portfolioUnpriced.
@@ -7258,7 +7258,7 @@ abstract class AppLocalizations {
   /// No description provided for @chartPerformanceNote.
   ///
   /// In es, this message translates to:
-  /// **'Solo lo que movieron los precios: comprar o vender no cambia esta línea.'**
+  /// **'Solo lo que movieron los precios de tus monedas, con el dólar de hoy: comprar o vender no cambia esta línea.'**
   String get chartPerformanceNote;
 
   /// No description provided for @binancePromiseRead.
@@ -7620,6 +7620,78 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{count, plural, =1{1 tasa escrita a mano} other{{count} tasas escritas a mano}}'**
   String ratesManualCount(int count);
+
+  /// No description provided for @portfolioNoData.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin dato'**
+  String get portfolioNoData;
+
+  /// No description provided for @portfolioNoData24h.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no hay precio de hace 24 horas.'**
+  String get portfolioNoData24h;
+
+  /// No description provided for @portfolioNoPrice.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin precio'**
+  String get portfolioNoPrice;
+
+  /// No description provided for @portfolioDayDetail.
+  ///
+  /// In es, this message translates to:
+  /// **'{percent} por precio'**
+  String portfolioDayDetail(String percent);
+
+  /// No description provided for @portfolioGainMeaning.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que vale hoy lo que aún tienes menos lo que pagaste por eso, en pesos. Incluye cuánto se movió el dólar frente al peso y las comisiones de Binance; lo que ya vendiste va aparte.'**
+  String get portfolioGainMeaning;
+
+  /// No description provided for @portfolioGainUncosted.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin contar {amount} que llegó sin precio de compra.'**
+  String portfolioGainUncosted(String amount);
+
+  /// No description provided for @portfolioConvertedWith.
+  ///
+  /// In es, this message translates to:
+  /// **'Pasados a pesos con la TRM del {day}'**
+  String portfolioConvertedWith(String day);
+
+  /// No description provided for @portfolioRefresh.
+  ///
+  /// In es, this message translates to:
+  /// **'Actualizar'**
+  String get portfolioRefresh;
+
+  /// No description provided for @portfolioRefreshLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Actualizar precios'**
+  String get portfolioRefreshLabel;
+
+  /// No description provided for @chartPerformanceNoteFx.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que movieron los precios y el dólar frente al peso: comprar o vender no cambia esta línea.'**
+  String get chartPerformanceNoteFx;
+
+  /// No description provided for @portfolioGainMeaningPlain.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que vale hoy lo que aún tienes menos lo que pagaste por eso. Incluye las comisiones de Binance; lo que ya vendiste va aparte.'**
+  String get portfolioGainMeaningPlain;
+
+  /// No description provided for @chartPerformanceNoteFxPlain.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que movieron los precios y el dólar frente a tu moneda: comprar o vender no cambia esta línea.'**
+  String get chartPerformanceNoteFxPlain;
 }
 
 class _AppLocalizationsDelegate

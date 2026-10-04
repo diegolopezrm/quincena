@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 
@@ -5,6 +7,7 @@ import '../../format/dates.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
+import '../../money/rates.dart';
 import '../../own/own_controller.dart';
 import '../../portfolio/cost_basis.dart';
 import '../../portfolio/market.dart';
@@ -150,7 +153,7 @@ class _PortfolioCardState extends State<PortfolioCard> {
       final Portfolio? p = _controller.portfolio;
       if (p == null || p.isEmpty) return const SizedBox.shrink();
       final Asset base = p.base;
-      final double? day = p.change24h;
+      final double? day = _controller.day?.change;
       final double? gain = p.gainRatio;
       void open() => Navigator.of(context).push(
         MaterialPageRoute<void>(
@@ -480,8 +483,112 @@ class _Hero extends StatelessWidget {
     final AppLocalizations l = context.l10n;
     final Portfolio p = portfolio;
     final Asset base = p.base;
+    final Pair? gain = p.gain;
+    final double? gainRatio = p.gainRatio;
+    final Pair uncosted = p.uncostedValue;
+    final ({Pair moved, double change})? day = controller.day;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Headline(
+          caption: l.portfolioWorth,
+          value: moneyText(Money(p.value.base, base), base: base),
+          // Dollars and coins share the page: the total says its currency.
+          unit: base,
+          detail: base.code == 'USD'
+              ? null
+              : moneyText(Money(p.value.usd, Asset.usd), base: base),
+        ),
+        const SizedBox(height: 6),
+        _PriceStatus(controller: controller, base: base),
+        const SizedBox(height: 16),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Expanded(
+                child: day == null
+                    ? _Figure(
+                        label: l.portfolioToday,
+                        value: l.portfolioNoData,
+                        detail: controller.pricing
+                            ? l.portfolioPricing
+                            : l.portfolioNoData24h,
+                      )
+                    : _Figure(
+                        label: l.portfolioToday,
+                        value: moneyText(
+                          Money(day.moved.base, base),
+                          base: base,
+                          signed: true,
+                        ),
+                        detail: l.portfolioDayDetail(percentText(day.change)),
+                        // By the amount, as the chart colors it.
+                        color: changeColor(context, day.moved.base.toDouble()),
+                      ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _Figure(
+                  label: (gain?.base ?? Decimal.zero) >= Decimal.zero
+                      ? l.portfolioGain
+                      : l.portfolioLoss,
+                  value: gain == null
+                      ? l.portfolioNoData
+                      : moneyText(
+                          Money(gain.base, base),
+                          base: base,
+                          signed: true,
+                        ),
+                  detail: gainRatio == null
+                      ? null
+                      : '${percentText(gainRatio)} ${l.portfolioSinceBought}',
+                  color: gain == null
+                      ? null
+                      : changeColor(context, gain.base.toDouble()),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        if (uncosted.base > Decimal.zero)
+          Text(
+            l.portfolioGainUncosted(
+              moneyText(Money(uncosted.base, base), base: base),
+            ),
+            style: context.type.bodySmall,
+          ),
+        Text(
+          // It speaks of pesos, and of the dollar against the peso.
+          base.code == 'COP'
+              ? l.portfolioGainMeaning
+              : l.portfolioGainMeaningPlain,
+          style: context.type.bodySmall,
+        ),
+      ],
+    );
+  }
+}
+
+/// When the prices were read, and with which day's dollar they became the
+/// base currency, with a way to read them again: pulling the page down is
+/// not something everyone finds.
+class _PriceStatus extends StatelessWidget {
+  const _PriceStatus({required this.controller, required this.base});
+
+  final PortfolioController controller;
+  final Asset base;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
     final DateTime? at = controller.pricedAt;
-    final String status = controller.pricing && at == null
+    final bool reading = controller.pricing;
+    // Prices that could not be read, or never were, are a warning; a read
+    // that worked needs no light of its own.
+    final bool warn = controller.pricingFailed || (at == null && !reading);
+    final String status = reading && at == null
         ? l.portfolioPricing
         : controller.pricingFailed
         ? (at == null
@@ -489,85 +596,50 @@ class _Hero extends StatelessWidget {
               : l.portfolioPricingFailedAt(dayAndTime(at)))
         : at == null
         ? l.portfolioNeverPriced
-        : l.portfolioPricedAt(timeOfDay(at));
-    final Pair gain = p.gain;
-    final double? gainRatio = p.gainRatio;
-    final double? day = p.change24h;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+        : l.portfolioPricedAt(dayAndTime(at));
+    DateTime? trm;
+    for (final Rate r in controller.own.rates.used(Asset.usd, base)) {
+      if (r.source == 'trm') trm = r.asOf;
+    }
+    return Row(
       children: <Widget>[
-        Headline(
-          caption: l.portfolioWorth,
-          value: moneyText(Money(p.value.base, base), base: base),
-          detail: base.code == 'USD'
-              ? null
-              : moneyText(Money(p.value.usd, Asset.usd), base: base),
-        ),
-        const SizedBox(height: 6),
-        Row(
-          children: <Widget>[
-            _LiveDot(active: controller.pricing),
-            const SizedBox(width: 6),
-            Expanded(child: Text(status, style: context.type.bodySmall)),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: _Figure(
-                label: l.portfolioToday,
-                value: day == null
-                    ? '—'
-                    : moneyText(
-                        Money(p.moved24h.base, base),
-                        base: base,
-                        signed: true,
-                      ),
-                detail: day == null ? null : percentText(day),
-                color: day == null ? null : changeColor(context, day),
+        if (warn) ...<Widget>[
+          Icon(Glyph.warningCircle, size: 16, color: context.colors.caution),
+          const SizedBox(width: 6),
+        ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Semantics(
+                liveRegion: warn,
+                child: Text(status, style: context.type.bodySmall),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _Figure(
-                label: gain.base >= Decimal.zero
-                    ? l.portfolioGain
-                    : l.portfolioLoss,
-                value: moneyText(
-                  Money(gain.base, base),
-                  base: base,
-                  signed: true,
+              if (trm != null)
+                Text(
+                  l.portfolioConvertedWith(dayShortMonth(trm)),
+                  style: context.type.bodySmall,
                 ),
-                detail: gainRatio == null
-                    ? l.portfolioSinceBought
-                    : '${percentText(gainRatio)} ${l.portfolioSinceBought}',
-                color: changeColor(context, gain.base.toDouble()),
-              ),
-            ),
-          ],
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        TextButton.icon(
+          onPressed: reading ? null : () => unawaited(controller.refresh()),
+          icon: reading
+              ? const SizedBox.square(
+                  dimension: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Glyph.arrowsClockwise, size: 18),
+          label: Text(
+            l.portfolioRefresh,
+            semanticsLabel: l.portfolioRefreshLabel,
+          ),
         ),
       ],
     );
   }
-}
-
-/// A pulsing dot while prices are being read.
-class _LiveDot extends StatelessWidget {
-  const _LiveDot({required this.active});
-
-  final bool active;
-
-  @override
-  Widget build(BuildContext context) => AnimatedContainer(
-    duration: const Duration(milliseconds: 300),
-    width: 8,
-    height: 8,
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      color: active ? context.colors.caution : context.colors.positive,
-    ),
-  );
 }
 
 /// One figure in a box: what it is, the amount, and a detail under it.
@@ -601,11 +673,7 @@ class _Figure extends StatelessWidget {
           ),
         ),
         if (detail != null)
-          Text(
-            detail!,
-            style: context.type.bodySmall?.copyWith(color: color),
-            maxLines: 3,
-          ),
+          Text(detail!, style: context.type.bodySmall?.copyWith(color: color)),
       ],
     ),
   );
@@ -667,11 +735,14 @@ class _ChartCard extends StatelessWidget {
         : worth;
     final double? first = worth.isEmpty ? null : worth.first;
     // What prices made over the range on what was held, not what was
-    // bought or sold in it.
-    final Pair made = points == null || points.isEmpty
-        ? Pair.zero
-        : points.last.gain;
+    // bought or sold in it; as a fraction, step by step, so money put in
+    // along the way does not read as a return.
+    final ValuePoint? last = points == null || points.isEmpty
+        ? null
+        : points.last;
+    final Pair made = last?.gain ?? Pair.zero;
     final double moved = made.base.toDouble();
+    final double ratio = last?.ratio ?? 0;
     final double changed = worth.isEmpty ? 0 : worth.last - worth.first;
     final bool flows =
         !performance &&
@@ -683,14 +754,14 @@ class _ChartCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          if (first != null && first > 0)
+          if (last != null)
             Text.rich(
               TextSpan(
                 children: <InlineSpan>[
                   TextSpan(
                     text:
                         '${moneyText(Money(made.base.round(scale: base.decimals), base), base: base, signed: true)} '
-                        '(${percentText(moved / first)}) ',
+                        '(${percentText(ratio)}) ',
                     style: context.type.titleSmall?.copyWith(color: color),
                   ),
                   TextSpan(
@@ -744,7 +815,7 @@ class _ChartCard extends StatelessWidget {
                 : Semantics(
                     label:
                         '${l.portfolioWorth} ${_long(l, range)}: '
-                        '${percentText(first! > 0 ? moved / first : 0)}',
+                        '${percentText(ratio)}',
                     child: DrawIn(
                       key: ValueKey<(ChartRange, bool)>((range, performance)),
                       builder: (BuildContext context, double progress) =>
@@ -780,7 +851,17 @@ class _ChartCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            performance ? l.chartPerformanceNote : l.chartWithHoldings,
+            !performance
+                ? l.chartWithHoldings
+                // Over a month or a year each day has its own dollar, so the
+                // line also moves with it; within a week, today's.
+                : base.code == 'USD' ||
+                      range == ChartRange.day ||
+                      range == ChartRange.week
+                ? l.chartPerformanceNote
+                : base.code == 'COP'
+                ? l.chartPerformanceNoteFx
+                : l.chartPerformanceNoteFxPlain,
             style: context.type.bodySmall,
           ),
         ],
@@ -1022,7 +1103,7 @@ class HoldingRow extends StatelessWidget {
               children: <Widget>[
                 Figures(
                   value == null
-                      ? '—'
+                      ? context.l10n.portfolioNoPrice
                       : moneyText(Money(value.base, base), base: base),
                   style: context.type.titleSmall,
                 ),
