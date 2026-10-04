@@ -167,9 +167,9 @@ List<Tool> accountTools(
     name: 'coming_days',
     description:
         'The money to spend over the next 30 days: the balance today, the '
-        'lowest point before payday and its day, the first day under the '
-        'cushion if there is one, and every scheduled charge, movement and '
-        'expected pay with its day. What is sure (the balance and what is '
+        'lowest estimated balance before payday and its day, the first day '
+        'under the cushion if there is one, and every scheduled charge, '
+        'movement and expected pay with its day. What is sure (the balance and what is '
         'scheduled) is kept apart from the pay, which is only expected.',
     onCall: (_) {
       final Ledger ledger = current();
@@ -515,8 +515,8 @@ List<Tool> accountTools(
         'after a save_expense event arrives, never on the first request. '
         'Pass the id the event carries: the person can edit the form and '
         'save again, and the same id corrects that expense instead of '
-        'adding another. Returns what is free until payday afterwards and '
-        'the month so far in that category.',
+        'adding another. Returns what can be spent until payday afterwards '
+        'and the month so far in that category.',
     inputSchema: S.object(
       properties: <String, Schema>{
         'amount': S.number(
