@@ -20,6 +20,7 @@ import '../../statements/text_statement.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import 'category_choices.dart';
 import 'look.dart';
 import 'movement_list.dart';
 
@@ -189,10 +190,9 @@ class _StatementPageState extends State<StatementPage> {
     final Account? account = _account;
     final StatementRead? read = _read;
     if (account == null || read == null) return;
-    List<ImportCandidate> all = await StatementImporter(
+    final List<ImportCandidate> all = await StatementImporter(
       own.store,
-    ).prepare(account, read);
-    if (flip) all = <ImportCandidate>[for (final c in all) c.flipped()];
+    ).prepare(account, read, flip: flip);
     if (!mounted) return;
     setState(() {
       _candidates = all;
@@ -229,11 +229,35 @@ class _StatementPageState extends State<StatementPage> {
       _imported = n;
       _uncategorized = <String>{
         for (final ImportCandidate c in chosen)
-          if (c.category == null) c.ref,
+          if (c.kind != EntryKind.transfer && c.category == null) c.ref,
       };
       _saving = false;
       _stage = _Stage.done;
     });
+  }
+
+  /// Opens line [i] to change what it is recorded as.
+  Future<void> _review(int i) async {
+    final Account? account = _account;
+    if (account == null) return;
+    final ImportCandidate? changed =
+        await showModalBottomSheet<ImportCandidate>(
+          context: context,
+          isScrollControlled: true,
+          showDragHandle: true,
+          useSafeArea: true,
+          backgroundColor: context.colors.surface,
+          constraints: const BoxConstraints(maxWidth: 560),
+          builder: (BuildContext context) =>
+              _LineSheet(own: own, account: account, candidate: _candidates[i]),
+        );
+    if (changed == null || !mounted) return;
+    setState(
+      () => _candidates = <ImportCandidate>[
+        for (var j = 0; j < _candidates.length; j++)
+          j == i ? changed : _candidates[j],
+      ],
+    );
   }
 
   @override
@@ -408,7 +432,10 @@ class _StatementPageState extends State<StatementPage> {
     ];
     final int fresh = newOnes.length;
     final int unsorted = all
-        .where((ImportCandidate c) => c.proposed && c.category == null)
+        .where(
+          (ImportCandidate c) =>
+              c.proposed && c.kind != EntryKind.transfer && c.category == null,
+        )
         .length;
     // What was already there and the person checked anyway: it would be
     // recorded a second time.
@@ -517,6 +544,7 @@ class _StatementPageState extends State<StatementPage> {
                 children: <Widget>[
                   for (var i = 0; i < all.length; i++)
                     _CandidateRow(
+                      own: own,
                       candidate: all[i],
                       account: account,
                       base: base,
@@ -525,6 +553,7 @@ class _StatementPageState extends State<StatementPage> {
                       onChanged: (bool on) => setState(
                         () => on ? _chosen.add(i) : _chosen.remove(i),
                       ),
+                      onOpen: () => _review(i),
                     ),
                 ],
               ),
@@ -596,17 +625,21 @@ class _StatementPageState extends State<StatementPage> {
   }
 }
 
-/// One line of the statement, checked to import or not.
+/// One line of the statement: checked to import or not, and a tap away
+/// from what it is recorded as.
 class _CandidateRow extends StatelessWidget {
   const _CandidateRow({
+    required this.own,
     required this.candidate,
     required this.account,
     required this.base,
     required this.oneYear,
     required this.chosen,
     required this.onChanged,
+    required this.onOpen,
   });
 
+  final OwnController own;
   final ImportCandidate candidate;
   final Account? account;
   final Asset? base;
@@ -616,6 +649,7 @@ class _CandidateRow extends StatelessWidget {
   final bool oneYear;
   final bool chosen;
   final ValueChanged<bool> onChanged;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -630,16 +664,24 @@ class _CandidateRow extends StatelessWidget {
     final String amount = a == null
         ? c.line.amount.toString()
         : moneyText(Money(c.line.amount, a.asset), base: base, signed: true);
-    return CheckboxListTile(
-      value: chosen,
-      onChanged: (bool? on) => onChanged(on ?? false),
-      controlAffinity: ListTileControlAffinity.leading,
+    final String name = c.payee.isEmpty ? c.line.description : c.payee;
+    final TextStyle? caution = context.type.bodySmall?.copyWith(
+      color: context.colors.caution,
+    );
+    final String? category = c.category;
+    return ListTile(
+      onTap: onOpen,
       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+      leading: Checkbox(
+        value: chosen,
+        semanticLabel: name,
+        onChanged: (bool? on) => onChanged(on ?? false),
+      ),
       title: Row(
         children: <Widget>[
           Expanded(
             child: Text(
-              c.payee.isEmpty ? c.line.description : c.payee,
+              name,
               style: context.type.titleSmall,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -656,18 +698,162 @@ class _CandidateRow extends StatelessWidget {
           ),
         ],
       ),
-      subtitle: Text(
-        <String>[
-          if (oneYear) dayShortMonth(c.line.date) else shortDate(c.line.date),
-          if (c.payee.isNotEmpty && c.payee != c.line.description)
-            c.line.description,
-          ?badge,
-        ].join(' · '),
-        style: context.type.bodySmall?.copyWith(
-          color: badge == null ? null : context.colors.caution,
+      // What was already there says so; a new line says what it will be.
+      subtitle: Text.rich(
+        TextSpan(
+          children: <InlineSpan>[
+            TextSpan(
+              text: oneYear
+                  ? dayShortMonth(c.line.date)
+                  : shortDate(c.line.date),
+            ),
+            if (badge != null)
+              TextSpan(text: ' · $badge', style: caution)
+            else if (category != null)
+              TextSpan(
+                text:
+                    ' · ${categoryNameFor(context, category, own.categories)}',
+              )
+            else
+              TextSpan(text: ' · ${l.statementGiveCategory}', style: caution),
+          ],
         ),
+        style: context.type.bodySmall,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+}
+
+/// What one line of the statement is recorded as: an expense or an income,
+/// and its category, next to the bank's own words for it.
+class _LineSheet extends StatefulWidget {
+  const _LineSheet({
+    required this.own,
+    required this.account,
+    required this.candidate,
+  });
+
+  final OwnController own;
+  final Account account;
+  final ImportCandidate candidate;
+
+  @override
+  State<_LineSheet> createState() => _LineSheetState();
+}
+
+class _LineSheetState extends State<_LineSheet> {
+  ImportCandidate get c => widget.candidate;
+  OwnController get own => widget.own;
+
+  late EntryKind _kind = c.kind;
+  late String? _category = c.category;
+
+  /// The line's amount as what it is recorded as: money out for an
+  /// expense, money in for an income.
+  Decimal get _amount => switch (_kind) {
+    EntryKind.expense => -c.line.amount.abs(),
+    EntryKind.income => c.line.amount.abs(),
+    _ => c.line.amount,
+  };
+
+  void _save() => Navigator.of(context).pop(
+    c.copyWith(
+      amount: _amount,
+      kind: _kind,
+      category: _category,
+      clearCategory: _category == null,
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    final Decimal amount = _amount;
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(l.statementReviewLine, style: context.type.headlineMedium),
+            const SizedBox(height: 16),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    c.payee.isEmpty ? c.line.description : c.payee,
+                    style: context.type.titleMedium,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Figures(
+                  moneyText(
+                    Money(amount, widget.account.asset),
+                    base: own.profile?.base,
+                    signed: true,
+                  ),
+                  style: context.type.titleMedium?.copyWith(
+                    color: amount > Decimal.zero
+                        ? context.colors.positive
+                        : context.colors.ink,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(shortDate(c.line.date), style: context.type.bodySmall),
+            const SizedBox(height: 16),
+            Text(l.statementOriginal, style: context.type.labelMedium),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: context.colors.sunken,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: SelectableText(
+                c.line.description,
+                style: context.type.bodyMedium,
+              ),
+            ),
+            const SizedBox(height: 20),
+            SegmentedButton<EntryKind>(
+              segments: <ButtonSegment<EntryKind>>[
+                ButtonSegment<EntryKind>(
+                  value: EntryKind.expense,
+                  label: Text(l.kindExpense),
+                ),
+                ButtonSegment<EntryKind>(
+                  value: EntryKind.income,
+                  label: Text(l.kindIncome),
+                ),
+              ],
+              selected: <EntryKind>{_kind},
+              showSelectedIcon: false,
+              onSelectionChanged: (Set<EntryKind> s) => setState(() {
+                // A category belongs to one side: the line's own comes
+                // back with its side.
+                _category = s.first == c.kind ? c.category : null;
+                _kind = s.first;
+              }),
+            ),
+            const SizedBox(height: 20),
+            Text(l.category, style: context.type.labelMedium),
+            const SizedBox(height: 8),
+            CategoryChoices(
+              own: own,
+              income: _kind == EntryKind.income,
+              selected: _category,
+              onChanged: (String? key) => setState(() => _category = key),
+            ),
+            const SizedBox(height: 20),
+            FilledButton(onPressed: _save, child: Text(l.save)),
+          ],
+        ),
       ),
     );
   }

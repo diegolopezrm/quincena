@@ -2589,7 +2589,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get statementImportedBefore => 'Ya importado';
 
   @override
-  String get statementFlip => 'Invertir signos';
+  String get statementFlip => 'Invertir entradas y salidas';
 
   @override
   String statementImport(int count) {
@@ -4798,4 +4798,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String statementOut(String amount) {
     return 'salen $amount';
   }
+
+  @override
+  String get statementReviewLine => 'Revisar movimiento';
+
+  @override
+  String get statementOriginal => 'Como aparece en el extracto';
 }

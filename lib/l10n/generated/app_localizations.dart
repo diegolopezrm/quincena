@@ -4175,7 +4175,7 @@ abstract class AppLocalizations {
   /// No description provided for @statementFlip.
   ///
   /// In es, this message translates to:
-  /// **'Invertir signos'**
+  /// **'Invertir entradas y salidas'**
   String get statementFlip;
 
   /// No description provided for @statementImport.
@@ -7596,6 +7596,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'salen {amount}'**
   String statementOut(String amount);
+
+  /// No description provided for @statementReviewLine.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisar movimiento'**
+  String get statementReviewLine;
+
+  /// No description provided for @statementOriginal.
+  ///
+  /// In es, this message translates to:
+  /// **'Como aparece en el extracto'**
+  String get statementOriginal;
 }
 
 class _AppLocalizationsDelegate

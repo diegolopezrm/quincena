@@ -826,7 +826,7 @@
   "@statementSummary": {"placeholders": {"count": {"type": "int"}, "range": {"type": "String"}}},
   "statementRecorded": "Ya registrado",
   "statementImportedBefore": "Ya importado",
-  "statementFlip": "Invertir signos",
+  "statementFlip": "Invertir entradas y salidas",
   "statementImport": "{count, plural, =0{Nada para importar} =1{Importar un movimiento} other{Importar {count} movimientos}}",
   "@statementImport": {"placeholders": {"count": {"type": "int"}}},
   "statementDone": "{count, plural, =1{Se importó un movimiento.} other{Se importaron {count} movimientos.}}",
@@ -1516,5 +1516,7 @@
   "statementIn": "entran {amount}",
   "@statementIn": {"placeholders": {"amount": {"type": "String"}}},
   "statementOut": "salen {amount}",
-  "@statementOut": {"placeholders": {"amount": {"type": "String"}}}
+  "@statementOut": {"placeholders": {"amount": {"type": "String"}}},
+  "statementReviewLine": "Revisar movimiento",
+  "statementOriginal": "Como aparece en el extracto"
 }

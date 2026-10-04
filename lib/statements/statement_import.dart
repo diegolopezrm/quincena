@@ -18,8 +18,11 @@ class ImportCandidate {
     required this.category,
     required this.recorded,
     required this.importedBefore,
+    required this.kind,
   });
 
+  /// The line, signed for the account: what the person changes on it
+  /// changes its sign too.
   final StatementLine line;
 
   /// What marks it as this statement's line, so importing the same
@@ -35,23 +38,35 @@ class ImportCandidate {
   /// This very line was imported from a statement before.
   final bool importedBefore;
 
+  /// What it is recorded as: an expense or an income, as its sign says,
+  /// unless the person said otherwise.
+  final EntryKind kind;
+
   /// Whether it is checked to import when the review opens.
   bool get proposed => !recorded && !importedBefore;
 
   bool get income => line.amount > Decimal.zero;
 
-  ImportCandidate flipped() => ImportCandidate(
-    line: StatementLine(
-      date: line.date,
-      description: line.description,
-      amount: -line.amount,
-      balance: line.balance,
-    ),
+  ImportCandidate copyWith({
+    Decimal? amount,
+    EntryKind? kind,
+    String? category,
+    bool clearCategory = false,
+  }) => ImportCandidate(
+    line: amount == null
+        ? line
+        : StatementLine(
+            date: line.date,
+            description: line.description,
+            amount: amount,
+            balance: line.balance,
+          ),
     ref: ref,
     payee: payee,
-    category: category,
+    category: clearCategory ? null : (category ?? this.category),
     recorded: recorded,
     importedBefore: importedBefore,
+    kind: kind ?? this.kind,
   );
 }
 
@@ -103,11 +118,13 @@ class StatementImporter {
   static const int window = 3;
 
   /// Each line of [read] as it would be recorded in [account], and whether
-  /// it already is.
+  /// it already is. [flip] turns every sign around, for a statement whose
+  /// money in and out came the wrong way.
   Future<List<ImportCandidate>> prepare(
     Account account,
-    StatementRead read,
-  ) async {
+    StatementRead read, {
+    bool flip = false,
+  }) async {
     List<StatementLine> lines = read.lines;
     // A card statement lists purchases as positive: on a card they are
     // debt, money out.
@@ -139,11 +156,20 @@ class StatementImporter {
 
     final Map<String, int> seen = <String, int>{};
     final List<ImportCandidate> out = <ImportCandidate>[];
-    for (final StatementLine l in lines) {
+    for (final StatementLine read in lines) {
+      // The line keeps its mark however its sign is read.
       final String key =
-          '${l.date.toIso8601String().substring(0, 10)}|${l.amount}|${normalize(l.description)}';
+          '${read.date.toIso8601String().substring(0, 10)}|${read.amount}|${normalize(read.description)}';
       final int n = seen[key] = (seen[key] ?? 0) + 1;
       final String ref = 'statement:${account.id}:$key#$n';
+      final StatementLine l = flip
+          ? StatementLine(
+              date: read.date,
+              description: read.description,
+              amount: -read.amount,
+              balance: read.balance,
+            )
+          : read;
       final String payee = payeeOf(l.description);
       final Entry? match = _match(l, payee, open);
       if (match != null) open.remove(match);
@@ -155,6 +181,7 @@ class StatementImporter {
           category: _category(l, payee, settings),
           recorded: match != null,
           importedBefore: imported.contains(ref),
+          kind: l.amount > Decimal.zero ? EntryKind.income : EntryKind.expense,
         ),
       );
     }
@@ -204,11 +231,11 @@ class StatementImporter {
   Future<int> record(Account account, List<ImportCandidate> chosen) async {
     var n = 0;
     for (final ImportCandidate c in chosen) {
-      final bool income = c.line.amount > Decimal.zero;
+      final bool income = c.kind == EntryKind.income;
       await store.addEntry(
         accountId: account.id,
         amount: c.line.amount.abs(),
-        kind: income ? EntryKind.income : EntryKind.expense,
+        kind: c.kind,
         date: c.line.date,
         category: c.category ?? (income ? 'other_income' : 'other'),
         payee: c.payee,

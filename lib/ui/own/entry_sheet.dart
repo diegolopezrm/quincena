@@ -14,6 +14,7 @@ import '../../theme/tokens.dart';
 import '../icons.dart';
 import 'amount_input.dart';
 import 'capture_reasons.dart';
+import 'category_choices.dart';
 import 'look.dart';
 import 'split_sheet.dart';
 
@@ -349,41 +350,6 @@ class _EntryFormState extends State<_EntryForm> {
     if (mounted) Navigator.of(context).pop();
   }
 
-  Future<void> _newCategory() async {
-    final AppLocalizations l = context.l10n;
-    final TextEditingController name = TextEditingController();
-    final String? typed = await showDialog<String>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text(l.newCategory),
-        content: TextField(
-          controller: name,
-          autofocus: true,
-          textCapitalization: TextCapitalization.sentences,
-          decoration: InputDecoration(labelText: l.accountName),
-          onSubmitted: (String v) => Navigator.of(context).pop(v),
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(l.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(name.text),
-            child: Text(l.save),
-          ),
-        ],
-      ),
-    );
-    name.dispose();
-    if (typed == null || typed.trim().isEmpty) return;
-    final CategoryItem created = await own.store.addCategory(
-      typed,
-      income: _kind == EntryKind.income,
-    );
-    setState(() => _category = created.key);
-  }
-
   Future<void> _pickDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -439,10 +405,6 @@ class _EntryFormState extends State<_EntryForm> {
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
     final bool transfer = _kind == EntryKind.transfer;
-    final List<CategoryItem> categories = <CategoryItem>[
-      for (final CategoryItem c in own.categories)
-        if (!c.archived && c.income == (_kind == EntryKind.income)) c,
-    ];
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SingleChildScrollView(
@@ -550,30 +512,11 @@ class _EntryFormState extends State<_EntryForm> {
               const SizedBox(height: 20),
               Text(l.category, style: context.type.labelMedium),
               const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: <Widget>[
-                  for (final CategoryItem c in categories)
-                    ChoiceChip(
-                      avatar: Icon(
-                        categoryIconFor(c.key),
-                        size: 18,
-                        color: categoryColorFor(context, c.key),
-                      ),
-                      label: Text(
-                        categoryNameFor(context, c.key, own.categories),
-                      ),
-                      selected: _category == c.key,
-                      onSelected: (bool on) =>
-                          setState(() => _category = on ? c.key : null),
-                    ),
-                  ActionChip(
-                    avatar: const Icon(Glyph.plus, size: 18),
-                    label: Text(l.newCategory),
-                    onPressed: _newCategory,
-                  ),
-                ],
+              CategoryChoices(
+                own: own,
+                income: _kind == EntryKind.income,
+                selected: _category,
+                onChanged: (String? key) => setState(() => _category = key),
               ),
               const SizedBox(height: 16),
               TextField(

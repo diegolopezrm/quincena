@@ -347,6 +347,54 @@ void main() {
       expect(entries.every((Entry e) => e.source == 'statement'), isTrue);
     });
 
+    test('a line is recorded as what the person made it', () async {
+      final StatementImporter importer = StatementImporter(store);
+      final List<ImportCandidate> all = await importer.prepare(
+        bank,
+        statement(),
+      );
+      // The bank wrote a refund as a purchase.
+      final ImportCandidate refund = all.first.copyWith(
+        amount: d('45900'),
+        kind: EntryKind.income,
+        category: 'refund',
+      );
+      expect(refund.ref, all.first.ref);
+      await importer.record(bank, <ImportCandidate>[refund]);
+      final Entry saved = (await store.entries(accountId: bank.id)).single;
+      expect(saved.kind, EntryKind.income);
+      expect(saved.amount, d('45900'));
+      expect(saved.category, 'refund');
+      expect(saved.sourceRef, all.first.ref);
+    });
+
+    test('flipped signs keep each line\'s mark', () async {
+      final StatementImporter importer = StatementImporter(store);
+      final List<ImportCandidate> plain = await importer.prepare(
+        bank,
+        statement(),
+      );
+      final List<ImportCandidate> flipped = await importer.prepare(
+        bank,
+        statement(),
+        flip: true,
+      );
+      expect(
+        flipped.map((ImportCandidate c) => c.line.amount),
+        plain.map((ImportCandidate c) => -c.line.amount),
+      );
+      expect(flipped.map((ImportCandidate c) => c.kind), <EntryKind>[
+        EntryKind.income,
+        EntryKind.income,
+        EntryKind.expense,
+        EntryKind.income,
+      ]);
+      expect(
+        flipped.map((ImportCandidate c) => c.ref),
+        plain.map((ImportCandidate c) => c.ref),
+      );
+    });
+
     test('a card statement\'s positive purchases are debt', () async {
       final StatementRead read = readTable(
         parseCsv(
