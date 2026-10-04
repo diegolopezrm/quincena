@@ -29,6 +29,13 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<!-- Sync files and backups are sealed with a standard algorithm,
+	     XChaCha20-Poly1305, from a Dart library. App Store Connect's answer
+	     for standard encryption in an app not offered in France is that no
+	     document is needed and this can say NO. If France is ever added,
+	     this changes and the French declaration is filed first. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

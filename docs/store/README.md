@@ -42,11 +42,12 @@ Productivity. Free, in every country but France.
 library: a standard algorithm, not the one in Apple's operating system. In
 App Store Connect's terms that needs no documentation, except a French
 encryption declaration to be offered in France, which is why France is left
-out for now. `Info.plist` carries no `ITSAppUsesNonExemptEncryption`, so each
-build answers the encryption questions in App Store Connect: standard
-algorithms, not offered in France. App Store Connect's reply is that no
-document is needed and the key can say `NO`, which stays true only while
-France is left out.
+out for now. Builds up to 17 answered the encryption questions in App Store Connect:
+standard algorithms, not offered in France. App Store Connect's reply is
+that no document is needed and the key can say `NO`, so from build 18
+`Info.plist` carries `ITSAppUsesNonExemptEncryption` set to `NO` and builds
+go to testers without the questions. That stays true only while France is
+left out.
 
 ### Spanish
 
