@@ -14,6 +14,7 @@ import 'package:quincena/money/asset.dart';
 import 'package:quincena/money/money.dart';
 import 'package:quincena/money/rates.dart';
 import 'package:quincena/own/own_controller.dart';
+import 'package:quincena/own/own_tools.dart';
 import 'package:quincena/portfolio/market.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
@@ -57,6 +58,19 @@ class DownMarket extends FakeMarket {
   Future<Map<String, Ticker>> tickers(Iterable<String> codes) async {
     asked++;
     return const <String, Ticker>{};
+  }
+}
+
+/// A market that cannot be reached, where tether still draws its flat line
+/// at one dollar, as [MarketData.candles] draws it without asking anyone.
+class OfflineMarket extends DownMarket {
+  @override
+  Future<List<Candle>> candles(String code, ChartRange range) async {
+    if (code != 'USDT') return const <Candle>[];
+    return <Candle>[
+      for (var i = range.points - 1; i >= 0; i--)
+        Candle(_now.subtract(range.step * i), Decimal.one),
+    ];
   }
 }
 
@@ -188,6 +202,18 @@ void main() {
     expect(screen(tester), isNot(contains('USDT ·')));
     // A coin with no price says so.
     expect(find.text('Sin precio'), findsOneWidget);
+  });
+
+  testWidgets('offline, a chart of tether alone is not a day without change', (
+    tester,
+  ) async {
+    final OwnController own = await openCrypto(tester, OfflineMarket());
+
+    // Bitcoin keeps the last price saved, but nothing says how it moved.
+    expect(own.portfolio.day, isNull);
+    expect(find.text('Sin dato'), findsOneWidget);
+    expect(find.textContaining('0,00 %'), findsNothing);
+    expect(portfolioAnswer(own)['change24hInBase'], isNull);
   });
 
   testWidgets('the day on top is the day the chart draws', (tester) async {

@@ -541,4 +541,64 @@ void main() {
       expect(rates.rate(Asset.btc, Asset.cop), d('400000000'));
     });
   });
+
+  test('a day drawn hours ago is not the last 24 hours', () async {
+    var now = DateTime(2026, 10, 2, 12);
+    final QuincenaStore store = QuincenaStore(
+      QuincenaDatabase(NativeDatabase.memory()),
+      now: () => now,
+    );
+    addTearDown(store.close);
+    await store.ensureCategories();
+    await store.saveProfile(
+      const Profile(name: 'Diego', base: Asset.cop, schedule: TwiceMonthly()),
+    );
+    await store.addAccount(
+      name: 'Binance BTC',
+      kind: AccountKind.exchange,
+      asset: Asset.btc,
+      opening: d('0.01'),
+      institution: 'Binance',
+      openingCost: Money(d('3000000'), Asset.cop),
+    );
+    await store.saveRates(<Rate>[trm('4000', now)]);
+    final OwnController own = OwnController(
+      store,
+      now: () => now,
+      readNative: false,
+      market: _DayMarket(),
+    );
+    addTearDown(own.dispose);
+    await own.start();
+    await own.portfolio.refresh();
+    await own.portfolio.loadChart(ChartRange.day);
+    // From the candles: 0,01 BTC from 99.000 to 100.000 dollars.
+    expect(own.portfolio.day!.moved.base, d('40000'));
+
+    // Hours later, with no screen drawing the day, Gemini asks again: the
+    // ticker's 24 hours, not the morning's.
+    now = now.add(const Duration(hours: 3));
+    await own.portfolio.refreshIfOlder(const Duration(minutes: 1));
+    expect(own.portfolio.day!.moved.base.toDouble(), closeTo(120000, 0.01));
+    expect(portfolioAnswer(own)['change24hInBase'], 120000);
+  });
+}
+
+/// A bitcoin that opened the day at 97.000 dollars by its ticker, and whose
+/// day of candles went from 99.000 to 100.000.
+class _DayMarket extends FakeMarket {
+  _DayMarket()
+    : super(
+        prices: const <String, (String, String)>{'BTC': ('100000', '97000')},
+      );
+
+  @override
+  Future<List<Candle>> candles(String code, ChartRange range) async {
+    if (code != 'BTC') return const <Candle>[];
+    final DateTime end = DateTime(2026, 10, 2, 12);
+    return <Candle>[
+      Candle(end.subtract(range.step), d('99000')),
+      Candle(end, d('100000')),
+    ];
+  }
 }

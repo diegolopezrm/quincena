@@ -50,6 +50,9 @@ class PortfolioController extends ChangeNotifier {
   final Map<ChartRange, DateTime> _chartedAt = <ChartRange, DateTime>{};
   final Set<ChartRange> _charting = <ChartRange>{};
 
+  /// The coins each chart had candles for.
+  final Map<ChartRange, Set<String>> _drawn = <ChartRange, Set<String>>{};
+
   /// What the person holds now, or null before onboarding.
   Portfolio? get portfolio {
     final StoreSnapshot? s = own.snapshot;
@@ -78,13 +81,27 @@ class PortfolioController extends ChangeNotifier {
   /// calculation, or from the tickers while it is read. Null when neither
   /// knows.
   ({Pair moved, double change})? get day {
+    final Portfolio? p = portfolio;
+    if (p == null) return null;
     final List<ValuePoint>? points = _charts[ChartRange.day];
-    if (points != null && points.length > 1) {
+    final DateTime? at = _chartedAt[ChartRange.day];
+    final Set<String> drawn = _drawn[ChartRange.day] ?? const <String>{};
+    final List<Holding> moving = <Holding>[
+      for (final Holding h in p.priced)
+        if (!h.pegged) h,
+    ];
+    // The chart tells the day while it is recent and drew every coin with a
+    // price that moves: one it could not read would count as standing still.
+    if (points != null &&
+        points.length > 1 &&
+        at != null &&
+        own.now().difference(at) <= ChartRange.day.step * 2 &&
+        moving.every((Holding h) => drawn.contains(h.asset.code)) &&
+        (moving.isNotEmpty || p.holdings.every((Holding h) => h.pegged))) {
       return (moved: points.last.gain, change: points.last.ratio);
     }
-    final Portfolio? p = portfolio;
-    final Pair? moved = p?.moved24h;
-    final double? change = p?.change24h;
+    final Pair? moved = p.moved24h;
+    final double? change = p.change24h;
     if (moved == null || change == null) return null;
     return (moved: moved, change: change);
   }
@@ -292,6 +309,10 @@ class PortfolioController extends ChangeNotifier {
             recent ? dollarNow : (_history.on(day) ?? dollarNow),
         base: base,
       );
+      _drawn[range] = <String>{
+        for (final MapEntry<String, List<Candle>> c in candles.entries)
+          if (c.value.isNotEmpty) c.key,
+      };
       _chartedAt[range] = own.now();
     } finally {
       _charting.remove(range);
