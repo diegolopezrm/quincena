@@ -1255,7 +1255,7 @@
   "functions": {
     "arrivalMonth": {
       "type": "object",
-      "description": "The month a savings goal is reached when `monthly` is put aside every month from now, as text such as \"mayo de 2027\". Says \"nunca\" when `monthly` is zero. Bind a GoalPlanner's `arrival` to it.",
+      "description": "The month a savings goal is reached when `monthly` is put aside every month from now, as text such as \"mayo de 2027\". Says \"nunca\", or \"never\" in English, when `monthly` is zero. Bind a GoalPlanner's `arrival` to it.",
       "properties": {
         "call": {
           "const": "arrivalMonth"
