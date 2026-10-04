@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:genui/genui.dart' show Surface, UserActionEvent;
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/agent/scripted_agent.dart';
@@ -8,19 +9,24 @@ import 'package:quincena/catalog/goal_planner.dart';
 import 'package:quincena/data/ledger.dart';
 import 'package:quincena/format/money.dart';
 import 'package:quincena/session/session.dart';
+import 'package:quincena/ui/conversation.dart';
 import 'package:quincena/ui/own/free_explained.dart';
 
 import 'fonts.dart';
 
-/// Opens the app on a phone-sized screen with an agent that answers at once.
-Future<Session> open(WidgetTester tester) async {
+/// Opens the app on a phone-sized screen with an agent that answers at once,
+/// or after [thinking].
+Future<Session> open(
+  WidgetTester tester, {
+  Duration thinking = Duration.zero,
+}) async {
   tester.view.physicalSize = const Size(1170, 2532);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
   // The test device speaks English unless told otherwise.
   tester.platformDispatcher.localesTestValue = const <Locale>[Locale('es')];
   addTearDown(tester.platformDispatcher.clearLocalesTestValue);
-  final session = Session(thinking: Duration.zero);
+  final session = Session(thinking: thinking);
   addTearDown(session.dispose);
   await tester.pumpWidget(QuincenaApp(session: session));
   await settle(tester);
@@ -70,6 +76,12 @@ List<String> outsideThePlanner(WidgetTester tester) {
     for (final RichText t in tester.widgetList<RichText>(find.byType(RichText)))
       if (!inside.contains(t)) t.text.toPlainText(),
   ];
+}
+
+/// Whether the top of what [finder] finds is within the screen.
+bool onScreen(WidgetTester tester, Finder finder) {
+  final double top = tester.getTopLeft(finder).dy;
+  return top >= 0 && top < tester.view.physicalSize.height / 3;
 }
 
 void main() {
@@ -327,6 +339,204 @@ void main() {
 
     expect(screen(tester), contains(r'Gastaste $480.500 más que en agosto'));
     expect(screen(tester), contains('Lo que más cambió'));
+  });
+
+  testWidgets('two taps save one expense, and Editar corrects it', (
+    tester,
+  ) async {
+    final Session session = await open(tester);
+    final List<Movement> before = List<Movement>.of(session.ledger.movements);
+    List<Movement> added() => <Movement>[
+      for (final Movement m in session.ledger.movements)
+        if (!before.contains(m)) m,
+    ];
+    await ask(tester, session, ScriptedAgent.starters[4]);
+    final String form = session.turns.single.surfaceIds.single;
+
+    await tester.enterText(find.byType(TextField).first, '52000');
+    await settle(tester);
+    final Finder save = find.text('Guardar gasto');
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.tap(save);
+    await settle(tester);
+
+    expect(added().single.amount, 52000);
+    expect(session.ledger.freeUntilPayday, 1369300 - 52000);
+    expect(screen(tester), contains(r'$1.317.300'));
+    expect(find.textContaining('Gasto guardado · '), findsOneWidget);
+    // The answer keeps a turn of its own, under what the person did.
+    expect(find.text('Guardaste el gasto'), findsOneWidget);
+
+    // The form takes nothing more: not a tap, not an action sent to it.
+    await tester.tap(save, warnIfMissed: false);
+    session.controller.handleUiEvent(
+      UserActionEvent(
+        surfaceId: form,
+        name: 'save_expense',
+        sourceComponentId: 'save',
+        context: <String, Object?>{'amount': 52000, 'category': 'groceries'},
+      ),
+    );
+    await settle(tester);
+    expect(session.turns, hasLength(2));
+    expect(added(), hasLength(1));
+    expect(session.ledger.freeUntilPayday, 1369300 - 52000);
+
+    // Editar opens the form again, and saving corrects the same expense.
+    await tester.ensureVisible(find.text('Editar'));
+    await settle(tester);
+    await tester.tap(find.text('Editar'));
+    await settle(tester);
+    expect(find.textContaining('Gasto guardado · '), findsNothing);
+    await tester.enterText(find.byType(TextField).first, '60000');
+    await settle(tester);
+    await tester.ensureVisible(save);
+    await settle(tester);
+    await tester.tap(save);
+    await settle(tester);
+
+    expect(session.turns, hasLength(3));
+    expect(added().single.amount, 60000);
+    expect(session.ledger.freeUntilPayday, 1369300 - 60000);
+    expect(find.textContaining('Gasto guardado · '), findsOneWidget);
+
+    // From the receipt, the answer it got is a tap away.
+    final Finder corrected = find.byWidgetPredicate(
+      (Widget w) =>
+          w is Surface &&
+          w.surfaceContext.surfaceId == session.turns.last.surfaceIds.single,
+    );
+    await tester.drag(find.byType(FollowedScroll), const Offset(0, 3000));
+    await settle(tester);
+    expect(onScreen(tester, corrected), isFalse);
+    await tester.tap(find.text('Ver resultado'));
+    await settle(tester);
+    expect(onScreen(tester, corrected), isTrue);
+  });
+
+  testWidgets('a save nothing came of leaves the form open', (tester) async {
+    final Session session = await open(tester);
+    await ask(tester, session, ScriptedAgent.starters[4]);
+    final String form = session.turns.single.surfaceIds.single;
+
+    await tester.enterText(find.byType(TextField).first, '');
+    await settle(tester);
+    await tester.ensureVisible(find.text('Guardar gasto').first);
+    await tester.tap(find.text('Guardar gasto').first);
+    await settle(tester);
+
+    expect(session.settledOf(form), isNull);
+    expect(find.textContaining('Gasto guardado · '), findsNothing);
+  });
+
+  testWidgets('Nueva starts over, and the one before can come back', (
+    tester,
+  ) async {
+    final Session session = await open(tester);
+    await ask(tester, session, ScriptedAgent.starters[4]);
+    await tester.ensureVisible(find.text('Guardar gasto'));
+    await tester.tap(find.text('Guardar gasto'));
+    await settle(tester);
+    expect(session.ledger.freeUntilPayday, 1369300 - 45000);
+
+    await tester.tap(find.text('Nueva'));
+    await settle(tester);
+    // The welcome again, over the untouched account.
+    expect(session.turns, isEmpty);
+    expect(find.text(ScriptedAgent.starters[0]), findsOneWidget);
+    expect(session.ledger.freeUntilPayday, 1369300);
+    expect(find.text('Empezaste una conversación nueva.'), findsOneWidget);
+
+    await tester.tap(find.text('Deshacer'));
+    await settle(tester);
+    expect(session.turns, hasLength(2));
+    expect(session.turns.first.question, ScriptedAgent.starters[4]);
+    expect(find.textContaining('Gasto guardado · '), findsOneWidget);
+    expect(session.ledger.freeUntilPayday, 1369300 - 45000);
+
+    // A question in the new one ends the way back.
+    await tester.tap(find.text('Nueva'));
+    await settle(tester);
+    await ask(tester, session, ScriptedAgent.starters[2]);
+    expect(find.text('Deshacer'), findsNothing);
+    expect(session.canRestore, isFalse);
+
+    // And it lasts only a few seconds.
+    await tester.tap(find.text('Nueva'));
+    await settle(tester);
+    await tester.pump(const Duration(seconds: 7));
+    await settle(tester);
+    expect(find.text('Deshacer'), findsNothing);
+    expect(session.canRestore, isFalse);
+    expect(session.turns, isEmpty);
+  });
+
+  testWidgets('an answer that lands below the reader waits behind a bubble', (
+    tester,
+  ) async {
+    final Session session = await open(
+      tester,
+      thinking: const Duration(milliseconds: 700),
+    );
+    await ask(tester, session, ScriptedAgent.starters[0]);
+    // Nobody scrolled: the answer came into view on its own.
+    expect(find.text('Ver resultado'), findsNothing);
+
+    final Future<void> answered = session.ask(ScriptedAgent.starters[3]);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    final ScrollPosition position = tester
+        .state<ScrollableState>(
+          find
+              .descendant(
+                of: find.byType(FollowedScroll),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        )
+        .position;
+    // Back up to read the first answer while the second is on its way.
+    await tester.drag(find.byType(FollowedScroll), const Offset(0, 400));
+    await tester.pump(const Duration(milliseconds: 50));
+    final double reading = position.pixels;
+    await settle(tester);
+    await answered;
+
+    expect(position.pixels, reading);
+    expect(find.text('Ver resultado'), findsOneWidget);
+    final Finder newest = find.byWidgetPredicate(
+      (Widget w) =>
+          w is Surface &&
+          w.surfaceContext.surfaceId == session.turns.last.surfaceIds.single,
+    );
+    expect(onScreen(tester, newest), isFalse);
+
+    await tester.tap(find.text('Ver resultado'));
+    await settle(tester);
+    expect(onScreen(tester, newest), isTrue);
+    expect(find.text('Ver resultado'), findsNothing);
+  });
+
+  testWidgets('the name over an answer gives way to its surface', (
+    tester,
+  ) async {
+    final Session session = await open(
+      tester,
+      thinking: const Duration(milliseconds: 700),
+    );
+    final Finder name = find.descendant(
+      of: find.byType(Conversation),
+      matching: find.text('Quincena'),
+    );
+    final Future<void> answered = session.ask(ScriptedAgent.starters[2]);
+    await tester.pump();
+    // While it thinks, the turn says who is answering.
+    expect(name, findsOneWidget);
+
+    await settle(tester);
+    await answered;
+    expect(name, findsNothing);
   });
 
   testWidgets('a question the demo does not know offers the ones it does', (

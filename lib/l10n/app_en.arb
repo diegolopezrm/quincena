@@ -1329,5 +1329,13 @@
   "goalEffectSame": "It's what you already set aside: what you can spend stays the same.",
   "goalNeverArrives": "With nothing set aside each month, you don't reach the goal.",
   "goalEffectUntilPaydayShort": "You're {short} short of {payday}. The contribution goes out on {day}, after payday.",
-  "goalEffectBeforePayShort": "The contribution on {day} goes out before payday: you'd be {short} short of {payday}."
+  "goalEffectBeforePayShort": "The contribution on {day} goes out before payday: you'd be {short} short of {payday}.",
+  "newConversationShort": "New",
+  "conversationCleared": "You started a new conversation.",
+  "seeResult": "See result",
+  "newAnswerBelow": "There's a new answer below",
+  "settledExpense": "Expense saved",
+  "settledPlan": "Plan saved",
+  "settledCancelled": "Marked as canceled",
+  "settledAt": "{what} · {time}"
 }

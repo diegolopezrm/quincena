@@ -69,6 +69,18 @@ void main() {
     expect(text, contains('+11%'));
   });
 
+  testWidgets('a new conversation says so in English', (tester) async {
+    final Session session = await open(tester);
+    await ask(tester, session, ScriptedAgent.startersEn[2]);
+
+    await tester.tap(find.text('New'));
+    await tester.pumpAndSettle();
+    expect(find.text('You started a new conversation.'), findsOneWidget);
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+    expect(session.turns.single.question, ScriptedAgent.startersEn[2]);
+  });
+
   testWidgets('the goal planner reads in English', (tester) async {
     final Session session = await open(tester);
     await ask(tester, session, ScriptedAgent.startersEn[1]);

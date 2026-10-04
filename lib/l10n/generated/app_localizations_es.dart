@@ -5162,4 +5162,30 @@ class AppLocalizationsEs extends AppLocalizations {
   String goalEffectBeforePayShort(String day, String short, String payday) {
     return 'El aporte del $day sale antes de tu pago: te faltarían $short para llegar al $payday.';
   }
+
+  @override
+  String get newConversationShort => 'Nueva';
+
+  @override
+  String get conversationCleared => 'Empezaste una conversación nueva.';
+
+  @override
+  String get seeResult => 'Ver resultado';
+
+  @override
+  String get newAnswerBelow => 'Hay una respuesta nueva abajo';
+
+  @override
+  String get settledExpense => 'Gasto guardado';
+
+  @override
+  String get settledPlan => 'Plan guardado';
+
+  @override
+  String get settledCancelled => 'Marcadas como canceladas';
+
+  @override
+  String settledAt(String what, String time) {
+    return '$what · $time';
+  }
 }

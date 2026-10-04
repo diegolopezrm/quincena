@@ -42,7 +42,6 @@ void main() {
               listenable: session,
               builder: (BuildContext context, _) => Conversation(
                 session: session,
-                latest: GlobalKey(),
                 onExplainFree: () => explained++,
               ),
             ),

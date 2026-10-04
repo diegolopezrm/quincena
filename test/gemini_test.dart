@@ -375,6 +375,40 @@ void main() {
       });
     });
 
+    test(
+      'an expense saved again with its id is corrected, not repeated',
+      () async {
+        final dartantic.Tool record = ownTools(
+          own,
+        ).firstWhere((dartantic.Tool t) => t.name == 'record_expense');
+        await record.call(<String, dynamic>{
+          'amount': 45900,
+          'category': 'groceries',
+          'note': 'Éxito',
+          'id': 'chat-1',
+        });
+        final Object? result = await record.call(<String, dynamic>{
+          'amount': 52000,
+          'category': 'restaurants',
+          'note': 'Crepes',
+          'id': 'chat-1',
+        });
+        expect((result! as Map)['freeUntilPayday'], 948000);
+        final Entry entry = (await store.entries()).single;
+        expect(entry.amount, d('-52000'));
+        expect(entry.category, 'restaurants');
+        expect(entry.payee, 'Crepes');
+
+        // Another id is another expense.
+        await record.call(<String, dynamic>{
+          'amount': 1000,
+          'category': 'other',
+          'id': 'chat-2',
+        });
+        expect(await store.entries(), hasLength(2));
+      },
+    );
+
     test('through Quincena, a question needs one left for the day', () async {
       final Allowance allowance = Allowance(store, perDay: 1, now: () => now);
       await allowance.load();

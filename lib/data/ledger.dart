@@ -272,6 +272,17 @@ class Ledger {
       ..add(movement)
       ..sort((Movement a, Movement b) => a.date.compareTo(b.date));
   }
+
+  /// Puts [movement] in place of the one with its id, or adds it when there
+  /// is none: an expense corrected after it was saved counts once.
+  void replace(Movement movement) {
+    movements.removeWhere((Movement m) => m.id == movement.id);
+    record(movement);
+  }
+
+  /// Takes [movement] out, as when the person corrects an expense they
+  /// saved. False when it was not there.
+  bool remove(Movement movement) => movements.remove(movement);
 }
 
 /// The calendar day of [moment]: a movement at noon today is today's, not

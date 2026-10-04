@@ -1627,5 +1627,14 @@
   "goalEffectUntilPaydayShort": "Te faltan {short} para llegar al {payday}. El aporte sale el {day}, después de tu pago.",
   "@goalEffectUntilPaydayShort": {"placeholders": {"short": {"type": "String"}, "payday": {"type": "String"}, "day": {"type": "String"}}},
   "goalEffectBeforePayShort": "El aporte del {day} sale antes de tu pago: te faltarían {short} para llegar al {payday}.",
-  "@goalEffectBeforePayShort": {"placeholders": {"day": {"type": "String"}, "short": {"type": "String"}, "payday": {"type": "String"}}}
+  "@goalEffectBeforePayShort": {"placeholders": {"day": {"type": "String"}, "short": {"type": "String"}, "payday": {"type": "String"}}},
+  "newConversationShort": "Nueva",
+  "conversationCleared": "Empezaste una conversación nueva.",
+  "seeResult": "Ver resultado",
+  "newAnswerBelow": "Hay una respuesta nueva abajo",
+  "settledExpense": "Gasto guardado",
+  "settledPlan": "Plan guardado",
+  "settledCancelled": "Marcadas como canceladas",
+  "settledAt": "{what} · {time}",
+  "@settledAt": {"placeholders": {"what": {"type": "String"}, "time": {"type": "String"}}}
 }
