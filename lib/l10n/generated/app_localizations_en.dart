@@ -1694,7 +1694,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paydayArrived => 'Your pay arrived';
 
   @override
-  String get freeExplainAction => 'Where does this come from?';
+  String get freeExplainAction => 'Where does it come from?';
 
   @override
   String get freeExplainTitle => 'How what you can spend is worked out';

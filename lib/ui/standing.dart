@@ -69,10 +69,11 @@ class StandingCard extends StatelessWidget {
         ? l.standingShortUntil(dayMonth(payday))
         : l.standingUntil(dayMonth(payday));
     // The payment that comes first, under the payments line, so the next
-    // thing due is in view and not only their total.
+    // thing due is in view and not only their total. One with no name is
+    // said mid-sentence, after the colon.
     final String? next = switch (ledger.committed.firstOrNull) {
       final Movement m => l.standingNextCharge(
-        m.merchant.isEmpty ? l.timelineCharge : m.merchant,
+        m.merchant.isEmpty ? l.timelineCharge.toLowerCase() : m.merchant,
         pesos(ledger.major(m.amount)),
         dayShortMonth(m.date),
       ),

@@ -91,9 +91,7 @@ class CommitmentsPage extends StatelessWidget {
                             ScaffoldMessenger.of(context);
                         final String done = l.fixedNoneDone;
                         await own.sayNoFixedPayments(true);
-                        messenger.showSnackBar(
-                          SnackBar(content: Text(done)),
-                        );
+                        messenger.showSnackBar(SnackBar(content: Text(done)));
                       },
                       child: Text(l.noFixedPayments),
                     ),
