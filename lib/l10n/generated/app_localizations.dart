@@ -8237,6 +8237,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Ganancia por precio {range}: {amount}, {percent}'**
   String chartSemanticsGain(String range, String amount, String percent);
+
+  /// No description provided for @portfolioSourceBinanceOff.
+  ///
+  /// In es, this message translates to:
+  /// **'Leída de Binance · sin conectar'**
+  String get portfolioSourceBinanceOff;
+
+  /// No description provided for @portfolioSourceWalletOff.
+  ///
+  /// In es, this message translates to:
+  /// **'Leída por dirección pública · ya no la sigues'**
+  String get portfolioSourceWalletOff;
 }
 
 class _AppLocalizationsDelegate

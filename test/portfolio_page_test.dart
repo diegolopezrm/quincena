@@ -1,6 +1,8 @@
 // The Cripto page says what each figure measures: no number where there is
 // no data, one calculation for the day's move, and the currency of a total
 // on a screen of many.
+import 'dart:convert';
+
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -81,7 +83,7 @@ class OfflineMarket extends DownMarket {
 
 /// The Cripto page over 0,01 BTC bought for 3.000.000, 500 USDT with no
 /// purchase price and some PEPE that Binance has no price for, all written
-/// by hand but, with [syncedTether], the tether.
+/// by hand but, with [syncedTether], the tether; plus whatever [data] adds.
 Future<OwnController> openCrypto(
   WidgetTester tester,
   MarketData market, {
@@ -89,6 +91,7 @@ Future<OwnController> openCrypto(
   bool reward = false,
   Asset base = Asset.cop,
   bool syncedTether = false,
+  Future<void> Function(QuincenaStore store)? data,
 }) async {
   tester.view.physicalSize = const Size(1080, 2400);
   tester.view.devicePixelRatio = 3;
@@ -156,6 +159,7 @@ Future<OwnController> openCrypto(
       institution: 'MetaMask',
       spendable: false,
     );
+    await data?.call(store);
     return store;
   }))!;
   addTearDown(() => tester.runAsync(store.close));
@@ -470,10 +474,59 @@ void main() {
         'actualiza solo',
       ),
     );
-    expect(text, contains('500 USDT\nConectada a Binance: se actualiza sola'));
+    // Read from Binance, with no key here: it says so, as the sources do.
+    expect(text, contains('500 USDT\nLeída de Binance · sin conectar'));
+    expect(text, isNot(contains('Conectada a Binance')));
     // MetaMask's one coin says it once, for the place.
     expect(text, contains('Anotado a mano: no se actualiza solo\nPEPE'));
     expect(find.text('Anotado a mano: no se actualiza solo'), findsNWidgets(2));
+  });
+
+  testWidgets('a coin read from an address says when, and once the address '
+      'is no longer followed, says that instead', (tester) async {
+    await openCrypto(
+      tester,
+      CandleMarket(),
+      data: (QuincenaStore store) async {
+        // Read a moment ago: the page does not read it again.
+        await store.setSetting(
+          'wallets',
+          jsonEncode(<String, Object?>{
+            'wallets': <Object?>[
+              <String, Object?>{
+                'chain': 'bitcoin',
+                'address': 'bc1qfollowed',
+                'label': 'Ledger',
+              },
+            ],
+            'syncedAt': _now.toIso8601String(),
+          }),
+        );
+        for (final (String place, String address) in <(String, String)>[
+          ('Ledger', 'bc1qfollowed'),
+          ('Trezor', 'bc1qstopped'),
+        ]) {
+          await store.addAccount(
+            name: 'Bitcoin',
+            kind: AccountKind.wallet,
+            asset: Asset.btc,
+            opening: Decimal.parse('0.001'),
+            institution: place,
+            spendable: false,
+            syncRef: 'wallet:bitcoin:$address:BTC',
+          );
+        }
+      },
+    );
+    tester.view.physicalSize = const Size(1080, 9000);
+    await settle(tester);
+
+    final String read = 'Por dirección pública · leída ${dayAndTime(_now)}';
+    const String stopped = 'Leída por dirección pública · ya no la sigues';
+    double top(String text) => tester.getTopLeft(find.text(text)).dy;
+    expect(top('LEDGER'), lessThan(top(read)));
+    expect(top(read), lessThan(top('TREZOR')));
+    expect(top('TREZOR'), lessThan(top(stopped)));
   });
 
   testWidgets('dragging along the chart shows each moment and what it was, '

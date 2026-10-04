@@ -980,23 +980,37 @@ class _Allocation extends StatelessWidget {
 }
 
 /// Where [account]'s balance comes from, in words: written by hand, or
-/// read from Binance or a public address, and when.
+/// read from Binance or a public address, and when; or read there once and
+/// not from here any more, with no key on this device or the address no
+/// longer followed. Null while that is not known yet.
 String? holdingSourceText(
   AppLocalizations l,
   OwnController own,
   Account account,
 ) => switch (HoldingSource.of(account)) {
   HoldingSource.manual => l.portfolioSourceManual,
-  HoldingSource.binance => switch (own.binance.syncedAt) {
-    final DateTime at => l.portfolioSourceBinance(dayAndTime(at)),
-    null => l.portfolioSourceBinanceNever,
-  },
-  HoldingSource.wallet => switch (own.wallets.syncedAt) {
-    final DateTime at => l.portfolioSourceWallet(dayAndTime(at)),
-    null => l.portfolioSourceWalletNever,
-  },
-  null => null,
+  HoldingSource.binance when own.binance.connected =>
+    switch (own.binance.syncedAt) {
+      final DateTime at => l.portfolioSourceBinance(dayAndTime(at)),
+      null => l.portfolioSourceBinanceNever,
+    },
+  HoldingSource.binance when own.binance.loaded => l.portfolioSourceBinanceOff,
+  HoldingSource.wallet when own.wallets.follows(account) =>
+    switch (own.wallets.syncedAt) {
+      final DateTime at => l.portfolioSourceWallet(dayAndTime(at)),
+      null => l.portfolioSourceWalletNever,
+    },
+  HoldingSource.wallet when own.wallets.loaded => l.portfolioSourceWalletOff,
+  _ => null,
 };
+
+/// Whether [account]'s balance is read again by itself from here.
+bool _updates(OwnController own, Account account) =>
+    switch (HoldingSource.of(account)) {
+      HoldingSource.binance => own.binance.connected,
+      HoldingSource.wallet => own.wallets.follows(account),
+      _ => false,
+    };
 
 /// The coins kept in one place, with where their balances come from: once
 /// under the place's name when they all come the same way, on each coin
@@ -1034,10 +1048,12 @@ class _Place extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(top: 2),
                   child: Icon(
-                    HoldingSource.of(holdings.first.account) ==
-                            HoldingSource.manual
+                    _updates(own, holdings.first.account)
+                        ? Glyph.arrowsClockwise
+                        : HoldingSource.of(holdings.first.account) ==
+                              HoldingSource.manual
                         ? Glyph.pencilSimple
-                        : Glyph.arrowsClockwise,
+                        : Glyph.pause,
                     size: 14,
                     color: context.colors.inkSoft,
                   ),

@@ -344,6 +344,17 @@ class WalletLink extends ChangeNotifier {
   DateTime? get syncedAt => _syncedAt;
   bool get syncing => _syncing;
 
+  /// Whether [wallets] was read from the device yet.
+  bool get loaded => _loaded;
+
+  /// Whether [account] holds a coin of an address still followed, rather
+  /// than one stopped, whose account stays as the person's own.
+  bool follows(Account account) => _wallets.any(
+    (WalletAddress w) =>
+        account.syncRef?.startsWith('wallet:${w.chain.name}:${w.address}:') ??
+        false,
+  );
+
   /// The address of the last wallet that could not be read, if any.
   String? get failed => _failed;
 

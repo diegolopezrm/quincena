@@ -1361,5 +1361,7 @@
   "chartPointGain": "{when}: {amount} since the start",
   "chartPointValue": "{when}: worth {amount}",
   "chartTouchHint": "Touch the line and slide your finger to see each moment.",
-  "chartSemanticsGain": "Gain from prices {range}: {amount}, {percent}"
+  "chartSemanticsGain": "Gain from prices {range}: {amount}, {percent}",
+  "portfolioSourceBinanceOff": "Read from Binance · not connected",
+  "portfolioSourceWalletOff": "Read by public address · no longer followed"
 }

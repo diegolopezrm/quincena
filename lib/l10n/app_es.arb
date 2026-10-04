@@ -1668,5 +1668,7 @@
   "@chartPointValue": {"placeholders": {"when": {"type": "String"}, "amount": {"type": "String"}}},
   "chartTouchHint": "Toca la línea y desliza el dedo para ver cada momento.",
   "chartSemanticsGain": "Ganancia por precio {range}: {amount}, {percent}",
-  "@chartSemanticsGain": {"placeholders": {"range": {"type": "String"}, "amount": {"type": "String"}, "percent": {"type": "String"}}}
+  "@chartSemanticsGain": {"placeholders": {"range": {"type": "String"}, "amount": {"type": "String"}, "percent": {"type": "String"}}},
+  "portfolioSourceBinanceOff": "Leída de Binance · sin conectar",
+  "portfolioSourceWalletOff": "Leída por dirección pública · ya no la sigues"
 }

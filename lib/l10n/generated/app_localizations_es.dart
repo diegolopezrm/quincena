@@ -5282,4 +5282,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String chartSemanticsGain(String range, String amount, String percent) {
     return 'Ganancia por precio $range: $amount, $percent';
   }
+
+  @override
+  String get portfolioSourceBinanceOff => 'Leída de Binance · sin conectar';
+
+  @override
+  String get portfolioSourceWalletOff =>
+      'Leída por dirección pública · ya no la sigues';
 }

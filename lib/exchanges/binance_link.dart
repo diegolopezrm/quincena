@@ -117,6 +117,9 @@ class BinanceLink extends ChangeNotifier {
   static bool get available => !kIsWeb;
 
   bool get connected => _connected;
+
+  /// Whether [connected] was read from the device yet.
+  bool get loaded => _loaded;
   bool get syncing => _syncing;
   double get progress => _progress;
   DateTime? get syncedAt => _syncedAt;
