@@ -299,6 +299,29 @@ void main() {
       expect(prompt, contains('Ask for every tool an answer needs at once'));
     });
 
+    test('it is told how a goal answer is built', () {
+      final String flat = prompt.replaceAll(RegExp(r'\s+'), ' ');
+      expect(flat, contains('what is missing each month (monthlyShort)'));
+      expect(flat, contains('the contributionsBeforeDeadline with their days'));
+      expect(flat, contains('the GoalPlanner alone saves nothing'));
+      // The figure the title gives is not repeated in a tile.
+      expect(flat, isNot(contains('StatTile whose value is money over')));
+      expect(
+        flat,
+        contains('Never repeat in a tile or an Insight a figure already shown'),
+      );
+    });
+
+    test('text outside a control never says what the control changes', () {
+      expect(
+        prompt.replaceAll(RegExp(r'\s+'), ' '),
+        contains(
+          'Text outside a control never states what depends on the value it '
+          'writes',
+        ),
+      );
+    });
+
     test('it is told how to put an amount inside a sentence', () {
       expect(prompt, contains(r'"value": "You have ${money(amount: 120000)}'));
     });
@@ -449,6 +472,15 @@ void main() {
         final Map<String, Object?> goal = await call('savings_goal');
         expect(goal['missing'], 1800000);
         expect(goal['monthlyNeeded'], 600000);
+        // What is missing each month and the days it lands come worked out,
+        // so the model never subtracts or counts.
+        expect(goal['monthlyShort'], 350000);
+        expect(goal['contributionDay'], 16);
+        expect(goal['contributionsBeforeDeadline'], <String>[
+          '2026-10-16',
+          '2026-11-16',
+          '2026-12-16',
+        ]);
         expect(goal['arrivalAtCurrentPace'], 'mayo de 2027');
       },
     );

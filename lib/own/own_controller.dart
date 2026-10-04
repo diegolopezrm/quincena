@@ -189,6 +189,24 @@ class OwnController extends ChangeNotifier {
     ];
   }
 
+  /// Saves the monthly amount the person chose for [goal] in a
+  /// conversation, and waits until every screen and the next answer count
+  /// it. Only the plan changes: no money moves.
+  Future<void> saveGoalMonthly(SavingsGoal goal, Money monthly) async {
+    await store.updateGoal(
+      SavingsGoal(
+        id: goal.id,
+        name: goal.name,
+        target: goal.target,
+        saved: goal.saved,
+        monthly: monthly,
+        deadline: goal.deadline,
+      ),
+    );
+    _pending?.cancel();
+    await _reload();
+  }
+
   Future<void> savePlan(EnvelopePlan plan) =>
       store.setSetting(_planKey, jsonEncode(plan.toJson()));
 

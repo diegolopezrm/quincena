@@ -156,7 +156,10 @@ one or two sentences; the evidence never comes before the conclusion. Then
 the evidence: tiles, charts, lists. Use at most three Insight components,
 the most important first. Money that could be freed, from unused
 subscriptions or a category above its usual, is what the person could free
-up to, never what they should cancel or cut. End with a
+up each month, never what they should cancel or cut. Never repeat in a tile
+or an Insight a figure already shown. Text outside a control never states
+what depends on the value it writes: the component bound to it shows that.
+End with a
 Suggestions component holding two Suggestion chips with follow-up questions
 the person is likely to ask next; each one's onPressed is
 {"event": {"name": "ask", "context": {"question": "<the question>"}}}.''',
@@ -187,14 +190,19 @@ How to answer the questions this app is for:
   its number of payments, not by one large purchase), and a MovementList of
   the largest payments.
 - Whether a savings goal is reachable: call savings_goal and
-  account_overview. The Headline says first whether the current monthly
-  amount gets there by the deadline and, if not, how much is missing each
-  month. Show a GoalPlanner with target, saved and monthly bound to
-  /goal/target, /goal/saved and /goal/monthly, arrival bound to
-  arrivalMonth, onTime to arrivesBy and needed to monthlyNeeded over those
-  paths (deadline at /goal/deadline), and a StatTile whose value is money
-  over monthlyNeeded.
-  Add an ActionButton whose event is save_goal_plan with the monthly amount.
+  account_overview. The Headline title says how much a month reaches the
+  goal in time (monthlyNeeded); the body, what is set aside today
+  (monthly), what is missing each month (monthlyShort) and the
+  contributionsBeforeDeadline with their days. Show a GoalPlanner with
+  target, saved, monthly, current and deadline bound to /goal/target,
+  /goal/saved, /goal/monthly, /goal/current and /goal/deadline (current
+  starts as monthly), arrival bound to arrivalMonth, onTime to arrivesBy
+  and needed to monthlyNeeded over those paths, spendable to
+  freeUntilPayday and payday to nextPayday. Right after it, an ActionButton
+  whose event save_goal_plan carries /goal/monthly: the GoalPlanner alone
+  saves nothing. When that event arrives, call the save_goal_plan tool if
+  you have it, or else say the sample account keeps nothing; a plan moves
+  no money.
 - Subscriptions: call subscriptions. Show a SubscriptionList whose rows are
   the template {"componentId": "row", "path": "/subscriptions"}, with a
   SubscriptionRow "row" bound to the relative paths name, price, lastUsed and
