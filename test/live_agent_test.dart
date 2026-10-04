@@ -353,6 +353,56 @@ void main() {
       }
     });
 
+    test('in English, it is told the words the screens use', () {
+      String flat(String text) => text.replaceAll(RegExp(r'\s+'), ' ');
+      for (final bool own in <bool>[false, true]) {
+        final String english = flat(
+          quincenaPrompt(
+            quincenaCatalog,
+            demoLedger(),
+            language: 'en',
+            own: own,
+          ),
+        );
+        expect(english, contains('"transactions", never "movements"'));
+        expect(english, contains('"pay period"'));
+        expect(english, contains('"paycheck"'));
+        expect(english, contains('never "fortnight"'));
+        expect(english, contains('"safety buffer", never "cushion"'));
+        expect(english, contains('"recurring payments", never "fixed'));
+        expect(english, contains('"installments"'));
+        expect(english, contains('"compared with", never "against"'));
+      }
+      // Spanish has its own words, and is not told the English ones.
+      expect(flat(prompt), isNot(contains('never "movements"')));
+    });
+
+    test('names are never translated, in either language', () {
+      const String rule =
+          'Names stay as they come: merchants, people, accounts and '
+          'statement descriptions are never translated.';
+      for (final String language in <String>['es', 'en']) {
+        for (final bool own in <bool>[false, true]) {
+          expect(
+            quincenaPrompt(
+              quincenaCatalog,
+              demoLedger(),
+              language: language,
+              own: own,
+            ).replaceAll(RegExp(r'\s+'), ' '),
+            contains(rule),
+          );
+        }
+      }
+    });
+
+    test('paydays are said as ordinals', () {
+      expect(
+        quincenaPrompt(quincenaCatalog, demoLedger(), own: true),
+        contains('Paydays are the 15th and the 31st of each month'),
+      );
+    });
+
     test('it is told to ask for its tools at once', () {
       // Each turn sends the whole prompt again: six turns cost three times
       // two, and the person waits for every one.
