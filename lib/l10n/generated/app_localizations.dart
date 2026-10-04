@@ -1100,12 +1100,6 @@ abstract class AppLocalizations {
   /// **'Sin tasa para {assets}: cuenta como cero en los totales.'**
   String ratesMissing(String assets);
 
-  /// No description provided for @rateManual.
-  ///
-  /// In es, this message translates to:
-  /// **'Escrita a mano'**
-  String get rateManual;
-
   /// No description provided for @rateSourceTrm.
   ///
   /// In es, this message translates to:
@@ -1145,7 +1139,7 @@ abstract class AppLocalizations {
   /// No description provided for @stablecoinPeg.
   ///
   /// In es, this message translates to:
-  /// **'{asset} se cuenta como un dólar.'**
+  /// **'{asset} se cuenta como 1 US\$'**
   String stablecoinPeg(String asset);
 
   /// No description provided for @addMovement.
@@ -2803,12 +2797,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{held} a {rate}'**
   String freeExplainHeldAt(String held, String rate);
-
-  /// No description provided for @freeExplainRateOf.
-  ///
-  /// In es, this message translates to:
-  /// **'tasa del {date}'**
-  String freeExplainRateOf(String date);
 
   /// No description provided for @importData.
   ///
@@ -7000,7 +6988,7 @@ abstract class AppLocalizations {
   /// No description provided for @ratesSeeAll.
   ///
   /// In es, this message translates to:
-  /// **'Ver de dónde sale cada tasa o cambiarla'**
+  /// **'Ver tasas usadas'**
   String get ratesSeeAll;
 
   /// No description provided for @cardOwedLabel.
@@ -7566,6 +7554,72 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena.'**
   String get widgetAddFailed;
+
+  /// No description provided for @rateManualTag.
+  ///
+  /// In es, this message translates to:
+  /// **'Manual'**
+  String get rateManualTag;
+
+  /// No description provided for @rateManualOn.
+  ///
+  /// In es, this message translates to:
+  /// **'Escrita a mano el {date}'**
+  String rateManualOn(String date);
+
+  /// No description provided for @rateAutomaticNow.
+  ///
+  /// In es, this message translates to:
+  /// **'La automática hoy: {value}'**
+  String rateAutomaticNow(String value);
+
+  /// No description provided for @rateUseFetchedShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Usar la automática'**
+  String get rateUseFetchedShort;
+
+  /// No description provided for @rateRestoreFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo traer la tasa automática. Sigue la tuya; intenta de nuevo con conexión.'**
+  String get rateRestoreFailed;
+
+  /// No description provided for @rateStepPrice.
+  ///
+  /// In es, this message translates to:
+  /// **'Precio de mercado: 1 {asset} = {value} · {source}, {when}'**
+  String rateStepPrice(String asset, String value, String source, String when);
+
+  /// No description provided for @rateStepConvert.
+  ///
+  /// In es, this message translates to:
+  /// **'Conversión a {base}: 1 {asset} = {value} · {source} del {date}'**
+  String rateStepConvert(
+    String base,
+    String asset,
+    String value,
+    String source,
+    String date,
+  );
+
+  /// No description provided for @rateStepManual.
+  ///
+  /// In es, this message translates to:
+  /// **'1 {asset} = {value} · escrita a mano'**
+  String rateStepManual(String asset, String value);
+
+  /// No description provided for @ratesIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Así pasamos a {base} lo que tienes en otras monedas. Solo cambian los totales, no los saldos de tus cuentas.'**
+  String ratesIntro(String base);
+
+  /// No description provided for @ratesManualCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{1 tasa escrita a mano} other{{count} tasas escritas a mano}}'**
+  String ratesManualCount(int count);
 }
 
 class _AppLocalizationsDelegate

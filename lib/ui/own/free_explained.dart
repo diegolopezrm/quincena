@@ -282,8 +282,9 @@ class ExplainLine extends StatelessWidget {
   );
 }
 
-/// How [held] became the base currency: at what rate, from where, as of
-/// which day; or that no rate converts it.
+/// How [held] became the base currency: at what rate, then each step of
+/// it on its own line, from where and as of when; or that no rate converts
+/// it.
 String conversionDetail(
   AppLocalizations l,
   RateTable rates,
@@ -292,7 +293,6 @@ String conversionDetail(
 ) {
   final Decimal? rate = rates.rate(held.asset, base);
   if (rate == null) return l.ratesMissing(held.asset.code);
-  final List<Rate> used = rates.used(held.asset, base);
   return <String>[
     l.freeExplainHeldAt(
       moneyText(held, base: base),
@@ -303,7 +303,6 @@ String conversionDetail(
         decimals: rate < Decimal.fromInt(10) ? 4 : 2,
       ),
     ),
-    rateSources(l, rates, held.asset, base),
-    if (used.isNotEmpty) l.freeExplainRateOf(dayShortMonth(used.first.asOf)),
-  ].join(' · ');
+    ...rateStepLines(l, rates, held.asset, base),
+  ].join('\n');
 }

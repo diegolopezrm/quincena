@@ -621,9 +621,6 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get rateManual => 'Escrita a mano';
-
-  @override
   String get rateSourceTrm => 'TRM oficial';
 
   @override
@@ -645,7 +642,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String stablecoinPeg(String asset) {
-    return '$asset se cuenta como un dólar.';
+    return '$asset se cuenta como 1 US\$';
   }
 
   @override
@@ -1741,11 +1738,6 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String freeExplainHeldAt(String held, String rate) {
     return '$held a $rate';
-  }
-
-  @override
-  String freeExplainRateOf(String date) {
-    return 'tasa del $date';
   }
 
   @override
@@ -4402,7 +4394,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get totalExplainOwe => 'Lo que debes';
 
   @override
-  String get ratesSeeAll => 'Ver de dónde sale cada tasa o cambiarla';
+  String get ratesSeeAll => 'Ver tasas usadas';
 
   @override
   String get cardOwedLabel => 'Debes';
@@ -4762,4 +4754,61 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get widgetAddFailed =>
       'Tu pantalla de inicio no deja agregarlo desde aquí. Mantén presionado un espacio vacío y busca Quincena.';
+
+  @override
+  String get rateManualTag => 'Manual';
+
+  @override
+  String rateManualOn(String date) {
+    return 'Escrita a mano el $date';
+  }
+
+  @override
+  String rateAutomaticNow(String value) {
+    return 'La automática hoy: $value';
+  }
+
+  @override
+  String get rateUseFetchedShort => 'Usar la automática';
+
+  @override
+  String get rateRestoreFailed =>
+      'No se pudo traer la tasa automática. Sigue la tuya; intenta de nuevo con conexión.';
+
+  @override
+  String rateStepPrice(String asset, String value, String source, String when) {
+    return 'Precio de mercado: 1 $asset = $value · $source, $when';
+  }
+
+  @override
+  String rateStepConvert(
+    String base,
+    String asset,
+    String value,
+    String source,
+    String date,
+  ) {
+    return 'Conversión a $base: 1 $asset = $value · $source del $date';
+  }
+
+  @override
+  String rateStepManual(String asset, String value) {
+    return '1 $asset = $value · escrita a mano';
+  }
+
+  @override
+  String ratesIntro(String base) {
+    return 'Así pasamos a $base lo que tienes en otras monedas. Solo cambian los totales, no los saldos de tus cuentas.';
+  }
+
+  @override
+  String ratesManualCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tasas escritas a mano',
+      one: '1 tasa escrita a mano',
+    );
+    return '$_temp0';
+  }
 }

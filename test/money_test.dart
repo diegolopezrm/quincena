@@ -144,6 +144,54 @@ void main() {
       );
     });
 
+    test('a conversion comes apart into its steps, in order', () {
+      final List<RateStep> steps = table.steps(Asset.btc, Asset.cop);
+      expect(steps.map((RateStep s) => '${s.from}/${s.to}'), <String>[
+        'BTC/USDT',
+        'USDT/USD',
+        'USD/COP',
+      ]);
+      expect(steps.map((RateStep s) => s.kind), <RateStepKind>[
+        RateStepKind.price,
+        RateStepKind.peg,
+        RateStepKind.conversion,
+      ]);
+      expect(steps.map((RateStep s) => s.value), <Decimal>[
+        d('80000'),
+        Decimal.one,
+        d('4000'),
+      ]);
+      expect(steps.map((RateStep s) => s.rate?.source), <String?>[
+        'binance',
+        null,
+        'trm',
+      ]);
+      // Euros go to the dollar against the way the rate is quoted.
+      final List<RateStep> euros = table.steps(Asset.eur, Asset.cop);
+      expect(euros.first.from, 'EUR');
+      expect(euros.first.value, d('1.25'));
+      expect(euros.first.rate!.pair, 'USD/EUR');
+      expect(table.steps(Asset.cop, Asset.cop), isEmpty);
+      expect(table.steps(Asset.of('PEPE'), Asset.cop), isEmpty);
+    });
+
+    test('a rate typed by hand is a step of its own kind', () {
+      final RateTable typed = RateTable(<Rate>[
+        Rate(
+          asset: 'USD',
+          quote: 'COP',
+          value: d('3400'),
+          asOf: DateTime(2026, 10, 4),
+          source: 'manual',
+          manual: true,
+        ),
+      ]);
+      expect(
+        typed.steps(Asset.usdt, Asset.cop).map((RateStep s) => s.kind),
+        <RateStepKind>[RateStepKind.peg, RateStepKind.manual],
+      );
+    });
+
     test('euros reach pesos through the dollar', () {
       expect(
         table.convert(Money(d('8'), Asset.eur), Asset.cop)!.amount,

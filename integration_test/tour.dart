@@ -338,7 +338,7 @@ final List<Scene> scenes = <Scene>[
     await settle(t.tester);
     await t.page('patrimonio-de-donde-sale');
     await t.back();
-    await t.visit('Ver de dónde sale cada tasa o cambiarla', 'tasas');
+    await t.visit('Ver tasas usadas', 'tasas');
     // Its own row: "Bancolombia" alone is also the card's bank.
     await t.tap('Banco · Bancolombia');
     await t.page('cuenta-bancolombia');

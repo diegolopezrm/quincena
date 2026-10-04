@@ -201,6 +201,21 @@ void main() {
       );
       expect(await store.ratesFetchedAt(), today);
     });
+
+    test('restoring a typed rate puts the fetched one in its place', () async {
+      await store.setManualRate('USD', 'COP', d('3400'));
+      await store.restoreRate('USD', 'COP', fetched);
+      final Rate usd = (await store.rates()).firstWhere(
+        (Rate r) => r.pair == 'USD/COP',
+      );
+      expect(usd.manual, isFalse);
+      expect(usd.source, 'trm');
+      expect(usd.value, d('3312.84'));
+      expect(
+        RateTable(await store.rates()).rate(Asset.btc, Asset.usdt),
+        d('84616.92'),
+      );
+    });
   });
 
   group('export, import, delete', () {

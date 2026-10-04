@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import '../../domain/records.dart';
 import '../../exchanges/binance_link.dart';
 import '../../format/dates.dart';
-import '../../format/money.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
@@ -218,8 +217,8 @@ class AccountsTab extends StatelessWidget {
   }
 }
 
-/// The rates behind the totals in one short line each, how current they
-/// are, and the way to see where each comes from or type one by hand.
+/// The rates behind the totals, folded into one row that opens them, with
+/// how current they are. A rate shows on the tab only when one is missing.
 class RatesSummary extends StatelessWidget {
   const RatesSummary({super.key, required this.own});
 
@@ -236,46 +235,38 @@ class RatesSummary extends StatelessWidget {
     }.toList();
     if (held.isEmpty) return const SizedBox.shrink();
     final RateTable table = own.rates;
-    // A plain section: rates are reference, not something to tap first.
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    final List<Asset> missing = <Asset>[
+      for (final Asset a in held)
+        if (table.rate(a, base) == null) a,
+    ];
+    return Panel(
       children: <Widget>[
-        SectionLabel(l.ratesTitle),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Column(
+        ListTile(
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (BuildContext context) => RatesPage(own: own),
+            ),
+          ),
+          leading: Icon(Glyph.arrowsLeftRight, color: context.colors.brand),
+          title: Text(l.ratesSeeAll, style: context.type.titleSmall),
+          subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Wrap(
-                spacing: 18,
-                runSpacing: 6,
-                children: <Widget>[
-                  for (final Asset a in held)
-                    Figures(
-                      '${a.code} ${shortRate(table.rate(a, base), base) ?? '—'}',
-                      style: context.type.bodyMedium?.copyWith(
-                        color: table.rate(a, base) == null
-                            ? context.colors.caution
-                            : context.colors.ink,
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 4),
               Text(ratesStatus(l, own), style: context.type.bodySmall),
+              // In the panel: caution text is too faint on the canvas.
+              if (missing.isNotEmpty)
+                Text(
+                  l.ratesMissing(missing.map((Asset a) => a.code).join(', ')),
+                  style: context.type.bodySmall?.copyWith(
+                    color: context.colors.caution,
+                  ),
+                ),
             ],
           ),
-        ),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton.icon(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (BuildContext context) => RatesPage(own: own),
-              ),
-            ),
-            icon: const Icon(Glyph.arrowRight, size: 18),
-            label: Text(l.ratesSeeAll),
+          trailing: Icon(
+            Glyph.caretRight,
+            size: 18,
+            color: context.colors.inkFaint,
           ),
         ),
       ],
@@ -283,31 +274,30 @@ class RatesSummary extends StatelessWidget {
   }
 }
 
-/// One unit of an asset in [base], short enough to read at a glance:
-/// `$3.312,84` for a dollar, `$280,3 M` for a bitcoin. Null without a rate.
-String? shortRate(Decimal? rate, Asset base) {
-  if (rate == null) return null;
-  if (rate >= Decimal.fromInt(1000000) && base == Asset.cop) {
-    return pesosShort(rate.toDouble());
-  }
-  return formatAmount(
-    rate,
-    base,
-    base: base,
-    decimals: rate < Decimal.fromInt(10) ? 4 : 2,
-  );
-}
-
-/// How current the rates are, as a line under them.
+/// How current the rates are, and how many the person typed by hand, as
+/// the lines under them.
 String ratesStatus(AppLocalizations l, OwnController own) {
   final DateTime? fetched = own.ratesFetchedAt;
-  return own.refreshingRates
+  final Asset? base = own.profile?.base;
+  final RateTable table = own.rates;
+  final int typed = base == null
+      ? 0
+      : <String>{
+          for (final Account a in own.accounts)
+            for (final Rate r in table.used(a.asset, base))
+              if (r.manual) r.pair,
+        }.length;
+  final String? state = own.refreshingRates
       ? l.ratesRefresh
       : own.ratesFailed
       ? (fetched == null ? l.ratesFailed : l.ratesFailedAt(dayAndTime(fetched)))
-      : fetched == null
-      ? l.ratesNever
-      : l.ratesUpdated(dayAndTime(fetched));
+      : fetched != null
+      ? l.ratesUpdated(dayAndTime(fetched))
+      // Rates typed by hand are rates too: not "none yet".
+      : typed > 0
+      ? null
+      : l.ratesNever;
+  return <String>[?state, if (typed > 0) l.ratesManualCount(typed)].join('\n');
 }
 
 /// Every rate the totals use, where each comes from, and the way to type
@@ -339,32 +329,56 @@ class RatesPage extends StatelessWidget {
   );
 }
 
-/// Where the rates converting [asset] to [base] come from, as a person
-/// knows them: `TRM`, `Binance`, or typed by hand.
-String rateSources(
+/// The conversion of [asset] to [base], one leg per line, as a person
+/// reads it: the market price of a coin, a stablecoin counted as a dollar,
+/// and the rate that takes it to [base], each with where and when it comes
+/// from. Each rate is written as its source gives it, with its currency
+/// named, so a `$` beside pesos is never a dollar.
+List<String> rateStepLines(
   AppLocalizations l,
   RateTable rates,
   Asset asset,
   Asset base,
-) {
-  final List<Rate> used = rates.used(asset, base);
-  if (used.any((Rate r) => r.manual)) return l.rateManual;
-  final List<String> names = <String>[
-    for (final Rate r in used)
-      switch (r.source) {
-        'trm' => l.rateSourceTrm,
-        'binance' => l.rateSourceBinance,
-        'ecb' => l.rateSourceEcb,
-        _ => r.source,
-      },
-  ];
-  if (asset.code == 'USDT' || asset.code == 'USDC') {
-    names.insert(0, l.stablecoinPeg(asset.code));
+) => <String>[
+  for (final RateStep step in rates.steps(asset, base))
+    _stepLine(l, step, base),
+];
+
+/// One leg of a conversion, as [rateStepLines] writes it.
+String _stepLine(AppLocalizations l, RateStep step, Asset base) {
+  final Rate? r = step.rate;
+  if (r == null) {
+    // Only a stablecoin and the dollar meet without a rate.
+    return l.stablecoinPeg(step.from == 'USD' ? step.to : step.from);
   }
-  return names.toSet().join(' · ');
+  final Asset one = Asset.of(r.asset);
+  final String unit = one.isCrypto ? one.code : one.symbol ?? one.code;
+  final String value = formatAmount(
+    r.value,
+    Asset.of(r.quote),
+    base: base,
+    decimals: r.value < Decimal.fromInt(10) ? 4 : 2,
+  );
+  final String source = switch (r.source) {
+    'trm' => l.rateSourceTrm,
+    'binance' => l.rateSourceBinance,
+    'ecb' => l.rateSourceEcb,
+    _ => r.source,
+  };
+  return switch (step.kind) {
+    RateStepKind.manual => l.rateStepManual(unit, value),
+    RateStepKind.price => l.rateStepPrice(
+      unit,
+      value,
+      source,
+      dayAndTime(r.asOf),
+    ),
+    _ => l.rateStepConvert(step.to, unit, value, source, dayShortMonth(r.asOf)),
+  };
 }
 
-/// How current the conversions are, and each rate the totals use.
+/// What the rates are for, how current they are, and each rate the totals
+/// use.
 class RatesPanel extends StatelessWidget {
   const RatesPanel({super.key, required this.own});
 
@@ -381,47 +395,47 @@ class RatesPanel extends StatelessWidget {
     };
     if (held.isEmpty) return const SizedBox.shrink();
     final RateTable table = own.rates;
-    final String status = ratesStatus(l, own);
-    return Block(
-      padding: const EdgeInsets.fromLTRB(18, 14, 8, 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text(l.ratesIntro(base.code), style: context.type.bodyMedium),
+        const SizedBox(height: 8),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: Text(ratesStatus(l, own), style: context.type.bodySmall),
+            ),
+            IconButton(
+              tooltip: l.ratesRefresh,
+              onPressed: own.refreshingRates
+                  ? null
+                  : () => own.refreshRates(force: true),
+              icon: own.refreshingRates
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Glyph.arrowCounterClockwise, size: 20),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Block(
+          padding: const EdgeInsets.fromLTRB(18, 8, 8, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(l.ratesTitle, style: context.type.titleSmall),
-                    Text(status, style: context.type.bodySmall),
-                  ],
+              for (final Asset a in held)
+                _RateLine(
+                  own: own,
+                  asset: a,
+                  base: base,
+                  rate: table.rate(a, base),
                 ),
-              ),
-              IconButton(
-                tooltip: l.ratesRefresh,
-                onPressed: own.refreshingRates
-                    ? null
-                    : () => own.refreshRates(force: true),
-                icon: own.refreshingRates
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Glyph.arrowCounterClockwise, size: 20),
-              ),
             ],
           ),
-          const SizedBox(height: 6),
-          for (final Asset a in held)
-            _RateLine(
-              own: own,
-              asset: a,
-              base: base,
-              rate: table.rate(a, base),
-            ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -439,73 +453,56 @@ class _RateLine extends StatelessWidget {
   final Asset base;
   final Decimal? rate;
 
-  String _sources(AppLocalizations l) => rateSources(l, own.rates, asset, base);
+  /// The pair typed by hand is the one the person thinks in: dollars in
+  /// pesos, bitcoin in dollars.
+  Asset get _quote => asset.isCrypto && base.code != 'USD' ? Asset.usd : base;
+
+  /// The rate the person typed for [asset], when the totals use one.
+  Rate? get _typed => own.rates
+      .used(asset, base)
+      .where((Rate r) => r.manual && r.pair == '${asset.code}/${_quote.code}')
+      .firstOrNull;
 
   Future<void> _edit(BuildContext context) async {
-    final AppLocalizations l = context.l10n;
-    // The pair typed by hand is the one the person thinks in: dollars in
-    // pesos, bitcoin in dollars.
-    final Asset quote = asset.isCrypto && base.code != 'USD' ? Asset.usd : base;
-    final Decimal? current = own.rates.rate(asset, quote);
-    final TextEditingController value = TextEditingController(
-      text: current == null
-          ? ''
-          : formatDecimal(
-              current,
-              decimals: quote.decimals > 0 ? 6 : 2,
-              trim: true,
-            ),
-    );
-    final String? typed = await showDialog<String>(
+    final Asset quote = _quote;
+    final _RateChoice? choice = await showDialog<_RateChoice>(
       context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text(l.rateEdit),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Text(
-              l.rateEditBody(asset.code, quote.code),
-              style: context.type.bodyMedium,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: value,
-              autofocus: true,
-              inputFormatters: <TextInputFormatter>[
-                AmountInputFormatter(maxDecimals: 8),
-              ],
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: InputDecoration(suffixText: quote.code),
-            ),
-          ],
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(''),
-            child: Text(l.rateUseFetched),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(value.text),
-            child: Text(l.save),
-          ),
-        ],
+      builder: (BuildContext context) => _RateDialog(
+        asset: asset,
+        quote: quote,
+        current: own.rates.rate(asset, quote),
+        typedByHand: _typed != null,
       ),
     );
-    value.dispose();
-    if (typed == null) return;
-    final Decimal? parsed = typed.isEmpty ? null : parseAmount(typed);
-    if (typed.isNotEmpty && (parsed == null || parsed <= Decimal.zero)) return;
-    await own.store.setManualRate(asset.code, quote.code, parsed);
-    if (parsed == null) await own.refreshRates(force: true);
+    if (choice == null) return;
+    if (choice.restore) {
+      if (context.mounted) await _restore(context);
+      return;
+    }
+    final Decimal? typed = choice.typed;
+    if (typed == null || typed <= Decimal.zero) return;
+    await own.store.setManualRate(asset.code, quote.code, typed);
+  }
+
+  /// Back to the automatic rate, or a word that the typed one stays when
+  /// the automatic one could not be fetched.
+  Future<void> _restore(BuildContext context) async {
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final String failed = context.l10n.rateRestoreFailed;
+    if (!await own.restoreAutomaticRate(asset.code, _quote.code)) {
+      messenger.showSnackBar(SnackBar(content: Text(failed)));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
     final Decimal? r = rate;
+    final Rate? typed = _typed;
+    final Decimal? fetched = typed == null
+        ? null
+        : own.fetchedRate(asset, _quote);
+    final List<String> steps = rateStepLines(l, own.rates, asset, base);
     final String text = r == null
         ? l.ratesMissing(asset.code)
         : '1 ${asset.code} = ${formatAmount(r, base, base: base, decimals: r < Decimal.fromInt(10) ? 4 : 2)}';
@@ -520,16 +517,55 @@ class _RateLine extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Figures(
-                    text,
-                    style: context.type.bodyMedium?.copyWith(
-                      color: r == null
-                          ? context.colors.caution
-                          : context.colors.ink,
-                    ),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: <Widget>[
+                      Figures(
+                        text,
+                        style: context.type.bodyMedium?.copyWith(
+                          color: r == null
+                              ? context.colors.caution
+                              : context.colors.ink,
+                        ),
+                      ),
+                      if (typed != null) const _ManualTag(),
+                    ],
                   ),
-                  if (r != null)
-                    Text(_sources(l), style: context.type.bodySmall),
+                  // A rate typed for the pair itself is the line above:
+                  // its one step would only say it again.
+                  if (typed == null || steps.length > 1)
+                    for (final String step in steps)
+                      Figures(step, style: context.type.bodySmall),
+                  if (typed != null) ...<Widget>[
+                    Text(
+                      l.rateManualOn(dayShortMonth(typed.asOf)),
+                      style: context.type.bodySmall,
+                    ),
+                    if (fetched != null)
+                      Figures(
+                        l.rateAutomaticNow(
+                          formatAmount(
+                            fetched,
+                            _quote,
+                            base: base,
+                            decimals: fetched < Decimal.fromInt(10) ? 4 : 2,
+                          ),
+                        ),
+                        style: context.type.bodySmall,
+                      ),
+                    TextButton(
+                      // One way back at a time: it waits for any fetch.
+                      onPressed: own.refreshingRates
+                          ? null
+                          : () => _restore(context),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                      ),
+                      child: Text(l.rateUseFetchedShort),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -546,4 +582,109 @@ class _RateLine extends StatelessWidget {
       ),
     );
   }
+}
+
+/// What the rate dialog ended in: a rate typed, or the way back to the
+/// automatic one.
+typedef _RateChoice = ({Decimal? typed, bool restore});
+
+/// One unit of [asset] in [quote], typed by hand.
+class _RateDialog extends StatefulWidget {
+  const _RateDialog({
+    required this.asset,
+    required this.quote,
+    required this.current,
+    required this.typedByHand,
+  });
+
+  final Asset asset;
+  final Asset quote;
+  final Decimal? current;
+
+  /// Whether the rate in use was typed by hand: only then is there an
+  /// automatic one to go back to.
+  final bool typedByHand;
+
+  @override
+  State<_RateDialog> createState() => _RateDialogState();
+}
+
+class _RateDialogState extends State<_RateDialog> {
+  late final TextEditingController _value = TextEditingController(
+    text: switch (widget.current) {
+      null => '',
+      final Decimal current => formatDecimal(
+        current,
+        decimals: widget.quote.decimals > 0 ? 6 : 2,
+        trim: true,
+      ),
+    },
+  );
+
+  @override
+  void dispose() {
+    _value.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    return AlertDialog(
+      title: Text(l.rateEdit),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            l.rateEditBody(widget.asset.code, widget.quote.code),
+            style: context.type.bodyMedium,
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _value,
+            autofocus: true,
+            inputFormatters: <TextInputFormatter>[
+              AmountInputFormatter(maxDecimals: 8),
+            ],
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(suffixText: widget.quote.code),
+          ),
+        ],
+      ),
+      actions: <Widget>[
+        if (widget.typedByHand)
+          TextButton(
+            onPressed: () => Navigator.of(
+              context,
+            ).pop<_RateChoice>((typed: null, restore: true)),
+            child: Text(l.rateUseFetched),
+          ),
+        TextButton(
+          onPressed: () => Navigator.of(
+            context,
+          ).pop<_RateChoice>((typed: parseAmount(_value.text), restore: false)),
+          child: Text(l.save),
+        ),
+      ],
+    );
+  }
+}
+
+/// Says a rate was typed by hand, in a soft pill beside it.
+class _ManualTag extends StatelessWidget {
+  const _ManualTag();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+    decoration: BoxDecoration(
+      color: context.colors.cautionSoft,
+      borderRadius: BorderRadius.circular(99),
+    ),
+    child: Text(
+      context.l10n.rateManualTag,
+      style: context.type.labelSmall?.copyWith(color: context.colors.caution),
+    ),
+  );
 }

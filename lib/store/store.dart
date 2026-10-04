@@ -849,6 +849,18 @@ class QuincenaStore {
         );
   }
 
+  /// Drops the rate the person typed for [asset] in [quote] and saves
+  /// [fetched] in the same transaction, so the pair is never left without
+  /// a rate in between.
+  Future<void> restoreRate(
+    String asset,
+    String quote,
+    Iterable<Rate> fetched,
+  ) => db.transaction(() async {
+    await setManualRate(asset, quote, null);
+    await saveRates(fetched);
+  });
+
   /// When rates were last fetched, or null if never.
   Future<DateTime?> ratesFetchedAt() async {
     final List<RateRow> rows =

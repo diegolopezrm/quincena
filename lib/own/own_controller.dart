@@ -88,6 +88,10 @@ class OwnController extends ChangeNotifier {
   LedgerBuild? _build;
   Map<String, Money> _balances = const <String, Money>{};
   DateTime? _ratesFetchedAt;
+
+  /// The day of the last fetch and the rates it brought, kept to show the
+  /// automatic value next to one the person typed.
+  (DateTime, List<Rate>)? _lastFetched;
   bool _refreshing = false;
   bool _ratesFailed = false;
   StreamSubscription<void>? _changes;
@@ -636,9 +640,49 @@ class OwnController extends ChangeNotifier {
     ], p.base);
     _ratesFailed =
         fetched.isEmpty && accounts.any((Account a) => a.asset != p.base);
-    if (fetched.isNotEmpty) await store.saveRates(fetched);
+    if (fetched.isNotEmpty) {
+      _lastFetched = (today, fetched);
+      await store.saveRates(fetched);
+    }
     _refreshing = false;
     await _reload();
+  }
+
+  /// What the sources said one [asset] is worth in [quote] at today's last
+  /// fetch, even where the person typed their own rate; null when it was
+  /// not fetched today.
+  Decimal? fetchedRate(Asset asset, Asset quote) {
+    final (DateTime, List<Rate>)? last = _lastFetched;
+    if (last == null || last.$1 != today) return null;
+    return RateTable(last.$2).rate(asset, quote);
+  }
+
+  /// Goes back from the rate the person typed for [asset] in [quote] to the
+  /// automatic one. The new rates are fetched before the typed one is
+  /// dropped: when they cannot convert the pair, offline or with a source
+  /// down, the typed rate stays and this returns false, so the totals are
+  /// never left without a rate.
+  Future<bool> restoreAutomaticRate(String asset, String quote) async {
+    final Profile? p = profile;
+    if (p == null) return false;
+    _refreshing = true;
+    _notify();
+    try {
+      final List<Rate> fetched = await _fetcher.fetch(<Asset>[
+        for (final Account a in accounts) a.asset,
+        Asset.of(asset),
+      ], p.base);
+      if (fetched.isNotEmpty) _lastFetched = (today, fetched);
+      if (RateTable(fetched).rate(Asset.of(asset), Asset.of(quote)) == null) {
+        return false;
+      }
+      await store.restoreRate(asset, quote, fetched);
+      _ratesFailed = false;
+      return true;
+    } finally {
+      _refreshing = false;
+      await _reload();
+    }
   }
 
   /// Takes what the native side captured since the last time and runs it
