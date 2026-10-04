@@ -62,10 +62,12 @@ class CommitmentsPage extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           title: Text(l.fixedTitle, style: context.type.titleLarge),
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => showChargeSheet(context, own: own),
-          icon: const Icon(Glyph.plus),
-          label: Text(l.chargeAdd),
+        floatingActionButton: ScrollAwareFab(
+          child: FloatingActionButton.extended(
+            onPressed: () => showChargeSheet(context, own: own),
+            icon: const Icon(Glyph.plus),
+            label: Text(l.chargeAdd),
+          ),
         ),
         body: Center(
           child: ConstrainedBox(

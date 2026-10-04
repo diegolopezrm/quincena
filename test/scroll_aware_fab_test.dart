@@ -11,11 +11,20 @@ import 'package:quincena/app_mode.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/ui/icons.dart';
+import 'package:quincena/ui/own/commitments_page.dart';
+import 'package:quincena/ui/own/freelance_page.dart';
+import 'package:quincena/ui/own/instalments_page.dart';
 import 'package:quincena/ui/own/look.dart';
 import 'package:quincena/ui/own/own_shell.dart';
+import 'package:quincena/ui/own/shared_page.dart';
+import 'package:quincena/ui/own/trips_page.dart';
+import 'package:quincena/ui/own/wallets_page.dart';
+import 'package:quincena/ui/own/wishes_page.dart';
 
+import 'commitments_data.dart';
 import 'own_flow_test.dart' show settle;
 import 'page_harness.dart';
+import 'real_life_data.dart';
 
 /// Whether a tap at [where] lands on the floating button.
 bool reaches(WidgetTester tester, Offset where) {
@@ -233,6 +242,40 @@ void main() {
       expect(tester.widget<FadeTransition>(fade.first).opacity.value, 0);
     });
   });
+
+  // Every page whose list runs under an extended button, so none of them
+  // keeps one over its amounts.
+  final Map<String, Widget Function(OwnController own)> pages =
+      <String, Widget Function(OwnController own)>{
+        'fixed payments': (OwnController own) => CommitmentsPage(own: own),
+        'instalments': (OwnController own) => InstalmentsPage(own: own),
+        'shared expenses': (OwnController own) => SharedPage(own: own),
+        'a group': (OwnController own) => GroupPage(own: own, id: guatape),
+        'trips': (OwnController own) => TripsPage(own: own),
+        'a trip': (OwnController own) => TripPage(own: own, id: newYork),
+        'wishes': (OwnController own) => WishesPage(own: own),
+        'variable income': (OwnController own) => FreelancePage(own: own),
+        'wallets': (OwnController own) => WalletsPage(own: own),
+      };
+  for (final MapEntry<String, Widget Function(OwnController)> page
+      in pages.entries) {
+    testWidgets('on ${page.key} the button steps aside too', (tester) async {
+      await openPage(
+        tester,
+        page.value,
+        data: (store, bank, card) async {
+          await addCommitments(store);
+          await addRealLife(store);
+        },
+      );
+      final Finder button = find.byType(FloatingActionButton);
+      expect(button, findsOneWidget);
+      expect(
+        find.ancestor(of: button, matching: find.byType(ScrollAwareFab)),
+        findsOneWidget,
+      );
+    });
+  }
 
   group('in the shell', () {
     /// The shell over 2.000.000 in the bank and a month of small expenses,
