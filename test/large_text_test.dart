@@ -13,14 +13,16 @@ import 'package:quincena/store/store.dart';
 import 'fonts.dart';
 import 'own_flow_test.dart' show fakeRates, settle;
 
-/// A phone with the system text size at twice the default, which is as far
-/// as the accessibility settings of both platforms go.
-Future<Session> open(WidgetTester tester) async {
+/// A phone with the system text size at twice the default, the most
+/// Android offers, speaking [language]. iOS's accessibility sizes go
+/// further; own_accessibility_test holds the main screens there.
+Future<Session> open(WidgetTester tester, [String language = 'es']) async {
   tester.view.physicalSize = const Size(1170, 2532);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
-  tester.platformDispatcher.localesTestValue = const <Locale>[Locale('es')];
+  tester.platformDispatcher.localesTestValue = <Locale>[Locale(language)];
   addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+  addTearDown(() => Intl.defaultLocale = 'es_CO');
   tester.platformDispatcher.textScaleFactorTestValue = 2;
   addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
   final session = Session(thinking: Duration.zero);
@@ -35,12 +37,18 @@ void main() {
     await loadAppFonts();
     Intl.defaultLocale = 'es_CO';
     await initializeDateFormatting('es');
+    await initializeDateFormatting('en');
   });
 
-  testWidgets('the home screen holds at twice the text size', (tester) async {
-    await open(tester);
-    expect(tester.takeException(), isNull);
-  });
+  for (final String language in <String>['es', 'en']) {
+    testWidgets('the home screen holds at twice the text size, in $language', (
+      tester,
+    ) async {
+      final Session session = await open(tester, language);
+      expect(session.language, language);
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets(
     'the sample, with whose it is and the way to one\'s own, holds at twice '
@@ -75,16 +83,25 @@ void main() {
     },
   );
 
-  for (var i = 0; i < ScriptedAgent.starters.length; i++) {
-    testWidgets('answer ${i + 1} holds at twice the text size', (tester) async {
-      final Session session = await open(tester);
-      final Future<void> answered = session.ask(ScriptedAgent.starters[i]);
-      await tester.pumpAndSettle();
-      await answered;
-      await tester.pumpAndSettle();
+  for (final String language in <String>['es', 'en']) {
+    for (var i = 0; i < ScriptedAgent.starters.length; i++) {
+      testWidgets('answer ${i + 1} holds at twice the text size, in '
+          '$language', (tester) async {
+        final Session session = await open(tester, language);
+        final Future<void> answered = session.ask(
+          ScriptedAgent.startersFor(language)[i],
+        );
+        await tester.pumpAndSettle();
+        await answered;
+        await tester.pumpAndSettle();
 
-      expect(tester.takeException(), isNull);
-    });
+        // Answered, in full, in that language.
+        expect(session.language, language);
+        expect(session.turns.single.error, isNull);
+        expect(session.turns.single.surfaceIds, isNotEmpty);
+        expect(tester.takeException(), isNull);
+      });
+    }
   }
 
   testWidgets('the goal planner holds at twice the text size as it moves', (

@@ -6,6 +6,12 @@ import '../theme/theme.dart';
 import '../theme/tokens.dart';
 import 'icons.dart';
 
+/// Whether the system text is large enough that a row's amount goes under
+/// its name instead of beside it, and the name wraps instead of being cut:
+/// past 1.3 times the default, as with the rows of Por revisar.
+bool largeText(BuildContext context) =>
+    MediaQuery.textScalerOf(context).scale(10) > 13;
+
 /// The icon each category is drawn with, wherever it appears.
 const Map<Category, IconData> categoryIcon = <Category, IconData>{
   Category.housing: Glyph.house,

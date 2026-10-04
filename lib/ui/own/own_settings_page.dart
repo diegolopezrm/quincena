@@ -20,6 +20,7 @@ import '../../theme/tokens.dart';
 import '../../version.dart';
 import '../../widget/home_widget.dart';
 import '../icons.dart';
+import '../kit.dart';
 import 'amount_input.dart';
 import 'backup_flow.dart';
 import 'binance_page.dart';
@@ -514,6 +515,11 @@ class OwnSettingsPage extends StatelessWidget {
                             ],
                             selected: <ThemeMode>{settings.themeMode},
                             showSelectedIcon: false,
+                            // With large text one choice under the other,
+                            // each word whole.
+                            direction: largeText(context)
+                                ? Axis.vertical
+                                : Axis.horizontal,
                             onSelectionChanged: (Set<ThemeMode> s) =>
                                 settings.themeMode = s.first,
                           ),
@@ -537,6 +543,9 @@ class OwnSettingsPage extends StatelessWidget {
                               settings.locale?.languageCode ?? '',
                             },
                             showSelectedIcon: false,
+                            direction: largeText(context)
+                                ? Axis.vertical
+                                : Axis.horizontal,
                             onSelectionChanged: (Set<String> s) =>
                                 settings.locale = s.first.isEmpty
                                 ? null

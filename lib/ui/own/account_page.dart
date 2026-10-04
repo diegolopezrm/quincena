@@ -88,42 +88,56 @@ class AccountPage extends StatelessWidget {
           body: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 760),
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-                children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      if (account.asset.isCrypto)
-                        CoinMark(account.asset, size: 48)
-                      else
-                        AccountTile(account.kind, size: 48),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Headline(
-                          caption: !card || balance.isZero
-                              ? l.balanceToday
-                              : balance.isNegative
-                              ? l.cardOwedLabel
-                              : l.cardInFavorLabel,
-                          onExplain: () =>
-                              showAccountExplained(context, own, account),
-                          value: card && balance.isZero
-                              ? l.cardClear
-                              : moneyText(shown, base: own.profile?.base),
-                          detail: detail.isEmpty ? null : detail,
+              // The movements are built as they scroll into view: an account
+              // with years of statements costs only what shows.
+              child: CustomScrollView(
+                slivers: <Widget>[
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    sliver: SliverList.list(
+                      children: <Widget>[
+                        Row(
+                          children: <Widget>[
+                            if (account.asset.isCrypto)
+                              CoinMark(account.asset, size: 48)
+                            else
+                              AccountTile(account.kind, size: 48),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Headline(
+                                caption: !card || balance.isZero
+                                    ? l.balanceToday
+                                    : balance.isNegative
+                                    ? l.cardOwedLabel
+                                    : l.cardInFavorLabel,
+                                onExplain: () =>
+                                    showAccountExplained(context, own, account),
+                                value: card && balance.isZero
+                                    ? l.cardClear
+                                    : moneyText(shown, base: own.profile?.base),
+                                detail: detail.isEmpty ? null : detail,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                        if (account.asset.isCrypto) ...<Widget>[
+                          const SizedBox(height: 20),
+                          PositionPanel(own: own, account: account),
+                        ],
+                        const SizedBox(height: 28),
+                        if (entries.isEmpty)
+                          Text(l.noMovements, style: context.type.bodyMedium),
+                      ],
+                    ),
                   ),
-                  if (account.asset.isCrypto) ...<Widget>[
-                    const SizedBox(height: 20),
-                    PositionPanel(own: own, account: account),
-                  ],
-                  const SizedBox(height: 28),
-                  if (entries.isEmpty)
-                    Text(l.noMovements, style: context.type.bodyMedium)
-                  else
-                    MovementGroups(own: own, entries: entries, inAccount: true),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+                    sliver: MovementGroups.sliver(
+                      own: own,
+                      entries: entries,
+                      inAccount: true,
+                    ),
+                  ),
                 ],
               ),
             ),

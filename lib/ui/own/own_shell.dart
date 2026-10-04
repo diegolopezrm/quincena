@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../ai/cloud.dart';
@@ -114,14 +116,39 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
     ),
   );
 
+  /// How large the tab labels may grow. Material stops them at 1.3 times;
+  /// on a narrow phone the longest would break mid-word before that, so
+  /// they stop where it still fits.
+  double _labelScale(BuildContext context, List<String> labels) {
+    final TextStyle? style = NavigationBarTheme.of(
+      context,
+    ).labelTextStyle?.resolve(<WidgetState>{WidgetState.selected});
+    final double room = MediaQuery.sizeOf(context).width / labels.length - 4;
+    double widest = 0;
+    for (final String label in labels) {
+      final TextPainter painter = TextPainter(
+        text: TextSpan(text: label, style: style),
+        textDirection: Directionality.of(context),
+        maxLines: 1,
+      )..layout();
+      widest = math.max(widest, painter.width);
+      painter.dispose();
+    }
+    return widest == 0 ? 1.3 : math.max(1, room / widest);
+  }
+
+  /// The tab as a sliver: Movimientos builds its days as they scroll into
+  /// view, the others are laid out whole.
   Widget _tabBody() => switch (_tab) {
     1 => MovementsTab(own: own),
-    2 => AccountsTab(own: own),
-    3 => PlanTab(own: own),
-    _ => OwnHomeTab(
-      own: own,
-      onSeeAll: () => setState(() => _tab = 1),
-      onAsk: Cloud.supported ? _openAsk : null,
+    2 => SliverToBoxAdapter(child: AccountsTab(own: own)),
+    3 => SliverToBoxAdapter(child: PlanTab(own: own)),
+    _ => SliverToBoxAdapter(
+      child: OwnHomeTab(
+        own: own,
+        onSeeAll: () => setState(() => _tab = 1),
+        onAsk: Cloud.supported ? _openAsk : null,
+      ),
     ),
   };
 
@@ -141,20 +168,19 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
         if (own.ledger == null) {
           return const Center(child: CircularProgressIndicator());
         }
-        return CustomScrollView(
-          slivers: <Widget>[
-            SliverToBoxAdapter(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 760),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 112),
-                    child: _tabBody(),
-                  ),
+        // No wider than 760 points, in the middle of a wide screen.
+        return LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints box) {
+            final double side = 16 + math.max(0, (box.maxWidth - 760) / 2);
+            return CustomScrollView(
+              slivers: <Widget>[
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(side, 8, side, 112),
+                  sliver: _tabBody(),
                 ),
-              ),
-            ),
-          ],
+              ],
+            );
+          },
         );
       },
     );
@@ -188,7 +214,14 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
                 onPressed: _openInbox,
                 icon: Badge(
                   isLabelVisible: count > 0,
-                  label: Text('$count'),
+                  // The count grows no more than the tab labels: at the
+                  // largest text it would hide the tray it sits on.
+                  label: Text(
+                    '$count',
+                    textScaler: MediaQuery.textScalerOf(
+                      context,
+                    ).clamp(maxScaleFactor: 1.3),
+                  ),
                   backgroundColor: context.colors.brand,
                   child: const Icon(Glyph.tray),
                 ),
@@ -229,13 +262,18 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
           : content,
       bottomNavigationBar: wide
           ? null
-          : NavigationBar(
-              selectedIndex: _tab,
-              onDestinationSelected: (int i) => setState(() => _tab = i),
-              destinations: <NavigationDestination>[
-                for (final (IconData icon, String label) in destinations)
-                  NavigationDestination(icon: Icon(icon), label: label),
-              ],
+          : MediaQuery.withClampedTextScaling(
+              maxScaleFactor: _labelScale(context, <String>[
+                for (final (_, String label) in destinations) label,
+              ]),
+              child: NavigationBar(
+                selectedIndex: _tab,
+                onDestinationSelected: (int i) => setState(() => _tab = i),
+                destinations: <NavigationDestination>[
+                  for (final (IconData icon, String label) in destinations)
+                    NavigationDestination(icon: Icon(icon), label: label),
+                ],
+              ),
             ),
     );
   }
