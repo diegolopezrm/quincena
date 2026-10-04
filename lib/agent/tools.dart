@@ -435,7 +435,7 @@ List<Tool> accountTools(
     name: 'subscriptions',
     description:
         'Every subscription charged each month, with its price, the day it '
-        'started and the last day it was used.',
+        'started, the last day it was used and the next day it is charged.',
     onCall: (_) {
       final Ledger ledger = current();
       return <String, Object?>{
@@ -454,6 +454,7 @@ List<Tool> accountTools(
               'lastUsed': s.lastUsed == null ? null : _day(s.lastUsed!),
               'daysSinceUsed': s.daysSinceUsed(appToday),
               'unused': s.unusedAsOf(appToday),
+              'nextCharge': _day(s.nextCharge(appToday)),
             },
         ],
       };

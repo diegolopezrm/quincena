@@ -17,7 +17,7 @@
 
   "noteSavedExpense": "You saved the expense",
   "noteChoseMonthly": "You saved the plan",
-  "noteAskedCancel": "You asked to cancel subscriptions",
+  "noteAskedCancel": "You marked what you already canceled",
   "noteAskedPayments": "You asked to see the payments",
   "noteTappedAction": "You tapped an action",
   "problemKey": "The key didn't work. Check it in Settings.",
@@ -87,7 +87,7 @@
   "goalProgress": "{percent} percent of the goal saved",
   "goalSlider": "Monthly amount for {name}",
   "perMonth": "{amount} a month",
-  "cancelSaves": "Cancel what you switched off and you save",
+  "cancelSaves": "Cancel the ones you checked and you save",
   "used": "used {ago}",
   "noUsage": "no usage data",
   "limit": "Limit",
@@ -1337,5 +1337,9 @@
   "settledExpense": "Expense saved",
   "settledPlan": "Plan saved",
   "settledCancelled": "Marked as canceled",
-  "settledAt": "{what} · {time}"
+  "settledAt": "{what} · {time}",
+  "cancelPickHint": "Check the ones you want to cancel to see how much you'd save",
+  "subscriptionSelect": "Select {name} to cancel",
+  "subscriptionToCancel": "To cancel",
+  "subscriptionCancelled": "Canceled"
 }

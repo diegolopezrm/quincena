@@ -172,10 +172,10 @@ final ClientFunction monthlyNeededGenUiFunction = GenUiClientFunction(
 final ClientFunction savingsIfCancelledGenUiFunction = GenUiClientFunction(
   name: 'savingsIfCancelled',
   description:
-      'What cancelling every subscription whose `keep` is false '
-      'saves each month, in pesos. Pass it the same list a '
-      'SubscriptionList repeats over, and wrap it in `money` to '
-      'show it.',
+      'What cancelling every subscription whose `keep` is false, '
+      'and that is not cancelled already, saves each month, in '
+      'pesos. Pass it the same list a SubscriptionList repeats '
+      'over, and wrap it in `money` to show it.',
   argumentSchema: S.object(
     properties: {
       'items': A2uiSchemas.listOrReference(items: subscriptionItemGenUiSchema),

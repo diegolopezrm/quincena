@@ -21,7 +21,7 @@ class ActionButton extends StatelessWidget {
     @GenUiAction(eventName: 'submit') this.onPressed,
   });
 
-  /// What pressing it does, as a verb: "Guardar", "Apartar cada quincena".
+  /// What pressing it does, as a verb: "Guardar", "Revisar las marcadas".
   final String label;
 
   /// `primary` for the main action of the surface, `secondary` for the rest.

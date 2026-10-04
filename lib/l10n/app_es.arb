@@ -20,7 +20,7 @@
 
   "noteSavedExpense": "Guardaste el gasto",
   "noteChoseMonthly": "Guardaste el plan",
-  "noteAskedCancel": "Pediste cancelar suscripciones",
+  "noteAskedCancel": "Marcaste lo que ya cancelaste",
   "noteAskedPayments": "Pediste ver los pagos",
   "noteTappedAction": "Tocaste una acción",
   "problemKey": "La key no funcionó. Revísala en Ajustes.",
@@ -103,7 +103,7 @@
   "@goalSlider": {"placeholders": {"name": {"type": "String"}}},
   "perMonth": "{amount} al mes",
   "@perMonth": {"placeholders": {"amount": {"type": "String"}}},
-  "cancelSaves": "Si cancelas lo que apagaste, te ahorras",
+  "cancelSaves": "Si cancelas las que marcaste, te ahorras",
   "used": "usado {ago}",
   "@used": {"placeholders": {"ago": {"type": "String"}}},
   "noUsage": "sin datos de uso",
@@ -1636,5 +1636,10 @@
   "settledPlan": "Plan guardado",
   "settledCancelled": "Marcadas como canceladas",
   "settledAt": "{what} · {time}",
-  "@settledAt": {"placeholders": {"what": {"type": "String"}, "time": {"type": "String"}}}
+  "@settledAt": {"placeholders": {"what": {"type": "String"}, "time": {"type": "String"}}},
+  "cancelPickHint": "Marca las que quieras cancelar para ver cuánto ahorras",
+  "subscriptionSelect": "Seleccionar {name} para cancelar",
+  "@subscriptionSelect": {"placeholders": {"name": {"type": "String"}}},
+  "subscriptionToCancel": "Para cancelar",
+  "subscriptionCancelled": "Cancelada"
 }

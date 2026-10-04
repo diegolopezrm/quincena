@@ -320,6 +320,39 @@ void main() {
       expect(prompt, contains('shopping = Compras'));
     });
 
+    test('it is told Quincena never moves or cancels money', () {
+      expect(
+        prompt,
+        contains('Quincena never moves, sets aside, pays or cancels money'),
+      );
+      // Nothing comes ticked, and nothing is struck through until the
+      // person says they did it.
+      expect(prompt, isNot(contains('set keep to false')));
+      expect(prompt, contains('Leave keep true'));
+      expect(prompt, contains('review_cancellation'));
+      expect(prompt, contains('cancel_subscriptions'));
+      // The summary's saving comes from a function, and what was cancelled
+      // is not shown in a list that asks for ticks.
+      expect(prompt, contains('money over savingsIfCancelled on that list'));
+      expect(prompt, contains('as SubscriptionRows in a Group'));
+    });
+
+    test('in English, the suggested questions are in English too', () {
+      const String line = 'That includes the questions in Suggestion chips';
+      expect(prompt, isNot(contains(line)));
+      for (final bool own in <bool>[false, true]) {
+        expect(
+          quincenaPrompt(
+            quincenaCatalog,
+            demoLedger(),
+            language: 'en',
+            own: own,
+          ),
+          contains(line),
+        );
+      }
+    });
+
     test('it is told to ask for its tools at once', () {
       // Each turn sends the whole prompt again: six turns cost three times
       // two, and the person waits for every one.
@@ -489,6 +522,18 @@ void main() {
         'month': 'septiembre',
       });
       expect(result['error'], isNotNull);
+    });
+
+    test('each subscription says when it is charged next', () async {
+      final Map<String, Object?> subs = await call('subscriptions');
+      final Map<Object?, Object?> charges = <Object?, Object?>{
+        for (final Map<Object?, Object?> s
+            in (subs['subscriptions']! as List).cast<Map<Object?, Object?>>())
+          s['name']: s['nextCharge'],
+      };
+      // Today is 1 October: Fit24's charge on the 1st is already behind.
+      expect(charges['Fit24 gimnasio'], '2026-11-01');
+      expect(charges['Lingo Pro'], '2026-10-20');
     });
 
     test(

@@ -57,7 +57,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get noteChoseMonthly => 'Guardaste el plan';
 
   @override
-  String get noteAskedCancel => 'Pediste cancelar suscripciones';
+  String get noteAskedCancel => 'Marcaste lo que ya cancelaste';
 
   @override
   String get noteAskedPayments => 'Pediste ver los pagos';
@@ -317,7 +317,7 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get cancelSaves => 'Si cancelas lo que apagaste, te ahorras';
+  String get cancelSaves => 'Si cancelas las que marcaste, te ahorras';
 
   @override
   String used(String ago) {
@@ -5188,4 +5188,19 @@ class AppLocalizationsEs extends AppLocalizations {
   String settledAt(String what, String time) {
     return '$what · $time';
   }
+
+  @override
+  String get cancelPickHint =>
+      'Marca las que quieras cancelar para ver cuánto ahorras';
+
+  @override
+  String subscriptionSelect(String name) {
+    return 'Seleccionar $name para cancelar';
+  }
+
+  @override
+  String get subscriptionToCancel => 'Para cancelar';
+
+  @override
+  String get subscriptionCancelled => 'Cancelada';
 }

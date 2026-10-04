@@ -307,7 +307,9 @@ void main() {
         addTearDown(session.dispose);
         await tester.pumpWidget(QuincenaApp(session: session));
         await tester.pumpAndSettle();
-        final Future<void> answered = session.ask(ScriptedAgent.starters[1]);
+        final Future<void> answered = session.ask(
+          ScriptedAgent.startersFor(language)[1],
+        );
         await tester.pumpAndSettle();
         await answered;
         await shoot(s.key, language, '01-answer');

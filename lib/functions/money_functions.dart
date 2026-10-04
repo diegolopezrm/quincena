@@ -125,10 +125,10 @@ double monthlyNeeded(double target, double saved, String deadline) {
 
 @GenUiFunction(
   description:
-      'What cancelling every subscription whose `keep` is false saves each '
-      'month, in pesos. Pass it the same list a SubscriptionList repeats over, '
-      'and wrap it in `money` to show it.',
+      'What cancelling every subscription whose `keep` is false, and that is '
+      'not cancelled already, saves each month, in pesos. Pass it the same '
+      'list a SubscriptionList repeats over, and wrap it in `money` to show it.',
 )
 double savingsIfCancelled(List<SubscriptionItem> items) => items
-    .where((SubscriptionItem item) => !item.keep)
+    .where((SubscriptionItem item) => !item.keep && !item.cancelled)
     .fold(0, (double sum, SubscriptionItem item) => sum + item.price);

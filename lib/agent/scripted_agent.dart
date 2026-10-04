@@ -35,7 +35,7 @@ class AgentTurn {
       core.UpdateDataModelMessage(
         surfaceId: surfaceId,
         // A data model seeded with a constant map drops every write in
-        // silence, and these surfaces have sliders and switches. A real
+        // silence, and these surfaces have sliders and checkboxes. A real
         // agent's payload arrives decoded from JSON and is mutable; this
         // makes the scripted one the same.
         value: _mutable(data)! as Map<String, Object?>,
@@ -78,7 +78,7 @@ class ScriptedAgent {
     'Where did my money go in September?',
     'Can I afford Cartagena in December?',
     'What subscriptions do I have?',
-    'How am I doing against August?',
+    'How am I doing compared with August?',
     'Log 45k at the grocery store',
   ];
 
@@ -116,6 +116,13 @@ class ScriptedAgent {
         return _saved(context);
       case 'save_goal_plan':
         return _planSaved(context);
+      case 'review_cancellation':
+        return _review(context);
+      case 'change_cancellation':
+        return _subscriptions(<String>{
+          for (final Map<Object?, Object?> row in _ticked(context))
+            '${row['name']}',
+        });
       case 'cancel_subscriptions':
         return _cancelled(context);
     }
@@ -140,6 +147,12 @@ class ScriptedAgent {
 
   /// A category's name inside a sentence, where it is not capitalized.
   String _inline(Category c) => _label(c).toLowerCase();
+
+  /// Names in a sentence: "a", "a y b", "a, b y c".
+  String _and(List<String> items) => items.length < 2
+      ? items.join()
+      : '${items.take(items.length - 1).join(', ')} ${_t('y', 'and')} '
+            '${items.last}';
 
   AgentTurn _spending() {
     final (int y, int m) = _lastMonth;
@@ -222,13 +235,13 @@ class ScriptedAgent {
               )
             : _t(
                 'Te sobraron ${pesos(income - spent)}',
-                '${pesos(income - spent)} was left over',
+                'You had ${pesos(income - spent)} left over',
               ),
         'body': _t(
           'Salieron ${pesos(spent)} de los ${pesos(income)} que te pagaron'
               '${savedForGoal > 0 ? ', y apartaste ${pesos(savedForGoal)} para Cartagena' : ''}.',
-          '${pesos(spent)} went out of the ${pesos(income)} you were paid'
-              '${savedForGoal > 0 ? ', and you put ${pesos(savedForGoal)} aside for Cartagena' : ''}.',
+          'You spent ${pesos(spent)} of the ${pesos(income)} you were paid'
+              '${savedForGoal > 0 ? ', and set aside ${pesos(savedForGoal)} for Cartagena' : ''}.',
         ),
       }),
       _c('tiles', 'Tiles', {
@@ -239,12 +252,12 @@ class ScriptedAgent {
         'value': _call('money', {'amount': _path('/spent')}),
         'caption': _t(
           'de ${pesos(income)} que entraron',
-          'of ${pesos(income)} that came in',
+          'out of ${pesos(income)} in income',
         ),
         'tone': tight ? 'caution' : 'good',
       }),
       _c('tile_change', 'StatTile', {
-        'label': _t('Contra $previous', 'Against $previous'),
+        'label': _t('Contra $previous', 'vs. $previous'),
         'value': _call('percentChange', {
           'current': _path('/spent'),
           'previous': _path('/previous'),
@@ -273,7 +286,7 @@ class ScriptedAgent {
                       '${pesos(ledger.spentOn(up.key, py, pm))} en $previous: la cena del '
                       '${biggestMeal.date.day} en ${biggestMeal.merchant} y '
                       '${lunches - lunchesBefore} almuerzos más que el mes pasado.',
-                  'It came to ${pesos(ledger.spentOn(up.key, y, m))} against '
+                  'You spent ${pesos(ledger.spentOn(up.key, y, m))}, up from '
                       '${pesos(ledger.spentOn(up.key, py, pm))} in $previous: dinner on the '
                       '${_ordinal(biggestMeal.date.day)} at ${biggestMeal.merchant} and '
                       '${lunches - lunchesBefore} more lunches than the month before.',
@@ -281,7 +294,7 @@ class ScriptedAgent {
               : _t(
                   'Fueron ${pesos(ledger.spentOn(up.key, y, m))} contra '
                       '${pesos(ledger.spentOn(up.key, py, pm))} en $previous.',
-                  'It came to ${pesos(ledger.spentOn(up.key, y, m))} against '
+                  'You spent ${pesos(ledger.spentOn(up.key, y, m))}, up from '
                       '${pesos(ledger.spentOn(up.key, py, pm))} in $previous.',
                 ),
           'actionLabel': _t('Ver esos pagos', 'See those payments'),
@@ -297,7 +310,7 @@ class ScriptedAgent {
           'body': _t(
             'Gastaste ${pesos(ledger.spentOn(down.key, y, m))}, contra '
                 '${pesos(ledger.spentOn(down.key, py, pm))} en $previous.',
-            'You spent ${pesos(ledger.spentOn(down.key, y, m))}, against '
+            'You spent ${pesos(ledger.spentOn(down.key, y, m))}, down from '
                 '${pesos(ledger.spentOn(down.key, py, pm))} in $previous.',
           ),
         }),
@@ -501,7 +514,7 @@ class ScriptedAgent {
                 ),
           'body': _t(
             'Corrige lo que haga falta antes de guardar.',
-            'Fix anything that is off before saving.',
+            "Fix anything that's off before saving.",
           ),
         }),
         _c('form', 'Group', {
@@ -532,7 +545,7 @@ class ScriptedAgent {
               }),
               'message': _t(
                 'Es más de lo que hay en la cuenta.',
-                'That is more than the account holds.',
+                "That's more than the account has.",
               ),
             },
           ],
@@ -598,9 +611,9 @@ class ScriptedAgent {
             'Done: ${pesos(amount)} under ${_inline(category)}',
           ),
           'body': _t(
-            'Te quedan ${pesos(ledger.freeUntilPayday)} libres hasta el '
+            'Ahora puedes gastar ${pesos(ledger.freeUntilPayday)} hasta el '
                 '${dayMonth(ledger.nextPayday)}.',
-            'You have ${pesos(ledger.freeUntilPayday)} free until '
+            'Now you can spend ${pesos(ledger.freeUntilPayday)} until '
                 '${dayMonth(ledger.nextPayday)}.',
           ),
         }),
@@ -674,7 +687,12 @@ class ScriptedAgent {
     );
   }
 
-  AgentTurn _subscriptions() {
+  /// The subscriptions, each with a box the person ticks to cancel it.
+  ///
+  /// Nothing comes ticked: which ones to drop is the person's choice, so the
+  /// answer only names the ones that went unused. [ticked] holds the names
+  /// they had already chosen, when they come back to change the choice.
+  AgentTurn _subscriptions([Set<String> ticked = const <String>{}]) {
     final List<Subscription> subs = ledger.subscriptions;
     final List<Subscription> stale = subs
         .where((Subscription s) => s.unusedAsOf(appToday))
@@ -685,6 +703,9 @@ class ScriptedAgent {
                 (Subscription a, Subscription b) => b.since.compareTo(a.since),
               ))
               .first;
+    final String unused = _and(<String>[
+      for (final Subscription s in stale) s.name,
+    ]);
 
     return AgentTurn(
       components: <JsonMap>[
@@ -693,7 +714,7 @@ class ScriptedAgent {
             'head',
             'list',
             if (newest != null) 'newest',
-            'cancel',
+            'review',
             'next',
           ],
         }),
@@ -701,17 +722,15 @@ class ScriptedAgent {
           'kicker': _t('Suscripciones', 'Subscriptions'),
           'title': _t(
             'Pagas ${pesos(ledger.subscriptionsMonthly)} al mes en suscripciones',
-            'You pay ${pesos(ledger.subscriptionsMonthly)} a month in subscriptions',
+            'You pay ${pesos(ledger.subscriptionsMonthly)} a month for subscriptions',
           ),
           'body': _t(
-            'Son ${_count(subs.length)}. ${_capital(_count(stale.length))} '
-                '${stale.length == 1 ? 'lleva' : 'llevan'} más de un mes sin '
-                'usarse; ${stale.length == 1 ? 'la dejé apagada' : 'las dejé apagadas'} '
-                'para que veas lo que ahorras.',
-            'There are ${_count(subs.length)}. ${_capital(_count(stale.length))} '
-                '${stale.length == 1 ? 'has' : 'have'} gone unused for over a '
-                'month; I switched ${stale.length == 1 ? 'it' : 'them'} off so '
-                'you can see what you would save.',
+            'Son ${_count(subs.length)}. '
+                '${stale.isEmpty ? 'Todas se usaron en el último mes.' : '${_capital(_count(stale.length))} ${stale.length == 1 ? 'lleva' : 'llevan'} más de un mes sin usarse: $unused.'} '
+                'Marca las que quieras cancelar.',
+            'There are ${_count(subs.length)}. '
+                '${stale.isEmpty ? 'You used all of them in the last month.' : '${_capital(_count(stale.length))} ${stale.length == 1 ? 'has' : 'have'} gone unused for over a month: $unused.'} '
+                'Check the ones you want to cancel.',
           ),
         }),
         _c('list', 'SubscriptionList', {
@@ -739,76 +758,199 @@ class ScriptedAgent {
             'body': _t(
               'Es tu segundo servicio de video, y a Cineplus le sacaste '
                   'más uso este mes.',
-              'It is your second video service, and you used Cineplus more '
+              "It's your second video service, and you used Cineplus more "
                   'this month.',
             ),
           }),
-        _c('cancel', 'ActionButton', {
-          'label': _t('Cancelar las apagadas', 'Cancel the ones switched off'),
+        // Reviewing commits to nothing: the summary it brings is where the
+        // person says what they did.
+        _c('review', 'ActionButton', {
+          'label': _t('Revisar las marcadas', 'Review the ones you checked'),
           'emphasis': 'secondary',
-          'onPressed': _event('cancel_subscriptions', {
+          'onPressed': _event('review_cancellation', {
             'items': _path('/subscriptions'),
           }),
         }),
         ..._suggestions(<String>[_questions[1]]),
       ],
+      data: {'subscriptions': _subscriptionRows(ticked)},
+    );
+  }
+
+  /// Every subscription as a row of the list, with [ticked] ones not kept.
+  List<Map<String, Object?>> _subscriptionRows(Set<String> ticked) => [
+    for (final Subscription s in ledger.subscriptions)
+      {
+        'name': s.name,
+        'price': s.price,
+        if (s.lastUsed case final DateTime used) 'lastUsed': _iso(used),
+        'keep': !ticked.contains(s.name),
+      },
+  ];
+
+  /// The rows of an action's list that the person ticked to cancel.
+  static List<Map<Object?, Object?>> _ticked(Map<String, Object?> context) {
+    final Object? items = context['items'];
+    return items is List
+        ? items
+              .whereType<Map<Object?, Object?>>()
+              .where((Map<Object?, Object?> row) => row['keep'] == false)
+              .toList()
+        : const <Map<Object?, Object?>>[];
+  }
+
+  /// What cancelling the ticked ones means, before the person does it: what
+  /// they save, when each is charged next, and that Quincena cannot cancel
+  /// them. Only "Ya las cancelé" says it happened.
+  AgentTurn _review(Map<String, Object?> context) {
+    final Set<String> names = <String>{
+      for (final Map<Object?, Object?> row in _ticked(context))
+        '${row['name']}',
+    };
+    // The one charged soonest first: that is the one to cancel first.
+    final List<Subscription> chosen =
+        ledger.subscriptions
+            .where((Subscription s) => names.contains(s.name))
+            .toList()
+          ..sort(
+            (Subscription a, Subscription b) =>
+                a.nextCharge(appToday).compareTo(b.nextCharge(appToday)),
+          );
+    if (chosen.isEmpty) return _noneTicked();
+    final bool one = chosen.length == 1;
+    final int saves = chosen.fold(
+      0,
+      (int sum, Subscription s) => sum + s.price,
+    );
+
+    return AgentTurn(
+      components: <JsonMap>[
+        _c('root', 'Answer', {
+          'children': ['head', 'charges', 'change', 'done'],
+        }),
+        _c('head', 'Headline', {
+          'kicker': _t('Antes de cancelar', 'Before you cancel'),
+          'title': _t(
+            'Vas a cancelar ${_count(chosen.length)}: te ahorras ${pesos(saves)} al mes',
+            "You're canceling ${_count(chosen.length)}: you'll save ${pesos(saves)} a month",
+          ),
+          'body': one
+              ? _t(
+                  'Quincena no la cancela por ti: cancélala en el servicio '
+                      'antes de su próximo cobro.',
+                  "Quincena can't cancel it for you: cancel it with the "
+                      'service before its next charge.',
+                )
+              : _t(
+                  'Quincena no las cancela por ti: cancela cada una en su '
+                      'servicio antes de su próximo cobro.',
+                  "Quincena can't cancel them for you: cancel each one with "
+                      'its service before its next charge.',
+                ),
+        }),
+        _c('charges', 'MovementList', {
+          'title': one
+              ? _t('Su próximo cobro', 'Its next charge')
+              : _t('El próximo cobro de cada una', 'Next charge for each'),
+          'items': _path('/charges'),
+        }),
+        _c('change', 'ActionButton', {
+          'label': _t('Cambiar selección', 'Change selection'),
+          'emphasis': 'secondary',
+          'onPressed': _event('change_cancellation', {
+            'items': _path('/subscriptions'),
+          }),
+        }),
+        _c('done', 'ActionButton', {
+          'label': one
+              ? _t('Ya la cancelé', 'I canceled it')
+              : _t('Ya las cancelé', 'I canceled them'),
+          'emphasis': 'primary',
+          'onPressed': _event('cancel_subscriptions', {
+            'items': _path('/subscriptions'),
+          }),
+        }),
+      ],
       data: {
-        'subscriptions': [
-          for (final Subscription s in subs)
+        'subscriptions': _subscriptionRows(names),
+        'charges': [
+          for (final Subscription s in chosen)
             {
-              'name': s.name,
-              'price': s.price,
-              if (s.lastUsed case final DateTime used) 'lastUsed': _iso(used),
-              'keep': !stale.contains(s),
+              'merchant': s.name,
+              'category': Category.subscriptions.name,
+              'amount': s.price,
+              'date': _iso(s.nextCharge(appToday)),
             },
         ],
       },
     );
   }
 
+  /// What the person says they did: cancelled the ticked ones, each with its
+  /// service. Only now do the rows show struck through.
   AgentTurn _cancelled(Map<String, Object?> context) {
-    final Object? items = context['items'];
-    final List<Map<Object?, Object?>> rows = items is List
-        ? items.whereType<Map<Object?, Object?>>().toList()
-        : const <Map<Object?, Object?>>[];
-    final List<String> names = <String>[
-      for (final Map<Object?, Object?> row in rows)
-        if (row['keep'] == false) '${row['name']}',
-    ];
-    final num saved = rows
-        .where((Map<Object?, Object?> row) => row['keep'] == false)
-        .fold<num>(
-          0,
-          (num s, Map<Object?, Object?> row) =>
-              s + ((row['price'] as num?) ?? 0),
-        );
+    final List<Map<Object?, Object?>> rows = _ticked(context);
+    if (rows.isEmpty) return _noneTicked();
+    final String names = _and(<String>[
+      for (final Map<Object?, Object?> row in rows) '${row['name']}',
+    ]);
+    final num saved = rows.fold<num>(
+      0,
+      (num s, Map<Object?, Object?> row) => s + ((row['price'] as num?) ?? 0),
+    );
 
     return AgentTurn(
       components: <JsonMap>[
         _c('root', 'Answer', {
-          'children': ['head', 'next'],
+          'children': ['head', 'done', 'next'],
         }),
         _c('head', 'Headline', {
-          'kicker': _t('Suscripciones', 'Subscriptions'),
-          'title': names.isEmpty
-              ? _t('No cancelé ninguna', 'Nothing was cancelled')
-              : _t(
-                  'Cancelo ${names.join(' y ')}',
-                  'Cancelling ${names.join(' and ')}',
-                ),
-          'body': names.isEmpty
-              ? _t('Todas siguen activas.', 'All of them are still active.')
-              : _t(
-                  'Te ahorras ${pesos(saved)} al mes desde el próximo cobro. '
-                      'En la demo no se cancela nada de verdad.',
-                  'You save ${pesos(saved)} a month from the next charge. '
-                      'Nothing is really cancelled in the demo.',
-                ),
+          'kicker': _t('Hecho por ti', 'Done by you'),
+          'title': rows.length == 1
+              ? _t('Cancelada: $names', 'Canceled: $names')
+              : _t('Canceladas: $names', 'Canceled: $names'),
+          'body': _t(
+            'Desde el próximo cobro te ahorras ${pesos(saved)} al mes. En la '
+                'demo esto no cambia tus datos.',
+            "Starting with the next charge, you'll save ${pesos(saved)} a "
+                "month. In the demo, this doesn't change your data.",
+          ),
         }),
+        _c('done', 'Group', {
+          'title': _t('Las que cancelaste', 'What you canceled'),
+          'children': [for (var i = 0; i < rows.length; i++) 'row$i'],
+        }),
+        for (var i = 0; i < rows.length; i++)
+          _c('row$i', 'SubscriptionRow', {
+            'name': '${rows[i]['name']}',
+            'price': (rows[i]['price'] as num?) ?? 0,
+            if (rows[i]['lastUsed'] case final String used) 'lastUsed': used,
+            'keep': false,
+            'cancelled': true,
+          }),
         ..._suggestions(<String>[_questions[1]]),
       ],
     );
   }
+
+  /// The answer when the person reviews or confirms without ticking any.
+  AgentTurn _noneTicked() => AgentTurn(
+    components: <JsonMap>[
+      _c('root', 'Answer', {
+        'children': ['head', 'next'],
+      }),
+      _c('head', 'Headline', {
+        'kicker': _t('Suscripciones', 'Subscriptions'),
+        'title': _t('No marcaste ninguna', "You didn't check any"),
+        'body': _t(
+          'Todas siguen activas. Marca en la lista las que quieras cancelar.',
+          'All of them are still active. Check the ones you want to cancel '
+              'in the list.',
+        ),
+      }),
+      ..._suggestions(<String>[_questions[1]]),
+    ],
+  );
 
   AgentTurn _compare() {
     final (int y, int m) = _lastMonth;
@@ -828,6 +970,10 @@ class ScriptedAgent {
               (b.$2 - b.$3).abs().compareTo((a.$2 - a.$3).abs()),
         );
     final List<(Category, int, int)> top = moves.take(3).toList();
+    final String grew = _and(<String>[
+      for (final (Category c, int now, int then) in top)
+        if (now > then) _inline(c),
+    ]);
 
     return AgentTurn(
       components: <JsonMap>[
@@ -837,7 +983,7 @@ class ScriptedAgent {
         _c('head', 'Headline', {
           'kicker': _t(
             '${_capital(name)} contra $previous',
-            '$name against $previous',
+            '$name vs. $previous',
           ),
           'title': spent > before
               ? _t(
@@ -849,8 +995,8 @@ class ScriptedAgent {
                   'You spent ${pesos(before - spent)} less than in $previous',
                 ),
           'body': _t(
-            'El salto está en ${top.where((t) => t.$2 > t.$3).map((t) => _inline(t.$1)).join(' y ')}.',
-            'The jump is in ${top.where((t) => t.$2 > t.$3).map((t) => _inline(t.$1)).join(' and ')}.',
+            'El salto está en $grew.',
+            'Most of the increase is in $grew.',
           ),
         }),
         _c('tiles', 'Tiles', {
@@ -918,7 +1064,7 @@ class ScriptedAgent {
           'kicker': '${_label(category)} · ${_monthName(y, m)}',
           'title': _t(
             '${all.length} pagos por ${pesos(ledger.spentOn(category, y, m))}',
-            '${all.length} payments for ${pesos(ledger.spentOn(category, y, m))}',
+            '${all.length} payments totaling ${pesos(ledger.spentOn(category, y, m))}',
           ),
           'body': sorted.isEmpty
               ? null
@@ -949,12 +1095,12 @@ class ScriptedAgent {
         'kicker': _t('Modo demo', 'Demo mode'),
         'title': _t(
           'En la demo respondo estas preguntas',
-          'In the demo I answer these questions',
+          'In the demo, I can answer these questions',
         ),
         'body': _t(
           'Con un modelo conectado puedes preguntar lo que quieras. Sin él, '
               'prueba una de estas.',
-          'With a model connected you can ask anything. Without one, try '
+          'With a model connected, you can ask anything. Without one, try '
               'one of these.',
         ),
       }),

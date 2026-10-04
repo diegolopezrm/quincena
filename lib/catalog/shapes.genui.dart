@@ -159,13 +159,18 @@ MovementItem movementItemFromGenUiJson(
 /// Generated schema for [SubscriptionItem].
 final ObjectSchema subscriptionItemGenUiSchema = ObjectSchema(
   description:
-      'A subscription charged every month, and whether the person '
-      'wants to keep it.',
+      'A subscription charged every month, whether the person wants '
+      'to keep it, and whether they already cancelled it.',
   properties: {
     'name': S.string(description: 'The service, as the statement names it.'),
     'price': S.number(description: 'What it costs every month, in pesos.'),
     'keep': S.boolean(
       description: 'Whether the person wants to keep paying for it.',
+    ),
+    'cancelled': S.boolean(
+      description:
+          'Whether the person says they already cancelled it with the '
+          'service.',
     ),
   },
   required: ['name', 'price', 'keep'],
@@ -191,4 +196,5 @@ SubscriptionItem subscriptionItemFromGenUiJson(
   keep:
       genUiAsBool(json['keep']) ??
       genUiMissingField<bool>(onMissing, 'keep', false),
+  cancelled: genUiAsBool(json['cancelled']) ?? false,
 );
