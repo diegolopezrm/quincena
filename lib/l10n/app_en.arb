@@ -1341,5 +1341,9 @@
   "cancelPickHint": "Check the ones you want to cancel to see how much you'd save",
   "subscriptionSelect": "Select {name} to cancel",
   "subscriptionToCancel": "To cancel",
-  "subscriptionCancelled": "Canceled"
+  "subscriptionCancelled": "Canceled",
+  "cardLimitField": "Credit limit (optional)",
+  "cardLimitHelp": "With your limit, we show how much credit you have left. It never counts toward what you can spend: it's borrowed money.",
+  "cardCreditLeft": "{amount} credit left",
+  "cardCreditLeftOf": "{left} of {limit} credit left"
 }

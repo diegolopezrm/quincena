@@ -5207,4 +5207,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get subscriptionCancelled => 'Canceled';
+
+  @override
+  String get cardLimitField => 'Credit limit (optional)';
+
+  @override
+  String get cardLimitHelp =>
+      'With your limit, we show how much credit you have left. It never counts toward what you can spend: it\'s borrowed money.';
+
+  @override
+  String cardCreditLeft(String amount) {
+    return '$amount credit left';
+  }
+
+  @override
+  String cardCreditLeftOf(String left, String limit) {
+    return '$left of $limit credit left';
+  }
 }

@@ -30,6 +30,10 @@ class Accounts extends Table {
   /// accounts the person keeps by hand.
   TextColumn get syncRef => text().nullable()();
 
+  /// A credit card's limit, in its asset, when the person gave it; null
+  /// otherwise, and for every account that is not a card.
+  TextColumn get creditLimit => text().nullable()();
+
   /// Whether its money counts as available to spend before payday. Savings,
   /// investments and crypto usually do not.
   BoolColumn get spendable => boolean().withDefault(const Constant(true))();
@@ -236,9 +240,10 @@ class QuincenaDatabase extends _$QuincenaDatabase {
   QuincenaDatabase(super.executor);
 
   /// 2 adds what investments cost (an account's opening cost, a movement's
-  /// cost), the accounts kept in sync, and past daily rates.
+  /// cost), the accounts kept in sync, and past daily rates. 3 adds a
+  /// credit card's limit.
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -250,6 +255,9 @@ class QuincenaDatabase extends _$QuincenaDatabase {
         await m.addColumn(entries, entries.cost);
         await m.addColumn(entries, entries.costAsset);
         await m.createTable(dailyRates);
+      }
+      if (from < 3) {
+        await m.addColumn(accounts, accounts.creditLimit);
       }
     },
     beforeOpen: (OpeningDetails details) async {

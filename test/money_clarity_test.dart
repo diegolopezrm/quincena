@@ -26,6 +26,7 @@ import 'package:quincena/money/asset.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/store/store.dart';
 import 'package:quincena/theme/theme.dart';
+import 'package:quincena/ui/own/account_page.dart';
 import 'package:quincena/ui/own/accounts_tab.dart';
 import 'package:quincena/ui/own/home_tab.dart';
 import 'package:quincena/ui/own/inbox_page.dart';
@@ -312,6 +313,95 @@ void main() {
         expect(tester.takeException(), isNull);
       },
     );
+
+    testWidgets('a card with a limit says how much of it is left, and its '
+        'sheet ends on what it owes, as its page starts', (tester) async {
+      await openPage(
+        tester,
+        (OwnController own) => Scaffold(
+          body: SingleChildScrollView(child: AccountsTab(own: own)),
+        ),
+        data: (QuincenaStore store, Account bank, Account card) async {
+          await store.updateAccount(card.copyWith(creditLimit: d('3000000')));
+          await store.addEntry(
+            accountId: card.id,
+            amount: d('300000'),
+            kind: EntryKind.expense,
+            date: DateTime(2026, 10, 1, 12),
+            category: 'shopping',
+            payee: 'Falabella',
+          );
+        },
+      );
+      String text = screen(tester);
+      expect(text, contains('Debes\n\$300.000\nCupo libre \$2.700.000'));
+      // Borrowed money: no total counts the limit.
+      expect(text, contains('En tus cuentas de uso diario\n\$2.000.000'));
+      expect(text, contains('Lo que debes en tarjetas\n−\$300.000'));
+      expect(text, contains(r'$1.700.000'));
+      expect(text, isNot(contains(r'$4.700.000')));
+
+      await tapText(tester, 'Visa');
+      text = screen(tester);
+      expect(text, contains('Cupo libre \$2.700.000 de \$3.000.000'));
+      expect(find.text('Saldo hoy'), findsNothing);
+
+      // Where the debt comes from ends on the same words as the page.
+      await tester.tap(find.text('¿De dónde sale?').first);
+      await settle(tester);
+      Finder inSheet(String text) => find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.text(text),
+      );
+      expect(inSheet('Así se llega al saldo'), findsOneWidget);
+      expect(inSheet('Debes'), findsOneWidget);
+      expect(inSheet(r'$300.000'), findsOneWidget);
+      expect(inSheet('Saldo hoy'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a card takes its limit in its sheet, and gives it back', (
+      tester,
+    ) async {
+      final OwnController own = await openPage(
+        tester,
+        (OwnController own) => AccountPage(
+          own: own,
+          accountId: own.accounts
+              .firstWhere((Account a) => a.kind == AccountKind.card)
+              .id,
+        ),
+      );
+      Account visa() =>
+          own.accounts.firstWhere((Account a) => a.kind == AccountKind.card);
+
+      await tester.tap(find.byTooltip('Editar cuenta'));
+      await settle(tester);
+      final Finder limit = find.widgetWithText(
+        TextField,
+        'Cupo total (opcional)',
+      );
+      expect(limit, findsOneWidget);
+      expect(find.textContaining('es plata prestada'), findsOneWidget);
+      await tester.enterText(limit, '3000000');
+      await tapText(tester, 'Guardar');
+      expect(visa().creditLimit, d('3000000'));
+      expect(screen(tester), contains('Cupo libre \$3.000.000 de \$3.000.000'));
+
+      // Emptied, the card has no limit again, and says nothing of one.
+      await tester.tap(find.byTooltip('Editar cuenta'));
+      await settle(tester);
+      await tester.enterText(limit, '');
+      await tapText(tester, 'Guardar');
+      expect(visa().creditLimit, isNull);
+      expect(screen(tester), isNot(contains('Cupo libre')));
+
+      // Not a card: no limit to give.
+      await tester.tap(find.byTooltip('Editar cuenta'));
+      await settle(tester);
+      await tapText(tester, 'Banco');
+      expect(limit, findsNothing);
+    });
 
     testWidgets('net worth counts shared debts and instalments outside a card, '
         'estimated when a figure is missing', (tester) async {

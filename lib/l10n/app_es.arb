@@ -1641,5 +1641,11 @@
   "subscriptionSelect": "Seleccionar {name} para cancelar",
   "@subscriptionSelect": {"placeholders": {"name": {"type": "String"}}},
   "subscriptionToCancel": "Para cancelar",
-  "subscriptionCancelled": "Cancelada"
+  "subscriptionCancelled": "Cancelada",
+  "cardLimitField": "Cupo total (opcional)",
+  "cardLimitHelp": "Con el cupo te mostramos cuánto te queda por usar. Nunca se suma a lo que puedes gastar: es plata prestada.",
+  "cardCreditLeft": "Cupo libre {amount}",
+  "@cardCreditLeft": {"placeholders": {"amount": {"type": "String"}}},
+  "cardCreditLeftOf": "Cupo libre {left} de {limit}",
+  "@cardCreditLeftOf": {"placeholders": {"left": {"type": "String"}, "limit": {"type": "String"}}}
 }

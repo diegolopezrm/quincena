@@ -111,8 +111,9 @@ class QuincenaStore {
   /// The format [exportJson] writes. An import refuses a newer one.
   ///
   /// 2 adds what investments cost; a file of version 1 reads as before,
-  /// with no costs.
-  static const int exportVersion = 2;
+  /// with no costs. 3 adds a credit card's limit; a file of version 2 reads
+  /// as before, with no limits.
+  static const int exportVersion = 3;
 
   // Profile ------------------------------------------------------------------
 
@@ -253,6 +254,10 @@ class QuincenaStore {
     openingCost: _money(r.openingCost, r.openingCostAsset),
     syncRef: r.syncRef,
     balanceSince: r.createdAt,
+    creditLimit: switch (r.creditLimit) {
+      final String limit => Decimal.parse(limit),
+      null => null,
+    },
   );
 
   /// The amount stored as [amount] in [asset], when both are there.
@@ -270,6 +275,7 @@ class QuincenaStore {
     bool? spendable,
     Money? openingCost,
     String? syncRef,
+    Decimal? creditLimit,
   }) async {
     final String id = _newId();
     final int order = (await accounts(archived: true)).length;
@@ -286,6 +292,7 @@ class QuincenaStore {
       openingCost: openingCost,
       syncRef: syncRef,
       balanceSince: now,
+      creditLimit: creditLimit,
     );
     await db
         .into(db.accounts)
@@ -302,6 +309,7 @@ class QuincenaStore {
             openingCost: Value(openingCost?.amount.toString()),
             openingCostAsset: Value(openingCost?.asset.code),
             syncRef: Value(syncRef),
+            creditLimit: Value(creditLimit?.toString()),
             createdAt: now,
           ),
         );
@@ -322,6 +330,7 @@ class QuincenaStore {
           sortOrder: Value(account.sortOrder),
           openingCost: Value(account.openingCost?.amount.toString()),
           openingCostAsset: Value(account.openingCost?.asset.code),
+          creditLimit: Value(account.creditLimit?.toString()),
         ),
       );
 
@@ -1134,7 +1143,7 @@ class QuincenaStore {
   /// device stay out.
   Future<List<SyncRecord>> syncRecords() async => <SyncRecord>[
     for (final AccountRow r in await db.select(db.accounts).get())
-      SyncRecord('accounts', r.id, r.toJson()),
+      SyncRecord('accounts', r.id, _accountRecord(r)),
     for (final CategoryRow r in await db.select(db.categories).get())
       SyncRecord('categories', r.key, r.toJson()),
     for (final EntryRow r in await db.select(db.entries).get())
@@ -1150,6 +1159,14 @@ class QuincenaStore {
     for (final String key in syncedSettings)
       ..._settingRecords(key, await setting(key)),
   ];
+
+  /// An account as it syncs. Without a credit limit it reads as it did
+  /// before limits existed, so a device on either version takes it for
+  /// the same account rather than a change.
+  static Map<String, Object?> _accountRecord(AccountRow r) => <String, Object?>{
+    for (final MapEntry<String, Object?> e in r.toJson().entries)
+      if (e.key != 'creditLimit' || e.value != null) e.key: e.value,
+  };
 
   /// A setting as records: the whole of it, or one per thing it lists, and
   /// what is left apart from the list.
@@ -1374,6 +1391,9 @@ class QuincenaStore {
     }
   }
 
+  /// Writes [r] whole, empty values included: what another device took
+  /// away, such as a card's limit, goes here too. An upsert of the row as
+  /// it reads would leave the old value wherever the new one is empty.
   Future<void> _upsertSynced(SyncRecord r) async {
     final Map<String, Object?>? d = r.data;
     if (d == null) return;
@@ -1381,23 +1401,33 @@ class QuincenaStore {
       case 'accounts':
         await db
             .into(db.accounts)
-            .insertOnConflictUpdate(AccountRow.fromJson(d));
+            .insertOnConflictUpdate(AccountRow.fromJson(d).toCompanion(false));
       case 'categories':
         await db
             .into(db.categories)
-            .insertOnConflictUpdate(CategoryRow.fromJson(d));
+            .insertOnConflictUpdate(CategoryRow.fromJson(d).toCompanion(false));
       case 'entries':
-        await db.into(db.entries).insertOnConflictUpdate(EntryRow.fromJson(d));
+        await db
+            .into(db.entries)
+            .insertOnConflictUpdate(EntryRow.fromJson(d).toCompanion(false));
       case 'recurring':
         await db
             .into(db.recurrings)
-            .insertOnConflictUpdate(RecurringRow.fromJson(d));
+            .insertOnConflictUpdate(
+              RecurringRow.fromJson(d).toCompanion(false),
+            );
       case 'goals':
-        await db.into(db.goals).insertOnConflictUpdate(GoalRow.fromJson(d));
+        await db
+            .into(db.goals)
+            .insertOnConflictUpdate(GoalRow.fromJson(d).toCompanion(false));
       case 'budgets':
-        await db.into(db.budgets).insertOnConflictUpdate(BudgetRow.fromJson(d));
+        await db
+            .into(db.budgets)
+            .insertOnConflictUpdate(BudgetRow.fromJson(d).toCompanion(false));
       case 'rates':
-        await db.into(db.rates).insertOnConflictUpdate(RateRow.fromJson(d));
+        await db
+            .into(db.rates)
+            .insertOnConflictUpdate(RateRow.fromJson(d).toCompanion(false));
     }
   }
 

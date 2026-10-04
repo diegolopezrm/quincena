@@ -248,6 +248,26 @@ void main() {
       expect(await there.code(), isNull);
     });
 
+    test('a card\'s limit comes back from another phone\'s backup', () async {
+      await phone.addAccount(
+        name: 'Visa',
+        kind: AccountKind.card,
+        asset: Asset.cop,
+        opening: Decimal.parse('-300000'),
+        creditLimit: Decimal.parse('2000000'),
+      );
+      final SealedBackup sealed = await backups.seal();
+      final QuincenaStore other = emptyStore();
+      addTearDown(other.close);
+      final Backups there = Backups(other, keys: MemoryBackupKeyStore());
+      await there.restore(await there.open(sealed.file, code: sealed.newCode));
+      final Account visa = (await other.accounts()).firstWhere(
+        (Account a) => a.kind == AccountKind.card,
+      );
+      expect(visa.creditLimit, Decimal.parse('2000000'));
+      expect(await contents(other), await contents(phone));
+    });
+
     test('with no keychain, every backup brings its own code', () async {
       final Backups bare = Backups(phone, keys: NoKeychain());
       final SealedBackup a = await bare.seal();

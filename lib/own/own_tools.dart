@@ -30,7 +30,10 @@ List<Tool> ownTools(OwnController own) => <Tool>[
         'exchange. For each, its balance written as it is in its currency '
         '(balanceText, to show as it comes), the same in the base currency '
         'when a rate is known (balanceInBase), and whether it is money to '
-        'spend before payday. Then, in the base currency, netWorthInBase: '
+        'spend before payday. A card whose limit the person gave has '
+        'creditLimitText and creditLeftText, what is left to use of it: '
+        'borrowed money, never money to spend. Then, in the base currency, '
+        'netWorthInBase: '
         'the accounts with cards\' debt taken off, plus what others owe the '
         'person, less what they owe others and what is left of installments '
         'outside a card, each part apart when there is one. It is their net '
@@ -346,6 +349,15 @@ Map<String, Object?> accountsAnswer(OwnController own) {
                 ? null
                 : inBase(converted.amount),
             'spendable': a.spendable,
+            if (a.creditLeft(balance)
+                case final Money left) ...<String, Object?>{
+              'creditLimitText': formatAmount(
+                a.creditLimit!,
+                a.asset,
+                base: base,
+              ),
+              'creditLeftText': formatAmount(left.amount, a.asset, base: base),
+            },
           };
         }(),
     ],

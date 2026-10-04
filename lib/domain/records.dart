@@ -44,6 +44,7 @@ class Account {
     this.openingCost,
     this.syncRef,
     this.balanceSince,
+    this.creditLimit,
   });
 
   final String id;
@@ -70,7 +71,22 @@ class Account {
   /// a movement dated before it was already in that balance.
   final DateTime? balanceSince;
 
+  /// A credit card's limit in its own asset, positive, when the person
+  /// gave it. Borrowed money: no total ever counts it.
+  final Decimal? creditLimit;
+
   Money get openingMoney => Money(opening, asset);
+
+  /// What is left to use of a credit card's limit with [balance] on it,
+  /// never below zero; null for a card with no limit given, and for any
+  /// other account.
+  Money? creditLeft(Money balance) {
+    final Decimal? limit = creditLimit;
+    if (kind != AccountKind.card || limit == null) return null;
+    final Decimal owed = balance.isNegative ? -balance.amount : Decimal.zero;
+    final Decimal left = limit - owed;
+    return Money(left < Decimal.zero ? Decimal.zero : left, asset);
+  }
 
   Account copyWith({
     String? name,
@@ -82,6 +98,8 @@ class Account {
     int? sortOrder,
     Money? openingCost,
     bool clearOpeningCost = false,
+    Decimal? creditLimit,
+    bool clearCreditLimit = false,
   }) => Account(
     id: id,
     name: name ?? this.name,
@@ -95,6 +113,7 @@ class Account {
     openingCost: clearOpeningCost ? null : (openingCost ?? this.openingCost),
     syncRef: syncRef,
     balanceSince: balanceSince,
+    creditLimit: clearCreditLimit ? null : (creditLimit ?? this.creditLimit),
   );
 }
 

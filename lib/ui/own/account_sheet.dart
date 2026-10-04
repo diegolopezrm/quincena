@@ -79,6 +79,16 @@ class _AccountFormState extends State<_AccountForm> {
   );
   late Asset _costAsset = _editing?.openingCost?.asset ?? _defaultAsset;
   String? _costError;
+  late final TextEditingController _limit = TextEditingController(
+    text: _editing?.creditLimit == null
+        ? ''
+        : formatDecimal(
+            _editing!.creditLimit!,
+            decimals: _editing.asset.decimals,
+            trim: true,
+          ),
+  );
+  String? _limitError;
   late AccountKind _kind =
       _editing?.kind ?? widget.draft?.kind ?? AccountKind.bank;
   late Asset _asset = _editing?.asset ?? widget.draft?.asset ?? _defaultAsset;
@@ -107,6 +117,7 @@ class _AccountFormState extends State<_AccountForm> {
     _otherAsset.dispose();
     _balance.dispose();
     _cost.dispose();
+    _limit.dispose();
     super.dispose();
   }
 
@@ -129,12 +140,28 @@ class _AccountFormState extends State<_AccountForm> {
         investment &&
         _cost.text.trim().isNotEmpty &&
         (cost == null || cost < Decimal.zero);
+    // A card's limit: optional, and only a card has one.
+    final bool card = _kind == AccountKind.card;
+    final Decimal? limit = !card || _limit.text.trim().isEmpty
+        ? null
+        : parseAmount(_limit.text);
+    final bool limitInvalid =
+        card &&
+        _limit.text.trim().isNotEmpty &&
+        (limit == null || limit <= Decimal.zero);
     setState(() {
       _nameError = name.isEmpty ? l.accountNameHint : null;
       _balanceError = typed == null ? l.invalidAmount : null;
       _costError = costInvalid ? l.invalidAmount : null;
+      _limitError = limitInvalid ? l.invalidAmount : null;
     });
-    if (_nameError != null || typed == null || costInvalid || _saving) return;
+    if (_nameError != null ||
+        typed == null ||
+        costInvalid ||
+        limitInvalid ||
+        _saving) {
+      return;
+    }
     final Money? openingCost = cost == null ? null : Money(cost, _costAsset);
     setState(() => _saving = true);
     // A card shows what is owed, a positive number; its balance is negative.
@@ -149,6 +176,7 @@ class _AccountFormState extends State<_AccountForm> {
         institution: _institution.text,
         spendable: _spendable,
         openingCost: openingCost,
+        creditLimit: limit,
       );
     } else {
       final Account edited = _editing.copyWith(
@@ -161,6 +189,8 @@ class _AccountFormState extends State<_AccountForm> {
         opening: _editing.opening + (balance - _currentBalance.amount),
         openingCost: openingCost,
         clearOpeningCost: openingCost == null,
+        creditLimit: limit,
+        clearCreditLimit: limit == null,
       );
       await widget.own.store.updateAccount(edited);
       saved = edited;
@@ -289,6 +319,25 @@ class _AccountFormState extends State<_AccountForm> {
                 errorText: _balanceError,
               ),
             ),
+            if (_kind == AccountKind.card) ...<Widget>[
+              const SizedBox(height: 16),
+              TextField(
+                controller: _limit,
+                inputFormatters: <TextInputFormatter>[
+                  AmountInputFormatter(maxDecimals: asset.decimals),
+                ],
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: InputDecoration(
+                  labelText: l.cardLimitField,
+                  helperText: l.cardLimitHelp,
+                  helperMaxLines: 3,
+                  suffixText: asset.code,
+                  errorText: _limitError,
+                ),
+              ),
+            ],
             if (asset.isCrypto) ...<Widget>[
               const SizedBox(height: 16),
               _OpeningCost(

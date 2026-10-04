@@ -324,6 +324,53 @@ void main() {
       expect(await store.setting('wallets'), '{"wallets":[]}');
     });
 
+    test('a card\'s limit travels in the file, and a file from before '
+        'limits imports with none', () async {
+      await fill();
+      final Account visa = await store.addAccount(
+        name: 'Visa',
+        kind: AccountKind.card,
+        asset: Asset.cop,
+        opening: d('-300000'),
+        creditLimit: d('2000000'),
+      );
+      expect(visa.creditLimit, d('2000000'));
+      final Map<String, Object?> file =
+          jsonDecode(jsonEncode(await store.exportJson()))
+              as Map<String, Object?>;
+      expect(file['version'], 3);
+
+      await store.wipe();
+      await store.importJson(file);
+      Account back = (await store.accounts()).firstWhere(
+        (Account a) => a.kind == AccountKind.card,
+      );
+      expect(back.creditLimit, d('2000000'));
+      expect(back.opening, d('-300000'));
+
+      // Taken away, it stays away.
+      await store.updateAccount(back.copyWith(clearCreditLimit: true));
+      expect(
+        (await store.accounts())
+            .firstWhere((Account a) => a.kind == AccountKind.card)
+            .creditLimit,
+        isNull,
+      );
+
+      // Version 2 had no limits.
+      file['version'] = 2;
+      for (final Object? a in file['accounts']! as List<Object?>) {
+        (a! as Map<String, Object?>).remove('creditLimit');
+      }
+      await store.wipe();
+      await store.importJson(file);
+      back = (await store.accounts()).firstWhere(
+        (Account a) => a.kind == AccountKind.card,
+      );
+      expect(back.creditLimit, isNull);
+      expect(back.opening, d('-300000'));
+    });
+
     test('a file written by version 1 still imports', () async {
       await fill();
       final Map<String, Object?> file =

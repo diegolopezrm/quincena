@@ -5203,4 +5203,21 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get subscriptionCancelled => 'Cancelada';
+
+  @override
+  String get cardLimitField => 'Cupo total (opcional)';
+
+  @override
+  String get cardLimitHelp =>
+      'Con el cupo te mostramos cuánto te queda por usar. Nunca se suma a lo que puedes gastar: es plata prestada.';
+
+  @override
+  String cardCreditLeft(String amount) {
+    return 'Cupo libre $amount';
+  }
+
+  @override
+  String cardCreditLeftOf(String left, String limit) {
+    return 'Cupo libre $left de $limit';
+  }
 }

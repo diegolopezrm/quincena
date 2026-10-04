@@ -102,6 +102,17 @@ class $AccountsTable extends Accounts
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _creditLimitMeta = const VerificationMeta(
+    'creditLimit',
+  );
+  @override
+  late final GeneratedColumn<String> creditLimit = GeneratedColumn<String>(
+    'credit_limit',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _spendableMeta = const VerificationMeta(
     'spendable',
   );
@@ -166,6 +177,7 @@ class $AccountsTable extends Accounts
     openingCost,
     openingCostAsset,
     syncRef,
+    creditLimit,
     spendable,
     archived,
     sortOrder,
@@ -254,6 +266,15 @@ class $AccountsTable extends Accounts
         syncRef.isAcceptableOrUnknown(data['sync_ref']!, _syncRefMeta),
       );
     }
+    if (data.containsKey('credit_limit')) {
+      context.handle(
+        _creditLimitMeta,
+        creditLimit.isAcceptableOrUnknown(
+          data['credit_limit']!,
+          _creditLimitMeta,
+        ),
+      );
+    }
     if (data.containsKey('spendable')) {
       context.handle(
         _spendableMeta,
@@ -325,6 +346,10 @@ class $AccountsTable extends Accounts
         DriftSqlType.string,
         data['${effectivePrefix}sync_ref'],
       ),
+      creditLimit: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}credit_limit'],
+      ),
       spendable: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}spendable'],
@@ -372,6 +397,10 @@ class AccountRow extends DataClass implements Insertable<AccountRow> {
   /// accounts the person keeps by hand.
   final String? syncRef;
 
+  /// A credit card's limit, in its asset, when the person gave it; null
+  /// otherwise, and for every account that is not a card.
+  final String? creditLimit;
+
   /// Whether its money counts as available to spend before payday. Savings,
   /// investments and crypto usually do not.
   final bool spendable;
@@ -388,6 +417,7 @@ class AccountRow extends DataClass implements Insertable<AccountRow> {
     this.openingCost,
     this.openingCostAsset,
     this.syncRef,
+    this.creditLimit,
     required this.spendable,
     required this.archived,
     required this.sortOrder,
@@ -410,6 +440,9 @@ class AccountRow extends DataClass implements Insertable<AccountRow> {
     }
     if (!nullToAbsent || syncRef != null) {
       map['sync_ref'] = Variable<String>(syncRef);
+    }
+    if (!nullToAbsent || creditLimit != null) {
+      map['credit_limit'] = Variable<String>(creditLimit);
     }
     map['spendable'] = Variable<bool>(spendable);
     map['archived'] = Variable<bool>(archived);
@@ -435,6 +468,9 @@ class AccountRow extends DataClass implements Insertable<AccountRow> {
       syncRef: syncRef == null && nullToAbsent
           ? const Value.absent()
           : Value(syncRef),
+      creditLimit: creditLimit == null && nullToAbsent
+          ? const Value.absent()
+          : Value(creditLimit),
       spendable: Value(spendable),
       archived: Value(archived),
       sortOrder: Value(sortOrder),
@@ -457,6 +493,7 @@ class AccountRow extends DataClass implements Insertable<AccountRow> {
       openingCost: serializer.fromJson<String?>(json['openingCost']),
       openingCostAsset: serializer.fromJson<String?>(json['openingCostAsset']),
       syncRef: serializer.fromJson<String?>(json['syncRef']),
+      creditLimit: serializer.fromJson<String?>(json['creditLimit']),
       spendable: serializer.fromJson<bool>(json['spendable']),
       archived: serializer.fromJson<bool>(json['archived']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
@@ -476,6 +513,7 @@ class AccountRow extends DataClass implements Insertable<AccountRow> {
       'openingCost': serializer.toJson<String?>(openingCost),
       'openingCostAsset': serializer.toJson<String?>(openingCostAsset),
       'syncRef': serializer.toJson<String?>(syncRef),
+      'creditLimit': serializer.toJson<String?>(creditLimit),
       'spendable': serializer.toJson<bool>(spendable),
       'archived': serializer.toJson<bool>(archived),
       'sortOrder': serializer.toJson<int>(sortOrder),
@@ -493,6 +531,7 @@ class AccountRow extends DataClass implements Insertable<AccountRow> {
     Value<String?> openingCost = const Value.absent(),
     Value<String?> openingCostAsset = const Value.absent(),
     Value<String?> syncRef = const Value.absent(),
+    Value<String?> creditLimit = const Value.absent(),
     bool? spendable,
     bool? archived,
     int? sortOrder,
@@ -509,6 +548,7 @@ class AccountRow extends DataClass implements Insertable<AccountRow> {
         ? openingCostAsset.value
         : this.openingCostAsset,
     syncRef: syncRef.present ? syncRef.value : this.syncRef,
+    creditLimit: creditLimit.present ? creditLimit.value : this.creditLimit,
     spendable: spendable ?? this.spendable,
     archived: archived ?? this.archived,
     sortOrder: sortOrder ?? this.sortOrder,
@@ -533,6 +573,9 @@ class AccountRow extends DataClass implements Insertable<AccountRow> {
           ? data.openingCostAsset.value
           : this.openingCostAsset,
       syncRef: data.syncRef.present ? data.syncRef.value : this.syncRef,
+      creditLimit: data.creditLimit.present
+          ? data.creditLimit.value
+          : this.creditLimit,
       spendable: data.spendable.present ? data.spendable.value : this.spendable,
       archived: data.archived.present ? data.archived.value : this.archived,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
@@ -552,6 +595,7 @@ class AccountRow extends DataClass implements Insertable<AccountRow> {
           ..write('openingCost: $openingCost, ')
           ..write('openingCostAsset: $openingCostAsset, ')
           ..write('syncRef: $syncRef, ')
+          ..write('creditLimit: $creditLimit, ')
           ..write('spendable: $spendable, ')
           ..write('archived: $archived, ')
           ..write('sortOrder: $sortOrder, ')
@@ -571,6 +615,7 @@ class AccountRow extends DataClass implements Insertable<AccountRow> {
     openingCost,
     openingCostAsset,
     syncRef,
+    creditLimit,
     spendable,
     archived,
     sortOrder,
@@ -589,6 +634,7 @@ class AccountRow extends DataClass implements Insertable<AccountRow> {
           other.openingCost == this.openingCost &&
           other.openingCostAsset == this.openingCostAsset &&
           other.syncRef == this.syncRef &&
+          other.creditLimit == this.creditLimit &&
           other.spendable == this.spendable &&
           other.archived == this.archived &&
           other.sortOrder == this.sortOrder &&
@@ -605,6 +651,7 @@ class AccountsCompanion extends UpdateCompanion<AccountRow> {
   final Value<String?> openingCost;
   final Value<String?> openingCostAsset;
   final Value<String?> syncRef;
+  final Value<String?> creditLimit;
   final Value<bool> spendable;
   final Value<bool> archived;
   final Value<int> sortOrder;
@@ -620,6 +667,7 @@ class AccountsCompanion extends UpdateCompanion<AccountRow> {
     this.openingCost = const Value.absent(),
     this.openingCostAsset = const Value.absent(),
     this.syncRef = const Value.absent(),
+    this.creditLimit = const Value.absent(),
     this.spendable = const Value.absent(),
     this.archived = const Value.absent(),
     this.sortOrder = const Value.absent(),
@@ -636,6 +684,7 @@ class AccountsCompanion extends UpdateCompanion<AccountRow> {
     this.openingCost = const Value.absent(),
     this.openingCostAsset = const Value.absent(),
     this.syncRef = const Value.absent(),
+    this.creditLimit = const Value.absent(),
     this.spendable = const Value.absent(),
     this.archived = const Value.absent(),
     this.sortOrder = const Value.absent(),
@@ -656,6 +705,7 @@ class AccountsCompanion extends UpdateCompanion<AccountRow> {
     Expression<String>? openingCost,
     Expression<String>? openingCostAsset,
     Expression<String>? syncRef,
+    Expression<String>? creditLimit,
     Expression<bool>? spendable,
     Expression<bool>? archived,
     Expression<int>? sortOrder,
@@ -672,6 +722,7 @@ class AccountsCompanion extends UpdateCompanion<AccountRow> {
       if (openingCost != null) 'opening_cost': openingCost,
       if (openingCostAsset != null) 'opening_cost_asset': openingCostAsset,
       if (syncRef != null) 'sync_ref': syncRef,
+      if (creditLimit != null) 'credit_limit': creditLimit,
       if (spendable != null) 'spendable': spendable,
       if (archived != null) 'archived': archived,
       if (sortOrder != null) 'sort_order': sortOrder,
@@ -690,6 +741,7 @@ class AccountsCompanion extends UpdateCompanion<AccountRow> {
     Value<String?>? openingCost,
     Value<String?>? openingCostAsset,
     Value<String?>? syncRef,
+    Value<String?>? creditLimit,
     Value<bool>? spendable,
     Value<bool>? archived,
     Value<int>? sortOrder,
@@ -706,6 +758,7 @@ class AccountsCompanion extends UpdateCompanion<AccountRow> {
       openingCost: openingCost ?? this.openingCost,
       openingCostAsset: openingCostAsset ?? this.openingCostAsset,
       syncRef: syncRef ?? this.syncRef,
+      creditLimit: creditLimit ?? this.creditLimit,
       spendable: spendable ?? this.spendable,
       archived: archived ?? this.archived,
       sortOrder: sortOrder ?? this.sortOrder,
@@ -744,6 +797,9 @@ class AccountsCompanion extends UpdateCompanion<AccountRow> {
     if (syncRef.present) {
       map['sync_ref'] = Variable<String>(syncRef.value);
     }
+    if (creditLimit.present) {
+      map['credit_limit'] = Variable<String>(creditLimit.value);
+    }
     if (spendable.present) {
       map['spendable'] = Variable<bool>(spendable.value);
     }
@@ -774,6 +830,7 @@ class AccountsCompanion extends UpdateCompanion<AccountRow> {
           ..write('openingCost: $openingCost, ')
           ..write('openingCostAsset: $openingCostAsset, ')
           ..write('syncRef: $syncRef, ')
+          ..write('creditLimit: $creditLimit, ')
           ..write('spendable: $spendable, ')
           ..write('archived: $archived, ')
           ..write('sortOrder: $sortOrder, ')
@@ -4827,6 +4884,7 @@ typedef $$AccountsTableCreateCompanionBuilder =
       Value<String?> openingCost,
       Value<String?> openingCostAsset,
       Value<String?> syncRef,
+      Value<String?> creditLimit,
       Value<bool> spendable,
       Value<bool> archived,
       Value<int> sortOrder,
@@ -4844,6 +4902,7 @@ typedef $$AccountsTableUpdateCompanionBuilder =
       Value<String?> openingCost,
       Value<String?> openingCostAsset,
       Value<String?> syncRef,
+      Value<String?> creditLimit,
       Value<bool> spendable,
       Value<bool> archived,
       Value<int> sortOrder,
@@ -4926,6 +4985,11 @@ class $$AccountsTableFilterComposer
 
   ColumnFilters<String> get syncRef => $composableBuilder(
     column: $table.syncRef,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get creditLimit => $composableBuilder(
+    column: $table.creditLimit,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5029,6 +5093,11 @@ class $$AccountsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get creditLimit => $composableBuilder(
+    column: $table.creditLimit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get spendable => $composableBuilder(
     column: $table.spendable,
     builder: (column) => ColumnOrderings(column),
@@ -5093,6 +5162,11 @@ class $$AccountsTableAnnotationComposer
 
   GeneratedColumn<String> get syncRef =>
       $composableBuilder(column: $table.syncRef, builder: (column) => column);
+
+  GeneratedColumn<String> get creditLimit => $composableBuilder(
+    column: $table.creditLimit,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get spendable =>
       $composableBuilder(column: $table.spendable, builder: (column) => column);
@@ -5169,6 +5243,7 @@ class $$AccountsTableTableManager
                 Value<String?> openingCost = const Value.absent(),
                 Value<String?> openingCostAsset = const Value.absent(),
                 Value<String?> syncRef = const Value.absent(),
+                Value<String?> creditLimit = const Value.absent(),
                 Value<bool> spendable = const Value.absent(),
                 Value<bool> archived = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
@@ -5184,6 +5259,7 @@ class $$AccountsTableTableManager
                 openingCost: openingCost,
                 openingCostAsset: openingCostAsset,
                 syncRef: syncRef,
+                creditLimit: creditLimit,
                 spendable: spendable,
                 archived: archived,
                 sortOrder: sortOrder,
@@ -5201,6 +5277,7 @@ class $$AccountsTableTableManager
                 Value<String?> openingCost = const Value.absent(),
                 Value<String?> openingCostAsset = const Value.absent(),
                 Value<String?> syncRef = const Value.absent(),
+                Value<String?> creditLimit = const Value.absent(),
                 Value<bool> spendable = const Value.absent(),
                 Value<bool> archived = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
@@ -5216,6 +5293,7 @@ class $$AccountsTableTableManager
                 openingCost: openingCost,
                 openingCostAsset: openingCostAsset,
                 syncRef: syncRef,
+                creditLimit: creditLimit,
                 spendable: spendable,
                 archived: archived,
                 sortOrder: sortOrder,

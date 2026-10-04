@@ -8117,6 +8117,30 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Cancelada'**
   String get subscriptionCancelled;
+
+  /// No description provided for @cardLimitField.
+  ///
+  /// In es, this message translates to:
+  /// **'Cupo total (opcional)'**
+  String get cardLimitField;
+
+  /// No description provided for @cardLimitHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Con el cupo te mostramos cuánto te queda por usar. Nunca se suma a lo que puedes gastar: es plata prestada.'**
+  String get cardLimitHelp;
+
+  /// No description provided for @cardCreditLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'Cupo libre {amount}'**
+  String cardCreditLeft(String amount);
+
+  /// No description provided for @cardCreditLeftOf.
+  ///
+  /// In es, this message translates to:
+  /// **'Cupo libre {left} de {limit}'**
+  String cardCreditLeftOf(String left, String limit);
 }
 
 class _AppLocalizationsDelegate

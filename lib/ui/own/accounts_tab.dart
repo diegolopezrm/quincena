@@ -49,6 +49,7 @@ class AccountRow extends StatelessWidget {
             account.kind == AccountKind.card ? balance.abs() : balance,
           );
     final bool card = account.kind == AccountKind.card;
+    final Money? left = account.creditLeft(balance);
     final List<String> detail = <String>[
       // A card sits under its own heading, which already says what it is.
       if (!card || account.institution.isEmpty)
@@ -114,6 +115,11 @@ class AccountRow extends StatelessWidget {
                 if (converted != null)
                   Figures(
                     '≈ ${moneyText(converted, base: base)}',
+                    style: context.type.bodySmall,
+                  ),
+                if (left != null)
+                  Figures(
+                    context.l10n.cardCreditLeft(moneyText(left, base: base)),
                     style: context.type.bodySmall,
                   ),
               ],
