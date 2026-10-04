@@ -58,6 +58,7 @@ class OwnHomeTab extends StatelessWidget {
       children: <Widget>[
         StandingCard(
           ledger: ledger,
+          cardDebt: own.spendableCardDebt,
           onExplain: () => showFreeExplained(context, own),
         ),
         if (own.projection?.latePay case final DateTime late) ...<Widget>[
@@ -73,20 +74,11 @@ class OwnHomeTab extends StatelessWidget {
                 _TodoRow(
                   icon: Glyph.tray,
                   title: l.inboxBanner(own.pendingInbox.length),
-                  body: l.inboxBannerBody,
+                  body: l.inboxBannerBody(own.pendingInbox.length),
                   action: l.todoReview,
                   open: (_) => InboxPage(own: own),
                 ),
-              if (own.paidWithoutPlan)
-                _TodoRow(
-                  icon: Glyph.wallet,
-                  title: ledger.schedule is TwiceMonthly
-                      ? l.paydayArrived
-                      : l.paydayArrivedPay,
-                  body: l.paydayArrivedBody,
-                  action: l.todoSplit,
-                  open: (_) => EnvelopesPage(own: own),
-                ),
+              if (own.paidWithoutPlan) _PayArrivedRow(own: own, ledger: ledger),
             ],
           ),
         ],
@@ -142,6 +134,59 @@ class OwnHomeTab extends StatelessWidget {
       ],
     );
   }
+}
+
+/// The pay that arrived with no envelopes yet: how much, when and where,
+/// and the way to split it.
+class _PayArrivedRow extends StatelessWidget {
+  const _PayArrivedRow({required this.own, required this.ledger});
+
+  final OwnController own;
+  final Ledger ledger;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    final bool fortnight = ledger.schedule is TwiceMonthly;
+    // The earliest first, so the accounts read in the order the money came.
+    final List<Entry> arrivals = own.payArrivals.reversed.toList();
+    final int? total = own.payArrivedTotal;
+    final String? amount = total == null ? null : pesos(ledger.major(total));
+    final List<String> names = <String>{
+      for (final Entry e in arrivals) ?own.snapshot?.account(e.accountId)?.name,
+    }.toList();
+    final String where = names.length < 2
+        ? names.join()
+        : l.listAnd(
+            names.take(names.length - 1).join(', '),
+            names.last,
+            _sound(names.last),
+          );
+    final String from = dayShortMonth(arrivals.first.date);
+    final String to = dayShortMonth(arrivals.last.date);
+    return _TodoRow(
+      icon: Glyph.wallet,
+      title: amount == null
+          ? (fortnight ? l.paydayArrived : l.paydayArrivedPay)
+          : fortnight
+          ? l.paydayArrivedAmount(amount)
+          : l.paydayArrivedPayAmount(amount),
+      // On two days, both: the latest alone would date all of it.
+      body: from == to
+          ? l.paydayArrivedDetail(to, where)
+          : l.paydayArrivedDetailRange(from, to, where),
+      action: l.todoSplit,
+      open: (_) => EnvelopesPage(own: own),
+    );
+  }
+
+  /// The sound [word] starts with, as listAnd picks its conjunction: "i"
+  /// for an i, so Spanish says "Nequi e Itaú" and not "y Itaú"; an i
+  /// opening a diphthong, as in "hielo", keeps the y.
+  static String _sound(String word) =>
+      RegExp(r'^h?[ií](?![aeoáéó])', caseSensitive: false).hasMatch(word)
+      ? 'i'
+      : 'other';
 }
 
 /// One question to ask, or the way to ask another.
@@ -325,7 +370,7 @@ class _MovementsTabState extends State<MovementsTab> {
 }
 
 /// What comes until payday, as a line of days: what there is today, each
-/// charge on its day, and the pay, with the lowest point said first. In
+/// charge on its day, and the pay, with the lowest balance said first. In
 /// the week after a payday, the close of the period that ended.
 class _ComingDays extends StatelessWidget {
   const _ComingDays({required this.own, required this.ledger});
@@ -347,6 +392,16 @@ class _ComingDays extends StatelessWidget {
     final Projection? projection = own.projection;
     if (projection == null) return const SizedBox.shrink();
     final ProjectedDay low = projection.lowestBeforePayday;
+    // The lowest counts only what is sure: when money is expected by then,
+    // the line says it leaves that out.
+    final bool expecting = projection.days.any(
+      (ProjectedDay d) =>
+          !d.date.isAfter(low.date) &&
+          d.events.any(
+            (ProjectedEvent e) =>
+                e.certainty == Certainty.expected && e.amount > 0,
+          ),
+    );
     final ProjectedDay? tight = projection.firstTight;
     final DateTime payday = projection.nextPayday;
     final PeriodClose? close = closePeriod(ledger);
@@ -374,7 +429,7 @@ class _ComingDays extends StatelessWidget {
           Text(l.homeComing, style: context.type.titleSmall),
           const SizedBox(height: 4),
           Text(
-            l.comingLowestLine(
+            (expecting ? l.comingLowestLineSure : l.comingLowestLine)(
               pesos(ledger.major(low.sure)),
               dayMonth(low.date),
             ),

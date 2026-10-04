@@ -22,9 +22,19 @@ String sentence(String text) =>
 /// each thing held back from it has its own line, so the figure is
 /// explained before anyone has to ask.
 class StandingCard extends StatelessWidget {
-  const StandingCard({super.key, required this.ledger, this.onExplain});
+  const StandingCard({
+    super.key,
+    required this.ledger,
+    this.cardDebt = 0,
+    this.onExplain,
+  });
 
   final Ledger ledger;
+
+  /// What the credit cards counted here owe, in the ledger's smallest
+  /// unit. With some, what the accounts hold and what the cards owe take a
+  /// line each, so the debt is not taken off in silence.
+  final int cardDebt;
 
   /// Shows the sum account by account. Without it the card has no way to
   /// ask.
@@ -149,8 +159,13 @@ class StandingCard extends StatelessWidget {
           const SizedBox(height: 12),
           _Line(
             label: l.standingAvailable,
-            value: pesos(ledger.major(balance)),
+            value: pesos(ledger.major(balance + cardDebt)),
           ),
+          if (cardDebt > 0)
+            _Line(
+              label: l.standingCardDebtLine,
+              value: pesos(-ledger.major(cardDebt)),
+            ),
           for (final (String label, int amount) in held)
             _Line(
               label: label,

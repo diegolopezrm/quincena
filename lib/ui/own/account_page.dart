@@ -34,9 +34,13 @@ class AccountPage extends StatelessWidget {
           return Scaffold(appBar: AppBar(), body: const SizedBox.shrink());
         }
         final Money balance = own.balances[account.id] ?? account.openingMoney;
+        // A card's balance is what is owed on it, never money of another
+        // sign, as in its row.
+        final bool card = account.kind == AccountKind.card;
+        final Money shown = card ? balance.abs() : balance;
         final Money? converted = account.asset == own.profile?.base
             ? null
-            : own.inBase(balance);
+            : own.inBase(shown);
         final List<Entry> entries = visibleEntries(own, accountId: account.id);
         return Scaffold(
           appBar: AppBar(
@@ -84,10 +88,16 @@ class AccountPage extends StatelessWidget {
                       const SizedBox(width: 14),
                       Expanded(
                         child: Headline(
-                          caption: l.balanceToday,
+                          caption: !card || balance.isZero
+                              ? l.balanceToday
+                              : balance.isNegative
+                              ? l.cardOwedLabel
+                              : l.cardInFavorLabel,
                           onExplain: () =>
                               showAccountExplained(context, own, account),
-                          value: moneyText(balance, base: own.profile?.base),
+                          value: card && balance.isZero
+                              ? l.cardClear
+                              : moneyText(shown, base: own.profile?.base),
                           detail: converted == null
                               ? null
                               : '≈ ${moneyText(converted, base: own.profile?.base)}',

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dartantic_ai/dartantic_ai.dart' as dartantic;
@@ -12,8 +13,10 @@ import 'package:quincena/agent/model_client.dart';
 import 'package:quincena/agent/tools.dart';
 import 'package:quincena/ai/allowance.dart';
 import 'package:quincena/data/seed.dart';
+import 'package:quincena/domain/commitments.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
+import 'package:quincena/domain/shared.dart';
 import 'package:quincena/money/asset.dart';
 import 'package:quincena/money/rates.dart';
 import 'package:quincena/own/own_controller.dart';
@@ -202,8 +205,73 @@ void main() {
       expect(binance['balanceText'], '100\u00a0USDT');
       expect(binance['balanceInBase'], 400000);
       expect(binance['spendable'], isFalse);
-      expect(answer['totalInBase'], 1400000);
+      expect(answer['netWorthInBase'], 1400000);
+      expect(answer.containsKey('totalInBase'), isFalse);
       expect(answer['spendableInBase'], 1000000);
+    });
+
+    test('the net worth sent is defined, with what is owed outside the '
+        'accounts', () async {
+      await store.setSetting(
+        'shared.groups',
+        jsonEncode(<Object?>[
+          const Group(
+                id: 'arriendo',
+                name: 'Arriendo',
+                members: <Member>[
+                  Member(id: meId, name: ''),
+                  Member(id: 'sofia', name: 'Sofía'),
+                ],
+              )
+              .withExpense(
+                SharedExpense(
+                  id: 'luz',
+                  label: 'Luz',
+                  date: now,
+                  paidBy: 'sofia',
+                  shares: const <String, int>{meId: 60000, 'sofia': 60000},
+                ),
+              )
+              .toJson(),
+        ]),
+      );
+      await store.setSetting(
+        'commitments.instalments',
+        jsonEncode(<Object?>[
+          Instalments(
+            id: 'nevera',
+            name: 'Nevera',
+            principal: 240000,
+            count: 2,
+            firstDue: now.add(const Duration(days: 30)),
+            rate: 0,
+            fee: 0,
+          ).toJson(),
+        ]),
+      );
+      final OwnController fresh = OwnController(
+        store,
+        now: () => now,
+        readNative: false,
+      );
+      addTearDown(fresh.dispose);
+      await fresh.start();
+      final Map<String, Object?> answer = accountsAnswer(fresh);
+      // 1.400.000 in the accounts, less 60.000 owed to Sofía and the
+      // 240.000 left on the fridge.
+      expect(answer['netWorthInBase'], 1100000);
+      expect(answer['youOweOthersInBase'], 60000);
+      expect(answer['installmentsLeftInBase'], 240000);
+      expect(answer.containsKey('owedToYouInBase'), isFalse);
+      expect(answer.containsKey('netWorthIsEstimate'), isFalse);
+      final dartantic.Tool accounts = ownTools(
+        fresh,
+      ).firstWhere((dartantic.Tool t) => t.name == 'accounts');
+      expect(accounts.description, contains('netWorthInBase'));
+      expect(
+        accounts.description,
+        isNot(contains('everything the person has')),
+      );
     });
 
     test('an expense confirmed in a conversation is saved for real', () async {

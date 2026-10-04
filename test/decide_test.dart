@@ -2,6 +2,8 @@
 // days until payday, "Can I afford…?" is at hand, a goal's slider marks
 // what it takes and stops there, the ask bar teaches what to ask, and a
 // loan is recorded as one.
+import 'dart:convert';
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,8 +11,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/catalog/goal_planner.dart';
+import 'package:quincena/domain/freelance.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
+import 'package:quincena/format/money.dart';
 import 'package:quincena/l10n/l10n.dart';
 import 'package:quincena/money/asset.dart';
 import 'package:quincena/money/money.dart';
@@ -74,8 +78,14 @@ void main() {
     );
     await reveal(tester, find.text('Próximos días'));
     final String text = screen(tester);
-    expect(text, contains('Tu punto más bajo será'));
-    expect(text, contains('el 12 de octubre'));
+    // The pay comes on the 15th, after the lowest day: nothing to leave out.
+    expect(
+      text,
+      contains(
+        'Tu saldo mínimo estimado será ${pesos(1973100)} el 12 de octubre.',
+      ),
+    );
+    expect(text, isNot(contains('sin contar lo que esperas recibir')));
     expect(text, contains('Hoy'));
     expect(text, contains('Netflix'));
     expect(text, contains(r'−$26.900'));
@@ -84,6 +94,57 @@ void main() {
     expect(text, contains('esperado'));
     expect(text, contains(r'+$2.500.000'));
   });
+
+  testWidgets(
+    'money expected before the lowest day is said to be left out of it',
+    (tester) async {
+      await openPage(
+        tester,
+        (OwnController own) => Scaffold(
+          body: SingleChildScrollView(
+            child: OwnHomeTab(own: own, onSeeAll: () {}),
+          ),
+        ),
+        data: (QuincenaStore store, Account bank, Account card) async {
+          await store.addRecurring(
+            name: 'Netflix',
+            amount: Money(d('26900'), Asset.cop),
+            cadence: Cadence.monthly,
+            nextDate: DateTime(2026, 10, 12),
+            accountId: bank.id,
+            category: 'subscriptions',
+          );
+          // A client pays on the 4th, before Netflix on the 12th.
+          await store.setSetting(
+            'freelance',
+            jsonEncode(
+              FreelancePlan(
+                incomes: <ExpectedIncome>[
+                  ExpectedIncome(
+                    id: 'agencia',
+                    client: 'Agencia Uno',
+                    amount: 700000,
+                    expected: DateTime(2026, 10, 4),
+                  ),
+                ],
+              ).toJson(),
+            ),
+          );
+        },
+      );
+      await reveal(tester, find.text('Próximos días'));
+      final String text = screen(tester);
+      expect(text, contains('Agencia Uno'));
+      // The lowest is what is sure: the 700.000 on the 4th is not in it.
+      expect(
+        text,
+        contains(
+          'Tu saldo mínimo estimado será ${pesos(1973100)} el 12 de '
+          'octubre, sin contar lo que esperas recibir.',
+        ),
+      );
+    },
+  );
 
   testWidgets('"Can I afford…?" opens the days ahead with the price tried', (
     tester,

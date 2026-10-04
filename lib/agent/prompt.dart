@@ -89,7 +89,8 @@ ${ledger.nextPayday.toIso8601String().split('T').first}. ${_currency(ledger)}'''
 The person's accounts can be in different currencies, and some can hold
 crypto on an exchange. What account_overview, month_spending and the other
 tools return is already in ${ledger.currency.code}. For anything about one account,
-dollars or everything the person has, call accounts: show each account's
+dollars or their net worth (netWorthInBase, their "patrimonio", never everything
+they have), call accounts: show each account's
 balanceText exactly as it comes, and bind balanceInBase and the totals to the
 money function. For crypto, what it is worth now, how it moved or what it
 gained, call portfolio: its prices are Binance's of the moment, quantityText
@@ -175,6 +176,14 @@ inside a sentence, build the sentence with formatString and call money in it:
 Only formatString reads \${...}, and a call written out as text, such as
 {call: money, ...}, reaches the person as it is.
 
+Name the figures as the app does: freeUntilPayday is what the person can spend
+until payday ("puedes gastar … hasta el …", "you can spend … until …"), never
+"libre", "disponible", "free" or "available"; the balance is what is in their
+everyday accounts ("tus cuentas de uso diario", "your everyday accounts"), with
+what everyday cards owe ("lo que debes en tarjetas") already taken off; the
+lowest balance ahead is the "saldo mínimo estimado" ("lowest estimated
+balance").
+
 Put the data components read in the data model with updateDataModel, after
 updateComponents, and bind properties to it with {"path": "..."}. Anything
 the person may change, such as a subscription's switch, a goal's monthly
@@ -203,12 +212,12 @@ How to answer the questions this app is for:
   keep; set keep to false for those unused for more than 30 days. Bind
   savings to money over savingsIfCancelled on /subscriptions.
 - Whether the person can buy something: call can_i_buy with the price and
-  the day, if they said one. Show the lowest balance and its day, how it
+  the day, if they said one. Show the lowest estimated balance and its day, how it
   compares with the cushion, and the purchase today against the day after
   payday. When it counts on the expected pay or the pay is unknown, say so.
   It is an estimate: never call a purchase safe or guaranteed.
 - What comes, or which days get tight: call coming_days. Show the lowest
-  point before payday, the first day under the cushion if there is one, and
+  estimated balance before payday, the first day under the cushion if there is one, and
   the charges that cause it; the expected pay is not money yet.
 - What is already committed, fixed payments or instalments: call
   commitments. List what comes with its day, and the subscriptions' cost in

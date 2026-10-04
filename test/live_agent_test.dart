@@ -283,6 +283,33 @@ void main() {
       expect(prompt, contains('never add, subtract or divide'));
     });
 
+    test('it names the figures as the screens do', () {
+      // Read as the model does, without the line breaks.
+      String flat(String text) => text.replaceAll(RegExp(r'\s+'), ' ');
+      final String words = flat(prompt);
+      expect(words, contains('"puedes gastar … hasta el …"'));
+      expect(
+        words,
+        contains('never "libre", "disponible", "free" or "available"'),
+      );
+      expect(words, contains('"saldo mínimo estimado"'));
+      expect(words, isNot(contains('lowest point')));
+      // The balance it gets has a card's debt off, which the home card
+      // shows on a line of its own.
+      expect(
+        words,
+        contains(
+          'what everyday cards owe ("lo que debes en tarjetas") already',
+        ),
+      );
+      // With someone's own accounts, the net worth is defined.
+      final String own = flat(
+        quincenaPrompt(quincenaCatalog, demoLedger(), own: true),
+      );
+      expect(own, contains('netWorthInBase, their "patrimonio"'));
+      expect(own, isNot(contains('everything the person has')));
+    });
+
     test('it is told the Spanish names of the categories', () {
       expect(prompt, contains('shopping = Compras'));
     });

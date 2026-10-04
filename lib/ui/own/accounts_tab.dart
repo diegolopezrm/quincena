@@ -42,7 +42,12 @@ class AccountRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final Money balance = own.balances[account.id] ?? account.openingMoney;
     final Asset? base = own.profile?.base;
-    final Money? converted = account.asset == base ? null : own.inBase(balance);
+    // A card's debt in pesos too reads as owed, not as money of another sign.
+    final Money? converted = account.asset == base
+        ? null
+        : own.inBase(
+            account.kind == AccountKind.card ? balance.abs() : balance,
+          );
     final bool card = account.kind == AccountKind.card;
     final List<String> detail = <String>[
       // A card sits under its own heading, which already says what it is.
@@ -120,10 +125,41 @@ class AccountRow extends StatelessWidget {
   }
 }
 
+/// One line under the net worth: what the everyday accounts hold, or what
+/// everyday cards owe.
+class _SpendLine extends StatelessWidget {
+  const _SpendLine({
+    required this.label,
+    required this.value,
+    required this.base,
+  });
+
+  final String label;
+  final Money value;
+  final Asset base;
+
+  @override
+  Widget build(BuildContext context) => MergeSemantics(
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      child: Row(
+        children: <Widget>[
+          Expanded(child: Text(label, style: context.type.bodyMedium)),
+          Figures(
+            moneyText(value, base: base),
+            style: context.type.titleMedium,
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 /// Every account, grouped by what it is for: the net worth first, as what
-/// the person has minus what they owe, then what is there to spend today,
-/// the accounts to spend from, the credit cards as what is owed, savings
-/// and investments, and a line of the rates behind the totals.
+/// the person has minus what they owe, then what the everyday accounts
+/// hold and what everyday cards owe, the everyday accounts, the credit
+/// cards as what is owed, savings and investments, and a line of the rates
+/// behind the totals.
 class AccountsTab extends StatelessWidget {
   const AccountsTab({super.key, required this.own});
 
@@ -147,35 +183,39 @@ class AccountsTab extends StatelessWidget {
         if (!a.spendable && !card(a)) a,
     ];
     final bool crypto = own.portfolio.hasHoldings;
+    // What the money to spend starts from, as on the home card: what the
+    // everyday accounts hold, and apart what everyday cards owe.
+    var everyday = Money.zero(base);
+    var cardDebt = Money.zero(base);
+    for (final Account a in own.accounts) {
+      if (!a.spendable) continue;
+      if (own.partOfTotal(a) case final Money part) {
+        if (card(a) && part.isNegative) {
+          cardDebt += part;
+        } else {
+          everyday += part;
+        }
+      }
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Headline(
           caption: l.netWorth,
           onExplain: () => showTotalExplained(context, own),
-          value: moneyText(own.total(), base: base),
+          value: moneyText(own.netWorth().total, base: base),
+          // The code only where other currencies show beside it.
+          unit: own.accounts.any((Account a) => a.asset != base) ? base : null,
           detail: l.netWorthDetail,
         ),
         const SizedBox(height: 12),
-        MergeSemantics(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    l.standingAvailable,
-                    style: context.type.bodyMedium,
-                  ),
-                ),
-                Figures(
-                  moneyText(own.total(spendableOnly: true), base: base),
-                  style: context.type.titleMedium,
-                ),
-              ],
-            ),
+        _SpendLine(label: l.standingAvailable, value: everyday, base: base),
+        if (cardDebt.isNegative)
+          _SpendLine(
+            label: l.standingCardDebtLine,
+            value: cardDebt,
+            base: base,
           ),
-        ),
         const SizedBox(height: 24),
         if (own.accounts.isEmpty)
           Text(l.noAccounts, style: context.type.bodyMedium),

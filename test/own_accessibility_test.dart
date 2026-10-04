@@ -18,7 +18,9 @@ import 'package:quincena/statements/tables.dart';
 import 'package:quincena/sync/sync_service.dart';
 import 'package:quincena/store/store.dart';
 import 'package:quincena/theme/theme.dart';
+import 'package:quincena/ui/own/account_page.dart';
 import 'package:quincena/ui/own/accounts_tab.dart';
+import 'package:quincena/ui/own/balance_explained.dart';
 import 'package:quincena/ui/own/binance_page.dart';
 import 'package:quincena/ui/own/capture_settings_page.dart';
 import 'package:quincena/ui/own/close_page.dart';
@@ -27,6 +29,7 @@ import 'package:quincena/ui/own/coming_days_page.dart';
 import 'package:quincena/ui/own/cushion_page.dart';
 import 'package:quincena/ui/own/detective_page.dart';
 import 'package:quincena/ui/own/envelopes_page.dart';
+import 'package:quincena/ui/own/free_explained.dart';
 import 'package:quincena/ui/own/freelance_page.dart';
 import 'package:quincena/ui/own/home_tab.dart';
 import 'package:quincena/ui/own/inbox_page.dart';
@@ -98,6 +101,16 @@ void main() {
             tab(OwnHomeTab(own: own, onSeeAll: () {}, onAsk: ([String? _]) {})),
         'movements': (OwnController own) => tab(MovementsTab(own: own)),
         'accounts': (OwnController own) => tab(AccountsTab(own: own)),
+        'where the net worth comes from': (OwnController own) =>
+            tab(TotalExplained(own: own)),
+        'a card': (OwnController own) => AccountPage(
+          own: own,
+          accountId: own.accounts
+              .firstWhere((Account a) => a.kind == AccountKind.card)
+              .id,
+        ),
+        'where the money to spend comes from': (OwnController own) =>
+            Scaffold(body: FreeExplained(own: own)),
         'crypto': (OwnController own) => PortfolioPage(own: own),
         'Binance': (OwnController own) => BinancePage(own: own),
         'wallets': (OwnController own) => WalletsPage(own: own),

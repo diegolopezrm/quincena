@@ -4,7 +4,10 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/agent/scripted_agent.dart';
 import 'package:quincena/app.dart';
+import 'package:quincena/data/ledger.dart';
+import 'package:quincena/format/money.dart';
 import 'package:quincena/session/session.dart';
+import 'package:quincena/ui/own/free_explained.dart';
 
 import 'fonts.dart';
 
@@ -71,6 +74,45 @@ void main() {
     for (final String question in ScriptedAgent.starters) {
       expect(find.text(question), findsOneWidget);
     }
+  });
+
+  testWidgets('the sample card says where its figure comes from', (
+    tester,
+  ) async {
+    final Session session = await open(tester);
+    final Ledger ledger = session.ledger;
+    await tester.tap(find.text('¿De dónde sale?'));
+    await settle(tester);
+    Finder inSheet(Finder f) =>
+        find.descendant(of: find.byType(LedgerExplained), matching: f);
+    expect(
+      inSheet(find.text('Así se calcula lo que puedes gastar')),
+      findsOneWidget,
+    );
+    // The same sum as the card, from the sample's ledger alone.
+    expect(inSheet(find.text('En tus cuentas de uso diario')), findsOneWidget);
+    expect(
+      inSheet(find.text(pesos(ledger.major(ledger.balance)))),
+      findsOneWidget,
+    );
+    expect(
+      inSheet(find.text(pesos(ledger.major(ledger.freeUntilPayday)))),
+      findsOneWidget,
+    );
+    expect(inSheet(find.text(r'$1.369.300')), findsOneWidget);
+    // And what it assumes, further down.
+    await tester.scrollUntilVisible(
+      inSheet(find.textContaining('Es una estimación')),
+      120,
+      scrollable: find
+          .descendant(
+            of: find.byType(LedgerExplained),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    expect(inSheet(find.textContaining('Es una estimación')), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('where the money went: a habit, not a purchase', (tester) async {

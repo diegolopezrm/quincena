@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/account_trace.dart';
+import '../../domain/net_worth.dart';
 import '../../domain/records.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
@@ -117,8 +118,10 @@ class AccountExplained extends StatelessWidget {
   }
 }
 
-/// The total taken apart: each account in the base currency, the rate
-/// that converted it, and what has no rate yet.
+/// The net worth taken apart: each account in the base currency and the
+/// rate that converted it, what others owe and what is owed to them, what
+/// is left of purchases in instalments outside a card, and what has no
+/// rate yet.
 class TotalExplained extends StatelessWidget {
   const TotalExplained({super.key, required this.own});
 
@@ -146,17 +149,48 @@ class TotalExplained extends StatelessWidget {
       Money.zero(base),
       (Money total, (Account, Money) p) => total + p.$2,
     );
+    // Beyond the accounts: shared expenses and loans both ways, and the
+    // instalments no card holds.
+    final NetWorth worth = own.netWorth();
+    final List<Widget> haveMore = <Widget>[
+      if (!worth.owed.isZero)
+        ExplainLine(
+          title: l.totalExplainOwedToYou,
+          detail: l.totalExplainShared,
+          value: moneyText(worth.owed, base: base),
+        ),
+    ];
+    final List<Widget> oweMore = <Widget>[
+      if (!worth.owing.isZero)
+        ExplainLine(
+          title: l.totalExplainYouOwe,
+          detail: l.totalExplainShared,
+          value: moneyText(-worth.owing, base: base),
+        ),
+      if (!worth.instalments.isZero)
+        ExplainLine(
+          title: l.totalExplainInstallments,
+          detail: worth.estimated
+              ? '${l.totalExplainInstallmentsLeft} · ${l.instalEstimated}'
+              : l.totalExplainInstallmentsLeft,
+          value: moneyText(-worth.instalments, base: base),
+        ),
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Text(l.totalExplainTitle, style: context.type.headlineMedium),
         const SizedBox(height: 16),
-        for (final (String title, List<(Account, Money)> parts)
-            in <(String, List<(Account, Money)>)>[
-              (l.totalExplainHave, have),
-              (l.totalExplainOwe, owe),
+        for (final (
+              String title,
+              List<(Account, Money)> parts,
+              List<Widget> more,
+            )
+            in <(String, List<(Account, Money)>, List<Widget>)>[
+              (l.totalExplainHave, have, haveMore),
+              (l.totalExplainOwe, owe, oweMore),
             ])
-          if (parts.isNotEmpty) ...<Widget>[
+          if (parts.isNotEmpty || more.isNotEmpty) ...<Widget>[
             SectionLabel(title),
             Panel(
               children: <Widget>[
@@ -173,6 +207,7 @@ class TotalExplained extends StatelessWidget {
                           ),
                     value: moneyText(part, base: base),
                   ),
+                ...more,
               ],
             ),
             const SizedBox(height: 16),
@@ -181,19 +216,22 @@ class TotalExplained extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
           child: Column(
             children: <Widget>[
-              if (owe.isNotEmpty) ...<Widget>[
+              if (owe.isNotEmpty || oweMore.isNotEmpty) ...<Widget>[
                 ExplainSum(
                   label: l.totalExplainHave,
-                  value: moneyText(sum(have), base: base),
+                  value: moneyText(sum(have) + worth.owed, base: base),
                 ),
                 ExplainSum(
                   label: l.totalExplainOwe,
-                  value: moneyText(sum(owe), base: base),
+                  value: moneyText(
+                    sum(owe) - worth.owing - worth.instalments,
+                    base: base,
+                  ),
                 ),
               ],
               ExplainSum(
                 label: l.netWorth,
-                value: moneyText(own.total(), base: base),
+                value: moneyText(worth.total, base: base),
                 strong: true,
               ),
             ],

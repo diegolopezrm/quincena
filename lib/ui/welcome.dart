@@ -5,6 +5,7 @@ import '../data/ledger.dart';
 import '../l10n/l10n.dart';
 import '../theme/tokens.dart';
 import 'icons.dart';
+import 'own/free_explained.dart';
 import 'standing.dart';
 
 /// What the screen shows before the first question: where the money stands,
@@ -57,7 +58,10 @@ class Welcome extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         if (standing) ...<Widget>[
-          StandingCard(ledger: ledger),
+          StandingCard(
+            ledger: ledger,
+            onExplain: () => showLedgerExplained(context, ledger),
+          ),
           const SizedBox(height: 28),
         ],
         Padding(

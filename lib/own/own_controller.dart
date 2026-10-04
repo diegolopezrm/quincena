@@ -17,6 +17,7 @@ import '../data/ledger.dart';
 import '../domain/commitments.dart';
 import '../domain/freelance.dart';
 import '../domain/ledger_builder.dart';
+import '../domain/net_worth.dart';
 import '../domain/plan.dart';
 import '../domain/projection.dart';
 import '../domain/records.dart';
@@ -147,20 +148,45 @@ class OwnController extends ChangeNotifier {
     return p;
   }
 
-  /// Whether a pay arrived in this period, an income filed as salary since
-  /// the payday that started it, and the period has no envelopes yet.
-  bool get paidWithoutPlan {
+  /// Whether a pay arrived in this period and the period has no envelopes
+  /// yet.
+  bool get paidWithoutPlan => plan == null && payArrivals.isNotEmpty;
+
+  /// The pay that arrived in this period: incomes filed as salary since the
+  /// payday that started it, the latest first.
+  List<Entry> get payArrivals {
     final Ledger? l = ledger;
     final StoreSnapshot? s = _snapshot;
-    if (l == null || s == null || plan != null) return false;
+    if (l == null || s == null) return const <Entry>[];
     final DateTime start = periodStart(l);
-    return s.entries.any(
-      (Entry e) =>
-          e.kind == EntryKind.income &&
-          e.category == 'salary' &&
-          !DateTime(e.date.year, e.date.month, e.date.day).isBefore(start) &&
-          !e.date.isAfter(endOfDay(l.today)),
-    );
+    return <Entry>[
+      for (final Entry e in s.entries)
+        if (e.kind == EntryKind.income &&
+            e.category == 'salary' &&
+            !DateTime(e.date.year, e.date.month, e.date.day).isBefore(start) &&
+            !e.date.isAfter(endOfDay(l.today)))
+          e,
+    ]..sort((Entry a, Entry b) => b.date.compareTo(a.date));
+  }
+
+  /// What [payArrivals] add up to, in the ledger's smallest unit; null when
+  /// there are none, or when one has no rate to the base currency, since a
+  /// total without it would be short.
+  int? get payArrivedTotal {
+    final Ledger? l = ledger;
+    final StoreSnapshot? s = _snapshot;
+    final List<Entry> arrivals = payArrivals;
+    if (l == null || s == null || arrivals.isEmpty) return null;
+    var total = 0;
+    for (final Entry e in arrivals) {
+      final Account? a = s.account(e.accountId);
+      final Money? converted = a == null
+          ? null
+          : inBase(Money(e.amount, a.asset));
+      if (converted == null) return null;
+      total += l.minor(converted.amount.toDouble());
+    }
+    return total;
   }
 
   /// The envelopes last saved, whatever their period: the next plan starts
@@ -561,6 +587,19 @@ class OwnController extends ChangeNotifier {
   /// What each spendable account adds to the money until payday, in the
   /// ledger's smallest unit.
   Map<String, int> get spendableParts => _build?.parts ?? const <String, int>{};
+
+  /// What the credit cards counted in the money until payday owe, in the
+  /// ledger's smallest unit: their part of it below zero.
+  int get spendableCardDebt {
+    var owed = 0;
+    for (final Account a in accounts) {
+      if (a.kind != AccountKind.card || !a.spendable) continue;
+      final int part = spendableParts[a.id] ?? 0;
+      if (part < 0) owed -= part;
+    }
+    return owed;
+  }
+
   Map<String, Money> get balances => _balances;
   DateTime? get ratesFetchedAt => _ratesFetchedAt;
   bool get refreshingRates => _refreshing;
@@ -613,6 +652,38 @@ class OwnController extends ChangeNotifier {
       if (part != null) sum += part;
     }
     return sum;
+  }
+
+  /// What the person is worth: the accounts as [total] adds them, plus
+  /// what others owe them, less what they owe others and what is left to
+  /// pay of purchases in instalments outside a credit card.
+  NetWorth netWorth() {
+    final Asset base = profile?.base ?? Asset.cop;
+    Money money(int minor) =>
+        Money(Decimal.fromInt(minor).shift(-base.decimals), base);
+    final (int owed, int owing) = sharedBalance;
+    var left = 0;
+    var estimated = false;
+    for (final Instalments p in _instalments) {
+      // A card's balance already holds what was bought on it.
+      final String? id = p.accountId;
+      if (id != null && _snapshot?.account(id)?.kind == AccountKind.card) {
+        continue;
+      }
+      // Without the instalment there is no schedule, but what was financed
+      // is still owed: that much, less what was paid, as an estimate.
+      final int remaining = p.remaining ?? p.principal - p.paid;
+      if (remaining <= 0) continue;
+      left += remaining;
+      if (!p.totalKnown) estimated = true;
+    }
+    return NetWorth(
+      accounts: total(),
+      owed: money(owed),
+      owing: money(owing),
+      instalments: money(left),
+      estimated: estimated,
+    );
   }
 
   Future<void> start() async {

@@ -309,7 +309,9 @@ class _AccountFormState extends State<_AccountForm> {
               }),
               title: Text(l.accountSpendable, style: context.type.titleSmall),
               subtitle: Text(
-                l.accountSpendableHelp,
+                _kind == AccountKind.card
+                    ? l.cardSpendableHelp
+                    : l.accountSpendableHelp,
                 style: context.type.bodySmall,
               ),
             ),

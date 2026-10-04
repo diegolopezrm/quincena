@@ -274,7 +274,7 @@ void main() {
     await tester.tap(find.text('Internet'));
     await tester.enterText(find.byType(TextField), '50.000');
     await settle(tester);
-    expect(find.text('Lo más bajo en 45 días'), findsOneWidget);
+    expect(find.text('Saldo mínimo en 45 días'), findsOneWidget);
 
     await tester.tap(find.text('Guardar el escenario'));
     await settle(tester);

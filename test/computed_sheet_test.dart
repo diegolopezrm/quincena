@@ -60,13 +60,14 @@ void main() {
     expect(find.text('Cómo se calculó'), findsOneWidget);
     expect(
       find.text(
-        'Tus saldos, lo comprometido, el colchón y lo libre hasta el pago',
+        'Tus saldos, lo comprometido, el colchón y lo que puedes gastar '
+        'hasta el pago',
       ),
       findsOneWidget,
     );
     expect(find.textContaining('Gemini solo los explica'), findsOneWidget);
 
-    await tester.tap(find.text('Ver el desglose de lo libre'));
+    await tester.tap(find.text('Ver cómo se calcula lo que puedes gastar'));
     await tester.pumpAndSettle();
     expect(explained, 1);
     expect(tester.takeException(), isNull);

@@ -182,6 +182,14 @@ void main() {
     expect(usdPart.amount, d('4543527'));
     expect(own.partOfTotal(bitcoin), isNull);
     expect(own.total().amount, bankPart.amount + usdPart.amount);
+    // Nobody owes anything and nothing is bought in instalments: the net
+    // worth is the accounts.
+    expect(own.netWorth().total, own.total());
+    // Dollars on the same screen: the figure says which currency it is in.
+    expect(
+      find.descendant(of: find.byType(Headline), matching: find.text('COP')),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('¿De dónde sale?').first);
     await settle(tester);
@@ -198,7 +206,7 @@ void main() {
     );
     expect(inSheet(find.textContaining('TRM oficial')), findsOneWidget);
     expect(
-      inSheet(find.text(moneyText(own.total(), base: Asset.cop))),
+      inSheet(find.text(moneyText(own.netWorth().total, base: Asset.cop))),
       findsOneWidget,
     );
     expect(
