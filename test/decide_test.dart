@@ -189,6 +189,11 @@ void main() {
       await tester.tap(find.byTooltip('Escribir monto'));
       await tester.pumpAndSettle();
       expect(find.text('¿Cuánto quieres apartar al mes?'), findsOneWidget);
+      // The field says what it takes, for a screen reader too.
+      expect(
+        tester.getSemantics(find.byType(EditableText)),
+        isSemantics(label: 'Monto', isTextField: true),
+      );
 
       await tester.enterText(find.byType(TextField), '0');
       await tester.tap(find.text('Usar este monto'));

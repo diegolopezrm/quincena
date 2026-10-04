@@ -564,6 +564,7 @@ class _AmountDialogState extends State<_AmountDialog> {
         onSubmitted: (_) => _use(),
         style: context.type.headlineSmall?.copyWith(fontFeatures: tabular),
         decoration: InputDecoration(
+          labelText: l.amount,
           prefixText: switch (baseCurrency.localSymbol ?? baseCurrency.symbol) {
             final String sign => '$sign ',
             null => null,
