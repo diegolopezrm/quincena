@@ -549,6 +549,55 @@ void main() {
         expect(bancolombia.kind, EntryKind.transfer);
         expect(bancolombia.otherAccountId, master.id);
       });
+
+      test('is not a refund on the card', () async {
+        final List<ImportCandidate> all = await StatementImporter(store)
+            .prepare(
+              card,
+              readTable(
+                parseCsv(
+                  'Fecha;Descripción;Valor\n'
+                  '15/09/2026;RAPPI;45.900\n'
+                  '16/09/2026;NETFLIX;26.900\n'
+                  '18/09/2026;ABONO DEVOLUCION RAPPI;-45.900\n',
+                ),
+              ),
+            );
+        // The money came back from the shop, not from the bank.
+        expect(all.last.line.amount, d('45900'));
+        expect(all.last.cardPayment, isFalse);
+        expect(all.last.kind, EntryKind.income);
+        expect(all.last.otherAccountId, isNull);
+      });
+    });
+
+    test('a move written by hand is not taken for a purchase', () async {
+      final Account nequi = await store.addAccount(
+        name: 'Nequi',
+        kind: AccountKind.wallet,
+        asset: Asset.cop,
+      );
+      await store.addTransfer(
+        fromAccountId: bank.id,
+        toAccountId: nequi.id,
+        sent: d('50000'),
+        date: DateTime(2026, 9, 3),
+        note: 'Para Nequi',
+      );
+      final List<ImportCandidate> all = await StatementImporter(store).prepare(
+        bank,
+        readTable(
+          parseCsv(
+            'Fecha;Descripción;Valor\n'
+            '03/09/2026;COMPRA EN EXITO;-50.000\n'
+            '03/09/2026;TRANSFERENCIA A NEQUI;-50.000\n',
+          ),
+        ),
+      );
+      expect(
+        <bool>[for (final ImportCandidate c in all) c.recorded],
+        <bool>[false, true],
+      );
     });
 
     group('the balance the person wrote', () {

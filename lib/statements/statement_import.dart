@@ -99,6 +99,11 @@ final RegExp _cardPaymentWords = RegExp(
   r'|\bpago (recibido|gracias)\b|\bsu pago\b',
 );
 
+/// What says money came back from a purchase, not that a card was paid.
+final RegExp _refundWords = RegExp(
+  r'\b(devolucion|reverso|reversion|reembolso|reintegro|anulacion)\b',
+);
+
 /// Words in an account's name that say nothing about which one it is.
 const Set<String> _plainWords = <String>{
   'tarjeta',
@@ -315,9 +320,9 @@ class StatementImporter {
         e.date.day,
       ).difference(l.date).inDays.abs();
       if (days > window || days >= closest) continue;
-      // A move's side here carries the other statement's words, not this
-      // one's.
-      final String name = e.isTransfer
+      // A move's side another statement brought here carries that
+      // statement's words, not this one's.
+      final String name = e.isTransfer && e.source == 'statement'
           ? ''
           : (e.payee.isNotEmpty ? e.payee : e.note);
       if (name.isNotEmpty &&
@@ -336,6 +341,7 @@ class StatementImporter {
   /// card, or money into a card.
   bool _isCardPayment(StatementLine l, Account account) {
     final String plain = normalize(l.description);
+    if (_refundWords.hasMatch(plain)) return false;
     if (account.kind == AccountKind.card) {
       return l.amount > Decimal.zero &&
           (_cardPaymentWords.hasMatch(plain) ||
