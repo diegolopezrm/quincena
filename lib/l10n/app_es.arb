@@ -1396,7 +1396,7 @@
   "cardClear": "Al día",
   "totalExplainHave": "Lo que tienes",
   "totalExplainOwe": "Lo que debes",
-  "ratesSeeAll": "Ver de dónde sale cada tasa o cambiarla",
+  "ratesSeeAll": "Ver tasas usadas",
   "cardOwedLabel": "Debes",
   "cardInFavorLabel": "A favor",
   "whichAccountIn": "No sabemos a qué cuenta llegó.",
@@ -1517,5 +1517,9 @@
   "rateStepConvert": "Conversión a {base}: 1 {asset} = {value} · {source} del {date}",
   "@rateStepConvert": {"placeholders": {"base": {"type": "String"}, "asset": {"type": "String"}, "value": {"type": "String"}, "source": {"type": "String"}, "date": {"type": "String"}}},
   "rateStepManual": "1 {asset} = {value} · escrita a mano",
-  "@rateStepManual": {"placeholders": {"asset": {"type": "String"}, "value": {"type": "String"}}}
+  "@rateStepManual": {"placeholders": {"asset": {"type": "String"}, "value": {"type": "String"}}},
+  "ratesIntro": "Así pasamos a {base} lo que tienes en otras monedas. Solo cambian los totales, no los saldos de tus cuentas.",
+  "@ratesIntro": {"placeholders": {"base": {"type": "String"}}},
+  "ratesManualCount": "{count, plural, =1{1 tasa escrita a mano} other{{count} tasas escritas a mano}}",
+  "@ratesManualCount": {"placeholders": {"count": {"type": "int"}}}
 }

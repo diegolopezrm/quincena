@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import '../../domain/records.dart';
 import '../../exchanges/binance_link.dart';
 import '../../format/dates.dart';
-import '../../format/money.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
@@ -218,8 +217,8 @@ class AccountsTab extends StatelessWidget {
   }
 }
 
-/// The rates behind the totals in one short line each, how current they
-/// are, and the way to see where each comes from or type one by hand.
+/// The rates behind the totals, folded into one row that opens them, with
+/// how current they are. A rate shows on the tab only when one is missing.
 class RatesSummary extends StatelessWidget {
   const RatesSummary({super.key, required this.own});
 
@@ -236,78 +235,74 @@ class RatesSummary extends StatelessWidget {
     }.toList();
     if (held.isEmpty) return const SizedBox.shrink();
     final RateTable table = own.rates;
-    // A plain section: rates are reference, not something to tap first.
+    final List<Asset> missing = <Asset>[
+      for (final Asset a in held)
+        if (table.rate(a, base) == null) a,
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        SectionLabel(l.ratesTitle),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Wrap(
-                spacing: 18,
-                runSpacing: 6,
-                children: <Widget>[
-                  for (final Asset a in held)
-                    Figures(
-                      '${a.code} ${shortRate(table.rate(a, base), base) ?? '—'}',
-                      style: context.type.bodyMedium?.copyWith(
-                        color: table.rate(a, base) == null
-                            ? context.colors.caution
-                            : context.colors.ink,
-                      ),
-                    ),
-                ],
+        Panel(
+          children: <Widget>[
+            ListTile(
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (BuildContext context) => RatesPage(own: own),
+                ),
               ),
-              const SizedBox(height: 4),
-              Text(ratesStatus(l, own), style: context.type.bodySmall),
-            ],
-          ),
-        ),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton.icon(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (BuildContext context) => RatesPage(own: own),
+              leading: Icon(Glyph.arrowsLeftRight, color: context.colors.brand),
+              title: Text(l.ratesSeeAll, style: context.type.titleSmall),
+              subtitle: Text(
+                ratesStatus(l, own),
+                style: context.type.bodySmall,
+              ),
+              trailing: Icon(
+                Glyph.caretRight,
+                size: 18,
+                color: context.colors.inkFaint,
               ),
             ),
-            icon: const Icon(Glyph.arrowRight, size: 18),
-            label: Text(l.ratesSeeAll),
-          ),
+          ],
         ),
+        if (missing.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+            child: Text(
+              l.ratesMissing(missing.map((Asset a) => a.code).join(', ')),
+              style: context.type.bodySmall?.copyWith(
+                color: context.colors.caution,
+              ),
+            ),
+          ),
       ],
     );
   }
 }
 
-/// One unit of an asset in [base], short enough to read at a glance:
-/// `$3.312,84` for a dollar, `$280,3 M` for a bitcoin. Null without a rate.
-String? shortRate(Decimal? rate, Asset base) {
-  if (rate == null) return null;
-  if (rate >= Decimal.fromInt(1000000) && base == Asset.cop) {
-    return pesosShort(rate.toDouble());
-  }
-  return formatAmount(
-    rate,
-    base,
-    base: base,
-    decimals: rate < Decimal.fromInt(10) ? 4 : 2,
-  );
-}
-
-/// How current the rates are, as a line under them.
+/// How current the rates are, and how many the person typed by hand, as
+/// the lines under them.
 String ratesStatus(AppLocalizations l, OwnController own) {
   final DateTime? fetched = own.ratesFetchedAt;
-  return own.refreshingRates
+  final Asset? base = own.profile?.base;
+  final RateTable table = own.rates;
+  final int typed = base == null
+      ? 0
+      : <String>{
+          for (final Account a in own.accounts)
+            for (final Rate r in table.used(a.asset, base))
+              if (r.manual) r.pair,
+        }.length;
+  final String? state = own.refreshingRates
       ? l.ratesRefresh
       : own.ratesFailed
       ? (fetched == null ? l.ratesFailed : l.ratesFailedAt(dayAndTime(fetched)))
-      : fetched == null
-      ? l.ratesNever
-      : l.ratesUpdated(dayAndTime(fetched));
+      : fetched != null
+      ? l.ratesUpdated(dayAndTime(fetched))
+      // Rates typed by hand are rates too: not "none yet".
+      : typed > 0
+      ? null
+      : l.ratesNever;
+  return <String>[?state, if (typed > 0) l.ratesManualCount(typed)].join('\n');
 }
 
 /// Every rate the totals use, where each comes from, and the way to type
@@ -387,7 +382,8 @@ String _stepLine(AppLocalizations l, RateStep step, Asset base) {
   };
 }
 
-/// How current the conversions are, and each rate the totals use.
+/// What the rates are for, how current they are, and each rate the totals
+/// use.
 class RatesPanel extends StatelessWidget {
   const RatesPanel({super.key, required this.own});
 
@@ -404,47 +400,47 @@ class RatesPanel extends StatelessWidget {
     };
     if (held.isEmpty) return const SizedBox.shrink();
     final RateTable table = own.rates;
-    final String status = ratesStatus(l, own);
-    return Block(
-      padding: const EdgeInsets.fromLTRB(18, 14, 8, 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text(l.ratesIntro(base.code), style: context.type.bodyMedium),
+        const SizedBox(height: 8),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: Text(ratesStatus(l, own), style: context.type.bodySmall),
+            ),
+            IconButton(
+              tooltip: l.ratesRefresh,
+              onPressed: own.refreshingRates
+                  ? null
+                  : () => own.refreshRates(force: true),
+              icon: own.refreshingRates
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Glyph.arrowCounterClockwise, size: 20),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Block(
+          padding: const EdgeInsets.fromLTRB(18, 8, 8, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(l.ratesTitle, style: context.type.titleSmall),
-                    Text(status, style: context.type.bodySmall),
-                  ],
+              for (final Asset a in held)
+                _RateLine(
+                  own: own,
+                  asset: a,
+                  base: base,
+                  rate: table.rate(a, base),
                 ),
-              ),
-              IconButton(
-                tooltip: l.ratesRefresh,
-                onPressed: own.refreshingRates
-                    ? null
-                    : () => own.refreshRates(force: true),
-                icon: own.refreshingRates
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Glyph.arrowCounterClockwise, size: 20),
-              ),
             ],
           ),
-          const SizedBox(height: 6),
-          for (final Asset a in held)
-            _RateLine(
-              own: own,
-              asset: a,
-              base: base,
-              rate: table.rate(a, base),
-            ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

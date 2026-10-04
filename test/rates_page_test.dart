@@ -39,12 +39,14 @@ void main() {
   });
 
   /// The rates page for someone with an account in [held], and its rate
-  /// typed by hand when [typed]: a dollar in pesos, a coin in dollars.
+  /// typed by hand when [typed]: a dollar in pesos, a coin in dollars. The
+  /// Cuentas tab instead when [tab].
   Future<OwnController> open(
     WidgetTester tester, {
     required RateFetcher fetcher,
     Asset held = Asset.usd,
     String? typed,
+    bool tab = false,
   }) async {
     tester.view.physicalSize = const Size(1170, 2532);
     tester.view.devicePixelRatio = 3;
@@ -88,7 +90,15 @@ void main() {
         locale: const Locale('es'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: appLocales,
-        home: RatesPage(own: own),
+        home: tab
+            ? Scaffold(
+                body: ListenableBuilder(
+                  listenable: own,
+                  builder: (BuildContext context, _) =>
+                      SingleChildScrollView(child: AccountsTab(own: own)),
+                ),
+              )
+            : RatesPage(own: own),
       ),
     );
     await settle(tester);
@@ -170,6 +180,51 @@ void main() {
     await settle(tester);
     expect(find.text(r'1 USD = $4.000'), findsOneWidget);
     expect((await storedDollar(tester)).source, 'trm');
+  });
+
+  testWidgets('Cuentas folds the rates into one row that opens them', (
+    tester,
+  ) async {
+    await open(tester, fetcher: fakeRates(), typed: '3400', tab: true);
+
+    expect(find.text('Ver tasas usadas'), findsOneWidget);
+    // Only the typed dollar is in use, which is a rate, not "none yet".
+    expect(find.text('1 tasa escrita a mano'), findsOneWidget);
+    expect(find.textContaining('Aún sin tasas'), findsNothing);
+    // No figures on the tab while every rate is there.
+    expect(find.textContaining(r'$3.400'), findsNothing);
+    expect(find.textContaining('Sin tasa para'), findsNothing);
+
+    await tester.ensureVisible(find.text('Ver tasas usadas'));
+    await tester.tap(find.text('Ver tasas usadas'));
+    await settle(tester);
+    expect(
+      find.text(
+        'Así pasamos a COP lo que tienes en otras monedas. Solo cambian los '
+        'totales, no los saldos de tus cuentas.',
+      ),
+      findsOneWidget,
+    );
+    // The title is the page's, said once.
+    expect(find.text('Tasas'), findsOneWidget);
+    expect(find.text(r'1 USD = $3.400'), findsOneWidget);
+    expect(find.text('1 tasa escrita a mano'), findsOneWidget);
+  });
+
+  testWidgets('a missing rate is what Cuentas shows of the rates', (
+    tester,
+  ) async {
+    await open(tester, fetcher: downRates(), held: Asset.btc, tab: true);
+
+    expect(find.text('Ver tasas usadas'), findsOneWidget);
+    expect(
+      find.text('No se pudieron actualizar. Se usan las últimas guardadas.'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Sin tasa para BTC: cuenta como cero en los totales.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a coin shows its market price apart from the pesos', (

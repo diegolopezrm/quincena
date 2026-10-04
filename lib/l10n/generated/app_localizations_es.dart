@@ -4394,7 +4394,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get totalExplainOwe => 'Lo que debes';
 
   @override
-  String get ratesSeeAll => 'Ver de dónde sale cada tasa o cambiarla';
+  String get ratesSeeAll => 'Ver tasas usadas';
 
   @override
   String get cardOwedLabel => 'Debes';
@@ -4794,5 +4794,21 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String rateStepManual(String asset, String value) {
     return '1 $asset = $value · escrita a mano';
+  }
+
+  @override
+  String ratesIntro(String base) {
+    return 'Así pasamos a $base lo que tienes en otras monedas. Solo cambian los totales, no los saldos de tus cuentas.';
+  }
+
+  @override
+  String ratesManualCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tasas escritas a mano',
+      one: '1 tasa escrita a mano',
+    );
+    return '$_temp0';
   }
 }

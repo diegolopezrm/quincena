@@ -4396,7 +4396,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get totalExplainOwe => 'What you owe';
 
   @override
-  String get ratesSeeAll => 'See where each rate comes from, or change it';
+  String get ratesSeeAll => 'See the rates used';
 
   @override
   String get cardOwedLabel => 'You owe';
@@ -4795,5 +4795,21 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String rateStepManual(String asset, String value) {
     return '1 $asset = $value · typed by hand';
+  }
+
+  @override
+  String ratesIntro(String base) {
+    return 'This is how we turn what you hold in other currencies into $base. Only totals change, never your account balances.';
+  }
+
+  @override
+  String ratesManualCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count rates typed by hand',
+      one: '1 rate typed by hand',
+    );
+    return '$_temp0';
   }
 }

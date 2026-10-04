@@ -6988,7 +6988,7 @@ abstract class AppLocalizations {
   /// No description provided for @ratesSeeAll.
   ///
   /// In es, this message translates to:
-  /// **'Ver de dónde sale cada tasa o cambiarla'**
+  /// **'Ver tasas usadas'**
   String get ratesSeeAll;
 
   /// No description provided for @cardOwedLabel.
@@ -7608,6 +7608,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'1 {asset} = {value} · escrita a mano'**
   String rateStepManual(String asset, String value);
+
+  /// No description provided for @ratesIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Así pasamos a {base} lo que tienes en otras monedas. Solo cambian los totales, no los saldos de tus cuentas.'**
+  String ratesIntro(String base);
+
+  /// No description provided for @ratesManualCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{1 tasa escrita a mano} other{{count} tasas escritas a mano}}'**
+  String ratesManualCount(int count);
 }
 
 class _AppLocalizationsDelegate

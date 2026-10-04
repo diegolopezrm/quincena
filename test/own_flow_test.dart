@@ -168,7 +168,18 @@ void main() {
     await settle(tester);
     expect(screen(tester), contains('Patrimonio'));
     expect(screen(tester), contains(r'$1.854.100'));
-    expect(screen(tester), contains(r'USDT $4.000'));
+
+    // The rates fold into one row; behind it, how tether became pesos.
+    expect(screen(tester), isNot(contains(r'USDT $4.000')));
+    await tester.ensureVisible(find.text('Ver tasas usadas'));
+    await tester.tap(find.text('Ver tasas usadas'));
+    await settle(tester);
+    expect(screen(tester), contains(r'1 USDT = $4.000'));
+    expect(screen(tester), contains(r'USDT se cuenta como 1 US$'));
+    expect(
+      screen(tester),
+      contains(r'Conversión a COP: 1 US$ = $4.000 · TRM oficial del 3 oct'),
+    );
   });
 
   testWidgets(
