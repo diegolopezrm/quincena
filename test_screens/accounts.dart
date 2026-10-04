@@ -1,7 +1,7 @@
 // The account the screen renders and the tour of the app use: Diego's,
-// with a bank, a wallet, cash, a credit card, dollars and crypto, a month
-// of movements, a recurring charge, and, with [withCaptures], what the
-// phone caught one morning.
+// with a bank, a wallet, cash, a credit card with its limit, dollars and
+// crypto with what it cost, a month of movements, a recurring charge, and,
+// with [withCaptures], what the phone caught one morning.
 import 'dart:convert';
 
 import 'package:decimal/decimal.dart';
@@ -75,6 +75,7 @@ Future<QuincenaStore> seeded() async {
     asset: Asset.cop,
     opening: d('-480000'),
     institution: 'Bancolombia',
+    creditLimit: d('3000000'),
   );
   final Account dollars = await store.addAccount(
     name: 'Cuenta en dólares',
@@ -90,6 +91,9 @@ Future<QuincenaStore> seeded() async {
     asset: Asset.usdt,
     opening: d('1520.5'),
     institution: 'Binance',
+    // What each coin cost, so the gain is the gain: one without its
+    // purchase price is left out of it, and would be most of the money.
+    openingCost: Money(d('4900000'), Asset.cop),
   );
   await store.addAccount(
     name: 'Bitcoin',
@@ -97,6 +101,7 @@ Future<QuincenaStore> seeded() async {
     asset: Asset.btc,
     opening: d('0.0123'),
     institution: 'Binance',
+    openingCost: Money(d('3000000'), Asset.cop),
   );
 
   Future<void> spend(

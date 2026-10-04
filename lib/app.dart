@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'app_mode.dart';
 import 'l10n/l10n.dart';
 import 'money/rate_sources.dart';
+import 'portfolio/market.dart';
 import 'session/session.dart';
 import 'store/open.dart';
 import 'store/store.dart';
@@ -54,6 +55,7 @@ class QuincenaApp extends StatefulWidget {
     this.startInDemo = kIsWeb,
     this.fetcher,
     this.now,
+    this.market,
   });
 
   /// The conversation to show. Tests pass one with no thinking pause, and
@@ -73,6 +75,9 @@ class QuincenaApp extends StatefulWidget {
 
   /// The clock, for tests.
   final DateTime Function()? now;
+
+  /// Where crypto prices come from, for tests and the store's screenshots.
+  final MarketData? market;
 
   @override
   State<QuincenaApp> createState() => _QuincenaAppState();
@@ -103,6 +108,7 @@ class _QuincenaAppState extends State<QuincenaApp> {
           startInDemo: widget.startInDemo,
           fetcher: widget.fetcher,
           now: widget.now,
+          market: widget.market,
         )..start());
 
   @override
