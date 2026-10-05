@@ -157,6 +157,9 @@ ThemeData quincenaTheme(Brightness brightness) {
         textStyle: text.labelLarge,
       ),
     ),
+    // On the white of sheets and cards. Material puts dialogs on the sunken
+    // ground, the fill of every field, so a field in one did not show.
+    dialogTheme: DialogThemeData(backgroundColor: c.surface),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: c.sunken,

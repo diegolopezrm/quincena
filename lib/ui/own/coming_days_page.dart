@@ -370,6 +370,9 @@ class _Key extends StatelessWidget {
         height: 2,
         child: dashed
             ? Row(
+                // An empty ColoredBox takes the smallest height it is
+                // allowed, which in a Row is none: the dashes did not show.
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   for (var i = 0; i < 3; i++) ...<Widget>[
                     Expanded(child: ColoredBox(color: color)),
