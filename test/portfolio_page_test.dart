@@ -320,6 +320,49 @@ void main() {
     );
   });
 
+  testWidgets('the total is its coins added up, each as its row shows it', (
+    tester,
+  ) async {
+    final OwnController own = await openCrypto(
+      tester,
+      FakeMarket(
+        prices: const <String, (String, String)>{
+          'BTC': ('84616.92', '83102.40'),
+        },
+      ),
+      data: (QuincenaStore store) async {
+        await store.saveRates(<Rate>[
+          Rate(
+            asset: 'USD',
+            quote: 'COP',
+            value: Decimal.parse('3312.84'),
+            asOf: DateTime(2026, 10, 3),
+            source: 'trm',
+          ),
+        ]);
+        await store.addAccount(
+          name: 'Tether suelto',
+          kind: AccountKind.exchange,
+          asset: Asset.usdt,
+          opening: Decimal.parse('0.5'),
+          institution: 'Binance',
+          spendable: false,
+        );
+      },
+    );
+
+    // 2.803.223,17 + 1.656.420 + 1.656,42: each coin rounds to the peso in
+    // its row and in Cuentas, and the total adds those, not the cents
+    // under them, which would make it 4.461.300.
+    var rows = Decimal.zero;
+    for (final Account a in own.accounts) {
+      if (own.partOfTotal(a) case final Money part) rows += part.amount;
+    }
+    expect(rows, Decimal.parse('4461299'));
+    expect(find.text('\$4.461.299'), findsOneWidget);
+    expect(find.text('\$4.461.300'), findsNothing);
+  });
+
   testWidgets('it says where the prices and the dollar come from, and when', (
     tester,
   ) async {

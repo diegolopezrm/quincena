@@ -1,4 +1,1747 @@
 // Flows of Cuentas (04) y Cripto (05).
+import 'dart:convert';
+
+import 'package:decimal/decimal.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:quincena/domain/net_worth.dart';
+import 'package:quincena/domain/pay_schedule.dart';
+import 'package:quincena/domain/records.dart';
+import 'package:quincena/format/money.dart';
+import 'package:quincena/money/asset.dart';
+import 'package:quincena/money/money.dart';
+import 'package:quincena/money/rates.dart';
+import 'package:quincena/own/own_controller.dart';
+import 'package:quincena/portfolio/market.dart';
+import 'package:quincena/portfolio/portfolio.dart';
+import 'package:quincena/store/store.dart';
+import 'package:quincena/ui/own/look.dart' show moneyText;
+import 'package:quincena/ui/own/portfolio_chart.dart';
+
+import '../../test_screens/accounts.dart' show screensNow, seeded;
+import '../tour.dart';
 import 'flow.dart';
 
-final List<AppFlow> cuentasFlows = <AppFlow>[];
+final List<AppFlow> cuentasFlows = <AppFlow>[
+  AppFlow(
+    '04-01-ver-mi-patrimonio',
+    'Ver mi patrimonio y de dónde sale',
+    area: 'Cuentas',
+    goal:
+        'Quiero saber cuánto tengo en total, descontando lo que debo, y '
+        'entender cómo se llega a esa cifra.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      await f.tap('Cuentas');
+      await f.page(
+        'Cuentas: arriba el «Patrimonio», lo que tienes menos lo que debes; '
+        'debajo, las cuentas agrupadas por para qué son.',
+      );
+      final NetWorth worth = own.netWorth();
+      await f.check(
+        'El patrimonio en pantalla, ${_cop(worth.total)}, es la suma de las '
+        'cuentas más lo que te deben menos lo que debes',
+        () {
+          expect(f.shows(_cop(worth.total)), isTrue);
+          // Each account at its rate, rounded to the peso, added here.
+          var accounts = Decimal.zero;
+          for (final Account a in own.accounts) {
+            final Decimal rate = own.rates.rate(a.asset, Asset.cop)!;
+            accounts += (_balance(own, a).amount * rate).round();
+          }
+          expect(
+            worth.total.amount,
+            accounts +
+                worth.owed.amount -
+                worth.owing.amount -
+                worth.instalments.amount,
+          );
+        },
+      );
+      await f.check(
+        'El saldo de cada cuenta en pesos es lo que tenía al empezar más sus '
+        'movimientos hasta hoy',
+        () {
+          for (final Account a in own.accounts) {
+            if (a.asset != Asset.cop) continue;
+            expect(
+              _balance(own, a).amount,
+              _fromMovements(own, a),
+              reason: a.name,
+            );
+          }
+        },
+      );
+      final Money everyday = _everyday(own);
+      await f.check(
+        '«En tus cuentas de uso diario» muestra ${_cop(everyday)}, la suma '
+        'de Bancolombia, Nequi y Efectivo',
+        () {
+          expect(
+            everyday.amount,
+            <String>['Bancolombia', 'Nequi', 'Efectivo']
+                .map((String n) => _balance(own, _named(own, n)).amount)
+                .fold(Decimal.zero, (Decimal s, Decimal v) => s + v),
+          );
+          expect(_rowOf(f, 'En tus cuentas de uso diario'), _cop(everyday));
+        },
+      );
+      final Money visa = -_balance(own, _named(own, 'Visa'));
+      await f.check(
+        '«Lo que debes en tarjetas» es lo que debes en la Visa, '
+        '${_cop(visa)}',
+        () => expect(_rowOf(f, 'Lo que debes en tarjetas'), _cop(-visa)),
+      );
+      await f.tapFound(find.text('¿De dónde sale?').first);
+      await f.page(
+        'Toca «¿De dónde sale?»: lo que tienes y lo que debes, cuenta por '
+        'cuenta en pesos, con la tasa de las que están en otra moneda.',
+      );
+      await f.check(
+        'El detalle cierra en el mismo patrimonio, ${_cop(worth.total)}',
+        () {
+          expect(find.text('Así se calcula tu patrimonio'), findsOneWidget);
+          expect(f.screenText, contains(_cop(worth.total)));
+          expect(f.screenText, contains('Les debes a otras personas'));
+          expect(f.screenText, contains('Compras a cuotas'));
+        },
+      );
+      await f.back();
+      await f.step('Al cerrar el detalle vuelves a Cuentas, donde estabas.');
+    },
+  ),
+  AppFlow(
+    '04-02-revisar-mi-cuenta-de-banco',
+    'Revisar la cuenta del banco',
+    area: 'Cuentas',
+    goal:
+        'Quiero ver cuánto tengo en Bancolombia, por qué tengo eso y anotar '
+        'un gasto directamente ahí.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Account bank = _named(own, 'Bancolombia');
+      await f.tap('Cuentas');
+      await f.tap('Banco · Bancolombia');
+      await f.page(
+        'Toca Bancolombia: el «Saldo hoy» arriba y debajo sus movimientos, '
+        'del más reciente al más viejo.',
+      );
+      final Money before = _balance(own, bank);
+      await f.check('El saldo hoy en pantalla es ${_cop(before)}', () {
+        expect(f.shows(_cop(before)), isTrue);
+      });
+      await f.tapFound(find.text('¿De dónde sale?').first);
+      await f.step(
+        '«¿De dónde sale?» arma el saldo: con lo que empezó, más ingresos, '
+        'menos gastos y transferencias, hasta el «Saldo hoy».',
+      );
+      await f.check(
+        'Con lo que empezó, ${_cop(bank.openingMoney)}, más los movimientos '
+        'da el saldo de hoy',
+        () {
+          expect(f.screenText, contains(_cop(bank.openingMoney)));
+          expect(before.amount, _fromMovements(own, bank));
+        },
+      );
+      await f.back();
+      await f.tapTip('Agregar movimiento');
+      await f.step(
+        'El «+» de la cuenta abre un movimiento nuevo con Bancolombia ya '
+        'elegida como la cuenta de donde sale.',
+      );
+      await f.type('Monto', '45000');
+      await f.tap('Mercado');
+      await f.type('¿Dónde o a quién?', 'D1 Laureles');
+      await f.tap('Guardar');
+      await f.top();
+      await f.step(
+        'Al guardar, el gasto de 45.000 queda bajo «Hoy», arriba de la '
+        'lista, y el «Saldo hoy» baja en esa cantidad.',
+      );
+      await f.check('El gasto quedó en Bancolombia', () {
+        final Entry e = own.snapshot!.entries.firstWhere(
+          (Entry e) => e.payee == 'D1 Laureles',
+        );
+        expect(e.accountId, bank.id);
+        expect(e.amount, Decimal.parse('-45000'));
+      });
+      final Money after = before - Money(Decimal.parse('45000'), Asset.cop);
+      await f.check('El saldo pasó de ${_cop(before)} a ${_cop(after)}', () {
+        expect(_balance(own, bank), after);
+        expect(f.shows(_cop(after)), isTrue);
+      });
+      await f.tap('D1 Laureles');
+      await f.step(
+        'Tocar un movimiento lo abre para corregirlo: monto, categoría, '
+        'cuenta y fecha.',
+      );
+      await f.back();
+      await f.tapTip('Importar extracto');
+      await f.step(
+        'El ícono de documento arriba abre «Importar extracto», para traer '
+        'los movimientos del banco desde un archivo.',
+      );
+      await f.back();
+    },
+    manual: <String>[
+      'Elegir el archivo del extracto en el selector de archivos del sistema.',
+    ],
+  ),
+  AppFlow(
+    '04-03-ver-billetera-y-efectivo',
+    'Ver Nequi y el efectivo',
+    area: 'Cuentas',
+    goal:
+        'Quiero ver cuánto me queda en Nequi y en el efectivo, aunque el '
+        'efectivo no tenga movimientos.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Account nequi = _named(own, 'Nequi');
+      final Account cash = _named(own, 'Efectivo');
+      await f.tap('Cuentas');
+      await f.tap('Billetera digital · Nequi');
+      await f.page(
+        'Nequi, la billetera digital: su «Saldo hoy» y lo que se ha pagado '
+        'desde ella.',
+      );
+      await f.tapFound(find.text('¿De dónde sale?').first);
+      await f.step(
+        'Su «¿De dónde sale?»: con lo que empezó y los gastos de estos días.',
+      );
+      await f.check(
+        'El saldo de Nequi, ${_cop(_balance(own, nequi))}, es lo que tenía al '
+        'empezar más sus movimientos',
+        () => expect(_balance(own, nequi).amount, _fromMovements(own, nequi)),
+      );
+      await f.back();
+      await f.back();
+      await f.tapFound(find.text('Efectivo').first);
+      await f.step(
+        'El efectivo no tiene movimientos: muestra su saldo y un texto que '
+        'dice que ahí aparecerá la plata que entra y sale.',
+      );
+      await f.check('El efectivo no tiene movimientos y muestra \$60.000', () {
+        expect(
+          own.snapshot!.entries.where((Entry e) => e.accountId == cash.id),
+          isEmpty,
+        );
+        expect(f.shows('Aquí aparecerá tu plata entrando y saliendo.'), isTrue);
+        expect(_balance(own, cash), _cop60k);
+      });
+      await f.tapFound(find.text('¿De dónde sale?').first);
+      await f.step(
+        'Sin movimientos, «¿De dónde sale?» solo muestra con lo que empezó, '
+        'que es el mismo saldo de hoy.',
+      );
+      await f.back();
+    },
+  ),
+  AppFlow(
+    '04-04-revisar-la-tarjeta',
+    'Revisar lo que debo en la tarjeta',
+    area: 'Cuentas',
+    goal:
+        'Quiero ver cuánto debo en la Visa y cuánto cupo me queda para '
+        'usarla.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Account visa = _named(own, 'Visa');
+      final Money owed = -_balance(own, visa);
+      final Money left = visa.creditLeft(_balance(own, visa))!;
+      await f.tap('Cuentas');
+      await f.reveal(find.text('Visa'));
+      await f.step(
+        'En «Tarjetas de crédito» la Visa dice «Debes» y, debajo, el «Cupo '
+        'libre» que le queda.',
+      );
+      await f.check(
+        'La fila dice que debes ${_cop(owed)} y te queda ${_cop(left)} de '
+        'cupo',
+        () {
+          expect(f.shows(_cop(owed)), isTrue);
+          expect(f.shows('Cupo libre ${_cop(left)}'), isTrue);
+        },
+      );
+      await f.check('El cupo libre es el cupo menos lo que debes', () {
+        expect(left.amount, visa.creditLimit! - owed.amount);
+      });
+      await f.tap('Visa');
+      await f.page(
+        'Toca la Visa: arriba «Debes» en vez de saldo, y «Cupo libre» de '
+        'cuánto; debajo, las compras hechas con ella.',
+      );
+      await f.check('La página dice «Cupo libre ${_cop(left)} de '
+          '${_cop(Money(visa.creditLimit!, Asset.cop))}»', () {
+        expect(
+          f.screenText,
+          contains(
+            'Cupo libre ${_cop(left)} de '
+            '${_cop(Money(visa.creditLimit!, Asset.cop))}',
+          ),
+        );
+      });
+      await f.tapFound(find.text('¿De dónde sale?').first);
+      await f.step(
+        '«¿De dónde sale?» de la tarjeta termina en «Debes»: con lo que '
+        'empezó debiendo más cada compra.',
+      );
+      await f.check('El detalle termina en «Debes ${_cop(owed)}»', () {
+        expect(f.screenText, contains('Debes'));
+        expect(f.screenText, contains(_cop(owed)));
+        expect(-_balance(own, visa).amount, -_fromMovements(own, visa));
+      });
+      await f.back();
+    },
+  ),
+  AppFlow(
+    '04-05-ver-cuenta-en-dolares',
+    'Ver la cuenta en dólares',
+    area: 'Cuentas',
+    goal:
+        'Tengo dólares en Global66 y quiero ver cuánto son en pesos y con '
+        'qué tasa se calculó.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Account usd = _named(own, 'Cuenta en dólares');
+      await f.tap('Cuentas');
+      await f.reveal(find.text('Cuenta en dólares'));
+      await f.step(
+        'La cuenta en dólares está en «Ahorros e inversiones»: el saldo en '
+        'dólares y debajo, con «≈», cuánto es en pesos.',
+      );
+      final Money balance = _balance(own, usd);
+      final Money inPesos = own.partOfTotal(usd)!;
+      await f.check(
+        '${moneyText(balance, base: Asset.cop)} a la tasa de hoy son '
+        '${_cop(inPesos)}',
+        () {
+          final Decimal rate = own.rates.rate(Asset.usd, Asset.cop)!;
+          expect(inPesos.amount, (balance.amount * rate).round());
+          expect(f.shows('≈ ${_cop(inPesos)}'), isTrue);
+        },
+      );
+      await f.tap('Cuenta en dólares');
+      await f.page(
+        'Toca la cuenta: «Saldo hoy» en dólares, cuánto es en pesos y el '
+        'gasto de Spotify pagado en dólares.',
+      );
+      await f.tapFound(find.text('¿De dónde sale?').first);
+      await f.step(
+        'Su «¿De dónde sale?» explica el saldo en dólares y debajo la tasa '
+        'con la que se pasa a pesos.',
+      );
+      await f.check('El detalle nombra la TRM con la que se convierte', () {
+        expect(f.screenText, contains('TRM'));
+      });
+      await f.back();
+    },
+  ),
+  AppFlow(
+    '04-06-agregar-cuenta-de-ahorros',
+    'Agregar una cuenta de ahorros',
+    area: 'Cuentas',
+    goal:
+        'Abrí una cuenta de ahorros en Davivienda y quiero que cuente en mi '
+        'patrimonio, pero no en lo que puedo gastar.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Money worth = own.netWorth().total;
+      final Money everyday = own.total(spendableOnly: true);
+      final int count = own.accounts.length;
+      await f.tap('Cuentas');
+      await f.tap('Agregar cuenta');
+      await f.step(
+        'Toca «Agregar cuenta»: el formulario empieza en «Banco» y en pesos, '
+        'con «Cuenta de uso diario» encendida.',
+      );
+      await f.tap('Guardar');
+      await f.step(
+        'Guardar sin nombre no deja seguir: «Nombre» se pone en rojo, con un '
+        'ejemplo de cómo llamarla.',
+      );
+      await f.check('Sin nombre no se crea ninguna cuenta', () {
+        expect(own.accounts.length, count);
+        expect(f.shows('Por ejemplo, Bancolombia ahorros'), isTrue);
+      });
+      await f.type('Nombre', 'Davivienda ahorros');
+      await f.type('Entidad (opcional)', 'Davivienda');
+      await f.type('¿Cuánto tiene hoy?', '1200000');
+      await f.tapFound(find.byType(SwitchListTile));
+      await f.step(
+        'Con nombre, entidad y 1.200.000, apaga «Cuenta de uso diario»: es '
+        'plata guardada, no para gastar en la quincena.',
+      );
+      await f.tap('Guardar');
+      await f.reveal(find.text('Davivienda ahorros'));
+      await f.step(
+        'La cuenta queda en «Ahorros e inversiones» y el patrimonio de arriba '
+        'sube 1.200.000.',
+      );
+      await f.check('Quedó una cuenta de banco que no es de uso diario', () {
+        final Account a = _named(own, 'Davivienda ahorros');
+        expect(a.kind, AccountKind.bank);
+        expect(a.spendable, isFalse);
+        expect(a.institution, 'Davivienda');
+        expect(_balance(own, a), _pesos('1200000'));
+        _expectIn(f, 'Davivienda ahorros', 'AHORROS E INVERSIONES', 'CRIPTO');
+      });
+      final Money now = worth + _pesos('1200000');
+      await f.check(
+        'El patrimonio pasó de ${_cop(worth)} a ${_cop(now)}',
+        () => expect(own.netWorth().total, now),
+      );
+      await f.check(
+        'Lo de uso diario sigue en ${_cop(everyday)}',
+        () => expect(own.total(spendableOnly: true), everyday),
+      );
+    },
+  ),
+  AppFlow(
+    '04-07-agregar-tarjeta-con-cupo',
+    'Agregar una tarjeta con cupo',
+    area: 'Cuentas',
+    goal:
+        'Saqué una Mastercard de Falabella y quiero que la app cuente lo que '
+        'debo y cuánto cupo me queda.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Money worth = own.netWorth().total;
+      final int cardDebt = own.spendableCardDebt;
+      await f.tap('Cuentas');
+      await f.tap('Agregar cuenta');
+      await f.type('Nombre', 'Mastercard Falabella');
+      await f.tap('Tarjeta de crédito');
+      await f.page(
+        'Al elegir «Tarjeta de crédito», el saldo pasa a «¿Cuánto debes '
+        'hoy?» y aparece «Cupo total (opcional)».',
+      );
+      await f.type('Entidad (opcional)', 'Banco Falabella');
+      await f.type('¿Cuánto debes hoy?', '350000');
+      await f.type('Cupo total (opcional)', '0');
+      await f.tap('Guardar');
+      await f.reveal(find.text('Cupo total (opcional)'));
+      await f.step(
+        'Un cupo de 0 no sirve: el campo pide «Escribe un monto» y la '
+        'tarjeta no se guarda todavía.',
+      );
+      await f.check('Con el cupo en 0 no se crea la tarjeta', () {
+        expect(
+          own.accounts.where((Account a) => a.name == 'Mastercard Falabella'),
+          isEmpty,
+        );
+      });
+      await f.type('Cupo total (opcional)', '2000000');
+      await f.tap('Guardar');
+      await f.reveal(find.text('Mastercard Falabella'));
+      await f.step(
+        'La tarjeta queda en «Tarjetas de crédito»: «Debes \$350.000» y '
+        '«Cupo libre \$1.650.000».',
+      );
+      await f.check('Debes \$350.000 con un cupo de \$2.000.000', () {
+        final Account card = _named(own, 'Mastercard Falabella');
+        expect(card.kind, AccountKind.card);
+        expect(_balance(own, card), _pesos('-350000'));
+        expect(card.creditLimit, Decimal.parse('2000000'));
+        expect(card.creditLeft(_balance(own, card)), _pesos('1650000'));
+        expect(f.shows('Cupo libre \$1.650.000'), isTrue);
+      });
+      final String debtBefore = pesos(own.ledger!.major(cardDebt));
+      final String debtNow = pesos(own.ledger!.major(cardDebt + 350000));
+      await f.check(
+        'Lo que debes en tarjetas pasó de $debtBefore a $debtNow',
+        () {
+          expect(own.spendableCardDebt, cardDebt + 350000);
+          expect(_rowOf(f, 'Lo que debes en tarjetas'), '−$signJoiner$debtNow');
+        },
+      );
+      await f.check(
+        'El patrimonio bajó \$350.000',
+        () => expect(own.netWorth().total, worth - _pesos('350000')),
+      );
+    },
+  ),
+  AppFlow(
+    '04-08-agregar-cuenta-en-dolares',
+    'Agregar una cuenta en dólares',
+    area: 'Cuentas',
+    goal:
+        'Tengo 500 dólares en Wise y quiero verlos en pesos dentro de mi '
+        'patrimonio.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Money worth = own.netWorth().total;
+      await f.tap('Cuentas');
+      await f.tap('Agregar cuenta');
+      await f.type('Nombre', 'Wise');
+      await f.tapFound(find.byType(DropdownButtonFormField<String>));
+      await f.step(
+        'Abre «Moneda»: arriba las monedas, abajo las cripto y al final '
+        '«Otra cripto» para cualquier otra.',
+      );
+      await f.tap('USD · Dólar estadounidense');
+      await f.type('¿Cuánto tiene hoy?', '500');
+      await f.tapFound(find.byType(SwitchListTile));
+      await f.step(
+        'Con «USD» elegido, el saldo lleva «USD» al lado; se apaga «Cuenta '
+        'de uso diario» porque son ahorros.',
+      );
+      await f.tap('Guardar');
+      await f.reveal(find.text('Wise'));
+      await f.step(
+        'Wise queda en «Ahorros e inversiones» con US\$500,00 y, debajo, lo '
+        'que son en pesos con la TRM.',
+      );
+      final Decimal rate = own.rates.rate(Asset.usd, Asset.cop)!;
+      final Money inPesos = Money(
+        (Decimal.fromInt(500) * rate).round(),
+        Asset.cop,
+      );
+      await f.check(
+        'US\$500 a ${_cop(Money(rate, Asset.cop))} son ${_cop(inPesos)}',
+        () {
+          final Account wise = _named(own, 'Wise');
+          expect(wise.asset, Asset.usd);
+          expect(own.partOfTotal(wise), inPesos);
+          expect(f.shows('≈ ${_cop(inPesos)}'), isTrue);
+        },
+      );
+      await f.check(
+        'El patrimonio subió exactamente ${_cop(inPesos)}',
+        () => expect(own.netWorth().total, worth + inPesos),
+      );
+    },
+  ),
+  AppFlow(
+    '04-09-primera-cuenta',
+    'Agregar la primera cuenta',
+    area: 'Cuentas',
+    goal:
+        'Todavía no tengo cuentas en la app y quiero empezar por el efectivo '
+        'que llevo en la billetera.',
+    data: _withoutAccounts,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      await f.tap('Cuentas');
+      await f.page(
+        'Sin cuentas, la pestaña lo dice y ofrece «Conecta Binance» con lo '
+        'que esa conexión puede y no puede hacer.',
+      );
+      await f.check('Cuentas dice que aún no hay cuentas', () {
+        expect(own.accounts, isEmpty);
+        expect(f.screenText, contains('Aún no tienes cuentas'));
+      });
+      await f.tap('Agregar cuenta');
+      await f.tap('Exchange de cripto');
+      await f.step(
+        'Al elegir «Exchange de cripto», «Cuenta de uso diario» se apaga '
+        'sola: lo que hay en un exchange no es para gastar.',
+      );
+      await f.check('Con Exchange de cripto el interruptor queda apagado', () {
+        expect(_switchOn(f), isFalse);
+      });
+      await f.tap('Ahorro o inversión');
+      await f.check('Con Ahorro o inversión también queda apagado', () {
+        expect(_switchOn(f), isFalse);
+      });
+      await f.tap('Billetera digital');
+      await f.check('Con Billetera digital se vuelve a encender', () {
+        expect(_switchOn(f), isTrue);
+      });
+      await f.tap('Otra');
+      await f.tap('Efectivo');
+      await f.type('Nombre', 'Billetera');
+      await f.type('¿Cuánto tiene hoy?', '80000');
+      await f.step(
+        'Probando cada tipo, el interruptor sigue al tipo; con «Efectivo» '
+        'queda encendido: es plata del día a día.',
+      );
+      await f.check('Con Efectivo el interruptor está encendido', () {
+        expect(_switchOn(f), isTrue);
+      });
+      await f.tap('Guardar');
+      await f.step(
+        'La primera cuenta aparece en «Cuentas de uso diario» y el '
+        '«Patrimonio» ya es \$80.000.',
+      );
+      await f.check('Quedó una cuenta de efectivo de uso diario', () {
+        final Account a = _named(own, 'Billetera');
+        expect(a.kind, AccountKind.cash);
+        expect(a.spendable, isTrue);
+        expect(own.netWorth().total, _pesos('80000'));
+        expect(f.screenText, isNot(contains('Aún no tienes cuentas')));
+      });
+      await f.tap('Conecta Binance');
+      await f.step(
+        '«Conecta Binance» abre la conexión con una llave de solo lectura, '
+        'para quien guarda cripto allá.',
+      );
+      await f.back();
+    },
+  ),
+  AppFlow(
+    '04-10-editar-una-cuenta',
+    'Cambiar el nombre y el uso de una cuenta',
+    area: 'Cuentas',
+    goal:
+        'Nequi ahora es solo para ahorrar: quiero cambiarle el nombre y que '
+        'deje de contar en lo que puedo gastar.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Account nequi = _named(own, 'Nequi');
+      final Money held = _balance(own, nequi);
+      final Money everyday = _everyday(own);
+      final Money worth = own.netWorth().total;
+      await f.tap('Cuentas');
+      await f.tap('Billetera digital · Nequi');
+      await f.tapTip('Editar cuenta');
+      await f.page(
+        'El lápiz abre «Editar cuenta»: la moneda queda fija, y dice por '
+        'qué; lo demás se puede cambiar.',
+      );
+      await f.type('Nombre', 'Nequi ahorros');
+      await f.tapFound(find.byType(SwitchListTile));
+      await f.step(
+        'Cambia el nombre a «Nequi ahorros» y apaga «Cuenta de uso diario».',
+      );
+      await f.tap('Guardar');
+      await f.step(
+        'Al guardar, el título de la cuenta ya dice «Nequi ahorros».',
+      );
+      await f.back();
+      await f.reveal(find.text('Nequi ahorros'));
+      await f.step(
+        'En Cuentas, Nequi ahorros pasó a «Ahorros e inversiones» y ya no '
+        'suma en lo de uso diario.',
+      );
+      await f.check('El cambio quedó guardado', () {
+        final Account a = _account(own, nequi.id);
+        expect(a.name, 'Nequi ahorros');
+        expect(a.spendable, isFalse);
+        _expectIn(f, 'Nequi ahorros', 'AHORROS E INVERSIONES', 'CRIPTO');
+      });
+      final Money now = everyday - held;
+      await f.check(
+        'Lo de uso diario pasó de ${_cop(everyday)} a ${_cop(now)}, sin los '
+        '${_cop(held)} de Nequi',
+        () {
+          expect(_everyday(own), now);
+          expect(_rowOf(f, 'En tus cuentas de uso diario'), _cop(now));
+        },
+      );
+      await f.check(
+        'El patrimonio sigue en ${_cop(worth)}',
+        () => expect(own.netWorth().total, worth),
+      );
+    },
+  ),
+  AppFlow(
+    '04-11-ajustar-el-saldo',
+    'Corregir el saldo de una cuenta',
+    area: 'Cuentas',
+    goal:
+        'La app del banco dice que tengo \$1.180.000 en Bancolombia y quiero '
+        'que Quincena diga lo mismo.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Account bank = _named(own, 'Bancolombia');
+      final Money before = _balance(own, bank);
+      final int entries = own.snapshot!.entries.length;
+      final Money target = _pesos('1180000');
+      final Money opening = bank.openingMoney + (target - before);
+      await f.tap('Cuentas');
+      await f.tap('Banco · Bancolombia');
+      await f.tapTip('Editar cuenta');
+      await f.reveal(find.text('¿Cuánto tiene hoy?'));
+      await f.step(
+        '«¿Cuánto tiene hoy?» trae el saldo de hoy, ${_plain(before)}, listo '
+        'para corregirlo.',
+      );
+      await f.check('El campo trae el saldo de hoy', () {
+        expect(f.shows(_plain(before)), isTrue);
+      });
+      await f.type('¿Cuánto tiene hoy?', '1180000');
+      await f.tap('Guardar');
+      await f.step(
+        'Al guardar, el «Saldo hoy» queda en \$1.180.000, lo mismo que dice '
+        'el banco.',
+      );
+      await f.check('El saldo hoy es \$1.180.000', () {
+        expect(_balance(own, bank), target);
+        expect(f.shows(_cop(target)), isTrue);
+      });
+      await f.check('No se agregó ni se cambió ningún movimiento', () {
+        expect(own.snapshot!.entries.length, entries);
+      });
+      await f.tapFound(find.text('¿De dónde sale?').first);
+      await f.step(
+        'En «¿De dónde sale?», «Con lo que empezó» absorbió la diferencia de '
+        '${_cop(before - target)}; los movimientos siguen iguales.',
+      );
+      await f.check('Con lo que empezó pasó de ${_cop(bank.openingMoney)} a '
+          '${_cop(opening)}', () {
+        expect(_account(own, bank.id).openingMoney, opening);
+        expect(f.screenText, contains(_cop(opening)));
+      });
+      await f.back();
+    },
+  ),
+  AppFlow(
+    '04-12-cambiar-el-cupo-de-la-tarjeta',
+    'Cambiar el cupo y el uso de la tarjeta',
+    area: 'Cuentas',
+    goal:
+        'El banco me subió el cupo de la Visa y además la pago con ahorros, '
+        'así que no quiero que reste de lo que puedo gastar.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Account visa = _named(own, 'Visa');
+      final Money owed = -_balance(own, visa);
+      final int free = own.ledger!.freeUntilPayday;
+      await f.tap('Cuentas');
+      await f.tap('Visa');
+      await f.tapTip('Editar cuenta');
+      await f.page(
+        'En la tarjeta, «¿Cuánto debes hoy?» trae lo que debes, en positivo, '
+        'y el cupo de \$3.000.000.',
+      );
+      await f.type('Cupo total (opcional)', '4000000');
+      await f.tap('Guardar');
+      await f.step(
+        'Con el cupo nuevo, el «Cupo libre» sube en \$1.000.000: ahora es '
+        'de \$4.000.000.',
+      );
+      final Money left = _pesos('4000000') - owed;
+      await f.check(
+        'Cupo libre ${_cop(left)} de \$4.000.000, y la deuda sigue en '
+        '${_cop(owed)}',
+        () {
+          final Account a = _account(own, visa.id);
+          expect(a.creditLimit, Decimal.parse('4000000'));
+          expect(-_balance(own, a), owed);
+          expect(
+            f.screenText,
+            contains('Cupo libre ${_cop(left)} de \$4.000.000'),
+          );
+        },
+      );
+      await f.tapTip('Editar cuenta');
+      await f.type('Cupo total (opcional)', '');
+      await f.tap('Guardar');
+      await f.step(
+        'Borrando el cupo, la tarjeta solo muestra lo que debes: el «Cupo '
+        'libre» desaparece.',
+      );
+      await f.check('Sin cupo no hay cupo libre', () {
+        expect(_account(own, visa.id).creditLimit, isNull);
+        expect(f.screenText, isNot(contains('Cupo libre')));
+      });
+      await f.tapTip('Editar cuenta');
+      await f.tapFound(find.byType(SwitchListTile));
+      await f.step(
+        'Apaga «Cuenta de uso diario»: su ayuda dice que lo que debes en la '
+        'tarjeta deja de restar de lo que puedes gastar.',
+      );
+      await f.tap('Guardar');
+      await f.back();
+      await f.top();
+      await f.step(
+        'En Cuentas ya no está la línea «Lo que debes en tarjetas».',
+      );
+      await f.check('Lo que debes en tarjetas ya no resta', () {
+        expect(own.spendableCardDebt, 0);
+        expect(f.shows('Lo que debes en tarjetas'), isFalse);
+      });
+      await f.check(
+        'Lo que puedes gastar subió (era ${pesos(own.ledger!.major(free))})',
+        () => expect(own.ledger!.freeUntilPayday, greaterThan(free)),
+      );
+    },
+  ),
+  AppFlow(
+    '04-13-eliminar-una-cuenta',
+    'Eliminar una cuenta',
+    area: 'Cuentas',
+    goal:
+        'Cerré Nequi y quiero quitarla de la app, sabiendo qué se borra con '
+        'ella.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Account nequi = _named(own, 'Nequi');
+      final Money held = _balance(own, nequi);
+      final Money worth = own.netWorth().total;
+      final int entries = own.snapshot!.entries.length;
+      final int inNequi = own.snapshot!.entries
+          .where((Entry e) => e.accountId == nequi.id)
+          .length;
+      await f.tap('Cuentas');
+      await f.tap('Billetera digital · Nequi');
+      await f.tapTip('Editar cuenta');
+      await f.tap('Eliminar');
+      await f.step(
+        '«Eliminar», al final del formulario, pide confirmar: dice cuántos '
+        'movimientos se borran con ella y que no se puede deshacer.',
+      );
+      await f.check('El aviso cuenta los $inNequi movimientos de Nequi', () {
+        expect(
+          f.screenText,
+          contains('Se borran también sus $inNequi movimientos.'),
+        );
+      });
+      await f.tap('Cancelar');
+      await f.step(
+        'Con «Cancelar» no pasa nada: el formulario sigue abierto y Nequi '
+        'sigue ahí.',
+      );
+      await f.check('Cancelar no borra nada', () {
+        expect(own.snapshot!.account(nequi.id), isNotNull);
+        expect(own.snapshot!.entries.length, entries);
+      });
+      await f.tap('Eliminar');
+      await f.tap('Eliminar');
+      await f.step(
+        'Al confirmar, el formulario se cierra y la página de Nequi queda '
+        'vacía: hay que volver con la flecha.',
+      );
+      await f.back();
+      await f.step('En Cuentas, Nequi ya no aparece y el patrimonio bajó.');
+      await f.check('Nequi y sus $inNequi movimientos ya no están', () {
+        expect(own.snapshot!.account(nequi.id), isNull);
+        expect(own.snapshot!.entries.length, entries - inNequi);
+        expect(f.shows('Nequi'), isFalse);
+      });
+      final Money now = worth - held;
+      await f.check(
+        'El patrimonio pasó de ${_cop(worth)} a ${_cop(now)}',
+        () => expect(own.netWorth().total, now),
+      );
+    },
+  ),
+  AppFlow(
+    '04-14-escribir-una-tasa',
+    'Usar mi propia tasa del dólar',
+    area: 'Cuentas',
+    goal:
+        'Me cambian los dólares a \$4.100 y quiero que la app use esa tasa, '
+        'y luego volver a la automática.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Account usd = _named(own, 'Cuenta en dólares');
+      final Decimal held = _balance(own, usd).amount;
+      final Decimal trm = own.rates.rate(Asset.usd, Asset.cop)!;
+      await f.tap('Cuentas');
+      await f.tap('Ver tasas usadas');
+      await f.page(
+        '«Ver tasas usadas»: cómo se pasa a pesos cada moneda, de dónde sale '
+        'cada tasa y cuándo se actualizó.',
+      );
+      await f.tapContaining('1 USD =');
+      await f.step(
+        'Tocar la línea del dólar abre «Escribir una tasa» con la de hoy ya '
+        'escrita; solo hay «Guardar», sin «Cancelar».',
+      );
+      await f.back();
+      await f.check('Cerrar el cuadro sin guardar deja la TRM', () {
+        expect(own.rates.rate(Asset.usd, Asset.cop), trm);
+        expect(_typedRate(own, Asset.usd), isFalse);
+      });
+      await f.tapContaining('1 USD =');
+      await f.tester.enterText(find.byType(TextField).last, '4100');
+      await f.tap('Guardar');
+      await f.step(
+        'Con 4.100 guardado, la línea dice «Manual», cuándo se escribió y '
+        'ofrece «Usar la automática».',
+      );
+      final Money at4100 = _pesos('${(held * Decimal.fromInt(4100)).round()}');
+      await f.check(
+        'La cuenta en dólares vale ${_cop(at4100)} con la tasa escrita',
+        () {
+          expect(own.rates.rate(Asset.usd, Asset.cop), Decimal.fromInt(4100));
+          expect(_typedRate(own, Asset.usd), isTrue);
+          expect(own.partOfTotal(usd), at4100);
+          expect(f.screenText, contains('1 tasa escrita a mano'));
+        },
+      );
+      await f.tapTip('Actualizar tasas');
+      await f.step(
+        '«Actualizar tasas» trae las automáticas, pero la escrita a mano se '
+        'queda; ahora se ve al lado la automática de hoy.',
+      );
+      await f.check('Actualizar no reemplaza la tasa escrita', () {
+        expect(own.rates.rate(Asset.usd, Asset.cop), Decimal.fromInt(4100));
+        expect(f.screenText, contains('La automática hoy: \$4.000'));
+      });
+      await f.tap('Usar la automática');
+      await f.step(
+        '«Usar la automática» vuelve a la TRM: se va «Manual» y la línea '
+        'dice de nuevo de dónde viene la tasa.',
+      );
+      final Money at4000 = _pesos('${(held * Decimal.fromInt(4000)).round()}');
+      await f.check(
+        'Con la TRM automática de \$4.000 la cuenta vale ${_cop(at4000)}',
+        () {
+          expect(own.rates.rate(Asset.usd, Asset.cop), Decimal.fromInt(4000));
+          expect(_typedRate(own, Asset.usd), isFalse);
+          expect(own.partOfTotal(usd), at4000);
+        },
+      );
+      await f.back();
+      await f.reveal(find.text('Cuenta en dólares'));
+      await f.step(
+        'En Cuentas, la cuenta en dólares ya se pasa a pesos con la TRM '
+        'nueva.',
+      );
+      await f.check(
+        'La fila muestra ≈ ${_cop(at4000)}',
+        () => expect(f.shows('≈ ${_cop(at4000)}'), isTrue),
+      );
+    },
+  ),
+  AppFlow(
+    '04-15-tasa-sin-conexion',
+    'Poner una tasa que la app no consigue',
+    area: 'Cuentas',
+    goal:
+        'Tengo euros y la app no trae su tasa; quiero escribirla yo y que '
+        'no se pierda si no hay conexión.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Money worth = own.netWorth().total;
+      await f.tap('Cuentas');
+      await f.tap('Agregar cuenta');
+      await f.type('Nombre', 'Cuenta en euros');
+      await f.tapFound(find.byType(DropdownButtonFormField<String>));
+      await f.tap('EUR · Euro');
+      await f.type('¿Cuánto tiene hoy?', '300');
+      await f.tapFound(find.byType(SwitchListTile));
+      await f.tap('Guardar');
+      await f.reveal(find.text('Ver tasas usadas'));
+      await f.step(
+        'Sin tasa para el euro, la cuenta no muestra cuánto es en pesos y '
+        '«Ver tasas usadas» avisa que cuenta como cero.',
+      );
+      await f.check('Sin tasa, los €300 no suman al patrimonio', () {
+        expect(own.partOfTotal(_named(own, 'Cuenta en euros')), isNull);
+        expect(own.netWorth().total, worth);
+        expect(f.screenText, contains('Sin tasa para EUR'));
+      });
+      await f.tap('Ver tasas usadas');
+      await f.tapContaining('Sin tasa para EUR');
+      await f.step(
+        'En las tasas, tocar la línea del euro abre «Escribir una tasa» con '
+        'el campo vacío.',
+      );
+      await f.tester.enterText(find.byType(TextField).last, '4350');
+      await f.tap('Guardar');
+      await f.step('Con 4.350 guardado, el euro tiene tasa, marcada «Manual».');
+      final Money euros = _pesos('1305000');
+      await f.check(
+        'Los €300 a \$4.350 suman ${_cop(euros)} al patrimonio',
+        () {
+          expect(own.partOfTotal(_named(own, 'Cuenta en euros')), euros);
+          expect(own.netWorth().total, worth + euros);
+        },
+      );
+      await f.tapContaining('1 EUR =');
+      await f.step(
+        'Con una tasa escrita, el cuadro ofrece además «Volver a la tasa '
+        'automática».',
+      );
+      await f.tap('Volver a la tasa automática');
+      await f.step(
+        'Sin conseguir la del euro, la app avisa que sigue la tuya: la tasa '
+        'escrita no se pierde.',
+      );
+      await f.check('La tasa escrita de \$4.350 sigue en uso', () {
+        expect(own.rates.rate(Asset.eur, Asset.cop), Decimal.fromInt(4350));
+        expect(_typedRate(own, Asset.eur), isTrue);
+        expect(f.screenText, contains('No se pudo traer la tasa automática'));
+      });
+    },
+    manual: <String>[
+      'En modo avión, «Usar la automática» en la línea del dólar: la tasa '
+          'escrita debe quedarse y salir el aviso.',
+    ],
+  ),
+  AppFlow(
+    '05-01-ver-rendimiento-y-ganancia',
+    'Ver cuánto vale mi cripto y cuánto gano',
+    area: 'Cripto',
+    goal:
+        'Quiero saber cuánto vale hoy mi cripto, cuánto se movió en el día y '
+        'cuánto le gano frente a lo que pagué.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      await f.tap('Cuentas');
+      await f.reveal(find.text('Rendimiento y ganancia'));
+      await f.step(
+        'En Cuentas, «Cripto» suma sus monedas y la última fila, «Rendimiento '
+        'y ganancia», dice cuánto ganas en porcentaje.',
+      );
+      var coins = Money.zero(Asset.cop);
+      for (final Account a in own.accounts) {
+        if (a.asset.isCrypto) coins += own.partOfTotal(a)!;
+      }
+      await f.check(
+        'El total de Cripto, ${_cop(coins)}, es la suma de sus filas',
+        () => expect(_sectionTotal(f, 'CRIPTO'), _cop(coins)),
+      );
+      await f.tap('Rendimiento y ganancia');
+      await f.page(
+        'La página de cripto: lo que vale, lo que se movió en 24 horas, la '
+        'ganancia, la gráfica, cada moneda y de dónde sale su saldo.',
+      );
+      final Portfolio p = own.portfolio.portfolio!;
+      await f.check(
+        '«Tu cripto vale» dice lo mismo que el total de Cripto en Cuentas',
+        () => expect(_cop(Money(p.value.base, Asset.cop)), _cop(coins)),
+      );
+      await f.check(
+        'La ganancia de cada moneda es lo que vale menos lo que costó',
+        () {
+          for (final Holding h in p.priced) {
+            expect(h.gain!.base, h.value!.base - h.position.cost.base);
+          }
+          expect(
+            f.screenText,
+            contains(_signed(Money(p.gain!.base, Asset.cop))),
+          );
+        },
+      );
+      await f.check(
+        'Bitcoin se movió +1,82 % en 24 horas, de 83.102,40 a 84.616,92 USDT',
+        () {
+          final Holding btc = p.holdings.firstWhere(
+            (Holding h) => h.asset == Asset.btc,
+          );
+          expect(btc.change24h, closeTo(84616.92 / 83102.40 - 1, 1e-9));
+        },
+      );
+      await f.tap('Actualizar');
+      await f.step(
+        '«Actualizar», junto a la hora de los precios, los lee otra vez; '
+        'también se puede arrastrar la página hacia abajo.',
+      );
+      await f.check('Los precios quedaron leídos y sin error', () {
+        expect(own.portfolio.pricing, isFalse);
+        expect(own.portfolio.pricingFailed, isFalse);
+        expect(own.portfolio.pricedAt, isNotNull);
+      });
+    },
+  ),
+  AppFlow(
+    '05-02-explorar-la-grafica',
+    'Explorar la gráfica de la cripto',
+    area: 'Cripto',
+    goal:
+        'Quiero ver cómo le fue a mi cripto en el día, la semana, el mes y '
+        'el año, y qué valía en un momento dado.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      await f.tap('Cuentas');
+      await f.tap('Rendimiento y ganancia');
+      await f.reveal(find.byType(PortfolioChart));
+      await f.step(
+        'La gráfica abre en «7 d» y en «Rendimiento»: solo lo que movieron '
+        'los precios, desde cero.',
+      );
+      for (final (String tab, ChartRange range, String long) in _ranges) {
+        await f.tap(tab);
+        await f.step(
+          'En «$tab» la línea y la cifra de arriba cuentan lo que ganó o '
+          'perdió la cripto $long.',
+        );
+        await f.check('La gráfica de «$tab» se dibujó $long', () {
+          expect(own.portfolio.chart(range), isNotNull);
+          expect(f.screenText, contains(long));
+        });
+      }
+      await f.tap('7 d');
+      await f.tap('Valor');
+      await f.step(
+        'Con «Valor» la línea es lo que valía la cripto en cada momento: una '
+        'compra la sube de golpe, y la nota de abajo lo dice.',
+      );
+      await f.check('Con Valor la nota explica que cuenta las compras', () {
+        expect(
+          f.shows(
+            'El valor con lo que tenías en cada momento: una compra lo sube '
+            'de golpe.',
+          ),
+          isTrue,
+        );
+      });
+      await f.tap('Rendimiento');
+      final Rect chart = f.tester.getRect(find.byType(PortfolioChart));
+      final TestGesture finger = await f.tester.startGesture(
+        Offset(chart.left + chart.width * 0.5, chart.top + 80),
+      );
+      await f.tester.pump(const Duration(milliseconds: 200));
+      await f.step(
+        'Con el dedo sobre la línea, arriba sale la fecha y cuánto se había '
+        'ganado hasta ese momento.',
+      );
+      await f.check('Arriba se lee un momento de la línea', () {
+        expect(f.screenText, contains('desde el inicio'));
+      });
+      await finger.moveBy(Offset(-chart.width * 0.35, 0));
+      await f.tester.pump(const Duration(milliseconds: 100));
+      await f.step(
+        'Al deslizar el dedo a la izquierda, la fecha y la cifra cambian al '
+        'momento que toca.',
+      );
+      await finger.up();
+      await f.step(
+        'Al soltar vuelve la ganancia de la semana y se va la ayuda «Toca la '
+        'línea…».',
+      );
+      await f.check('Al soltar se quita la ayuda y vuelve el resumen', () {
+        expect(f.screenText, isNot(contains('desde el inicio')));
+        expect(f.screenText, isNot(contains('Toca la línea')));
+        expect(f.screenText, contains('en 7 días'));
+      });
+    },
+  ),
+  AppFlow(
+    '05-03-ver-una-moneda',
+    'Ver una moneda por dentro',
+    area: 'Cripto',
+    goal:
+        'Quiero ver cuánto bitcoin tengo, a qué precio está, cuánto me costó '
+        'y cuánto le gano.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      await f.tap('Cuentas');
+      await f.tap('Rendimiento y ganancia');
+      await f.tapFound(find.text('Bitcoin'));
+      await f.page(
+        'Tocar Bitcoin abre su cuenta: el saldo en BTC y en pesos, el '
+        'precio, lo que vale, lo que costó y la ganancia.',
+      );
+      final Holding btc = own.portfolio.portfolio!.holdings.firstWhere(
+        (Holding h) => h.asset == Asset.btc,
+      );
+      await f.check('Vale es la cantidad por el precio de hoy', () {
+        final Decimal worth = btc.position.quantity * btc.price!.base;
+        expect(btc.value!.base, worth);
+        expect(f.screenText, contains(_cop(Money(worth, Asset.cop))));
+      });
+      await f.check(
+        'Te costó \$3.000.000 y el costo promedio es eso entre 0,0123 BTC',
+        () {
+          expect(btc.position.cost.base, Decimal.parse('3000000'));
+          expect(f.screenText, contains('\$3.000.000'));
+          final Decimal average = btc.position.averageCost!.base;
+          expect(
+            (average * Decimal.parse('0.0123')).round(),
+            Decimal.parse('3000000'),
+          );
+        },
+      );
+      await f.tapFound(find.text('¿De dónde sale?').first);
+      await f.step(
+        '«¿De dónde sale?» explica el saldo en BTC y cómo se pasa a pesos: '
+        'precio de Binance, USDT como dólar y TRM.',
+      );
+      await f.back();
+      await f.back();
+      await f.tapFound(find.text('Tether (USDT)'));
+      await f.step(
+        'El USDT de Binance: su precio es un dólar, así que no cambia en 24 '
+        'horas; la ganancia sale del dólar frente al peso.',
+      );
+      await f.check('USDT no muestra cambio de 24 horas', () {
+        final Holding usdt = own.portfolio.portfolio!.holdings.firstWhere(
+          (Holding h) => h.asset == Asset.usdt,
+        );
+        expect(usdt.pegged, isTrue);
+        expect(f.screenText, isNot(contains('· 24 h')));
+      });
+    },
+  ),
+  AppFlow(
+    '05-04-registrar-una-compra',
+    'Registrar una compra de bitcoin',
+    area: 'Cripto',
+    goal:
+        'Ayer compré bitcoin por P2P y quiero anotarlo con lo que pagué para '
+        'que la ganancia salga bien.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Account bitcoin = _named(own, 'Bitcoin');
+      final Holding before = _holding(own, Asset.btc);
+      await f.tap('Cuentas');
+      await f.tap('Bitcoin');
+      await f.tap('Compra');
+      await f.step(
+        '«Compra» abre «Registrar compra»: cantidad, de dónde salió la plata '
+        '(por defecto «Fuera de Quincena»), el total y la fecha.',
+      );
+      await f.tap('Guardar');
+      await f.step(
+        'Guardar vacío no deja: la cantidad y el total piden «Escribe un '
+        'monto».',
+      );
+      await f.check('Sin cantidad ni total no se registra nada', () {
+        expect(_balance(own, bitcoin), before.position.account.openingMoney);
+        expect(f.shows('Escribe un monto'), isTrue);
+      });
+      await f.type('Cantidad de BTC', '0,001');
+      await f.tap('USD');
+      await f.type('Total pagado', '90');
+      await f.step(
+        'Con «USD» elegido, el total va en dólares y la app calcula el precio '
+        'por unidad: US\$90.000.',
+      );
+      await f.check(
+        'Al escribir se van los «Escribe un monto» y sale el precio por unidad',
+        () {
+          expect(f.shows('Escribe un monto'), isFalse);
+          expect(f.shows('Precio por unidad: US\$90.000,00'), isTrue);
+        },
+      );
+      await f.tap('COP');
+      await f.type('Total pagado', '360000');
+      await f.step(
+        'De vuelta en «COP» con 360.000, el precio por unidad es '
+        '\$360.000.000.',
+      );
+      await f.tap('Hoy');
+      await f.step('Tocar la fecha abre el calendario para elegir el día.');
+      await f.tap('2');
+      await f.tap('ACEPTAR');
+      await f.tap('Ayer');
+      await f.tap('Cancelar');
+      await f.step(
+        'Elegido el 2, la fecha dice «Ayer»; volver a abrir y «Cancelar» la '
+        'deja igual.',
+      );
+      await f.tap('Guardar');
+      await f.step(
+        'Al guardar, el saldo sube a 0,0133 BTC y la compra aparece en los '
+        'movimientos.',
+      );
+      await f.check('Quedó una compra de 0,001 BTC por \$360.000, ayer', () {
+        final Entry e = own.snapshot!.entries.firstWhere(
+          (Entry e) => e.accountId == bitcoin.id,
+        );
+        expect(e.amount, Decimal.parse('0.001'));
+        expect(e.cost, _pesos('360000'));
+        expect(e.date, DateTime(2026, 10, 2));
+      });
+      await f.check('El saldo pasó de 0,0123 a 0,0133 BTC', () {
+        expect(_balance(own, bitcoin).amount, Decimal.parse('0.0133'));
+      });
+      await f.check('Lo que costó subió exactamente \$360.000', () {
+        expect(
+          _holding(own, Asset.btc).position.cost.base,
+          before.position.cost.base + Decimal.parse('360000'),
+        );
+      });
+    },
+  ),
+  AppFlow(
+    '05-05-registrar-una-venta',
+    'Vender bitcoin y recibir en el banco',
+    area: 'Cripto',
+    goal:
+        'Vendí parte de mi bitcoin y me consignaron en Bancolombia; quiero '
+        'que las dos cuentas cambien.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Account bitcoin = _named(own, 'Bitcoin');
+      final Account bank = _named(own, 'Bancolombia');
+      final Money bankBefore = _balance(own, bank);
+      await f.tap('Cuentas');
+      await f.tap('Bitcoin');
+      await f.tap('Venta');
+      await f.step(
+        '«Venta» abre «Registrar venta»; debajo de la cantidad dice cuánto '
+        'tiene la cuenta: 0,0123 BTC.',
+      );
+      await f.type('Cantidad de BTC', '0,02');
+      await f.type('Total recibido', '6000000');
+      await f.tap('Guardar');
+      await f.step(
+        'Vender más de lo que hay no deja: la cantidad se marca en rojo con '
+        'lo que tiene la cuenta.',
+      );
+      await f.check('Sin saldo suficiente no se registra la venta', () {
+        expect(_balance(own, bitcoin).amount, Decimal.parse('0.0123'));
+      });
+      await f.type('Cantidad de BTC', '0,005');
+      await f.tapFound(find.byType(DropdownButtonFormField<String?>));
+      await f.step(
+        '«Recibido en» lista tus cuentas: si la plata llegó a una, su saldo '
+        'también cambia.',
+      );
+      await f.tap('Bancolombia · COP');
+      await f.type('Total recibido', '1650000');
+      await f.step(
+        'Con Bancolombia elegida, el total va en pesos y la app calcula el '
+        'precio: \$330.000.000 por bitcoin.',
+      );
+      await f.tap('Guardar');
+      await f.step(
+        'Al guardar, Bitcoin baja a 0,0073 BTC y la venta aparece como '
+        'transferencia a Bancolombia.',
+      );
+      await f.check('Bitcoin pasó de 0,0123 a 0,0073 BTC', () {
+        expect(_balance(own, bitcoin).amount, Decimal.parse('0.0073'));
+      });
+      final Money bankNow = bankBefore + _pesos('1650000');
+      await f.check(
+        'Bancolombia pasó de ${_cop(bankBefore)} a ${_cop(bankNow)}',
+        () => expect(_balance(own, bank), bankNow),
+      );
+      await f.check('Las dos partes son una sola transferencia', () {
+        final Entry sold = own.snapshot!.entries.firstWhere(
+          (Entry e) => e.accountId == bitcoin.id,
+        );
+        final Entry paid = own.snapshot!.entries.firstWhere(
+          (Entry e) => e.transferId == sold.transferId && e.id != sold.id,
+        );
+        expect(sold.transferId, isNotNull);
+        expect(paid.accountId, bank.id);
+      });
+      await f.back();
+      await f.tap('Rendimiento y ganancia');
+      await f.reveal(find.textContaining('Ya ganado en ventas'));
+      await f.step(
+        'En la página de cripto, abajo aparece lo que ya se ganó vendiendo, '
+        'aparte de la ganancia no realizada.',
+      );
+      await f.check('Hay una ganancia realizada por la venta', () {
+        expect(
+          own.portfolio.portfolio!.realized.base,
+          greaterThan(Decimal.zero),
+        );
+      });
+    },
+  ),
+  AppFlow(
+    '05-06-agregar-cripto-a-mano',
+    'Agregar cripto a mano',
+    area: 'Cripto',
+    goal:
+        'Tengo ether y cardano en una billetera y quiero anotarlos con lo que '
+        'me costaron.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Money worth = own.netWorth().total;
+      await f.tap('Cuentas');
+      await f.tap('Agregar cuenta');
+      await f.type('Nombre', 'MetaMask ETH');
+      await f.tapFound(find.byType(DropdownButtonFormField<String>));
+      await f.tap('ETH · Ether');
+      await f.tap('Billetera digital');
+      await f.page(
+        'Con una cripto como moneda aparece «¿Cuánto te costó?», en pesos o '
+        'dólares, para calcular la ganancia.',
+      );
+      await f.check('Al elegir una cripto no se apaga el uso diario solo', () {
+        expect(_switchOn(f), isTrue);
+      });
+      await f.tapFound(find.byType(SwitchListTile));
+      await f.type('¿Cuánto tiene hoy?', '0,5');
+      await f.tap('USD');
+      await f.type('¿Cuánto te costó?', '1200');
+      await f.step(
+        'Con 0,5 ETH, apagado el uso diario y un costo de US\$1.200, todo '
+        'listo para guardar.',
+      );
+      await f.tap('Guardar');
+      await f.reveal(find.text('MetaMask ETH'));
+      await f.step('MetaMask ETH entra en «Cripto», con su valor en pesos.');
+      final Account ether = _named(own, 'MetaMask ETH');
+      final Money ethPesos = own.partOfTotal(ether)!;
+      await f.check('0,5 ETH con costo de US\$1.200, fuera del uso diario', () {
+        expect(ether.asset, Asset.eth);
+        expect(ether.spendable, isFalse);
+        expect(ether.openingCost, Money(Decimal.fromInt(1200), Asset.usd));
+        expect(own.netWorth().total, worth + ethPesos);
+      });
+      await f.tap('Agregar cuenta');
+      await f.type('Nombre', 'Cardano');
+      await f.tapFound(find.byType(DropdownButtonFormField<String>));
+      await f.tap('Otra cripto');
+      await f.type('Símbolo, por ejemplo ADA', 'ada');
+      await f.tap('Exchange de cripto');
+      await f.type('¿Cuánto tiene hoy?', '1500');
+      await f.step(
+        '«Otra cripto» deja escribir el símbolo, ADA; con «Exchange de '
+        'cripto» el uso diario se apaga solo.',
+      );
+      await f.tap('Guardar');
+      await f.reveal(find.text('Cardano'));
+      await f.step(
+        'Cardano queda en Cripto sin valor en pesos: la app no tiene precio '
+        'para ADA.',
+      );
+      await f.check('ADA no tiene precio y no suma al patrimonio', () {
+        final Account ada = _named(own, 'Cardano');
+        expect(ada.asset.code, 'ADA');
+        expect(ada.spendable, isFalse);
+        expect(own.partOfTotal(ada), isNull);
+        expect(own.netWorth().total, worth + ethPesos);
+      });
+      await f.tap('Rendimiento y ganancia');
+      await f.page(
+        'En la página de cripto, Cardano dice «Sin precio» y la nota de abajo '
+        'explica que no suma al total.',
+      );
+      await f.check('La página dice que ADA no tiene precio', () {
+        expect(own.portfolio.portfolio!.unpriced, contains(Asset.of('ADA')));
+      });
+    },
+  ),
+  AppFlow(
+    '05-07-conectar-binance',
+    'Conectar Binance',
+    area: 'Cripto',
+    goal:
+        'Llevo mis saldos de Binance a mano y quiero conectarla para que se '
+        'actualicen solos, sin arriesgar mi plata.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      await f.tap('Cuentas');
+      await f.tap('Rendimiento y ganancia');
+      await f.reveal(find.text('Billeteras propias'));
+      await f.step(
+        '«Gestionar fuentes»: Binance avisa que tus saldos de allá están '
+        'anotados a mano y ofrece conectarla.',
+      );
+      await f.tap('Binance');
+      await f.page(
+        'La conexión explica qué trae, que la llave solo lee, que se guarda '
+        'solo en el teléfono y cómo crearla.',
+      );
+      await f.tap('Conectar');
+      await f.step('«Conectar» sin llaves no hace nada ni dice qué falta.');
+      await f.check('Sin llaves no se conecta', () {
+        expect(own.binance.connected, isFalse);
+        expect(f.shows('Revisando la llave con Binance…'), isFalse);
+      });
+      await f.type('API Key', 'llave-de-prueba');
+      await f.tap('Conectar');
+      await f.check('Con solo la API Key tampoco intenta conectar', () {
+        expect(own.binance.connected, isFalse);
+      });
+      await f.type('Secret Key', 'secreto');
+      await f.step('La Secret Key se escribe oculta, con un candado al lado.');
+      await f.tapFound(
+        find.descendant(
+          of: find.widgetWithText(TextField, 'Secret Key'),
+          matching: find.byType(IconButton),
+        ),
+      );
+      await f.step('Tocar el candado muestra la Secret Key para revisarla.');
+      await f.check('El candado muestra el secreto', () {
+        final TextField secret = f.tester.widget<TextField>(
+          find.widgetWithText(TextField, 'Secret Key'),
+        );
+        expect(secret.obscureText, isFalse);
+      });
+    },
+    manual: <String>[
+      'Conectar con una llave real de solo lectura: ver «Conectada con una '
+          'llave de solo lectura», «Leer ahora» y el informe de movimientos.',
+      'Probar una llave que puede operar o retirar: debe rechazarla y no '
+          'guardarla.',
+      'Con Binance conectada, «Archivarlas» para las cuentas que llevabas a '
+          'mano y «Desconectar» con su confirmación (Cancelar y Desconectar).',
+      'Que la llave quede en el llavero del teléfono y no en la copia '
+          'exportada.',
+    ],
+  ),
+  AppFlow(
+    '05-08-seguir-una-billetera',
+    'Seguir una billetera por su dirección',
+    area: 'Cripto',
+    goal:
+        'Tengo bitcoin en un Ledger y quiero seguirlo con su dirección '
+        'pública, sin dar ninguna llave.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final int count = own.accounts.length;
+      await f.tap('Cuentas');
+      await f.tap('Rendimiento y ganancia');
+      await f.tap('Billeteras propias');
+      await f.step(
+        '«Billeteras propias» explica que solo lee la dirección pública, qué '
+        'redes sirven y a qué servicios se consulta.',
+      );
+      await f.tap('Agregar billetera');
+      await f.step(
+        '«Agregar billetera»: la red (Bitcoin, Ethereum o TRON), la dirección '
+        'y un nombre para reconocerla.',
+      );
+      await f.type('Dirección pública', 'mi-ledger');
+      await f.tap('Agregar billetera');
+      await f.step(
+        'Algo que no parece una dirección de Bitcoin se rechaza en el '
+        'momento, sin consultar nada.',
+      );
+      await f.type('Dirección pública', _badChecksum);
+      await f.tap('TRON');
+      await f.tap('Agregar billetera');
+      await f.step(
+        'Con «TRON» elegido, la misma dirección de Bitcoin se rechaza: cada '
+        'red tiene su forma.',
+      );
+      await f.check('Las direcciones con forma de otra red se rechazan', () {
+        expect(f.shows('Esa no parece una dirección de TRON.'), isTrue);
+      });
+      await f.tap('Bitcoin');
+      await f.type('Nombre: Ledger, MetaMask…', 'Ledger');
+      await f.tap('Agregar billetera');
+      await f.step(
+        'Con la forma correcta pero sin poder leerla, la app avisa y no la '
+        'sigue; el aviso culpa a la conexión.',
+      );
+      await f.check('Una dirección que no se pudo leer no se sigue', () {
+        expect(own.wallets.wallets, isEmpty);
+        expect(own.accounts.length, count);
+        expect(f.screenText, contains('No se pudo leer esa dirección'));
+      });
+      await f.back();
+      await f.tapTip('Actualizar tasas');
+      await f.step(
+        'Sin billeteras, el botón de actualizar de arriba no tiene nada que '
+        'leer: la página sigue vacía.',
+      );
+    },
+    manual: <String>[
+      'Seguir una dirección real con saldo (Bitcoin, Ethereum y TRON): '
+          'deben aparecer sus monedas como cuentas.',
+      'Con la billetera seguida, «Actualizar» con conexión trae el saldo '
+          'nuevo como un ajuste.',
+    ],
+  ),
+  AppFlow(
+    '05-09-dejar-de-seguir-una-billetera',
+    'Dejar de seguir una billetera',
+    area: 'Cripto',
+    goal:
+        'Ya no uso ese Ledger y quiero dejar de seguirlo sin perder lo que '
+        'la app ya anotó.',
+    data: _followingAWallet,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Account ledger = own.accounts.firstWhere(
+        (Account a) => a.institution == 'Ledger',
+      );
+      await f.tap('Cuentas');
+      await f.tap('Rendimiento y ganancia');
+      await f.page(
+        'El Ledger aparece como un lugar más, con la hora en que se leyó su '
+        'dirección pública.',
+      );
+      await f.reveal(find.text('LEDGER'));
+      await f.check('El Ledger dice que se lee por dirección pública', () {
+        expect(f.screenText, contains('Por dirección pública · leída'));
+      });
+      await f.tap('Billeteras propias');
+      await f.step(
+        'En «Billeteras propias» está el Ledger con su dirección corta y lo '
+        'que tiene: 0,05 BTC.',
+      );
+      await f.tapTip('Actualizar tasas');
+      await f.step(
+        'El botón de actualizar de arriba intenta leerla; si no puede, avisa '
+        'y deja los últimos saldos.',
+      );
+      await f.check('Sin leerla, el saldo se queda en 0,05 BTC', () {
+        expect(own.wallets.failed, isNotNull);
+        expect(_balance(own, ledger).amount, Decimal.parse('0.05'));
+        expect(f.screenText, contains('no se pudo leer'));
+      });
+      await f.tapTip('Dejar de seguir');
+      await f.step(
+        'La papelera pregunta antes: deja de leerse, y lo que trajo se queda '
+        'como tuyo.',
+      );
+      await f.tap('Cancelar');
+      await f.check('Cancelar la deja seguida', () {
+        expect(own.wallets.wallets, hasLength(1));
+      });
+      await f.tapTip('Dejar de seguir');
+      await f.tap('Dejar de seguir');
+      await f.step('Confirmado, ya no hay billeteras seguidas.');
+      await f.check('Ya no se sigue, pero la cuenta de 0,05 BTC sigue', () {
+        expect(own.wallets.wallets, isEmpty);
+        expect(own.snapshot!.account(ledger.id), isNotNull);
+        expect(_balance(own, ledger).amount, Decimal.parse('0.05'));
+      });
+      await f.back();
+      await f.reveal(find.text('LEDGER'));
+      await f.step(
+        'En la página de cripto, el Ledger ahora dice que ya no la sigues.',
+      );
+      await f.check('La fuente dice «ya no la sigues»', () {
+        expect(f.screenText, contains('ya no la sigues'));
+      });
+    },
+    manual: <String>[
+      'Con conexión, «Actualizar» en «Billeteras propias» con una dirección '
+          'real debe leer el saldo sin aviso.',
+    ],
+  ),
+];
+
+final Money _cop60k = Money(Decimal.parse('60000'), Asset.cop);
+
+/// The chart's other ranges, as their tab and their words say them.
+const List<(String, ChartRange, String)> _ranges =
+    <(String, ChartRange, String)>[
+      ('24 h', ChartRange.day, 'en 24 horas'),
+      ('30 d', ChartRange.month, 'en 30 días'),
+      ('1 a', ChartRange.year, 'en un año'),
+    ];
+
+/// A Bitcoin address with the shape of one and a checksum that is wrong:
+/// no service reads it, with a connection or without one.
+const String _badChecksum = 'bc1qexampleexampleexampleexample0lmg5w';
+
+/// Diego, before adding any account.
+Future<QuincenaStore> _withoutAccounts() async {
+  final QuincenaStore store = await emptyStore();
+  await store.ensureCategories();
+  await store.saveProfile(
+    const Profile(name: 'Diego', base: Asset.cop, schedule: TwiceMonthly()),
+  );
+  await store.setSetting('app.mode', 'own');
+  return store;
+}
+
+/// Diego's account, also following a Ledger by its public address, read
+/// ten minutes ago.
+Future<QuincenaStore> _followingAWallet() async {
+  final QuincenaStore store = await seeded();
+  await store.addAccount(
+    name: 'Bitcoin del Ledger',
+    kind: AccountKind.wallet,
+    asset: Asset.btc,
+    opening: Decimal.parse('0.05'),
+    institution: 'Ledger',
+    spendable: false,
+    syncRef: 'wallet:bitcoin:$_badChecksum:BTC',
+  );
+  await store.setSetting(
+    'wallets',
+    jsonEncode(<String, Object?>{
+      'wallets': <Object?>[
+        <String, String>{
+          'chain': 'bitcoin',
+          'address': _badChecksum,
+          'label': 'Ledger',
+        },
+      ],
+      'syncedAt': screensNow
+          .subtract(const Duration(minutes: 10))
+          .toIso8601String(),
+    }),
+  );
+  return store;
+}
+
+/// Pesos as the app writes them.
+String _cop(Money m) => moneyText(m, base: Asset.cop);
+
+Account _named(OwnController own, String name) =>
+    own.accounts.firstWhere((Account a) => a.name == name);
+
+Money _balance(OwnController own, Account a) =>
+    own.balances[a.id] ?? a.openingMoney;
+
+/// What [a] started with plus every movement in it up to today, worked out
+/// apart from the app's own sum.
+Decimal _fromMovements(OwnController own, Account a) {
+  final DateTime today = own.today;
+  final DateTime end = DateTime(today.year, today.month, today.day + 1);
+  Decimal sum = _account(own, a.id).opening;
+  for (final Entry e in own.snapshot!.entries) {
+    if (e.accountId == a.id && e.date.isBefore(end)) sum += e.amount;
+  }
+  return sum;
+}
+
+Account _account(OwnController own, String id) => own.snapshot!.account(id)!;
+
+/// What the everyday accounts hold in pesos, cards apart, as the tab adds
+/// it.
+Money _everyday(OwnController own) {
+  var sum = Money.zero(Asset.cop);
+  for (final Account a in own.accounts) {
+    if (!a.spendable || a.kind == AccountKind.card) continue;
+    sum += own.partOfTotal(a)!;
+  }
+  return sum;
+}
+
+/// The figure on the line that starts with [label].
+String? _rowOf(FlowRun f, String label) {
+  final Finder row = find.ancestor(
+    of: find.text(label),
+    matching: find.byType(Row),
+  );
+  if (row.evaluate().isEmpty) return null;
+  final Iterable<Text> texts = f.tester.widgetList<Text>(
+    find.descendant(of: row.first, matching: find.byType(Text)),
+  );
+  return texts.map((Text t) => t.data).whereType<String>().last;
+}
+
+Money _pesos(String amount) => Money(Decimal.parse(amount), Asset.cop);
+
+/// Pesos signed, as a gain is written.
+String _signed(Money m) => moneyText(m, base: Asset.cop, signed: true);
+
+/// Pesos as an amount field writes them, without the sign.
+String _plain(Money m) => formatDecimal(m.amount, decimals: 0, trim: true);
+
+/// Whether the rate in use for [asset] in pesos was typed by hand.
+bool _typedRate(OwnController own, Asset asset) =>
+    own.rates.used(asset, Asset.cop).any((Rate r) => r.manual);
+
+Holding _holding(OwnController own, Asset asset) => own
+    .portfolio
+    .portfolio!
+    .holdings
+    .firstWhere((Holding h) => h.asset == asset);
+
+/// Whether the account form's «Cuenta de uso diario» is on.
+bool _switchOn(FlowRun f) =>
+    f.tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value;
+
+/// That the row named [name] sits under the [section] heading, before the
+/// [next] one.
+void _expectIn(FlowRun f, String name, String section, String next) {
+  final double y = f.tester.getTopLeft(find.text(name).first).dy;
+  expect(y, greaterThan(f.tester.getTopLeft(find.text(section)).dy));
+  expect(y, lessThan(f.tester.getTopLeft(find.text(next)).dy));
+}
+
+/// The figure beside a section's heading.
+String? _sectionTotal(FlowRun f, String section) => _rowOf(f, section);

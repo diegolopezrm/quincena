@@ -355,17 +355,33 @@ class _Hero extends StatelessWidget {
     final double? gainRatio = p.gainRatio;
     final Pair uncosted = p.uncostedValue;
     final ({Pair moved, double change})? day = controller.day;
+    // Each coin rounded first, as its row shows it and as Cuentas adds it,
+    // so the total is the sum of the rows and the same figure in both.
+    Decimal total(Decimal Function(Pair value) of, int decimals) =>
+        p.priced.fold(
+          Decimal.zero,
+          (Decimal sum, Holding h) => sum + of(h.value!).round(scale: decimals),
+        );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Headline(
           caption: l.portfolioWorth,
-          value: moneyText(Money(p.value.base, base), base: base),
+          value: moneyText(
+            Money(total((Pair v) => v.base, base.decimals), base),
+            base: base,
+          ),
           // Dollars and coins share the page: the total says its currency.
           unit: base,
           detail: base.code == 'USD'
               ? null
-              : moneyText(Money(p.value.usd, Asset.usd), base: base),
+              : moneyText(
+                  Money(
+                    total((Pair v) => v.usd, Asset.usd.decimals),
+                    Asset.usd,
+                  ),
+                  base: base,
+                ),
         ),
         const SizedBox(height: 6),
         _PriceStatus(controller: controller, base: base),
