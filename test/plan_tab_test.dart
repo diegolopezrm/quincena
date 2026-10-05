@@ -213,6 +213,10 @@ void main() {
     );
     await settle(tester);
     expect(find.text('Te pasas por'), findsOneWidget);
+    // Over by the day to day and the trip's 150.000, less the 1.900.000
+    // there is, said without a minus: «Te pasas por» says it is over.
+    expect(find.text(pesos(3250000)), findsOneWidget);
+    expect(find.text(pesos(-3250000)), findsNothing);
     await tester.tap(find.text('Guardar el reparto'));
     await settle(tester);
     expect(find.text('Asignas más de lo que hay'), findsOneWidget);

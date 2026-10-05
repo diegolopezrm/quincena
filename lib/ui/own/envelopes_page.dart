@@ -275,7 +275,8 @@ class _EnvelopesPageState extends State<EnvelopesPage> {
                         ),
                       ),
                     ),
-                    Figures(amount(left), style: context.type.titleSmall),
+                    // «Te pasas por» already says it is over: no minus.
+                    Figures(amount(left.abs()), style: context.type.titleSmall),
                   ],
                 ),
               ),

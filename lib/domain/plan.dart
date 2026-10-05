@@ -186,8 +186,9 @@ double paydaysPerMonth(Ledger ledger) {
 }
 
 /// A first split of the period's money: each goal its monthly share for one
-/// period, the day to day what was spent in a period lately, and what is
-/// left, free. With [last], the period before's envelopes are reused.
+/// period, as far as the money goes, the day to day what was spent in a
+/// period lately, and what is left, free. With [last], the period before's
+/// envelopes are reused.
 List<Envelope> proposeEnvelopes(
   Ledger ledger, {
   required List<GoalShare> goals,
@@ -204,17 +205,27 @@ List<Envelope> proposeEnvelopes(
     ];
   }
   final double perMonth = paydaysPerMonth(ledger);
-  final List<Envelope> out = <Envelope>[
-    for (final GoalShare g in goals)
-      if (g.monthly > 0 && g.saved < g.target)
-        Envelope(
-          id: 'goal-${g.id}',
-          kind: EnvelopeKind.goal,
-          name: g.name,
-          amount: math.min((g.monthly / perMonth).round(), g.target - g.saved),
-          goalId: g.id,
-        ),
-  ];
+  // Never more than there is: when money is short, the goals get what is
+  // left, in order, and the rest of each share waits.
+  var free = money;
+  final List<Envelope> out = <Envelope>[];
+  for (final GoalShare g in goals) {
+    if (g.monthly <= 0 || g.saved >= g.target) continue;
+    final int share = math.min(
+      math.min((g.monthly / perMonth).round(), g.target - g.saved),
+      free,
+    );
+    free -= share;
+    out.add(
+      Envelope(
+        id: 'goal-${g.id}',
+        kind: EnvelopeKind.goal,
+        name: g.name,
+        amount: share,
+        goalId: g.id,
+      ),
+    );
+  }
   final int forGoals = out.fold(0, (int s, Envelope e) => s + e.amount);
   final int left = math.max(0, money - forGoals);
   final int? usual = usualPeriodSpending(ledger);
