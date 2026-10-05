@@ -136,6 +136,7 @@ class _QuincenaAppState extends State<QuincenaApp> {
           onDone: modes.finishedOnboarding,
           onCancel: modes.cancelOnboarding,
           newOwn: () => modes.newOwn(readNative: false),
+          now: modes.now,
         ),
         AppMode.demo => HomePage(
           session: _session,

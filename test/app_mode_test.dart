@@ -62,6 +62,20 @@ void main() {
     expect(modes.mode, AppMode.choosing);
   });
 
+  test('onboarding left after the profile and before any account picks up '
+      'again, rather than opening on an empty home', () async {
+    final AppModeController modes = await open(startInDemo: false);
+    await modes.useOwn();
+    // The pay step saves the profile; the person backs out on the next.
+    await modes.store!.saveProfile(
+      const Profile(name: 'Laura', base: Asset.cop, schedule: TwiceMonthly()),
+    );
+    modes.cancelOnboarding();
+
+    await modes.useOwn();
+    expect(modes.mode, AppMode.onboarding);
+  });
+
   test('the own accounts read prices from the market the app was given, as '
       'the store pictures and the tour give one with fixed prices', () async {
     final QuincenaStore store = QuincenaStore(

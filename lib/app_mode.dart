@@ -111,11 +111,16 @@ class AppModeController extends ChangeNotifier {
     _set(AppMode.demo);
   }
 
-  /// The person's own accounts, through onboarding the first time.
+  /// The person's own accounts, through onboarding the first time, and
+  /// again while it was left before any account: it picks up where it
+  /// stopped instead of opening on nothing.
   Future<void> useOwn() async {
     final QuincenaStore? s = store;
     if (s == null) return;
-    if (await s.profile() == null) return _set(AppMode.onboarding);
+    if (await s.profile() == null ||
+        (await s.accounts(archived: true)).isEmpty) {
+      return _set(AppMode.onboarding);
+    }
     await s.setSetting(_modeKey, 'own');
     await _enterOwn();
   }
