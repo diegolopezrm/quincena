@@ -195,6 +195,93 @@ void main() {
     expect(find.byType(TextField), findsOneWidget);
   });
 
+  testWidgets('what was recorded on its own shows as it was corrected', (
+    tester,
+  ) async {
+    Future<QuincenaStore> automatic() async {
+      final QuincenaStore store = await withCaptures();
+      await store.saveCaptureSettings(
+        (await store.captureSettings()).copyWith(autoRecord: true),
+      );
+      return store;
+    }
+
+    final OwnController own = await open(tester, automatic);
+    await tester.runAsync(
+      () => own.ingestText(r'Nequi: Pagaste $32.000 en Rappi'),
+    );
+    await settle(tester);
+    expect(find.text('Restaurantes · Nequi'), findsOneWidget);
+
+    // Corrected in its sheet: another category, a name, an amount.
+    final Entry made = (await tester.runAsync(
+      own.store.entries,
+    ))!.singleWhere((Entry e) => e.source == 'paste');
+    await tester.runAsync(
+      () => own.store.updateEntry(
+        made.copyWith(
+          category: 'leisure',
+          payee: 'Rappi Turbo',
+          amount: Decimal.parse('-30000'),
+        ),
+      ),
+    );
+    await settle(tester);
+    expect(find.text('Rappi Turbo'), findsOneWidget);
+    expect(find.text('Salidas · Nequi'), findsOneWidget);
+    expect(find.textContaining('30.000'), findsOneWidget);
+    expect(find.text('Restaurantes · Nequi'), findsNothing);
+  });
+
+  testWidgets('a payment that does not say which way it went has no sign', (
+    tester,
+  ) async {
+    final OwnController own = await open(tester, withCaptures);
+    await tester.runAsync(
+      () => own.ingestText(
+        r'Bancolombia: movimiento por $50.000 en tu cuenta *5678',
+      ),
+    );
+    await settle(tester);
+    expect(
+      find.text('No sabemos si es un gasto o un ingreso.'),
+      findsOneWidget,
+    );
+    final String shown = tester
+        .widget<Text>(find.textContaining('50.000'))
+        .data!;
+    expect(shown, isNot(contains('−')));
+    expect(shown, isNot(contains('+')));
+  });
+
+  testWidgets('a pasted message is read once the dialog has closed', (
+    tester,
+  ) async {
+    final OwnController own = await open(tester, withCaptures);
+    final int waiting = own.pendingInbox.length;
+    Future<void> paste(String text, String button) async {
+      await tester.tap(find.text('Leer un pago'));
+      await settle(tester);
+      await tester.tap(find.text('Un mensaje que copiaste'));
+      await settle(tester);
+      await tester.enterText(find.byType(TextField), text);
+      await tester.tap(find.text(button));
+      // The dialog draws its field while it closes: the field still has
+      // its text then.
+      await settle(tester);
+    }
+
+    await paste(r'Nequi: Pagaste $32.000 en Rappi', 'Cancelar');
+    expect(tester.takeException(), isNull);
+    expect(own.pendingInbox, hasLength(waiting));
+
+    await paste(r'Nequi: Pagaste $32.000 en Rappi', 'Leer');
+    expect(tester.takeException(), isNull);
+    expect(find.text('Pegar un mensaje'), findsNothing);
+    expect(find.text('Quedó en Por revisar.'), findsOneWidget);
+    expect(own.pendingInbox, hasLength(waiting + 1));
+  });
+
   testWidgets('a narrow phone keeps the title whole and the name its room', (
     tester,
   ) async {

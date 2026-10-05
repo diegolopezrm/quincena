@@ -296,6 +296,11 @@ class CaptureService {
     ),
   );
 
+  /// Whether confirming [p] teaches where its institution's alerts go:
+  /// only an alert in the [base] currency, or with a bare `$`, does.
+  static bool teachesInstitution(ParsedCapture p, Asset? base) =>
+      p.asset == null || p.asset == (base ?? Asset.cop);
+
   /// Whether [p] can be recorded without asking. An account guessed only
   /// because it is the one in pesos is proposed, never assumed.
   static bool _clear(ParsedCapture p, Suggestion s) =>
@@ -502,7 +507,11 @@ class CaptureService {
       learn(RuleKind.merchant, key, category);
     }
     if (card != null) learn(RuleKind.card, card, accountId);
-    if (institution != null && card == null) {
+    // A charge in another currency went where that currency is kept: it
+    // says nothing about where the bank's other alerts go.
+    if (institution != null &&
+        card == null &&
+        teachesInstitution(item.parsed, (await store.profile())?.base)) {
       learn(RuleKind.institution, institution, accountId);
     }
     if (changes.isNotEmpty) await store.saveCaptureSettings(s);

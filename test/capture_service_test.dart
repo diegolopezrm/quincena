@@ -485,6 +485,38 @@ Fecha
       expect(next.suggestion.why, contains('learned'));
     });
 
+    test(
+      'a charge in another currency does not say where the bank goes',
+      () async {
+        final Account dollars = await store.addAccount(
+          name: 'Cuenta en dólares',
+          kind: AccountKind.bank,
+          asset: Asset.usd,
+          institution: 'Global66',
+        );
+        await capture.ingest(<CaptureEvent>[
+          push(r'Bancolombia le informa Compra por US$10,99 en SPOTIFY.'),
+        ]);
+        final Accepted done = await capture.accept(
+          (await pending()).single,
+          accountId: dollars.id,
+        );
+        expect(
+          done.learned.map((RuleChange c) => c.rule.kind),
+          isNot(contains(RuleKind.institution)),
+        );
+
+        // The bank's next alert, in pesos, still goes to its peso account.
+        await capture.ingest(<CaptureEvent>[
+          push(
+            r'Bancolombia le informa Pago por $89.900 a Claro',
+            at: now.add(const Duration(minutes: 5)),
+          ),
+        ]);
+        expect((await pending()).single.suggestion.accountId, bancolombia.id);
+      },
+    );
+
     test('confirming what a rule already says teaches nothing new', () async {
       await confirmFirst();
       await capture.ingest(<CaptureEvent>[bakery('9.500', day: 2)]);
