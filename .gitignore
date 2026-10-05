@@ -58,3 +58,4 @@ firebase-debug.log
 
 # Pictures tool/tour/run.sh takes of every screen, for review.
 capturas/
+test_screens/flows_out/
