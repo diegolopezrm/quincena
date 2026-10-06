@@ -933,7 +933,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String computedFooter(String time) {
-    return 'Cada cifra de la respuesta salió de estos cálculos, hechos en tu teléfono con tus datos de $time. Gemini solo los explica.';
+    return 'Cada cifra de la respuesta salió de estos cálculos, hechos en tu teléfono con tus datos de $time, y Gemini solo los explica.';
   }
 
   @override

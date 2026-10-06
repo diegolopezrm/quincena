@@ -480,8 +480,8 @@ class Session extends ChangeNotifier {
     _errors.clear();
     notifyListeners();
     // Through Quincena's project, each question counts against the day's.
-    final Allowance? day = allowance;
-    if (_mode == AgentMode.gemini && day != null && !await day.take()) {
+    final Allowance? day = _mode == AgentMode.gemini ? allowance : null;
+    if (day != null && !await day.take()) {
       turn.error = AnswerProblem.limit;
       _busy = false;
       notifyListeners();
@@ -525,6 +525,8 @@ class Session extends ChangeNotifier {
       // the device's logs.
       if (kDebugMode) debugPrint('The answer did not arrive: $error');
       turn.error = _explain(error, _mode);
+      // Only a question that got its answer counts against the day.
+      await day?.giveBack();
     }
     if (!turns.contains(turn)) return;
     // An action the script has no answer for leaves nothing to show.

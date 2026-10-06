@@ -1553,7 +1553,7 @@ abstract class AppLocalizations {
   /// No description provided for @computedFooter.
   ///
   /// In es, this message translates to:
-  /// **'Cada cifra de la respuesta salió de estos cálculos, hechos en tu teléfono con tus datos de {time}. Gemini solo los explica.'**
+  /// **'Cada cifra de la respuesta salió de estos cálculos, hechos en tu teléfono con tus datos de {time}, y Gemini solo los explica.'**
   String computedFooter(String time);
 
   /// No description provided for @computedOverview.

@@ -155,7 +155,9 @@ class _SettingsState extends State<_Settings> {
                   FirebaseGeminiClient.defaultModel,
                 ),
               }, style: context.type.bodySmall),
-              if (_mode == AgentMode.live && !live) ...<Widget>[
+              // Connected, it stays, so a key that did not work can be
+              // replaced where the notice about it sends the person.
+              if (_mode == AgentMode.live) ...<Widget>[
                 const SizedBox(height: 12),
                 TextField(
                   controller: _key,

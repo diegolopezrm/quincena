@@ -578,7 +578,10 @@ class ScriptedAgent {
     );
   }
 
-  AgentTurn _saved(Map<String, Object?> context) {
+  /// Saves the expense the form sent, unless its amount is one the form's
+  /// own checks turn down: then nothing is saved and nothing said, and the
+  /// form stays open with its message under the amount.
+  AgentTurn? _saved(Map<String, Object?> context) {
     final num amount = context['amount'] is num ? context['amount']! as num : 0;
     final Category category =
         Category.values
@@ -586,7 +589,7 @@ class ScriptedAgent {
             .firstOrNull ??
         Category.other;
     final String note = (context['note'] as String?)?.trim() ?? '';
-    if (amount <= 0) return _record(0, category);
+    if (amount <= 0 || amount > ledger.balance) return null;
 
     ledger.record(
       Movement(

@@ -62,4 +62,18 @@ class Allowance extends ChangeNotifier {
     notifyListeners();
     return true;
   }
+
+  /// Gives back a question [take] counted that got no answer, as when the
+  /// phone had no connection: every notice then asks to try again, and a
+  /// try that brought nothing is not one of the day's.
+  Future<void> giveBack() async {
+    final String today = _today;
+    if (_day != today || _used == 0) return;
+    _used--;
+    await store.setSetting(
+      _key,
+      jsonEncode(<String, Object>{'day': today, 'used': _used}),
+    );
+    notifyListeners();
+  }
 }
