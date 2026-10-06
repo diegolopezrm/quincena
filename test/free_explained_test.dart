@@ -43,13 +43,16 @@ void main() {
     String? cushion,
     bool fixed = true,
     Future<void> Function(QuincenaStore store)? data,
+    DateTime? since,
   }) async {
     tester.view.physicalSize = const Size(1170, 2532);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
+    // The accounts are written down at [since], today unless a test says.
+    DateTime clock = since ?? now;
     final QuincenaStore store = QuincenaStore(
       QuincenaDatabase(NativeDatabase.memory()),
-      now: () => now,
+      now: () => clock,
     );
     addTearDown(() => tester.runAsync(store.close));
     final OwnController own = OwnController(
@@ -108,6 +111,7 @@ void main() {
         );
       }
       await data?.call(store);
+      clock = now;
       await own.start();
     });
     await tester.pumpWidget(
@@ -290,11 +294,13 @@ void main() {
   testWidgets('the cushion is taken out, and a late pay is said', (
     tester,
   ) async {
-    // Paid on the 30th, nothing came in, and 100.000 kept untouched.
+    // Paid on the 30th, nothing came in since the accounts were written
+    // down on the 20th, and 100.000 kept untouched.
     final OwnController own = await open(
       tester,
       pay: '2400000',
       cushion: '100000',
+      since: DateTime(2026, 9, 20),
     );
     final Ledger ledger = own.ledger!;
     expect(ledger.freeUntilPayday, 2200000 - 26900 - 100000);

@@ -18,6 +18,8 @@ void main() {
   late QuincenaStore store;
   // Paid on the 15th and the 30th; today is the 3rd.
   final DateTime today = DateTime(2026, 10, 3);
+  // When the store writes things down: today unless a test says.
+  late DateTime clock;
 
   Future<void> profile({String? pay, String? cushion}) => store.saveProfile(
     Profile(
@@ -30,9 +32,10 @@ void main() {
   );
 
   setUp(() async {
+    clock = today;
     store = QuincenaStore(
       QuincenaDatabase(NativeDatabase.memory()),
-      now: () => today,
+      now: () => clock,
     );
     await store.ensureCategories();
     await profile();
@@ -189,7 +192,10 @@ void main() {
   );
 
   test('a pay that did not arrive is late, and expected tomorrow', () async {
+    // Written down on the 20th, before the payday.
+    clock = DateTime(2026, 9, 20);
     await bank('50000');
+    clock = today;
     await profile(pay: '2400000');
     // Paid on the 30th of September; it is the 3rd and nothing came in.
     final Projection late = Projection.of((await build()).ledger);
@@ -213,6 +219,24 @@ void main() {
     expect(paid.latePay, isNull);
   });
 
+  test('a payday before the balances were written down is not late: the '
+      'pay was already in them', () async {
+    // Set up on the 3rd, three days after the 30th, with no income since.
+    await bank('2450000');
+    await profile(pay: '2400000');
+    final Projection p = Projection.of((await build()).ledger);
+    expect(p.latePay, isNull);
+    expect(
+      p.days.expand((ProjectedDay d) => d.events).map((e) => e.kind),
+      isNot(contains(ProjectedKind.latePay)),
+    );
+
+    // The next payday is counted as ever, and it can be late in its turn.
+    final Projection later = Projection.of(
+      (await build(on: DateTime(2026, 10, 17))).ledger,
+    );
+    expect(later.latePay, DateTime(2026, 10, 15));
+  });
   test(
     'the cushion is left out of the free amount and marks tight days',
     () async {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -23,6 +25,7 @@ class AppSettings extends ChangeNotifier {
   set themeMode(ThemeMode value) {
     if (value == _themeMode) return;
     _themeMode = value;
+    unawaited(_store?.setSetting(_themeKey, value.name));
     notifyListeners();
   }
 
@@ -33,6 +36,25 @@ class AppSettings extends ChangeNotifier {
   set locale(Locale? value) {
     if (value == _locale) return;
     _locale = value;
+    unawaited(_store?.setSetting(_languageKey, value?.languageCode ?? ''));
+    notifyListeners();
+  }
+
+  QuincenaStore? _store;
+  static const String _themeKey = 'app.theme';
+  static const String _languageKey = 'app.language';
+
+  /// Takes the theme and the language chosen last time from [store], and
+  /// keeps every new choice there. They belong to this device: neither
+  /// travels in an export or to another device.
+  Future<void> keepIn(QuincenaStore store) async {
+    final String? theme = await store.setting(_themeKey);
+    final String? language = await store.setting(_languageKey);
+    _store = store;
+    for (final ThemeMode mode in ThemeMode.values) {
+      if (mode.name == theme) _themeMode = mode;
+    }
+    if (language != null && language.isNotEmpty) _locale = Locale(language);
     notifyListeners();
   }
 
@@ -110,6 +132,14 @@ class _QuincenaAppState extends State<QuincenaApp> {
           now: widget.now,
           market: widget.market,
         )..start());
+
+  @override
+  void initState() {
+    super.initState();
+    if (_modes?.store case final QuincenaStore store) {
+      unawaited(_settings.keepIn(store));
+    }
+  }
 
   @override
   void dispose() {

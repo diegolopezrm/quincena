@@ -20,7 +20,8 @@ Future<void> showSettings(
   context: context,
   showDragHandle: true,
   isScrollControlled: true,
-  backgroundColor: context.colors.surface,
+  // No color of its own: the theme's surface, read as the sheet draws, so
+  // it turns dark with the rest when the person picks dark in it.
   constraints: const BoxConstraints(maxWidth: 560),
   builder: (BuildContext context) => _Settings(
     settings: settings,

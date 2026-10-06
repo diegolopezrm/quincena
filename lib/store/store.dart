@@ -1431,6 +1431,16 @@ class QuincenaStore {
     }
   }
 
+  /// How this device opens and what it shows outside the app: kept when an
+  /// import replaces the data, never exported, never synced.
+  static const List<String> deviceSettings = <String>[
+    'app.mode',
+    'app.theme',
+    'app.language',
+    'reminders.close',
+    'widget.hideAmounts',
+  ];
+
   /// The settings an export carries.
   static const List<String> _exportedSettings = <String>[
     _captureKey,
@@ -1488,7 +1498,16 @@ class QuincenaStore {
         (r! as Map).cast<String, Object?>(),
     ];
     await db.transaction(() async {
+      // What belongs to this device and not to the data stays: no file
+      // carries it.
+      final Map<String, String> device = <String, String>{
+        for (final String key in deviceSettings)
+          if (await setting(key) case final String value) key: value,
+      };
       await _wipeTables();
+      for (final MapEntry<String, String> e in device.entries) {
+        await setSetting(e.key, e.value);
+      }
       await ensureCategories();
       final Object? profile = json['profile'];
       if (profile is Map) {
