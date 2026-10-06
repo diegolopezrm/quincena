@@ -81,6 +81,18 @@ class UnreachableModel implements ModelClient {
       );
 }
 
+/// A model whose answer arrives, and whose connection drops right after.
+class DroppedAfterAnswerModel implements ModelClient {
+  @override
+  Stream<String> send(
+    String prompt, {
+    required List<ChatMessage> history,
+  }) async* {
+    yield* OneSurfaceModel().send(prompt, history: history);
+    throw const SocketException('Connection reset by peer');
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final DateTime now = DateTime(2026, 10, 3, 10);
@@ -483,6 +495,29 @@ void main() {
       await again.load();
       expect(again.left, 2);
     });
+
+    test(
+      'a question whose answer arrived counts, though it failed after',
+      () async {
+        final Allowance allowance = Allowance(store, perDay: 2, now: () => now);
+        await allowance.load();
+        final Session session = Session(
+          mode: AgentMode.gemini,
+          client: DroppedAfterAnswerModel(),
+          errorWindow: Duration.zero,
+          ledgerOf: () => own.ledger!,
+          toolsFor: (_) => ownTools(own),
+          own: true,
+          allowance: allowance,
+        );
+        addTearDown(session.dispose);
+
+        await session.ask('¿Cuánto me queda libre?');
+        expect(session.turns.last.surfaceIds, isNotEmpty);
+        expect(session.turns.last.error, AnswerProblem.offline);
+        expect(allowance.left, 1);
+      },
+    );
   });
   test('can I buy it, what comes and the close, as tools', () async {
     final List<dartantic.Tool> tools = ledgerTools(demoLedger());

@@ -921,9 +921,9 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       }
       await f.tap('Otra pregunta');
       await f.step(
-        'Después de tres preguntas sin respuesta, «Otra pregunta» dice «Te '
-        'quedan 27 preguntas hoy»: las tres que no se respondieron se '
-        'contaron.',
+        'Después de tres preguntas sin respuesta, «Otra pregunta» sigue '
+        'diciendo «Te quedan 30 preguntas hoy»: las que no se respondieron '
+        'no se cuentan.',
       );
       await f.check(
         'Las preguntas que no se respondieron no gastan las del día: siguen '

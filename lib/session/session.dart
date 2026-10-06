@@ -574,8 +574,13 @@ class Session extends ChangeNotifier {
       // the device's logs.
       if (kDebugMode) debugPrint('The answer did not arrive: $error');
       turn.error = _explain(error, _mode);
-      // Only a question that got its answer counts against the day.
-      await day?.giveBack();
+      // Only a question that got its answer counts against the day: one
+      // that failed before anything of it arrived is given back. What did
+      // arrive is announced a moment after it is taken in.
+      if (day != null) {
+        await Future<void>.delayed(Duration.zero);
+        if (turn.surfaceIds.isEmpty && turn.text.isEmpty) await day.giveBack();
+      }
     }
     if (!turns.contains(turn)) return;
     // An action the script has no answer for leaves nothing to show.
