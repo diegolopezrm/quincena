@@ -320,6 +320,83 @@ void main() {
     );
   });
 
+  testWidgets('with nothing held, it offers the ways to bring crypto in', (
+    tester,
+  ) async {
+    await openCrypto(
+      tester,
+      FakeMarket(),
+      data: (QuincenaStore store) async {
+        // Everything sold: crypto accounts at zero hold nothing.
+        for (final Account a in await store.accounts()) {
+          await store.addEntry(
+            accountId: a.id,
+            amount: -a.opening,
+            kind: EntryKind.expense,
+            date: DateTime(2026, 10, 2),
+            cost: Money(Decimal.fromInt(1000), Asset.cop),
+          );
+        }
+      },
+    );
+    expect(
+      find.text(
+        'Aún no tienes cripto. Agrega una billetera o conecta Binance.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Tu cripto vale'), findsNothing);
+    // What the words name is there to tap.
+    expect(find.text('Billeteras propias'), findsOneWidget);
+    expect(find.text('Binance'), findsOneWidget);
+    await tester.tap(find.text('Billeteras propias'));
+    await settle(tester);
+    expect(find.text('Aún no sigues ninguna billetera.'), findsOneWidget);
+  });
+
+  testWidgets('the total is its coins added up, each as its row shows it', (
+    tester,
+  ) async {
+    final OwnController own = await openCrypto(
+      tester,
+      FakeMarket(
+        prices: const <String, (String, String)>{
+          'BTC': ('84616.92', '83102.40'),
+        },
+      ),
+      data: (QuincenaStore store) async {
+        await store.saveRates(<Rate>[
+          Rate(
+            asset: 'USD',
+            quote: 'COP',
+            value: Decimal.parse('3312.84'),
+            asOf: DateTime(2026, 10, 3),
+            source: 'trm',
+          ),
+        ]);
+        await store.addAccount(
+          name: 'Tether suelto',
+          kind: AccountKind.exchange,
+          asset: Asset.usdt,
+          opening: Decimal.parse('0.5'),
+          institution: 'Binance',
+          spendable: false,
+        );
+      },
+    );
+
+    // 2.803.223,17 + 1.656.420 + 1.656,42: each coin rounds to the peso in
+    // its row and in Cuentas, and the total adds those, not the cents
+    // under them, which would make it 4.461.300.
+    var rows = Decimal.zero;
+    for (final Account a in own.accounts) {
+      if (own.partOfTotal(a) case final Money part) rows += part.amount;
+    }
+    expect(rows, Decimal.parse('4461299'));
+    expect(find.text('\$4.461.299'), findsOneWidget);
+    expect(find.text('\$4.461.300'), findsNothing);
+  });
+
   testWidgets('it says where the prices and the dollar come from, and when', (
     tester,
   ) async {

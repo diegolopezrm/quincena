@@ -31,7 +31,7 @@ class AccountPage extends StatelessWidget {
         final AppLocalizations l = context.l10n;
         final Account? account = own.snapshot?.account(accountId);
         if (account == null) {
-          // Deleted from its own sheet: nothing left to show.
+          // Deleted while its sheet is still closing: nothing left to show.
           return Scaffold(appBar: AppBar(), body: const SizedBox.shrink());
         }
         final Money balance = own.balances[account.id] ?? account.openingMoney;
@@ -73,8 +73,20 @@ class AccountPage extends StatelessWidget {
                 ),
               IconButton(
                 tooltip: l.editAccount,
-                onPressed: () =>
-                    showAccountSheet(context, own: own, account: account),
+                onPressed: () async {
+                  final Account? saved = await showAccountSheet(
+                    context,
+                    own: own,
+                    account: account,
+                  );
+                  if (saved != null) return;
+                  // Deleted from the sheet: back to where it was opened
+                  // from, not to an empty page.
+                  final bool gone = !(await own.store.accounts(
+                    archived: true,
+                  )).any((Account a) => a.id == accountId);
+                  if (gone && context.mounted) Navigator.of(context).pop();
+                },
                 icon: const Icon(Glyph.pencilSimple),
               ),
             ],

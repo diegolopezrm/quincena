@@ -363,7 +363,12 @@ class _BinancePageState extends State<BinancePage> {
     final DateTime? at = link.syncedAt;
     final SyncReport? report = link.report;
     final String? problem = _syncMessage(l);
-    final List<Account> manual = _manual;
+    // Kept by hand, they count twice only once Binance brought its own:
+    // before that, archiving them would only take them off the totals.
+    final bool brought = widget.own.accounts.any(
+      (Account a) => a.syncRef?.startsWith(BinanceSync.prefix) ?? false,
+    );
+    final List<Account> manual = brought ? _manual : const <Account>[];
     return <Widget>[
       Row(
         children: <Widget>[

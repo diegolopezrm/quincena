@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -68,6 +69,7 @@ void main() {
     WidgetTester tester, {
     (String, String)? keys,
     bool trading = false,
+    Future<void> Function(QuincenaStore store)? data,
   }) async {
     tester.view.physicalSize = const Size(1170, 2532);
     tester.view.devicePixelRatio = 3;
@@ -100,6 +102,7 @@ void main() {
       await store.saveProfile(
         const Profile(name: 'Diego', base: Asset.cop, schedule: TwiceMonthly()),
       );
+      await data?.call(store);
       await own.start();
     });
     await tester.pumpWidget(
@@ -176,6 +179,47 @@ void main() {
     expect(find.text('Leer ahora'), findsOneWidget);
     expect(find.text('Desconectar'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('balances kept by hand are offered to archive only once '
+      'Binance brought its own', (tester) async {
+    Future<void> handKept(QuincenaStore store) async {
+      await store.addAccount(
+        name: 'Mi USDT',
+        kind: AccountKind.exchange,
+        asset: Asset.usdt,
+        opening: Decimal.fromInt(500),
+        institution: 'Binance',
+        spendable: false,
+      );
+    }
+
+    // Connected, but nothing read yet: archiving would only take the
+    // balance off every total.
+    final (OwnController own, MemoryVault _) = await open(
+      tester,
+      keys: ('key', 'secret'),
+      data: handKept,
+    );
+    expect(own.binance.connected, isTrue);
+    expect(find.text('Archivarlas'), findsNothing);
+    expect(find.textContaining('llevabas a mano'), findsNothing);
+
+    // Once Binance brought the same coin, it would count twice.
+    await tester.runAsync(
+      () => own.store.addAccount(
+        name: 'Tether (USDT)',
+        kind: AccountKind.exchange,
+        asset: Asset.usdt,
+        opening: Decimal.fromInt(500),
+        institution: 'Binance',
+        spendable: false,
+        syncRef: 'binance:USDT',
+      ),
+    );
+    await settle(tester);
+    expect(find.textContaining('llevabas a mano: Mi USDT'), findsOneWidget);
+    expect(find.text('Archivarlas'), findsOneWidget);
   });
 }
 

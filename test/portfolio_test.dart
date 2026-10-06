@@ -168,6 +168,54 @@ void main() {
       expect(bitcoin.moved24h!.usd, d('200'));
     });
 
+    test('a price typed by hand is the one used, as in every total', () {
+      final StoreSnapshot plain = snapshot();
+      final List<Rate> rates = <Rate>[
+        ...plain.rates,
+        Rate(
+          asset: 'BTC',
+          quote: 'USD',
+          value: d('90000'),
+          asOf: DateTime(2026, 10, 2),
+          source: 'manual',
+          manual: true,
+        ),
+      ];
+      final Portfolio mine = buildPortfolio(
+        StoreSnapshot(
+          profile: plain.profile,
+          accounts: plain.accounts,
+          entries: plain.entries,
+          recurring: plain.recurring,
+          goals: plain.goals,
+          rates: rates,
+          categories: plain.categories,
+        ),
+        tickers: <String, Ticker>{
+          'BTC': Ticker(
+            asset: 'BTC',
+            price: d('100000'),
+            open: d('80000'),
+            high: d('100000'),
+            low: d('80000'),
+            at: DateTime(2026, 10, 2, 12),
+          ),
+        },
+        history: DollarHistory(<Rate>[trm('4000', march)]),
+      );
+      final Holding bitcoin = mine.holdings.first;
+      // 0,01 at 90.000 dollars, at 4.000 pesos each, not at the market's
+      // 100.000: what the accounts' totals say too.
+      expect(bitcoin.price!.usd, d('90000'));
+      expect(bitcoin.value, Pair(d('3600000'), d('900')));
+      expect(
+        RateTable(
+          rates,
+        ).convert(Money(d('0.01'), Asset.btc), Asset.cop)!.amount,
+        bitcoin.value!.base,
+      );
+    });
+
     test('adds up what has a price, and names what does not', () {
       expect(p.value, Pair(d('5000000'), d('1250')));
       expect(p.cost.base, d('4000000'));

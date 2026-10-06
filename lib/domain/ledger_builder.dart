@@ -145,9 +145,14 @@ LedgerBuild buildLedger(
   // Two months of charges ahead: those by payday are committed, the rest
   // are for projections.
   final DateTime horizon = today.add(const Duration(days: 62));
+  // A charge whose account was deleted is still the person's to pay, from
+  // some account: it counts, as one with no account does. Only an account
+  // kept apart from spending, or archived, takes it out.
+  bool charged(String? id) =>
+      id == null || !accounts.containsKey(id) || spendable(id);
   final List<Movement> upcoming = <Movement>[
     for (final RecurringCharge r in s.recurring)
-      if (r.active && (r.accountId == null || spendable(r.accountId)))
+      if (r.active && charged(r.accountId))
         for (final DateTime d in r.datesUntil(horizon))
           if (d.isAfter(today))
             Movement(
@@ -219,6 +224,26 @@ LedgerBuild buildLedger(
     final String? account = accountOf[m.id];
     if (account == null || !ledger.settled(m)) continue;
     parts[account] = (parts[account] ?? 0) + Ledger.effect(m);
+  }
+  // A transfer between two of them, as paying a card from the bank, takes
+  // nothing from the money to spend but moves it from one part to the
+  // other: what left the one is what the other gets, so they still add up.
+  for (final List<Entry> legs in byTransfer.values) {
+    if (legs.length != 2 || legs.any((Entry e) => e.isTrade)) continue;
+    final Entry from = legs[0].amount < Decimal.zero ? legs[0] : legs[1];
+    final Entry to = identical(from, legs[0]) ? legs[1] : legs[0];
+    if (!spendable(from.accountId) || !spendable(to.accountId)) continue;
+    final DateTime day = DateTime(
+      from.date.year,
+      from.date.month,
+      from.date.day,
+    );
+    if (day.isAfter(today)) continue;
+    final int moved = inBase(
+      Money(from.amount.abs(), accounts[from.accountId]!.asset),
+    );
+    parts[from.accountId] = (parts[from.accountId] ?? 0) - moved;
+    parts[to.accountId] = (parts[to.accountId] ?? 0) + moved;
   }
   return LedgerBuild(ledger, unconverted, parts);
 }

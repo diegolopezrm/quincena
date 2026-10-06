@@ -272,10 +272,39 @@ class _PortfolioPageState extends State<PortfolioPage> {
         builder: (BuildContext context, _) {
           final Portfolio? p = _controller.portfolio;
           if (p == null) return const SizedBox.shrink();
+          // Where the balances come from, to connect or follow more: after
+          // the coins, or, with none yet, under the words that name them.
+          final Widget sources = Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              SectionLabel(l.portfolioSources),
+              Panel(
+                children: <Widget>[
+                  if (BinanceLink.available)
+                    BinanceCard(own: widget.own, compact: true),
+                  WalletsRow(own: widget.own),
+                ],
+              ),
+            ],
+          );
           if (p.isEmpty) {
-            return Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(l.portfolioEmpty, style: context.type.bodyMedium),
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 760),
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(4, 0, 4, 24),
+                      child: Text(
+                        l.portfolioEmpty,
+                        style: context.type.bodyMedium,
+                      ),
+                    ),
+                    sources,
+                  ],
+                ),
+              ),
             );
           }
           return RefreshIndicator(
@@ -315,16 +344,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                     const SizedBox(height: 4),
                     _Allocation(portfolio: p),
                     const SizedBox(height: 24),
-                    // Where the balances come from, to connect or follow
-                    // more: after what they show.
-                    SectionLabel(l.portfolioSources),
-                    Panel(
-                      children: <Widget>[
-                        if (BinanceLink.available)
-                          BinanceCard(own: widget.own, compact: true),
-                        WalletsRow(own: widget.own),
-                      ],
-                    ),
+                    sources,
                     const SizedBox(height: 24),
                     _Notes(portfolio: p),
                   ],
@@ -355,17 +375,33 @@ class _Hero extends StatelessWidget {
     final double? gainRatio = p.gainRatio;
     final Pair uncosted = p.uncostedValue;
     final ({Pair moved, double change})? day = controller.day;
+    // Each coin rounded first, as its row shows it and as Cuentas adds it,
+    // so the total is the sum of the rows and the same figure in both.
+    Decimal total(Decimal Function(Pair value) of, int decimals) =>
+        p.priced.fold(
+          Decimal.zero,
+          (Decimal sum, Holding h) => sum + of(h.value!).round(scale: decimals),
+        );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Headline(
           caption: l.portfolioWorth,
-          value: moneyText(Money(p.value.base, base), base: base),
+          value: moneyText(
+            Money(total((Pair v) => v.base, base.decimals), base),
+            base: base,
+          ),
           // Dollars and coins share the page: the total says its currency.
           unit: base,
           detail: base.code == 'USD'
               ? null
-              : moneyText(Money(p.value.usd, Asset.usd), base: base),
+              : moneyText(
+                  Money(
+                    total((Pair v) => v.usd, Asset.usd.decimals),
+                    Asset.usd,
+                  ),
+                  base: base,
+                ),
         ),
         const SizedBox(height: 6),
         _PriceStatus(controller: controller, base: base),

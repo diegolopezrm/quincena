@@ -95,6 +95,7 @@ class _AccountFormState extends State<_AccountForm> {
   late bool _spendable = _editing?.spendable ?? _kind.spendableByDefault;
   bool _spendableTouched = false;
   bool _other = false;
+  String? _otherError;
   String? _nameError;
   String? _balanceError;
   bool _saving = false;
@@ -108,6 +109,15 @@ class _AccountFormState extends State<_AccountForm> {
     final Decimal value = _currentBalance.amount;
     final Decimal shown = _editing!.kind == AccountKind.card ? -value : value;
     return formatDecimal(shown, decimals: _editing.asset.decimals, trim: true);
+  }
+
+  /// Today's balance as the form showed it on opening.
+  late final String _shownBalance;
+
+  @override
+  void initState() {
+    super.initState();
+    _shownBalance = _balance.text;
   }
 
   @override
@@ -149,13 +159,18 @@ class _AccountFormState extends State<_AccountForm> {
         card &&
         _limit.text.trim().isNotEmpty &&
         (limit == null || limit <= Decimal.zero);
+    // Another crypto needs its ticker: without one the account would be
+    // made in the base currency, as if no crypto had been picked.
+    final bool noTicker = _other && _otherAsset.text.trim().isEmpty;
     setState(() {
       _nameError = name.isEmpty ? l.accountNameHint : null;
+      _otherError = noTicker ? l.assetOtherHint : null;
       _balanceError = typed == null ? l.invalidAmount : null;
       _costError = costInvalid ? l.invalidAmount : null;
       _limitError = limitInvalid ? l.invalidAmount : null;
     });
     if (_nameError != null ||
+        noTicker ||
         typed == null ||
         costInvalid ||
         limitInvalid ||
@@ -185,8 +200,13 @@ class _AccountFormState extends State<_AccountForm> {
         institution: _institution.text,
         spendable: _spendable,
         // The person corrected today's balance: the opening absorbs the
-        // difference, and the movements stay as they were.
-        opening: _editing.opening + (balance - _currentBalance.amount),
+        // difference, and the movements stay as they were. Left as it was
+        // shown, it stays as it is: a card's credit in the person's favor
+        // shows below zero, and saving another change must not make it a
+        // debt.
+        opening: _balance.text == _shownBalance
+            ? _editing.opening
+            : _editing.opening + (balance - _currentBalance.amount),
         openingCost: openingCost,
         clearOpeningCost: openingCost == null,
         creditLimit: limit,
@@ -196,6 +216,18 @@ class _AccountFormState extends State<_AccountForm> {
       saved = edited;
     }
     if (mounted) Navigator.of(context).pop(saved);
+  }
+
+  /// Takes a field's error away, redrawing only when there was one.
+  void _clear(VoidCallback error) {
+    if (_nameError == null &&
+        _otherError == null &&
+        _balanceError == null &&
+        _limitError == null &&
+        _costError == null) {
+      return;
+    }
+    setState(error);
   }
 
   Future<void> _delete() async {
@@ -249,10 +281,13 @@ class _AccountFormState extends State<_AccountForm> {
               style: context.type.headlineMedium,
             ),
             const SizedBox(height: 20),
+            // A field's error goes as soon as it is typed again: left there,
+            // it would still say the name is missing once it is written.
             TextField(
               controller: _name,
               autofocus: !editing && widget.draft == null,
               textCapitalization: TextCapitalization.sentences,
+              onChanged: (_) => _clear(() => _nameError = null),
               decoration: InputDecoration(
                 labelText: l.accountName,
                 hintText: l.accountNameHint,
@@ -290,11 +325,12 @@ class _AccountFormState extends State<_AccountForm> {
                 asset: _asset,
                 other: _other,
                 otherController: _otherAsset,
+                otherError: _otherError,
                 onChanged: (Asset? a) => setState(() {
                   _other = a == null;
                   if (a != null) _asset = a;
                 }),
-                onOtherChanged: () => setState(() {}),
+                onOtherChanged: () => setState(() => _otherError = null),
               ),
             const SizedBox(height: 16),
             TextField(
@@ -311,6 +347,7 @@ class _AccountFormState extends State<_AccountForm> {
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
+              onChanged: (_) => _clear(() => _balanceError = null),
               decoration: InputDecoration(
                 labelText: _kind == AccountKind.card
                     ? l.accountDebtNow
@@ -329,6 +366,7 @@ class _AccountFormState extends State<_AccountForm> {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
+                onChanged: (_) => _clear(() => _limitError = null),
                 decoration: InputDecoration(
                   labelText: l.cardLimitField,
                   helperText: l.cardLimitHelp,
@@ -345,6 +383,7 @@ class _AccountFormState extends State<_AccountForm> {
                 asset: _costAsset,
                 choices: <Asset>{_defaultAsset, Asset.usd}.toList(),
                 error: _costError,
+                onChanged: () => _clear(() => _costError = null),
                 onAsset: (Asset a) => setState(() => _costAsset = a),
               ),
             ],
@@ -394,6 +433,7 @@ class _OpeningCost extends StatelessWidget {
     required this.asset,
     required this.choices,
     required this.error,
+    required this.onChanged,
     required this.onAsset,
   });
 
@@ -401,6 +441,7 @@ class _OpeningCost extends StatelessWidget {
   final Asset asset;
   final List<Asset> choices;
   final String? error;
+  final VoidCallback onChanged;
   final ValueChanged<Asset> onAsset;
 
   @override
@@ -415,6 +456,7 @@ class _OpeningCost extends StatelessWidget {
             AmountInputFormatter(maxDecimals: asset.decimals),
           ],
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          onChanged: (_) => onChanged(),
           decoration: InputDecoration(
             labelText: l.accountOpeningCost,
             helperText: l.accountOpeningCostHelp,
@@ -489,11 +531,15 @@ class _AssetPicker extends StatelessWidget {
     required this.otherController,
     required this.onChanged,
     required this.onOtherChanged,
+    this.otherError,
   });
 
   final Asset asset;
   final bool other;
   final TextEditingController otherController;
+
+  /// What is wrong with the ticker typed, if anything.
+  final String? otherError;
 
   /// Null means "another crypto", typed below.
   final ValueChanged<Asset?> onChanged;
@@ -543,7 +589,10 @@ class _AssetPicker extends StatelessWidget {
             controller: otherController,
             textCapitalization: TextCapitalization.characters,
             onChanged: (_) => onOtherChanged(),
-            decoration: InputDecoration(labelText: l.assetOtherHint),
+            decoration: InputDecoration(
+              labelText: l.assetOtherHint,
+              errorText: otherError,
+            ),
           ),
         ],
       ],

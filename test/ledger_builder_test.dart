@@ -299,6 +299,97 @@ void main() {
     expect(l.freeUntilPayday, 4158000 - 1696900);
   });
 
+  test(
+    'paying a card from the bank moves their parts, not the total',
+    () async {
+      final Account bank = await store.addAccount(
+        name: 'Bancolombia',
+        kind: AccountKind.bank,
+        asset: Asset.cop,
+        opening: d('1000000'),
+      );
+      final Account card = await store.addAccount(
+        name: 'Visa',
+        kind: AccountKind.card,
+        asset: Asset.cop,
+        opening: d('-300000'),
+      );
+      final Account nequi = await store.addAccount(
+        name: 'Nequi',
+        kind: AccountKind.wallet,
+        asset: Asset.cop,
+        opening: d('0'),
+      );
+      await store.addTransfer(
+        fromAccountId: bank.id,
+        toAccountId: card.id,
+        sent: d('300000'),
+        date: DateTime(2026, 10, 2),
+      );
+      // A top-up dated ahead has not moved anything yet.
+      await store.addTransfer(
+        fromAccountId: bank.id,
+        toAccountId: nequi.id,
+        sent: d('50000'),
+        date: DateTime(2026, 10, 10),
+      );
+
+      final LedgerBuild built = buildLedger(
+        (await store.snapshot())!,
+        today: today,
+      );
+      expect(built.parts, <String, int>{
+        bank.id: 700000,
+        card.id: 0,
+        nequi.id: 0,
+      });
+      expect(
+        built.parts.values.fold(0, (int sum, int v) => sum + v),
+        built.ledger.balance,
+      );
+    },
+  );
+
+  test('a charge whose card was deleted is still to be paid', () async {
+    await store.addAccount(
+      name: 'Bancolombia',
+      kind: AccountKind.bank,
+      asset: Asset.cop,
+      opening: d('1000000'),
+    );
+    final Account card = await store.addAccount(
+      name: 'Visa',
+      kind: AccountKind.card,
+      asset: Asset.cop,
+    );
+    final Account kept = await store.addAccount(
+      name: 'Ahorros',
+      kind: AccountKind.bank,
+      asset: Asset.cop,
+      spendable: false,
+    );
+    await store.addRecurring(
+      name: 'Netflix',
+      amount: Money(d('26900'), Asset.cop),
+      cadence: Cadence.monthly,
+      nextDate: DateTime(2026, 10, 12),
+      accountId: card.id,
+    );
+    await store.addRecurring(
+      name: 'Seguro',
+      amount: Money(d('50000'), Asset.cop),
+      cadence: Cadence.monthly,
+      nextDate: DateTime(2026, 10, 10),
+      accountId: kept.id,
+    );
+    expect((await ledger()).committedUntilPayday, 26900);
+
+    await store.deleteAccount(card.id);
+    // Netflix still comes before payday; what is paid from savings, not.
+    expect((await ledger()).committedUntilPayday, 26900);
+    expect((await ledger()).freeUntilPayday, 1000000 - 26900);
+  });
+
   test('a subscription says when it is charged next, by its cadence', () async {
     await store.addRecurring(
       name: 'Dominio',

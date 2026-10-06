@@ -121,6 +121,12 @@ class _TradeFormState extends State<_TradeForm> {
     final AppLocalizations l = context.l10n;
     final Decimal? quantity = parseAmount(_quantity.text);
     final Decimal? total = parseAmount(_total.text);
+    // Crypto paid from one of the person's coins cannot be more than that
+    // coin holds: an exchange or a wallet does not lend.
+    final Account? payer = sell ? null : _otherAccount;
+    final Money? payerHeld = payer == null || !payer.asset.isCrypto
+        ? null
+        : own.balances[payer.id] ?? payer.openingMoney;
     setState(() {
       _quantityError = quantity == null || quantity <= Decimal.zero
           ? l.invalidAmount
@@ -129,6 +135,8 @@ class _TradeFormState extends State<_TradeForm> {
                 : null);
       _totalError = total == null || total <= Decimal.zero
           ? l.invalidAmount
+          : payerHeld != null && total > payerHeld.amount
+          ? l.tradeNotEnough(moneyText(payerHeld, base: own.profile?.base))
           : null;
     });
     if (_quantityError != null || _totalError != null || _saving) return;
@@ -211,6 +219,8 @@ class _TradeFormState extends State<_TradeForm> {
               ],
             ),
             const SizedBox(height: 20),
+            // A field's error goes as soon as it is typed again: left there,
+            // it would also hide the price per unit worked out below.
             TextField(
               controller: _quantity,
               autofocus: true,
@@ -220,7 +230,7 @@ class _TradeFormState extends State<_TradeForm> {
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) => setState(() => _quantityError = null),
               decoration: InputDecoration(
                 labelText: l.tradeQuantity(account.asset.code),
                 suffixText: account.asset.code,
@@ -262,7 +272,7 @@ class _TradeFormState extends State<_TradeForm> {
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) => setState(() => _totalError = null),
               decoration: InputDecoration(
                 labelText: sell ? l.tradeReceived : l.tradePaid,
                 suffixText: _totalAsset.code,

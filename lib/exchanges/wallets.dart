@@ -420,6 +420,10 @@ class WalletLink extends ChangeNotifier {
       for (final WalletAddress w in _wallets)
         if (w != wallet) w,
     ];
+    // What could not be read of it is no news once it is not followed.
+    if (!_wallets.any((WalletAddress w) => w.address == _failed)) {
+      _failed = null;
+    }
     await _save();
     notifyListeners();
   }
@@ -451,7 +455,9 @@ class WalletLink extends ChangeNotifier {
           _failed = w.address;
         }
       }
-      _syncedAt = _now();
+      // When they were read is when every one of them was: a read that
+      // failed leaves the last good one, and the balances it brought.
+      if (_failed == null) _syncedAt = _now();
       await _save();
     } finally {
       reader.close();
