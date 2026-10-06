@@ -2636,18 +2636,23 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       });
       phone.toPick.add(await _read(f, there.export));
       await f.tap('Abrir un archivo de otro dispositivo');
+      // Right after the tap, before the picture takes its time: queued, the
+      // notice before would still be the one showing.
+      await f.check(
+        'Al momento, el aviso es el de este archivo y no el de antes',
+        () {
+          expect(f.shows('Ya estaba todo al día.'), isTrue);
+          expect(f.shows('Listo: un cambio.'), isFalse);
+          expect(find.byType(SnackBar), findsOneWidget);
+        },
+      );
       await f.step(
         'Abrir enseguida otra vez un archivo con lo mismo no duplica nada, y '
         'el aviso cambia al momento: «Ya estaba todo al día.»',
       );
-      await f.check(
-        'Nada se duplicó y lo dice, en lugar del aviso de antes',
-        () {
-          expect(_own(f).snapshot!.entries, hasLength(mine + 1));
-          expect(f.shows('Ya estaba todo al día.'), isTrue);
-          expect(f.shows('Listo: un cambio.'), isFalse);
-        },
-      );
+      await f.check('Nada se duplicó', () {
+        expect(_own(f).snapshot!.entries, hasLength(mine + 1));
+      });
       await f.back();
       await f.back();
       await f.check(
@@ -3046,6 +3051,16 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         ),
       );
       await f.tap('Importar un archivo');
+      // Right after the tap, before the picture takes its time: queued, the
+      // notice about the other file would still be the one showing.
+      await f.check('Al momento, el aviso es el de este archivo', () {
+        expect(f.screenText, contains('Actualiza la app'));
+        expect(
+          f.screenText,
+          isNot(contains('Ese archivo no lo exportó Quincena.')),
+        );
+        expect(find.byType(SnackBar), findsOneWidget);
+      });
       await f.step(
         'Enseguida, uno de una Quincena más nueva: el aviso cambia al momento '
         'a «Actualiza la app y vuelve a intentarlo; no se cambió nada.»',
@@ -3053,13 +3068,6 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.check('Un archivo más nuevo no cambia nada', () {
         expect(f.screenText, contains('Actualiza la app'));
         expect(_own(f).snapshot!.entries, hasLength(entries));
-      });
-      await f.check('El aviso del archivo anterior ya no está, ni espera', () {
-        expect(
-          f.screenText,
-          isNot(contains('Ese archivo no lo exportó Quincena.')),
-        );
-        expect(find.byType(SnackBar), findsOneWidget);
       });
       // One that looks whole but breaks halfway in.
       phone.toPick.add(
