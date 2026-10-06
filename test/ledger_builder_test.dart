@@ -390,6 +390,44 @@ void main() {
     expect((await ledger()).freeUntilPayday, 1000000 - 26900);
   });
 
+  test('a card paid in part from the bank keeps what is still owed', () async {
+    final Account bank = await store.addAccount(
+      name: 'Bancolombia',
+      kind: AccountKind.bank,
+      asset: Asset.cop,
+      opening: d('1000000'),
+    );
+    final Account visa = await store.addAccount(
+      name: 'Visa',
+      kind: AccountKind.card,
+      asset: Asset.cop,
+      opening: d('-480000'),
+    );
+    await store.addTransfer(
+      fromAccountId: bank.id,
+      toAccountId: visa.id,
+      sent: d('300000'),
+      date: DateTime(2026, 10, 2),
+    );
+    // One still to come moves nothing yet.
+    await store.addTransfer(
+      fromAccountId: bank.id,
+      toAccountId: visa.id,
+      sent: d('100000'),
+      date: DateTime(2026, 10, 9),
+    );
+
+    final LedgerBuild built = buildLedger(
+      (await store.snapshot())!,
+      today: today,
+    );
+    expect(built.parts, <String, int>{bank.id: 700000, visa.id: -180000});
+    expect(
+      built.parts.values.fold(0, (int sum, int v) => sum + v),
+      built.ledger.balance,
+    );
+  });
+
   test('a subscription says when it is charged next, by its cadence', () async {
     await store.addRecurring(
       name: 'Dominio',

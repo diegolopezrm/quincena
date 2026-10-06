@@ -417,8 +417,16 @@ class _InboxCardState extends State<InboxCard> {
   OwnController get own => widget.own;
   InboxItem get item => widget.item;
 
+  /// The movement an automatic record made, as it stands now: the person
+  /// may have corrected it since.
+  Entry? get _made {
+    if (item.status != InboxStatus.accepted) return null;
+    final String? id = item.entryId;
+    return own.snapshot?.entries.where((Entry e) => e.id == id).firstOrNull;
+  }
+
   Account? get _account {
-    final String? id = item.suggestion.accountId;
+    final String? id = _made?.accountId ?? item.suggestion.accountId;
     for (final Account a in own.accounts) {
       if (a.id == id) return a;
     }
@@ -478,6 +486,7 @@ class _InboxCardState extends State<InboxCard> {
               ? null
               : l.pickAccountCardNote(card)
         : institution != null &&
+              CaptureService.teachesInstitution(p, own.profile?.base) &&
               !off.contains(CaptureRule.idOf(RuleKind.institution, institution))
         ? l.pickAccountBankNote(institution)
         : null;
@@ -523,10 +532,7 @@ class _InboxCardState extends State<InboxCard> {
 
   /// The movement an automatic record made, to correct it in place.
   Future<void> _fix() async {
-    final String? id = item.entryId;
-    final Entry? entry = own.snapshot?.entries
-        .where((Entry e) => e.id == id)
-        .firstOrNull;
+    final Entry? entry = _made;
     if (entry == null) return;
     await showEntrySheet(context, own: own, entry: entry);
   }
@@ -640,14 +646,23 @@ class _InboxCardState extends State<InboxCard> {
     final AppLocalizations l = context.l10n;
     final InboxItem i = item;
     final Account? account = _account;
+    // What was recorded shows as it is now, corrected or not; what waits
+    // shows what the app read.
+    final Entry? made = _made;
     // A bare `$` with no account yet reads as the base currency.
-    final Asset? asset = i.parsed.asset ?? account?.asset ?? own.profile?.base;
-    final Decimal? amount = i.parsed.amount;
-    final EntryKind? kind = i.parsed.kind;
-    final bool income = kind == EntryKind.income;
+    final Asset? asset = made != null
+        ? account?.asset
+        : i.parsed.asset ?? account?.asset ?? own.profile?.base;
+    final Decimal? amount = made?.amount.abs() ?? i.parsed.amount;
+    final EntryKind? kind = made?.kind ?? i.parsed.kind;
+    final bool income = made != null
+        ? made.amount > Decimal.zero
+        : kind == EntryKind.income;
     // What recording it saves, also when the app found no category.
     final String category =
-        i.suggestion.category ?? (income ? 'other_income' : 'other');
+        made?.category ??
+        i.suggestion.category ??
+        (income ? 'other_income' : 'other');
     final String categoryName = categoryNameFor(
       context,
       category,
@@ -659,18 +674,22 @@ class _InboxCardState extends State<InboxCard> {
     final bool recorded = i.status == InboxStatus.accepted;
     final bool waiting = !repeat && !recorded;
     final String payee =
-        i.suggestion.payee ?? i.parsed.merchant ?? l.noMerchant;
+        (made == null || made.payee.isEmpty ? null : made.payee) ??
+        i.suggestion.payee ??
+        i.parsed.merchant ??
+        l.noMerchant;
     // When the payment happened, as the receipt says, not when it was
     // shared.
-    final DateTime when = i.parsed.when ?? i.event.at;
+    final DateTime when = made?.date ?? i.parsed.when ?? i.event.at;
     final String amountText = amount == null
         ? '—'
         : asset == null
         ? formatDecimal(amount, decimals: 2, trim: true)
+        // Which way it went is not known yet: no sign either.
         : moneyText(
-            Money(income ? amount : -amount, asset),
+            Money(income || kind == null ? amount : -amount, asset),
             base: own.profile?.base,
-            signed: true,
+            signed: kind != null,
           );
     final Color amountColor = income
         ? context.colors.positive
@@ -996,33 +1015,11 @@ Future<void> showPasteDialog(BuildContext context, OwnController own) async {
   final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
   final ClipboardData? clip = await Clipboard.getData(Clipboard.kTextPlain);
   if (!context.mounted) return;
-  final TextEditingController text = TextEditingController(
-    text: clip?.text?.trim() ?? '',
-  );
   final String? typed = await showDialog<String>(
     context: context,
-    builder: (BuildContext context) => AlertDialog(
-      title: Text(l.pasteMessage),
-      content: TextField(
-        controller: text,
-        autofocus: true,
-        minLines: 3,
-        maxLines: 6,
-        decoration: InputDecoration(hintText: l.pasteHint),
-      ),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l.cancel),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(text.text),
-          child: Text(l.pasteRead),
-        ),
-      ],
-    ),
+    builder: (BuildContext context) =>
+        _PasteDialog(initial: clip?.text?.trim() ?? ''),
   );
-  text.dispose();
   if (typed == null || typed.trim().isEmpty) return;
   final IngestReport r = await own.ingestText(typed.trim());
   messenger.showSnackBar(
@@ -1038,4 +1035,53 @@ Future<void> showPasteDialog(BuildContext context, OwnController own) async {
       ),
     ),
   );
+}
+
+/// Where the person pastes a message. It owns its controller, so the field
+/// can still draw while the dialog closes.
+class _PasteDialog extends StatefulWidget {
+  const _PasteDialog({required this.initial});
+
+  /// What the clipboard held when it opened.
+  final String initial;
+
+  @override
+  State<_PasteDialog> createState() => _PasteDialogState();
+}
+
+class _PasteDialogState extends State<_PasteDialog> {
+  late final TextEditingController _text = TextEditingController(
+    text: widget.initial,
+  );
+
+  @override
+  void dispose() {
+    _text.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    return AlertDialog(
+      title: Text(l.pasteMessage),
+      content: TextField(
+        controller: _text,
+        autofocus: true,
+        minLines: 3,
+        maxLines: 6,
+        decoration: InputDecoration(hintText: l.pasteHint),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_text.text),
+          child: Text(l.pasteRead),
+        ),
+      ],
+    );
+  }
 }

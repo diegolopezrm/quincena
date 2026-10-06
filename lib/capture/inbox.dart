@@ -319,8 +319,9 @@ enum RuleKind {
 }
 
 /// Something the app learned from what the person confirmed, as a rule
-/// they can read, change or turn off. A rule only shapes what arrives
-/// after it: nothing already recorded changes with it.
+/// they can read, change or turn off. A rule shapes what arrives after it
+/// and what still waits for its account: nothing already recorded changes
+/// with it.
 @immutable
 class CaptureRule {
   const CaptureRule({

@@ -634,7 +634,7 @@
   "ruleCardKey": "Tarjeta *{digits}",
   "@ruleCardKey": {"placeholders": {"digits": {"type": "String"}}},
   "rulesTitle": "Reglas aprendidas",
-  "rulesBody": "Se crean cuando registras algo en Por revisar. Una regla solo cambia lo que llegue después: lo ya registrado se queda como está.",
+  "rulesBody": "Se crean cuando registras algo en Por revisar. Una regla cambia lo que llegue después y lo que aún espera ahí: lo ya registrado se queda como está.",
   "rulesEmpty": "Todavía no hay reglas. Aparecen cuando registras tus primeros movimientos.",
   "rulesMerchants": "Comercios",
   "rulesCards": "Tarjetas",

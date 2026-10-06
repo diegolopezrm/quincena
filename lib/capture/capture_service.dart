@@ -61,13 +61,13 @@ class CaptureService {
     final List<Account> accounts = await store.accounts();
     final Asset base = (await store.profile())?.base ?? Asset.cop;
     final DateTime since = _now().subtract(lookBack);
+    // Each side of a move between the person's accounts counts too: the
+    // other bank's alert for the same money is that side seen again.
     final List<Sighting> known = <Sighting>[
       for (final InboxItem i in await store.inbox(since: since))
         if (i.status != InboxStatus.dismissed) ?_sighting(i),
       for (final Entry e in await store.entries())
-        if (!e.date.isBefore(since) &&
-            e.transferId == null &&
-            e.amount != Decimal.zero)
+        if (!e.date.isBefore(since) && e.amount != Decimal.zero)
           Sighting(
             id: e.id,
             amount: e.amount.abs(),
@@ -142,6 +142,7 @@ class CaptureService {
     Decimal? amount,
     EntryKind? kind,
     DateTime? date,
+    String note = '',
   }) async {
     final List<Account> accounts = await store.accounts();
     final Entry entry = await _record(
@@ -153,6 +154,7 @@ class CaptureService {
       amount: amount,
       kind: kind,
       date: date,
+      note: note,
     );
     final InboxItem recorded = item.copyWith(
       status: InboxStatus.accepted,
@@ -296,6 +298,11 @@ class CaptureService {
     ),
   );
 
+  /// Whether confirming [p] teaches where its institution's alerts go:
+  /// only an alert in the [base] currency, or with a bare `$`, does.
+  static bool teachesInstitution(ParsedCapture p, Asset? base) =>
+      p.asset == null || p.asset == (base ?? Asset.cop);
+
   /// Whether [p] can be recorded without asking. An account guessed only
   /// because it is the one in pesos is proposed, never assumed.
   static bool _clear(ParsedCapture p, Suggestion s) =>
@@ -319,6 +326,43 @@ class CaptureService {
       item.status == InboxStatus.pending &&
       _clear(item.parsed, item.suggestion) &&
       isReady(item, accounts);
+
+  /// [item] as the rules stand now: a capture still waiting for its account
+  /// takes the one its card's rule, or else its bank's, learned after it
+  /// arrived, as one arriving now would. Turning the rule off or deleting
+  /// it leaves the capture asking again.
+  static InboxItem withRules(
+    InboxItem item,
+    CaptureSettings settings,
+    Iterable<Account> accounts,
+  ) {
+    if (item.status != InboxStatus.pending ||
+        item.suggestion.accountId != null) {
+      return item;
+    }
+    final String? card = item.parsed.card;
+    final String? institution = item.parsed.institution;
+    final String? byCard = card == null
+        ? null
+        : settings.use(RuleKind.card, card);
+    final String? byBank = byCard != null || institution == null
+        ? null
+        : settings.use(RuleKind.institution, institution);
+    final String? accountId = byCard ?? byBank;
+    if (accountId == null || !accounts.any((Account a) => a.id == accountId)) {
+      return item;
+    }
+    final Suggestion s = item.suggestion;
+    return item.copyWith(
+      suggestion: Suggestion(
+        accountId: accountId,
+        category: s.category,
+        payee: s.payee,
+        place: s.place,
+        why: <String>[byCard != null ? 'card' : 'institution', ...s.why],
+      ),
+    );
+  }
 
   Future<Suggestion> _suggest(
     CaptureEvent event,
@@ -433,19 +477,25 @@ class CaptureService {
     Decimal? amount,
     EntryKind? kind,
     DateTime? date,
+    String note = '',
   }) async {
     final ParsedCapture p = item.parsed;
     final String account = accountId ?? item.suggestion.accountId!;
     final Asset target = _asset(accounts, account) ?? Asset.cop;
     Decimal value = amount ?? p.amount!;
-    var note = '';
+    // What the person wrote, after the amount as charged when it was
+    // converted.
+    var said = note.trim();
     // A dollar charge on a peso account: what the bank will take, roughly.
     if (amount == null && p.asset != null && p.asset != target) {
       final Money? converted = RateTable(
         await store.rates(),
       ).convert(Money(value, p.asset!), target);
       if (converted != null) {
-        note = formatAmount(value, p.asset!, base: target);
+        said = <String>[
+          formatAmount(value, p.asset!, base: target),
+          if (said.isNotEmpty) said,
+        ].join(' · ');
         value = converted.amount.round(scale: target.decimals);
       }
     }
@@ -460,7 +510,7 @@ class CaptureService {
           item.suggestion.category ??
           (k == EntryKind.income ? 'other_income' : 'other'),
       payee: payee ?? item.suggestion.payee ?? '',
-      note: note,
+      note: said,
       source: item.event.source.name,
       sourceRef: item.id,
     );
@@ -502,7 +552,11 @@ class CaptureService {
       learn(RuleKind.merchant, key, category);
     }
     if (card != null) learn(RuleKind.card, card, accountId);
-    if (institution != null && card == null) {
+    // A charge in another currency went where that currency is kept: it
+    // says nothing about where the bank's other alerts go.
+    if (institution != null &&
+        card == null &&
+        teachesInstitution(item.parsed, (await store.profile())?.base)) {
       learn(RuleKind.institution, institution, accountId);
     }
     if (changes.isNotEmpty) await store.saveCaptureSettings(s);

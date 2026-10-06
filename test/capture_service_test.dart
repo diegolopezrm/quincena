@@ -391,6 +391,93 @@ Fecha
     ]);
     expect(r.duplicates, 1);
   });
+
+  test('the other bank\'s alert for money moved between own accounts is '
+      'a possible repeat, not more money', () async {
+    final String transfer = await store.addTransfer(
+      fromAccountId: bancolombia.id,
+      toAccountId: nequi.id,
+      sent: d('150000'),
+      date: now,
+    );
+    final IngestReport r = await capture.ingest(<CaptureEvent>[
+      push(
+        r'Nequi · Recibiste $150.000 de Diego Lopez',
+        app: 'com.nequi.MobileApp',
+        at: now.add(const Duration(minutes: 2)),
+      ),
+    ]);
+    expect(r.duplicates, 1);
+    expect(r.added, 0);
+    final InboxItem item = (await store.inbox()).single;
+    expect(item.status, InboxStatus.duplicate);
+    final Entry arrived = (await store.entries(
+      accountId: nequi.id,
+    )).firstWhere((Entry e) => e.transferId == transfer);
+    expect(item.duplicateOf, arrived.id);
+  });
+
+  test('a rule learned later reaches what is still waiting', () async {
+    // Davivienda, where the person has no account, and a card no rule
+    // knows yet.
+    await capture.ingest(<CaptureEvent>[
+      push(
+        r'Davivienda: Compra por $45.000 en D1 con tu tarjeta *5678',
+        app: 'com.davivienda.daviviendaapp',
+      ),
+    ]);
+    final InboxItem waiting = (await pending()).single;
+    expect(waiting.suggestion.accountId, isNull);
+    final List<Account> accounts = await store.accounts();
+    CaptureSettings s = (await store.captureSettings()).withRule(
+      CaptureRule(kind: RuleKind.card, key: '5678', target: nequi.id),
+    );
+    final InboxItem taught = CaptureService.withRules(waiting, s, accounts);
+    expect(taught.suggestion.accountId, nequi.id);
+    expect(taught.suggestion.why.first, 'card');
+    expect(taught.suggestion.category, waiting.suggestion.category);
+    expect(CaptureService.isReady(taught, accounts), isTrue);
+
+    // Turned off, the card asks again; the bank's rule is the next thing.
+    s = s.withRule(
+      CaptureRule(
+        kind: RuleKind.card,
+        key: '5678',
+        target: nequi.id,
+        enabled: false,
+      ),
+    );
+    expect(
+      CaptureService.withRules(waiting, s, accounts).suggestion.accountId,
+      isNull,
+    );
+    s = s.withRule(
+      CaptureRule(
+        kind: RuleKind.institution,
+        key: 'Davivienda',
+        target: bancolombia.id,
+      ),
+    );
+    final InboxItem byBank = CaptureService.withRules(waiting, s, accounts);
+    expect(byBank.suggestion.accountId, bancolombia.id);
+    expect(byBank.suggestion.why.first, 'institution');
+
+    // What was already recorded, or a possible repeat, stays as it was.
+    final InboxItem recorded = waiting.copyWith(status: InboxStatus.accepted);
+    expect(CaptureService.withRules(recorded, s, accounts), same(recorded));
+  });
+
+  test('what the person writes about a capture is kept with it', () async {
+    await capture.ingest(<CaptureEvent>[
+      push(r'Bancolombia: Compraste $45.900 en EXITO LAURELES T.Deb *1234'),
+    ]);
+    final Accepted done = await capture.accept(
+      (await pending()).single,
+      accountId: bancolombia.id,
+      note: '  Almuerzo con el equipo ',
+    );
+    expect(done.entry.note, 'Almuerzo con el equipo');
+  });
   group('rules', () {
     // A bakery no list knows, paid with a Nequi card.
     CaptureEvent bakery(String amount, {int day = 1}) => push(
@@ -484,6 +571,38 @@ Fecha
       expect(next.suggestion.category, 'restaurants');
       expect(next.suggestion.why, contains('learned'));
     });
+
+    test(
+      'a charge in another currency does not say where the bank goes',
+      () async {
+        final Account dollars = await store.addAccount(
+          name: 'Cuenta en dólares',
+          kind: AccountKind.bank,
+          asset: Asset.usd,
+          institution: 'Global66',
+        );
+        await capture.ingest(<CaptureEvent>[
+          push(r'Bancolombia le informa Compra por US$10,99 en SPOTIFY.'),
+        ]);
+        final Accepted done = await capture.accept(
+          (await pending()).single,
+          accountId: dollars.id,
+        );
+        expect(
+          done.learned.map((RuleChange c) => c.rule.kind),
+          isNot(contains(RuleKind.institution)),
+        );
+
+        // The bank's next alert, in pesos, still goes to its peso account.
+        await capture.ingest(<CaptureEvent>[
+          push(
+            r'Bancolombia le informa Pago por $89.900 a Claro',
+            at: now.add(const Duration(minutes: 5)),
+          ),
+        ]);
+        expect((await pending()).single.suggestion.accountId, bancolombia.id);
+      },
+    );
 
     test('confirming what a rule already says teaches nothing new', () async {
       await confirmFirst();
