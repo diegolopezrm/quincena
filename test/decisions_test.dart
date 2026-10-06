@@ -189,6 +189,33 @@ void main() {
       );
     });
 
+    test('a category that fell to nothing keeps the payments it had', () async {
+      await spend('300000', DateTime(2026, 8, 30, 12), 'groceries');
+      await spend('900000', DateTime(2026, 9, 5, 12), 'housing');
+      await spend('290000', DateTime(2026, 9, 16, 12), 'groceries');
+      final Ledger l = await ledger();
+      final PeriodClose close = (closePeriod(l))!;
+      expect(close.startBefore, DateTime(2026, 8, 30));
+      expect(close.changes.first.category, Category.housing);
+      expect(close.changes.first.now, 0);
+      expect(close.movementsOf(l, Category.housing), isEmpty);
+      expect(
+        <int>[
+          for (final Movement m in close.movementsBefore(l, Category.housing))
+            m.amount,
+        ],
+        <int>[900000],
+      );
+    });
+
+    test('the first whole period has no period before to show', () async {
+      await spend('80000', DateTime(2026, 9, 15, 12), 'groceries');
+      final Ledger l = await ledger();
+      final PeriodClose close = (closePeriod(l))!;
+      expect(close.startBefore, isNull);
+      expect(close.movementsBefore(l, Category.groceries), isEmpty);
+    });
+
     test('a tight day ahead comes before anything else', () async {
       await profile(cushion: '600000');
       await spend('80000', DateTime(2026, 9, 15, 12), 'groceries');

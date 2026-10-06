@@ -4,7 +4,9 @@ import 'package:flutter/services.dart';
 
 import '../../capture/capture_service.dart';
 import '../../capture/inbox.dart';
+import '../../data/ledger.dart';
 import '../../domain/records.dart';
+import '../../domain/shared.dart';
 import '../../format/dates.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
@@ -160,6 +162,7 @@ class _EntryFormState extends State<_EntryForm> {
       _capture?.event.at ??
       own.today;
   String? _amountError;
+  String? _receivedError;
   String? _fromError;
   String? _accountError;
   bool _saving = false;
@@ -261,6 +264,7 @@ class _EntryFormState extends State<_EntryForm> {
     );
     if (converted == null) return;
     _received.text = _decimalText(converted.amount, converted.asset);
+    _receivedError = null;
   }
 
   DateTime _stamp(DateTime day) {
@@ -292,17 +296,22 @@ class _EntryFormState extends State<_EntryForm> {
     final bool badAccounts =
         _kind == EntryKind.transfer &&
         (_toAccountId == null || _toAccountId == _accountId);
+    // Between currencies, what arrived is said apart, under its own field.
+    final bool badReceived =
+        _crossCurrency && (received == null || received <= Decimal.zero);
     setState(() {
       _amountError = badAmount ? l.invalidAmount : null;
       _fromError = from == null ? l.accountRequired : null;
       _accountError = badAccounts ? l.sameAccount : null;
+      _receivedError = badReceived ? l.invalidAmount : null;
     });
-    if (badAmount || from == null || badAccounts || _saving) return;
-    if (_crossCurrency && (received == null || received <= Decimal.zero)) {
-      setState(() => _amountError = l.invalidAmount);
+    if (badAmount || from == null || badAccounts || badReceived || _saving) {
       return;
     }
     setState(() => _saving = true);
+    final (Group, SharedExpense)? split = _editing == null
+        ? null
+        : own.splitOf(_editing!.id);
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     final DateTime when = _when();
     final String? category = _kind == EntryKind.transfer
@@ -387,18 +396,40 @@ class _EntryFormState extends State<_EntryForm> {
         ),
       );
     }
+    // A split belongs to an expense: one that is no longer an expense
+    // takes it along, or the others would still owe for it; one whose
+    // amount was put right is split again at the new amount.
+    if (split case (final Group group, final SharedExpense expense)) {
+      if (_kind != EntryKind.expense) {
+        await own.saveGroup(group.withoutExpense(expense.id));
+      } else if (_inBase(amount, from) case final int total) {
+        await own.saveGroup(group.withExpense(expense.resizedTo(total)));
+      }
+    }
     if (mounted) Navigator.of(context).pop();
+  }
+
+  /// [amount] held in the account [accountId], in the ledger's smallest
+  /// unit of the base currency; null without a rate for it.
+  int? _inBase(Decimal amount, String accountId) {
+    final Money? money = own.inBase(Money(amount, _assetOf(accountId)));
+    final Ledger? ledger = own.ledger;
+    if (money == null || ledger == null) return null;
+    return ledger.minor(money.amount.toDouble());
   }
 
   Future<void> _delete() async {
     final AppLocalizations l = context.l10n;
+    final (Group, SharedExpense)? split = own.splitOf(_editing!.id);
     final bool? sure = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
         title: Text(l.deleteMovementTitle),
-        content: _editing!.transferId == null
-            ? null
-            : Text(l.deleteTransferBody),
+        content: _editing!.transferId != null
+            ? Text(l.deleteTransferBody)
+            : split != null
+            ? Text(l.deleteSplitBody)
+            : null,
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -416,6 +447,10 @@ class _EntryFormState extends State<_EntryForm> {
     );
     if (sure != true) return;
     await own.store.deleteEntry(_editing!);
+    // The split goes with what was split: no one owes for a deleted one.
+    if (split case (final Group group, final SharedExpense expense)) {
+      await own.saveGroup(group.withoutExpense(expense.id));
+    }
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -535,8 +570,10 @@ class _EntryFormState extends State<_EntryForm> {
                 decimal: true,
               ),
               style: context.type.displaySmall,
+              // What saving said of the amount no longer holds.
               onChanged: (_) => setState(() {
                 _amountTouched = true;
+                _amountError = null;
                 _suggestReceived();
               }),
               decoration: InputDecoration(
@@ -552,6 +589,7 @@ class _EntryFormState extends State<_EntryForm> {
               (String? id) => setState(() {
                 if (id != null) _accountId = id;
                 _fromError = null;
+                _accountError = null;
                 _suggestReceived();
               }),
               error: _fromError,
@@ -563,6 +601,7 @@ class _EntryFormState extends State<_EntryForm> {
                 _toAccountId,
                 (String? id) => setState(() {
                   _toAccountId = id;
+                  _accountError = null;
                   _suggestReceived();
                 }),
                 error: _accountError,
@@ -579,11 +618,15 @@ class _EntryFormState extends State<_EntryForm> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  onChanged: (_) => _receivedTouched = true,
+                  onChanged: (_) => setState(() {
+                    _receivedTouched = true;
+                    _receivedError = null;
+                  }),
                   decoration: InputDecoration(
                     labelText: l.received,
                     helperText: l.receivedHelp,
                     suffixText: _assetOf(_toAccountId).code,
+                    errorText: _receivedError,
                   ),
                 ),
               ],
@@ -648,8 +691,11 @@ class _EntryFormState extends State<_EntryForm> {
                       },
               ),
             ),
+            // Only while it is still an expense: switched to another kind,
+            // there is nothing to split.
             if (_editing case final Entry editing
                 when editing.kind == EntryKind.expense &&
+                    _kind == EntryKind.expense &&
                     !editing.isTrade &&
                     !editing.isTransfer) ...<Widget>[
               const SizedBox(height: 8),

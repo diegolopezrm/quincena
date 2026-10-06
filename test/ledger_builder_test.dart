@@ -428,6 +428,72 @@ void main() {
     );
   });
 
+  test(
+    'money sent to dollars moves the parts by what left, not the whole',
+    () async {
+      final Account bank = await store.addAccount(
+        name: 'Bancolombia',
+        kind: AccountKind.bank,
+        asset: Asset.cop,
+        opening: d('1500000'),
+      );
+      final Account card = await store.addAccount(
+        name: 'Visa',
+        kind: AccountKind.card,
+        asset: Asset.cop,
+        opening: d('-800000'),
+        creditLimit: d('3000000'),
+      );
+      final Account dollars = await store.addAccount(
+        name: 'Dólares',
+        kind: AccountKind.bank,
+        asset: Asset.usd,
+        opening: d('0'),
+      );
+      Future<int> balance() async =>
+          buildLedger((await store.snapshot())!, today: today).ledger.balance;
+      final int before = await balance();
+      await store.addTransfer(
+        fromAccountId: bank.id,
+        toAccountId: card.id,
+        sent: d('480000'),
+        date: DateTime(2026, 10, 2),
+      );
+      // Sent from pesos, a little less arrived in dollars: the parts move
+      // by what was sent, so they still add up to the whole.
+      await store.addTransfer(
+        fromAccountId: bank.id,
+        toAccountId: dollars.id,
+        sent: d('400000'),
+        received: d('99'),
+        date: DateTime(2026, 10, 3),
+      );
+      // Paid ahead of its day: nothing moved yet.
+      await store.addTransfer(
+        fromAccountId: bank.id,
+        toAccountId: card.id,
+        sent: d('100000'),
+        date: DateTime(2026, 10, 9),
+      );
+
+      final LedgerBuild built = buildLedger(
+        (await store.snapshot())!,
+        today: today,
+      );
+      expect(built.parts, <String, int>{
+        bank.id: 1500000 - 480000 - 400000,
+        card.id: -800000 + 480000,
+        dollars.id: 400000,
+      });
+      expect(
+        built.parts.values.fold(0, (int sum, int v) => sum + v),
+        built.ledger.balance,
+      );
+      // Moving money between the accounts to spend changes none of it.
+      expect(built.ledger.balance, before);
+    },
+  );
+
   test('a subscription says when it is charged next, by its cadence', () async {
     await store.addRecurring(
       name: 'Dominio',

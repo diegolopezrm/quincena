@@ -719,6 +719,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteTransferBody => 'Both sides of the transfer are deleted.';
 
   @override
+  String get deleteSplitBody =>
+      'Its split goes too: what you\'re owed for it stops counting.';
+
+  @override
   String get invalidAmount => 'Enter an amount';
 
   @override
@@ -977,6 +981,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String comingRunsOut(String date) {
+    return 'On $date you\'d run out of money.';
+  }
+
+  @override
+  String get comingRunsOutBadge => 'Out of money';
+
+  @override
   String get comingNoTight =>
       'You stay above your safety buffer for the next 30 days.';
 
@@ -1003,6 +1015,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String comingLeftTrying(String amount) {
     return 'with what you try, $amount';
+  }
+
+  @override
+  String comingLeftExpected(String amount) {
+    return 'if what you expect arrives, $amount';
   }
 
   @override
@@ -1174,7 +1191,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String closeShort(String amount) {
+    return 'You\'re $amount short of payday';
+  }
+
+  @override
   String get closeSeeDays => 'See the next 30 days';
+
+  @override
+  String closeActionRunsOut(String date) {
+    return 'On $date you\'d run out of money. See whether a charge could move to another day.';
+  }
 
   @override
   String closeActionTight(String date) {
@@ -1193,6 +1220,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get closeActionNone => 'Nothing to adjust this time.';
+
+  @override
+  String closePaymentsNone(String category) {
+    return 'No payments in $category this pay period. Here are the ones from the period before:';
+  }
 
   @override
   String get closeSeePayments => 'See the payments';
@@ -3485,6 +3517,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get splitNeedsSomeone => 'Add at least one more person.';
+
+  @override
+  String get splitNeedsShare => 'Tick at least one other person with a share.';
 
   @override
   String get splitRemove => 'Remove the split';

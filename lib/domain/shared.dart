@@ -62,6 +62,52 @@ class SharedExpense {
   /// What the others' parts add up to.
   int get othersPart => amount - (shares[paidBy] ?? 0);
 
+  /// The same split of [total], for the movement it came from when its
+  /// amount was put right: parts that were even stay even, the payer
+  /// carrying what rounding leaves; uneven ones keep what each other
+  /// person owes and the payer's part takes the difference, unless they
+  /// owe more than the new total, which is then shared in the same
+  /// proportions.
+  SharedExpense resizedTo(int total) {
+    if (total == amount || shares.isEmpty) return this;
+    final List<String> ids = <String>[
+      if (shares.containsKey(paidBy)) paidBy,
+      for (final String id in shares.keys)
+        if (id != paidBy) id,
+    ];
+    final List<int> parts = shares.values.toList();
+    final int high = parts.reduce((int a, int b) => a > b ? a : b);
+    final int low = parts.reduce((int a, int b) => a < b ? a : b);
+    final Map<String, int> resized;
+    if (high - low <= 1) {
+      final List<int> even = splitEvenly(total, ids.length);
+      resized = <String, int>{
+        for (var i = 0; i < ids.length; i++) ids[i]: even[i],
+      };
+    } else if (othersPart <= total) {
+      resized = <String, int>{...shares, paidBy: total - othersPart};
+    } else {
+      resized = <String, int>{
+        for (final String id in ids)
+          if (id != paidBy) id: shares[id]! * total ~/ amount,
+      };
+      final int rest =
+          total - resized.values.fold(0, (int sum, int v) => sum + v);
+      resized[paidBy] = (resized[paidBy] ?? 0) + rest;
+    }
+    return SharedExpense(
+      id: id,
+      label: label,
+      date: date,
+      paidBy: paidBy,
+      shares: <String, int>{
+        for (final MapEntry<String, int> s in resized.entries)
+          if (s.value > 0) s.key: s.value,
+      },
+      entryId: entryId,
+    );
+  }
+
   Map<String, Object?> toJson() => <String, Object?>{
     'id': id,
     'label': label,

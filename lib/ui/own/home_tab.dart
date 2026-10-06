@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 
+import '../../capture/merchants.dart';
 import '../../data/ledger.dart';
 import '../../domain/decisions.dart';
 import '../../domain/pay_schedule.dart';
@@ -410,25 +411,35 @@ class _MovementsTabState extends State<MovementsTab> {
     super.dispose();
   }
 
+  /// Whether [e] has [q], a query already [normalize]d, in what it was,
+  /// its note, its category or its accounts: a transfer is found by either
+  /// end. Accents do not count, as a phone's keyboard often leaves them out.
   bool _matches(BuildContext context, Entry e, String q) {
     final OwnController own = widget.own;
-    final String account = own.snapshot?.account(e.accountId)?.name ?? '';
+    final List<String> accounts = <String>[
+      ?own.snapshot?.account(e.accountId)?.name,
+      // The other end of a transfer: only a transfer looks for it.
+      if (e.transferId case final String transfer)
+        for (final Entry leg in own.snapshot?.entries ?? const <Entry>[])
+          if (leg.transferId == transfer && leg.id != e.id)
+            ?own.snapshot?.account(leg.accountId)?.name,
+    ];
     final String category = e.category == null
         ? ''
         : categoryNameFor(context, e.category!, own.categories);
     return <String>[
       e.payee,
       e.note,
-      account,
+      ...accounts,
       category,
-    ].any((String s) => s.toLowerCase().contains(q));
+    ].any((String s) => normalize(s).contains(q));
   }
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
     final OwnController own = widget.own;
-    final String q = _search.text.trim().toLowerCase();
+    final String q = normalize(_search.text);
     final List<Entry> all = visibleEntries(own);
     final List<Entry> shown = q.isEmpty
         ? all
@@ -533,7 +544,10 @@ class _ComingDays extends StatelessWidget {
           ),
           if (tight != null)
             Text(
-              l.comingTight(dayShortMonth(tight.date)),
+              // Without a cushion, under it is out of money.
+              (ledger.cushion > 0 ? l.comingTight : l.comingRunsOut)(
+                dayShortMonth(tight.date),
+              ),
               style: context.type.bodySmall?.copyWith(
                 color: context.colors.caution,
               ),

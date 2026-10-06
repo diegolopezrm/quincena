@@ -173,6 +173,9 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
           builder: (BuildContext context, BoxConstraints box) {
             final double side = 16 + math.max(0, (box.maxWidth - 760) / 2);
             return CustomScrollView(
+              // Each tab keeps its own place: another tab opens at its top,
+              // not as far down as the one left.
+              key: PageStorageKey<int>(_tab),
               slivers: <Widget>[
                 SliverPadding(
                   padding: EdgeInsets.fromLTRB(side, 8, side, 112),

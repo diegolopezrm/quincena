@@ -121,12 +121,14 @@ class _SplitSheetState extends State<_SplitSheet> {
   @override
   void initState() {
     super.initState();
+    SharedExpense? existing = widget.expense;
     if (widget.entry case final Entry e) {
       if (own.splitOf(e.id) case (final Group g, final SharedExpense x)) {
         _group = g;
         _label.text = x.label;
         _even = _isEven(x);
         _in.addAll(x.shares.keys);
+        existing = x;
       }
     }
     for (final TextEditingController c in <TextEditingController>[
@@ -136,14 +138,16 @@ class _SplitSheetState extends State<_SplitSheet> {
       c.addListener(_changed);
     }
     if (_in.isEmpty) _in.addAll(_members.map((Member m) => m.id));
-    if (widget.expense case final SharedExpense x) {
+    // Each part as it was, so a split by amounts opens with its amounts.
+    if (existing case final SharedExpense x) {
       for (final MapEntry<String, int> s in x.shares.entries) {
         _controller(s.key).text = _format(s.value);
       }
     }
   }
 
-  void _changed() => setState(() {});
+  /// What was typed changed: what saving last said may no longer hold.
+  void _changed() => setState(() => _error = null);
 
   @override
   void dispose() {
@@ -229,6 +233,14 @@ class _SplitSheetState extends State<_SplitSheet> {
     }
     if (_members.length < 2) {
       setState(() => _error = l.splitNeedsSomeone);
+      return;
+    }
+    // Someone besides whoever paid has a part, or nothing is split.
+    final String payer = widget.entry != null ? meId : _paidBy;
+    if (!shares.entries.any(
+      (MapEntry<String, int> s) => s.key != payer && s.value > 0,
+    )) {
+      setState(() => _error = l.splitNeedsShare);
       return;
     }
     final NavigatorState navigator = Navigator.of(context);
@@ -331,6 +343,7 @@ class _SplitSheetState extends State<_SplitSheet> {
                     DropdownMenuItem<String?>(value: g.id, child: Text(g.name)),
                 ],
                 onChanged: (String? id) => setState(() {
+                  _error = null;
                   _group = id == null ? null : own.group(id);
                   _in
                     ..clear()
@@ -427,8 +440,10 @@ class _SplitSheetState extends State<_SplitSheet> {
                 ButtonSegment<bool>(value: false, label: Text(l.splitCustom)),
               ],
               selected: <bool>{_even},
-              onSelectionChanged: (Set<bool> v) =>
-                  setState(() => _even = v.first),
+              onSelectionChanged: (Set<bool> v) => setState(() {
+                _even = v.first;
+                _error = null;
+              }),
             ),
             const SizedBox(height: 12),
             for (final Member m in _members)
@@ -439,6 +454,7 @@ class _SplitSheetState extends State<_SplitSheet> {
                     Checkbox(
                       value: _in.contains(m.id),
                       onChanged: (bool? on) => setState(() {
+                        _error = null;
                         if (on ?? false) {
                           _in.add(m.id);
                         } else {

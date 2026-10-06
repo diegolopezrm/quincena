@@ -186,6 +186,7 @@ class PeriodClose {
     required this.action,
     this.tightDay,
     this.actionCategory,
+    this.startBefore,
   });
 
   /// The period: from [start], a payday, to the day before [end], the
@@ -198,6 +199,9 @@ class PeriodClose {
   /// The period before; null without a whole one recorded.
   final int? spentBefore;
 
+  /// Where the period before starts; null without a whole one recorded.
+  final DateTime? startBefore;
+
   /// Largest movement first.
   final List<CategoryChange> changes;
 
@@ -208,12 +212,28 @@ class PeriodClose {
   final Category? actionCategory;
 
   /// The movements behind [category] in the period.
-  List<Movement> movementsOf(Ledger ledger, Category category) => <Movement>[
+  List<Movement> movementsOf(Ledger ledger, Category category) =>
+      _movements(ledger, category, start, end);
+
+  /// The movements behind [category] in the period before, which is what a
+  /// category that fell to nothing compares with. Empty without one.
+  List<Movement> movementsBefore(Ledger ledger, Category category) =>
+      switch (startBefore) {
+        final DateTime from => _movements(ledger, category, from, start),
+        null => const <Movement>[],
+      };
+
+  static List<Movement> _movements(
+    Ledger ledger,
+    Category category,
+    DateTime from,
+    DateTime to,
+  ) => <Movement>[
     for (final Movement m in ledger.movements)
       if (m.flow == Flow.expense &&
           m.category == category &&
-          !_day(m.date).isBefore(start) &&
-          _day(m.date).isBefore(end))
+          !_day(m.date).isBefore(from) &&
+          _day(m.date).isBefore(to))
         m,
   ]..sort((Movement a, Movement b) => b.amount.compareTo(a.amount));
 }
@@ -306,6 +326,7 @@ PeriodClose? closePeriod(Ledger ledger, {bool hasGoals = false}) {
     action: action,
     tightDay: tight?.date,
     actionCategory: actionCategory,
+    startBefore: comparable ? before : null,
   );
 }
 

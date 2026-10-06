@@ -720,6 +720,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'Se eliminan las dos partes de la transferencia.';
 
   @override
+  String get deleteSplitBody =>
+      'También se quita su división: lo que te deben por este gasto deja de contar.';
+
+  @override
   String get invalidAmount => 'Escribe un monto';
 
   @override
@@ -980,6 +984,14 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String comingRunsOut(String date) {
+    return 'El $date te quedarías sin plata.';
+  }
+
+  @override
+  String get comingRunsOutBadge => 'Sin plata';
+
+  @override
   String get comingNoTight => 'Ningún día bajo tu colchón en estos 30 días.';
 
   @override
@@ -1004,6 +1016,11 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String comingLeftTrying(String amount) {
     return 'con lo que pruebas, $amount';
+  }
+
+  @override
+  String comingLeftExpected(String amount) {
+    return 'si llega lo que esperas, $amount';
   }
 
   @override
@@ -1175,7 +1192,17 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String closeShort(String amount) {
+    return 'Te faltan $amount para llegar al pago';
+  }
+
+  @override
   String get closeSeeDays => 'Ver los próximos 30 días';
+
+  @override
+  String closeActionRunsOut(String date) {
+    return 'El $date te quedarías sin plata. Mira qué cobro podrías mover de fecha.';
+  }
 
   @override
   String closeActionTight(String date) {
@@ -1194,6 +1221,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get closeActionNone => 'Nada que ajustar esta vez.';
+
+  @override
+  String closePaymentsNone(String category) {
+    return 'En esta quincena no hubo pagos de $category. Estos son los de la anterior:';
+  }
 
   @override
   String get closeSeePayments => 'Ver los pagos';
@@ -3480,6 +3512,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get splitNeedsSomeone => 'Agrega al menos a una persona más.';
+
+  @override
+  String get splitNeedsShare => 'Marca al menos a otra persona con su parte.';
 
   @override
   String get splitRemove => 'Quitar la división';

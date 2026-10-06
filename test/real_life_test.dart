@@ -63,6 +63,52 @@ void main() {
       }
     });
 
+    test('a split movement put right keeps its split, at the new amount', () {
+      SharedExpense of(Map<String, int> shares) => SharedExpense(
+        id: 'x',
+        label: 'Crepes',
+        date: DateTime(2026, 10, 3),
+        paidBy: meId,
+        shares: shares,
+        entryId: 'entry',
+      );
+      // Even stays even, the payer carrying the rounding.
+      expect(
+        of(<String, int>{meId: 11750, 'ana': 11750}).resizedTo(30001).shares,
+        <String, int>{meId: 15001, 'ana': 15000},
+      );
+      expect(
+        of(<String, int>{
+          meId: 7834,
+          'ana': 7833,
+          'juan': 7833,
+        }).resizedTo(30000).shares,
+        <String, int>{meId: 10000, 'ana': 10000, 'juan': 10000},
+      );
+      // By amounts, what Ana owes stays and the person's part moves.
+      final SharedExpense uneven = of(<String, int>{meId: 8000, 'ana': 15500});
+      expect(uneven.resizedTo(30000).shares, <String, int>{
+        meId: 14500,
+        'ana': 15500,
+      });
+      expect(uneven.resizedTo(30000).othersPart, 15500);
+      // Less than Ana owed: shared in the same proportions.
+      expect(uneven.resizedTo(10000).shares, <String, int>{
+        meId: 3405,
+        'ana': 6595,
+      });
+      for (final int total in <int>[1, 999, 10000, 23500, 30000, 123457]) {
+        expect(uneven.resizedTo(total).amount, total);
+        expect(
+          of(<String, int>{meId: 1, 'ana': 1}).resizedTo(total).amount,
+          total,
+        );
+      }
+      final SharedExpense same = uneven.resizedTo(23500);
+      expect(identical(same, uneven), isTrue);
+      expect(uneven.resizedTo(30000).entryId, 'entry');
+    });
+
     test('a group settles with the fewest payments', () {
       const List<Member> people = <Member>[
         Member(id: meId, name: ''),
