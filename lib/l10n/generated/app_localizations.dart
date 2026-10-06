@@ -8655,6 +8655,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Ver la nueva'**
   String get seeNewSelection;
+
+  /// No description provided for @rulesEmptyWithMovements.
+  ///
+  /// In es, this message translates to:
+  /// **'No tienes reglas ahora. Cuando registres algo en Por revisar, se crea la de su comercio, su tarjeta o su banco. Tus movimientos no cambian.'**
+  String get rulesEmptyWithMovements;
 }
 
 class _AppLocalizationsDelegate

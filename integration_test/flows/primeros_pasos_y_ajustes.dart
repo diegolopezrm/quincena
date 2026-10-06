@@ -1455,8 +1455,10 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         await f.tapFound(find.byTooltip('Borrar regla').first);
       }
       await f.step(
-        'Con todas borradas: «Todavía no hay reglas. Aparecen cuando '
-        'registras tus primeros movimientos.», aunque ya tienes muchos.',
+        'Con todas borradas, a alguien con muchos movimientos le dice «No '
+        'tienes reglas ahora. Cuando registres algo en Por revisar, se crea '
+        'la de su comercio, su tarjeta o su banco. Tus movimientos no '
+        'cambian.»',
       );
       await f.check('No queda ninguna regla guardada', () async {
         final CaptureSettings saved = await _read(
@@ -1464,8 +1466,17 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           () => _store(f).captureSettings(),
         );
         expect(saved.rules, isEmpty);
-        expect(f.screenText, contains('Todavía no hay reglas.'));
       });
+      await f.check(
+        'Con ${_own(f).snapshot!.entries.length} movimientos, no habla de '
+        'los primeros sino de cómo vuelven las reglas',
+        () {
+          expect(_own(f).snapshot!.entries, isNotEmpty);
+          expect(f.screenText, contains('No tienes reglas ahora.'));
+          expect(f.screenText, isNot(contains('primeros movimientos')));
+          expect(f.screenText, contains('Tus movimientos no cambian.'));
+        },
+      );
       await f.back();
       await f.check('La fila dice «Ninguna todavía»', () {
         expect(f.shows('Ninguna todavía'), isTrue);
