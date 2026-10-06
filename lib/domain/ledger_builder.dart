@@ -81,6 +81,9 @@ LedgerBuild buildLedger(
 
   final List<Movement> movements = <Movement>[];
   final Map<String, String> accountOf = <String, String>{};
+  // What left one spendable account for another by today: the whole stays,
+  // but the part of each moves.
+  final List<Entry> moved = <Entry>[];
   for (final Entry e in s.entries) {
     if (!spendable(e.accountId)) continue;
     final bool out = e.amount < Decimal.zero;
@@ -97,7 +100,15 @@ LedgerBuild buildLedger(
           flow = Flow.income;
         case EntryKind.transfer:
           // Between two spendable accounts nothing left the money to spend.
-          if (spendable(otherLeg[e.id])) continue;
+          if (spendable(otherLeg[e.id])) {
+            final DateTime day = DateTime(
+              e.date.year,
+              e.date.month,
+              e.date.day,
+            );
+            if (out && !day.isAfter(today)) moved.add(e);
+            continue;
+          }
           flow = out ? Flow.saving : Flow.transferIn;
         case EntryKind.adjustment:
           flow = out ? Flow.saving : Flow.transferIn;
@@ -219,6 +230,15 @@ LedgerBuild buildLedger(
     final String? account = accountOf[m.id];
     if (account == null || !ledger.settled(m)) continue;
     parts[account] = (parts[account] ?? 0) + Ledger.effect(m);
+  }
+  // Both sides by what left, so they still add up to the whole.
+  for (final Entry e in moved) {
+    final int amount = inBase(
+      Money(e.amount.abs(), accounts[e.accountId]!.asset),
+    );
+    final String into = otherLeg[e.id]!;
+    parts[e.accountId] = (parts[e.accountId] ?? 0) - amount;
+    parts[into] = (parts[into] ?? 0) + amount;
   }
   return LedgerBuild(ledger, unconverted, parts);
 }

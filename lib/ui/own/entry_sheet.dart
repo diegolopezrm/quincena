@@ -238,6 +238,15 @@ class _EntryFormState extends State<_EntryForm> {
         : DateTime(day.year, day.month, day.day, 12);
   }
 
+  /// When the movement happened: the hour it already had while its day
+  /// stays the same, or else what [_stamp] gives the day picked.
+  DateTime _when() {
+    final DateTime? had =
+        _editing?.date ?? _capture?.parsed.when ?? _capture?.event.at;
+    if (had != null && DateUtils.isSameDay(had, _date)) return had;
+    return _stamp(_date);
+  }
+
   Future<void> _save() async {
     final AppLocalizations l = context.l10n;
     final Decimal? amount = parseAmount(_amount.text);
@@ -261,7 +270,7 @@ class _EntryFormState extends State<_EntryForm> {
     }
     setState(() => _saving = true);
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
-    final DateTime when = _stamp(_date);
+    final DateTime when = _when();
     final String? category = _kind == EntryKind.transfer
         ? null
         : (_category ?? (_kind == EntryKind.income ? 'other_income' : 'other'));
@@ -275,6 +284,7 @@ class _EntryFormState extends State<_EntryForm> {
         amount: amount,
         kind: _kind,
         date: when,
+        note: _note.text,
       );
       showRecorded(messenger, own, done);
       if (mounted) Navigator.of(context).pop();

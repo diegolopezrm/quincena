@@ -254,6 +254,43 @@ void main() {
     expect(shown, isNot(contains('+')));
   });
 
+  testWidgets('what the sheet records keeps its note and when it was paid', (
+    tester,
+  ) async {
+    final OwnController own = await open(tester, withCaptures);
+    final InboxItem exito = own.pendingInbox.firstWhere(
+      (InboxItem i) => i.suggestion.payee == 'Éxito Laureles',
+    );
+    await tester.tap(
+      find.descendant(
+        of: find.ancestor(
+          of: find.text('Éxito Laureles'),
+          matching: find.byType(InboxCard),
+        ),
+        matching: find.text('Editar'),
+      ),
+    );
+    await settle(tester);
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await settle(tester);
+    await tester.tap(find.text('Bancolombia').last);
+    await settle(tester);
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Nota (opcional)'),
+      'Almuerzo con el equipo',
+    );
+    await tester.ensureVisible(find.text('Registrar gasto'));
+    await tester.tap(find.text('Registrar gasto'));
+    await settle(tester);
+
+    final Entry made = (await tester.runAsync(
+      own.store.entries,
+    ))!.singleWhere((Entry e) => e.sourceRef == exito.id);
+    expect(made.note, 'Almuerzo con el equipo');
+    // The alert came at 9:40: the day was not changed, nor is its hour.
+    expect(made.date, exito.event.at);
+  });
+
   testWidgets('a pasted message is read once the dialog has closed', (
     tester,
   ) async {

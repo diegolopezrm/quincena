@@ -142,6 +142,7 @@ class CaptureService {
     Decimal? amount,
     EntryKind? kind,
     DateTime? date,
+    String note = '',
   }) async {
     final List<Account> accounts = await store.accounts();
     final Entry entry = await _record(
@@ -153,6 +154,7 @@ class CaptureService {
       amount: amount,
       kind: kind,
       date: date,
+      note: note,
     );
     final InboxItem recorded = item.copyWith(
       status: InboxStatus.accepted,
@@ -438,19 +440,25 @@ class CaptureService {
     Decimal? amount,
     EntryKind? kind,
     DateTime? date,
+    String note = '',
   }) async {
     final ParsedCapture p = item.parsed;
     final String account = accountId ?? item.suggestion.accountId!;
     final Asset target = _asset(accounts, account) ?? Asset.cop;
     Decimal value = amount ?? p.amount!;
-    var note = '';
+    // What the person wrote, after the amount as charged when it was
+    // converted.
+    var said = note.trim();
     // A dollar charge on a peso account: what the bank will take, roughly.
     if (amount == null && p.asset != null && p.asset != target) {
       final Money? converted = RateTable(
         await store.rates(),
       ).convert(Money(value, p.asset!), target);
       if (converted != null) {
-        note = formatAmount(value, p.asset!, base: target);
+        said = <String>[
+          formatAmount(value, p.asset!, base: target),
+          if (said.isNotEmpty) said,
+        ].join(' · ');
         value = converted.amount.round(scale: target.decimals);
       }
     }
@@ -465,7 +473,7 @@ class CaptureService {
           item.suggestion.category ??
           (k == EntryKind.income ? 'other_income' : 'other'),
       payee: payee ?? item.suggestion.payee ?? '',
-      note: note,
+      note: said,
       source: item.event.source.name,
       sourceRef: item.id,
     );

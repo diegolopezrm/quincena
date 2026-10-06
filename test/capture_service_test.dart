@@ -391,6 +391,17 @@ Fecha
     ]);
     expect(r.duplicates, 1);
   });
+  test('what the person writes about a capture is kept with it', () async {
+    await capture.ingest(<CaptureEvent>[
+      push(r'Bancolombia: Compraste $45.900 en EXITO LAURELES T.Deb *1234'),
+    ]);
+    final Accepted done = await capture.accept(
+      (await pending()).single,
+      accountId: bancolombia.id,
+      note: '  Almuerzo con el equipo ',
+    );
+    expect(done.entry.note, 'Almuerzo con el equipo');
+  });
   group('rules', () {
     // A bakery no list knows, paid with a Nequi card.
     CaptureEvent bakery(String amount, {int day = 1}) => push(
