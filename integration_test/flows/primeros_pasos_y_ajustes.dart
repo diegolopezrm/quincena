@@ -2542,11 +2542,11 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tap('Varios dispositivos');
       await f.tap('Empezar en este dispositivo');
       await f.tap('Copiar el código');
-      await _waitMessages(f);
       await f.tap('Guardar mis cambios en un archivo');
       await f.step(
-        '«Guardar mis cambios en un archivo» guarda quincena-2026-10-03.qsync '
-        'y dice «Archivo guardado. Ábrelo en tu otro dispositivo.»',
+        'Copia el código y enseguida toca «Guardar mis cambios en un '
+        'archivo»: guarda quincena-2026-10-03.qsync y el aviso de abajo ya '
+        'dice «Archivo guardado. Ábrelo en tu otro dispositivo.»',
       );
       final Uint8List? saved = phone.saved['quincena-2026-10-03.qsync'];
       await f.check('Se guardó el archivo cifrado del 3 de octubre', () {
@@ -2560,6 +2560,10 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           f.shows('Archivo guardado. Ábrelo en tu otro dispositivo.'),
           isTrue,
         );
+      });
+      await f.check('El aviso del código copiado ya no está, ni espera', () {
+        expect(f.shows('Código copiado.'), isFalse);
+        expect(find.byType(SnackBar), findsOneWidget);
       });
       // The computer joins with the code copied and opens the file.
       final (QuincenaStore computer, SyncService there) = await _otherDevice(f);
@@ -2595,16 +2599,19 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         expect(f.shows('Listo: un cambio.'), isTrue);
       });
       phone.toPick.add(await _read(f, there.export));
-      await _waitMessages(f);
       await f.tap('Abrir un archivo de otro dispositivo');
       await f.step(
-        'Abrir otra vez un archivo con lo mismo no duplica nada: «Ya estaba '
-        'todo al día.»',
+        'Abrir enseguida otra vez un archivo con lo mismo no duplica nada, y '
+        'el aviso cambia al momento: «Ya estaba todo al día.»',
       );
-      await f.check('Nada se duplicó y lo dice', () {
-        expect(_own(f).snapshot!.entries, hasLength(mine + 1));
-        expect(f.shows('Ya estaba todo al día.'), isTrue);
-      });
+      await f.check(
+        'Nada se duplicó y lo dice, en lugar del aviso de antes',
+        () {
+          expect(_own(f).snapshot!.entries, hasLength(mine + 1));
+          expect(f.shows('Ya estaba todo al día.'), isTrue);
+          expect(f.shows('Listo: un cambio.'), isFalse);
+        },
+      );
       await f.back();
       await f.back();
       await f.check(
@@ -3002,15 +3009,21 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           ),
         ),
       );
-      await _waitMessages(f);
       await f.tap('Importar un archivo');
       await f.step(
-        'Uno de una Quincena más nueva: «Actualiza la app y vuelve a '
-        'intentarlo; no se cambió nada.»',
+        'Enseguida, uno de una Quincena más nueva: el aviso cambia al momento '
+        'a «Actualiza la app y vuelve a intentarlo; no se cambió nada.»',
       );
       await f.check('Un archivo más nuevo no cambia nada', () {
         expect(f.screenText, contains('Actualiza la app'));
         expect(_own(f).snapshot!.entries, hasLength(entries));
+      });
+      await f.check('El aviso del archivo anterior ya no está, ni espera', () {
+        expect(
+          f.screenText,
+          isNot(contains('Ese archivo no lo exportó Quincena.')),
+        );
+        expect(find.byType(SnackBar), findsOneWidget);
       });
       // One that looks whole but breaks halfway in.
       phone.toPick.add(

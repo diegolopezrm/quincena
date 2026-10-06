@@ -2984,7 +2984,7 @@ Future<void> _undoFromNotice(FlowRun f) => f.tapFound(
 /// Takes the notice at the bottom away, as its time running out would.
 Future<void> _hideNotice(FlowRun f) async {
   for (final ScaffoldMessengerState m in f.tester.stateList(
-    find.byType(ScaffoldMessenger),
+    find.byWidgetPredicate((Widget w) => w is ScaffoldMessenger),
   )) {
     m.removeCurrentSnackBar();
   }
