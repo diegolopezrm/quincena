@@ -1,4 +1,6 @@
 // Flows of Por revisar y captura (07), Importar extracto (08).
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -11,10 +13,16 @@ import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/format/money.dart';
 import 'package:quincena/money/asset.dart';
+import 'package:quincena/money/money.dart';
 import 'package:quincena/own/own_controller.dart';
+import 'package:quincena/statements/statement.dart';
+import 'package:quincena/statements/statement_import.dart';
+import 'package:quincena/statements/tables.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
 import 'package:quincena/ui/own/inbox_page.dart';
+import 'package:quincena/ui/own/own_shell.dart';
+import 'package:quincena/ui/own/statement_page.dart';
 
 import '../../test/own_flow_test.dart' show settle;
 import '../../test_screens/accounts.dart';
@@ -161,8 +169,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       );
       final int rules = own.captureSettings.rules.length;
       await f.step(
-        'Inicio: «Puedes gastar» todavía no cuenta lo que llegó a Nequi; la '
-        'bandeja de arriba dice que hay 2 por revisar.',
+        'Inicio: ${_headline(own)} todavía no cuenta lo que llegó a Nequi; '
+        'la bandeja de arriba dice que hay 2 por revisar.',
       );
       await f.tapTip('Por revisar');
       await f.step(
@@ -186,10 +194,6 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.check('El saldo de Nequi subió exactamente \$85.000', () {
         expect(own.balances[nequi.id]!.amount, before + Decimal.parse('85000'));
       });
-      final String up = _cop(own, free + own.ledger!.minor(85000));
-      await f.check('Lo que puedes gastar subió a $up', () {
-        expect(own.ledger!.freeUntilPayday, free + own.ledger!.minor(85000));
-      });
       await f.check(
         'Aprendió dos reglas: Laura Gómez y las alertas de Nequi',
         () {
@@ -199,11 +203,25 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
           expect(s.rules.length, rules + 2);
         },
       );
+      await f.back();
+      await f.step(
+        'De vuelta en Inicio: ${_headline(own)}, con los \$85.000 de Laura, '
+        'y el aviso con «Deshacer» sigue abajo.',
+      );
+      final int up = free + own.ledger!.minor(85000);
+      await f.check('Lo que puedes gastar subió a ${_cop(own, up)}', () {
+        expect(own.ledger!.freeUntilPayday, up);
+        expect(f.shows(_cop(own, up)), isTrue);
+      });
       await _undoFromNotice(f);
       await f.step(
-        'Con «Deshacer» del aviso el ingreso se borra y Laura Gómez vuelve a '
-        '«Listos para registrar», como si nada.',
+        '«Deshacer» desde Inicio: el ingreso se borra, vuelve '
+        '${_headline(own)} y la bandeja otra vez dice 2.',
       );
+      await f.check('Lo que puedes gastar volvió a ${_cop(own, free)}', () {
+        expect(own.ledger!.freeUntilPayday, free);
+        expect(own.balances[nequi.id]!.amount, before);
+      });
       await f.check('El ingreso ya no está y la captura espera otra vez', () {
         expect(
           own.snapshot!.entries.where((Entry e) => e.sourceRef == laura.id),
@@ -217,15 +235,11 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         expect(s.institutionAccounts.containsKey('Nequi'), isFalse);
         expect(s.rules.length, rules);
       });
-      await f.back();
+      await f.tapTip('Por revisar');
       await f.step(
-        'De vuelta en Inicio, «Puedes gastar» y Nequi quedaron como al '
-        'principio.',
+        'Laura Gómez espera otra vez en «Listos para registrar», como si '
+        'nada hubiera pasado.',
       );
-      await f.check('Lo que puedes gastar volvió a ${_cop(own, free)}', () {
-        expect(own.ledger!.freeUntilPayday, free);
-        expect(own.balances[nequi.id]!.amount, before);
-      });
     },
   ),
   AppFlow(
@@ -239,6 +253,7 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
     (FlowRun f) async {
       final OwnController own = f.own;
       final int free = own.ledger!.freeUntilPayday;
+      final String before = _headline(own);
       final Account bank = _account(own, 'Bancolombia');
       final InboxItem exito = own.pendingInbox.firstWhere(
         (InboxItem i) => _payee(i) == 'Éxito Laureles',
@@ -333,9 +348,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       });
       await f.back();
       await f.step(
-        'Inicio: con los \$63.200 de Éxito Laureles, ${_figure(own, free)} '
-        'pasó a ${_figure(own, own.ledger!.freeUntilPayday)}; Carulla no '
-        'cuenta hasta registrarla.',
+        'Inicio: con los \$63.200 de Éxito Laureles, $before pasó a '
+        '${_headline(own)}; Carulla no cuenta hasta registrarla.',
       );
     },
   ),
@@ -405,8 +419,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await _hideNotice(f);
       await f.back();
       await f.step(
-        'Inicio: ${_figure(own, free)}, igual que antes: pasar plata entre '
-        'tus cuentas no es gastar ni ganar.',
+        'Inicio: sigue ${_headline(own)}, igual que antes: pasar plata '
+        'entre tus cuentas no es gastar ni ganar.',
       );
     },
   ),
@@ -546,11 +560,47 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         'Un pago en pesos de Bancolombia, pegado después, sigue pidiendo la '
         'cuenta: el cobro en dólares no la decidió por él.',
       );
+      final InboxItem claro = own.pendingInbox.firstWhere(
+        (InboxItem i) => _payee(i) == 'Claro',
+      );
       await f.check('El pago en pesos no va a la cuenta en dólares', () {
-        final InboxItem claro = own.pendingInbox.firstWhere(
-          (InboxItem i) => _payee(i) == 'Claro',
-        );
         expect(claro.suggestion.accountId, isNot(dollars.id));
+      });
+      await _hideNotice(f);
+      await _tapOn(f, 'Claro', 'Elegir la cuenta');
+      await f.step(
+        '«Elegir la cuenta» de Claro avisa «La próxima vez, lo de '
+        'Bancolombia irá directo a esa cuenta.»: el mensaje no trae tarjeta, '
+        'así que aprende el banco.',
+      );
+      await f.check('La hoja promete la regla del banco', () {
+        expect(
+          f.shows(
+            'La próxima vez, lo de Bancolombia irá directo a esa cuenta.',
+          ),
+          isTrue,
+        );
+      });
+      final Account bank = _account(own, 'Bancolombia');
+      final Decimal bankBefore = own.balances[bank.id]!.amount;
+      await f.tap('Bancolombia');
+      await f.step(
+        'Con Bancolombia elegida, el aviso dice «Gasto registrado en '
+        'Bancolombia» y lo que aprendió: Claro va a Servicios y una regla más.',
+      );
+      await f.check('Quedó el pago de Claro en Bancolombia', () {
+        final Entry e = own.snapshot!.entries.firstWhere(
+          (Entry e) => e.sourceRef == claro.id,
+        );
+        expect(e.accountId, bank.id);
+        expect(e.amount, Decimal.parse('-89900'));
+        expect(
+          own.balances[bank.id]!.amount,
+          bankBefore - Decimal.parse('89900'),
+        );
+      });
+      await f.check('Lo de Bancolombia ahora va a su cuenta en pesos', () {
+        expect(own.captureSettings.institutionAccounts['Bancolombia'], bank.id);
       });
     },
   ),
@@ -694,7 +744,7 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         'Registrado: el aviso dice que desde ahora «Exito Laureles» va a '
         'Restaurantes, y una regla más (la tarjeta *1234).',
       );
-      await f.check('El gasto quedó como lo corregiste', () {
+      await f.check('El gasto quedó como lo corregiste, con la nota', () {
         final Entry e = own.snapshot!.entries.firstWhere(
           (Entry e) => e.sourceRef == exito.id,
         );
@@ -702,6 +752,13 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         expect(e.amount, Decimal.parse('-63200'));
         expect(e.category, 'restaurants');
         expect(e.payee, 'Éxito Laureles');
+        expect(e.note, 'Almuerzo con el equipo');
+      });
+      await f.check('Y con la hora del aviso, 9:40 a. m.', () {
+        final Entry e = own.snapshot!.entries.firstWhere(
+          (Entry e) => e.sourceRef == exito.id,
+        );
+        expect(e.date, DateTime(2026, 10, 3, 9, 40));
       });
       await f.check('Aprendió Restaurantes para el comercio y la tarjeta', () {
         expect(
@@ -761,22 +818,20 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       );
       final int spent = own.ledger!.minor(45000 + 18500 + 32000);
       await f.check('Quedaron los 3 gastos, cada uno en su cuenta', () {
-        final List<Entry> made = <Entry>[
-          for (final Entry e in own.snapshot!.entries)
-            if (e.source == 'notification' && e.sourceRef != null) e,
-        ];
+        final List<Entry> recorded = made();
         expect(
-          made.map((Entry e) => e.payee),
+          recorded.map((Entry e) => e.payee),
           unorderedEquals(<String>['D1', 'Juan Valdez', 'Rappi']),
         );
         expect(
+          recorded.firstWhere((Entry e) => e.payee == 'D1').accountId,
           _account(own, 'Bancolombia').id,
-          made.firstWhere((Entry e) => e.payee == 'D1').accountId,
         );
         expect(
+          recorded.firstWhere((Entry e) => e.payee == 'Rappi').accountId,
           _account(own, 'Nequi').id,
-          made.firstWhere((Entry e) => e.payee == 'Rappi').accountId,
         );
+        expect(own.pendingInbox, hasLength(4));
       });
       await f.check(
         'Lo que puedes gastar bajó ${_cop(own, spent)}, lo que suman',
@@ -789,10 +844,7 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       );
       await f.check('Deshacer quitó los 3 movimientos de una vez', () {
         expect(own.pendingInbox, hasLength(7));
-        expect(
-          own.snapshot!.entries.where((Entry e) => e.source == 'notification'),
-          isEmpty,
-        );
+        expect(made(), isEmpty);
         expect(own.ledger!.freeUntilPayday, free);
       });
       await f.tapFound(find.text('Tienda La Esquina'));
@@ -832,14 +884,67 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       );
       await f.check('Solo se registró D1', () {
         expect(own.pendingInbox, hasLength(6));
-        expect(
-          own.snapshot!.entries
-              .where((Entry e) => e.source == 'notification')
-              .map((Entry e) => e.payee),
-          <String>['D1'],
-        );
+        expect(made().map((Entry e) => e.payee), <String>['D1']);
         expect(own.ledger!.freeUntilPayday, free - own.ledger!.minor(45000));
       });
+      await _hideNotice(f);
+      await f.tapFound(
+        find.descendant(
+          of: _card('Tienda La Esquina'),
+          matching: find.byTooltip('Registrar gasto'),
+        ),
+      );
+      await _hideNotice(f);
+      await f.top();
+      await f.step(
+        'Con el chulo de Tienda La Esquina quedan 5: vuelven a ser tarjetas, '
+        'y arriba dice «Registrar 2 de los 3 listos» porque Laura no tiene '
+        'categoría segura.',
+      );
+      await f.check('Tienda La Esquina quedó en Otros, en Nequi', () {
+        final Entry e = made().firstWhere(
+          (Entry e) => e.payee == 'Tienda La Esquina',
+        );
+        expect(e.category, 'other');
+        expect(e.accountId, _account(own, 'Nequi').id);
+        expect(f.shows('Registrar 2 de los 3 listos'), isTrue);
+      });
+      await _tapOn(f, 'Laura Gómez', 'Registrar ingreso');
+      await _hideNotice(f);
+      await f.top();
+      await f.step(
+        'Registrado el ingreso de Laura, los dos listos que quedan son '
+        'claros: el botón ahora dice «Registrar los 2 listos».',
+      );
+      await f.check('El botón cuenta los 2 que quedan listos', () {
+        expect(f.shows('Registrar los 2 listos'), isTrue);
+      });
+      await f.tap('Registrar los 2 listos');
+      await f.step(
+        '«Registrar los 2 listos» registra Juan Valdez y Rappi de una vez: '
+        'solo quedan los 2 que necesitan información.',
+      );
+      final int net = own.ledger!.minor(85000 - 45000 - 9800 - 18500 - 32000);
+      await f.check('Ya se registraron 5 y quedan 2 esperando', () {
+        expect(
+          made().map((Entry e) => e.payee),
+          unorderedEquals(<String>[
+            'D1',
+            'Tienda La Esquina',
+            'Laura Gómez',
+            'Juan Valdez',
+            'Rappi',
+          ]),
+        );
+        expect(
+          own.pendingInbox.map(_payee),
+          unorderedEquals(<String>['Éxito Laureles', 'Falabella']),
+        );
+      });
+      await f.check(
+        'Lo que puedes gastar se movió ${_cop(own, net)}: lo que suman',
+        () => expect(own.ledger!.freeUntilPayday, free + net),
+      );
     },
   ),
   AppFlow(
@@ -949,9 +1054,10 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       );
       await _hideNotice(f);
       await _paste(f, rappi);
+      await f.reveal(find.text('POSIBLES REPETIDOS'));
       await f.step(
-        'Pegar el mismo mensaje otra vez no lo duplica: el aviso dice «Ese '
-        'pago ya estaba.»',
+        'El mismo mensaje pegado otra vez: el aviso dice «Ese pago ya '
+        'estaba.» y la copia queda en «Posibles repetidos», no en los listos.',
       );
       await f.check('El mismo mensaje dos veces queda como repetido', () {
         final List<InboxItem> same = <InboxItem>[
@@ -980,6 +1086,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
           'app cerrada (Atajos en iPhone, acceso a notificaciones en Android).',
       'Los botones «Añadir» de los atajos listos y «Abrir Atajos», que abren '
           'la app Atajos del iPhone.',
+      'En Android, «Permitir acceso a notificaciones» abre los ajustes del '
+          'sistema y, al volver, dice «Acceso a notificaciones activado».',
     ],
     (FlowRun f) async {
       final OwnController own = f.own;
@@ -1040,12 +1148,23 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         'Guardado: la tarjeta sigue en «Registrado automáticamente», ahora '
         'con Salidas.',
       );
-      await f.check('El movimiento quedó en Salidas', () {
+      await f.check('El movimiento quedó en Salidas, a la misma hora', () {
         final Entry e = own.snapshot!.entries.firstWhere(
           (Entry e) => e.source == 'paste',
         );
         expect(e.category, 'leisure');
+        expect(e.date, screensNow);
       });
+      await _openMenu(f, 'Rappi');
+      await f.step(
+        'En lo que ya se registró, el menú «⋮» solo trae «Detalles de '
+        'detección»: no se descarta, se deshace.',
+      );
+      await f.check('Lo registrado no se puede descartar', () {
+        expect(f.shows('Detalles de detección'), isTrue);
+        expect(find.text('Descartar'), findsNothing);
+      });
+      await f.back();
       await _tapOn(f, 'Rappi', 'Deshacer');
       await f.top();
       await f.step(
@@ -1064,6 +1183,37 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         );
         expect(own.ledger!.freeUntilPayday, free);
       });
+      await f.back();
+      await f.tapTip('Ajustes');
+      await f.tap('Captura automática');
+      await f.tap('Leer un pantallazo o PDF');
+      await f.step(
+        'En Captura automática, «Leer un pantallazo o PDF» ofrece lo mismo que '
+        'Por revisar: «Capturas o fotos» o «Un PDF».',
+      );
+      await f.back();
+      await f.tapFound(
+        find.widgetWithText(SwitchListTile, 'Registrar solo lo que esté claro'),
+      );
+      await f.step(
+        'Apagado «Registrar solo lo que esté claro»: desde ahora todo vuelve a '
+        'esperar en Por revisar.',
+      );
+      await f.check('El ajuste apagado quedó guardado', () async {
+        final CaptureSettings saved = (await f.tester.runAsync(
+          () => own.store.captureSettings(),
+        ))!;
+        expect(saved.autoRecord, isFalse);
+      });
+      await f.check('Y un pago claro ya no se registra solo', () async {
+        final IngestReport r = (await f.tester.runAsync(
+          () => own.capture.ingest(<CaptureEvent>[
+            _nequi(r'Pagaste $18.000 en Rappi', 10, 30),
+          ]),
+        ))!;
+        expect(r.recorded, 0);
+        expect(r.added, 1);
+      });
     },
   ),
   AppFlow(
@@ -1074,6 +1224,11 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         'La app aprendió cosas de lo que registré y una está mal: quiero '
         'verlas, corregirla, apagar otra y borrar las que no sirven.',
     data: _withRules,
+    manual: <String>[
+      'Prender «Usar la ubicación del pago» pide el permiso de ubicación del '
+          'sistema y luego «Permitir siempre»; negarlo muestra el aviso con '
+          '«Abrir ajustes».',
+    ],
     (FlowRun f) async {
       final OwnController own = f.own;
       await f.tapTip('Ajustes');
@@ -1135,6 +1290,18 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
           (InboxItem i) => _payee(i) == 'D1',
         );
         expect(d1.suggestion.accountId, isNull);
+      });
+      await f.tapFound(_ruleSwitch('Tarjeta *1234'));
+      await f.step(
+        'Prendida otra vez, la regla de la tarjeta vuelve a decir «→ '
+        'Bancolombia» sin tachar.',
+      );
+      await f.check('La regla de la tarjeta volvió a usarse', () {
+        expect(own.captureSettings.disabledRules, isNot(contains('card:1234')));
+        expect(
+          own.captureSettings.use(RuleKind.card, '1234'),
+          _account(own, 'Bancolombia').id,
+        );
       });
       await f.tapFound(_ruleTrash('Nequi'));
       await f.step(
@@ -1255,7 +1422,10 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         },
       );
       await f.back();
-      await f.step('Inicio: «Puedes gastar» bajó lo de Farmatodo.');
+      await f.step(
+        'Inicio: ahora ${_headline(own)}, los \$27.500 de Farmatodo menos '
+        'que antes.',
+      );
       await f.check(
         'Lo que puedes gastar bajó a ${_cop(own, free - own.ledger!.minor(27500))}',
         () => expect(
@@ -1263,6 +1433,882 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
           free - own.ledger!.minor(27500),
         ),
       );
+    },
+  ),
+  AppFlow(
+    '07-14-pago-sin-banco',
+    'Registrar un pago que no dice el banco',
+    area: 'Por revisar',
+    goal:
+        'Camilo me pagó y el mensaje no dice a qué cuenta llegó, y tengo el '
+        'pantallazo de un café que pagué en efectivo: quiero decirle a la app '
+        'dónde fue cada uno.',
+    data: fullAccount,
+    manual: <String>[
+      'Elegir el pantallazo del café con «Leer un pago» › «Capturas o fotos» '
+          'y ver el aviso «Leí un pago. Quedó en Por revisar.»',
+    ],
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final int free = own.ledger!.freeUntilPayday;
+      final Account nequi = _account(own, 'Nequi');
+      final Account cash = _account(own, 'Efectivo');
+      final int rules = own.captureSettings.rules.length;
+      await f.tapTip('Por revisar');
+      await _paste(f, r'Recibiste $120.000 de Camilo Ruiz');
+      await _hideNotice(f);
+      await f.top();
+      await f.step(
+        'Camilo Ruiz te pagó \$120.000, pero el mensaje no nombra banco: la '
+        'tarjeta dice «No sabemos a qué cuenta llegó.»',
+      );
+      final InboxItem camilo = own.pendingInbox.firstWhere(
+        (InboxItem i) => _payee(i) == 'Camilo Ruiz',
+      );
+      await f.check('Espera sin cuenta, como ingreso', () {
+        expect(camilo.parsed.kind, EntryKind.income);
+        expect(camilo.parsed.institution, isNull);
+        expect(camilo.suggestion.accountId, isNull);
+        expect(f.shows('No sabemos a qué cuenta llegó.'), isTrue);
+      });
+      await _tapOn(f, 'Camilo Ruiz', 'Elegir la cuenta');
+      await f.step(
+        '«¿A qué cuenta llegó?» lista tus cuentas, las de uso diario en pesos '
+        'primero, y no promete regla: no hay banco ni tarjeta que aprender.',
+      );
+      await f.check('La hoja pregunta por la cuenta sin prometer reglas', () {
+        expect(f.shows('¿A qué cuenta llegó?'), isTrue);
+        expect(find.textContaining('La próxima vez'), findsNothing);
+      });
+      await f.tap('Nequi');
+      await f.step(
+        'Elegida Nequi: el aviso dice «Ingreso registrado en Nequi.» y que '
+        'Camilo Ruiz va a Otros ingresos desde ahora.',
+      );
+      await f.check('Quedó un ingreso de \$120.000 en Nequi', () {
+        final Entry e = own.snapshot!.entries.firstWhere(
+          (Entry e) => e.sourceRef == camilo.id,
+        );
+        expect(e.accountId, nequi.id);
+        expect(e.amount, Decimal.parse('120000'));
+      });
+      await f.check('Solo aprendió el nombre: no hay banco que recordar', () {
+        expect(own.captureSettings.rules.length, rules + 1);
+        expect(
+          own.captureSettings.merchantCategories['camilo ruiz'],
+          isNotNull,
+        );
+      });
+      await _hideNotice(f);
+      // What the system's photo picker hands back is read on the phone; its
+      // text goes in as a screenshot's.
+      await f.tester.runAsync(
+        () => own.ingestRead(<String>[r'Pagaste $15.000 en Tostao']),
+      );
+      await settle(f.tester);
+      await f.top();
+      await f.step(
+        'Lo que la app leyó del pantallazo del café espera igual: Tostao por '
+        '\$15.000, con «No sabemos de qué cuenta salió.»',
+      );
+      final InboxItem tostao = own.pendingInbox.firstWhere(
+        (InboxItem i) => _payee(i) == 'Tostao',
+      );
+      await f.check('Llegó como captura de pantalla, sin cuenta', () {
+        expect(tostao.event.source, CaptureSource.screenshot);
+        expect(tostao.suggestion.accountId, isNull);
+        expect(f.shows('No sabemos de qué cuenta salió.'), isTrue);
+      });
+      await _openMenu(f, 'Tostao');
+      await f.tap('Detalles de detección');
+      await f.reveal(_card('Tostao'));
+      await f.step(
+        'Sus detalles dicen que llegó por «Captura de pantalla» y muestran el '
+        'texto que leyó, tal cual.',
+      );
+      await f.check('Los detalles dicen de dónde salió el texto', () {
+        expect(find.textContaining('Captura de pantalla'), findsOneWidget);
+        expect(find.text(r'Pagaste $15.000 en Tostao'), findsOneWidget);
+      });
+      await _tapOn(f, 'Tostao', 'Elegir la cuenta');
+      await f.tap('Efectivo');
+      await f.step(
+        'Con Efectivo elegido, el aviso dice «Gasto registrado en Efectivo.» '
+        'y que Tostao va a Restaurantes; quedan los que ya esperaban.',
+      );
+      await f.check('Quedó un gasto de \$15.000 en Efectivo', () {
+        final Entry e = own.snapshot!.entries.firstWhere(
+          (Entry e) => e.sourceRef == tostao.id,
+        );
+        expect(e.accountId, cash.id);
+        expect(e.amount, Decimal.parse('-15000'));
+        expect(e.source, 'screenshot');
+      });
+      await _hideNotice(f);
+      await f.back();
+      final int now = free + own.ledger!.minor(120000 - 15000);
+      await f.step(
+        'Inicio: ${_headline(own)}, con los \$120.000 de Camilo y sin los '
+        '\$15.000 del café.',
+      );
+      await f.check('Lo que puedes gastar subió a ${_cop(own, now)}', () {
+        expect(own.ledger!.freeUntilPayday, now);
+      });
+    },
+  ),
+  AppFlow(
+    '08-01-importar-el-extracto-del-banco',
+    'Importar el extracto del banco',
+    area: 'Importar extracto',
+    goal:
+        'Bajé el extracto de Bancolombia y quiero traer lo que no anoté, sin '
+        'que se dupliquen los que ya tenía.',
+    data: fullAccount,
+    manual: <String>[
+      '«Elegir archivo» abre el selector de archivos del sistema: probar con '
+          'un CSV, un Excel (.xlsx) y un PDF reales del banco.',
+      'Un PDF que el teléfono no logra leer ofrece «Leer con Gemini», que '
+          'necesita la red y gasta una pregunta del día.',
+      'Compartir el extracto a Quincena desde otra app (Archivos, el correo) '
+          'y que abra directo en la revisión.',
+    ],
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Account bank = _account(own, 'Bancolombia');
+      final Account visa = _account(own, 'Visa');
+      final Decimal bankBefore = own.balances[bank.id]!.amount;
+      final Decimal visaBefore = own.balances[visa.id]!.amount;
+      final int free = own.ledger!.freeUntilPayday;
+      await f.tapTip('Ajustes');
+      await f.tap('Importar extracto');
+      await f.step(
+        'Ajustes › «Importar extracto»: lee CSV, Excel o PDF en el teléfono '
+        'y todo se revisa antes de guardar. «Elegir archivo» abre el selector '
+        'del sistema.',
+      );
+      await f.back();
+      final StatementRead read = await _openStatement(f, _bankCsv);
+      await f.page(
+        'El extracto leído va a Bancolombia, la primera cuenta: 7 '
+        'movimientos, 4 nuevos y marcados, 3 que ya estaban sin marcar.',
+      );
+      final List<ImportCandidate> all = await _prepared(f, bank, read);
+      await f.check('La pantalla cuenta lo mismo que halló el importador', () {
+        expect(all, hasLength(7));
+        expect(all.where((ImportCandidate c) => c.proposed), hasLength(4));
+        expect(all.where((ImportCandidate c) => c.recorded), hasLength(3));
+        expect(
+          f.screenText,
+          contains(
+            '4 nuevos · 3 ya estaban · 2 sin categoría · 1 entre tus cuentas',
+          ),
+        );
+      });
+      await f.check(
+        'La nómina, Uber y el Éxito ya estaban: van sin marcar',
+        () {
+          expect(
+            <String>[
+              for (final ImportCandidate c in all)
+                if (c.recorded) c.payee,
+            ],
+            unorderedEquals(<String>[
+              'Nomina DL Soft',
+              'Uber Trip',
+              'Exito Laureles',
+            ]),
+          );
+          expect(_ticked(f, 'Exito Laureles'), isFalse);
+          expect(_ticked(f, 'Claro'), isTrue);
+        },
+      );
+      final Decimal out = <Decimal>[
+        for (final ImportCandidate c in all)
+          if (c.proposed) c.line.amount,
+      ].fold(Decimal.zero, (Decimal a, Decimal b) => a + b);
+      await f.check('Salen ${_money(out)}: lo que suman las 4 nuevas', () {
+        expect(out, Decimal.parse('-799900'));
+        expect(
+          f.screenText,
+          contains('4 seleccionados · salen ${_money(out)}'),
+        );
+      });
+      await f.check('El pago de la Visa va como movimiento hacia la Visa', () {
+        final ImportCandidate c = all.firstWhere(
+          (ImportCandidate c) => c.cardPayment,
+        );
+        expect(c.kind, EntryKind.transfer);
+        expect(c.otherAccountId, visa.id);
+        expect(f.screenText, contains('Pago de tu tarjeta Visa'));
+      });
+      await f.reveal(find.text('Sumarlos a mi saldo'));
+      await f.check('Como son de antes del 3 oct, tu saldo ya los incluye', () {
+        expect(
+          f.screenText,
+          contains(
+            '4 movimientos son de antes del 3 de octubre, cuando escribiste '
+            'el saldo de Bancolombia.',
+          ),
+        );
+        expect(
+          f.screenText,
+          contains(
+            'El saldo de Bancolombia sigue en ${_money(bankBefore)}: ya '
+            'incluía estos movimientos.',
+          ),
+        );
+      });
+      await f.tap('Importar 4 movimientos');
+      await f.waitFor(find.text('Se importaron 4 movimientos.'));
+      await f.page(
+        '«Se importaron 4 movimientos.»: el saldo de Bancolombia sigue '
+        'igual, el pago de la Visa no cuenta como gasto y 2 piden categoría.',
+      );
+      await f.check('Quedaron los 4, cada uno como debía', () {
+        final List<Entry> made = _imported(own, bank);
+        expect(made, hasLength(4));
+        expect(
+          made.firstWhere((Entry e) => e.payee == 'Claro').category,
+          'utilities',
+        );
+        expect(
+          made.firstWhere((Entry e) => e.payee == 'Juan Perez').category,
+          'other',
+        );
+        final Entry card = made.firstWhere((Entry e) => e.transferId != null);
+        expect(card.amount, Decimal.parse('-480000'));
+        expect(
+          own.snapshot!.entries
+              .firstWhere(
+                (Entry e) => e.transferId == card.transferId && e.id != card.id,
+              )
+              .accountId,
+          visa.id,
+        );
+      });
+      await f.check('Los saldos de Bancolombia y la Visa no se movieron', () {
+        expect(own.balances[bank.id]!.amount, bankBefore);
+        expect(own.balances[visa.id]!.amount, visaBefore);
+      });
+      await f.tapFound(find.text('Juan Perez'));
+      await f.tap('Salidas');
+      await f.step(
+        'Tocar «Juan Perez» abre el movimiento para darle categoría: aquí, '
+        'Salidas.',
+      );
+      await f.tap('Guardar');
+      await f.step(
+        'Guardado: Juan Perez sale de la lista y ahora dice «Uno quedó sin '
+        'categoría: tócalo para ponérsela.»',
+      );
+      await f.check('Juan Perez quedó en Salidas', () {
+        expect(
+          _imported(
+            own,
+            bank,
+          ).firstWhere((Entry e) => e.payee == 'Juan Perez').category,
+          'leisure',
+        );
+        expect(f.shows('Juan Perez'), isFalse);
+      });
+      await f.tap('Listo');
+      await f.back();
+      await f.step(
+        'Inicio: sigue ${_headline(own)}; lo importado ya estaba en el saldo '
+        'que escribiste.',
+      );
+      await f.check('Lo que puedes gastar no cambió', () {
+        expect(own.ledger!.freeUntilPayday, free);
+      });
+      await f.check('«Lo que debes en tarjetas» es lo que dice la Visa', () {
+        _cardDebtShown(f, own);
+      });
+      final int saved = _imported(own, bank).length;
+      final StatementRead again = await _openStatement(f, _bankCsv);
+      await f.page(
+        'El mismo archivo otra vez: «Ninguno nuevo», cada línea dice «Ya '
+        'importado» o «Ya registrado» y el botón dice «Nada para importar».',
+      );
+      await f.check('Otra vez el mismo archivo no trae nada nuevo', () async {
+        final List<ImportCandidate> twice = await _prepared(f, bank, again);
+        expect(twice.where((ImportCandidate c) => c.proposed), isEmpty);
+        expect(
+          twice.where((ImportCandidate c) => c.importedBefore),
+          hasLength(4),
+        );
+        expect(
+          f.tester
+              .widget<FilledButton>(
+                find.widgetWithText(FilledButton, 'Nada para importar'),
+              )
+              .onPressed,
+          isNull,
+        );
+      });
+      await f.tap('Nada para importar');
+      await f.check('Y no se guardó nada otra vez', () {
+        expect(_imported(own, bank), hasLength(saved));
+      });
+    },
+  ),
+  AppFlow(
+    '08-02-revisar-linea-por-linea',
+    'Revisar el extracto línea por línea',
+    area: 'Importar extracto',
+    goal:
+        'Antes de importar quiero corregir lo que el extracto no dice bien: '
+        'un retiro que fue a mi efectivo, una categoría que falta y lo que '
+        'ya había anotado.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Account bank = _account(own, 'Bancolombia');
+      final Account cash = _account(own, 'Efectivo');
+      await f.tap('Cuentas');
+      await f.tap('Banco · Bancolombia');
+      await f.tapTip('Importar extracto');
+      await f.step(
+        'En la cuenta Bancolombia, el ícono «Importar extracto» de arriba '
+        'abre la misma pantalla, con «Elegir archivo».',
+      );
+      await f.back();
+      await _openStatement(f, _bankCsv, account: 'Bancolombia');
+      await f.tapTip('Invertir entradas y salidas');
+      await f.step(
+        '«Invertir entradas y salidas» (arriba) voltea los signos, por si el '
+        'banco los trae al revés: ahora la nómina saldría y el resto entraría.',
+      );
+      await f.check('Volteado, la nómina sale y lo demás entra', () {
+        expect(
+          f.screenText,
+          contains(
+            '7 seleccionados · entran '
+            '${_money(Decimal.parse('1002900'), signed: true)} · salen '
+            '${_money(Decimal.parse('-2400000'))}',
+          ),
+        );
+      });
+      await f.tapTip('Invertir entradas y salidas');
+      await f.tapFound(find.byType(DropdownButtonFormField<String>));
+      await f.tapFound(find.text('Nequi · COP').last);
+      await f.step(
+        'En «Cuenta» se elige Nequi: allá no hay nada de esto, así que los 7 '
+        'quedan nuevos y marcados.',
+      );
+      await f.check('En Nequi los 7 son nuevos', () {
+        expect(f.screenText, contains('7 nuevos · ninguno repetido'));
+      });
+      await f.tapFound(find.byType(DropdownButtonFormField<String>));
+      await f.tapFound(find.text('Bancolombia · COP').last);
+      await f.tapFound(_lineBox('Exito Laureles'));
+      await f.step(
+        'De vuelta en Bancolombia, marcar a mano «Exito Laureles», que ya '
+        'estaba, avisa abajo: «Marcaste 1 que ya estaba: se contaría dos '
+        'veces.»',
+      );
+      await f.check('El aviso y el botón cuentan el repetido', () {
+        expect(
+          f.shows('Marcaste 1 que ya estaba: se contaría dos veces.'),
+          isTrue,
+        );
+        expect(f.shows('Importar 5 movimientos'), isTrue);
+      });
+      await f.tapFound(_lineBox('Exito Laureles'));
+      await f.tap('Quitar todos');
+      await f.step(
+        '«Quitar todos» desmarca todo: «Nada seleccionado», el botón queda '
+        'apagado en «Nada para importar» y arriba se ofrece «Marcar los '
+        'nuevos».',
+      );
+      await f.check('Sin nada marcado no se puede importar', () {
+        expect(f.screenText, contains('Nada seleccionado'));
+        expect(
+          f.tester
+              .widget<FilledButton>(
+                find.widgetWithText(FilledButton, 'Nada para importar'),
+              )
+              .onPressed,
+          isNull,
+        );
+        expect(
+          f.shows('Marcaste 1 que ya estaba: se contaría dos veces.'),
+          isFalse,
+        );
+      });
+      await f.tap('Marcar los nuevos');
+      await f.check('«Marcar los nuevos» marca solo los 4 nuevos', () {
+        expect(f.shows('Importar 4 movimientos'), isTrue);
+        expect(_ticked(f, 'Exito Laureles'), isFalse);
+      });
+      await f.tapFound(find.text('Cajero'));
+      await f.step(
+        'Tocar «Cajero» abre «Revisar movimiento»: el retiro por −\$200.000, '
+        '«RETIRO CAJERO» como lo dice el extracto, y Gasto sin categoría.',
+      );
+      await f.tap('Transferencia');
+      await f.step(
+        'Un retiro no es un gasto: con «Transferencia» aparece «Hacia», que '
+        'para este retiro en cajero propone la Visa.',
+      );
+      await f.check('Para el retiro propone la tarjeta, no el efectivo', () {
+        expect(
+          find.descendant(
+            of: find.byType(DropdownButtonFormField<String>).last,
+            matching: find.text('Visa'),
+          ),
+          findsOneWidget,
+        );
+      });
+      await f.tapFound(find.byType(DropdownButtonFormField<String>).last);
+      await f.tapFound(find.text('Efectivo').last);
+      await f.step('«Hacia» cambiado a Efectivo, adonde fue la plata.');
+      await f.tap('Guardar');
+      await f.step(
+        'Guardado: la línea de Cajero dice «Pasa a Efectivo», con el ícono de '
+        'los movimientos entre tus cuentas.',
+      );
+      await f.check('El retiro quedó como paso a Efectivo', () async {
+        expect(f.screenText, contains('Pasa a Efectivo'));
+        await f.top();
+        expect(
+          f.screenText,
+          contains(
+            '4 nuevos · 3 ya estaban · 1 sin categoría · 2 entre tus cuentas',
+          ),
+        );
+      });
+      await f.tapFound(find.text('Juan Perez'));
+      await f.tap('Ingreso');
+      await f.step(
+        'En Juan Perez, «Ingreso» cambia el signo a +\$30.000 y muestra las '
+        'categorías de ingresos.',
+      );
+      await f.back();
+      await f.check('Cerrar la hoja sin guardar deja la línea como estaba', () {
+        expect(f.screenText, contains('Sin categoría'));
+        expect(
+          f.screenText,
+          contains('salen ${_money(Decimal.parse('-799900'))}'),
+        );
+      });
+      await f.tapFound(find.text('Juan Perez'));
+      await f.tap('Salidas');
+      await f.tap('Guardar');
+      await f.step(
+        'Abierta otra vez, con Salidas y «Guardar», Juan Perez ya no dice '
+        '«Sin categoría».',
+      );
+      await f.check('Ya no queda nada sin categoría', () {
+        expect(f.screenText, isNot(contains('sin categoría')));
+      });
+      await f.tap('Importar 4 movimientos');
+      await f.waitFor(find.text('Se importaron 4 movimientos.'));
+      await f.step(
+        'Importado tal como se revisó: «Todos quedaron con su categoría.» y 2 '
+        'quedaron como movimientos entre tus cuentas.',
+      );
+      await f.check('El retiro llegó a Efectivo y Juan Perez a Salidas', () {
+        final List<Entry> made = _imported(own, bank);
+        final Entry withdrawal = made.firstWhere(
+          (Entry e) => e.amount == Decimal.parse('-200000'),
+        );
+        expect(withdrawal.transferId, isNotNull);
+        expect(
+          own.snapshot!.entries
+              .firstWhere(
+                (Entry e) =>
+                    e.transferId == withdrawal.transferId &&
+                    e.id != withdrawal.id,
+              )
+              .accountId,
+          cash.id,
+        );
+        expect(
+          made.firstWhere((Entry e) => e.payee == 'Juan Perez').category,
+          'leisure',
+        );
+      });
+    },
+  ),
+  AppFlow(
+    '08-03-sumar-los-viejos-a-mi-saldo',
+    'Sumar al saldo lo que trae el extracto',
+    area: 'Importar extracto',
+    goal:
+        'El saldo que escribí en Bancolombia era de antes de estos '
+        'movimientos: quiero que el extracto lo actualice.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Account bank = _account(own, 'Bancolombia');
+      final Account visa = _account(own, 'Visa');
+      final Decimal bankBefore = own.balances[bank.id]!.amount;
+      final Decimal visaBefore = own.balances[visa.id]!.amount;
+      final int free = own.ledger!.freeUntilPayday;
+      await _openStatement(f, _bankCsv, account: 'Bancolombia');
+      await f.reveal(find.text('Sumarlos a mi saldo'));
+      await f.step(
+        'Al final de la lista: «4 movimientos son de antes del 3 de octubre», '
+        'con «Mi saldo ya los incluye (recomendado)» marcado.',
+      );
+      await f.tap('Sumarlos a mi saldo');
+      final Decimal after = bankBefore - Decimal.parse('799900');
+      await f.step(
+        'Con «Sumarlos a mi saldo», abajo dice «Saldo de Bancolombia: '
+        '${_money(bankBefore)} → ${_money(after)}».',
+      );
+      await f.check('El saldo que anuncia es el de hoy menos lo que sale', () {
+        expect(
+          f.screenText,
+          contains(
+            'Saldo de Bancolombia: ${_money(bankBefore)} → ${_money(after)}',
+          ),
+        );
+      });
+      await f.tap('Importar 4 movimientos');
+      await f.waitFor(find.text('Se importaron 4 movimientos.'));
+      await f.step(
+        'Importados: el resultado repite «Saldo de Bancolombia: '
+        '${_money(bankBefore)} → ${_money(after)}».',
+      );
+      await f.check('Bancolombia bajó exactamente \$799.900', () {
+        expect(own.balances[bank.id]!.amount, after);
+      });
+      await f.check('Lo que debes en la Visa bajó \$480.000', () {
+        expect(
+          own.balances[visa.id]!.amount,
+          visaBefore + Decimal.parse('480000'),
+        );
+      });
+      await f.tap('Listo');
+      final int spent = own.ledger!.minor(89900 + 30000 + 200000);
+      await f.step(
+        'Inicio: ahora ${_headline(own)}. El pago de la Visa no cambia eso: '
+        'baja el banco y «Lo que debes en tarjetas» baja a '
+        '${pesos(-_owed(own))}.',
+      );
+      await f.check(
+        'Lo que puedes gastar bajó ${_cop(own, spent)}, sin el pago de la Visa',
+        () => expect(own.ledger!.freeUntilPayday, free - spent),
+      );
+      await f.check(
+        '«Lo que debes en tarjetas» bajó a lo que dice la Visa ahora',
+        () => _cardDebtShown(f, own),
+      );
+    },
+  ),
+  AppFlow(
+    '08-04-ajustar-al-saldo-del-extracto',
+    'Dejar la cuenta con el saldo del extracto',
+    area: 'Importar extracto',
+    goal:
+        'El extracto trae el saldo de cada día y quiero que Bancolombia '
+        'quede con el mismo saldo que dice el banco.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Account bank = _account(own, 'Bancolombia');
+      final Decimal before = own.balances[bank.id]!.amount;
+      final StatementRead read = await _openStatement(
+        f,
+        _balanceCsv,
+        account: 'Bancolombia',
+      );
+      await f.page(
+        'Este extracto trae saldo: abajo dice «Según el extracto, el 3 de '
+        'octubre tenías \$865.100.» y lo que Quincena tendría ese día.',
+      );
+      final List<ImportCandidate> all = await _prepared(f, bank, read);
+      await f.check('Halla el saldo final del extracto', () {
+        final ClosingBalance? closing = StatementImporter.closing(bank, all);
+        expect(closing?.amount, Decimal.parse('865100'));
+        expect(
+          f.screenText,
+          contains('Según el extracto, el 3 de octubre tenías \$865.100.'),
+        );
+        expect(f.screenText, contains('Quincena tendría'));
+      });
+      await f.tapFound(
+        find.widgetWithText(SwitchListTile, 'Ajustar al saldo del extracto'),
+      );
+      await f.step(
+        'Con «Ajustar al saldo del extracto» prendido, abajo dice que el '
+        'saldo de Bancolombia quedará en \$865.100.',
+      );
+      await f.check('Promete dejar Bancolombia en \$865.100', () {
+        expect(
+          f.screenText,
+          contains(
+            'Saldo de Bancolombia: ${_money(before)} → '
+            '${_money(Decimal.parse('865100'))}',
+          ),
+        );
+      });
+      await f.tap('Importar 2 movimientos');
+      await f.waitFor(find.text('Se importaron 2 movimientos.'));
+      await f.step(
+        'Importados D1 y Claro: el saldo de Bancolombia pasó a \$865.100, el '
+        'mismo del extracto.',
+      );
+      await f.check('Bancolombia quedó con el saldo del extracto', () {
+        expect(own.balances[bank.id]!.amount, Decimal.parse('865100'));
+        expect(_imported(own, bank), hasLength(2));
+      });
+      await f.tap('Listo');
+      await f.tap('Cuentas');
+      await f.tap('Banco · Bancolombia');
+      await f.step(
+        'En la cuenta, el saldo dice \$865.100 y arriba están D1 y Claro, '
+        'que llegaron del extracto.',
+      );
+      await f.check('La cuenta muestra el mismo saldo', () {
+        expect(f.shows(_money(Decimal.parse('865100'))), isTrue);
+      });
+    },
+  ),
+  AppFlow(
+    '08-05-importar-la-tarjeta',
+    'Importar el extracto de la tarjeta',
+    area: 'Importar extracto',
+    goal:
+        'Quiero traer las compras de la Visa que no anoté, y que el pago que '
+        'le hice no cuente como un ingreso.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Account visa = _account(own, 'Visa');
+      final Account bank = _account(own, 'Bancolombia');
+      final Decimal visaBefore = own.balances[visa.id]!.amount;
+      final Decimal bankBefore = own.balances[bank.id]!.amount;
+      final StatementRead read = await _openStatement(
+        f,
+        _cardCsv,
+        account: 'Visa',
+      );
+      await f.page(
+        'El extracto de la Visa trae las compras en positivo y la app las lee '
+        'como deuda. Al pago le pregunta «¿De cuál de tus cuentas salió este '
+        'pago?».',
+      );
+      final List<ImportCandidate> all = await _prepared(f, visa, read);
+      await f.check('Las compras quedan como gastos y Falabella ya estaba', () {
+        expect(
+          all.firstWhere((ImportCandidate c) => c.payee == 'Rappi').line.amount,
+          Decimal.parse('-35500'),
+        );
+        expect(
+          all
+              .firstWhere((ImportCandidate c) => c.payee == 'Falabella')
+              .recorded,
+          isTrue,
+        );
+      });
+      await f.check('El pago no sabe de qué cuenta salió', () {
+        final ImportCandidate pay = all.firstWhere(
+          (ImportCandidate c) => c.cardPayment,
+        );
+        expect(pay.otherAccountId, isNull);
+        expect(pay.kind, EntryKind.income);
+        expect(
+          f.screenText,
+          contains('¿De cuál de tus cuentas salió este pago?'),
+        );
+      });
+      await f.tapFound(find.text('SU Pago Gracias'));
+      await f.tap('Transferencia');
+      await f.step(
+        'En su hoja, «Transferencia» pide «Desde» y propone Bancolombia: el '
+        'pago salió de ahí.',
+      );
+      await f.tap('Guardar');
+      await f.step(
+        'Guardado: el pago dice «Viene de Bancolombia» y arriba explica que '
+        'un pago de tarjeta no cuenta como gasto.',
+      );
+      await f.check('El pago quedó como movimiento desde Bancolombia', () {
+        expect(f.screenText, contains('Viene de Bancolombia'));
+        expect(
+          f.screenText,
+          contains(
+            'Un pago de tarjeta pasa plata de una cuenta tuya a otra: no '
+            'cuenta como gasto',
+          ),
+        );
+      });
+      await f.tap('Importar 3 movimientos');
+      await f.waitFor(find.text('Se importaron 3 movimientos.'));
+      await f.step(
+        'Importados: «Lo que debes en Visa» va de un valor al mismo, porque '
+        'tu saldo ya los incluía.',
+      );
+      await f.check('Ni la deuda de la Visa ni Bancolombia cambiaron', () {
+        expect(own.balances[visa.id]!.amount, visaBefore);
+        expect(own.balances[bank.id]!.amount, bankBefore);
+      });
+      await f.check('El pago quedó como transferencia de Bancolombia', () {
+        final Entry pay = _imported(
+          own,
+          visa,
+        ).firstWhere((Entry e) => e.amount == Decimal.parse('480000'));
+        expect(pay.transferId, isNotNull);
+        expect(
+          own.snapshot!.entries
+              .firstWhere(
+                (Entry e) => e.transferId == pay.transferId && e.id != pay.id,
+              )
+              .accountId,
+          bank.id,
+        );
+      });
+    },
+  ),
+  AppFlow(
+    '08-06-archivo-vacio-y-tarjeta-que-falta',
+    'Importar sin tener la tarjeta en la app',
+    area: 'Importar extracto',
+    goal:
+        'Solo tengo mi cuenta de ahorros en la app: quiero importar su '
+        'extracto, que trae el pago de una tarjeta, y saber qué pasa si el '
+        'archivo no sirve.',
+    data: _oneAccount,
+    manual: <String>[
+      'Un archivo que no es un extracto (una foto, un PDF protegido) muestra '
+          '«No se pudo leer el archivo. Prueba con un CSV, un Excel (.xlsx) o '
+          'un PDF.»',
+    ],
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Account bank = _account(own, 'Bancolombia');
+      final Decimal before = own.balances[bank.id]!.amount;
+      await _openStatement(
+        f,
+        'Fecha;Descripción;Valor\n',
+        until: find.text('No encontré movimientos en este archivo.'),
+      );
+      await f.step(
+        'Un archivo sin movimientos: «No encontré movimientos en este '
+        'archivo.» y «Elegir archivo» para probar con otro.',
+      );
+      await f.back();
+      await _openStatement(f, _noCardCsv, account: 'Bancolombia');
+      await f.step(
+        'Arriba, en naranja: «Parece el pago de una tarjeta. Agrégala en '
+        'Cuentas…». La línea «Tarjeta de Credito» va marcada como gasto en '
+        'Créditos.',
+      );
+      await f.check('Avisa que falta la tarjeta', () {
+        expect(
+          f.screenText,
+          contains('Parece el pago de una tarjeta. Agrégala en Cuentas'),
+        );
+      });
+      await f.tapFound(_lineBox('Tarjeta de Credito'));
+      await f.step(
+        'Desmarcado el pago de la tarjeta, el botón ofrece «Seleccionar '
+        'todos» y abajo quedan «2 seleccionados».',
+      );
+      await f.check('Quedan marcadas solo las 2 compras', () {
+        expect(f.shows('Seleccionar todos'), isTrue);
+        expect(f.shows('Importar 2 movimientos'), isTrue);
+      });
+      await f.tap('Importar 2 movimientos');
+      await f.waitFor(find.text('Se importaron 2 movimientos.'));
+      await f.step(
+        'Importadas las 2 compras: el pago de la tarjeta no se guardó, y el '
+        'saldo de Bancolombia sigue igual porque ya las incluía.',
+      );
+      await f.check('Se guardaron las compras y no el pago', () {
+        final List<Entry> made = _imported(own, bank);
+        expect(made, hasLength(2));
+        expect(
+          made.where((Entry e) => e.amount == Decimal.parse('-350000')),
+          isEmpty,
+        );
+        expect(own.balances[bank.id]!.amount, before);
+      });
+    },
+  ),
+  AppFlow(
+    '08-07-pago-de-una-de-dos-tarjetas',
+    'Decir cuál de mis tarjetas pagué',
+    area: 'Importar extracto',
+    goal:
+        'Tengo dos tarjetas y el extracto del banco solo dice «pago tarjeta '
+        'crédito»: quiero decir que fue la Mastercard y que no cuente como '
+        'gasto.',
+    data: _twoCards,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Account bank = _account(own, 'Bancolombia');
+      final Account master = _account(own, 'Mastercard');
+      final Decimal masterBefore = own.balances[master.id]!.amount;
+      final StatementRead read = await _openStatement(
+        f,
+        _twoCardsCsv,
+        account: 'Bancolombia',
+      );
+      await f.step(
+        'El pago no nombra la tarjeta: la línea dice «¿Es el pago de una '
+        'tarjeta tuya?» en naranja, y por ahora va como gasto.',
+      );
+      final List<ImportCandidate> all = await _prepared(f, bank, read);
+      await f.check('Con dos tarjetas no adivina cuál', () {
+        final ImportCandidate pay = all.firstWhere(
+          (ImportCandidate c) => c.cardPayment,
+        );
+        expect(pay.otherAccountId, isNull);
+        expect(pay.kind, EntryKind.expense);
+        expect(f.screenText, contains('¿Es el pago de una tarjeta tuya?'));
+      });
+      await f.tapFound(find.text('Tarjeta Credito'));
+      await f.tap('Transferencia');
+      await f.step(
+        'En su hoja, «Transferencia» propone en «Hacia» la primera tarjeta, '
+        'la Visa.',
+      );
+      await f.tapFound(find.byType(DropdownButtonFormField<String>).last);
+      await f.tapFound(find.text('Mastercard').last);
+      await f.tap('Guardar');
+      await f.step(
+        'Con Mastercard elegida y guardada, la línea dice «Pago de tu tarjeta '
+        'Mastercard» y ya no pregunta.',
+      );
+      await f.check('La línea va hacia la Mastercard', () {
+        expect(f.screenText, contains('Pago de tu tarjeta Mastercard'));
+        expect(
+          f.screenText,
+          isNot(contains('¿Es el pago de una tarjeta tuya?')),
+        );
+      });
+      await f.tap('Importar 2 movimientos');
+      await f.waitFor(find.text('Se importaron 2 movimientos.'));
+      await f.step(
+        'Importados: «Uno quedó como movimiento entre tus cuentas: no cuenta '
+        'como gasto.»',
+      );
+      await f.check('El pago llegó a la Mastercard y su deuda no se movió', () {
+        final Entry pay = _imported(
+          own,
+          bank,
+        ).firstWhere((Entry e) => e.amount == Decimal.parse('-250000'));
+        expect(
+          own.snapshot!.entries
+              .firstWhere(
+                (Entry e) => e.transferId == pay.transferId && e.id != pay.id,
+              )
+              .accountId,
+          master.id,
+        );
+        expect(own.balances[master.id]!.amount, masterBefore);
+      });
+      await f.tap('Listo');
+      await f.step(
+        'Inicio: «Lo que debes en tarjetas» dice ${pesos(-_owed(own))}, lo '
+        'de la Visa y la Mastercard juntas.',
+      );
+      await f.check('Inicio suma lo que deben las dos tarjetas', () {
+        _cardDebtShown(f, own);
+      });
     },
   ),
 ];
@@ -1337,6 +2383,20 @@ Future<QuincenaStore> _withRules() async {
   return store;
 }
 
+/// Diego's account with a second card, a Mastercard from Davivienda.
+Future<QuincenaStore> _twoCards() async {
+  final QuincenaStore store = await fullAccount();
+  await store.addAccount(
+    name: 'Mastercard',
+    kind: AccountKind.card,
+    asset: Asset.cop,
+    opening: Decimal.parse('-250000'),
+    institution: 'Davivienda',
+    creditLimit: Decimal.parse('2000000'),
+  );
+  return store;
+}
+
 /// Someone who spends from one account in pesos, and keeps dollars apart.
 Future<QuincenaStore> _oneAccount() async {
   final QuincenaStore store = QuincenaStore(
@@ -1403,6 +2463,14 @@ Account _account(OwnController own, String name) =>
 
 /// [minor] of the base currency the way the app writes it.
 String _cop(OwnController own, int minor) => pesos(own.ledger!.major(minor));
+
+/// What Inicio's big figure says now, in its own words.
+String _headline(OwnController own) {
+  final int free = own.ledger!.freeUntilPayday;
+  return free < 0
+      ? '«Te faltan ${_cop(own, -free)}»'
+      : '«Puedes gastar ${_cop(own, free)}»';
+}
 
 /// Who a capture says was paid, as its card shows it.
 String _payee(InboxItem i) =>
@@ -1474,3 +2542,137 @@ Finder _ruleTrash(String subject) => find.descendant(
   of: _ruleRow(subject),
   matching: find.byTooltip('Borrar regla'),
 );
+
+/// Bancolombia's statement for the end of September: the salary, Uber and
+/// the Éxito, already in the account; a bill, a transfer to someone, a
+/// cash withdrawal and the Visa's payment, which are not.
+const String _bankCsv =
+    'Fecha;Descripción;Valor\n'
+    '30/09/2026;ABONO NOMINA DL SOFT;2.400.000\n'
+    '01/10/2026;COMPRA EN UBER TRIP;-15.600\n'
+    '01/10/2026;PAGO PSE CLARO;-89.900\n'
+    '01/10/2026;TRANSFERENCIA A JUAN PEREZ;-30.000\n'
+    '02/10/2026;COMPRA EN EXITO LAURELES;-187.400\n'
+    '02/10/2026;RETIRO CAJERO;-200.000\n'
+    '02/10/2026;PAGO TARJETA VISA;-480.000\n';
+
+/// A statement with the balance after each line, which ends today.
+const String _balanceCsv =
+    'Fecha;Descripción;Valor;Saldo\n'
+    '02/10/2026;COMPRA EN EXITO LAURELES;-187.400;1.000.000\n'
+    '03/10/2026;COMPRA EN D1;-45.000;955.000\n'
+    '03/10/2026;PAGO PSE CLARO;-89.900;865.100\n';
+
+/// The Visa's statement, purchases in positive as cards print them, and
+/// the payment the bank received.
+const String _cardCsv =
+    'Fecha;Descripción;Valor\n'
+    '29/09/2026;SU PAGO GRACIAS;-480.000\n'
+    '30/09/2026;NETFLIX.COM;26.900\n'
+    '02/10/2026;FALABELLA;42.900\n'
+    '02/10/2026;RAPPI;35.500\n';
+
+/// Bancolombia's statement with the payment of a card it does not name.
+const String _twoCardsCsv =
+    'Fecha;Descripción;Valor\n'
+    '01/10/2026;PAGO PSE CLARO;-89.900\n'
+    '02/10/2026;PAGO TARJETA CREDITO;-250.000\n';
+
+/// A savings account's statement with a card's payment in it.
+const String _noCardCsv =
+    'Fecha;Descripción;Valor\n'
+    '28/09/2026;COMPRA EN D1;-45.000\n'
+    '29/09/2026;PAGO TARJETA DE CREDITO;-350.000\n'
+    '30/09/2026;COMPRA EN FARMATODO;-27.500\n';
+
+/// Opens the import with [csv] already read, the way a file comes back
+/// from the system's picker, for [account] or, with none, for the first
+/// one; then waits for [until], by default the review's lines.
+Future<StatementRead> _openStatement(
+  FlowRun f,
+  String csv, {
+  String? account,
+  Finder? until,
+}) async {
+  final OwnController own = _shellOwn(f);
+  final StatementRead read = readTable(parseCsv(csv));
+  final String? id = account == null ? null : _account(own, account).id;
+  unawaited(
+    Navigator.of(
+      f.tester.element(find.byType(OwnShell, skipOffstage: false)),
+    ).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) =>
+            StatementPage(own: own, accountId: id, statement: read),
+      ),
+    ),
+  );
+  await settle(f.tester);
+  await f.waitFor(until ?? find.byType(Checkbox));
+  return read;
+}
+
+/// The app's controller, also while a page covers the shell.
+OwnController _shellOwn(FlowRun f) =>
+    f.tester.widget<OwnShell>(find.byType(OwnShell, skipOffstage: false)).own;
+
+/// What the importer makes of [read] for [account] right now.
+Future<List<ImportCandidate>> _prepared(
+  FlowRun f,
+  Account account,
+  StatementRead read,
+) async => (await f.tester.runAsync(
+  () => StatementImporter(_shellOwn(f).store).prepare(account, read),
+))!;
+
+/// What statements brought into [account].
+List<Entry> _imported(OwnController own, Account account) => <Entry>[
+  for (final Entry e in own.snapshot!.entries)
+    if (e.accountId == account.id &&
+        (e.sourceRef?.startsWith('statement:${account.id}:') ?? false))
+      e,
+];
+
+/// The checkbox of the statement line named [name].
+Finder _lineBox(String name) => find.descendant(
+  of: find.ancestor(of: find.text(name), matching: find.byType(ListTile)),
+  matching: find.byType(Checkbox),
+);
+
+/// Whether the statement line named [name] is checked to import.
+bool _ticked(FlowRun f, String name) =>
+    f.tester.widget<Checkbox>(_lineBox(name)).value ?? false;
+
+/// Checks that Inicio's «Lo que debes en tarjetas» is what the cards owe
+/// now, and that the money in the everyday accounts is what they hold.
+void _cardDebtShown(FlowRun f, OwnController own) {
+  final double owed = _owed(own);
+  var daily = Decimal.zero;
+  for (final Account a in own.accounts) {
+    if (a.spendable && a.asset == Asset.cop && a.kind != AccountKind.card) {
+      daily += own.balances[a.id]!.amount;
+    }
+  }
+  expect(own.spendableCardDebt, own.ledger!.minor(owed));
+  expect(f.screenText, contains(pesos(-owed)));
+  expect(
+    own.ledger!.balance + own.spendableCardDebt,
+    own.ledger!.minor(daily.toDouble()),
+  );
+}
+
+/// What the everyday cards owe now, by their balances, in pesos.
+double _owed(OwnController own) {
+  var owed = Decimal.zero;
+  for (final Account a in own.accounts) {
+    if (a.spendable && a.asset == Asset.cop && a.kind == AccountKind.card) {
+      owed -= own.balances[a.id]!.amount;
+    }
+  }
+  return owed.toDouble();
+}
+
+/// [amount] in pesos the way the import writes it, with a `+` on what
+/// comes in when [signed].
+String _money(Decimal amount, {bool signed = false}) =>
+    formatAmount(amount, Asset.cop, signed: signed);
