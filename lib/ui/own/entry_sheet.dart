@@ -491,7 +491,11 @@ class _EntryFormState extends State<_EntryForm> {
                 decimal: true,
               ),
               style: context.type.displaySmall,
-              onChanged: (_) => setState(_suggestReceived),
+              // What saving said of the amount no longer holds.
+              onChanged: (_) => setState(() {
+                _amountError = null;
+                _suggestReceived();
+              }),
               decoration: InputDecoration(
                 labelText: l.amount,
                 suffixText: _assetOf(_accountId).code,
@@ -505,6 +509,7 @@ class _EntryFormState extends State<_EntryForm> {
               (String? id) => setState(() {
                 if (id != null) _accountId = id;
                 _fromError = null;
+                _accountError = null;
                 _suggestReceived();
               }),
               error: _fromError,
@@ -516,6 +521,7 @@ class _EntryFormState extends State<_EntryForm> {
                 _toAccountId,
                 (String? id) => setState(() {
                   _toAccountId = id;
+                  _accountError = null;
                   _suggestReceived();
                 }),
                 error: _accountError,
@@ -532,7 +538,10 @@ class _EntryFormState extends State<_EntryForm> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  onChanged: (_) => _receivedTouched = true,
+                  onChanged: (_) => setState(() {
+                    _receivedTouched = true;
+                    _amountError = null;
+                  }),
                   decoration: InputDecoration(
                     labelText: l.received,
                     helperText: l.receivedHelp,

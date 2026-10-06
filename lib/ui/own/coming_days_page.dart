@@ -274,7 +274,9 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
                       const SizedBox(height: 2),
                       Text(
                         tight != null
-                            ? l.comingTight(dayShortMonth(tight.date))
+                            ? (ledger.cushion > 0
+                                  ? l.comingTight
+                                  : l.comingRunsOut)(dayShortMonth(tight.date))
                             : ledger.cushion > 0
                             ? l.comingNoTight
                             : l.comingNoTightZero,
@@ -665,7 +667,9 @@ class _DayDetail extends StatelessWidget {
                     borderRadius: BorderRadius.circular(99),
                   ),
                   child: Text(
-                    l.comingUnderCushion,
+                    ledger.cushion > 0
+                        ? l.comingUnderCushion
+                        : l.comingRunsOutBadge,
                     style: context.type.labelSmall?.copyWith(
                       color: context.colors.caution,
                     ),

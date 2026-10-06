@@ -1622,6 +1622,18 @@ abstract class AppLocalizations {
   /// **'El {date} quedarías bajo tu colchón.'**
   String comingTight(String date);
 
+  /// No description provided for @comingRunsOut.
+  ///
+  /// In es, this message translates to:
+  /// **'El {date} te quedarías sin plata.'**
+  String comingRunsOut(String date);
+
+  /// No description provided for @comingRunsOutBadge.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin plata'**
+  String get comingRunsOutBadge;
+
   /// No description provided for @comingNoTight.
   ///
   /// In es, this message translates to:
@@ -1922,6 +1934,12 @@ abstract class AppLocalizations {
   /// **'Ver los próximos 30 días'**
   String get closeSeeDays;
 
+  /// No description provided for @closeActionRunsOut.
+  ///
+  /// In es, this message translates to:
+  /// **'El {date} te quedarías sin plata. Mira qué cobro podrías mover de fecha.'**
+  String closeActionRunsOut(String date);
+
   /// No description provided for @closeActionTight.
   ///
   /// In es, this message translates to:
@@ -1945,6 +1963,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Nada que ajustar esta vez.'**
   String get closeActionNone;
+
+  /// No description provided for @closePaymentsNone.
+  ///
+  /// In es, this message translates to:
+  /// **'En esta quincena no hubo pagos de {category}. Estos son los de la anterior:'**
+  String closePaymentsNone(String category);
 
   /// No description provided for @closeSeePayments.
   ///

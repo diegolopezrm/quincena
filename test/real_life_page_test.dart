@@ -82,6 +82,70 @@ void main() {
     );
   });
 
+  testWidgets('a split by amounts opens again with its amounts, and what '
+      'saving said goes once something changes', (tester) async {
+    final OwnController own = await openPage(
+      tester,
+      (OwnController own) => Scaffold(
+        body: ListenableBuilder(
+          listenable: own,
+          builder: (BuildContext context, _) =>
+              CustomScrollView(slivers: <Widget>[MovementsTab(own: own)]),
+        ),
+      ),
+      data: (QuincenaStore store, Account bank, _) => dinner(store, bank),
+    );
+    await tapText(tester, 'Cena');
+    await tapText(tester, 'Dividir este gasto');
+    await tapText(tester, 'Guardar');
+    expect(find.text('Agrega al menos a una persona más.'), findsOneWidget);
+    await tester.enterText(
+      find.widgetWithText(TextField, '¿Con quién lo divides?'),
+      'Ana',
+    );
+    await settle(tester);
+    expect(find.text('Agrega al menos a una persona más.'), findsNothing);
+
+    await tapText(tester, 'Por montos');
+    await tester.enterText(find.widgetWithText(TextField, 'Tu parte'), '50000');
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Parte de Ana'),
+      '70000',
+    );
+    await settle(tester);
+    await tapText(tester, 'Guardar');
+    final Entry dinnerEntry = own.snapshot!.entries.singleWhere(
+      (Entry e) => e.payee == 'Cena',
+    );
+    expect(own.splitOf(dinnerEntry.id)!.$2.shares, <String, int>{
+      meId: 50000,
+      'p-ana': 70000,
+    });
+
+    await tapText(tester, 'Cena');
+    await tapText(tester, 'Cambiar la división');
+    expect(
+      find.descendant(
+        of: find.widgetWithText(TextField, 'Tu parte'),
+        matching: find.text('50.000'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.widgetWithText(TextField, 'Parte de Ana'),
+        matching: find.text('70.000'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Faltan'), findsNothing);
+    await tapText(tester, 'Guardar');
+    expect(own.splitOf(dinnerEntry.id)!.$2.shares, <String, int>{
+      meId: 50000,
+      'p-ana': 70000,
+    });
+  });
+
   testWidgets('a repayment tied to its movement is money back, and a '
       'reminder goes only when shared', (tester) async {
     final List<MethodCall> calls = <MethodCall>[];

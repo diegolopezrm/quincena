@@ -16,8 +16,10 @@ import 'package:quincena/store/store.dart';
 import 'package:quincena/theme/theme.dart';
 import 'package:quincena/ui/own/close_page.dart';
 import 'package:quincena/ui/own/coming_days_page.dart';
+import 'package:quincena/ui/own/home_tab.dart';
 
 import 'own_flow_test.dart' show settle;
+import 'page_harness.dart' as harness;
 
 Decimal d(String s) => Decimal.parse(s);
 
@@ -223,5 +225,101 @@ void main() {
     await tester.tap(find.text('Ver los pagos'));
     await settle(tester);
     expect(find.text('Crepes'), findsOneWidget);
+  });
+
+  testWidgets('the dashed keys under the chart show their dashes', (
+    tester,
+  ) async {
+    await open(tester, (OwnController own) => ComingDaysPage(own: own));
+    final Finder key = find
+        .ancestor(
+          of: find.text('Colchón de ${pesos(100000)}'),
+          matching: find.byType(Row),
+        )
+        .first;
+    final Finder dashes = find.descendant(
+      of: key,
+      matching: find.byType(ColoredBox),
+    );
+    expect(dashes, findsNWidgets(3));
+    for (final Element dash in dashes.evaluate()) {
+      expect((dash.renderObject! as RenderBox).size.height, 2);
+    }
+  });
+
+  testWidgets('a category that fell to nothing shows the payments of the '
+      'period before, not an empty sheet', (tester) async {
+    await harness.openPage(
+      tester,
+      (OwnController own) => ClosePage(own: own),
+      data: (QuincenaStore store, Account bank, _) async {
+        for (final (String amount, DateTime on, String category, String payee)
+            in <(String, DateTime, String, String)>[
+              ('90000', DateTime(2026, 8, 30, 12), 'groceries', 'Éxito'),
+              ('1200000', DateTime(2026, 9, 5, 12), 'housing', 'Arriendo'),
+              ('80000', DateTime(2026, 9, 16, 12), 'groceries', 'D1'),
+            ]) {
+          await store.addEntry(
+            accountId: bank.id,
+            amount: d(amount),
+            kind: EntryKind.expense,
+            date: on,
+            category: category,
+            payee: payee,
+          );
+        }
+      },
+    );
+    await harness.tapText(tester, 'Arriendo');
+    expect(find.text('Arriendo del 15 sept al 29 sept'), findsOneWidget);
+    expect(
+      find.text(
+        'En esta quincena no hubo pagos de Arriendo. Estos son los de la '
+        'anterior:',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text(pesos(-1200000)), findsWidgets);
+    expect(find.text('5 sept'), findsOneWidget);
+  });
+
+  testWidgets('without a cushion, a day under it is a day out of money', (
+    tester,
+  ) async {
+    // 2.000.000 after the pay, and rent of 2.300.000 on the 10th.
+    final OwnController own = await harness.openPage(
+      tester,
+      (OwnController own) => Scaffold(
+        body: SingleChildScrollView(
+          child: OwnHomeTab(own: own, onSeeAll: () {}),
+        ),
+      ),
+      data: (QuincenaStore store, Account bank, _) => store.addEntry(
+        accountId: bank.id,
+        amount: d('2300000'),
+        kind: EntryKind.expense,
+        date: DateTime(2026, 10, 10, 12),
+        category: 'housing',
+        payee: 'Arriendo',
+      ),
+    );
+    expect(own.ledger!.cushion, 0);
+    expect(find.text('El 10 oct te quedarías sin plata.'), findsOneWidget);
+    expect(find.textContaining('colchón'), findsNothing);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: quincenaTheme(Brightness.light),
+        locale: const Locale('es'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: appLocales,
+        home: ComingDaysPage(own: own),
+      ),
+    );
+    await settle(tester);
+    expect(find.text('El 10 oct te quedarías sin plata.'), findsOneWidget);
+    await harness.reveal(tester, find.text('Sin plata'));
+    expect(find.text('Sin plata'), findsWidgets);
+    expect(find.text('Bajo tu colchón'), findsNothing);
   });
 }

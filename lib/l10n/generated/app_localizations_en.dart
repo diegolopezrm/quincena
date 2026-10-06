@@ -977,6 +977,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String comingRunsOut(String date) {
+    return 'On $date you\'d run out of money.';
+  }
+
+  @override
+  String get comingRunsOutBadge => 'Out of money';
+
+  @override
   String get comingNoTight =>
       'You stay above your safety buffer for the next 30 days.';
 
@@ -1177,6 +1185,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get closeSeeDays => 'See the next 30 days';
 
   @override
+  String closeActionRunsOut(String date) {
+    return 'On $date you\'d run out of money. See whether a charge could move to another day.';
+  }
+
+  @override
   String closeActionTight(String date) {
     return 'On $date you\'d dip below your buffer. See whether a charge could move to another day.';
   }
@@ -1193,6 +1206,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get closeActionNone => 'Nothing to adjust this time.';
+
+  @override
+  String closePaymentsNone(String category) {
+    return 'No payments in $category this pay period. Here are the ones from the period before:';
+  }
 
   @override
   String get closeSeePayments => 'See the payments';

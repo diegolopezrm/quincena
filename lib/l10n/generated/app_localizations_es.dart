@@ -980,6 +980,14 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String comingRunsOut(String date) {
+    return 'El $date te quedarías sin plata.';
+  }
+
+  @override
+  String get comingRunsOutBadge => 'Sin plata';
+
+  @override
   String get comingNoTight => 'Ningún día bajo tu colchón en estos 30 días.';
 
   @override
@@ -1178,6 +1186,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get closeSeeDays => 'Ver los próximos 30 días';
 
   @override
+  String closeActionRunsOut(String date) {
+    return 'El $date te quedarías sin plata. Mira qué cobro podrías mover de fecha.';
+  }
+
+  @override
   String closeActionTight(String date) {
     return 'El $date quedarías bajo tu colchón. Mira qué cobro podrías mover de fecha.';
   }
@@ -1194,6 +1207,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get closeActionNone => 'Nada que ajustar esta vez.';
+
+  @override
+  String closePaymentsNone(String category) {
+    return 'En esta quincena no hubo pagos de $category. Estos son los de la anterior:';
+  }
 
   @override
   String get closeSeePayments => 'Ver los pagos';

@@ -69,57 +69,75 @@ class ClosePage extends StatelessWidget {
       (int a, Movement m) => a + m.amount,
     );
 
-    void payments(Category category) => showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      useSafeArea: true,
-      backgroundColor: context.colors.surface,
-      constraints: const BoxConstraints(maxWidth: 640),
-      builder: (BuildContext context) => SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Text(
-              l.closePaymentsTitle(
-                category.labelIn(lang),
-                dayShortMonth(close.start),
-                dayShortMonth(last),
-              ),
-              style: context.type.headlineMedium,
-            ),
-            const SizedBox(height: 12),
-            for (final Movement m in close.movementsOf(ledger, category))
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Text(
-                            m.merchant.isEmpty
-                                ? category.labelIn(lang)
-                                : m.merchant,
-                            style: context.type.titleSmall,
-                          ),
-                          Text(
-                            dayShortMonth(m.date),
-                            style: context.type.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Figures(amount(-m.amount), style: context.type.titleSmall),
-                  ],
+    void payments(Category category) {
+      final List<Movement> inPeriod = close.movementsOf(ledger, category);
+      // A category that fell to nothing: what it was, so the sheet is not
+      // empty and the difference has its payments.
+      final List<Movement> shown = inPeriod.isEmpty
+          ? close.movementsBefore(ledger, category)
+          : inPeriod;
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        useSafeArea: true,
+        backgroundColor: context.colors.surface,
+        constraints: const BoxConstraints(maxWidth: 640),
+        builder: (BuildContext context) => SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Text(
+                l.closePaymentsTitle(
+                  category.labelIn(lang),
+                  dayShortMonth(close.start),
+                  dayShortMonth(last),
                 ),
+                style: context.type.headlineMedium,
               ),
-          ],
+              const SizedBox(height: 12),
+              if (inPeriod.isEmpty) ...<Widget>[
+                Text(
+                  l.closePaymentsNone(category.labelIn(lang)),
+                  style: context.type.bodyMedium,
+                ),
+                const SizedBox(height: 6),
+              ],
+              for (final Movement m in shown)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              m.merchant.isEmpty
+                                  ? category.labelIn(lang)
+                                  : m.merchant,
+                              style: context.type.titleSmall,
+                            ),
+                            Text(
+                              dayShortMonth(m.date),
+                              style: context.type.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Figures(
+                        amount(-m.amount),
+                        style: context.type.titleSmall,
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    }
 
     void days() => Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -233,9 +251,10 @@ class ClosePage extends StatelessWidget {
         title: l.closeAction,
         children: <Widget>[
           Text(switch (close.action) {
-            CloseAction.tightDay => l.closeActionTight(
-              dayMonth(close.tightDay!),
-            ),
+            CloseAction.tightDay =>
+              (ledger.cushion > 0 ? l.closeActionTight : l.closeActionRunsOut)(
+                dayMonth(close.tightDay!),
+              ),
             CloseAction.lookAtCategory => () {
               final CategoryChange c = close.changes.firstWhere(
                 (CategoryChange x) => x.category == close.actionCategory,
