@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -16,13 +18,51 @@ import 'ui/own/onboarding_page.dart';
 import 'ui/own/own_shell.dart';
 import 'ui/own/start_page.dart';
 
-/// What the person chose in settings.
+/// What the person chose in settings. The appearance and the language are
+/// kept in [store], where there is one, and come back on the next launch.
 class AppSettings extends ChangeNotifier {
+  AppSettings({this.store});
+
+  /// Where the appearance and the language are kept; none where the build
+  /// keeps nothing, and they last until the app closes.
+  final QuincenaStore? store;
+
+  static const String _themeKey = 'app.theme';
+  static const String _localeKey = 'app.locale';
+
+  /// Whether the person changed each one before [load] read it back, which
+  /// then wins over what was kept.
+  bool _themeChosen = false;
+  bool _localeChosen = false;
+
+  /// Brings back the appearance and the language chosen before.
+  Future<void> load() async {
+    final QuincenaStore? s = store;
+    if (s == null) return;
+    final String? theme = await s.setting(_themeKey);
+    final String? language = await s.setting(_localeKey);
+    var changed = false;
+    if (!_themeChosen) {
+      final ThemeMode? kept = ThemeMode.values.asNameMap()[theme];
+      if (kept != null && kept != _themeMode) {
+        _themeMode = kept;
+        changed = true;
+      }
+    }
+    if (!_localeChosen && language != null && language.isNotEmpty) {
+      _locale = Locale(language);
+      changed = true;
+    }
+    if (changed) notifyListeners();
+  }
+
   ThemeMode _themeMode = ThemeMode.system;
   ThemeMode get themeMode => _themeMode;
   set themeMode(ThemeMode value) {
+    _themeChosen = true;
     if (value == _themeMode) return;
     _themeMode = value;
+    unawaited(store?.setSetting(_themeKey, value.name));
     notifyListeners();
   }
 
@@ -31,8 +71,10 @@ class AppSettings extends ChangeNotifier {
   /// The interface language the person chose, or null to follow the device.
   Locale? get locale => _locale;
   set locale(Locale? value) {
+    _localeChosen = true;
     if (value == _locale) return;
     _locale = value;
+    unawaited(store?.setSetting(_localeKey, value?.languageCode ?? ''));
     notifyListeners();
   }
 
@@ -84,7 +126,7 @@ class QuincenaApp extends StatefulWidget {
 }
 
 class _QuincenaAppState extends State<QuincenaApp> {
-  final AppSettings _settings = AppSettings();
+  late final AppSettings _settings = AppSettings(store: _modes?.store)..load();
 
   /// A key passed at build time starts the app with Gemini answering.
   ///
