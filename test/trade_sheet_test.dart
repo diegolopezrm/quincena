@@ -2,6 +2,7 @@
 // filled in.
 import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -54,6 +55,54 @@ void main() {
     await settle(tester);
     expect(find.text('Escribe un monto'), findsNothing);
     expect(find.text('Precio por unidad: \$360.000.000'), findsOneWidget);
+  });
+
+  testWidgets('a coin paid with another cannot spend more than it holds', (
+    tester,
+  ) async {
+    final OwnController own = await openCrypto(tester, FakeMarket());
+    final Account bitcoin = own.accounts.firstWhere(
+      (Account a) => a.asset == Asset.btc,
+    );
+    final Account tether = own.accounts.firstWhere(
+      (Account a) => a.asset == Asset.usdt,
+    );
+    unawaited(
+      showTradeSheet(
+        tester.element(find.byType(PortfolioPage)),
+        own: own,
+        account: bitcoin,
+      ),
+    );
+    await settle(tester);
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Cantidad de BTC'),
+      '0,01',
+    );
+    await tester.tap(find.byType(DropdownButtonFormField<String?>));
+    await settle(tester);
+    await tester.tap(find.text('Tether · USDT').last);
+    await settle(tester);
+    final Finder total = find.widgetWithText(TextField, 'Total pagado');
+    await tester.enterText(total, '900');
+    await tester.tap(find.text('Guardar'));
+    await settle(tester);
+    InputDecoration decoration() => tester.widget<TextField>(total).decoration!;
+    expect(decoration().errorText, 'Esa cuenta tiene 500\u00a0USDT.');
+    expect(
+      own.snapshot!.entries.where((Entry e) => e.accountId == tether.id),
+      isEmpty,
+    );
+
+    await tester.enterText(total, '400');
+    await settle(tester);
+    expect(decoration().errorText, isNull);
+    await tester.tap(find.text('Guardar'));
+    await settle(tester);
+    expect(
+      own.balances[tether.id]!.amount,
+      tether.opening - Decimal.fromInt(400),
+    );
   });
 
   testWidgets('selling more than is held says so, until the quantity changes', (

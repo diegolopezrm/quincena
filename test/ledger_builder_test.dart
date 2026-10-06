@@ -350,6 +350,46 @@ void main() {
     },
   );
 
+  test('a charge whose card was deleted is still to be paid', () async {
+    await store.addAccount(
+      name: 'Bancolombia',
+      kind: AccountKind.bank,
+      asset: Asset.cop,
+      opening: d('1000000'),
+    );
+    final Account card = await store.addAccount(
+      name: 'Visa',
+      kind: AccountKind.card,
+      asset: Asset.cop,
+    );
+    final Account kept = await store.addAccount(
+      name: 'Ahorros',
+      kind: AccountKind.bank,
+      asset: Asset.cop,
+      spendable: false,
+    );
+    await store.addRecurring(
+      name: 'Netflix',
+      amount: Money(d('26900'), Asset.cop),
+      cadence: Cadence.monthly,
+      nextDate: DateTime(2026, 10, 12),
+      accountId: card.id,
+    );
+    await store.addRecurring(
+      name: 'Seguro',
+      amount: Money(d('50000'), Asset.cop),
+      cadence: Cadence.monthly,
+      nextDate: DateTime(2026, 10, 10),
+      accountId: kept.id,
+    );
+    expect((await ledger()).committedUntilPayday, 26900);
+
+    await store.deleteAccount(card.id);
+    // Netflix still comes before payday; what is paid from savings, not.
+    expect((await ledger()).committedUntilPayday, 26900);
+    expect((await ledger()).freeUntilPayday, 1000000 - 26900);
+  });
+
   test('a subscription says when it is charged next, by its cadence', () async {
     await store.addRecurring(
       name: 'Dominio',

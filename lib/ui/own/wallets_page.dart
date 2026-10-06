@@ -353,14 +353,21 @@ class _AddWalletState extends State<_AddWallet> {
                   ButtonSegment<Chain>(value: c, label: Text(c.label)),
               ],
               selected: <Chain>{_chain},
-              onSelectionChanged: (Set<Chain> s) =>
-                  setState(() => _chain = s.single),
+              // What was wrong was wrong for the other chain: it goes, as it
+              // goes once the address is typed again.
+              onSelectionChanged: (Set<Chain> s) => setState(() {
+                _chain = s.single;
+                _error = null;
+              }),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _address,
               autocorrect: false,
               enableSuggestions: false,
+              onChanged: (_) {
+                if (_error != null) setState(() => _error = null);
+              },
               decoration: InputDecoration(
                 labelText: l.walletsAddress,
                 errorText: _error,

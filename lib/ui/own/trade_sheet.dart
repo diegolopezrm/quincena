@@ -121,6 +121,12 @@ class _TradeFormState extends State<_TradeForm> {
     final AppLocalizations l = context.l10n;
     final Decimal? quantity = parseAmount(_quantity.text);
     final Decimal? total = parseAmount(_total.text);
+    // Crypto paid from one of the person's coins cannot be more than that
+    // coin holds: an exchange or a wallet does not lend.
+    final Account? payer = sell ? null : _otherAccount;
+    final Money? payerHeld = payer == null || !payer.asset.isCrypto
+        ? null
+        : own.balances[payer.id] ?? payer.openingMoney;
     setState(() {
       _quantityError = quantity == null || quantity <= Decimal.zero
           ? l.invalidAmount
@@ -129,6 +135,8 @@ class _TradeFormState extends State<_TradeForm> {
                 : null);
       _totalError = total == null || total <= Decimal.zero
           ? l.invalidAmount
+          : payerHeld != null && total > payerHeld.amount
+          ? l.tradeNotEnough(moneyText(payerHeld, base: own.profile?.base))
           : null;
     });
     if (_quantityError != null || _totalError != null || _saving) return;

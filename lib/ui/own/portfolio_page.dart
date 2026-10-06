@@ -272,10 +272,39 @@ class _PortfolioPageState extends State<PortfolioPage> {
         builder: (BuildContext context, _) {
           final Portfolio? p = _controller.portfolio;
           if (p == null) return const SizedBox.shrink();
+          // Where the balances come from, to connect or follow more: after
+          // the coins, or, with none yet, under the words that name them.
+          final Widget sources = Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              SectionLabel(l.portfolioSources),
+              Panel(
+                children: <Widget>[
+                  if (BinanceLink.available)
+                    BinanceCard(own: widget.own, compact: true),
+                  WalletsRow(own: widget.own),
+                ],
+              ),
+            ],
+          );
           if (p.isEmpty) {
-            return Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(l.portfolioEmpty, style: context.type.bodyMedium),
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 760),
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(4, 0, 4, 24),
+                      child: Text(
+                        l.portfolioEmpty,
+                        style: context.type.bodyMedium,
+                      ),
+                    ),
+                    sources,
+                  ],
+                ),
+              ),
             );
           }
           return RefreshIndicator(
@@ -315,16 +344,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                     const SizedBox(height: 4),
                     _Allocation(portfolio: p),
                     const SizedBox(height: 24),
-                    // Where the balances come from, to connect or follow
-                    // more: after what they show.
-                    SectionLabel(l.portfolioSources),
-                    Panel(
-                      children: <Widget>[
-                        if (BinanceLink.available)
-                          BinanceCard(own: widget.own, compact: true),
-                        WalletsRow(own: widget.own),
-                      ],
-                    ),
+                    sources,
                     const SizedBox(height: 24),
                     _Notes(portfolio: p),
                   ],

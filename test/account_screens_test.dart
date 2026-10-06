@@ -113,6 +113,57 @@ void main() {
     expect(field(tester, 'Cupo total (opcional)').errorText, isNull);
   });
 
+  testWidgets('another crypto without its ticker is not saved as pesos', (
+    tester,
+  ) async {
+    final OwnController own = await open(tester);
+    final int count = own.accounts.length;
+    unawaited(
+      showAccountSheet(tester.element(find.byType(PortfolioPage)), own: own),
+    );
+    await settle(tester);
+    await tester.enterText(find.widgetWithText(TextField, 'Nombre'), 'Cardano');
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await settle(tester);
+    // At the end of the menu, past every currency.
+    await tester.scrollUntilVisible(
+      find.text('Otra cripto'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(find.text('Otra cripto').last);
+    await settle(tester);
+    await tester.enterText(
+      find.widgetWithText(TextField, '¿Cuánto tiene hoy?'),
+      '1500',
+    );
+    await tester.ensureVisible(find.text('Guardar'));
+    await tester.tap(find.text('Guardar'));
+    await settle(tester);
+    expect(own.accounts, hasLength(count));
+    // The label says what is missing, and so does the error under it.
+    final Finder ticker = find
+        .widgetWithText(TextField, 'Símbolo, por ejemplo ADA')
+        .first;
+    expect(
+      tester.widget<TextField>(ticker).decoration!.errorText,
+      'Símbolo, por ejemplo ADA',
+    );
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Símbolo, por ejemplo ADA'),
+      'ada',
+    );
+    await settle(tester);
+    expect(field(tester, 'Símbolo, por ejemplo ADA').errorText, isNull);
+    await tester.ensureVisible(find.text('Guardar'));
+    await tester.tap(find.text('Guardar'));
+    await settle(tester);
+    final Account ada = named(own, 'Cardano');
+    expect(ada.asset.code, 'ADA');
+    expect(balance(own, ada).amount, Decimal.fromInt(1500));
+  });
+
   testWidgets('a card in its holder\'s favor stays so when its limit changes', (
     tester,
   ) async {
@@ -185,6 +236,32 @@ void main() {
     expect(own.accounts.where((Account a) => a.id == bank.id), isEmpty);
     expect(find.byType(AccountPage), findsNothing);
     expect(find.byType(PortfolioPage), findsOneWidget);
+  });
+
+  testWidgets('the wallet form stops saying an address is wrong once it is '
+      'typed again or the chain changes', (tester) async {
+    final OwnController own = await open(tester);
+    await push(tester, WalletsPage(own: own));
+    await tester.tap(find.text('Agregar billetera'));
+    await settle(tester);
+    final Finder address = find.widgetWithText(TextField, 'Dirección pública');
+    String? error() => tester.widget<TextField>(address).decoration!.errorText;
+
+    await tester.enterText(address, 'mi-ledger');
+    await tester.tap(find.text('Agregar billetera').last);
+    await settle(tester);
+    expect(error(), 'Esa no parece una dirección de Bitcoin.');
+    await tester.enterText(address, 'mi-ledger-2');
+    await settle(tester);
+    expect(error(), isNull);
+
+    await tester.tap(find.text('Agregar billetera').last);
+    await settle(tester);
+    expect(error(), isNotNull);
+    await tester.tap(find.text('TRON'));
+    await settle(tester);
+    expect(error(), isNull);
+    expect(own.wallets.wallets, isEmpty);
   });
 
   testWidgets('the wallets page reads the wallets again, and says so', (

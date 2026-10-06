@@ -320,6 +320,40 @@ void main() {
     );
   });
 
+  testWidgets('with nothing held, it offers the ways to bring crypto in', (
+    tester,
+  ) async {
+    await openCrypto(
+      tester,
+      FakeMarket(),
+      data: (QuincenaStore store) async {
+        // Everything sold: crypto accounts at zero hold nothing.
+        for (final Account a in await store.accounts()) {
+          await store.addEntry(
+            accountId: a.id,
+            amount: -a.opening,
+            kind: EntryKind.expense,
+            date: DateTime(2026, 10, 2),
+            cost: Money(Decimal.fromInt(1000), Asset.cop),
+          );
+        }
+      },
+    );
+    expect(
+      find.text(
+        'Aún no tienes cripto. Agrega una billetera o conecta Binance.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Tu cripto vale'), findsNothing);
+    // What the words name is there to tap.
+    expect(find.text('Billeteras propias'), findsOneWidget);
+    expect(find.text('Binance'), findsOneWidget);
+    await tester.tap(find.text('Billeteras propias'));
+    await settle(tester);
+    expect(find.text('Aún no sigues ninguna billetera.'), findsOneWidget);
+  });
+
   testWidgets('the total is its coins added up, each as its row shows it', (
     tester,
   ) async {

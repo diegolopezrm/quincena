@@ -95,6 +95,7 @@ class _AccountFormState extends State<_AccountForm> {
   late bool _spendable = _editing?.spendable ?? _kind.spendableByDefault;
   bool _spendableTouched = false;
   bool _other = false;
+  String? _otherError;
   String? _nameError;
   String? _balanceError;
   bool _saving = false;
@@ -158,13 +159,18 @@ class _AccountFormState extends State<_AccountForm> {
         card &&
         _limit.text.trim().isNotEmpty &&
         (limit == null || limit <= Decimal.zero);
+    // Another crypto needs its ticker: without one the account would be
+    // made in the base currency, as if no crypto had been picked.
+    final bool noTicker = _other && _otherAsset.text.trim().isEmpty;
     setState(() {
       _nameError = name.isEmpty ? l.accountNameHint : null;
+      _otherError = noTicker ? l.assetOtherHint : null;
       _balanceError = typed == null ? l.invalidAmount : null;
       _costError = costInvalid ? l.invalidAmount : null;
       _limitError = limitInvalid ? l.invalidAmount : null;
     });
     if (_nameError != null ||
+        noTicker ||
         typed == null ||
         costInvalid ||
         limitInvalid ||
@@ -215,6 +221,7 @@ class _AccountFormState extends State<_AccountForm> {
   /// Takes a field's error away, redrawing only when there was one.
   void _clear(VoidCallback error) {
     if (_nameError == null &&
+        _otherError == null &&
         _balanceError == null &&
         _limitError == null &&
         _costError == null) {
@@ -318,11 +325,12 @@ class _AccountFormState extends State<_AccountForm> {
                 asset: _asset,
                 other: _other,
                 otherController: _otherAsset,
+                otherError: _otherError,
                 onChanged: (Asset? a) => setState(() {
                   _other = a == null;
                   if (a != null) _asset = a;
                 }),
-                onOtherChanged: () => setState(() {}),
+                onOtherChanged: () => setState(() => _otherError = null),
               ),
             const SizedBox(height: 16),
             TextField(
@@ -523,11 +531,15 @@ class _AssetPicker extends StatelessWidget {
     required this.otherController,
     required this.onChanged,
     required this.onOtherChanged,
+    this.otherError,
   });
 
   final Asset asset;
   final bool other;
   final TextEditingController otherController;
+
+  /// What is wrong with the ticker typed, if anything.
+  final String? otherError;
 
   /// Null means "another crypto", typed below.
   final ValueChanged<Asset?> onChanged;
@@ -577,7 +589,10 @@ class _AssetPicker extends StatelessWidget {
             controller: otherController,
             textCapitalization: TextCapitalization.characters,
             onChanged: (_) => onOtherChanged(),
-            decoration: InputDecoration(labelText: l.assetOtherHint),
+            decoration: InputDecoration(
+              labelText: l.assetOtherHint,
+              errorText: otherError,
+            ),
           ),
         ],
       ],

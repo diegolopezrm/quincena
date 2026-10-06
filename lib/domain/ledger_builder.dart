@@ -145,9 +145,14 @@ LedgerBuild buildLedger(
   // Two months of charges ahead: those by payday are committed, the rest
   // are for projections.
   final DateTime horizon = today.add(const Duration(days: 62));
+  // A charge whose account was deleted is still the person's to pay, from
+  // some account: it counts, as one with no account does. Only an account
+  // kept apart from spending, or archived, takes it out.
+  bool charged(String? id) =>
+      id == null || !accounts.containsKey(id) || spendable(id);
   final List<Movement> upcoming = <Movement>[
     for (final RecurringCharge r in s.recurring)
-      if (r.active && (r.accountId == null || spendable(r.accountId)))
+      if (r.active && charged(r.accountId))
         for (final DateTime d in r.datesUntil(horizon))
           if (d.isAfter(today))
             Movement(
