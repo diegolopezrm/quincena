@@ -1,20 +1,34 @@
 // Flows of Primeros pasos (01), Ajustes (09), Varios dispositivos y respaldo (10).
+import 'dart:convert';
+
 // The picker hands over files as cross_file's, and its fake must too.
 // ignore: depend_on_referenced_packages
 import 'package:cross_file/cross_file.dart';
 import 'package:decimal/decimal.dart';
+import 'package:drift/drift.dart' show driftRuntimeOptions;
+import 'package:drift/native.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quincena/app.dart';
+import 'package:quincena/backup/backup.dart';
+import 'package:quincena/capture/event.dart';
 import 'package:quincena/capture/inbox.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/format/money.dart';
+import 'package:quincena/licenses.dart';
 import 'package:quincena/money/asset.dart';
 import 'package:quincena/own/own_controller.dart';
+import 'package:quincena/session/session.dart';
+import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
+import 'package:quincena/sync/sync_file.dart';
+import 'package:quincena/sync/sync_service.dart';
+import 'package:quincena/sync/vault.dart';
+import 'package:quincena/version.dart';
+import 'package:quincena/ui/home_page.dart';
 import 'package:quincena/ui/own/own_shell.dart';
 // Links open through it; the fake keeps the app on screen.
 // ignore: depend_on_referenced_packages
@@ -442,6 +456,12 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         'venía marcado.',
       );
       await f.tapFound(find.text('1').last);
+      await f.tap('Cancelar');
+      await f.check('Con «Cancelar» sigue contando desde hoy, el 3', () {
+        expect(f.shows('Cada 14 días, contando desde el 3 oct 2026'), isTrue);
+      });
+      await f.tapContaining('Tu último pago');
+      await f.tapFound(find.text('1').last);
       await f.tap('ACEPTAR');
       await f.step(
         'Con el 1 de octubre elegido, la opción dice «Cada 14 días, contando '
@@ -489,7 +509,22 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         '«Agregar» en «Por hacer» lleva a «Pagos fijos», donde también está '
         '«No tengo pagos fijos».',
       );
+      await f.tap('No tengo pagos fijos');
+      await f.check('Desde Pagos fijos también se dice que no hay', () {
+        expect(_own(f).noFixedPayments, isTrue);
+        expect(_own(f).provisional, isFalse);
+      });
       await f.back();
+      await f.top();
+      await f.step(
+        'De vuelta en Inicio, abajo dice «Listo. Lo que puedes gastar ya no es '
+        'provisional.» y «Agrega tus pagos fijos» salió de «Por hacer».',
+      );
+      await f.check('Inicio ya no pide los pagos fijos', () {
+        expect(f.shows('Provisional: faltan tus pagos fijos'), isFalse);
+        expect(f.shows('Agrega tus pagos fijos'), isFalse);
+        expect(f.screenText, contains(pesos(500000)));
+      });
     },
   ),
   AppFlow(
@@ -536,6 +571,143 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.check('Puedes gastar ${pesos(320000)}', () {
         expect(_own(f).ledger!.freeUntilPayday, 320000);
         expect(_own(f).profile!.name, 'Laura');
+      });
+    },
+  ),
+  AppFlow(
+    '01-07-mis-dias-de-quincena-y-un-pago-a-mano',
+    'Escoger mis días de quincena y escribir un pago fijo a mano',
+    area: 'Primeros pasos',
+    goal:
+        'Me pagan el 10 y el 25, y pago un gimnasio que no está en las '
+        'sugerencias: quiero escribirlo, corregirlo y quitarlo si me equivoco.',
+    (FlowRun f) async {
+      await f.tap('Con mis cuentas');
+      await f.tester.enterText(find.byType(TextField).first, 'Sofía');
+      // «Siguiente» on the keyboard moves on, as the button does.
+      await f.tester.testTextInput.receiveAction(TextInputAction.next);
+      await settle(f.tester);
+      await f.check('«Siguiente» del teclado pasa al paso 2', () {
+        expect(f.shows('Paso 2 de 4'), isTrue);
+      });
+      await f.tester.tap(find.byType(DropdownButtonFormField<int>).first);
+      await settle(f.tester);
+      await f.step(
+        'En «Quincenal», «Primer pago» abre la lista de días del 1 al 27 '
+        'para escoger el primero.',
+      );
+      await f.tapFound(find.text('Día 10').last);
+      await f.tester.tap(find.byType(DropdownButtonFormField<int>).last);
+      await settle(f.tester);
+      await f.tapFound(find.text('Día 25').last);
+      await f.step(
+        'Con el 10 y el 25 escogidos, la opción dice «Los días 10 y 25 de '
+        'cada mes».',
+      );
+      await f.check('La opción quincenal muestra los días 10 y 25', () {
+        expect(f.shows('Los días 10 y 25 de cada mes'), isTrue);
+      });
+      await f.tap('Siguiente');
+      await f.check('El perfil quedó con quincenas el 10 y el 25', () async {
+        final Profile? p = await _read(f, () => _store(f).profile());
+        expect(p?.schedule, const TwiceMonthly(first: 10, second: 25));
+      });
+      await f.tap('Nequi · COP');
+      await f.type('¿Cuánto tiene hoy?', '400000');
+      await f.tap('Guardar');
+      await f.tap('Siguiente');
+      await f.tap('Agregar pago fijo');
+      await f.step(
+        '«Agregar pago fijo» abre el formulario vacío: cada mes, próximo cobro '
+        'el 3 de noviembre, pagado desde Nequi y en Suscripciones.',
+      );
+      await f.tap('Guardar');
+      await f.reveal(find.text('Falta el nombre o el valor.'));
+      await f.step(
+        '«Guardar» sin nombre ni valor no guarda: arriba del botón dice «Falta '
+        'el nombre o el valor.»',
+      );
+      await f.check('Sin nombre ni valor no se guarda', () async {
+        expect(await _read(f, () => _store(f).recurring()), isEmpty);
+      });
+      await f.type('¿Qué es?', 'Gimnasio');
+      await f.type('¿Cuánto cobra?', '90000');
+      await f.tap('Guardar');
+      await f.step(
+        'Con «Gimnasio» y 90.000, el pago queda en la lista con su próximo '
+        'cobro y su valor.',
+      );
+      await f.check(
+        'Quedó el gimnasio por 90.000, pagado desde Nequi, como suscripción '
+        'y con cobro el 3 de noviembre',
+        () async {
+          final RecurringCharge gym = (await _read(
+            f,
+            () => _store(f).recurring(),
+          )).single;
+          expect(gym.name, 'Gimnasio');
+          expect(gym.amount.amount, Decimal.parse('90000'));
+          expect(gym.category, 'subscriptions');
+          expect(gym.nextDate, DateTime(2026, 11, 3));
+          final List<Account> accounts = await _read(
+            f,
+            () => _store(f).accounts(),
+          );
+          expect(gym.accountId, accounts.single.id);
+        },
+      );
+      await f.tap('Gimnasio');
+      await f.type('¿Cuánto cobra?', '95000');
+      await f.page(
+        'Tocar el pago lo abre como «Pago fijo»: se corrige el valor a 95.000 '
+        'y abajo están «Pausar» y «Borrar pago fijo».',
+      );
+      await f.tap('Guardar');
+      await f.check('El gimnasio ahora cobra 95.000', () async {
+        final RecurringCharge gym = (await _read(
+          f,
+          () => _store(f).recurring(),
+        )).single;
+        expect(gym.amount.amount, Decimal.parse('95000'));
+      });
+      await f.tap('Gimnasio');
+      await f.tap('Borrar pago fijo');
+      await f.step(
+        '«Borrar pago fijo» pregunta antes: «¿Borrar Gimnasio?», y explica '
+        'que deja de contarse como comprometido.',
+      );
+      await f.tap('Cancelar');
+      await f.check('Con «Cancelar» el gimnasio sigue', () async {
+        expect(await _read(f, () => _store(f).recurring()), hasLength(1));
+      });
+      await f.tap('Borrar pago fijo');
+      await f.tap('Borrar pago fijo');
+      await f.step(
+        'Con «Borrar pago fijo» la lista queda vacía y vuelve a aparecer «No '
+        'tengo pagos fijos» bajo «Empezar».',
+      );
+      await f.check('No queda ningún pago fijo', () async {
+        expect(await _read(f, () => _store(f).recurring()), isEmpty);
+        expect(f.shows('No tengo pagos fijos'), isTrue);
+      });
+      await f.tapTip('Atrás');
+      await f.step(
+        '«Atrás» en el paso 4 vuelve a las cuentas: Nequi sigue ahí con sus '
+        '400.000.',
+      );
+      await f.check('El paso 3 conserva la cuenta Nequi', () {
+        expect(f.shows('Paso 3 de 4'), isTrue);
+        expect(f.shows('Nequi'), isTrue);
+      });
+      await f.tap('Siguiente');
+      await f.tap('No tengo pagos fijos');
+      await f.step(
+        'Con «No tengo pagos fijos», Inicio cuenta hasta el 10 de octubre, '
+        'el próximo de sus días de pago.',
+      );
+      await f.check('El próximo pago es el 10 de octubre', () {
+        expect(_own(f).ledger!.nextPayday, DateTime(2026, 10, 10));
+        expect(_own(f).ledger!.freeUntilPayday, 400000);
       });
     },
   ),
@@ -599,6 +771,12 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       );
       await f.tap('Cancelar');
       await f.check('Con «Cancelar» el nombre sigue siendo Diego', () {
+        expect(_own(f).profile!.name, 'Diego');
+      });
+      await f.tap('Nombre');
+      await f.tester.enterText(find.byType(TextField), '   ');
+      await f.tap('Guardar');
+      await f.check('Un nombre en blanco no se guarda', () {
         expect(_own(f).profile!.name, 'Diego');
       });
       await f.tap('Nombre');
@@ -810,6 +988,9 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         expect(phone.scheduledTexts().join(' '), isNot(contains(r'$')));
       });
       await f.tap('Avisarme el día de pago');
+      await f.step(
+        'Al tocarlo otra vez queda apagado: ya no habrá aviso el día de pago.',
+      );
       await f.check('Al apagarlo ya no queda ningún aviso de cierre', () {
         expect(_own(f).remindsClose, isFalse);
         expect(phone.scheduledClose(), isEmpty);
@@ -834,7 +1015,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       final String free = pesos(_own(f).ledger!.freeUntilPayday);
       // The widget gets the figure again whenever it changes.
       await f.tapTip('Ajustes');
-      await f.reveal(find.text('Ocultar montos en el widget'));
+      await _near(f, find.text('WIDGET DE INICIO'));
       await f.step(
         '«Widget de inicio» explica cómo agregarlo desde la pantalla de '
         'inicio. «Ocultar montos en el widget» está apagado.',
@@ -846,10 +1027,1377 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         expect(phone.widget?['amount'], '••••••');
       });
       await f.tap('Ocultar montos en el widget');
+      await f.step(
+        'Apagado otra vez, el widget vuelve a mostrar lo que puedes gastar.',
+      );
       await f.check('Apagado, el widget vuelve a mostrar $free', () {
         expect(_own(f).widgetHidesAmounts, isFalse);
         expect(phone.widget?['amount'], free);
       });
+    },
+  ),
+  AppFlow(
+    '09-07-captura-automatica',
+    'Revisar cómo llegan los pagos solos',
+    area: 'Ajustes',
+    goal:
+        'Quiero saber cómo hace la app para anotar mis pagos sola, leerle un '
+        'pantallazo y decidir qué registra sin preguntarme.',
+    data: _withRules,
+    manual: <String>[
+      'En un iPhone con iOS 27, los atajos listos con «Añadir» abren iCloud y '
+          'se instalan en Atajos.',
+      '«Abrir Atajos» abre la app Atajos del iPhone.',
+      'Elegir capturas o un PDF en el selector de fotos o de archivos del '
+          'sistema, y que Vision lea el texto de verdad.',
+      'En Android, «Permitir acceso a notificaciones» y los permisos de '
+          'ubicación, incluido «Permitir todo el tiempo».',
+    ],
+    (FlowRun f) async {
+      final _Phone phone = await _Phone.install(f);
+      final int pending = _own(f).pendingInbox.length;
+      await f.tapTip('Ajustes');
+      await f.tap('Captura automática');
+      await f.page(
+        '«Captura automática» explica cómo se arma en el iPhone con Atajos, '
+        'cómo leer capturas y comprobantes, y qué decide la app sola.',
+      );
+      if (f.shows('Abrir Atajos')) {
+        await f.tap('Abrir Atajos');
+        await f.check('«Abrir Atajos» abre la app Atajos', () {
+          expect(phone.opened, contains('shortcuts://'));
+        });
+      }
+      await f.tap('Leer un pantallazo o PDF');
+      await f.step(
+        '«Leer un pantallazo o PDF» pregunta qué elegir: «Capturas o fotos» '
+        'o «Un PDF».',
+      );
+      await f.tap('Un PDF');
+      await f.check('Si el selector se cierra sin elegir, no pasa nada', () {
+        expect(_own(f).pendingInbox, hasLength(pending));
+      });
+      phone.toPick.add(Uint8List.fromList(<int>[1, 2, 3]));
+      phone.screenshotText =
+          r'Bancolombia le informa Compra por $45.900 en RAPPI. '
+          '03/10/2026 09:30';
+      await f.tap('Leer un pantallazo o PDF');
+      await f.tap('Capturas o fotos');
+      await f.step(
+        'Con una captura de una compra en Rappi, abajo dice «Leí un pago. '
+        'Quedó en Por revisar.»',
+      );
+      await f.check('Queda un pago más por revisar, de 45.900 en Rappi', () {
+        expect(_own(f).pendingInbox, hasLength(pending + 1));
+        final InboxItem read = _own(f).pendingInbox.firstWhere(
+          (InboxItem i) => i.event.source == CaptureSource.screenshot,
+        );
+        expect(read.parsed.amount, Decimal.parse('45900'));
+        expect(read.suggestion.category, 'restaurants');
+        expect(read.suggestion.why, contains('learned'));
+      });
+      phone.toPick.add(Uint8List.fromList(<int>[4, 5]));
+      phone.screenshotText = 'Foto del perro';
+      await f.tap('Leer un pantallazo o PDF');
+      await f.tap('Capturas o fotos');
+      await f.step(
+        'Con una foto sin pago, abajo dice «No encontré un monto con su '
+        'moneda» y no se agrega nada.',
+      );
+      await f.check('Una foto sin pago no agrega nada', () {
+        expect(_own(f).pendingInbox, hasLength(pending + 1));
+      });
+      final bool auto = _own(f).captureSettings.autoRecord;
+      await f.tap('Registrar solo lo que esté claro');
+      await f.check('«Registrar solo lo que esté claro» queda '
+          '${auto ? 'apagado' : 'encendido'} y guardado', () async {
+        expect(_own(f).captureSettings.autoRecord, !auto);
+        final CaptureSettings saved = await _read(
+          f,
+          () => _store(f).captureSettings(),
+        );
+        expect(saved.autoRecord, !auto);
+      });
+      final bool located = _own(f).captureSettings.useLocation;
+      await f.tap('Usar la ubicación del pago');
+      await f.check('«Usar la ubicación del pago» queda '
+          '${located ? 'apagado' : 'encendido'}', () {
+        expect(_own(f).captureSettings.useLocation, !located);
+      });
+      await f.reveal(find.text('Volver a leer'));
+      await f.step(
+        'Abajo: cuántos comercios ya reconoce y las apps que no se leen, '
+        'como Rappi, con «Volver a leer».',
+      );
+      final int merchants = _own(f).captureSettings.merchantCategories.length;
+      await f.check('Dice que reconoce $merchants comercios', () {
+        expect(f.shows('Ya reconoce $merchants comercios.'), isTrue);
+      });
+      await f.tap('Volver a leer');
+      await f.check('Rappi vuelve a leerse', () async {
+        final CaptureSettings saved = await _read(
+          f,
+          () => _store(f).captureSettings(),
+        );
+        expect(saved.mutedApps, isEmpty);
+        expect(f.shows('Apps que no se leen'.toUpperCase()), isFalse);
+      });
+    },
+  ),
+  AppFlow(
+    '09-08-reglas-aprendidas',
+    'Corregir, apagar y borrar lo que la app aprendió',
+    area: 'Ajustes',
+    goal:
+        'La app aprendió que Rappi es restaurante, pero yo pido mercado por '
+        'ahí: quiero corregirlo y quitar lo que ya no me sirve.',
+    data: _withRules,
+    (FlowRun f) async {
+      final _Phone phone = await _Phone.install(f);
+      final int rules = _own(f).captureSettings.rules.length;
+      await f.tapTip('Ajustes');
+      await f.tap('Captura automática');
+      await f.reveal(find.text('Reglas aprendidas'));
+      await f.check('La fila dice $rules reglas', () {
+        expect(f.shows('$rules reglas'), isTrue);
+      });
+      await f.tap('Reglas aprendidas');
+      await f.page(
+        '«Reglas aprendidas» las agrupa en comercios, tarjetas y bancos, cada '
+        'una con su destino, un interruptor y la papelera.',
+      );
+      await f.tap('Rappi');
+      await f.step(
+        'Tocar «Rappi» pregunta «¿A qué categoría va?», con un visto en '
+        'Restaurantes.',
+      );
+      await f.tap('Mercado');
+      await f.check('Rappi ahora va a Mercado', () {
+        expect(
+          _own(f).captureSettings.use(RuleKind.merchant, 'rappi'),
+          'groceries',
+        );
+      });
+      final Finder exito = find.bySemanticsLabel(
+        'Usar esta regla: Exito Laureles',
+      );
+      await f.tapFound(
+        find.descendant(
+          of: find.ancestor(of: exito, matching: find.byType(ListTile)),
+          matching: find.byType(Switch),
+        ),
+      );
+      await f.step(
+        'Con el interruptor de Exito Laureles apagado, su destino se ve '
+        'tachado: la regla se guarda pero no se usa.',
+      );
+      await f.check('La regla de Exito Laureles se guarda pero no se usa', () {
+        final CaptureSettings s = _own(f).captureSettings;
+        expect(s.merchantCategories['exito laureles'], 'groceries');
+        expect(s.use(RuleKind.merchant, 'exito laureles'), isNull);
+      });
+      await f.tapFound(
+        find.descendant(
+          of: find.ancestor(
+            of: find.text('Tarjeta *1234'),
+            matching: find.byType(ListTile),
+          ),
+          matching: find.byTooltip('Borrar regla'),
+        ),
+      );
+      await f.step(
+        '«Borrar regla» en «Tarjeta *1234» la quita enseguida, sin preguntar '
+        'ni ofrecer deshacer.',
+      );
+      await f.check('La tarjeta *1234 ya no tiene regla', () async {
+        final CaptureSettings saved = await _read(
+          f,
+          () => _store(f).captureSettings(),
+        );
+        expect(saved.cardAccounts.containsKey('1234'), isFalse);
+        expect(saved.rules, hasLength(rules - 1));
+      });
+      await f.tap('Nequi');
+      await f.step(
+        'Una regla de banco o billetera pregunta «¿A qué cuenta va?», con '
+        'tus cuentas y un visto en Nequi.',
+      );
+      await f.back();
+      await f.check('Cerrar sin elegir deja lo de Nequi en Nequi', () {
+        final String? to = _own(
+          f,
+        ).captureSettings.use(RuleKind.institution, 'Nequi');
+        expect(
+          _own(f).accounts.firstWhere((Account a) => a.id == to).name,
+          'Nequi',
+        );
+      });
+      await f.back();
+      await f.check('De vuelta, la fila dice ${rules - 1} reglas', () {
+        expect(f.shows('${rules - 1} reglas'), isTrue);
+      });
+      phone.toPick.add(Uint8List.fromList(<int>[1]));
+      phone.screenshotText =
+          r'Bancolombia le informa Compra por $52.300 en RAPPI. '
+          '03/10/2026 09:45';
+      await f.tap('Leer un pantallazo o PDF');
+      await f.tap('Capturas o fotos');
+      await f.check('Un pago nuevo de Rappi llega sugerido en Mercado', () {
+        final InboxItem read = _own(f).pendingInbox.firstWhere(
+          (InboxItem i) => i.event.source == CaptureSource.screenshot,
+        );
+        expect(read.suggestion.category, 'groceries');
+        expect(read.suggestion.why, contains('learned'));
+      });
+    },
+  ),
+  AppFlow(
+    '09-09-tema-e-idioma',
+    'Cambiar el tema y el idioma',
+    area: 'Ajustes',
+    goal:
+        'De noche prefiero la app oscura, y a veces se la muestro a alguien '
+        'que no habla español.',
+    data: seeded,
+    (FlowRun f) async {
+      final _Phone phone = await _Phone.install(f);
+      await f.tapTip('Ajustes');
+      await f.tap('Oscuro');
+      await f.step(
+        'En «Apariencia», «Oscuro» cambia toda la app a colores oscuros al '
+        'instante.',
+      );
+      await f.check('La app quedó en modo oscuro', () {
+        expect(_app(f).themeMode, ThemeMode.dark);
+        expect(_brightness(f), Brightness.dark);
+      });
+      await f.tap('Claro');
+      await f.check('Con «Claro» queda clara aunque el teléfono cambie', () {
+        expect(_app(f).themeMode, ThemeMode.light);
+      });
+      await f.tap('English');
+      await f.step(
+        'En la fila de idiomas, «English» pasa todo a inglés al instante: '
+        '«Settings», «Your data», «Privacy policy».',
+      );
+      await f.check('La app quedó en inglés', () {
+        expect(_app(f).locale, const Locale('en'));
+        expect(f.shows('Settings'), isTrue);
+      });
+      await f.tap('Privacy policy');
+      await f.check('En inglés, la política abre su página en inglés', () {
+        expect(
+          phone.opened.last,
+          'https://diegolopezrm.github.io/quincena/privacy/',
+        );
+      });
+      await f.tap('Español');
+      await f.tapFound(find.text('Sistema').first);
+      await f.check('«Sistema» deja el tema y el idioma del teléfono', () {
+        expect(_app(f).themeMode, ThemeMode.system);
+        expect(_app(f).locale, const Locale('es'));
+      });
+      await f.tap('Oscuro');
+      await f.tap('English');
+      await _reopen(f);
+      await f.step(
+        'Con «Oscuro» e «English» elegidos, al cerrar y volver a abrir la app '
+        'Inicio sigue oscuro y en inglés: «You can spend».',
+      );
+      await f.check('Al volver a abrir, sigue oscura y en inglés', () {
+        expect(_app(f).themeMode, ThemeMode.dark);
+        expect(_app(f).locale, const Locale('en'));
+      });
+    },
+  ),
+  AppFlow(
+    '09-10-privacidad-soporte-y-licencias',
+    'Leer la privacidad, pedir ayuda y ver las licencias',
+    area: 'Ajustes',
+    goal:
+        'Antes de poner mis cuentas quiero saber qué pasa con mis datos y a '
+        'quién escribir si algo falla.',
+    data: seeded,
+    manual: <String>[
+      'Que las páginas de privacidad y soporte abran en el navegador y '
+          'carguen.',
+    ],
+    (FlowRun f) async {
+      final _Phone phone = await _Phone.install(f);
+      await f.tapTip('Ajustes');
+      await _near(f, find.text('PRIVACIDAD'));
+      await f.step(
+        '«Privacidad» dice que todo se guarda solo en el teléfono, sin '
+        'publicidad ni venta de datos, y tiene tres filas.',
+      );
+      await f.tap('Política de privacidad');
+      await f.check('«Política de privacidad» abre la página en español', () {
+        expect(phone.opened, <String>[
+          'https://diegolopezrm.github.io/quincena/privacidad/',
+        ]);
+      });
+      await f.tap('Soporte');
+      await f.check('«Soporte» abre la página de soporte', () {
+        expect(
+          phone.opened.last,
+          'https://diegolopezrm.github.io/quincena/soporte/',
+        );
+      });
+      // What main() adds to the packages' own licenses.
+      registerLicenses();
+      await f.tap('Licencias y créditos');
+      await f.waitFor(find.text('OpenStreetMap'));
+      await f.step(
+        '«Licencias y créditos» muestra Quincena con su versión y los créditos '
+        'de OpenStreetMap, y debajo cada fuente, ícono y paquete con su '
+        'licencia.',
+      );
+      await f.check('La página nombra la app, su versión y los créditos', () {
+        expect(f.shows('Quincena'), isTrue);
+        expect(f.shows(appVersion), isTrue);
+        expect(f.screenText, contains('© 2026 DL SOFT TECHNOLOGIES SAS'));
+      });
+      await f.tap('OpenStreetMap');
+      await f.waitFor(find.textContaining('Open Database License'));
+      await f.step(
+        'Tocar «OpenStreetMap» abre su licencia: de dónde salen los comercios '
+        'cercanos y la Open Database License.',
+      );
+      await f.check('La licencia de OpenStreetMap se lee completa', () {
+        expect(f.screenText, contains('Open Database License (ODbL) 1.0'));
+      });
+      await f.back();
+      await f.back();
+    },
+  ),
+  AppFlow(
+    '09-11-ver-el-ejemplo-y-volver',
+    'Mirar el ejemplo y volver a mis cuentas',
+    area: 'Ajustes',
+    goal:
+        'Quiero ver otra vez la cuenta de ejemplo sin perder nada de lo mío, '
+        'y volver cuando termine.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final _Phone phone = await _Phone.install(f);
+      final int free = _own(f).ledger!.freeUntilPayday;
+      final int entries = _own(f).snapshot!.entries.length;
+      await f.tapTip('Ajustes');
+      await _near(f, find.text('TUS DATOS'));
+      await f.step(
+        'En «Tus datos», «Ver los datos de ejemplo» está junto a exportar, '
+        'importar y «Borrar todo».',
+      );
+      await f.tap('Ver los datos de ejemplo');
+      await f.step(
+        '«Ver los datos de ejemplo» abre la cuenta de Valentina, con el aviso '
+        'de que no es la tuya y «Volver a mis cuentas».',
+      );
+      await f.check('La app recuerda que está en el ejemplo', () async {
+        expect(await _read(f, () => _store(f).setting('app.mode')), 'demo');
+        expect(f.shows('Volver a mis cuentas'), isTrue);
+      });
+      await f.check('El widget deja de mostrar la cifra del ejemplo', () {
+        expect(phone.widget, isNull);
+      });
+      await f.check('Tus movimientos siguen guardados', () async {
+        expect(await _read(f, () => _store(f).entries()), hasLength(entries));
+      });
+      await f.tap('Volver a mis cuentas');
+      await f.step(
+        '«Volver a mis cuentas» regresa a tu Inicio, con la misma cifra que '
+        'antes.',
+      );
+      await f.check('Puedes gastar sigue en ${pesos(free)}', () {
+        expect(_own(f).ledger!.freeUntilPayday, free);
+        expect(f.screenText, contains(pesos(free)));
+      });
+      await f.check('La app abre de nuevo en tus cuentas', () async {
+        expect(await _read(f, () => _store(f).setting('app.mode')), 'own');
+      });
+      await f.check('El widget vuelve a mostrar ${pesos(free)}', () {
+        expect(phone.widget?['amount'], pesos(free));
+      });
+    },
+  ),
+  AppFlow(
+    '09-12-borrar-todo',
+    'Borrar todos mis datos',
+    area: 'Ajustes',
+    goal: 'Voy a vender el teléfono y quiero que no quede nada mío en la app.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final _Phone phone = await _Phone.install(f);
+      // A device that synced and made a sealed backup keeps both keys.
+      await _read(f, () => SecureKeyStore().write(VaultKey.generate().bytes));
+      await _read(
+        f,
+        () => SecureBackupKeyStore().write(VaultKey.generate().bytes),
+      );
+      final int accounts = _own(f).accounts.length;
+      await f.tapTip('Ajustes');
+      await f.tap('Borrar todo');
+      await f.step(
+        '«Borrar todo» pregunta antes: «¿Borrar todos tus datos?», y avisa '
+        'que no se puede deshacer y que conviene exportar primero.',
+      );
+      await f.tap('Cancelar');
+      await f.check('Con «Cancelar» no se borra nada', () async {
+        expect(await _read(f, () => _store(f).accounts()), hasLength(accounts));
+        expect(f.shows('Ajustes'), isTrue);
+      });
+      await f.tap('Borrar todo');
+      await f.tap('Borrar todo');
+      await f.step(
+        'Con «Borrar todo» la app vuelve a la primera pantalla, «¿Cómo '
+        'quieres empezar?», como recién instalada.',
+      );
+      await f.check(
+        'No queda perfil, cuentas, movimientos ni pagos fijos',
+        () async {
+          final QuincenaStore store = _store(f);
+          expect(await _read(f, store.profile), isNull);
+          expect(await _read(f, () => store.accounts(archived: true)), isEmpty);
+          expect(await _read(f, store.entries), isEmpty);
+          expect(await _read(f, store.recurring), isEmpty);
+          expect(await _read(f, () => store.setting('app.mode')), isNull);
+        },
+      );
+      await f.check(
+        'Se borraron las llaves de sincronizar y de respaldo',
+        () async {
+          expect(await _read(f, () => SecureKeyStore().read()), isNull);
+          expect(await _read(f, () => SecureBackupKeyStore().read()), isNull);
+        },
+      );
+      await f.check('El widget ya no muestra ninguna cifra', () {
+        expect(phone.widget, isNull);
+      });
+      await f.tap('Con mis cuentas');
+      await f.step(
+        '«Con mis cuentas» empieza la configuración desde cero: el nombre '
+        'vacío y la moneda en pesos.',
+      );
+      await f.check('La configuración empieza vacía, en el paso 1', () {
+        expect(f.shows('Paso 1 de 4'), isTrue);
+        expect(
+          f.tester
+              .widget<TextField>(find.byType(TextField).first)
+              .controller!
+              .text,
+          isEmpty,
+        );
+      });
+      await f.tapTip('Atrás');
+      await _reopen(f);
+      await f.check('Al volver a abrir, sigue en la primera pantalla', () {
+        expect(f.shows('¿Cómo quieres empezar?'), isTrue);
+      });
+    },
+  ),
+  AppFlow(
+    '09-13-quien-responde-en-el-ejemplo',
+    'Elegir quién responde en el ejemplo y ver el modo desarrollador',
+    area: 'Ajustes',
+    goal:
+        'En la cuenta de ejemplo quiero saber quién contesta mis preguntas y, '
+        'como desarrollador, ver cómo arma cada respuesta.',
+    demo: true,
+    manual: <String>[
+      'Con «Gemini», una pregunta de verdad responde Gemini a través de '
+          'Quincena (necesita red y el proyecto de Firebase).',
+      'Con «Tu key», pegar una key real de aistudio.google.com y «Conectar».',
+      'Pegar la sesión copiada en un issue y reproducirla.',
+      'Tocar la pastilla «genui» y recorrer las pestañas tree, data, semantics '
+          'y messages del inspector (en las pruebas su letra no carga y el '
+          'encabezado se desborda).',
+    ],
+    (FlowRun f) async {
+      final _Phone phone = await _Phone.install(f);
+      await f.tapTip('Ajustes');
+      await f.page(
+        'En el ejemplo, «Ajustes» es una hoja: quién responde, idioma, '
+        'apariencia, modo desarrollador, «Usar con mis cuentas» y «Empezar de '
+        'nuevo».',
+      );
+      await f.check('Responde la demo, sin red', () {
+        expect(_session(f).mode, AgentMode.demo);
+        expect(f.shows('Demo'), isTrue);
+      });
+      await f.tap('Gemini');
+      await f.step(
+        '«Gemini» cambia la explicación: responde Gemini a través de '
+        'Quincena, sin key.',
+      );
+      await f.check('Ahora responde Gemini', () {
+        expect(_session(f).mode, AgentMode.gemini);
+      });
+      await f.tap('Tu key');
+      await f.tap('Conectar');
+      await f.step(
+        '«Tu key» pide la «Key de Gemini» y «Conectar». Sin key, «Conectar» '
+        'no hace nada.',
+      );
+      await f.check('Sin key sigue respondiendo Gemini de Quincena', () {
+        expect(_session(f).mode, AgentMode.gemini);
+        expect(_session(f).canGoLive, isFalse);
+      });
+      await f.tap('Demo');
+      await f.check('De vuelta en «Demo»', () {
+        expect(_session(f).mode, AgentMode.demo);
+      });
+      await f.tap('Modo desarrollador');
+      await f.reveal(find.text('Copiar la sesión'));
+      await f.step(
+        'Con «Modo desarrollador» encendido aparece «Copiar la sesión», '
+        'apagado mientras no haya conversación.',
+      );
+      await f.check('«Copiar la sesión» está apagado sin conversación', () {
+        expect(
+          f.tester
+              .widget<OutlinedButton>(
+                find.widgetWithText(OutlinedButton, 'Copiar la sesión'),
+              )
+              .onPressed,
+          isNull,
+        );
+      });
+      await f.back();
+      await f.tapContaining('¿Qué suscripciones tengo?');
+      await f.step(
+        'Con el modo desarrollador, la respuesta a «¿Qué suscripciones '
+        'tengo?» lleva abajo a la izquierda la pastilla del inspector.',
+      );
+      await f.check('El inspector está encendido sobre la conversación', () {
+        expect(_settings(f).developer, isTrue);
+        expect(_session(f).turns, hasLength(1));
+        expect(find.textContaining('genui '), findsOneWidget);
+      });
+      await f.tapTip('Ajustes');
+      await f.tap('Copiar la sesión');
+      await f.step(
+        '«Copiar la sesión» copia la conversación, pero la hoja sigue abierta '
+        'y tapa el aviso «Sesión copiada»: no se ve que pasó algo.',
+      );
+      await f.check('La sesión quedó en el portapapeles, sin lo escrito', () {
+        expect(phone.clipboard, isNotNull);
+        expect(phone.clipboard, contains('subscriptions'));
+        expect(
+          find.textContaining('Sesión copiada', skipOffstage: false),
+          findsOneWidget,
+        );
+      });
+      await f.tapTip('Ajustes');
+      await f.tap('Modo desarrollador');
+      await f.tap('Empezar de nuevo');
+      await f.step(
+        '«Empezar de nuevo» cierra la hoja y deja el ejemplo sin '
+        'conversación, con las preguntas del comienzo.',
+      );
+      await f.check('No queda conversación y el inspector se apagó', () {
+        expect(_session(f).turns, isEmpty);
+        expect(_settings(f).developer, isFalse);
+      });
+    },
+  ),
+  AppFlow(
+    '09-14-del-ejemplo-a-mis-cuentas',
+    'Ver el ejemplo en inglés y pasar a mis cuentas',
+    area: 'Ajustes',
+    goal:
+        'Le mostré el ejemplo a un amigo en inglés y oscuro; ahora quiero '
+        'empezar con mis cuentas.',
+    demo: true,
+    (FlowRun f) async {
+      await f.tapTip('Ajustes');
+      await f.tap('English');
+      await f.tap('Dark');
+      await f.page(
+        'En la hoja, «English» la pasa a inglés y «Dark» la oscurece: ahora '
+        'dice «Settings», «Language» y «Appearance».',
+      );
+      await f.check('El ejemplo quedó en inglés y oscuro, la hoja también', () {
+        expect(_app(f).locale, const Locale('en'));
+        expect(_app(f).themeMode, ThemeMode.dark);
+        expect(f.shows('Language'), isTrue);
+        expect(
+          f.tester
+              .widget<Material>(
+                find
+                    .descendant(
+                      of: find.byType(BottomSheet),
+                      matching: find.byType(Material),
+                    )
+                    .first,
+              )
+              .color,
+          Theme.of(f.tester.element(find.text('Language'))).colorScheme.surface,
+        );
+        expect(_brightness(f), Brightness.dark);
+      });
+      await f.tap('Español');
+      await f.tap('Claro');
+      await f.step(
+        '«Español» y «Claro» la pasan otra vez a español y a colores claros; '
+        'abajo sigue «Usar con mis cuentas».',
+      );
+      await f.tap('Usar con mis cuentas');
+      await f.step(
+        'De vuelta en español y claro, «Usar con mis cuentas» cierra la hoja y '
+        'abre el paso 1 de la configuración.',
+      );
+      await f.check('Empieza la configuración', () {
+        expect(f.shows('Paso 1 de 4'), isTrue);
+        expect(_app(f).themeMode, ThemeMode.light);
+      });
+    },
+  ),
+  AppFlow(
+    '10-01-empezar-a-sincronizar',
+    'Empezar a sincronizar y cuidar el código',
+    area: 'Varios dispositivos y respaldo',
+    goal:
+        'Quiero usar Quincena también en el computador: necesito el código '
+        'para unirlo, poder cambiarlo y dejar de sincronizar si me arrepiento.',
+    data: seeded,
+    (FlowRun f) async {
+      final _Phone phone = await _Phone.install(f);
+      final int accounts = _own(f).accounts.length;
+      await f.tapTip('Ajustes');
+      await f.tap('Varios dispositivos');
+      await f.step(
+        '«Varios dispositivos» explica que los cambios viajan en un archivo '
+        'cifrado que mueves tú, y que sincronizar no es un respaldo.',
+      );
+      await f.tap('Empezar en este dispositivo');
+      final String? code = await _syncCode(f);
+      await f.step(
+        '«Empezar en este dispositivo» muestra «Tu código» en grupos de cuatro, '
+        'con «Copiar el código» y «Listo».',
+      );
+      await f.check('El código mostrado es el que guardó el teléfono', () {
+        expect(code, isNotNull);
+        for (final String group in code!.split('-')) {
+          expect(find.text(group), findsWidgets);
+        }
+      });
+      await f.tap('Copiar el código');
+      await f.step(
+        '«Copiar el código» lo copia, cierra el cuadro y avisa «Código '
+        'copiado.»; ahora están los botones para mover archivos.',
+      );
+      await f.check('El código quedó en el portapapeles', () {
+        expect(phone.clipboard, code);
+      });
+      await f.page(
+        'Sincronizando: «Guardar mis cambios en un archivo», «Abrir un archivo '
+        'de otro dispositivo» y, abajo, «Este dispositivo».',
+      );
+      await f.tap('Ver el código');
+      await f.check('«Ver el código» muestra el mismo código', () {
+        expect(find.text(code!.split('-').first), findsWidgets);
+      });
+      await f.tap('Listo');
+      await f.tap('Cambiar el código');
+      await f.step(
+        '«Cambiar el código» pregunta antes y explica que los archivos nuevos '
+        'solo se abren con el código nuevo.',
+      );
+      await f.tap('Cancelar');
+      await f.check('Con «Cancelar» el código sigue igual', () async {
+        expect(await _syncCode(f), code);
+      });
+      await f.tap('Cambiar el código');
+      await f.tap('Cambiar el código');
+      final String? changed = await _syncCode(f);
+      await f.step(
+        'Al confirmar aparece «Tu código nuevo», distinto del anterior.',
+      );
+      await f.check('El teléfono guardó un código nuevo', () {
+        expect(changed, isNotNull);
+        expect(changed, isNot(code));
+        expect(find.text(changed!.split('-').first), findsWidgets);
+      });
+      await f.tap('Listo');
+      await f.tap('Dejar de sincronizar');
+      await f.step(
+        '«Dejar de sincronizar» pregunta antes: el teléfono olvida el código y '
+        'tus datos se quedan.',
+      );
+      await f.tap('Cancelar');
+      await f.check('Con «Cancelar» sigue sincronizando', () async {
+        expect(await _syncCode(f), changed);
+      });
+      await f.tap('Dejar de sincronizar');
+      await f.tap('Dejar de sincronizar');
+      await f.step(
+        'Al confirmar vuelven «Empezar en este dispositivo» y «Unir este '
+        'dispositivo».',
+      );
+      await f.check('El código se olvidó y las cuentas siguen', () async {
+        expect(await _syncCode(f), isNull);
+        expect(f.shows('Empezar en este dispositivo'), isTrue);
+        expect(await _read(f, () => _store(f).accounts()), hasLength(accounts));
+      });
+    },
+  ),
+  AppFlow(
+    '10-02-unir-este-telefono',
+    'Unir un teléfono nuevo con el código',
+    area: 'Varios dispositivos y respaldo',
+    goal:
+        'Ya uso Quincena en el computador. En el teléfono nuevo quiero escribir '
+        'el código y traer todo lo de allá.',
+    data: _newPhone,
+    manual: <String>[
+      'Mover el archivo .qsync del computador al teléfono por AirDrop, '
+          'Archivos o un chat, y elegirlo en el selector del sistema.',
+    ],
+    (FlowRun f) async {
+      final _Phone phone = await _Phone.install(f);
+      // The computer, where Quincena already has everything.
+      final (QuincenaStore computer, SyncService there) = await _otherDevice(
+        f,
+        data: seeded,
+      );
+      final String code = await _read(f, there.start);
+      final Uint8List file = await _read(f, there.export);
+      final int theirs = (await _read(f, computer.entries)).length;
+      await f.tapTip('Ajustes');
+      await f.tap('Varios dispositivos');
+      await f.tap('Unir este dispositivo');
+      await f.step(
+        '«Unir este dispositivo» pide el código que muestra el otro '
+        'dispositivo; los guiones no importan.',
+      );
+      await f.tap('Cancelar');
+      await f.check('Con «Cancelar» no se une', () async {
+        expect(await _syncCode(f), isNull);
+      });
+      await f.tap('Unir este dispositivo');
+      await f.type('Código', 'ABCD-EFGH');
+      await f.tap('Unir');
+      await f.step(
+        'Un código corto no pasa: «Al código le sobran o le faltan '
+        'caracteres: son 54.»',
+      );
+      await f.check('Avisa que le faltan caracteres', () {
+        expect(
+          f.shows('Al código le sobran o le faltan caracteres: son 54.'),
+          isTrue,
+        );
+      });
+      await f.type('Código', 'U${code.substring(1)}');
+      await f.tap('Unir');
+      await f.check('Con una U avisa que el código no la usa', () {
+        expect(
+          f.shows(
+            'Hay un carácter que el código no usa. Revisa que no sea una U.',
+          ),
+          isTrue,
+        );
+      });
+      final String typo =
+          '${code.substring(0, 2)}${code[2] == 'A' ? 'B' : 'A'}'
+          '${code.substring(3)}';
+      await f.type('Código', typo);
+      await f.tap('Unir');
+      await f.step(
+        'Con un carácter cambiado: «El código no cuadra: revisa si hay un '
+        'carácter cambiado.»',
+      );
+      await f.check('Un código con un error no une el teléfono', () async {
+        expect(await _syncCode(f), isNull);
+      });
+      await f.type('Código', code.toLowerCase().replaceAll('-', ' '));
+      await f.tap('Unir');
+      await f.step(
+        'Bien escrito, aunque sea en minúsculas y con espacios, une el '
+        'teléfono: «Listo. Ahora abre un archivo de tu otro dispositivo».',
+      );
+      await f.check('El teléfono quedó con el código del computador', () async {
+        expect(await _syncCode(f), code);
+      });
+      await _waitMessages(f);
+      await f.tap('Abrir un archivo de otro dispositivo');
+      await f.check(
+        'Si el selector se cierra sin elegir, no cambia nada',
+        () async {
+          expect(await _read(f, () => _store(f).accounts()), hasLength(1));
+        },
+      );
+      phone.toPick.add(file);
+      await _waitMessages(f);
+      await f.tap('Abrir un archivo de otro dispositivo');
+      await f.step(
+        'Al abrir el archivo del computador avisa «Listo: 19 cambios.», sin '
+        'decir cuáles.',
+      );
+      await f.check(
+        'Llegaron las cuentas y los $theirs movimientos del computador, y '
+        'Daviplata sigue',
+        () async {
+          final List<Account> accounts = await _read(
+            f,
+            () => _store(f).accounts(),
+          );
+          expect(
+            accounts.map((Account a) => a.name),
+            containsAll(<String>['Bancolombia', 'Visa', 'Daviplata']),
+          );
+          expect(await _read(f, () => _store(f).entries()), hasLength(theirs));
+        },
+      );
+      await f.back();
+      await f.back();
+      final int free = _own(f).ledger!.freeUntilPayday;
+      await f.step(
+        'Inicio ya cuenta lo del computador y Daviplata: puedes gastar '
+        '${pesos(free)}.',
+      );
+      await f.check('Inicio muestra ${pesos(free)}, lo que calcula la app', () {
+        expect(f.screenText, contains(pesos(free)));
+        expect(_own(f).accounts.map((Account a) => a.name), contains('Visa'));
+      });
+    },
+  ),
+  AppFlow(
+    '10-03-llevar-mis-cambios',
+    'Pasar los cambios de un dispositivo al otro',
+    area: 'Varios dispositivos y respaldo',
+    goal:
+        'Anoto en el teléfono y a veces en el computador: quiero que los dos '
+        'queden con lo mismo.',
+    data: seeded,
+    manual: <String>[
+      'El selector del sistema para guardar el archivo y para elegirlo en el '
+          'otro dispositivo.',
+      'Abrir en el computador el archivo que guardó el teléfono.',
+    ],
+    (FlowRun f) async {
+      final _Phone phone = await _Phone.install(f);
+      final int free = _own(f).ledger!.freeUntilPayday;
+      final int mine = _own(f).snapshot!.entries.length;
+      await f.tapTip('Ajustes');
+      await f.tap('Varios dispositivos');
+      await f.tap('Empezar en este dispositivo');
+      await f.tap('Copiar el código');
+      await _waitMessages(f);
+      await f.tap('Guardar mis cambios en un archivo');
+      await f.step(
+        '«Guardar mis cambios en un archivo» guarda quincena-2026-10-03.qsync '
+        'y dice «Archivo guardado. Ábrelo en tu otro dispositivo.»',
+      );
+      final Uint8List? saved = phone.saved['quincena-2026-10-03.qsync'];
+      await f.check('Se guardó el archivo cifrado del 3 de octubre', () {
+        expect(saved, isNotNull);
+      });
+      // The computer joins with the code copied and opens the file.
+      final (QuincenaStore computer, SyncService there) = await _otherDevice(f);
+      await _read(f, () => there.join(phone.clipboard!));
+      await _read(f, () => there.import(saved!));
+      await f.check('El computador recibe los $mine movimientos', () async {
+        expect(await _read(f, computer.entries), hasLength(mine));
+      });
+      // On the computer, a lunch paid from Bancolombia.
+      await _read(f, () async {
+        final Account bank = (await computer.accounts()).firstWhere(
+          (Account a) => a.name == 'Bancolombia',
+        );
+        await computer.addEntry(
+          accountId: bank.id,
+          amount: Decimal.parse('-32000'),
+          kind: EntryKind.expense,
+          date: DateTime(2026, 10, 3, 13),
+          category: 'restaurants',
+          payee: 'Almuerzo en el computador',
+        );
+      });
+      phone.toPick.add(await _read(f, there.export));
+      await _waitMessages(f);
+      await f.tap('Abrir un archivo de otro dispositivo');
+      await f.step('Al abrir el archivo del computador: «Listo: un cambio.»');
+      await f.check('Llegó el almuerzo anotado en el computador', () {
+        expect(_own(f).snapshot!.entries, hasLength(mine + 1));
+        expect(
+          _own(f).snapshot!.entries.map((Entry e) => e.payee),
+          contains('Almuerzo en el computador'),
+        );
+        expect(f.shows('Listo: un cambio.'), isTrue);
+      });
+      phone.toPick.add(await _read(f, there.export));
+      await _waitMessages(f);
+      await f.tap('Abrir un archivo de otro dispositivo');
+      await f.step(
+        'Abrir otra vez un archivo con lo mismo no duplica nada: «Ya estaba '
+        'todo al día.»',
+      );
+      await f.check('Nada se duplicó', () {
+        expect(_own(f).snapshot!.entries, hasLength(mine + 1));
+      });
+      await f.back();
+      await f.back();
+      await f.check(
+        'Puedes gastar pasó de ${pesos(free)} a ${pesos(free - 32000)}',
+        () {
+          expect(_own(f).ledger!.freeUntilPayday, free - 32000);
+          expect(f.screenText, contains(pesos(free - 32000)));
+        },
+      );
+    },
+  ),
+  AppFlow(
+    '10-04-archivos-que-no-sirven-y-cambios-que-esperan',
+    'Archivos que no sirven y cambios que quedaron esperando',
+    area: 'Varios dispositivos y respaldo',
+    goal:
+        'Si abro un archivo equivocado no quiero dañar nada, y si cambié lo '
+        'mismo en dos lados quiero escoger qué versión queda.',
+    data: seeded,
+    (FlowRun f) async {
+      final _Phone phone = await _Phone.install(f);
+      final int mine = _own(f).snapshot!.entries.length;
+      await f.tapTip('Ajustes');
+      await f.tap('Varios dispositivos');
+      await f.tap('Empezar en este dispositivo');
+      await f.tap('Listo');
+      final String code = (await _syncCode(f))!;
+      // A backup in JSON, not a sync file.
+      phone.toPick.add(await _read(f, () => Backups(_store(f)).plain()));
+      await _waitMessages(f);
+      await f.tap('Abrir un archivo de otro dispositivo');
+      await f.step(
+        'Un respaldo en JSON no es de sincronizar: «Ese no es un archivo de '
+        'sincronización de Quincena.»',
+      );
+      // A file from a vault with another code.
+      final (QuincenaStore stranger, SyncService elsewhere) =
+          await _otherDevice(f);
+      await _read(f, () => stranger.ensureCategories());
+      await _read(f, elsewhere.start);
+      phone.toPick.add(await _read(f, elsewhere.export));
+      await _waitMessages(f);
+      await f.tap('Abrir un archivo de otro dispositivo');
+      await f.step(
+        'Uno hecho con otro código: «Ese archivo se hizo con otro código.»',
+      );
+      // The right vault, cut short on the way.
+      final (QuincenaStore computer, SyncService there) = await _otherDevice(f);
+      await _read(f, () => there.join(code));
+      final Uint8List whole = await _read(
+        f,
+        () => SyncService(
+          _store(f),
+          keys: SecureKeyStore(),
+          now: () => screensNow,
+        ).export(),
+      );
+      phone.toPick.add(Uint8List.sublistView(whole, 0, whole.length ~/ 2));
+      await _waitMessages(f);
+      await f.tap('Abrir un archivo de otro dispositivo');
+      await f.step(
+        'Uno que se cortó: «El archivo está dañado o se cortó: guárdalo de '
+        'nuevo en el otro dispositivo. No cambió nada.»',
+      );
+      // From a newer Quincena.
+      phone.toPick.add(
+        await _read(
+          f,
+          () => SyncFile.seal(VaultKey.fromCode(code), <String, Object?>{
+            'app': 'quincena',
+            'format': 99,
+            'records': <Object?>[],
+          }),
+        ),
+      );
+      await _waitMessages(f);
+      await f.tap('Abrir un archivo de otro dispositivo');
+      await f.check('Ningún archivo malo cambió nada', () {
+        expect(_own(f).snapshot!.entries, hasLength(mine));
+        expect(
+          f.shows(
+            'Ese archivo es de una versión más nueva de Quincena: actualiza '
+            'la app.',
+          ),
+          isTrue,
+        );
+      });
+      // The same lunch changed on both: here the name, there a note, later.
+      await _read(f, () async {
+        await there.import(whole);
+        final Entry here = (await _store(
+          f,
+        ).entries()).firstWhere((Entry e) => e.payee == 'Crepes & Waffles');
+        await _store(f).updateEntry(here.copyWith(payee: 'Crepes con Laura'));
+        final Entry theirs = (await computer.entries()).firstWhere(
+          (Entry e) => e.id == here.id,
+        );
+        await computer.updateEntry(theirs.copyWith(note: 'Con factura'));
+      });
+      phone.toPick.add(await _read(f, there.export));
+      await _waitMessages(f);
+      await f.tap('Abrir un archivo de otro dispositivo');
+      await f.reveal(find.text('Traer de vuelta'));
+      await f.step(
+        'Cambiado en los dos: quedó lo del computador y tu cambio espera en '
+        '«Para revisar», con «Descartar» y «Traer de vuelta».',
+      );
+      Entry lunch() => _own(
+        f,
+      ).snapshot!.entries.firstWhere((Entry e) => e.category == 'restaurants');
+      await f.check('Quedó la versión del computador y la tuya espera', () {
+        expect(lunch().payee, 'Crepes & Waffles');
+        expect(lunch().note, 'Con factura');
+        expect(find.textContaining('Crepes con Laura'), findsOneWidget);
+      });
+      await f.tap('Traer de vuelta');
+      await f.reveal(find.text('Descartar'));
+      await f.step(
+        '«Traer de vuelta» deja tu nombre, y lo que había antes queda a su vez '
+        'en «Para revisar»: nada se pierde.',
+      );
+      await f.check('Tu versión volvió: Crepes con Laura', () {
+        expect(lunch().payee, 'Crepes con Laura');
+        expect(
+          find.textContaining('Lo que había antes de traer de vuelta'),
+          findsOneWidget,
+        );
+      });
+      await f.tap('Descartar');
+      await f.step(
+        '«Descartar» lo quita de la lista y «Para revisar» desaparece.',
+      );
+      await f.check('No queda nada por revisar', () async {
+        expect(f.shows('PARA REVISAR'), isFalse);
+        expect(
+          await _read(
+            f,
+            () => SyncService(_store(f), keys: SecureKeyStore()).conflicts(),
+          ),
+          isEmpty,
+        );
+        expect(lunch().payee, 'Crepes con Laura');
+      });
+    },
+  ),
+  AppFlow(
+    '10-05-respaldo-cifrado',
+    'Guardar un respaldo cifrado y cuidar su código',
+    area: 'Varios dispositivos y respaldo',
+    goal:
+        'Quiero una copia de todo por si pierdo el teléfono, que nadie más '
+        'pueda leer.',
+    data: fullAccount,
+    manual: <String>[
+      'El selector del sistema para guardar el archivo .qbackup en Archivos, '
+          'iCloud o Drive.',
+    ],
+    (FlowRun f) async {
+      final _Phone phone = await _Phone.install(f);
+      final int entries = _own(f).snapshot!.entries.length;
+      await f.tapTip('Ajustes');
+      await _waitMessages(f);
+      await f.tap('Exportar mis datos');
+      await f.step(
+        '«Exportar mis datos» ofrece «Cifrado (recomendado)», ya marcado, o '
+        '«Sin cifrar (JSON)». Aún no hay código de respaldo.',
+      );
+      await f.check('Todavía no hay código ni botón para verlo', () async {
+        expect(await _read(f, () => Backups(_store(f)).code()), isNull);
+        expect(f.shows('Ver mi código de respaldo'), isFalse);
+      });
+      await f.back();
+      await f.check('Cerrar la hoja no guarda nada', () {
+        expect(phone.saved, isEmpty);
+      });
+      await _waitMessages(f);
+      await f.tap('Exportar mis datos');
+      await f.tap('Exportar');
+      final String? code = await _read(f, () => Backups(_store(f)).code());
+      await f.step(
+        'La primera vez, antes de guardar, muestra «Tu código de respaldo» con '
+        '«Copiar el código» y «Ya lo guardé».',
+      );
+      await f.check('El código mostrado es el que quedó en el teléfono', () {
+        expect(code, isNotNull);
+        expect(find.text(code!.split('-').first), findsWidgets);
+      });
+      await f.tap('Ya lo guardé');
+      await f.step(
+        'Con «Ya lo guardé» se guarda el archivo: «Archivo guardado.»',
+      );
+      final Uint8List? first = phone.saved['quincena-2026-10-03.qbackup'];
+      await f.check(
+        'El respaldo abre con ese código en otro teléfono y trae los $entries '
+        'movimientos',
+        () async {
+          expect(first, isNotNull);
+          final List<Object?>? inside = await _openBackup(f, first!, code!);
+          expect(inside, hasLength(entries));
+        },
+      );
+      await f.check('Sin el código, otro teléfono no lo abre', () async {
+        expect(await _openBackup(f, first!, null), isNull);
+      });
+      await _waitMessages(f);
+      await f.tap('Exportar mis datos');
+      await f.step(
+        'Con un código ya hecho, la hoja suma «Ver mi código de respaldo» y '
+        '«Cambiar el código».',
+      );
+      await f.tap('Ver mi código de respaldo');
+      await f.check('«Ver mi código de respaldo» muestra el mismo', () {
+        expect(find.text(code!.split('-').first), findsWidgets);
+      });
+      await f.tap('Listo');
+      await f.tap('Cambiar el código');
+      await f.step(
+        '«Cambiar el código» avisa que los respaldos viejos siguen abriendo '
+        'con el código de antes.',
+      );
+      await f.tap('Cancelar');
+      await f.check('Con «Cancelar» el código sigue igual', () async {
+        expect(await _read(f, () => Backups(_store(f)).code()), code);
+      });
+      await f.tap('Cambiar el código');
+      await f.tap('Cambiar');
+      final String? changed = await _read(f, () => Backups(_store(f)).code());
+      await f.step('Con «Cambiar» aparece «Tu nuevo código de respaldo».');
+      await f.tap('Copiar el código');
+      await f.check('«Copiar el código» copia el código nuevo', () {
+        expect(phone.clipboard, changed);
+      });
+      await f.tap('Exportar');
+      await f.check('Esta vez no muestra el código antes de guardar', () {
+        expect(f.shows('Tu código de respaldo'), isFalse);
+      });
+      final Uint8List? second = phone.saved['quincena-2026-10-03.qbackup'];
+      await f.check(
+        'El respaldo nuevo abre con el código nuevo y el viejo con el viejo',
+        () async {
+          expect(changed, isNot(code));
+          expect(await _openBackup(f, second!, changed!), hasLength(entries));
+          expect(await _openBackup(f, first!, code!), hasLength(entries));
+          expect(await _openBackup(f, second, code), isNull);
+        },
+      );
+      phone.toPick.add(second!);
+      await _waitMessages(f);
+      await f.tap('Importar un archivo');
+      await f.step(
+        'En este teléfono, «Importar un archivo» abre su propio respaldo sin '
+        'pedir el código: solo pregunta si reemplazar todo.',
+      );
+      await f.tap('Cancelar');
+      await f.check('Con «Cancelar» todo sigue igual', () {
+        expect(_own(f).snapshot!.entries, hasLength(entries));
+      });
+    },
+  ),
+  AppFlow(
+    '10-06-exportar-sin-cifrar',
+    'Exportar mis datos en JSON para otra herramienta',
+    area: 'Varios dispositivos y respaldo',
+    goal:
+        'Quiero llevar mis movimientos a una hoja de cálculo y necesito un '
+        'archivo que cualquier programa lea.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final _Phone phone = await _Phone.install(f);
+      await f.tapTip('Ajustes');
+      await _waitMessages(f);
+      await f.tap('Exportar mis datos');
+      await f.step(
+        'La hoja viene con «Cifrado (recomendado)» marcado; «Sin cifrar (JSON)» '
+        'está debajo.',
+      );
+      await f.tap('Sin cifrar (JSON)');
+      await f.step(
+        'Con «Sin cifrar (JSON)» marcado: cualquiera que tenga el archivo puede '
+        'leer tus finanzas.',
+      );
+      await f.tap('Exportar');
+      await f.step(
+        'Sin pedir código, guarda quincena-2026-10-03.json y dice «Archivo '
+        'guardado.»',
+      );
+      final Uint8List? file = phone.saved['quincena-2026-10-03.json'];
+      await f.check(
+        'El JSON trae el perfil, las cuentas y los movimientos',
+        () async {
+          final Map<String, Object?> json =
+              jsonDecode(utf8.decode(file!)) as Map<String, Object?>;
+          expect(json['app'], 'quincena');
+          expect((json['profile']! as Map<String, Object?>)['name'], 'Diego');
+          expect(
+            json['accounts'],
+            hasLength(
+              (await _read(f, () => _store(f).accounts(archived: true))).length,
+            ),
+          );
+          expect(json['entries'], hasLength(_own(f).snapshot!.entries.length));
+        },
+      );
+      await f.check('No lleva llaves ni crea un código de respaldo', () async {
+        final Map<String, Object?> json =
+            jsonDecode(utf8.decode(file!)) as Map<String, Object?>;
+        expect(
+          (json['settings']! as Map<String, Object?>).keys.where(
+            (String k) => k.startsWith('sync.') || k.startsWith('app.'),
+          ),
+          isEmpty,
+        );
+        expect(await _read(f, () => Backups(_store(f)).code()), isNull);
+      });
+    },
+  ),
+  AppFlow(
+    '10-07-importar-un-respaldo',
+    'Recuperar mis datos desde un archivo',
+    area: 'Varios dispositivos y respaldo',
+    goal:
+        'Me equivoqué borrando cosas y quiero volver a la copia que guardé, '
+        'sin que un archivo equivocado me dañe nada.',
+    data: fullAccount,
+    manual: <String>[
+      'Elegir el archivo en el selector del sistema, desde Archivos, iCloud o '
+          'Drive.',
+    ],
+    (FlowRun f) async {
+      final _Phone phone = await _Phone.install(f);
+      final int entries = _own(f).snapshot!.entries.length;
+      // The copy kept: the account before the captures and the rest.
+      final (QuincenaStore copy, _) = await _otherDevice(f, data: seeded);
+      final Uint8List backup = await _read(f, () => Backups(copy).plain());
+      final int kept = (await _read(f, copy.entries)).length;
+      await f.tapTip('Ajustes');
+      await _waitMessages(f);
+      await f.tap('Importar un archivo');
+      await f.check('Si el selector se cierra sin elegir, nada cambia', () {
+        expect(_own(f).snapshot!.entries, hasLength(entries));
+      });
+      phone.toPick.add(Uint8List.fromList(utf8.encode('Lista del mercado')));
+      await _waitMessages(f);
+      await f.tap('Importar un archivo');
+      await f.step(
+        'Un archivo que no es de Quincena: «Ese archivo no lo exportó '
+        'Quincena. No se cambió nada.»',
+      );
+      await f.check('Nada cambió', () {
+        expect(_own(f).snapshot!.entries, hasLength(entries));
+      });
+      phone.toPick.add(backup);
+      await _waitMessages(f);
+      await f.tap('Importar un archivo');
+      await f.step(
+        'Con el respaldo, antes de tocar nada pregunta «¿Reemplazar todo con '
+        'este archivo?»',
+      );
+      await f.tap('Cancelar');
+      await f.check('Con «Cancelar» siguen los $entries movimientos', () {
+        expect(_own(f).snapshot!.entries, hasLength(entries));
+      });
+      phone.toPick.add(backup);
+      await _waitMessages(f);
+      await f.tap('Importar un archivo');
+      await f.tap('Reemplazar');
+      await f.step('Con «Reemplazar»: «Datos importados.»');
+      await f.check('Quedaron los $kept movimientos del archivo', () async {
+        expect(await _read(f, () => _store(f).entries()), hasLength(kept));
+        expect(_own(f).snapshot!.entries, hasLength(kept));
+      });
+      await f.back();
+      final int free = _own(f).ledger!.freeUntilPayday;
+      await f.step(
+        'Inicio muestra lo del archivo: puedes gastar ${pesos(free)}.',
+      );
+      await f.check('Inicio dice ${pesos(free)}, lo que calcula la app', () {
+        expect(f.screenText, contains(pesos(free)));
+      });
+      await _reopen(f);
+      await f.check('Al volver a abrir, la app abre en tus cuentas', () {
+        expect(find.byType(OwnShell), findsOneWidget);
+        expect(f.shows('¿Cómo quieres empezar?'), isFalse);
+      });
+    },
+  ),
+  AppFlow(
+    '10-08-respaldo-de-otro-telefono',
+    'Abrir en el teléfono nuevo el respaldo cifrado del viejo',
+    area: 'Varios dispositivos y respaldo',
+    goal:
+        'Cambié de teléfono y tengo el respaldo cifrado del viejo: quiero '
+        'abrirlo aquí con mi código.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final _Phone phone = await _Phone.install(f);
+      final int entries = _own(f).snapshot!.entries.length;
+      // The old phone: its sealed backup and its code, and a sync file.
+      final (QuincenaStore old, SyncService oldSync) = await _otherDevice(
+        f,
+        data: seeded,
+      );
+      final SealedBackup sealed = await _read(
+        f,
+        () => Backups(old, keys: MemoryBackupKeyStore()).seal(),
+      );
+      final String code = sealed.newCode!;
+      final int kept = (await _read(f, old.entries)).length;
+      await _read(f, oldSync.start);
+      phone.toPick.add(await _read(f, oldSync.export));
+      await f.tapTip('Ajustes');
+      await _waitMessages(f);
+      await f.tap('Importar un archivo');
+      await f.step(
+        'Un archivo de sincronizar no es un respaldo: dice que se abre en '
+        '«Varios dispositivos» y no cambia nada.',
+      );
+      phone.toPick.add(sealed.file);
+      await _waitMessages(f);
+      await f.tap('Importar un archivo');
+      await f.step(
+        'El respaldo cifrado del otro teléfono pide su código: «Respaldo '
+        'cifrado», con «Cancelar» y «Abrir».',
+      );
+      await f.tap('Cancelar');
+      await f.check('Con «Cancelar» no cambia nada', () {
+        expect(_own(f).snapshot!.entries, hasLength(entries));
+      });
+      phone.toPick.add(sealed.file);
+      await _waitMessages(f);
+      await f.tap('Importar un archivo');
+      await f.type('Código', VaultKey.generate().code);
+      await f.tap('Abrir');
+      await f.step(
+        'Con otro código: «Ese código no abre este respaldo. Si es el de '
+        'sincronización, el de respaldo es otro.»',
+      );
+      await f.check('Un código equivocado no abre nada', () {
+        expect(
+          f.shows(
+            'Ese código no abre este respaldo. Si es el de sincronización, '
+            'el de respaldo es otro.',
+          ),
+          isTrue,
+        );
+        expect(_own(f).snapshot!.entries, hasLength(entries));
+      });
+      await f.type('Código', code);
+      await f.tap('Abrir');
+      await f.tap('Reemplazar');
+      await f.step('Con el código bueno y «Reemplazar»: «Datos importados.»');
+      await f.check(
+        'Quedaron los $kept movimientos del teléfono viejo',
+        () async {
+          expect(await _read(f, () => _store(f).entries()), hasLength(kept));
+        },
+      );
+      await f.check(
+        'Este teléfono se queda con ese código de respaldo',
+        () async {
+          expect(await _read(f, () => Backups(_store(f)).code()), code);
+        },
+      );
     },
   ),
 ];
@@ -870,6 +2418,106 @@ const List<String> _otherFixed = <String>[
   'Internet',
   'Plan del celular',
 ];
+
+/// The sync code this device keeps, if it syncs.
+Future<String?> _syncCode(FlowRun f) =>
+    _read(f, () => SyncService(_store(f), keys: SecureKeyStore()).code());
+
+/// Another device: its store, with what [data] puts in it, and its sync,
+/// with a key of its own. Its clock runs an hour ahead, so what it changes
+/// is the later change. It closes after the flow.
+Future<(QuincenaStore, SyncService)> _otherDevice(
+  FlowRun f, {
+  Future<QuincenaStore> Function()? data,
+}) async {
+  driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+  final DateTime later = screensNow.add(const Duration(hours: 1));
+  final QuincenaStore store = await _read(f, () async {
+    if (data != null) return data();
+    final QuincenaStore empty = QuincenaStore(
+      QuincenaDatabase(NativeDatabase.memory()),
+      now: () => later,
+    );
+    await empty.ensureCategories();
+    return empty;
+  });
+  addTearDown(() => f.tester.runAsync(store.close));
+  return (store, SyncService(store, keys: MemoryKeyStore(), now: () => later));
+}
+
+/// The movements in a sealed backup, opened with [code] on a phone that
+/// never had it; null when it does not open.
+Future<List<Object?>?> _openBackup(FlowRun f, Uint8List file, String? code) =>
+    _read(f, () async {
+      final QuincenaStore elsewhere = QuincenaStore(
+        QuincenaDatabase(NativeDatabase.memory()),
+      );
+      try {
+        final OpenedBackup opened = await Backups(
+          elsewhere,
+          keys: MemoryBackupKeyStore(),
+        ).open(file, code: code);
+        return opened.json['entries']! as List<Object?>;
+      } on BackupException {
+        return null;
+      } finally {
+        await elsewhere.close();
+      }
+    });
+
+/// Lets the messages at the bottom go, as when the person reads them,
+/// before something that says one of its own.
+Future<void> _waitMessages(FlowRun f) async {
+  for (var i = 0; i < 4 && find.byType(SnackBar).evaluate().isNotEmpty; i++) {
+    await f.tester.pump(const Duration(seconds: 5));
+    await settle(f.tester);
+  }
+}
+
+/// A phone set up a moment ago with one account, Daviplata.
+Future<QuincenaStore> _newPhone() async {
+  final QuincenaStore store = QuincenaStore(
+    QuincenaDatabase(NativeDatabase.memory()),
+    now: () => screensNow,
+  );
+  await store.ensureCategories();
+  await store.saveProfile(
+    const Profile(name: 'Diego', base: Asset.cop, schedule: TwiceMonthly()),
+  );
+  await store.setSetting('app.mode', 'own');
+  await store.addAccount(
+    name: 'Daviplata',
+    kind: AccountKind.wallet,
+    asset: Asset.cop,
+    opening: Decimal.parse('120000'),
+    institution: 'Daviplata',
+  );
+  return store;
+}
+
+/// The app as built now: its theme and language.
+MaterialApp _app(FlowRun f) =>
+    f.tester.widget<MaterialApp>(find.byType(MaterialApp).first);
+
+/// Whether the screen is drawn light or dark.
+Brightness _brightness(FlowRun f) =>
+    Theme.of(f.tester.element(find.byType(Scaffold).last)).brightness;
+
+/// The sample's conversation.
+Session _session(FlowRun f) =>
+    f.tester.widget<HomePage>(find.byType(HomePage)).session;
+
+/// What the person chose in the sample's settings.
+AppSettings _settings(FlowRun f) =>
+    f.tester.widget<HomePage>(find.byType(HomePage)).settings;
+
+/// Scrolls [finder] near the top of the screen, for a picture that starts
+/// with it.
+Future<void> _near(FlowRun f, Finder finder) async {
+  await f.reveal(finder);
+  await Scrollable.ensureVisible(f.tester.element(finder.last), alignment: 0.1);
+  await settle(f.tester);
+}
 
 /// The person's accounts, also from a page pushed over them.
 OwnController _own(FlowRun f) =>
