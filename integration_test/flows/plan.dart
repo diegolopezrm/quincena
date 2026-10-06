@@ -1,10 +1,12 @@
 // Flows of Plan (06).
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart' hide Flow;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quincena/capture/merchants.dart' show merchantKey;
 import 'package:quincena/data/category.dart';
 import 'package:quincena/data/ledger.dart';
 import 'package:quincena/domain/commitments.dart';
@@ -268,25 +270,55 @@ final List<AppFlow> planFlows = <AppFlow>[
         '«Reparte tu quincena» propone el día a día y lo de la meta. Abajo, '
         '«Sin asignar» dice cuánto queda libre.',
       );
-      await f.check('La propuesta no reparte más de lo que hay', () {
-        final List<Envelope> proposal = proposeEnvelopes(
-          l,
-          goals: own.goalShares,
-          dailyName: '',
-        );
-        final int sum = proposal.fold(0, (int s, Envelope e) => s + e.amount);
-        expect(sum, lessThanOrEqualTo(money));
-      });
+      final List<Envelope> proposal = proposeEnvelopes(
+        l,
+        goals: own.goalShares,
+        dailyName: '',
+      );
+      final int proposed = proposal.fold(
+        0,
+        (int s, Envelope e) => s + e.amount,
+      );
+      await f.check(
+        'Los campos traen la propuesta de la app, que no reparte más de lo '
+        'que hay: «Sin asignar» ${_pesos(l, money - proposed)}',
+        () {
+          expect(proposed, lessThanOrEqualTo(money));
+          expect(_fieldText(f, 'Día a día'), _typed(l, proposal.first.amount));
+          expect(
+            _fieldText(f, 'Viaje a Cartagena'),
+            _typed(l, proposal[1].amount),
+          );
+          expect(
+            _says(f, 'Sin asignar | ${_pesos(l, money - proposed)}'),
+            isTrue,
+          );
+        },
+      );
       await f.type('Día a día', '200000');
       await f.type('Viaje a Cartagena', '100000');
       await f.step(
-        'Día a día en 200.000 y 100.000 para el viaje: «Sin asignar» baja '
-        'mientras escribes.',
+        'Día a día en 200.000 y 100.000 para el viaje: «Sin asignar» baja a '
+        '${_pesos(l, money - l.minor(300000))} mientras escribes.',
+      );
+      await f.check(
+        '«Sin asignar» es lo que hay menos lo escrito: '
+        '${_pesos(l, money - l.minor(300000))}',
+        () => expect(
+          _says(f, 'Sin asignar | ${_pesos(l, money - l.minor(300000))}'),
+          isTrue,
+        ),
       );
       await f.tap('Apartar para algo');
       await f.step('«Apartar para algo» pide un nombre para el sobre.');
       await f.tap('Cancelar');
       await f.check('Con «Cancelar» no aparece ningún sobre nuevo', () {
+        expect(find.byTooltip('Quitar sobre'), findsNothing);
+      });
+      await f.tap('Apartar para algo');
+      await f.tap('Guardar');
+      await f.check('Sin nombre, «Guardar» tampoco crea un sobre', () {
+        expect(find.byType(AlertDialog), findsNothing);
         expect(find.byTooltip('Quitar sobre'), findsNothing);
       });
       await f.tap('Apartar para algo');
@@ -390,11 +422,15 @@ final List<AppFlow> planFlows = <AppFlow>[
       );
       await f.tap('Repartir en sobres');
       await f.step(
-        'La propuesta no pasa de lo que hay: sin plata libre, el sobre de la '
-        'meta no se lleva más de lo que queda.',
+        'La propuesta no pasa de lo que hay: los ${_pesos(l, money)} se van '
+        'a la meta y el día a día queda vacío, aunque faltan 12 días para el '
+        'pago.',
       );
-      await f.check('La propuesta no deja «Te pasas por»', () {
+      await f.check('La propuesta no deja «Te pasas por»: la meta se lleva '
+          '${_pesos(l, money)} y el día a día nada', () {
         expect(f.shows('Te pasas por'), isFalse);
+        expect(_fieldText(f, 'Viaje a Cartagena'), _typed(l, money));
+        expect(_fieldText(f, 'Día a día'), isEmpty);
       });
       await f.type('Día a día', '300000');
       final int goals =
@@ -453,17 +489,20 @@ final List<AppFlow> planFlows = <AppFlow>[
       await f.tap('Guardar así');
       await f.top();
       final int spent = spentThisPeriod(own.ledger!);
+      final int stillOver = l.minor(100000) + goals - money;
       await f.step(
-        'Con 100.000 de día a día y ${_pesos(l, spent)} gastados desde el 30 '
-        'de septiembre, la barra se llena y avisa «Te pasaste por».',
+        'Con 100.000 de día a día «Te pasas por» baja a '
+        '${_pesos(l, stillOver)}. Arriba, «Te pasaste por» cuenta los '
+        '${_pesos(l, spent)} gastados desde el 30 de septiembre.',
       );
       await f.check(
-        '«Te pasaste por» muestra lo gastado menos el día a día: '
-        '${_pesos(l, spent - l.minor(100000))}',
-        () => expect(
-          _says(f, 'Te pasaste por ${_pesos(l, spent - l.minor(100000))}'),
-          isTrue,
-        ),
+        'El reparto ajustado quedó con 100.000 de día a día y «Te pasas por» '
+        '${_pesos(l, stillOver)}',
+        () {
+          expect(own.plan!.daily, l.minor(100000));
+          expect(own.plan!.assigned - money, stillOver);
+          expect(_says(f, 'Te pasas por | ${_pesos(l, stillOver)}'), isTrue);
+        },
       );
     },
   ),
@@ -481,6 +520,11 @@ final List<AppFlow> planFlows = <AppFlow>[
       final int free = l.freeUntilPayday;
       final int incomes = own.freelance.incomes.length;
       final int pending = _pendingTotal(own);
+      final int estimated = own.freelance
+          .by(IncomeStatus.estimated)
+          .fold(0, (int s, ExpectedIncome i) => s + i.amount);
+      // The phone's share sheet, as if it opened.
+      final List<String> shared = _shares(f, sheet: true);
       await _openPlan(f);
       await f.tap('Ingresos variables');
       await f.page(
@@ -544,9 +588,17 @@ final List<AppFlow> planFlows = <AppFlow>[
       );
       await f.tap('Recordar al cliente');
       await f.step(
-        'En el teléfono «Recordar al cliente» abre la hoja de compartir con '
-        'el mensaje. Sin esa hoja el mensaje se copia, pero el aviso queda '
-        'tapado por el formulario.',
+        '«Recordar al cliente» le pasa a la hoja de compartir del teléfono, '
+        'que no sale en la imagen, un mensaje con el valor y la fecha.',
+      );
+      await f.check(
+        'El mensaje nombra a Agencia Uno, los ${pesos(700000)} y el 28 de '
+        'septiembre',
+        () {
+          expect(shared.single, startsWith('Hola, Agencia Uno.'));
+          expect(shared.single, contains(pesos(700000)));
+          expect(shared.single, contains('28 de septiembre'));
+        },
       );
       await f.tap('Cobrado');
       await f.tapFound(find.byType(DropdownButtonFormField<String?>));
@@ -583,22 +635,28 @@ final List<AppFlow> planFlows = <AppFlow>[
       );
       await f.tap('Taller de marca');
       await f.tap('Borrar cobro');
+      await f.top();
       await f.step(
-        '«Borrar cobro» en Taller de marca lo quita de una vez, sin preguntar '
-        'ni dejar deshacer.',
+        '«Borrar cobro» quita Taller de marca de una vez, sin preguntar ni '
+        'dejar deshacer: «Estimado» queda en $_zero.',
       );
-      await f.check('Taller de marca ya no está', () {
+      await f.check('Taller de marca ya no está y lo estimado pasó de '
+          '${_pesos(l, estimated)} a $_zero', () {
         expect(
           own.freelance.incomes.any(
             (ExpectedIncome i) => i.client == 'Taller de marca',
           ),
           isFalse,
         );
+        expect(own.freelance.by(IncomeStatus.estimated), isEmpty);
+        expect(_says(f, 'Estimado | $_zero'), isTrue);
       });
     },
     manual: <String>[
       '«Recordar al cliente» abre la hoja de compartir del teléfono con el '
           'mensaje listo para WhatsApp o correo.',
+      'Si la hoja de compartir no abre, el mensaje se copia: mirar si el '
+          'aviso «Mensaje copiado» queda tapado por el formulario.',
     ],
   ),
   AppFlow(
@@ -614,6 +672,7 @@ final List<AppFlow> planFlows = <AppFlow>[
       final Ledger l = own.ledger!;
       final int free = l.freeUntilPayday;
       final int reserve = l.reserved;
+      final int entries = own.snapshot!.entries.length;
       await f.step(
         'Inicio: «Puedes gastar» ya deja fuera ${_pesos(l, reserve)} de '
         'reserva, el 15 % de lo cobrado desde el 1 de octubre.',
@@ -628,7 +687,10 @@ final List<AppFlow> planFlows = <AppFlow>[
       await f.tapFound(find.byType(DropdownButtonFormField<int>));
       await f.step('El porcentaje se elige de una lista: de «Nada» a 40 %.');
       await f.tapFound(find.text(percent(30)).last);
-      await f.step('Con 30 % la reserva se duplica.');
+      await f.step(
+        'Con 30 % la reserva pasa a ${_pesos(l, reserve * 2)}: el porcentaje '
+        'nuevo cuenta también para lo cobrado desde el 1 de octubre.',
+      );
       await f.check(
         'La reserva pasó a ${_pesos(l, reserve * 2)} y lo que puedes gastar '
         'bajó lo mismo',
@@ -652,8 +714,13 @@ final List<AppFlow> planFlows = <AppFlow>[
       await f.tap('Guardar');
       await f.step(
         'Usaste 50.000: la reserva baja a '
-        '${_pesos(l, reserve * 2 - l.minor(50000))}.',
+        '${_pesos(l, reserve * 2 - l.minor(50000))}. No se anota ningún gasto: '
+        'el pago de los impuestos hay que registrarlo aparte.',
       );
+      await f.check('«Usé de la reserva» no crea ningún movimiento', () {
+        expect(own.snapshot!.entries.length, entries);
+        expect(own.freelance.used.single.$2, l.minor(50000));
+      });
       await f.check(
         'La reserva quedó en ${_pesos(l, reserve * 2 - l.minor(50000))} y lo '
         'que puedes gastar subió 50.000',
@@ -797,6 +864,13 @@ final List<AppFlow> planFlows = <AppFlow>[
       );
       await f.type('1 MXN en COP', '230');
       await f.tap('Transporte');
+      // The fee comes from the trip, and each expense can change it.
+      await f.type('Comisión', '0');
+      await f.check(
+        'Sin comisión se registrarían ${pesos(80500)}: 350 por 230',
+        () => expect(_says(f, 'Se registran ${pesos(80500)} en Visa'), isTrue),
+      );
+      await f.type('Comisión', '3');
       await f.step(
         'Con la tasa de 230 y la comisión de 3 % dice cuánto se registra en '
         'la Visa, estimado hasta el cargo real.',
@@ -859,6 +933,13 @@ final List<AppFlow> planFlows = <AppFlow>[
         expect(_entry(own, 'MoMA').amount, Decimal.fromInt(-107000));
       });
       await f.tap('Ajustar al cargo real');
+      await _typeInDialog(f, '');
+      await f.tap('Guardar');
+      await f.check('Sin valor el diálogo pide uno y no cambia el MoMA', () {
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(f.shows('Escribe cuánto pagaste.'), isTrue);
+        expect(_entry(own, 'MoMA').amount, Decimal.fromInt(-107000));
+      });
       await _typeInDialog(f, '108500');
       await f.tap('Guardar');
       await f.reveal(find.text('MoMA'));
@@ -898,8 +979,9 @@ final List<AppFlow> planFlows = <AppFlow>[
       });
       await f.tap('Incluir un gasto de antes');
       await f.step(
-        '«Incluir un gasto de antes» lista los gastos de los 120 días antes '
-        'del viaje: el tiquete de Avianca está arriba.',
+        '«Incluir un gasto de antes» lista todos los gastos de los 120 días '
+        'antes del viaje, también el arriendo: el tiquete de Avianca es el '
+        'segundo.',
       );
       await f.tapFound(
         find.ancestor(
@@ -1017,6 +1099,12 @@ final List<AppFlow> planFlows = <AppFlow>[
         '«Editar viaje» trae todo lo guardado: destino, fechas, '
         'moneda, presupuesto y comisión.',
       );
+      await f.check('El formulario trae Nueva York, 1.500 dólares y 3 %', () {
+        expect(_fieldText(f, '¿A dónde vas?'), 'Nueva York');
+        expect(_fieldText(f, 'Presupuesto'), '1.500');
+        expect(_fieldText(f, 'Comisión de tu tarjeta en el exterior'), '3');
+        expect(f.shows('1 de octubre – 9 de octubre'), isTrue);
+      });
       await f.type('Presupuesto', '2000');
       await f.tap('Guardar');
       await f.top();
@@ -1391,7 +1479,7 @@ final List<AppFlow> planFlows = <AppFlow>[
         'aparecer.',
       );
       await f.check('Claro quedó como «no es fijo» y ya no se sugiere', () {
-        expect(own.detective.notRecurring, isNotEmpty);
+        expect(own.detective.notRecurring, <String>{merchantKey('Claro')});
         expect(
           own.recurringGuesses.map((RecurringGuess g) => g.name),
           isNot(contains('Claro')),
@@ -1476,14 +1564,21 @@ final List<AppFlow> planFlows = <AppFlow>[
         'tres días o una semana antes.',
       );
       await f.tapFound(find.text('3 días antes').last);
+      await f.check('Sin prueba, el primer cobro propuesto es en un mes', () {
+        expect(f.shows('Próximo cobro: 3 de noviembre'), isTrue);
+      });
       await f.tap('¿Está en prueba gratis?');
       await _pickDay(f, '17');
       await f.tap('Ya no la uso');
       await f.page(
-        'Prueba hasta el 17 de octubre, con su nota. «Ya no la uso» muestra '
-        'lo que ahorras al año si la pausas.',
+        'Prueba hasta el 17 de octubre: el primer cobro pasa solo a ese día. '
+        '«Ya no la uso» muestra lo que ahorras al año si la pausas.',
         most: 2,
       );
+      await f.check('Al poner la prueba, el próximo cobro pasó al 17 de '
+          'octubre, el día que termina', () {
+        expect(f.shows('Próximo cobro: 17 de octubre'), isTrue);
+      });
       await f.tapTip('Quitar la prueba gratis');
       await f.check('«Quitar la prueba gratis» la quita del formulario', () {
         expect(f.shows('¿Está en prueba gratis?'), isTrue);
@@ -1491,10 +1586,6 @@ final List<AppFlow> planFlows = <AppFlow>[
       await f.tap('¿Está en prueba gratis?');
       await _pickDay(f, '17');
       await f.tap('Sí, la uso');
-      // The first charge is the day the trial ends.
-      await f.tapContaining('Próximo cobro:');
-      await f.tapTip('Mes anterior');
-      await _pickDay(f, '17');
       await f.page(
         'Listo: 38.900 cada mes desde la Visa, aviso tres días antes, prueba '
         'hasta el 17 de octubre y primer cobro ese día. Al año son 466.800.',
@@ -1592,6 +1683,7 @@ final List<AppFlow> planFlows = <AppFlow>[
       final int entries = own.snapshot!.entries.length;
       RecurringCharge charge(String name) =>
           own.recurring.firstWhere((RecurringCharge r) => r.name == name);
+      final List<MethodCall> calls = _reminders(f, allow: () => true);
       await _openPlan(f);
       await f.tap('Pagos fijos');
       await f.page(
@@ -1618,10 +1710,21 @@ final List<AppFlow> planFlows = <AppFlow>[
         expect(_fieldText(f, '¿Cuánto cobra?'), '119.000');
       });
       await f.tap('Salud');
+      await f.tapFound(find.byType(DropdownButtonFormField<Cadence>));
+      await f.tapFound(find.text('Cada dos semanas').last);
+      await f.tapFound(find.byType(DropdownButtonFormField<String?>));
+      await f.step(
+        '«Se paga desde» ofrece cada cuenta, también Binance y Bitcoin, y '
+        '«Ninguna cuenta en particular»; arriba ya dice «Cada dos semanas».',
+      );
+      await f.tapFound(find.text('Ninguna cuenta en particular').last);
       await f.back();
       await f.check('Cerrar el formulario sin guardar no cambia nada', () {
-        expect(charge('Fit24').amount.amount, Decimal.fromInt(119000));
-        expect(charge('Fit24').category, 'leisure');
+        final RecurringCharge gym = charge('Fit24');
+        expect(gym.amount.amount, Decimal.fromInt(119000));
+        expect(gym.category, 'leisure');
+        expect(gym.cadence, Cadence.monthly);
+        expect(own.snapshot!.account(gym.accountId!)!.name, 'Bancolombia');
       });
       await f.tap('Netflix');
       await f.reveal(find.text('Pausar'));
@@ -1641,15 +1744,27 @@ final List<AppFlow> planFlows = <AppFlow>[
           expect(own.ledger!.freeUntilPayday, free + l.minor(26900));
         },
       );
+      await f.check(
+        'En pausa ya no queda programado el aviso de Netflix, aunque la fila '
+        'siga con su campana',
+        () {
+          expect(_remindsOf(calls, 'Netflix'), isFalse);
+          expect(own.memoryOf(charge('Netflix').id).remindDays, 3);
+        },
+      );
       await f.tap('Netflix');
-      await f.step(
+      await f.page(
         'En pausa, el formulario lo dice arriba: «En pausa: no se cuenta como '
         'comprometido.» Abajo, «Pausar» cambia a «Reanudar».',
+        most: 2,
       );
       await f.tap('Reanudar');
       await f.check('Reanudado, vuelve a contarse como antes', () {
         expect(charge('Netflix').active, isTrue);
         expect(own.ledger!.freeUntilPayday, free);
+      });
+      await f.check('Reanudado, el aviso de Netflix vuelve a programarse', () {
+        expect(_remindsOf(calls, 'Netflix'), isTrue);
       });
       await f.tap('Netflix');
       await f.tap('Borrar pago fijo');
@@ -1825,6 +1940,16 @@ final List<AppFlow> planFlows = <AppFlow>[
           f.shows('${_pesos(l, p.payment!)}, calculada con la tasa'),
           isTrue,
         );
+      });
+      // A fixed instalment, worked out apart from the app: P·r / (1 − (1+r)^−n).
+      final double rate = 0.019;
+      final double annuity =
+          3600000 * rate / (1 - 1 / math.pow(1 + rate, 12).toDouble());
+      await f.reveal(find.textContaining('Cuota 1 ·'));
+      await f.check('La cuota es la de una cuota fija al 1,9 % mensual: '
+          '${pesos(annuity.round())}, y el primer interés ${pesos(68400)}', () {
+        expect(l.major(p.payment!), closeTo(annuity, 1));
+        expect(_says(f, 'Interés ${pesos(68400)}'), isTrue);
       });
       await f.tapTip('Editar compra a cuotas');
       await f.type('Tasa de interés', '25');
@@ -2140,7 +2265,8 @@ final List<AppFlow> planFlows = <AppFlow>[
       });
       await f.tapTip('Editar grupo');
       await f.step(
-        'Pedro todavía no tiene gastos: su nombre trae una x para quitarlo.',
+        'Pedro todavía no tiene gastos: su nombre trae al lado el botón para '
+        'quitarlo; Tú, Ana y Juan no.',
       );
       await _tapTipBy(f, 'Pedro', 'Eliminar');
       await f.tap('Guardar');
@@ -2291,6 +2417,8 @@ final List<AppFlow> planFlows = <AppFlow>[
       final Entry back = own.snapshot!.entries.firstWhere(
         (Entry e) => e.payee == 'Pedro te envió',
       );
+      // A phone whose share sheet did not open: the message is copied.
+      final List<String> shared = _shares(f, sheet: false);
       await _openPlan(f);
       await f.tap('Gastos compartidos');
       await f.step(
@@ -2303,9 +2431,14 @@ final List<AppFlow> planFlows = <AppFlow>[
         'En el grupo de Pedro: «Pedro te paga \$50.000». «Recordar» prepara '
         'un mensaje; sin la hoja de compartir, lo copia.',
       );
-      await f.check('El mensaje quedó copiado para pegarlo', () {
-        expect(find.textContaining('Mensaje copiado'), findsOneWidget);
-      });
+      await f.check(
+        'El mensaje para Pedro, con los ${pesos(50000)}, quedó copiado',
+        () {
+          expect(find.textContaining('Mensaje copiado'), findsOneWidget);
+          expect(shared.single, startsWith('Hola, Pedro.'));
+          expect(shared.single, contains(pesos(50000)));
+        },
+      );
       await f.tap('Registrar pago');
       await f.tap('Cancelar');
       await f.check('Con «Cancelar» no se anota ningún pago', () {
@@ -2350,6 +2483,39 @@ final List<AppFlow> planFlows = <AppFlow>[
         'En Guatapé debes 170.000: «Laura le paga a Camilo» y «Le pagas a '
         'Camilo», con los gastos y el pago de Laura abajo.',
         most: 3,
+      );
+      final int mine = own.group(guatape)!.balances[meId]!;
+      await _tapTextBy(
+        f,
+        'Laura le paga a Camilo ${pesos(200000)}',
+        'Registrar pago',
+      );
+      await f.tapFound(find.text(dayMonth(own.today)).last);
+      await _pickDay(f, '1');
+      await f.step(
+        'Entre otros dos también se anota: «Laura le pagó a Camilo» '
+        '200.000 el 1 de octubre. No pregunta por tus cuentas: no es tu plata.',
+      );
+      await f.tap('Guardar');
+      await f.check(
+        'Quedó el pago de Laura a Camilo y tu saldo en el grupo no cambia',
+        () {
+          final Group g = own.group(guatape)!;
+          final Settlement s = g.settlements.last;
+          expect(s.amount, 200000);
+          expect(s.date, DateTime(2026, 10, 1));
+          expect(s.entryId, isNull);
+          expect(
+            g.members.firstWhere((Member m) => m.id == s.from).name,
+            'Laura',
+          );
+          expect(
+            g.members.firstWhere((Member m) => m.id == s.to).name,
+            'Camilo',
+          );
+          expect(g.balances[meId], mine);
+          expect(own.ledger!.freeUntilPayday, free);
+        },
       );
       await f.tapFound(find.text('Registrar pago').last);
       await _typeInDialog(f, '100000');
@@ -2396,22 +2562,24 @@ final List<AppFlow> planFlows = <AppFlow>[
       await _openPlan(f);
       await f.reveal(find.text('Cargos para revisar'));
       await f.step(
-        'En Plan, «Cargos para revisar» cuenta 4: los avisos que nadie ha '
+        'En Plan, «Cargos para revisar» cuenta 3: los avisos que nadie ha '
         'mirado todavía.',
       );
+      await f.check('La fila cuenta los 3 avisos abiertos', () {
+        expect(f.shows('3 cargos para revisar'), isTrue);
+      });
       await f.tap('Cargos para revisar');
       await f.page(
-        'Cuatro avisos con su evidencia: el Éxito visto dos veces, Fit24 y el '
-        'Éxito «cobran más que antes» y una comida de 420.000.',
+        'Tres avisos con su evidencia: el Éxito visto dos veces, Fit24 «cobra '
+        'más que antes» y una comida de 420.000.',
         most: 6,
       );
       await f.check('Hay un aviso de cada tipo: repetido, subida y fuera de '
           'lo común', () {
         expect(
-          own.alerts.map((ChargeAlert a) => a.kind).toSet(),
-          AlertKind.values.toSet(),
+          own.alerts.map((ChargeAlert a) => a.kind).toList(),
+          unorderedEquals(AlertKind.values),
         );
-        expect(own.alerts, hasLength(4));
       });
       await f.check(
         'Tres compras en el Éxito el mismo día, una repetida, no son una '
@@ -2465,11 +2633,29 @@ final List<AppFlow> planFlows = <AppFlow>[
         expect(own.detective.answers[gym], isNull);
       });
       await f.tap('Ocultar las que marcaste');
+      await f.tap('Cargos fuera de lo común');
+      await f.tap('Pagos repetidos');
+      await f.reveal(find.text('Pagos repetidos'));
+      await f.step(
+        'Con «Pagos repetidos» y «Cargos fuera de lo común» apagados solo '
+        'queda el aviso de Fit24; el del Éxito repetido se fue de la lista.',
+      );
+      await f.check('Apagados, esos dos tipos dejan de avisar', () {
+        expect(own.detective.muted, <AlertKind>{
+          AlertKind.twice,
+          AlertKind.unusual,
+        });
+        expect(own.alerts.map((ChargeAlert a) => a.kind), <AlertKind>[
+          AlertKind.priceUp,
+        ]);
+      });
+      await f.tap('Cargos fuera de lo común');
+      await f.tap('Pagos repetidos');
       await f.tap('Subidas de precio');
       await f.reveal(find.text('Subidas de precio'));
       await f.step(
-        'Con «Subidas de precio» apagado, Fit24 y el Éxito dejan de avisar; '
-        'los otros tipos siguen encendidos.',
+        'Encendidos otra vez los dos, y con «Subidas de precio» apagado, Fit24 '
+        'deja de avisar y vuelve el Éxito repetido.',
       );
       await f.check('Las subidas de precio quedaron en silencio', () {
         expect(own.detective.muted, <AlertKind>{AlertKind.priceUp});
@@ -2477,6 +2663,7 @@ final List<AppFlow> planFlows = <AppFlow>[
           own.alerts.where((ChargeAlert a) => a.kind == AlertKind.priceUp),
           isEmpty,
         );
+        expect(own.alerts.map((ChargeAlert a) => a.id), contains(twice));
       });
       await f.top();
       await f.tapFound(find.text('EXITO LAURELES').first);
@@ -2901,6 +3088,25 @@ final List<AppFlow> planFlows = <AppFlow>[
         expect(own.cushionSettings.targetDays, 180);
         expect(f.shows('Llegaste a los 180 días que te propusiste.'), isFalse);
       });
+      for (final int target in <int>[30, 60, 90]) {
+        await f.tap('$target días');
+        await f.top();
+        await f.check(
+          'La meta de $target días queda guardada y ya se cumple',
+          () {
+            expect(own.cushionSettings.targetDays, target);
+            expect(
+              f.shows('Llegaste a los $target días que te propusiste.'),
+              isTrue,
+            );
+          },
+        );
+      }
+      await f.top();
+      await f.step(
+        'Con 90 días la meta ya se cumple: la barra se llena y dice '
+        '«Llegaste a los 90 días que te propusiste.»',
+      );
       await f.tap('Sin meta');
       await f.check('«Sin meta» quita la meta', () {
         expect(own.cushionSettings.targetDays, isNull);
@@ -2937,6 +3143,368 @@ final List<AppFlow> planFlows = <AppFlow>[
         expect(own.ledger!.cushion, l.minor(200000));
         expect(own.ledger!.freeUntilPayday, free - l.minor(200000));
       });
+    },
+  ),
+  AppFlow(
+    '06-27-dividir-un-gasto-que-ya-anote',
+    'Dividir un gasto que ya anoté',
+    area: 'Plan',
+    goal:
+        'Pagué la comida con Sofía y unas compras que eran de los dos: quiero '
+        'que solo mi parte cuente como gasto y saber cuánto me debe.',
+    data: seeded,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Ledger l = own.ledger!;
+      final int free = l.freeUntilPayday;
+      final int spent = spentThisPeriod(l);
+      final Entry crepes = _entry(own, 'Crepes & Waffles');
+      final Entry falabella = _entry(own, 'Falabella');
+      Group sofia() => own.groups.single;
+      await f.tap('Movimientos');
+      await f.tap('Crepes & Waffles');
+      await f.reveal(find.text('Dividir este gasto'));
+      await f.step(
+        'Al abrir la comida de Crepes & Waffles, debajo de «Guardar» está '
+        '«Dividir este gasto».',
+      );
+      await f.tap('Dividir este gasto');
+      await f.tap('Guardar');
+      await f.step(
+        '«Dividir un gasto» trae el valor del movimiento, que no se cambia. '
+        'Sin nadie más, «Guardar» avisa «Agrega al menos a una persona más.»',
+      );
+      await f.check('Sin con quién dividirlo no se crea ningún grupo', () {
+        expect(f.shows('Agrega al menos a una persona más.'), isTrue);
+        expect(own.groups, isEmpty);
+      });
+      await f.type('¿Con quién lo divides?', 'Sofía');
+      await f.type('Nombre del grupo', 'Comidas con Sofía');
+      await f.step(
+        'Con Sofía en partes iguales: ${pesos(11750)} para cada uno. El '
+        'grupo nuevo se llama «Comidas con Sofía».',
+      );
+      await f.tap('Guardar');
+      await f.step(
+        'De vuelta en Movimientos, la comida dice «Dividido: tu…»: la línea '
+        'se corta antes de decir cuánto es tu parte.',
+      );
+      await f.check(
+        'Quedó el grupo con Sofía y el gasto ligado al movimiento',
+        () {
+          expect(sofia().name, 'Comidas con Sofía');
+          expect(sofia().members.map((Member m) => m.name), <String>[
+            '',
+            'Sofía',
+          ]);
+          final SharedExpense e = sofia().expenses.single;
+          expect(e.entryId, crepes.id);
+          expect(e.paidBy, meId);
+          expect(e.shares.values, <int>[11750, 11750]);
+          expect(_says(f, 'Dividido: tu parte ${pesos(11750)}'), isTrue);
+        },
+      );
+      await f.check('Solo tu parte cuenta como gasto: lo gastado baja '
+          '${pesos(11750)} y lo que puedes gastar no cambia', () {
+        expect(spentThisPeriod(own.ledger!), spent - l.minor(11750));
+        expect(own.ledger!.freeUntilPayday, free);
+        expect(own.sharedBalance, (11750, 0));
+      });
+      await f.tap('Crepes & Waffles');
+      await f.tap('Cambiar la división');
+      await f.tap('Por montos');
+      await f.type('Tu parte', '8500');
+      await f.type('Parte de Sofía', '15000');
+      await f.step(
+        '«Cambiar la división» abre lo que había; «Por montos» deja poner '
+        '8.500 para ti y 15.000 para Sofía, que suman los 23.500.',
+      );
+      await f.tap('Guardar');
+      await f.check('Ahora Sofía debe 15.000 y lo gastado baja 15.000', () {
+        expect(sofia().expenses.single.shares, <String, int>{
+          meId: 8500,
+          sofia().members.last.id: 15000,
+        });
+        expect(spentThisPeriod(own.ledger!), spent - l.minor(15000));
+        expect(own.ledger!.freeUntilPayday, free);
+      });
+      await f.tap('Falabella');
+      await f.tap('Dividir este gasto');
+      await f.tapFound(find.byType(DropdownButtonFormField<String?>));
+      await f.step(
+        '«Grupo» ofrece crear uno nuevo o usar uno que ya tienes, como '
+        '«Comidas con Sofía».',
+      );
+      await f.tapFound(find.text('Comidas con Sofía').last);
+      await f.step(
+        'En el grupo de Sofía ya no hay que escribir nombres: Falabella queda '
+        'en ${pesos(21450)} para cada uno.',
+      );
+      await f.tap('Guardar');
+      await f.check('Las compras de Falabella fueron al mismo grupo', () {
+        expect(own.groups, hasLength(1));
+        expect(
+          sofia().expenses.map((SharedExpense e) => e.entryId),
+          unorderedEquals(<String>[crepes.id, falabella.id]),
+        );
+        expect(own.sharedBalance, (36450, 0));
+      });
+      await _openPlan(f);
+      await f.tap('Gastos compartidos');
+      await f.tap('Comidas con Sofía');
+      await f.step(
+        'En el grupo, «Sofía te paga ${pesos(36450)}»: 15.000 de la comida y '
+        '21.450 de Falabella, cada gasto con tu parte.',
+      );
+      await f.check('El grupo dice lo que Sofía debe: ${pesos(36450)}', () {
+        expect(f.shows('Sofía te paga ${pesos(36450)}'), isTrue);
+      });
+      await f.tap('Crepes & Waffles');
+      await f.reveal(find.text('Quitar la división'));
+      await f.tap('Quitar la división');
+      await f.step(
+        '«Quitar la división» saca la comida del grupo: Sofía queda debiendo '
+        'solo lo de Falabella, ${pesos(21450)}.',
+      );
+      await f.check(
+        'Sin la división, la comida vuelve a contar entera como gasto',
+        () {
+          expect(sofia().expenses.map((SharedExpense e) => e.entryId), <String>[
+            falabella.id,
+          ]);
+          expect(spentThisPeriod(own.ledger!), spent - l.minor(21450));
+          expect(own.sharedBalance, (21450, 0));
+        },
+      );
+    },
+  ),
+  AppFlow(
+    '06-28-saber-si-me-alcanza-sin-tocar-la-reserva',
+    'Saber si me alcanza sin tocar la reserva',
+    area: 'Plan',
+    goal:
+        'Aparto el 15 % de lo que cobro para impuestos: quiero saber si me '
+        'alcanza para unos tenis sin gastarme esa plata.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Ledger l = own.ledger!;
+      final int free = l.freeUntilPayday;
+      final int entries = own.snapshot!.entries.length;
+      await f.step(
+        'Inicio: «Puedes gastar» es ${_pesos(l, free)}, porque deja fuera '
+        '${_pesos(l, l.reserved)} de la reserva de ingresos variables.',
+      );
+      await _openPlan(f);
+      await f.tap('Próximos 30 días');
+      await f.tap('¿Me alcanza?');
+      await f.type('¿Cuánto cuesta?', '100000');
+      await f.type('¿Qué es? (opcional)', 'Tenis');
+      final PurchaseCheck shoes = checkPurchase(
+        own.ledger!,
+        price: l.minor(100000),
+        date: own.today,
+        label: 'Tenis',
+        atLeast: 30,
+      );
+      await f.step(
+        'Unos tenis de 100.000: dice «Te alcanza», con un saldo mínimo de '
+        '${_pesos(l, shoes.lowest)}, aunque para gastar solo hay '
+        '${_pesos(l, free)}: se los come a la reserva.',
+      );
+      await f.check(
+        'El saldo mínimo que muestra es el que calcula la app: '
+        '${_pesos(l, shoes.lowest)}',
+        () => expect(_says(f, _pesos(l, shoes.lowest)), isTrue),
+      );
+      await f.check(
+        'Con ${_pesos(l, free)} para gastar y ${_pesos(l, l.reserved)} de '
+        'reserva, una compra de ${pesos(100000)} no dice «Te alcanza»',
+        () => expect(f.shows('Te alcanza, según lo que sabe la app'), isFalse),
+      );
+      await f.type('¿Cuánto cuesta?', '7000');
+      await f.step(
+        'Con 7.000, menos de lo que puedes gastar, «Te alcanza» sí es cierto.',
+      );
+      await f.check('Una compra de 7.000 cabe en lo que puedes gastar', () {
+        expect(l.minor(7000), lessThanOrEqualTo(free));
+        expect(f.shows('Te alcanza, según lo que sabe la app'), isTrue);
+      });
+      await f.check('Probar compras no anota nada', () {
+        expect(own.snapshot!.entries.length, entries);
+        expect(own.ledger!.freeUntilPayday, free);
+      });
+    },
+  ),
+  AppFlow(
+    '06-29-poner-al-dia-una-meta-y-una-prueba-vencidas',
+    'Poner al día una meta y una prueba gratis vencidas',
+    area: 'Plan',
+    goal:
+        'Se me pasó la fecha de la moto y la prueba gratis de Max: quiero '
+        'ponerles fechas nuevas sin borrar nada.',
+    data: _overdue,
+    manual: <String>[
+      'Que el aviso de la prueba gratis de Max llegue el 16 de octubre a las '
+          '9 de la mañana.',
+    ],
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final int free = own.ledger!.freeUntilPayday;
+      final List<MethodCall> calls = _reminders(f, allow: () => true);
+      RecurringCharge max() =>
+          own.recurring.firstWhere((RecurringCharge r) => r.name == 'Max');
+      await _openPlan(f);
+      await f.reveal(find.text('Moto'));
+      await f.step(
+        'La Moto tenía fecha del 20 de septiembre, que ya pasó; la fila solo '
+        'dice cuándo llega, sin avisar que la fecha se venció.',
+      );
+      await f.tap('Moto');
+      await f.tap('Para el 20 de septiembre');
+      await f.step(
+        'La fecha vencida abre su calendario en septiembre, para moverla.',
+      );
+      await f.check('El calendario abre aunque la fecha ya pasó', () {
+        expect(
+          find.byWidgetPredicate((Widget w) => w is DatePickerDialog),
+          findsOneWidget,
+        );
+      });
+      for (var i = 0; i < 3; i++) {
+        await f.tapTip('Mes siguiente');
+      }
+      await _pickDay(f, '20');
+      await f.step('La meta queda «Para el 20 de diciembre».');
+      await f.tap('Guardar');
+      await f.check(
+        'La Moto quedó para el 20 de diciembre, con lo ahorrado',
+        () {
+          final SavingsGoal g = own.snapshot!.goals.single;
+          expect(g.deadline, DateTime(2026, 12, 20));
+          expect(g.saved.amount, Decimal.fromInt(1500000));
+        },
+      );
+      await f.top();
+      await f.tap('Pagos fijos');
+      await f.step(
+        'En la lista, Max ya no muestra la prueba que terminó el 28 de '
+        'septiembre, y su próximo cobro sigue en el 3 de noviembre.',
+      );
+      await f.tap('Max');
+      await f.tap('Prueba gratis hasta el 28 de septiembre');
+      await f.tapTip('Mes siguiente');
+      await _pickDay(f, '17');
+      await f.reveal(find.textContaining('Próximo cobro:'));
+      await f.step(
+        'Con la prueba hasta el 17 de octubre, el primer cobro pasa solo a '
+        'ese día: «Próximo cobro: 17 de octubre».',
+      );
+      await f.check('El próximo cobro siguió a la prueba: 17 de octubre', () {
+        expect(f.shows('Próximo cobro: 17 de octubre'), isTrue);
+      });
+      await f.tap('Guardar');
+      await f.check('Max quedó con la prueba y el primer cobro el 17', () {
+        expect(max().nextDate, DateTime(2026, 10, 17));
+        expect(own.memoryOf(max().id).trialEnds, DateTime(2026, 10, 17));
+      });
+      await f.check(
+        'El aviso de la prueba quedó para el 16 de octubre a las 9',
+        () {
+          final List<Object?> items =
+              (calls
+                          .lastWhere((MethodCall c) => c.method == 'schedule')
+                          .arguments
+                      as Map<Object?, Object?>)['items']!
+                  as List<Object?>;
+          final Map<Object?, Object?> trial = items
+              .cast<Map<Object?, Object?>>()
+              .firstWhere(
+                (Map<Object?, Object?> i) => '${i['title']}'.contains('Max'),
+              );
+          expect(
+            trial['title'],
+            'La prueba gratis de Max termina el 17 de octubre',
+          );
+          expect(trial['at'], DateTime(2026, 10, 16, 9).millisecondsSinceEpoch);
+        },
+      );
+      await f.check(
+        'Cobra después del pago del 15: lo que puedes gastar no cambia',
+        () => expect(own.ledger!.freeUntilPayday, free),
+      );
+      await f.step(
+        'Max queda con «Prueba gratis hasta el 17 de octubre» y su próximo '
+        'cobro ese mismo día.',
+      );
+    },
+  ),
+  AppFlow(
+    '06-30-repartir-como-la-quincena-pasada',
+    'Repartir como la quincena pasada',
+    area: 'Plan',
+    goal:
+        'Me llegó la quincena: quiero repartirla como la anterior sin escribir '
+        'todo otra vez, ajustando lo que ya no alcanza.',
+    data: _lastPeriodSplit,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Ledger l = own.ledger!;
+      final int money = allocatable(l);
+      final int over = l.minor(440000) - money;
+      await _openPlan(f);
+      await f.step(
+        'La quincena del 30 de septiembre todavía no tiene reparto: arriba '
+        'sale «Reparte esta quincena».',
+      );
+      await f.check(
+        'Hay un reparto de la quincena pasada y ninguno de esta',
+        () {
+          expect(own.plan, isNull);
+          expect(own.lastPlan!.period, DateTime(2026, 9, 15));
+        },
+      );
+      await f.tap('Repartir en sobres');
+      await f.step(
+        'Los sobres vienen como la quincena pasada: 300.000 de día a día, '
+        '100.000 para el viaje y 40.000 para el regalo. «Te pasas por» '
+        '${_pesos(l, over)}: esta vez hay menos.',
+      );
+      await f.check(
+        'Trae los sobres de la quincena pasada, sin el de la meta que ya no '
+        'existe',
+        () {
+          expect(_fieldText(f, 'Día a día'), '300.000');
+          expect(_fieldText(f, 'Viaje a Cartagena'), '100.000');
+          expect(_fieldText(f, 'Regalo de mamá'), '40.000');
+          expect(find.widgetWithText(TextField, 'Moto'), findsNothing);
+        },
+      );
+      await f.check(
+        'Copiar el reparto no mira lo que hay: se pasa por ${_pesos(l, over)}',
+        () => expect(_says(f, 'Te pasas por | ${_pesos(l, over)}'), isTrue),
+      );
+      await f.type('Día a día', '200000');
+      await f.step(
+        'Con 200.000 de día a día el reparto cabe: «Sin asignar» '
+        '${_pesos(l, money - l.minor(340000))}.',
+      );
+      await f.tap('Guardar el reparto');
+      await f.check('El reparto quedó guardado para esta quincena', () {
+        final EnvelopePlan plan = own.plan!;
+        expect(plan.period, periodStart(own.ledger!));
+        expect(plan.envelopes.map((Envelope e) => e.amount), <int>[
+          l.minor(200000),
+          l.minor(100000),
+          l.minor(40000),
+        ]);
+        expect(own.ledger!.setAside, l.minor(140000));
+      });
+      await f.top();
+      await f.step(
+        'En Plan, la tarjeta muestra el reparto con el viaje y el regalo '
+        'apartados; arriba ya dice «Te pasaste por», por lo gastado antes.',
+      );
     },
   ),
 ];
@@ -3202,6 +3770,126 @@ Future<QuincenaStore> _planAccount() async {
         ],
       ).toJson(),
     ]),
+  );
+  return store;
+}
+
+/// [minor] as an amount field shows it: no sign, and empty for nothing.
+String _typed(Ledger ledger, int minor) => minor == 0
+    ? ''
+    : formatDecimal(
+        Decimal.parse('${ledger.major(minor)}'),
+        decimals: ledger.currency.decimals,
+        trim: true,
+      );
+
+/// Answers the share sheet as a phone would: it opens when [sheet], or it
+/// is not there and the app copies the message. Keeps what was shared.
+List<String> _shares(FlowRun f, {required bool sheet}) {
+  const MethodChannel channel = MethodChannel('dev.dlsoft.quincena/share');
+  final List<String> texts = <String>[];
+  final TestDefaultBinaryMessenger messenger =
+      f.tester.binding.defaultBinaryMessenger;
+  messenger.setMockMethodCallHandler(channel, (MethodCall call) async {
+    if (call.method == 'text') texts.add('${call.arguments}');
+    return sheet;
+  });
+  addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+  return texts;
+}
+
+/// Whether the reminders the app set last, of those [calls] saw, have one
+/// about [name].
+bool _remindsOf(List<MethodCall> calls, String name) {
+  final MethodCall? last = calls
+      .where((MethodCall c) => c.method == 'schedule' || c.method == 'cancel')
+      .lastOrNull;
+  if (last == null || last.method == 'cancel') return false;
+  final List<Object?> items =
+      (last.arguments as Map<Object?, Object?>)['items']! as List<Object?>;
+  return items.any(
+    (Object? i) => '${(i! as Map<Object?, Object?>)['title']}'.contains(name),
+  );
+}
+
+/// The seeded account with dates gone by: a motorbike meant for the 20th
+/// of September, and Max, whose free trial ended on the 28th.
+Future<QuincenaStore> _overdue() async {
+  final QuincenaStore store = await seeded();
+  await store.addGoal(
+    name: 'Moto',
+    target: Money.parse('6000000', Asset.cop),
+    saved: Money.parse('1500000', Asset.cop),
+    monthly: Money.parse('500000', Asset.cop),
+    deadline: DateTime(2026, 9, 20),
+  );
+  final Account visa = (await store.accounts()).firstWhere(
+    (Account a) => a.name == 'Visa',
+  );
+  final RecurringCharge max = await store.addRecurring(
+    name: 'Max',
+    amount: Money.parse('19900', Asset.cop),
+    cadence: Cadence.monthly,
+    nextDate: DateTime(2026, 11, 3),
+    accountId: visa.id,
+    category: 'subscriptions',
+  );
+  await store.setSetting(
+    'commitments.memories',
+    jsonEncode(<String, Object?>{
+      max.id: ChargeMemory(trialEnds: DateTime(2026, 9, 28)).toJson(),
+    }),
+  );
+  return store;
+}
+
+/// The seeded account with the trip to Cartagena as a goal, and the split
+/// of the fortnight before: 300.000 for the day to day, 100.000 for the
+/// trip, 40.000 for a present, and 80.000 for a goal since deleted.
+Future<QuincenaStore> _lastPeriodSplit() async {
+  final QuincenaStore store = await seeded();
+  final SavingsGoal trip = await store.addGoal(
+    name: 'Viaje a Cartagena',
+    target: Money.parse('2400000', Asset.cop),
+    saved: Money.parse('650000', Asset.cop),
+    monthly: Money.parse('300000', Asset.cop),
+    deadline: DateTime(2026, 12, 20),
+  );
+  await store.setSetting(
+    'plan.envelopes',
+    jsonEncode(
+      EnvelopePlan(
+        period: DateTime(2026, 9, 15),
+        envelopes: <Envelope>[
+          const Envelope(
+            id: 'daily',
+            kind: EnvelopeKind.daily,
+            name: '',
+            amount: 300000,
+          ),
+          Envelope(
+            id: 'goal-${trip.id}',
+            kind: EnvelopeKind.goal,
+            name: trip.name,
+            amount: 100000,
+            goalId: trip.id,
+          ),
+          const Envelope(
+            id: 'goal-old',
+            kind: EnvelopeKind.goal,
+            name: 'Moto',
+            amount: 80000,
+            goalId: 'old',
+          ),
+          const Envelope(
+            id: 'aside-gift',
+            kind: EnvelopeKind.aside,
+            name: 'Regalo de mamá',
+            amount: 40000,
+          ),
+        ],
+      ).toJson(),
+    ),
   );
   return store;
 }

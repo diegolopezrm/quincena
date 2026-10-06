@@ -2198,6 +2198,16 @@ abstract class AppLocalizations {
   /// **'Lo que hay para gastar, menos {committed} comprometidos hasta el pago y {cushion} de colchón.'**
   String envelopesToSplitBody(String committed, String cushion);
 
+  /// No description provided for @envelopesToSplitBodyReserve.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que hay para gastar, menos {committed} comprometidos hasta el pago, {cushion} de colchón y {reserve} de la reserva de ingresos variables.'**
+  String envelopesToSplitBodyReserve(
+    String committed,
+    String cushion,
+    String reserve,
+  );
+
   /// No description provided for @envelopeDaily.
   ///
   /// In es, this message translates to:
@@ -5159,7 +5169,7 @@ abstract class AppLocalizations {
   /// No description provided for @detectiveRulePriceUp.
   ///
   /// In es, this message translates to:
-  /// **'Un comercio que cobró tres veces o más y en el último cobro subió 5 % o más.'**
+  /// **'Un comercio que cobraba lo mismo, al menos dos días distintos, y en el último cobro subió 5 % o más.'**
   String get detectiveRulePriceUp;
 
   /// No description provided for @detectiveRuleUnusual.

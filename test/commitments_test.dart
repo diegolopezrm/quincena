@@ -288,6 +288,58 @@ void main() {
       }
       expect(detectCharges(await store.entries(), today: today), isEmpty);
     });
+
+    test('three purchases the same day, one seen twice, are no price going '
+        'up', () async {
+      for (final (String payee, String source) in <(String, String)>[
+        ('Exito', 'notification'),
+        ('EXITO', 'statement:abc'),
+      ]) {
+        await spend(
+          '63200',
+          DateTime(2026, 10, 2, 9, 40),
+          payee,
+          category: 'groceries',
+          source: source,
+        );
+      }
+      await spend(
+        '187400',
+        DateTime(2026, 10, 2, 12),
+        'Exito',
+        category: 'groceries',
+      );
+      final List<ChargeAlert> alerts = detectCharges(
+        await store.entries(),
+        today: today,
+      );
+      expect(alerts.map((ChargeAlert a) => a.kind), <AlertKind>[
+        AlertKind.twice,
+      ]);
+    });
+
+    test('a shop whose every purchase differs has no price to go up', () async {
+      for (final (int day, String amount) in <(int, String)>[
+        (5, '82000'),
+        (12, '64000'),
+        (19, '95000'),
+      ]) {
+        await spend(
+          amount,
+          DateTime(2026, 9, day),
+          'D1',
+          category: 'groceries',
+        );
+      }
+      await spend('120000', DateTime(2026, 9, 26), 'D1', category: 'groceries');
+      expect(
+        detectCharges(
+          await store.entries(),
+          today: today,
+        ).where((ChargeAlert a) => a.kind == AlertKind.priceUp),
+        isEmpty,
+      );
+    });
   });
 
   group('what is committed', () {

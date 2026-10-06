@@ -1345,6 +1345,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String envelopesToSplitBodyReserve(
+    String committed,
+    String cushion,
+    String reserve,
+  ) {
+    return 'What you have to spend, minus $committed due by payday, your $cushion safety buffer and $reserve kept from variable income.';
+  }
+
+  @override
   String get envelopeDaily => 'Day to day';
 
   @override
@@ -3222,7 +3231,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get detectiveRulePriceUp =>
-      'A merchant that charged three times or more and went up 5% or more the last time.';
+      'A merchant that charged the same on at least two different days and went up 5% or more the last time.';
 
   @override
   String get detectiveRuleUnusual =>

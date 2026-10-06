@@ -105,6 +105,45 @@ void main() {
       expect(calls.last.method, 'cancel');
     });
 
+    testWidgets('a free trial moves the first charge to its end, and one '
+        'that ended still opens its calendar', (tester) async {
+      final OwnController own = await openPage(
+        tester,
+        (OwnController own) => CommitmentsPage(own: own),
+        data: (QuincenaStore store, Account bank, Account card) =>
+            store.addRecurring(
+              name: 'Max',
+              amount: Money(d('19900'), Asset.cop),
+              cadence: Cadence.monthly,
+              nextDate: DateTime(2026, 11, 3),
+              accountId: card.id,
+              category: 'subscriptions',
+            ),
+      );
+      final RecurringCharge max = own.recurring.single;
+      await tester.runAsync(
+        () => own.saveMemory(
+          max.id,
+          ChargeMemory(trialEnds: DateTime(2026, 9, 28)),
+        ),
+      );
+      await settle(tester);
+      await tapText(tester, 'Max');
+      await tapText(tester, 'Prueba gratis hasta el 28 de septiembre');
+      expect(tester.takeException(), isNull);
+      expect(find.byType(DatePickerDialog), findsOneWidget);
+      await tester.tap(find.byTooltip('Mes siguiente'));
+      await settle(tester);
+      await tester.tap(find.text('17').last);
+      await tester.tap(find.text('ACEPTAR'));
+      await settle(tester);
+      // It starts charging the day the trial ends.
+      expect(find.text('Próximo cobro: 17 de octubre'), findsOneWidget);
+      await tapText(tester, 'Guardar');
+      expect(own.recurring.single.nextDate, DateTime(2026, 10, 17));
+      expect(own.memoryOf(max.id).trialEnds, DateTime(2026, 10, 17));
+    });
+
     testWidgets('one not in use says what pausing saves, and that the app '
         'cancels nothing', (tester) async {
       await openPage(tester, (OwnController own) => CommitmentsPage(own: own));

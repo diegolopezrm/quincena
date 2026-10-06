@@ -173,10 +173,13 @@ class _GoalSheetState extends State<_GoalSheet> {
             OutlinedButton.icon(
               onPressed: () async {
                 final DateTime now = widget.own.today;
+                final DateTime initial =
+                    _deadline ?? DateTime(now.year, now.month + 6);
                 final DateTime? picked = await showDatePicker(
                   context: context,
-                  initialDate: _deadline ?? DateTime(now.year, now.month + 6),
-                  firstDate: now,
+                  initialDate: initial,
+                  // A date that already passed still opens, to move it.
+                  firstDate: initial.isBefore(now) ? initial : now,
                   lastDate: DateTime(now.year + 30),
                 );
                 if (picked != null) setState(() => _deadline = picked);

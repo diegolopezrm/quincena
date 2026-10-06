@@ -187,11 +187,18 @@ class _EnvelopesPageState extends State<EnvelopesPage> {
                   children: <Widget>[
                     Text(l.envelopesToSplit, style: context.type.labelMedium),
                     Figures(amount(money), style: context.type.headlineMedium),
+                    // Every amount taken out is named, so the sum adds up.
                     Text(
-                      l.envelopesToSplitBody(
-                        amount(ledger.committedUntilPayday),
-                        amount(ledger.cushion),
-                      ),
+                      ledger.reserved > 0
+                          ? l.envelopesToSplitBodyReserve(
+                              amount(ledger.committedUntilPayday),
+                              amount(ledger.cushion),
+                              amount(ledger.reserved),
+                            )
+                          : l.envelopesToSplitBody(
+                              amount(ledger.committedUntilPayday),
+                              amount(ledger.cushion),
+                            ),
                       style: context.type.bodySmall,
                     ),
                   ],
