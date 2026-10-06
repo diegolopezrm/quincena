@@ -1741,11 +1741,17 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         expect(f.shows('Ajustes'), isTrue);
         expect(phone.scheduledClose(), isNotEmpty);
       });
-      await f.tap('Borrar todo');
-      await f.tap('Borrar todo');
+      await f.tap('English');
+      await f.check('Antes de borrar, la app está en inglés', () {
+        expect(_app(f).locale, const Locale('en'));
+        expect(f.shows('Delete everything'), isTrue);
+      });
+      await f.tap('Delete everything');
+      await f.tap('Delete everything');
       await f.step(
-        'Con «Borrar todo» la app vuelve a «¿Cómo quieres empezar?», como '
-        'recién instalada: también vuelve a los colores del teléfono.',
+        'En inglés, «Delete everything» y confirmar: la app vuelve a «¿Cómo '
+        'quieres empezar?», como recién instalada, ya en el idioma y los '
+        'colores del teléfono, sin esperar a volver a abrirla.',
       );
       await f.check(
         'No queda perfil, cuentas, movimientos ni pagos fijos',
@@ -1781,7 +1787,12 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           expect(_app(f).themeMode, ThemeMode.system);
           expect(_app(f).locale, isNull);
           expect(_brightness(f), Brightness.light);
+          expect(f.shows('¿Cómo quieres empezar?'), isTrue);
           expect(await _read(f, () => _store(f).setting('app.theme')), isNull);
+          expect(
+            await _read(f, () => _store(f).setting('app.language')),
+            isNull,
+          );
         },
       );
       await f.tap('Con mis cuentas');
