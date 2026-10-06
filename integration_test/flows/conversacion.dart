@@ -13,10 +13,13 @@ import 'package:quincena/agent/model_client.dart';
 import 'package:quincena/agent/scripted_agent.dart';
 import 'package:quincena/ai/allowance.dart';
 import 'package:quincena/ai/reports.dart' show ReportReason;
+import 'package:a2ui_core/a2ui_core.dart' as core;
 import 'package:quincena/app.dart';
+import 'package:quincena/catalog/budget_meter.dart';
 import 'package:quincena/catalog/goal_planner.dart';
 import 'package:quincena/data/category.dart';
 import 'package:quincena/data/ledger.dart' show Goal, Ledger, Movement;
+import 'package:quincena/domain/records.dart' show Entry;
 import 'package:quincena/format/dates.dart';
 import 'package:quincena/format/money.dart';
 import 'package:quincena/functions/money_functions.dart'
@@ -30,6 +33,7 @@ import 'package:quincena/ui/ask_bar.dart';
 import 'package:quincena/ui/conversation.dart';
 import 'package:quincena/ui/home_page.dart';
 import 'package:quincena/ui/own/ask_page.dart';
+import 'package:quincena/ui/own/gemini_note_page.dart';
 import 'package:quincena/ui/own/own_shell.dart';
 import 'package:quincena/ui/own/onboarding_page.dart';
 import 'package:quincena/ui/welcome.dart';
@@ -82,6 +86,19 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         'Toca «¿De dónde sale?»: una hoja resta de lo que hay hoy cada pago '
         'que vence hasta el 15 de octubre, y dice lo que supone.',
       );
+      final String held = pesos(ledger.major(ledger.balance));
+      final String due = pesos(ledger.major(-ledger.committedUntilPayday));
+      await f.check('La hoja resta $due de $held y llega a $free, la cifra de '
+          'la tarjeta', () {
+        final String said = _said(f);
+        expect(said, contains(held));
+        expect(said, contains(due));
+        expect(said, contains('Puedes gastar hasta el 15 de octubre'));
+        expect(
+          ledger.balance - ledger.committedUntilPayday,
+          ledger.freeUntilPayday,
+        );
+      });
       await f.back();
       // Untouched, the ask bar turns its hint to one of the questions.
       await f.tester.pump(AskBar.turn);
@@ -206,6 +223,20 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
           _said(f),
           contains('${meals.length} pagos por ${pesos(ledger.major(eaten))}'),
         ),
+      );
+      final Movement biggest = meals.reduce(
+        (Movement a, Movement b) => b.amount > a.amount ? b : a,
+      );
+      await f.check(
+        'El primero es el más grande de la cuenta: ${biggest.merchant}, '
+        '${pesos(ledger.major(biggest.amount))}',
+        () {
+          expect(
+            _said(f),
+            contains('El más grande fue ${biggest.merchant}, el '),
+          );
+          expect(find.text(biggest.merchant), findsWidgets);
+        },
       );
       await f.check('Ver los pagos no cambia la cuenta', () {
         expect(ledger.spentIn(2026, 9), spent);
@@ -333,8 +364,19 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       await f.check('La meta quedó en ${pesos(needed)} al mes', () {
         expect(ledger.goal('cartagena').monthly, needed);
       });
-      await f.check('El control guardado ya no se mueve', () {
+      // A finger on the saved planner, which takes nothing more.
+      final Finder kept = find.byType(Slider).first;
+      await f.reveal(kept);
+      await f.tester.drag(kept, const Offset(-300, 0), warnIfMissed: false);
+      await settle(f.tester);
+      await f.check('El control guardado ya no se mueve: sigue en '
+          '${pesos(needed)}', () {
         expect(s.settledOf(s.turns.first.surfaceIds.single), isNotNull);
+        expect(
+          f.tester.widget<GoalPlanner>(find.byType(GoalPlanner).first).monthly,
+          needed,
+        );
+        expect(ledger.goal('cartagena').monthly, needed);
         expect(_said(f), contains('Plan guardado · '));
       });
       await f.tap('Editar');
@@ -495,6 +537,31 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(s.turns, hasLength(turns + 1));
         expect(ledger.subscriptionsMonthly, monthly);
       });
+      // The first review, from before «Cambiar selección», with both.
+      final Finder stale = find.text('Ya las cancelé');
+      await f.reveal(stale);
+      await Scrollable.ensureVisible(f.tester.element(stale), alignment: 0.5);
+      await settle(f.tester);
+      await f.step(
+        'Más arriba sigue la primera revisión, la de las dos: su «Ya las '
+        'cancelé» se ve igual de activo que antes de «Cambiar selección».',
+      );
+      final int answered = s.turns.length;
+      await f.tester.tap(stale, warnIfMissed: false);
+      await settle(f.tester);
+      await _read(
+        f,
+        'Lo toca: llega «Canceladas: Fit24 gimnasio y Lingo Pro», aunque la '
+        'última revisión dejó solo Fit24 y ya estaba confirmada.',
+        most: 1,
+      );
+      await f.check(
+        'La revisión de antes de «Cambiar selección» ya no confirma nada',
+        () {
+          expect(s.turns, hasLength(answered));
+          expect(find.textContaining('Canceladas: '), findsNothing);
+        },
+      );
     },
   ),
   AppFlow(
@@ -521,14 +588,35 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         'Toca «Registra 45 mil en el mercado»: llega un formulario con '
         '45.000 y Mercado ya puestos, para corregir antes de guardar.',
       );
+      final String form = s.turns.single.surfaceIds.single;
       await f.type('Monto', '');
+      await f.tap('Guardar gasto');
       await f.step(
-        'Borra el monto: debajo aparece «Escribe un monto mayor que cero.»',
+        'Borra el monto y toca «Guardar gasto»: no guarda nada, y debajo del '
+        'monto sigue «Escribe un monto mayor que cero.»',
+      );
+      await f.check(
+        'Sin monto no se guarda nada ni aparece otro formulario',
+        () {
+          expect(added(), isEmpty);
+          expect(s.turns, hasLength(1));
+          expect(s.settledOf(form), isNull);
+          expect(find.text('Guardar gasto'), findsOneWidget);
+        },
       );
       await f.type('Monto', '99000000');
+      await f.tap('Guardar gasto');
       await f.step(
-        'Escribe 99.000.000: avisa «Es más de lo que hay en la cuenta.»',
+        'Escribe 99.000.000 y toca «Guardar gasto»: avisa «Es más de lo que '
+        'hay en la cuenta.» y tampoco lo guarda.',
       );
+      await f.check('Un monto mayor que lo que hay no se guarda: puede gastar '
+          '${pesos(ledger.major(free))}, como antes', () {
+        expect(added(), isEmpty);
+        expect(ledger.freeUntilPayday, free);
+        expect(s.turns, hasLength(1));
+        expect(find.text('Es más de lo que hay en la cuenta.'), findsOne);
+      });
       await f.type('Monto', '52000');
       await f.tap('Restaurantes');
       await f.type('Dónde', 'Tienda Don Pacho');
@@ -627,6 +715,33 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(said, contains(pesos(ledger.major(now))));
         expect(said, contains(pesos(ledger.major(before))));
       });
+      // What changed most, worked out from the account: the three
+      // categories that moved the most between the two months.
+      final List<Category> moved =
+          <Category>[
+            for (final Category c in Category.values)
+              if (c != Category.housing && c != Category.debt) c,
+          ]..sort(
+            (Category a, Category b) =>
+                _moved(ledger, b).compareTo(_moved(ledger, a)),
+          );
+      final List<Category> top = moved.take(3).toList();
+      await f.check(
+        'Lo que más cambió son ${top.map((Category c) => c.label).join(', ')}, '
+        'con lo de cada mes',
+        () {
+          final List<BudgetMeter> meters = f.tester
+              .widgetList<BudgetMeter>(find.byType(BudgetMeter))
+              .toList();
+          expect(<Category>[
+            for (final BudgetMeter m in meters) m.category,
+          ], top);
+          for (final BudgetMeter m in meters) {
+            expect(m.spent, ledger.spentOn(m.category, 2026, 9));
+            expect(m.limit, ledger.spentOn(m.category, 2026, 8));
+          }
+        },
+      );
       await f.tap(ScriptedAgent.starters[0]);
       await _read(
         f,
@@ -698,14 +813,35 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(s.canRestore, isFalse);
         expect(find.text('Deshacer'), findsNothing);
       });
+      await f.tap('Nueva');
+      // Six seconds untouched, the time the offer to undo lasts.
+      await f.tester.pump(const Duration(seconds: 7));
+      await settle(f.tester);
+      await f.step(
+        '«Nueva» otra vez, y sin tocar «Deshacer»: a los seis segundos el '
+        'aviso se va, y con él la conversación anterior.',
+      );
+      await f.check('Pasado el aviso, la conversación anterior no vuelve', () {
+        expect(s.turns, isEmpty);
+        expect(s.canRestore, isFalse);
+        expect(find.text('Deshacer'), findsNothing);
+      });
+      await f.tap(ScriptedAgent.starters[4]);
+      await f.tap('Guardar gasto');
+      final int spent = s.ledger.freeUntilPayday;
       await f.tapTip('Ajustes');
       await f.tap('Empezar de nuevo');
       await f.step(
-        'En «Ajustes», «Empezar de nuevo» también limpia la conversación, '
-        'pero sin «Deshacer».',
+        'Con otro gasto guardado, «Empezar de nuevo» en «Ajustes» limpia la '
+        'conversación y la cuenta vuelve a ${pesos(s.ledger.major(free))}, '
+        'sin «Deshacer».',
       );
-      await f.check('«Empezar de nuevo» deja la conversación vacía', () {
+      await f.check('«Empezar de nuevo» quita el gasto: puede gastar otra vez '
+          '${pesos(s.ledger.major(free))}', () {
+        expect(spent, free - 45000);
         expect(s.turns, isEmpty);
+        expect(s.ledger.freeUntilPayday, free);
+        expect(s.canRestore, isFalse);
         expect(find.text('Deshacer'), findsNothing);
       });
     },
@@ -797,7 +933,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(at.value, at.max);
         expect(find.text('${at.max.round()} de ${at.max.round()}'), findsOne);
       });
-      await f.tester.drag(find.byType(Slider), const Offset(-800, 0));
+      await f.tester.drag(_replaySlider, const Offset(-800, 0));
       await settle(f.tester);
       await f.step(
         'Arrastra el control al principio: «Antes de la respuesta», 0 de 5, '
@@ -817,6 +953,20 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(find.text('Manda los componentes'), findsOneWidget);
       });
       await f.back();
+      // Each of the five, opened from the list: every one plays to its end.
+      final List<String> short = <String>[];
+      for (final String q in ScriptedAgent.starters) {
+        await f.tap(q);
+        final RecordedSlider played = RecordedSlider(f);
+        if (played.max < 1 || played.value != played.max) short.add(q);
+        if (find.byType(Surface).evaluate().isEmpty) short.add(q);
+        await f.back();
+      }
+      await f.check(
+        'Las cinco grabaciones abren con su respuesta armada, en el último '
+        'paso',
+        () => expect(short, isEmpty),
+      );
       await f.back();
       await f.check('Ver las grabaciones no toca la conversación', () {
         expect(_demo(f).turns, isEmpty);
@@ -841,10 +991,12 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
     ],
     (FlowRun f) async {
       final Session s = _demo(f);
+      await f.tap(ScriptedAgent.starters[3]);
       await f.tapTip('Ajustes');
       await f.page(
-        'Toca el engranaje: «Ajustes» de la demo, con quién responde, '
-        'idioma, apariencia, modo desarrollador y cómo salir.',
+        'Con una respuesta en pantalla, toca el engranaje: «Ajustes» de la '
+        'demo, con quién responde, idioma, apariencia, modo desarrollador y '
+        'cómo salir.',
       );
       await f.check('Responde el guion de la demo', () {
         expect(s.mode, AgentMode.demo);
@@ -863,12 +1015,22 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       await f.type('Key de Gemini', 'clave-de-prueba');
       await f.tap('Conectar');
       await f.step(
-        'Pega una key y toca «Conectar»: Ajustes se cierra y la etiqueta de '
-        'arriba pasa de «DEMO» a «EN VIVO».',
+        'Pega una key y toca «Conectar»: Ajustes se cierra, arriba dice «EN '
+        'VIVO» y la respuesta que había desapareció sin aviso.',
       );
       await f.check('Con la key responde Gemini en vivo', () {
         expect(s.mode, AgentMode.live);
         expect(find.text('EN VIVO'), findsOneWidget);
+      });
+      await f.check(
+        'Cambiar quién responde borró la respuesta que había, sin aviso',
+        () {
+          expect(s.turns, isEmpty);
+          expect(s.canRestore, isFalse);
+        },
+      );
+      await f.check('La key no quedó guardada en el teléfono', () async {
+        expect(await _savedSettings(f), isNot(contains('clave-de-prueba')));
       });
       await f.tapTip('Ajustes');
       await f.step(
@@ -926,6 +1088,8 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
     manual: <String>[
       'Con «Sistema» en Idioma y en Apariencia, cambiar el idioma y el modo '
           'oscuro del teléfono y ver que la app los sigue.',
+      'Escoger «English» y «Oscuro», cerrar la app del todo y abrirla: debe '
+          'volver en inglés y oscura.',
     ],
     (FlowRun f) async {
       final Session s = _demo(f);
@@ -951,6 +1115,25 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(s.turns, isEmpty);
         expect(find.text(ScriptedAgent.startersEn[0]), findsOneWidget);
       });
+      await f.tap(ScriptedAgent.startersEn[3]);
+      final Ledger ledger = s.ledger;
+      final int more = ledger.spentIn(2026, 9) - ledger.spentIn(2026, 8);
+      // Written while the app speaks English, with a comma between thousands.
+      final String english = pesos(ledger.major(more));
+      await _read(
+        f,
+        'En inglés, «${ScriptedAgent.startersEn[3]}» responde «You spent '
+        '$english more than in August», con coma entre los miles.',
+        most: 1,
+      );
+      await f.check(
+        'La respuesta en inglés da la misma cifra, $english, escrita en '
+        'inglés',
+        () {
+          expect(english, contains(','));
+          expect(_said(f), contains('You spent $english more than in August'));
+        },
+      );
       await f.tapTip('Settings');
       await f.tap('Español');
       await f.tap('Oscuro');
@@ -968,6 +1151,14 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
           QuincenaColors.dark.surface,
         );
       });
+      await f.check(
+        'Español y oscuro quedan guardados para la próxima vez que abra la '
+        'app',
+        () async {
+          expect(await _setting(f, 'app.theme'), 'dark');
+          expect(await _setting(f, 'app.locale'), 'es');
+        },
+      );
       await f.back();
       await f.step('Así se ve el inicio de la demo en modo oscuro.');
       await f.tapTip('Ajustes');
@@ -980,9 +1171,12 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       );
       await f.tester.tap(find.text('Sistema').last);
       await settle(f.tester);
-      await f.check('Idioma y apariencia siguen al teléfono', () {
+      await f.check('Idioma y apariencia siguen al teléfono, también al '
+          'volver a abrir la app', () async {
         expect(settings.locale, isNull);
         expect(settings.themeMode, ThemeMode.system);
+        expect(await _setting(f, 'app.theme'), 'system');
+        expect(await _setting(f, 'app.locale'), isEmpty);
       });
     },
   ),
@@ -1074,15 +1268,24 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
           null,
         );
       }
+      await f.back();
       await f.step(
-        'Cierra el inspector y en Ajustes toca «Copiar la sesión»: avisa '
-        'que se copió sin lo que escribió.',
+        'Cierra el inspector, toca «Copiar la sesión» en Ajustes y cierra la '
+        'hoja: abajo avisa que la sesión se copió sin lo que escribió.',
       );
       await f.check('Lo copiado trae la sesión sin «Regalo para mamá»', () {
         expect(copied, isNotNull);
         expect(copied, contains('"draft"'));
         expect(copied, isNot(contains('Regalo para mamá')));
+        expect(
+          find.text(
+            'Sesión copiada, sin lo que escribiste. Pégala en un issue y se '
+            'puede reproducir.',
+          ),
+          findsOneWidget,
+        );
       });
+      await f.tapTip('Ajustes');
       await f.tap('Modo desarrollador');
       await f.back();
       await f.check('Apagado, el inspector desaparece', () {
@@ -1116,14 +1319,27 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(find.byType(HomePage), findsOneWidget);
         expect(await _setting(f, 'app.mode'), 'demo');
       });
+      // With a conversation the notice goes; Ajustes keeps the way out.
+      await f.tap(ScriptedAgent.starters[3]);
       await f.tapTip('Ajustes');
       await f.reveal(find.text('Usar con mis cuentas'));
       await f.step(
-        'En Ajustes, al final, está el mismo botón «Usar con mis cuentas».',
+        'Con una pregunta hecha el aviso ya no está, pero en Ajustes, al '
+        'final, sigue el mismo botón «Usar con mis cuentas».',
       );
       await f.tap('Usar con mis cuentas');
       await f.check('Desde Ajustes también abre la configuración', () {
         expect(find.byType(OnboardingPage), findsOneWidget);
+      });
+      await f.tapTip('Atrás');
+      await f.step(
+        'Otra vez «Atrás» en el primer paso: la conversación de la demo sigue '
+        'ahí, con su respuesta.',
+      );
+      await f.check('Volver de la configuración no borra la conversación', () {
+        final Session s = _demo(f);
+        expect(s.turns.single.question, ScriptedAgent.starters[3]);
+        expect(find.byType(Conversation), findsOneWidget);
       });
     },
   ),
@@ -1149,8 +1365,10 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       );
       await f.check(
         'La demo sabe que hay cuentas propias a las que volver',
-        () {
+        () async {
           expect(find.text('Volver a mis cuentas'), findsOneWidget);
+          expect(find.text('Usar con mis cuentas'), findsNothing);
+          expect(await _setting(f, 'app.mode'), 'demo');
         },
       );
       await f.tap('Volver a mis cuentas');
@@ -1233,6 +1451,13 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         'La «i» de arriba a la derecha lleva a la misma '
         'explicación.',
       );
+      await f.check('La «i» abre la misma página de lo que ve Gemini', () {
+        expect(find.byType(GeminiNotePage), findsOneWidget);
+        expect(
+          _said(f),
+          contains('Cada persona tiene ${allowance.perDay} preguntas al día.'),
+        );
+      });
       await f.back();
       final String goal = own.goalShares.first.name;
       await _hintTo(f, '¿Llego a mi meta de $goal?');
@@ -1325,6 +1550,17 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(s.canRestore, isFalse);
         expect(find.text('Deshacer'), findsNothing);
         expect(s.turns.single.question, _ownStarters[4]);
+      });
+      await f.tap('Nueva');
+      await f.tapTip('Atrás');
+      await f.step(
+        '«Nueva» y enseguida la flecha «Atrás»: en Inicio no queda el aviso '
+        'con «Deshacer», que ya no llevaría a ninguna parte.',
+      );
+      await f.check('Al salir de la página se va la opción de deshacer', () {
+        expect(find.byType(AskPage), findsNothing);
+        expect(find.text('Deshacer'), findsNothing);
+        expect(s.canRestore, isFalse);
       });
     },
   ),
@@ -1461,6 +1697,14 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(again.turns.single.error, AnswerProblem.limit);
         expect(allowance.left, 0);
       });
+      await f.check(
+        'Lo guardado del día sigue en ${allowance.perDay} usadas: ningún '
+        'intento contó de más',
+        () async {
+          final String? saved = await _setting(f, 'gemini.usage');
+          expect((jsonDecode(saved!) as Map)['used'], allowance.perDay);
+        },
+      );
     },
   ),
   AppFlow(
@@ -1549,6 +1793,199 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       await f.check('Cerrar sin enviar no marca la respuesta', () {
         expect(s.turns.single.reported, isFalse);
         expect(find.text('Reportar'), findsOneWidget);
+      });
+      await f.tap('Reportar');
+      await f.check('Al abrirla otra vez, el motivo y el comentario se '
+          'perdieron', () {
+        expect(_reason(f), isNull);
+        expect(
+          f.tester
+              .widget<TextField>(
+                find.widgetWithText(TextField, 'Cuéntanos más (opcional)'),
+              )
+              .controller!
+              .text,
+          isEmpty,
+        );
+        expect(_sendReport(f).onPressed, isNull);
+      });
+      await f.back();
+    },
+  ),
+  AppFlow(
+    '12-06-anotar-un-gasto-preguntando',
+    'Anotar un gasto desde la conversación',
+    area: _askArea,
+    goal:
+        'Quiero anotar lo que gasté pidiéndoselo a la app, que quede en mis '
+        'cuentas y poder corregirlo si me equivoqué.',
+    data: fullAccount,
+    manual: <String>[
+      'Con Gemini de verdad: «Quiero anotar un gasto», llenar el formulario '
+          'que arme, guardarlo y verlo en Movimientos con lo que puedes gastar '
+          'ya rebajado.',
+    ],
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Allowance allowance = _allowance(f);
+      final int left = allowance.left;
+      final int free = own.ledger!.freeUntilPayday;
+      final int entries = own.snapshot!.entries.length;
+      List<Entry> written() => <Entry>[
+        for (final Entry e in own.snapshot!.entries)
+          if (e.source == 'gemini') e,
+      ];
+      final Session s = await _openAsk(f, clientFor: _Bookkeeper.new);
+      await f.tap(_ownStarters[4]);
+      await _read(
+        f,
+        'Aquí contesta un modelo de prueba con las mismas herramientas, no '
+        'Gemini. Toca «${_ownStarters[4]}»: llega un formulario para llenar '
+        'antes de guardar.',
+        most: 2,
+      );
+      await f.check('Antes de guardar no se anota nada', () {
+        expect(own.snapshot!.entries, hasLength(entries));
+        expect(written(), isEmpty);
+      });
+      await f.check(
+        'Pedir el formulario gastó una pregunta del día: quedan ${left - 1}',
+        () => expect(allowance.left, left - 1),
+      );
+      await f.type('Monto', '4500');
+      await f.tap('Restaurantes');
+      await f.type('Dónde', 'Tinto y pandebono');
+      await f.step(
+        'Con 4.500, Restaurantes y «Tinto y pandebono» en «Dónde», el '
+        'formulario queda listo para guardar.',
+      );
+      await f.tap('Guardar gasto');
+      final String after = pesos(own.ledger!.major(free - 4500));
+      await _read(
+        f,
+        'Toca «Guardar gasto»: el formulario se apaga y la respuesta dice '
+        'que quedó en tus cuentas y que ahora puedes gastar $after.',
+        most: 2,
+      );
+      await f.check(
+        'Quedó un movimiento nuevo de ${pesos(4500)} en Restaurantes, '
+        '«Tinto y pandebono»',
+        () {
+          expect(own.snapshot!.entries, hasLength(entries + 1));
+          final Entry e = written().single;
+          expect(e.amount.toString(), '-4500');
+          expect(e.category, 'restaurants');
+          expect(e.payee, 'Tinto y pandebono');
+        },
+      );
+      await f.check(
+        'Lo que puedes gastar pasó de ${pesos(own.ledger!.major(free))} a '
+        '$after, como dice la respuesta',
+        () {
+          expect(own.ledger!.freeUntilPayday, free - 4500);
+          expect(_said(f), contains(after));
+        },
+      );
+      await f.check(
+        'Guardar también gastó una pregunta del día: quedan ${left - 2}',
+        () => expect(allowance.left, left - 2),
+      );
+      await f.tap('Editar');
+      await f.type('Monto', '5500');
+      await f.tap('Guardar gasto');
+      final String corrected = pesos(own.ledger!.major(free - 5500));
+      await _read(
+        f,
+        '«Editar» en el recibo, 5.500 y «Guardar gasto» otra vez: la nueva '
+        'respuesta dice $corrected, y arriba sigue la anterior con $after.',
+        most: 1,
+      );
+      await f.check(
+        'Sigue habiendo un solo gasto, ahora de ${pesos(5500)}: puedes '
+        'gastar $corrected',
+        () {
+          expect(own.snapshot!.entries, hasLength(entries + 1));
+          expect(written().single.amount.toString(), '-5500');
+          expect(own.ledger!.freeUntilPayday, free - 5500);
+          expect(find.textContaining('Gasto guardado · '), findsOneWidget);
+        },
+      );
+      await f.tap('Calculado en tu teléfono');
+      await f.step(
+        'Bajo la respuesta, «Calculado en tu teléfono»: «Cómo se calculó» '
+        'dice que la cifra salió del gasto que se registró.',
+      );
+      await f.check(
+        'El cálculo de la respuesta es el gasto que se registró',
+        () {
+          expect(s.turns.last.computed.single.tool, 'record_expense');
+          expect(find.text('El gasto que se registró'), findsOneWidget);
+        },
+      );
+      await f.back();
+      await f.tapTip('Atrás');
+      await f.top();
+      await f.step(
+        'De vuelta en Inicio, «Puedes gastar» ya cuenta el tinto: '
+        '$corrected.',
+      );
+      await f.check('Inicio dice $corrected, lo mismo que la conversación', () {
+        expect(_said(f), contains(corrected));
+      });
+    },
+  ),
+  AppFlow(
+    '12-07-guardar-con-la-ultima-pregunta',
+    'Anotar un gasto con la última pregunta del día',
+    area: _askArea,
+    goal:
+        'Me queda una sola pregunta hoy y quiero anotar un gasto '
+        'conversando.',
+    data: _oneLeft,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Allowance allowance = _allowance(f);
+      final int entries = own.snapshot!.entries.length;
+      final int free = own.ledger!.freeUntilPayday;
+      final Session s = await _openAsk(f, clientFor: _Bookkeeper.new);
+      await f.step(
+        'Aquí contesta un modelo de prueba, no Gemini. Debajo de las '
+        'preguntas dice «Te queda una pregunta hoy».',
+      );
+      await f.check('Queda una sola pregunta del día', () {
+        expect(allowance.left, 1);
+        expect(find.text('Te queda una pregunta hoy'), findsOneWidget);
+      });
+      await f.tap(_ownStarters[4]);
+      await f.type('Monto', '4500');
+      await f.step(
+        'Toca «${_ownStarters[4]}»: el formulario llega con esa última '
+        'pregunta, y escribe 4.500.',
+      );
+      await f.check('Pedir el formulario se llevó la última pregunta', () {
+        expect(allowance.left, 0);
+        expect(s.turns.single.error, isNull);
+      });
+      final String form = s.turns.single.surfaceIds.single;
+      await f.tap('Guardar gasto');
+      await _read(
+        f,
+        'Toca «Guardar gasto»: no se guarda; dice «Tocaste una acción» y «Ya '
+        'usaste las preguntas de hoy», y el formulario lleno no se puede '
+        'guardar hasta mañana.',
+        most: 2,
+      );
+      await f.check('El gasto no quedó en sus cuentas: puede gastar '
+          '${pesos(own.ledger!.major(free))}, como antes', () {
+        expect(own.snapshot!.entries, hasLength(entries));
+        expect(own.ledger!.freeUntilPayday, free);
+        expect(s.turns.last.error, AnswerProblem.limit);
+        expect(s.settledOf(form), isNull);
+        expect(allowance.left, 0);
+      });
+      await f.check('Nada en pantalla dice que el gasto se guardó', () {
+        expect(find.text('Guardaste el gasto'), findsNothing);
+        expect(find.textContaining('Gasto guardado · '), findsNothing);
       });
     },
   ),
@@ -1674,8 +2111,7 @@ Future<void> _read(FlowRun f, String caption, {int most = 4}) async {
 
 /// The replay's slider.
 class RecordedSlider {
-  RecordedSlider(FlowRun f)
-    : _slider = f.tester.widget<Slider>(find.byType(Slider));
+  RecordedSlider(FlowRun f) : _slider = f.tester.widget<Slider>(_replaySlider);
 
   final Slider _slider;
 
@@ -1683,9 +2119,13 @@ class RecordedSlider {
   double get max => _slider.max;
 }
 
+/// The slider that steps through a replay, above the answer it replays,
+/// which may have sliders of its own.
+final Finder _replaySlider = find.byType(Slider).first;
+
 /// Taps the replay's slider where step [position] is.
 Future<void> _seek(FlowRun f, int position) async {
-  final Finder found = find.byType(Slider);
+  final Finder found = _replaySlider;
   final Slider slider = f.tester.widget<Slider>(found);
   final Rect track = f.tester.getRect(found);
   await f.tester.tapAt(
@@ -1693,6 +2133,20 @@ Future<void> _seek(FlowRun f, int position) async {
   );
   await settle(f.tester);
 }
+
+/// How much [c] moved between August and September in [ledger].
+int _moved(Ledger ledger, Category c) =>
+    (ledger.spentOn(c, 2026, 9) - ledger.spentOn(c, 2026, 8)).abs();
+
+/// Every value kept in the store's settings, joined.
+Future<String> _savedSettings(FlowRun f) async =>
+    (await f.tester.runAsync<String>(() async {
+      final QuincenaStore store = _store(f);
+      return <String>[
+        for (final row in await store.db.select(store.db.settings).get())
+          row.value,
+      ].join(' | ');
+    }))!;
 
 /// The day's questions, as the app counts them.
 Allowance _allowance(FlowRun f) =>
@@ -1770,13 +2224,18 @@ Future<Session> _openAsk(
 }
 
 /// The person's account with every question of the day already asked.
-Future<QuincenaStore> _usedUp() async {
+Future<QuincenaStore> _usedUp() => _used(30);
+
+/// The person's account with every question of the day asked but one.
+Future<QuincenaStore> _oneLeft() => _used(29);
+
+Future<QuincenaStore> _used(int used) async {
   final QuincenaStore store = await fullAccount();
   await store.setSetting(
     'gemini.usage',
     jsonEncode(<String, Object>{
       'day': '${screensNow.year}-${screensNow.month}-${screensNow.day}',
-      'used': 30,
+      'used': used,
     }),
   );
   return store;
@@ -1854,6 +2313,163 @@ class _StandIn implements ModelClient {
         ],
       },
     });
+  }
+}
+
+/// Writes down an expense the way a model does: a form first, and once the
+/// person saves it, record_expense with what the form sent, through the
+/// tools the conversation hands it. No network, and never shown as Gemini's.
+class _Bookkeeper implements ModelClient {
+  _Bookkeeper(List<dartantic.Tool> tools)
+    : _tools = <String, dartantic.Tool>{
+        for (final dartantic.Tool t in tools) t.name: t,
+      };
+
+  final Map<String, dartantic.Tool> _tools;
+  int _serial = 0;
+
+  @override
+  Stream<String> send(
+    String prompt, {
+    required List<ChatMessage> history,
+  }) async* {
+    final String id = 'gasto-${++_serial}';
+    final Object? sent = prompt.trimLeft().startsWith('{')
+        ? jsonDecode(prompt)
+        : null;
+    if (sent case {
+      'action': {
+        'name': 'save_expense',
+        'context': final Map<Object?, Object?> form,
+      },
+    }) {
+      final Map<Object?, Object?> saved =
+          await _tools['record_expense']!.call(<String, dynamic>{
+                'amount': form['amount'],
+                'category': form['category'],
+                'note': form['note'],
+                'id': form['id'],
+              })
+              as Map<Object?, Object?>;
+      yield* _blocks(
+        id,
+        AgentTurn(
+          components: <Map<String, Object?>>[
+            <String, Object?>{
+              'id': 'root',
+              'component': 'Answer',
+              'children': <String>['head', 'free'],
+            },
+            <String, Object?>{
+              'id': 'head',
+              'component': 'Headline',
+              'kicker': 'Guardado',
+              'title': 'Listo: quedó en tus cuentas',
+            },
+            <String, Object?>{
+              'id': 'free',
+              'component': 'StatTile',
+              'label': 'Ahora puedes gastar',
+              'value': <String, Object?>{
+                'call': 'money',
+                'args': <String, Object?>{'amount': saved['freeUntilPayday']},
+              },
+              'caption': 'hasta tu próximo pago',
+            },
+          ],
+        ),
+      );
+      return;
+    }
+    Map<String, Object?> path(String to) => <String, Object?>{'path': to};
+    yield* _blocks(
+      id,
+      AgentTurn(
+        components: <Map<String, Object?>>[
+          <String, Object?>{
+            'id': 'root',
+            'component': 'Answer',
+            'children': <String>['head', 'form'],
+          },
+          <String, Object?>{
+            'id': 'head',
+            'component': 'Headline',
+            'kicker': 'Nuevo gasto',
+            'title': 'Anoto un gasto',
+            'body': 'Corrige lo que haga falta antes de guardar.',
+          },
+          <String, Object?>{
+            'id': 'form',
+            'component': 'Group',
+            'title': 'Hoy',
+            'children': <String>['amount', 'category', 'note', 'save'],
+          },
+          <String, Object?>{
+            'id': 'amount',
+            'component': 'MoneyField',
+            'label': 'Monto',
+            'value': path('/draft/amount'),
+            'checks': <Object?>[
+              <String, Object?>{
+                'condition': <String, Object?>{
+                  'call': 'numeric',
+                  'args': <String, Object?>{
+                    'value': path('/draft/amount'),
+                    'min': 1,
+                  },
+                },
+                'message': 'Escribe un monto mayor que cero.',
+              },
+            ],
+          },
+          <String, Object?>{
+            'id': 'category',
+            'component': 'CategoryChoice',
+            'label': 'Categoría',
+            'value': path('/draft/category'),
+          },
+          <String, Object?>{
+            'id': 'note',
+            'component': 'TextEntry',
+            'label': 'Dónde',
+            'value': path('/draft/note'),
+          },
+          <String, Object?>{
+            'id': 'save',
+            'component': 'ActionButton',
+            'label': 'Guardar gasto',
+            'emphasis': 'primary',
+            'onPressed': <String, Object?>{
+              'event': <String, Object?>{
+                'name': 'save_expense',
+                'context': <String, Object?>{
+                  'amount': path('/draft/amount'),
+                  'category': path('/draft/category'),
+                  'note': path('/draft/note'),
+                },
+              },
+            },
+          },
+        ],
+        data: <String, Object?>{
+          'draft': <String, Object?>{
+            'amount': 0,
+            'category': 'groceries',
+            'note': '',
+          },
+        },
+      ),
+    );
+  }
+
+  /// [answer]'s messages, each in the block a model writes it in.
+  Stream<String> _blocks(String id, AgentTurn answer) async* {
+    for (final core.A2uiMessage m in answer.messages(
+      id,
+      quincenaCatalog.catalogId!,
+    )) {
+      yield '```json\n${jsonEncode(m.toJson())}\n```\n';
+    }
   }
 }
 
