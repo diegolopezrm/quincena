@@ -292,7 +292,7 @@
   "@totalExplainUnpriced": {"placeholders": {"names": {"type": "String"}}},
   "computedOnPhone": "Calculado en tu teléfono",
   "computedTitle": "Cómo se calculó",
-  "computedFooter": "Cada cifra de la respuesta salió de estos cálculos, hechos en tu teléfono con tus datos de {time}. Gemini solo los explica.",
+  "computedFooter": "Cada cifra de la respuesta salió de estos cálculos, hechos en tu teléfono con tus datos de {time}, y Gemini solo los explica.",
   "@computedFooter": {"placeholders": {"time": {"type": "String"}}},
   "computedOverview": "Tus saldos, lo comprometido, el colchón y lo que puedes gastar hasta el pago",
   "computedMonth": "Gastos de {month} por categoría, frente al mes anterior",

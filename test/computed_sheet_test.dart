@@ -64,7 +64,11 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.textContaining('Gemini solo los explica'), findsOneWidget);
+    // The time ends in "p. m." or "a. m.": no second period after it.
+    final String footer = tester
+        .widget<Text>(find.textContaining('Gemini solo los explica'))
+        .data!;
+    expect(footer, isNot(contains('..')));
 
     await tester.tap(find.text('Ver cómo se calcula lo que puedes gastar'));
     await tester.pumpAndSettle();
