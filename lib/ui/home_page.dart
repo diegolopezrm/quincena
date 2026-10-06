@@ -141,7 +141,8 @@ class _HomePageState extends State<HomePage> {
                   onRestart: _session.turns.isEmpty
                       ? null
                       : () => startNewConversation(context, _session),
-                  live: _session.mode == AgentMode.live,
+                  // Gemini through Quincena answers live too, key or not.
+                  live: _session.mode != AgentMode.demo,
                 ),
                 Expanded(
                   // The panel reports on the conversation, so it covers the

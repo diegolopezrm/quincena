@@ -20,7 +20,9 @@ Future<void> showSettings(
   context: context,
   showDragHandle: true,
   isScrollControlled: true,
-  backgroundColor: context.colors.surface,
+  // No color of its own: the theme's surface, looked up as the sheet
+  // builds, so it turns dark or light with the rest when the person picks
+  // the appearance here.
   constraints: const BoxConstraints(maxWidth: 560),
   builder: (BuildContext context) => _Settings(
     settings: settings,
@@ -151,7 +153,9 @@ class _SettingsState extends State<_Settings> {
                   FirebaseGeminiClient.defaultModel,
                 ),
               }, style: context.type.bodySmall),
-              if (_mode == AgentMode.live && !live) ...<Widget>[
+              // Connected, it stays, so a key that did not work can be
+              // replaced where the notice about it sends the person.
+              if (_mode == AgentMode.live) ...<Widget>[
                 const SizedBox(height: 12),
                 TextField(
                   controller: _key,
