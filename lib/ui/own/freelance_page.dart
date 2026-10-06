@@ -29,52 +29,11 @@ class FreelancePage extends StatelessWidget {
   static const List<int> _percents = <int>[0, 5, 10, 15, 20, 25, 30, 35, 40];
 
   Future<void> _use(BuildContext context, Ledger ledger) async {
-    final AppLocalizations l = context.l10n;
-    final Asset base = own.profile?.base ?? Asset.cop;
-    final TextEditingController amount = TextEditingController();
     final int? used = await showDialog<int>(
       context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text(l.freelanceUse),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            TextField(
-              controller: amount,
-              autofocus: true,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              inputFormatters: <TextInputFormatter>[
-                AmountInputFormatter(maxDecimals: base.decimals),
-              ],
-              decoration: InputDecoration(labelText: l.freelanceUseAmount),
-            ),
-            const SizedBox(height: 8),
-            Text(l.freelanceUseHelp, style: context.type.bodySmall),
-          ],
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(l.cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              final Decimal? value = parseAmount(amount.text);
-              Navigator.of(context).pop(
-                value == null || value <= Decimal.zero
-                    ? null
-                    : ledger.minor(value.toDouble()),
-              );
-            },
-            child: Text(l.save),
-          ),
-        ],
-      ),
+      builder: (BuildContext context) =>
+          _UseDialog(ledger: ledger, asset: own.profile?.base ?? Asset.cop),
     );
-    amount.dispose();
     if (used == null) return;
     final FreelancePlan plan = own.freelance;
     await own.saveFreelance(
@@ -290,6 +249,70 @@ class FreelancePage extends StatelessWidget {
       );
     },
   );
+}
+
+/// What was taken out of the reserve. The dialog keeps its own field, so
+/// the field lives until the dialog is gone.
+class _UseDialog extends StatefulWidget {
+  const _UseDialog({required this.ledger, required this.asset});
+
+  final Ledger ledger;
+  final Asset asset;
+
+  @override
+  State<_UseDialog> createState() => _UseDialogState();
+}
+
+class _UseDialogState extends State<_UseDialog> {
+  final TextEditingController _amount = TextEditingController();
+
+  @override
+  void dispose() {
+    _amount.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    return AlertDialog(
+      title: Text(l.freelanceUse),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          TextField(
+            controller: _amount,
+            autofocus: true,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: <TextInputFormatter>[
+              AmountInputFormatter(maxDecimals: widget.asset.decimals),
+            ],
+            decoration: InputDecoration(labelText: l.freelanceUseAmount),
+          ),
+          const SizedBox(height: 8),
+          Text(l.freelanceUseHelp, style: context.type.bodySmall),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l.cancel),
+        ),
+        TextButton(
+          onPressed: () {
+            final Decimal? value = parseAmount(_amount.text);
+            Navigator.of(context).pop(
+              value == null || value <= Decimal.zero
+                  ? null
+                  : widget.ledger.minor(value.toDouble()),
+            );
+          },
+          child: Text(l.save),
+        ),
+      ],
+    );
+  }
 }
 
 class _Total extends StatelessWidget {

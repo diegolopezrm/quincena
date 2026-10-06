@@ -415,7 +415,8 @@ class _EnvelopesCard extends StatelessWidget {
                     style: context.type.bodyMedium,
                   ),
                 ),
-                Figures(amount(left), style: context.type.bodyMedium),
+                // «Te pasas por» already says it is over: no minus.
+                Figures(amount(left.abs()), style: context.type.bodyMedium),
               ],
             ),
           ),

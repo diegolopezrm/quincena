@@ -241,6 +241,59 @@ void main() {
     );
   });
 
+  testWidgets('what was used from the reserve leaves it, and the dialog '
+      'closes cleanly', (tester) async {
+    final OwnController own = await openPage(
+      tester,
+      (OwnController own) => FreelancePage(own: own),
+      data: (QuincenaStore store, Account bank, _) async {
+        await store.addEntry(
+          accountId: bank.id,
+          amount: d('1000000'),
+          kind: EntryKind.income,
+          date: DateTime(2026, 10, 2, 9),
+          category: 'freelance',
+          payee: 'Estudio Sur',
+        );
+        await store.setSetting(
+          'freelance',
+          jsonEncode(
+            FreelancePlan(
+              reservePercent: 15,
+              reserveSince: DateTime(2026, 10, 1),
+            ).toJson(),
+          ),
+        );
+      },
+    );
+    expect(own.ledger!.reserved, 150000);
+    final int free = own.ledger!.freeUntilPayday;
+
+    // Cancelled, nothing is used.
+    await tapText(tester, 'Usé de la reserva');
+    await tapText(tester, 'Cancelar');
+    expect(tester.takeException(), isNull);
+    expect(own.freelance.used, isEmpty);
+
+    await tapText(tester, 'Usé de la reserva');
+    await tester.enterText(
+      find.widgetWithText(TextField, '¿Cuánto usaste?'),
+      '50.000',
+    );
+    // The keyboard is up while typing, and goes down as the dialog closes:
+    // the closing dialog is laid out again, its field still there.
+    tester.view.viewInsets = const FakeViewPadding(bottom: 900);
+    await tester.pump();
+    await tester.tap(find.text('Guardar'));
+    await tester.pump();
+    tester.view.resetViewInsets();
+    await settle(tester);
+    expect(tester.takeException(), isNull);
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(own.ledger!.reserved, 100000);
+    expect(own.ledger!.freeUntilPayday, free + 50000);
+  });
+
   testWidgets('a trip counts an expense abroad, estimated and then set to '
       'the bank\'s charge', (tester) async {
     final OwnController own = await openPage(

@@ -568,8 +568,11 @@ List<ChargeAlert> detectCharges(
     }
   }
 
-  // Price up: a merchant charged three times or more in half a year whose
-  // last charge is at least 5 % over the ones before.
+  // Price up: a merchant that charged the same on two days or more in half
+  // a year, and whose last charge, on a later day, is at least 5 % over
+  // it. Charges of the last one's day do not count before it, and charges
+  // that differ say nothing of a price: a shop's every purchase is
+  // different, and one bigger purchase is no rise.
   final DateTime half = _day(today).subtract(const Duration(days: 183));
   final Map<String, List<Entry>> byMerchant = <String, List<Entry>>{};
   for (final Entry e in spent) {
@@ -578,14 +581,28 @@ List<ChargeAlert> detectCharges(
     byMerchant.putIfAbsent('${e.accountId}|$key', () => <Entry>[]).add(e);
   }
   for (final List<Entry> group in byMerchant.values) {
-    if (group.length < 3) continue;
     final Entry last = group.last;
     if (_day(last.date).isBefore(since)) continue;
-    final Decimal usual = _median(<Decimal>[
-      for (final Entry e in group.sublist(0, group.length - 1)) -e.amount,
-    ]);
+    final List<Entry> earlier = <Entry>[
+      for (final Entry e in group)
+        if (_day(e.date).isBefore(_day(last.date))) e,
+    ];
+    final Set<DateTime> days = <DateTime>{
+      for (final Entry e in earlier) _day(e.date),
+    };
+    if (days.length < 2) continue;
+    final List<Decimal> prices = <Decimal>[
+      for (final Entry e in earlier) -e.amount,
+    ];
+    final Decimal usual = _median(prices);
+    final bool steady = prices.every(
+      (Decimal p) =>
+          (p - usual).abs() * Decimal.fromInt(100) <=
+          usual * Decimal.fromInt(5),
+    );
     final Decimal now = -last.amount;
-    if (usual > Decimal.zero &&
+    if (steady &&
+        usual > Decimal.zero &&
         now * Decimal.fromInt(100) >= usual * Decimal.fromInt(105)) {
       out.add(
         ChargeAlert(

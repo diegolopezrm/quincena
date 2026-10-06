@@ -258,13 +258,21 @@ class _ChargeSheetState extends State<_ChargeSheet> {
 
   Future<void> _pickTrial() async {
     final DateTime today = own.today;
+    final DateTime initial = _trial ?? today.add(const Duration(days: 7));
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _trial ?? today.add(const Duration(days: 7)),
-      firstDate: today,
+      initialDate: initial,
+      // A trial that already ended still opens, to move it.
+      firstDate: initial.isBefore(today) ? initial : today,
       lastDate: DateTime(today.year + 2),
     );
-    if (picked != null) setState(() => _trial = picked);
+    // The first charge comes when the trial ends.
+    if (picked != null) {
+      setState(() {
+        _trial = picked;
+        _next = picked;
+      });
+    }
   }
 
   @override

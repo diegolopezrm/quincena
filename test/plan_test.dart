@@ -123,6 +123,32 @@ void main() {
       },
     );
 
+    test('a first proposal never splits more than there is', () async {
+      // Rent before payday leaves 50.000 of the 2.000.000: the trip's
+      // 150.000 share does not fit, so it gets what there is.
+      await store.addRecurring(
+        name: 'Arriendo',
+        amount: Money(d('1950000'), Asset.cop),
+        cadence: Cadence.monthly,
+        nextDate: DateTime(2026, 10, 10),
+        accountId: bank.id,
+        category: 'housing',
+      );
+      final Ledger l = await ledger();
+      expect(allocatable(l), 50000);
+      final List<Envelope> proposal = proposeEnvelopes(
+        l,
+        goals: const <GoalShare>[trip],
+        dailyName: 'Día a día',
+      );
+      expect(proposal.last.amount, 50000);
+      expect(proposal.first.amount, 0);
+      expect(
+        proposal.fold(0, (int s, Envelope e) => s + e.amount),
+        allocatable(l),
+      );
+    });
+
     test(
       'without history the day to day takes six tenths of what is left',
       () async {

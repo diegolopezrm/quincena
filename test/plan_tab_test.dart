@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'package:quincena/domain/freelance.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/format/money.dart';
@@ -21,6 +24,7 @@ import 'package:quincena/ui/own/what_if_page.dart';
 import 'package:quincena/ui/own/wishes_page.dart';
 
 import 'own_flow_test.dart' show settle;
+import 'page_harness.dart';
 
 Decimal d(String s) => Decimal.parse(s);
 
@@ -213,6 +217,10 @@ void main() {
     );
     await settle(tester);
     expect(find.text('Te pasas por'), findsOneWidget);
+    // Over by the day to day and the trip's 150.000, less the 1.900.000
+    // there is, said without a minus: «Te pasas por» says it is over.
+    expect(find.text(pesos(3250000)), findsOneWidget);
+    expect(find.text(pesos(-3250000)), findsNothing);
     await tester.tap(find.text('Guardar el reparto'));
     await settle(tester);
     expect(find.text('Asignas más de lo que hay'), findsOneWidget);
@@ -255,6 +263,30 @@ void main() {
     await settle(tester);
     expect(find.text('Moto'), findsNothing);
     expect((await tester.runAsync(own.store.snapshot))!.goals, hasLength(1));
+  });
+
+  testWidgets('a goal deleted takes its envelope, and what it set aside '
+      'is free again', (tester) async {
+    final OwnController own = await open(tester, tab);
+    await tester.tap(find.text('Repartir en sobres'));
+    await settle(tester);
+    await tester.tap(find.text('Guardar el reparto'));
+    await settle(tester);
+    expect(own.ledger!.setAside, 150000);
+    expect(own.ledger!.freeUntilPayday, 1750000);
+
+    await tester.tap(find.text('Cartagena').last);
+    await settle(tester);
+    await tester.tap(find.text('Borrar meta').last);
+    await settle(tester);
+    await tester.tap(find.text('Borrar meta').last);
+    await settle(tester);
+    expect(own.snapshot!.goals, isEmpty);
+    // Only the day to day stays, and nothing is set aside.
+    expect(own.plan!.envelopes.map((e) => e.name), <String>['']);
+    expect(own.ledger!.setAside, 0);
+    expect(own.ledger!.freeUntilPayday, 1900000);
+    expect(find.text('Cartagena'), findsNothing);
   });
 
   testWidgets('the cushion asks where it is, and says why it cannot count', (
@@ -339,5 +371,80 @@ void main() {
       (await tester.runAsync(own.store.recurring))!.single.amount.amount,
       d('150000'),
     );
+  });
+
+  testWidgets('what there is to split names the reserve it leaves out', (
+    tester,
+  ) async {
+    await openPage(
+      tester,
+      (OwnController own) => EnvelopesPage(own: own),
+      data: (QuincenaStore store, Account bank, Account card) async {
+        await store.addEntry(
+          accountId: bank.id,
+          amount: d('1000000'),
+          kind: EntryKind.income,
+          date: DateTime(2026, 10, 2, 9),
+          category: 'freelance',
+          payee: 'Estudio Sur',
+        );
+        await store.setSetting(
+          'freelance',
+          jsonEncode(
+            FreelancePlan(
+              reservePercent: 15,
+              reserveSince: DateTime(2026, 10, 1),
+            ).toJson(),
+          ),
+        );
+      },
+    );
+    // 3.000.000 in the bank, less 15 % of the client's 1.000.000.
+    expect(find.text(pesos(2850000)), findsOneWidget);
+    expect(
+      find.text(
+        'Lo que hay para gastar, menos ${pesos(0)} comprometidos hasta el '
+        'pago, ${pesos(0)} de colchón y ${pesos(150000)} de la reserva de '
+        'ingresos variables.',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('a goal whose date went by opens its calendar, to move it', (
+    tester,
+  ) async {
+    final OwnController own = await openPage(
+      tester,
+      (OwnController own) => Scaffold(
+        body: ListenableBuilder(
+          listenable: own,
+          builder: (BuildContext context, _) =>
+              SingleChildScrollView(child: PlanTab(own: own)),
+        ),
+      ),
+      data: (QuincenaStore store, Account bank, Account card) => store.addGoal(
+        name: 'Moto',
+        target: Money(d('6000000'), Asset.cop),
+        saved: Money(d('1500000'), Asset.cop),
+        monthly: Money(d('500000'), Asset.cop),
+        deadline: DateTime(2026, 9, 20),
+      ),
+    );
+    await tapText(tester, 'Moto');
+    await tapText(tester, 'Para el 20 de septiembre');
+    expect(tester.takeException(), isNull);
+    expect(find.byType(DatePickerDialog), findsOneWidget);
+    // From September, on to December.
+    for (var i = 0; i < 3; i++) {
+      await tester.tap(find.byTooltip('Mes siguiente'));
+      await settle(tester);
+    }
+    await tester.tap(find.text('20').last);
+    await tester.tap(find.text('ACEPTAR'));
+    await settle(tester);
+    expect(find.text('Para el 20 de diciembre'), findsOneWidget);
+    await tapText(tester, 'Guardar');
+    expect(own.snapshot!.goals.single.deadline, DateTime(2026, 12, 20));
   });
 }
