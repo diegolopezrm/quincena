@@ -500,6 +500,9 @@ class _PriceStatus extends StatelessWidget {
               : l.portfolioPricingFailedAt(dayAndTime(at)))
         : at == null
         ? l.portfolioNeverPriced
+        // The example's are made up, and say so.
+        : controller.own.example
+        ? l.examplePricedAt(dayAndTime(at))
         : l.portfolioPricedAt(dayAndTime(at));
     DateTime? trm;
     for (final Rate r in controller.own.rates.used(Asset.usd, base)) {

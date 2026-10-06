@@ -363,7 +363,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get startDemoBody =>
-      'See how it works with Valentina\'s account, a designer in Medellín. You can switch to your own accounts any time.';
+      'Explore the whole app with Valentina\'s account, a designer in Medellín. She is made up and your data stays untouched; switch to your own accounts any time.';
 
   @override
   String get privacyNote =>
@@ -5619,5 +5619,40 @@ class AppLocalizationsEn extends AppLocalizations {
       one: 'Record 1 of the $total ready',
     );
     return '$_temp0';
+  }
+
+  @override
+  String exampleBarTitle(String name) {
+    return '$name\'s example account';
+  }
+
+  @override
+  String get exampleUseOwn => 'Use my accounts';
+
+  @override
+  String exampleAboutBody(String name) {
+    return '$name is made up, and so is every figure. Nothing you do here touches your own accounts or your data, and it is all erased when you leave the example.';
+  }
+
+  @override
+  String get exampleBackToStart => 'Back to the first screen';
+
+  @override
+  String get exampleStay => 'Keep exploring';
+
+  @override
+  String exampleOnlyBody(String name) {
+    return 'This is $name\'s example account, and it is made up. Here this does nothing: it connects to nothing, asks your phone for no permissions and leaves your data alone. To use it, switch to your own accounts.';
+  }
+
+  @override
+  String get exampleNoReminders => 'The example account sets no reminders.';
+
+  @override
+  String get exampleSection => 'Example account';
+
+  @override
+  String examplePricedAt(String when) {
+    return 'The example\'s fixed prices, from $when';
   }
 }

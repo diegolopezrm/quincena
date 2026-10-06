@@ -276,33 +276,43 @@ void main() {
   );
 
   testWidgets(
-    'the sample is one tap away, and the way back is in its settings',
+    'the sample is the whole app, one tap away, and its bar and settings '
+    'lead out of it',
     (tester) async {
-      await openApp(tester);
+      final QuincenaStore store = await openApp(tester);
       await tester.tap(find.text('Con datos de ejemplo'));
       await settle(tester);
-      expect(screen(tester), contains('Hola, Valentina'));
-      // On its home, whose account it is and the way to one's own.
-      expect(
-        screen(tester),
-        contains('Estás viendo la cuenta de ejemplo de Valentina'),
-      );
-      expect(find.text('Usar con mis cuentas'), findsOneWidget);
+      // Valentina's whole account: the figure, the tabs and the inbox.
+      expect(find.text('Cuenta de ejemplo de Valentina'), findsOneWidget);
+      expect(find.text('Usar mis cuentas'), findsOneWidget);
+      expect(screen(tester), contains('Puedes gastar'));
+      expect(screen(tester), contains('hasta el 15 de octubre'));
+      for (final String tab in <String>[
+        'Inicio',
+        'Movimientos',
+        'Cuentas',
+        'Plan',
+      ]) {
+        expect(find.text(tab), findsWidgets);
+      }
+      expect(find.byTooltip('Por revisar'), findsOneWidget);
+      // None of it is in the person's own database.
+      expect(await tester.runAsync(store.profile), isNull);
 
       await tester.tap(find.byTooltip('Ajustes'));
       await settle(tester);
-      expect(
-        find.descendant(
-          of: find.byType(BottomSheet),
-          matching: find.text('Usar con mis cuentas'),
-        ),
-        findsOneWidget,
-      );
+      expect(find.text('CUENTA DE EJEMPLO'), findsOneWidget);
+      expect(find.text('Ver los datos de ejemplo'), findsNothing);
+      await tester.tap(find.text('Volver a la primera pantalla'));
+      await settle(tester);
+      expect(find.text('Con datos de ejemplo'), findsOneWidget);
+      expect(find.text('Cuenta de ejemplo de Valentina'), findsNothing);
+      expect(await tester.runAsync(() => store.setting('app.mode')), '');
     },
   );
 
   testWidgets(
-    'where the app opens on the sample, its notice leads to onboarding and '
+    'where the app opens on the sample, its bar leads to onboarding and '
     'back',
     (tester) async {
       tester.view.physicalSize = const Size(1170, 2532);
@@ -326,21 +336,30 @@ void main() {
       );
       await settle(tester);
       expect(find.text('Con mis cuentas'), findsNothing);
+      expect(find.text('Cuenta de ejemplo de Valentina'), findsOneWidget);
+
+      // Its bar says what it is; there is no first screen to go back to.
+      await tester.tap(find.text('Cuenta de ejemplo de Valentina'));
+      await settle(tester);
       expect(
         screen(tester),
-        contains('Estás viendo la cuenta de ejemplo de Valentina'),
+        contains('Valentina es inventada, como todas sus cifras.'),
       );
+      expect(find.text('Volver a la primera pantalla'), findsNothing);
+      await tester.tap(find.text('Seguir en el ejemplo'));
+      await settle(tester);
 
-      await tester.tap(find.text('Usar con mis cuentas'));
+      await tester.tap(find.text('Usar mis cuentas'));
       await settle(tester);
       expect(find.text('Paso 1 de 4'), findsOneWidget);
+      expect(find.text('Cuenta de ejemplo de Valentina'), findsNothing);
 
       // Backing out returns to the sample, not to a first screen the web
       // never showed.
       await tester.tap(find.byTooltip('Atrás'));
       await settle(tester);
       expect(find.text('Con mis cuentas'), findsNothing);
-      expect(find.text('Usar con mis cuentas'), findsOneWidget);
+      expect(find.text('Cuenta de ejemplo de Valentina'), findsOneWidget);
     },
   );
 

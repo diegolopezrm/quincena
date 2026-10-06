@@ -120,7 +120,7 @@
   "startOwnTitle": "Con mis cuentas",
   "startOwnBody": "Agrega tus cuentas en pesos, dólares o cripto y registra lo que entra y lo que sale.",
   "startDemoTitle": "Con datos de ejemplo",
-  "startDemoBody": "Mira cómo funciona con la cuenta de Valentina, una diseñadora en Medellín. Puedes pasar a tus cuentas cuando quieras.",
+  "startDemoBody": "Recorre toda la app con la cuenta de Valentina, una diseñadora en Medellín. Es inventada y no toca tus datos; puedes pasar a tus cuentas cuando quieras.",
   "privacyNote": "Tus cuentas y movimientos se guardan solo en este dispositivo.",
   "onboardingStep": "Paso {step} de {total}",
   "@onboardingStep": {"placeholders": {"step": {"type": "int"}, "total": {"type": "int"}}},
@@ -1762,5 +1762,18 @@
   "inboxWaiting": "{count, plural, =1{1 movimiento por revisar} other{{count} movimientos por revisar}}",
   "@inboxWaiting": {"placeholders": {"count": {"type": "int"}}},
   "inboxRecordSome": "{count, plural, =1{Registrar 1 de los {total} listos} other{Registrar {count} de los {total} listos}}",
-  "@inboxRecordSome": {"placeholders": {"count": {"type": "int"}, "total": {"type": "int"}}}
+  "@inboxRecordSome": {"placeholders": {"count": {"type": "int"}, "total": {"type": "int"}}},
+  "exampleBarTitle": "Cuenta de ejemplo de {name}",
+  "@exampleBarTitle": {"placeholders": {"name": {"type": "String"}}},
+  "exampleUseOwn": "Usar mis cuentas",
+  "exampleAboutBody": "{name} es inventada, como todas sus cifras. Lo que hagas aquí no toca tus cuentas ni tus datos, y se borra al salir del ejemplo.",
+  "@exampleAboutBody": {"placeholders": {"name": {"type": "String"}}},
+  "exampleBackToStart": "Volver a la primera pantalla",
+  "exampleStay": "Seguir en el ejemplo",
+  "exampleOnlyBody": "Esta es la cuenta de ejemplo de {name}, y es inventada. Aquí esto no hace nada: no se conecta con nada, no le pide permisos a tu teléfono y no toca tus datos. Para usarlo, pasa a tus cuentas.",
+  "@exampleOnlyBody": {"placeholders": {"name": {"type": "String"}}},
+  "exampleNoReminders": "En la cuenta de ejemplo no se programan avisos.",
+  "exampleSection": "Cuenta de ejemplo",
+  "examplePricedAt": "Precios fijos del ejemplo, del {when}",
+  "@examplePricedAt": {"placeholders": {"when": {"type": "String"}}}
 }

@@ -63,8 +63,9 @@ import 'package:quincena/ui/own/trips_page.dart';
 import 'package:quincena/ui/own/wallets_page.dart';
 import 'package:quincena/ui/own/what_if_page.dart';
 import 'package:quincena/ui/own/wishes_page.dart';
+import 'package:quincena/data/example_prices.dart';
 
-import '../test_screens/store_screens_test.dart' show ExampleMarket, example;
+import '../test_screens/store_screens_test.dart' show example;
 import 'commitments_data.dart';
 import 'fonts.dart';
 import 'real_life_data.dart';
@@ -239,7 +240,7 @@ Future<void> expectAccessible(
     return store;
   }))!;
   addTearDown(() => tester.runAsync(store.close));
-  final MarketData market = ExampleMarket();
+  final MarketData market = ExampleMarket(now: () => _now);
   final OwnController own = OwnController(
     store,
     now: () => _now,
@@ -666,7 +667,7 @@ void main() {
       store,
       now: () => _now,
       readNative: false,
-      market: ExampleMarket(),
+      market: ExampleMarket(now: () => _now),
     );
     addTearDown(own.dispose);
     await tester.runAsync(own.start);

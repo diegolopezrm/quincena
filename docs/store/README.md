@@ -2,8 +2,10 @@
 
 What Quincena says about itself in the App Store and Google Play, the
 answers to their privacy forms, and the screenshots. The screenshots come
-from `test_screens/store_screens_test.dart`, with an example person,
-Valentina, and never anyone's real data:
+from `test_screens/store_screens_test.dart`, which opens the app's own
+example account, Valentina's (`lib/data/example_account.dart`), the one
+"Con datos de ejemplo" opens, so every screen in them is a tap away in the
+app. Never anyone's real data:
 
 ```bash
 flutter test test_screens/store_screens_test.dart --update-goldens
@@ -240,7 +242,13 @@ only about the person's money, through tools, inside the app.
 
 > Quincena keeps every account and transaction on the device. To try it
 > without entering anything, tap "Con datos de ejemplo" on the first
-> screen. "Pregúntale a tu plata" uses Gemini through Firebase AI Logic,
+> screen: it opens the whole app (Inicio, Movimientos, Cuentas, Plan, Por
+> revisar and Cripto) on a made-up account, the one in the screenshots,
+> kept in memory apart from the person's own and erased on leaving it.
+> There, what only makes sense with one's own accounts (Binance, sync,
+> backups, reminders, automatic capture, the widget, deleting everything)
+> says so instead of running. "Pregúntale a tu plata" uses Gemini through
+> Firebase AI Logic,
 > protected by App Check; questions are limited to 30 a day per person.
 > Connecting Binance needs a read-only API key of the reviewer's own and is
 > optional; every other feature works without it.
@@ -406,4 +414,7 @@ can touch.
 
 The 1.1.0 screenshots in `screenshots/` were rendered on 4 October 2026
 from `test_screens/store_screens_test.dart`, with fixed prices so Spanish
-and English show the same figures.
+and English show the same figures. On 6 October 2026 Google Play turned
+the app down because the screenshots showed screens "Con datos de ejemplo"
+did not open; they were rendered again from the app's own example account,
+which now opens the whole app, with its bar on every screen.

@@ -659,7 +659,7 @@ abstract class AppLocalizations {
   /// No description provided for @startDemoBody.
   ///
   /// In es, this message translates to:
-  /// **'Mira cómo funciona con la cuenta de Valentina, una diseñadora en Medellín. Puedes pasar a tus cuentas cuando quieras.'**
+  /// **'Recorre toda la app con la cuenta de Valentina, una diseñadora en Medellín. Es inventada y no toca tus datos; puedes pasar a tus cuentas cuando quieras.'**
   String get startDemoBody;
 
   /// No description provided for @privacyNote.
@@ -8643,6 +8643,60 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{count, plural, =1{Registrar 1 de los {total} listos} other{Registrar {count} de los {total} listos}}'**
   String inboxRecordSome(int count, int total);
+
+  /// No description provided for @exampleBarTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta de ejemplo de {name}'**
+  String exampleBarTitle(String name);
+
+  /// No description provided for @exampleUseOwn.
+  ///
+  /// In es, this message translates to:
+  /// **'Usar mis cuentas'**
+  String get exampleUseOwn;
+
+  /// No description provided for @exampleAboutBody.
+  ///
+  /// In es, this message translates to:
+  /// **'{name} es inventada, como todas sus cifras. Lo que hagas aquí no toca tus cuentas ni tus datos, y se borra al salir del ejemplo.'**
+  String exampleAboutBody(String name);
+
+  /// No description provided for @exampleBackToStart.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver a la primera pantalla'**
+  String get exampleBackToStart;
+
+  /// No description provided for @exampleStay.
+  ///
+  /// In es, this message translates to:
+  /// **'Seguir en el ejemplo'**
+  String get exampleStay;
+
+  /// No description provided for @exampleOnlyBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta es la cuenta de ejemplo de {name}, y es inventada. Aquí esto no hace nada: no se conecta con nada, no le pide permisos a tu teléfono y no toca tus datos. Para usarlo, pasa a tus cuentas.'**
+  String exampleOnlyBody(String name);
+
+  /// No description provided for @exampleNoReminders.
+  ///
+  /// In es, this message translates to:
+  /// **'En la cuenta de ejemplo no se programan avisos.'**
+  String get exampleNoReminders;
+
+  /// No description provided for @exampleSection.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta de ejemplo'**
+  String get exampleSection;
+
+  /// No description provided for @examplePricedAt.
+  ///
+  /// In es, this message translates to:
+  /// **'Precios fijos del ejemplo, del {when}'**
+  String examplePricedAt(String when);
 }
 
 class _AppLocalizationsDelegate

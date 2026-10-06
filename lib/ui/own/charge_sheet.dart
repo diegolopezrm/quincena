@@ -154,7 +154,9 @@ class _ChargeSheetState extends State<_ChargeSheet> {
       return;
     }
     setState(() => _saving = true);
-    final String denied = l.chargeRemindDenied;
+    final String denied = own.example
+        ? l.exampleNoReminders
+        : l.chargeRemindDenied;
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     final NavigatorState navigator = Navigator.of(context);
     final Money money = Money(amount, _asset);

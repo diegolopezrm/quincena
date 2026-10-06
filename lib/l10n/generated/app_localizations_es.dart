@@ -363,7 +363,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get startDemoBody =>
-      'Mira cómo funciona con la cuenta de Valentina, una diseñadora en Medellín. Puedes pasar a tus cuentas cuando quieras.';
+      'Recorre toda la app con la cuenta de Valentina, una diseñadora en Medellín. Es inventada y no toca tus datos; puedes pasar a tus cuentas cuando quieras.';
 
   @override
   String get privacyNote =>
@@ -5610,5 +5610,41 @@ class AppLocalizationsEs extends AppLocalizations {
       one: 'Registrar 1 de los $total listos',
     );
     return '$_temp0';
+  }
+
+  @override
+  String exampleBarTitle(String name) {
+    return 'Cuenta de ejemplo de $name';
+  }
+
+  @override
+  String get exampleUseOwn => 'Usar mis cuentas';
+
+  @override
+  String exampleAboutBody(String name) {
+    return '$name es inventada, como todas sus cifras. Lo que hagas aquí no toca tus cuentas ni tus datos, y se borra al salir del ejemplo.';
+  }
+
+  @override
+  String get exampleBackToStart => 'Volver a la primera pantalla';
+
+  @override
+  String get exampleStay => 'Seguir en el ejemplo';
+
+  @override
+  String exampleOnlyBody(String name) {
+    return 'Esta es la cuenta de ejemplo de $name, y es inventada. Aquí esto no hace nada: no se conecta con nada, no le pide permisos a tu teléfono y no toca tus datos. Para usarlo, pasa a tus cuentas.';
+  }
+
+  @override
+  String get exampleNoReminders =>
+      'En la cuenta de ejemplo no se programan avisos.';
+
+  @override
+  String get exampleSection => 'Cuenta de ejemplo';
+
+  @override
+  String examplePricedAt(String when) {
+    return 'Precios fijos del ejemplo, del $when';
   }
 }

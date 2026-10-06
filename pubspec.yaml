@@ -40,6 +40,8 @@ dependencies:
   dartantic_ai: ^3.4.2
   drift: ^2.35.1
   drift_flutter: ^0.3.1
+  # The example account's database in memory on the web.
+  sqlite3: ^3.5.2
   decimal: ^3.2.6
   uuid: ^4.6.0
   http: ^1.6.0

@@ -275,11 +275,14 @@ class _TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool back = ModalRoute.of(context)?.canPop ?? false;
     return _Column(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 8, 8),
+        padding: EdgeInsets.fromLTRB(back ? 4 : 20, 12, 8, 8),
         child: Row(
           children: <Widget>[
+            // Opened from the example's home, the way back to it.
+            if (back) const BackButton(),
             // Shrinks rather than overflows when the text is set large.
             Expanded(
               child: Align(

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'app_mode.dart';
+import 'data/example_account.dart';
 import 'l10n/l10n.dart';
 import 'money/rate_sources.dart';
 import 'portfolio/market.dart';
@@ -14,6 +15,7 @@ import 'store/store.dart';
 import 'theme/theme.dart';
 import 'theme/tokens.dart';
 import 'ui/home_page.dart';
+import 'ui/own/example_bar.dart';
 import 'ui/own/onboarding_page.dart';
 import 'ui/own/own_shell.dart';
 import 'ui/own/start_page.dart';
@@ -97,8 +99,8 @@ class QuincenaApp extends StatefulWidget {
   /// otherwise the app opens its own where the build can keep one.
   final QuincenaStore? store;
 
-  /// Open on the sample unless the person already chose their own
-  /// accounts, as the published web demo does.
+  /// Open on the example account unless the person already chose their
+  /// own accounts, as the published web demo does.
   final bool startInDemo;
 
   /// Where rates come from, for tests.
@@ -123,13 +125,20 @@ class _QuincenaAppState extends State<QuincenaApp> {
   /// it in its JavaScript, so a build for publishing must never define it.
   static const String _buildKey = String.fromEnvironment('GEMINI_API_KEY');
 
-  late final Session _session =
-      widget.session ??
-      Session(
-        mode: _buildKey.isEmpty ? AgentMode.demo : AgentMode.live,
-        apiKey: _buildKey.isEmpty ? null : _buildKey,
-        allowance: _modes?.allowance,
-      );
+  static const AgentMode _firstAgent = _buildKey == ''
+      ? AgentMode.demo
+      : AgentMode.live;
+
+  /// The example's conversation over the same story, made the first time
+  /// it is opened, in the language the app is in then.
+  Session? _conversation;
+
+  Session _exampleConversation(String language) => _conversation ??= Session(
+    mode: _firstAgent,
+    apiKey: _buildKey.isEmpty ? null : _buildKey,
+    allowance: _modes?.allowance,
+    language: language,
+  );
 
   /// Null when a test passed a session: the sample is all there is.
   late final AppModeController? _modes = widget.session != null
@@ -142,26 +151,91 @@ class _QuincenaAppState extends State<QuincenaApp> {
           market: widget.market,
         )..start());
 
+  final GlobalKey<NavigatorState> _navigator = GlobalKey<NavigatorState>();
+
+  /// What the app showed last, to notice when the example is left.
+  AppMode? _shown;
+
   @override
   void initState() {
     super.initState();
     if (_modes?.store case final QuincenaStore store) {
       unawaited(_settings.keepIn(store));
     }
+    _modes?.addListener(_modeChanged);
+  }
+
+  /// Leaving the example leaves its conversation too: the next visit
+  /// starts it over, as fresh as the account.
+  void _modeChanged() {
+    final AppMode? before = _shown;
+    _shown = _modes?.mode;
+    if (before == AppMode.demo && _shown != AppMode.demo) {
+      _conversation?.use(_firstAgent);
+    }
+  }
+
+  /// From the example to the person's own accounts, or to setting them up,
+  /// from whatever screen of it was open.
+  void _useOwn() {
+    _navigator.currentState?.popUntil((Route<dynamic> r) => r.isFirst);
+    unawaited(_modes?.useOwn());
+  }
+
+  void _backToStart() {
+    _navigator.currentState?.popUntil((Route<dynamic> r) => r.isFirst);
+    unawaited(_modes?.backToStart());
+  }
+
+  void _aboutExample(String owner) {
+    final BuildContext? context = _navigator.currentContext;
+    final AppModeController? modes = _modes;
+    if (context == null || modes == null) return;
+    unawaited(
+      showExampleAbout(
+        context,
+        owner: owner,
+        onUseOwn: modes.canUseOwn ? _useOwn : null,
+        onBackToStart: modes.hasStart ? _backToStart : null,
+      ),
+    );
+  }
+
+  /// The app's screens, under the example's bar while it is open.
+  Widget _frame(Widget navigator) {
+    final AppModeController? modes = _modes;
+    if (modes == null) return navigator;
+    return ListenableBuilder(
+      listenable: modes,
+      builder: (BuildContext context, _) {
+        final String? owner = modes.mode == AppMode.demo
+            ? (modes.example?.profile?.name ?? exampleOwner)
+            : null;
+        return ExampleFrame(
+          owner: owner,
+          onUseOwn: modes.canUseOwn ? _useOwn : null,
+          onAbout: () => _aboutExample(owner ?? exampleOwner),
+          child: navigator,
+        );
+      },
+    );
   }
 
   @override
   void dispose() {
+    _modes?.removeListener(_modeChanged);
     _settings.dispose();
     _modes?.dispose();
     if (widget.store == null) _modes?.store?.close();
-    if (widget.session == null) _session.dispose();
+    _conversation?.dispose();
     super.dispose();
   }
 
   Widget _home() {
     final AppModeController? modes = _modes;
-    if (modes == null) return HomePage(session: _session, settings: _settings);
+    if (modes == null) {
+      return HomePage(session: widget.session!, settings: _settings);
+    }
     return ListenableBuilder(
       listenable: modes,
       builder: (BuildContext context, _) => switch (modes.mode) {
@@ -177,13 +251,17 @@ class _QuincenaAppState extends State<QuincenaApp> {
           newOwn: () => modes.newOwn(readNative: false),
           now: modes.now,
         ),
-        AppMode.demo => HomePage(
-          session: _session,
+        // Each account its own shell: the example's never carries over to
+        // the person's, nor theirs to it.
+        AppMode.demo => OwnShell(
+          key: ObjectKey(modes.example),
+          own: modes.example!,
+          modes: modes,
           settings: _settings,
-          onUseOwn: modes.canUseOwn ? modes.useOwn : null,
-          hasOwn: modes.hasOwn,
+          conversation: _exampleConversation,
         ),
         AppMode.own => OwnShell(
+          key: ObjectKey(modes.own),
           own: modes.own!,
           modes: modes,
           settings: _settings,
@@ -199,6 +277,7 @@ class _QuincenaAppState extends State<QuincenaApp> {
       builder: (BuildContext context, _) => MaterialApp(
         title: 'Quincena',
         debugShowCheckedModeBanner: false,
+        navigatorKey: _navigator,
         theme: quincenaTheme(Brightness.light),
         darkTheme: quincenaTheme(Brightness.dark),
         themeMode: _settings.themeMode,
@@ -219,7 +298,7 @@ class _QuincenaAppState extends State<QuincenaApp> {
           Intl.defaultLocale = intlLocaleFor(
             Localizations.localeOf(context).languageCode,
           );
-          return child!;
+          return _frame(child!);
         },
         home: _home(),
       ),

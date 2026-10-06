@@ -9,6 +9,7 @@ import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import 'example_bar.dart';
 import 'look.dart';
 
 /// The words a sync writes, in the person's language.
@@ -64,11 +65,16 @@ class BinanceCard extends StatelessWidget {
             : at == null
             ? l.binanceNeverSynced
             : l.binanceSyncedAt(dayAndTime(at));
-        void open() => Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (BuildContext context) => BinancePage(own: own),
-          ),
-        );
+        Future<void> open() async {
+          if (await explainExample(context, own, l.binanceTitle)) return;
+          if (!context.mounted) return;
+          await Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (BuildContext context) => BinancePage(own: own),
+            ),
+          );
+        }
+
         if (compact) {
           return InkWell(
             onTap: open,

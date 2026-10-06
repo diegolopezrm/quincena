@@ -1,14 +1,13 @@
 // Renders the screenshots for the App Store and Google Play, in Spanish and
-// English, with an example person: never anyone's real data.
+// English: the conversation, and the app's own example account as «Con
+// datos de ejemplo» opens it, so every picture is a tap away in the app.
+// Never anyone's real data.
 //
 // Not part of `flutter test`, like the rest of this folder. Regenerate with:
 //
 //   flutter test test_screens/store_screens_test.dart --update-goldens
 //
 // They are written straight into docs/store/screenshots.
-import 'dart:async';
-import 'dart:math' as math;
-
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +19,7 @@ import 'package:quincena/app.dart';
 import 'package:quincena/capture/capture_service.dart';
 import 'package:quincena/capture/event.dart';
 import 'package:quincena/data/clock.dart';
+import 'package:quincena/data/example_prices.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/format/money.dart' as format;
@@ -27,15 +27,9 @@ import 'package:quincena/l10n/l10n.dart';
 import 'package:quincena/money/asset.dart';
 import 'package:quincena/money/money.dart';
 import 'package:quincena/money/rates.dart';
-import 'package:quincena/own/own_controller.dart';
-import 'package:quincena/portfolio/market.dart';
 import 'package:quincena/session/session.dart';
-import 'package:quincena/statements/tables.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
-import 'package:quincena/theme/theme.dart';
-import 'package:quincena/ui/own/portfolio_page.dart';
-import 'package:quincena/ui/own/statement_page.dart';
 
 import '../test/fonts.dart';
 import '../test/own_flow_test.dart' show fakeRates, settle;
@@ -52,71 +46,9 @@ const Map<String, (Size, double)> stores = <String, (Size, double)>{
   'play': (Size(360, 800), 3),
 };
 
-/// Market data for the screenshots: prices that moved a little over the
-/// week, the way markets do.
-class ExampleMarket extends MarketData {
-  static const Map<String, (String, String)> _prices =
-      <String, (String, String)>{
-        'BTC': ('84616.92', '83102.40'),
-        'ETH': ('2678.00', '2701.50'),
-      };
-
-  @override
-  Future<Map<String, Ticker>> tickers(Iterable<String> codes) async =>
-      <String, Ticker>{
-        for (final String c in codes)
-          if (c == 'USDT')
-            c: Ticker.peg(c, _now)
-          else if (_prices[c] case (final String now, final String open))
-            c: Ticker(
-              asset: c,
-              price: d(now),
-              open: d(open),
-              high: d(now),
-              low: d(open),
-              at: _now,
-            ),
-      };
-
-  @override
-  Future<List<Candle>> candles(String code, ChartRange range) async {
-    final (String now, String _) = _prices[code] ?? ('1', '1');
-    final double last = double.parse(now);
-    // A gentle climb with the small waves of any market, the same each run.
-    double at(int i) =>
-        last *
-        (1 -
-            0.03 * i / range.points +
-            0.008 * math.sin(i / 6) +
-            0.004 * math.sin(i / 2.3));
-    return <Candle>[
-      for (var i = range.points - 1; i >= 0; i--)
-        Candle(
-          _now.subtract(range.step * i),
-          Decimal.parse(at(i).toStringAsFixed(2)),
-        ),
-    ];
-  }
-
-  @override
-  Future<List<Rate>> dollarHistory(Asset base, DateTime from) async => <Rate>[
-    for (
-      var day = DateTime(2026, 1, 1);
-      !day.isAfter(_now);
-      day = DateTime(day.year, day.month, day.day + 1)
-    )
-      Rate(
-        asset: 'USD',
-        quote: 'COP',
-        value: d('3312.84'),
-        asOf: day,
-        source: 'trm',
-      ),
-  ];
-}
-
-/// Valentina's money: a designer in Medellín paid twice a month, with pesos
-/// in two banks, a card, dollars, and some crypto on Binance.
+/// A designer in Medellín paid twice a month, with pesos in two banks, a
+/// card, dollars, and some crypto on Binance: what the accessibility tests
+/// read the screens with. The store's pictures show the app's own example.
 Future<QuincenaStore> example() async {
   final QuincenaStore store = QuincenaStore(
     QuincenaDatabase(NativeDatabase.memory()),
@@ -131,24 +63,18 @@ Future<QuincenaStore> example() async {
     Rate(
       asset: 'USD',
       quote: 'COP',
-      value: d('3312.84'),
+      value: d(exampleTrm),
       asOf: DateTime(2026, 10, 3),
       source: 'trm',
     ),
-    Rate(
-      asset: 'BTC',
-      quote: 'USDT',
-      value: d('84616.92'),
-      asOf: _now,
-      source: 'binance',
-    ),
-    Rate(
-      asset: 'ETH',
-      quote: 'USDT',
-      value: d('2678'),
-      asOf: _now,
-      source: 'binance',
-    ),
+    for (final MapEntry<String, (String, String)> p in examplePrices.entries)
+      Rate(
+        asset: p.key,
+        quote: 'USDT',
+        value: d(p.value.$1),
+        asOf: _now,
+        source: 'binance',
+      ),
   ]);
   final Account bank = await store.addAccount(
     name: 'Bancolombia',
@@ -294,6 +220,32 @@ void main() {
     Intl.defaultLocale = language == 'en' ? 'en_US' : 'es_CO';
   }
 
+  Future<void> back(WidgetTester tester) async {
+    tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+    await settle(tester);
+  }
+
+  /// Taps [text] on the page on top, scrolled to the top of its list.
+  Future<void> tapFound(WidgetTester tester, String text) async {
+    final Finder f = find.text(text);
+    if (f.evaluate().isEmpty) {
+      await tester.scrollUntilVisible(
+        f,
+        300,
+        scrollable: find
+            .byWidgetPredicate(
+              (Widget w) =>
+                  w is Scrollable && w.axisDirection == AxisDirection.down,
+            )
+            .last,
+      );
+    }
+    await tester.ensureVisible(f.last);
+    await settle(tester);
+    await tester.tap(f.last);
+    await settle(tester);
+  }
+
   Future<void> shoot(String store, String language, String name) => expectLater(
     find.byType(MaterialApp).first,
     matchesGoldenFile('../docs/store/screenshots/$store/$language/$name.png'),
@@ -317,96 +269,43 @@ void main() {
         await shoot(s.key, language, '01-answer');
       });
 
-      testWidgets('own $tag', (tester) async {
+      testWidgets('example $tag', (tester) async {
         device(tester, s.value, language);
         final AppLocalizations l = lookupAppLocalizations(Locale(language));
-        final QuincenaStore store = (await tester.runAsync(example))!;
+        // A phone with nothing of anyone's: the pictures are the example
+        // that «Con datos de ejemplo» opens, as a reviewer finds it.
+        final QuincenaStore store = QuincenaStore(
+          QuincenaDatabase(NativeDatabase.memory()),
+        );
         addTearDown(() => tester.runAsync(store.close));
         await tester.pumpWidget(
-          QuincenaApp(
-            store: store,
-            startInDemo: false,
-            fetcher: fakeRates(),
-            now: () => _now,
-            // Cuentas shows how the crypto did, from these prices.
-            market: ExampleMarket(),
-          ),
+          QuincenaApp(store: store, startInDemo: false, fetcher: fakeRates()),
         );
         await settle(tester);
+        await tester.tap(find.text(l.startDemoTitle));
+        await settle(tester);
         await shoot(s.key, language, '02-home');
+
         await tester.tap(find.byTooltip(l.inboxTitle));
         await settle(tester);
         await shoot(s.key, language, '03-inbox');
-        tester.state<NavigatorState>(find.byType(Navigator).first).pop();
-        await settle(tester);
+        await back(tester);
+
         await tester.tap(find.text(l.tabAccounts).last);
         await settle(tester);
         await shoot(s.key, language, '06-accounts');
-      });
 
-      testWidgets('crypto and statements $tag', (tester) async {
-        device(tester, s.value, language);
-        final QuincenaStore store = (await tester.runAsync(example))!;
-        addTearDown(() => tester.runAsync(store.close));
-        final OwnController own = OwnController(
-          store,
-          now: () => _now,
-          readNative: false,
-          market: ExampleMarket(),
-        );
-        addTearDown(own.dispose);
-        await tester.runAsync(own.start);
-        await tester.pumpWidget(
-          MaterialApp(
-            debugShowCheckedModeBanner: false,
-            theme: quincenaTheme(Brightness.light),
-            locale: Locale(language),
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: appLocales,
-            home: const SizedBox(),
-          ),
-        );
-        // Pushed over the app, the way the app opens it, with its way back.
-        Future<void> open(Widget page) async {
-          final NavigatorState navigator = tester.state<NavigatorState>(
-            find.byType(Navigator).first,
-          );
-          navigator.popUntil((Route<dynamic> route) => route.isFirst);
-          unawaited(
-            navigator.push(
-              MaterialPageRoute<void>(builder: (BuildContext context) => page),
-            ),
-          );
-          await settle(tester);
-        }
-
-        await open(PortfolioPage(own: own));
-        await tester.runAsync(() => own.portfolio.refresh());
-        await tester.runAsync(() => own.portfolio.loadChart(ChartRange.week));
-        await settle(tester);
+        await tapFound(tester, l.cryptoPerformanceRow);
         await shoot(s.key, language, '04-crypto');
+        await back(tester);
 
-        final Account bank = own.accounts.firstWhere(
-          (Account a) => a.name == 'Bancolombia',
-        );
-        await open(
-          StatementPage(
-            own: own,
-            accountId: bank.id,
-            statement: readTable(
-              parseCsv(
-                'Fecha;Descripción;Valor;Saldo\n'
-                '28/09/2026;COMPRA EN D1 LAURELES;-32.400;1.245.600\n'
-                '27/09/2026;PAGO PSE CLARO HOGAR;-98.900;1.278.000\n'
-                '26/09/2026;TRANSFERENCIA DE CAMILO RIOS;150.000;1.376.900\n'
-                '25/09/2026;COMPRA EN RAPPI RESTAURANTES;-41.500;1.226.900\n'
-                '24/09/2026;PAGO TARJETA VISA;-480.000;1.268.400\n'
-                '23/09/2026;COMPRA EN TERPEL LAS PALMAS;-120.000;1.748.400\n',
-              ),
-            ),
-          ),
-        );
+        // In the example, «Importar extracto» reviews its own statement.
+        await tester.tap(find.byTooltip(l.settingsTitle));
+        await settle(tester);
+        await tapFound(tester, l.statementTitle);
         await shoot(s.key, language, '05-statement');
+        await tester.pumpWidget(const SizedBox());
+        await settle(tester);
       });
     }
   }

@@ -8,6 +8,7 @@ import '../../capture/merchants.dart';
 import '../../capture/native_channel.dart';
 import '../../domain/records.dart';
 import '../../format/dates.dart';
+import '../../data/example_account.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
@@ -22,6 +23,7 @@ import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
 import 'category_choices.dart';
+import 'example_bar.dart';
 import 'look.dart';
 import 'movement_list.dart';
 
@@ -102,7 +104,10 @@ class _StatementPageState extends State<StatementPage> {
   void initState() {
     super.initState();
     _accountId = widget.accountId;
-    final StatementRead? given = widget.statement;
+    // The example reviews a statement of its own, not a file of the
+    // person's.
+    final StatementRead? given =
+        widget.statement ?? (own.example ? exampleStatement() : null);
     if (given != null) {
       _stage = _Stage.reading;
       WidgetsBinding.instance.addPostFrameCallback((_) => _show(given));
@@ -119,6 +124,10 @@ class _StatementPageState extends State<StatementPage> {
   }
 
   Future<void> _pick() async {
+    // The person's own files are for their own accounts.
+    if (await explainExample(context, own, context.l10n.statementTitle)) {
+      return;
+    }
     final List<PlatformFile> files = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: const <String>['csv', 'txt', 'xlsx', 'pdf'],

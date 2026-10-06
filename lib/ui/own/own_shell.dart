@@ -2,14 +2,17 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../agent/understand.dart';
 import '../../ai/cloud.dart';
 import '../../app.dart';
 import '../../app_mode.dart';
 import '../../capture/native_channel.dart';
 import '../../l10n/l10n.dart';
 import '../../own/own_controller.dart';
+import '../../session/session.dart';
 import '../../theme/tokens.dart';
 import '../../widget/home_widget.dart';
+import '../home_page.dart';
 import '../icons.dart';
 import '../mark.dart';
 import 'accounts_tab.dart';
@@ -21,18 +24,25 @@ import 'look.dart';
 import 'own_settings_page.dart';
 import 'plan_tab.dart';
 
-/// The person's own accounts: home, movements and accounts, a tap apart.
+/// The person's own accounts, or the example's: home, movements and
+/// accounts, a tap apart.
 class OwnShell extends StatefulWidget {
   const OwnShell({
     super.key,
     required this.own,
     required this.modes,
     required this.settings,
+    this.conversation,
   });
 
   final OwnController own;
   final AppModeController modes;
   final AppSettings settings;
+
+  /// In the example, the scripted conversation over the same story, in the
+  /// language given: what «Pregúntale a tu plata» opens there instead of
+  /// Gemini.
+  final Session Function(String language)? conversation;
 
   @override
   State<OwnShell> createState() => _OwnShellState();
@@ -50,6 +60,9 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // What the phone shares and what it shows outside the app belong to the
+    // person's own accounts, never to the example.
+    if (own.example) return;
     WidgetsBinding.instance.addPostFrameCallback((_) => _openInboxIfAsked());
     own.addListener(_feedWidget);
   }
@@ -62,7 +75,7 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
   }
 
   void _feedWidget() {
-    if (mounted) _widget.update(context.l10n, own);
+    if (mounted && !own.example) _widget.update(context.l10n, own);
   }
 
   /// Someone shared a screenshot or a text with Quincena from another app
@@ -82,7 +95,7 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
   /// rates if they are old.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.resumed) return;
+    if (state != AppLifecycleState.resumed || own.example) return;
     own.pullCaptures();
     own.refreshRates();
     _openInboxIfAsked();
@@ -99,6 +112,23 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
       ),
     ),
   );
+
+  /// The example's conversation, with [question] asked when the script
+  /// knows it; otherwise it opens on the questions it does know.
+  void _openConversation([String? question]) {
+    final Session session = widget.conversation!(
+      Localizations.localeOf(context).languageCode,
+    );
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) =>
+            HomePage(session: session, settings: widget.settings),
+      ),
+    );
+    if (question != null && intentOf(question) != null && !session.busy) {
+      session.ask(question);
+    }
+  }
 
   void _openInbox() => Navigator.of(context).push(
     MaterialPageRoute<void>(
@@ -147,7 +177,9 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
       child: OwnHomeTab(
         own: own,
         onSeeAll: () => setState(() => _tab = 1),
-        onAsk: Cloud.supported ? _openAsk : null,
+        onAsk: own.example
+            ? (widget.conversation == null ? null : _openConversation)
+            : (Cloud.supported ? _openAsk : null),
       ),
     ),
   };

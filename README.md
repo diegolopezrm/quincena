@@ -5,9 +5,10 @@
 Personal finance where every answer is an interface.
 
 **[Try it in the browser](https://diegolopezrm.github.io/quincena/)**, in
-Spanish or English. It needs no account and no key: a scripted agent answers
-the questions on the home screen, and "Lo que respondió Gemini" replays five
-sessions Gemini answered for real.
+Spanish or English. It needs no account and no key: it opens the whole app on
+Valentina's made-up account, kept in memory, and "Otra pregunta" on its home
+opens the conversation, where a scripted agent answers and "Lo que respondió
+Gemini" replays five sessions Gemini answered for real.
 
 <p align="center">
   <img src="docs/screens/inicio.png" width="24%" alt="Home screen: what you can spend until payday, and the questions to ask">
@@ -124,10 +125,11 @@ flutter pub get
 flutter run -d chrome
 ```
 
-The demo runs offline. A scripted agent answers the questions on the home
-screen with the same components, bindings and function calls a model sends,
-and every number in its answers comes from the account, so saving an expense
-changes the next answer.
+The example account runs offline, on a fixed day with fixed rates and
+prices. In its conversation a scripted agent answers with the same
+components, bindings and function calls a model sends, and every number in
+its answers comes from the account, so saving an expense changes the next
+answer.
 
 On iOS and macOS the plugins, Firebase among them, come in as Swift packages
 (`pubspec.yaml` turns Swift Package Manager on for this app), so there is no

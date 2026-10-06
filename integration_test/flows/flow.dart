@@ -162,6 +162,9 @@ class FlowRun {
   Future<void> waitFor(Finder finder, {Duration? most}) =>
       most == null ? tour.waitFor(finder) : tour.waitFor(finder, most: most);
 
+  /// From the example's Inicio to its conversation over the same story.
+  Future<void> toConversation() => tour.conversation(english: flow.english);
+
   /// Taps what [finder] finds, after scrolling it into view.
   Future<void> tapFound(Finder finder) async {
     await reveal(finder);
