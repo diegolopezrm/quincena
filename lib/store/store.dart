@@ -715,6 +715,13 @@ class QuincenaStore {
         ),
       );
 
+  /// Moves the recurring charges paid from any of [from] to [to], or to
+  /// no account in particular when null.
+  Future<void> moveRecurring(Set<String> from, String? to) =>
+      (db.update(db.recurrings)..where((r) => r.accountId.isIn(from))).write(
+        RecurringsCompanion(accountId: Value(to)),
+      );
+
   /// Changes what a recurring charge costs from now on.
   Future<void> updateRecurring(String id, {required Money amount}) =>
       (db.update(db.recurrings)..where((r) => r.id.equals(id))).write(

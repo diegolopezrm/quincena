@@ -785,6 +785,47 @@ void main() {
       expect(await phone.sync.conflicts(), isEmpty);
     });
 
+    test('an account archived on one, with what was paid from it moved, '
+        'arrives archived on the other and comes back on both', () async {
+      final String bankId = await bank(phone);
+      final Account visa = await phone.store.addAccount(
+        name: 'Visa',
+        kind: AccountKind.card,
+        asset: Asset.cop,
+        opening: d('-42900'),
+      );
+      await phone.store.addRecurring(
+        name: 'Netflix',
+        amount: Money(d('26900'), Asset.cop),
+        cadence: Cadence.monthly,
+        nextDate: DateTime(2026, 10, 12),
+        accountId: visa.id,
+      );
+      await send(phone, laptop);
+      // The laptop's own profile, from before it joined, waits apart.
+      final int waiting = (await laptop.sync.conflicts()).length;
+
+      phone.later();
+      await phone.store.moveRecurring(<String>{visa.id}, bankId);
+      await phone.store.updateAccount(visa.copyWith(archived: true));
+      await send(phone, laptop);
+      final Account there = (await laptop.store.accounts(
+        archived: true,
+      )).firstWhere((Account a) => a.id == visa.id);
+      expect(there.archived, isTrue);
+      expect(await laptop.store.accounts(), hasLength(1));
+      expect((await laptop.store.recurring()).single.accountId, bankId);
+      expect(await laptop.contents(), await phone.contents());
+      expect(await laptop.sync.conflicts(), hasLength(waiting));
+
+      laptop.later();
+      await laptop.store.updateAccount(there.copyWith(archived: false));
+      await send(laptop, phone);
+      expect(await phone.store.accounts(), hasLength(2));
+      expect(await laptop.contents(), await phone.contents());
+      expect(await phone.sync.conflicts(), isEmpty);
+    });
+
     test('stopping forgets the key and keeps the data', () async {
       await send(phone, laptop);
       await laptop.sync.stop();

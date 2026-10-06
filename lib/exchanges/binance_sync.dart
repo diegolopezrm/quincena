@@ -363,20 +363,22 @@ class BinanceReader {
     return out;
   }
 
-  /// Everything since [from]: balances now, and what happened since.
+  /// Everything from [from] to [to], now when not given: balances now,
+  /// and what happened in between.
   Future<BinanceReading> read(
     DateTime from, {
+    DateTime? to,
     void Function(double)? progress,
   }) async {
-    final DateTime to = DateTime.now();
+    final DateTime until = to ?? DateTime.now();
     progress?.call(0.05);
     final Map<String, Decimal> held = await balances();
     progress?.call(0.25);
-    final List<BinanceEvent> events = <BinanceEvent>[...await p2p(from, to)];
+    final List<BinanceEvent> events = <BinanceEvent>[...await p2p(from, until)];
     progress?.call(0.45);
-    events.addAll(await conversions(from, to));
+    events.addAll(await conversions(from, until));
     progress?.call(0.6);
-    events.addAll(await transfers(from, to));
+    events.addAll(await transfers(from, until));
     progress?.call(0.75);
     final Set<String> traded = <String>{
       ...held.keys,

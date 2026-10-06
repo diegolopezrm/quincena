@@ -736,7 +736,12 @@ class _InstalmentSheetState extends State<_InstalmentSheet> {
   late DateTime _firstDue =
       widget.plan?.firstDue ??
       DateTime(own.today.year, own.today.month + 1, own.today.day);
-  late String? _accountId = widget.plan?.accountId;
+  // An account deleted or archived since is none the list offers: the
+  // purchase reads as paid outside Quincena.
+  late String? _accountId = own.accounts
+      .where((Account a) => a.id == widget.plan?.accountId)
+      .firstOrNull
+      ?.id;
   String? _error;
 
   TextEditingController _money(int? minor, {bool zero = false}) =>

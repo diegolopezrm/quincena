@@ -23,6 +23,7 @@ import 'package:quincena/ui/kit.dart' show Block, Figures;
 import 'package:quincena/ui/own/balance_explained.dart' show AccountExplained;
 import 'package:quincena/ui/own/binance_page.dart' show BinancePage;
 import 'package:quincena/ui/own/look.dart' show Headline, moneyText;
+import 'package:quincena/ui/own/movement_list.dart' show MovementRow;
 import 'package:quincena/ui/own/portfolio_chart.dart';
 import 'package:quincena/ui/own/portfolio_page.dart' show percentText;
 import 'package:quincena/ui/own/statement_page.dart' show StatementPage;
@@ -149,7 +150,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tapFound(find.text('¿De dónde sale?').first);
       await f.step(
         '«¿De dónde sale?» arma el saldo: con lo que empezó, más ingresos, '
-        'menos gastos y transferencias, hasta el «Saldo hoy».',
+        'menos gastos y la compra de USDT en Binance, hasta el «Saldo hoy».',
       );
       await f.check(
         'Con lo que empezó, ${_cop(bank.openingMoney)}, más los movimientos '
@@ -923,19 +924,54 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       final int inNequi = own.snapshot!.entries
           .where((Entry e) => e.accountId == nequi.id)
           .length;
+      final Money now = worth - held;
       await f.tap('Cuentas');
       await f.tap('Billetera digital · Nequi');
       await f.tapTip('Editar cuenta');
       await f.tap('Eliminar');
       await f.step(
-        '«Eliminar», al final del formulario, pide confirmar: dice cuántos '
-        'movimientos se borran con ella y que no se puede deshacer.',
+        '«Eliminar», al final del formulario, pide confirmar: cuántos '
+        'movimientos se borran y que no se puede deshacer, cuánto baja el '
+        'patrimonio y por qué, y ofrece «Archivar» en su lugar.',
       );
       await f.check('El aviso cuenta los $inNequi movimientos de Nequi', () {
         expect(
           f.screenText,
           contains('Se borran también sus $inNequi movimientos.'),
         );
+      });
+      await f.check(
+        'El aviso dice que el patrimonio pasa de ${_cop(worth)} a '
+        '${_cop(now)}: lo que tiene Nequi, ${_cop(held)}, deja de contar',
+        () {
+          expect(
+            _said(f),
+            contains(
+              _plainText(
+                'Lo que tiene, ${_cop(held)}, deja de contar en tu '
+                'patrimonio.',
+              ),
+            ),
+          );
+          expect(
+            _said(f),
+            contains(
+              _plainText(
+                'Tu patrimonio pasa de ${_cop(worth)} a ${_cop(now)}.',
+              ),
+            ),
+          );
+        },
+      );
+      await f.check('Antes de borrar, ofrece archivarla', () {
+        expect(
+          find.descendant(
+            of: find.byType(AlertDialog),
+            matching: find.text('Archivar'),
+          ),
+          findsOneWidget,
+        );
+        expect(_said(f), contains('Si la cerraste, mejor archívala'));
       });
       await f.tap('Cancelar');
       await f.step(
@@ -961,10 +997,13 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         expect(f.shows('Agregar cuenta'), isTrue);
         expect(find.byType(BackButton), findsNothing);
       });
-      final Money now = worth - held;
       await f.check(
-        'El patrimonio pasó de ${_cop(worth)} a ${_cop(now)}',
-        () => expect(own.netWorth().total, now),
+        'El patrimonio pasó de ${_cop(worth)} a ${_cop(now)}, como dijo el '
+        'aviso',
+        () {
+          expect(own.netWorth().total, now);
+          expect(_headline(f), _cop(now));
+        },
       );
     },
   ),
@@ -1657,12 +1696,15 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         expect(_balance(own, visa).isZero, isTrue);
         expect(own.spendableCardDebt, 0);
       });
+      final Money celular = _pesos('1290000');
+      final Money instalments = own.netWorth().instalments;
       await f.tapTip('Editar cuenta');
       await f.tap('Eliminar');
-      await f.step(
-        '«Eliminar» avisa que se borran sus $inVisa movimientos; no dice que '
-        'Netflix se cobra en esta tarjeta ni qué pasa con el pago desde '
-        'Bancolombia.',
+      await f.page(
+        '«Eliminar» avisa que se borran sus $inVisa movimientos, que el pago '
+        'se queda en Bancolombia como gasto, que Netflix y las cuotas del '
+        'Celular se pagan desde esta tarjeta y con qué cuenta se pagarán, y '
+        'cuánto baja el patrimonio y por qué.',
       );
       await f.check('El aviso cuenta los $inVisa movimientos de la Visa', () {
         expect(
@@ -1670,12 +1712,56 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
           contains('Se borran también sus $inVisa movimientos.'),
         );
       });
+      await f.check(
+        'Dice que el pago desde Bancolombia se queda allá como gasto',
+        () => expect(
+          _said(f),
+          contains(
+            'Una transferencia con otra cuenta se queda en esa cuenta como '
+            'ingreso o gasto.',
+          ),
+        ),
+      );
+      await f.check('Dice que Netflix y el Celular se pagan con la Visa', () {
+        expect(_said(f), contains('Netflix y Celular se pagan desde aquí.'));
+        expect(f.shows('Se pagarán con'), isTrue);
+        expect(f.shows('Sin cuenta'), isTrue);
+      });
+      await f.check(
+        'Explica que el patrimonio baja ${_cop(celular)}: las cuotas que '
+        'faltan del Celular iban en la deuda de la tarjeta',
+        () {
+          expect(
+            _said(f),
+            contains(
+              _plainText(
+                'Lo que falta de las cuotas, ${_cop(celular)}, ya no queda en '
+                'la deuda de una tarjeta',
+              ),
+            ),
+          );
+          expect(
+            _said(f),
+            contains(
+              _plainText(
+                'Tu patrimonio pasa de ${_cop(worth)} a '
+                '${_cop(worth - celular)}.',
+              ),
+            ),
+          );
+        },
+      );
+      await f.tapFound(find.text('Sin cuenta'));
+      await f.step(
+        '«Se pagarán con» lista tus otras cuentas: Netflix y las cuotas se '
+        'pueden pasar a una de ellas.',
+      );
+      await f.tap('Bancolombia');
       await f.tap('Eliminar');
       await f.top();
       await f.step(
         'Eliminada, vuelves a Cuentas: sin «Tarjetas de crédito», Bancolombia '
-        'con el pago hecho y el «Patrimonio» más bajo por las cuotas del '
-        'celular, que iban en la Visa.',
+        'con el pago hecho y el «Patrimonio» con la baja que anunció el aviso.',
       );
       await f.check('La Visa y sus movimientos ya no están', () {
         expect(own.snapshot!.account(visa.id), isNull);
@@ -1698,6 +1784,20 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         },
       );
       await f.check(
+        'Netflix y el Celular se pagan ahora con Bancolombia: ninguno quedó '
+        'en una cuenta que ya no existe',
+        () {
+          final RecurringCharge netflix = own.recurring.firstWhere(
+            (RecurringCharge r) => r.name == 'Netflix',
+          );
+          final Instalments phone = own.instalments.firstWhere(
+            (Instalments p) => p.name == 'Celular',
+          );
+          expect(netflix.accountId, bank.id);
+          expect(phone.accountId, bank.id);
+        },
+      );
+      await f.check(
         'Netflix sigue entre los pagos fijos y sigue restando de lo que '
         'puedes gastar: ${pesos(own.ledger!.major(free))}',
         () {
@@ -1708,13 +1808,199 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
           expect(own.ledger!.freeUntilPayday, free);
         },
       );
-      final Money celular = _pesos('1290000');
       await f.check(
-        'El patrimonio pasó de ${_cop(worth)} a ${_cop(worth - celular)}: '
-        'las 6 cuotas de \$215.000 del celular siguen debiéndose',
+        'El patrimonio pasó de ${_cop(worth)} a ${_cop(worth - celular)}, '
+        'como dijo el aviso: las 6 cuotas de \$215.000 del celular siguen '
+        'debiéndose',
         () {
           expect(own.netWorth().total, worth - celular);
           expect(_headline(f), _cop(worth - celular));
+        },
+      );
+      await f.tapFound(find.text('¿De dónde sale?').first);
+      await f.step(
+        '«¿De dónde sale?» del patrimonio muestra las cuotas del Celular '
+        'aparte, en «Compras a cuotas».',
+      );
+      await f.check('«Compras a cuotas» pasó de ${_cop(-instalments)} a '
+          '${_cop(-(instalments + celular))}, con el Celular', () {
+        expect(own.netWorth().instalments, instalments + celular);
+        expect(f.screenText, contains('Compras a cuotas'));
+        expect(f.screenText, contains(_cop(-(instalments + celular))));
+      });
+      await f.back();
+    },
+  ),
+  AppFlow(
+    '04-23-archivar-y-restaurar-una-cuenta',
+    'Archivar una cuenta cerrada y traerla de vuelta',
+    area: 'Cuentas',
+    goal:
+        'Cerré Nequi pero quiero guardar sus movimientos, sin que cuente en '
+        'mis totales ni me aparezca al anotar; y poder traerla si la vuelvo '
+        'a abrir.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Account nequi = _named(own, 'Nequi');
+      final Money held = own.partOfTotal(nequi)!;
+      final Money worth = own.netWorth().total;
+      final Money everyday = _everyday(own);
+      final int entries = own.snapshot!.entries.length;
+      final int inNequi = own.snapshot!.entries
+          .where((Entry e) => e.accountId == nequi.id)
+          .length;
+      await f.tap('Cuentas');
+      await f.tap('Billetera digital · Nequi');
+      await f.tapTip('Editar cuenta');
+      await f.reveal(find.text('Archivar'));
+      await f.step(
+        'Al final de «Editar cuenta», encima de «Eliminar», está «Archivar».',
+      );
+      await f.tap('Archivar');
+      await f.step(
+        '«Archivar» pregunta antes: sus movimientos se quedan, deja de '
+        'aparecer en Cuentas y al elegir una cuenta, se restaura desde '
+        '«Cuentas archivadas», y el patrimonio baja lo que tiene Nequi.',
+      );
+      await f.check(
+        'El aviso dice que sus $inNequi movimientos se quedan y dónde '
+        'restaurarla',
+        () {
+          expect(
+            _said(f),
+            contains('Sus $inNequi movimientos se quedan en tu historial.'),
+          );
+          expect(_said(f), contains('«Cuentas archivadas»'));
+        },
+      );
+      await f.check('Dice que el patrimonio pasa de ${_cop(worth)} a '
+          '${_cop(worth - held)}, por lo que tiene Nequi', () {
+        expect(
+          _said(f),
+          contains(
+            _plainText(
+              'Lo que tiene, ${_cop(held)}, deja de contar en tu '
+              'patrimonio.',
+            ),
+          ),
+        );
+        expect(
+          _said(f),
+          contains(
+            _plainText(
+              'Tu patrimonio pasa de ${_cop(worth)} a ${_cop(worth - held)}.',
+            ),
+          ),
+        );
+      });
+      await f.tapFound(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text('Archivar'),
+        ),
+      );
+      await f.top();
+      await f.step(
+        'Archivada, vuelves a Cuentas: Nequi ya no está entre las de uso '
+        'diario, y abajo aparece «Cuentas archivadas».',
+      );
+      await f.check('Nequi quedó archivada, con sus $inNequi movimientos', () {
+        expect(own.accounts.where((Account a) => a.id == nequi.id), isEmpty);
+        expect(own.snapshot!.account(nequi.id)!.archived, isTrue);
+        expect(own.snapshot!.entries.length, entries);
+        expect(f.shows('Nequi'), isFalse);
+      });
+      await f.check(
+        'El patrimonio es ${_cop(worth - held)} y «En tus cuentas de uso '
+        'diario» ${_cop(everyday - held)}',
+        () {
+          expect(own.netWorth().total, worth - held);
+          expect(_headline(f), _cop(worth - held));
+          expect(
+            _rowOf(f, 'En tus cuentas de uso diario'),
+            _cop(everyday - held),
+          );
+        },
+      );
+      await f.reveal(find.text('Cuentas archivadas'));
+      await f.step(
+        '«Cuentas archivadas» dice cuántas hay, fuera de tus totales.',
+      );
+      await f.check('La fila dice «Una cuenta, fuera de tus totales»', () {
+        expect(f.shows('Una cuenta, fuera de tus totales'), isTrue);
+      });
+      await f.tap('Movimientos');
+      await f.reveal(find.text('Crepes & Waffles'));
+      await f.step(
+        'En Movimientos sigue el historial de Nequi, como el Crepes & '
+        'Waffles de hoy, que todavía dice «Nequi».',
+      );
+      await f.check('Los movimientos de Nequi siguen en el historial', () {
+        expect(f.shows('Crepes & Waffles'), isTrue);
+      });
+      await f.top();
+      await f.tapTip('Agregar movimiento');
+      await f.tapFound(find.byType(DropdownButtonFormField<String>).first);
+      await f.step(
+        'Al anotar un movimiento, la lista de cuentas ya no ofrece Nequi.',
+      );
+      await f.check('Nequi no está entre las cuentas para elegir', () {
+        expect(f.shows('Bancolombia'), isTrue);
+        expect(f.shows('Nequi'), isFalse);
+      });
+      await f.back();
+      await f.back();
+      await f.tap('Cuentas');
+      await f.tap('Cuentas archivadas');
+      await f.step(
+        '«Cuentas archivadas» lista Nequi con lo que tiene y «Restaurar».',
+      );
+      await f.check('Nequi está en las archivadas', () {
+        expect(f.shows('Nequi'), isTrue);
+        expect(f.shows('Restaurar'), isTrue);
+      });
+      await f.tap('Nequi');
+      await f.step(
+        'Su página dice que está archivada, con «Restaurar», y guarda sus '
+        'movimientos; no ofrece agregar uno nuevo.',
+      );
+      await f.check('La página de Nequi archivada no deja anotar en ella', () {
+        expect(
+          f.shows(
+            'Archivada: no cuenta en tus totales ni aparece al elegir una '
+            'cuenta.',
+          ),
+          isTrue,
+        );
+        expect(find.byTooltip('Agregar movimiento'), findsNothing);
+        expect(f.shows('Crepes & Waffles'), isTrue);
+      });
+      await f.back();
+      await f.tap('Restaurar');
+      await f.step(
+        'Con «Restaurar», Nequi sale de las archivadas: ya no queda ninguna.',
+      );
+      await f.check('Nequi volvió a tus cuentas', () {
+        expect(
+          own.accounts.where((Account a) => a.id == nequi.id),
+          hasLength(1),
+        );
+        expect(f.shows('No tienes cuentas archivadas.'), isTrue);
+      });
+      await f.back();
+      await f.top();
+      await f.step(
+        'De vuelta en Cuentas, Nequi está otra vez entre las de uso diario y '
+        'el patrimonio vuelve a ${_cop(worth)}.',
+      );
+      await f.check(
+        'El patrimonio y «En tus cuentas de uso diario» son los de antes',
+        () {
+          expect(own.netWorth().total, worth);
+          expect(_headline(f), _cop(worth));
+          expect(_rowOf(f, 'En tus cuentas de uso diario'), _cop(everyday));
+          expect(f.shows('Cuentas archivadas'), isFalse);
         },
       );
     },
@@ -1985,12 +2271,15 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tapFound(find.text('¿De dónde sale?').first);
       await f.step(
         'Su «¿De dónde sale?»: con lo que empezó más los 118,2 USDT de la '
-        'transferencia que entró desde Bancolombia.',
+        'compra pagada con pesos de Bancolombia.',
       );
       await f.check(
-        'La transferencia de Bancolombia cuenta como una que entró',
+        'Los pesos de Bancolombia que compraron USDT cuentan como una compra, '
+        'no como una transferencia',
         () {
-          expect(f.shows('Una transferencia que entró'), isTrue);
+          expect(f.shows('Una compra'), isTrue);
+          expect(f.shows('Una transferencia que entró'), isFalse);
+          expect(_said(f), contains('+118,2 USDT'));
         },
       );
       await f.back();
@@ -2184,9 +2473,12 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       );
       await f.tap('Guardar');
       await f.step(
-        'Al guardar, Bitcoin baja a 0,0073 BTC y la venta aparece como '
-        'transferencia a Bancolombia.',
+        'Al guardar, Bitcoin baja a 0,0073 BTC y el movimiento «Bitcoin → '
+        'Bancolombia» dice «Venta», no «Transferencia».',
       );
+      await f.check('El movimiento de la venta dice «Venta»', () {
+        expect(_movementDetail(f, 'Bitcoin → Bancolombia'), 'Venta');
+      });
       await f.check('Bitcoin pasó de 0,0123 a 0,0073 BTC', () {
         expect(_balance(own, bitcoin).amount, Decimal.parse('0.0073'));
       });
@@ -2213,15 +2505,26 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       });
       await f.tapFound(find.text('¿De dónde sale?').first);
       await f.step(
-        '«¿De dónde sale?» del bitcoin: con lo que empezó, menos los 0,005 '
-        'BTC que salieron hacia Bancolombia.',
+        '«¿De dónde sale?» del bitcoin: con lo que empezó, menos una venta '
+        'de 0,005 BTC.',
       );
-      await f.check('El detalle termina en 0,0073 BTC', () {
+      await f.check('El detalle termina en 0,0073 BTC, con «Una venta»', () {
+        expect(f.shows('Una venta'), isTrue);
+        expect(f.shows('Una transferencia que salió'), isFalse);
         expect(_said(f), contains('−0,005 BTC'));
         expect(_said(f), contains('0,0073 BTC'));
       });
       await f.back();
       await f.back();
+      await f.tap('Movimientos');
+      await f.step(
+        'En Movimientos la venta también dice «Venta», con lo que salió del '
+        'bitcoin.',
+      );
+      await f.check('Movimientos dice «Venta», no «Transferencia»', () {
+        expect(_movementDetail(f, 'Bitcoin → Bancolombia'), 'Venta');
+      });
+      await f.tap('Cuentas');
       await f.tap('Rendimiento y ganancia');
       await f.reveal(find.textContaining('Ya ganado en ventas'));
       await f.step(
@@ -2655,8 +2958,11 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Guardar');
       await f.step(
         'Al guardar, Bitcoin sube a 0,0134 BTC y el cambio aparece como una '
-        'transferencia desde Binance.',
+        '«Compra» pagada desde Binance, no como una transferencia.',
       );
+      await f.check('El movimiento del cambio dice «Compra»', () {
+        expect(_movementDetail(f, 'Binance → Bitcoin'), 'Compra');
+      });
       await f.check('Bitcoin pasó de 0,0123 a 0,0134 BTC', () {
         expect(_balance(own, bitcoin).amount, Decimal.parse('0.0134'));
       });
@@ -3005,18 +3311,22 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         await f.step(
           'Cada moneda dice de dónde sale, «Conectada a Binance · leída…» o '
           '«Anotado a mano», y en «Gestionar fuentes» Binance dice cuándo se '
-          'leyó.',
+          'leyó: hace 20 minutos, así que abrir la cripto no la lee otra vez.',
         );
-        await f.check('Binance está conectada y leída hace 20 minutos', () {
-          expect(own.binance.connected, isTrue);
-          expect(own.binance.syncedAt, readAt);
-          expect(f.screenText, contains('Leída 3 oct · 9:40'));
-        });
+        await f.check(
+          'Binance está conectada y leída hace 20 minutos, por el reloj de la '
+          'app: no se volvió a leer',
+          () {
+            expect(own.binance.connected, isTrue);
+            expect(own.binance.syncedAt, readAt);
+            expect(own.binance.problem, isNull);
+            expect(f.screenText, contains('Leída 3 oct · 9:40'));
+          },
+        );
         await f.tap('Binance');
         await f.page(
-          'Binance conectada: cuándo se leyó, el aviso en rojo de que al abrir '
-          'la cripto no pudo leerla otra vez, «Leer ahora», «Archivarlas» y '
-          '«Desconectar».',
+          'Binance conectada: cuándo se leyó, «Leer ahora», las cuentas que '
+          'llevabas a mano con «Archivarlas», y «Desconectar».',
         );
         await f.check(
           'La página dice que está conectada y qué llevas a mano',
@@ -3046,13 +3356,68 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
             expect(f.screenText, anyOf(_binanceTrouble));
           },
         );
+        await f.back();
+        await f.reveal(find.text('Billeteras propias'));
+        await f.step(
+          'De vuelta en la cripto, «Gestionar fuentes» también dice que '
+          'Binance no se pudo leer, y de cuándo es la última lectura.',
+        );
+        await f.check(
+          'La fila de Binance dice «No se pudo leer. Última lectura: 3 oct · '
+          '9:40», no que está al día',
+          () {
+            expect(
+              f.screenText,
+              contains('No se pudo leer. Última lectura: 3 oct · 9:40'),
+            );
+            expect(f.screenText, isNot(contains('Leída 3 oct')));
+          },
+        );
+        await f.tap('Binance');
         final Money worth = own.netWorth().total;
         final Money handKept =
             own.partOfTotal(manualTether)! + own.partOfTotal(manualBitcoin)!;
         await f.tap('Archivarlas');
         await f.step(
-          '«Archivarlas» guarda aparte las cuentas que llevabas a mano: el '
-          'aviso se va y Binance queda como la única fuente.',
+          '«Archivarlas» pregunta antes: por qué, que sus movimientos se '
+          'quedan, que se restauran desde «Cuentas archivadas» y cuánto baja '
+          'el patrimonio.',
+        );
+        await f.check(
+          'El aviso dice qué hace, y que el patrimonio pasa de ${_cop(worth)} '
+          'a ${_cop(worth - handKept)}',
+          () {
+            expect(f.shows('¿Archivar Binance y Bitcoin?'), isTrue);
+            expect(_said(f), contains('archivarlas evita contarlos dos veces'));
+            expect(_said(f), contains('«Cuentas archivadas»'));
+            expect(
+              _said(f),
+              contains(
+                _plainText(
+                  'Tu patrimonio pasa de ${_cop(worth)} a '
+                  '${_cop(worth - handKept)}.',
+                ),
+              ),
+            );
+          },
+        );
+        await f.tap('Cancelar');
+        await f.check('«Cancelar» no archiva nada', () {
+          expect(
+            own.accounts.where((Account a) => a.id == manualTether.id),
+            hasLength(1),
+          );
+          expect(f.shows('Archivarlas'), isTrue);
+        });
+        await f.tap('Archivarlas');
+        await f.tapFound(
+          find.descendant(
+            of: find.byType(AlertDialog),
+            matching: find.text('Archivar'),
+          ),
+        );
+        await f.step(
+          'Archivadas, el aviso se va y Binance queda como la única fuente.',
         );
         await f.check(
           'Las cuentas a mano quedaron archivadas, con sus movimientos',
@@ -3079,7 +3444,8 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
           },
         );
         await f.check(
-          'El patrimonio bajó ${_cop(handKept)}: ya no cuenta dos veces',
+          'El patrimonio bajó ${_cop(handKept)}, como dijo el aviso: ya no '
+          'cuenta dos veces',
           () => expect(own.netWorth().total, worth - handKept),
         );
         await f.tap('Desconectar');
@@ -3128,6 +3494,33 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         await f.check('La fuente dice «Leída de Binance · sin conectar»', () {
           expect(f.screenText, contains('Leída de Binance · sin conectar'));
         });
+        await f.back();
+        await f.tap('Cuentas archivadas');
+        await f.step(
+          'En Cuentas, «Cuentas archivadas» tiene las dos que llevabas a mano, '
+          'cada una con lo que tiene y «Restaurar».',
+        );
+        await f.check('Binance y Bitcoin están entre las archivadas', () {
+          expect(f.shows('Binance'), isTrue);
+          expect(f.shows('Bitcoin'), isTrue);
+          expect(find.text('Restaurar'), findsNWidgets(2));
+        });
+        await f.tapFound(find.text('Restaurar').last);
+        await f.step(
+          '«Restaurar» trae de vuelta el Bitcoin que llevabas a mano; Binance '
+          'sigue archivada.',
+        );
+        await f.check(
+          'Bitcoin volvió a tus cuentas y Binance sigue archivada',
+          () {
+            expect(
+              own.accounts.where((Account a) => a.id == manualBitcoin.id),
+              hasLength(1),
+            );
+            expect(own.snapshot!.account(manualTether.id)!.archived, isTrue);
+            expect(find.text('Restaurar'), findsOneWidget);
+          },
+        );
       } finally {
         await f.tester.runAsync(() => SecureKeyVault().delete());
       }
@@ -3152,14 +3545,15 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         await _binanceIdle(f, own);
         await f.reveal(find.text('Billeteras propias'));
         await f.step(
-          'Con la llave guardada pero sin una lectura buena, Binance dice «Aún '
-          'sin leer».',
+          'Con la llave guardada pero sin una lectura buena, la fila de '
+          'Binance dice en rojo «No se ha podido leer todavía».',
         );
         await f.check('Binance está conectada, sin ninguna lectura buena', () {
           expect(own.binance.connected, isTrue);
           expect(own.binance.syncedAt, isNull);
           expect(own.binance.problem, isNotNull);
-          expect(f.shows('Aún sin leer'), isTrue);
+          expect(f.shows('No se ha podido leer todavía'), isTrue);
+          expect(f.shows('Aún sin leer'), isFalse);
         });
         await f.tap('Binance');
         await f.page(
@@ -3415,6 +3809,22 @@ void _expectEnglish(FlowRun f) {
 
 /// Pesos as the app writes them.
 String _cop(Money m) => moneyText(m, base: Asset.cop);
+
+/// The line under the movement titled [title]: what it was.
+String? _movementDetail(FlowRun f, String title) {
+  final Finder row = find.ancestor(
+    of: find.text(title),
+    matching: find.byType(MovementRow),
+  );
+  if (row.evaluate().isEmpty) return null;
+  final List<String> texts = <String>[
+    for (final Text t in f.tester.widgetList<Text>(
+      find.descendant(of: row.first, matching: find.byType(Text)),
+    ))
+      ?t.data,
+  ];
+  return texts.length > 1 ? texts[1] : null;
+}
 
 Account _named(OwnController own, String name) =>
     own.accounts.firstWhere((Account a) => a.name == name);

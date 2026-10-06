@@ -215,6 +215,7 @@ class BinanceLink extends ChangeNotifier {
     try {
       final BinanceReading reading = await BinanceReader(client).read(
         from,
+        to: started,
         progress: (double p) {
           _progress = p;
           notifyListeners();

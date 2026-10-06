@@ -576,6 +576,143 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get archive => 'Archivar';
+
+  @override
+  String get restore => 'Restaurar';
+
+  @override
+  String archiveAccountTitle(String names) {
+    return '¿Archivar $names?';
+  }
+
+  @override
+  String archiveAccountKept(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Sus $count movimientos se quedan en tu historial.',
+      one: 'Su movimiento se queda en tu historial.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String archiveAccountHidden(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Dejan de aparecer en Cuentas y al elegir una cuenta. Las puedes restaurar cuando quieras desde «Cuentas archivadas», en Cuentas.',
+      one:
+          'Deja de aparecer en Cuentas y al elegir una cuenta. La puedes restaurar cuando quieras desde «Cuentas archivadas», en Cuentas.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deleteAccountPreferArchive =>
+      'Si la cerraste, mejor archívala: su historial se queda y deja de aparecer en Cuentas.';
+
+  @override
+  String accountLeavingTransfers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count transferencias con otras cuentas se quedan en esas cuentas como ingresos o gastos.',
+      one:
+          'Una transferencia con otra cuenta se queda en esa cuenta como ingreso o gasto.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String accountLeavingCharges(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$names se pagan desde aquí.',
+      one: '$names se paga desde aquí.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get accountLeavingMoveTo => 'Se pagarán con';
+
+  @override
+  String get accountLeavingNoAccount => 'Sin cuenta';
+
+  @override
+  String accountLeavingHeld(int count, String amount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Lo que tienen, $amount, deja de contar en tu patrimonio.',
+      one: 'Lo que tiene, $amount, deja de contar en tu patrimonio.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String accountLeavingOwed(int count, String amount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Lo que se debe en ellas, $amount, deja de restar de tu patrimonio.',
+      one: 'Lo que se debe en ella, $amount, deja de restar de tu patrimonio.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String accountLeavingInstalmentsApart(String amount) {
+    return 'Lo que falta de las cuotas, $amount, ya no queda en la deuda de una tarjeta: resta aparte de tu patrimonio.';
+  }
+
+  @override
+  String accountLeavingInstalmentsCard(String amount) {
+    return 'Lo que falta de las cuotas, $amount, pasa a la deuda de la tarjeta.';
+  }
+
+  @override
+  String accountLeavingWorthSame(String total) {
+    return 'Tu patrimonio sigue en $total.';
+  }
+
+  @override
+  String accountLeavingWorth(String before, String after) {
+    return 'Tu patrimonio pasa de $before a $after.';
+  }
+
+  @override
+  String get archivedAccountsTitle => 'Cuentas archivadas';
+
+  @override
+  String archivedAccountsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cuentas, fuera de tus totales',
+      one: 'Una cuenta, fuera de tus totales',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get archivedAccountsBody =>
+      'Sus movimientos siguen en tu historial, pero no cuentan en tus totales ni aparecen al elegir una cuenta. Al restaurar una, vuelve a Cuentas y a tus totales.';
+
+  @override
+  String get archivedAccountsNone => 'No tienes cuentas archivadas.';
+
+  @override
+  String get accountArchivedNote =>
+      'Archivada: no cuenta en tus totales ni aparece al elegir una cuenta.';
+
+  @override
   String get groupSpendable => 'Cuentas de uso diario';
 
   @override
@@ -2503,6 +2640,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get binanceNeverSynced => 'Aún sin leer';
 
   @override
+  String binanceReadFailedAt(String when) {
+    return 'No se pudo leer. Última lectura: $when';
+  }
+
+  @override
+  String get binanceReadFailedNever => 'No se ha podido leer todavía';
+
+  @override
   String get binanceSyncNow => 'Leer ahora';
 
   @override
@@ -2541,6 +2686,10 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get binanceArchive => 'Archivarlas';
+
+  @override
+  String get binanceArchiveWhy =>
+      'Binance ya trae estos saldos: archivarlas evita contarlos dos veces.';
 
   @override
   String get binanceLabelP2p => 'Binance P2P';

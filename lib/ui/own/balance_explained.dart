@@ -71,6 +71,7 @@ class AccountExplained extends StatelessWidget {
       account,
       own.snapshot?.entries ?? const <Entry>[],
       own.today,
+      accounts: own.snapshot?.accounts ?? const <Account>[],
     );
     String money(Money m) => moneyText(m, base: base, signed: true);
     // A card ends where its page starts: on what is owed, not on a balance
