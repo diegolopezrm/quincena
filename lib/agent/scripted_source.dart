@@ -25,9 +25,12 @@ class ScriptedSource implements AnswerSource {
       _deliver(() => _agent.react(action.name, action.context));
 
   Future<void> _deliver(AgentTurn? Function() compose) async {
-    await Future<void>.delayed(thinking);
+    // Worked out before the pause: something with no answer, such as a form
+    // sent with an amount it turns down, is not kept waiting as if one were
+    // coming.
     final AgentTurn? answer = compose();
     if (answer == null) return;
+    await Future<void>.delayed(thinking);
     final String surfaceId = 'answer-${++_serial}';
     answer
         .messages(surfaceId, quincenaCatalog.catalogId!)

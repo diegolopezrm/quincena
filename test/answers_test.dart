@@ -515,6 +515,40 @@ void main() {
 
     expect(session.settledOf(form), isNull);
     expect(find.textContaining('Gasto guardado · '), findsNothing);
+    // Nothing says it was saved, and no second form is added.
+    expect(session.turns, hasLength(1));
+    expect(find.text('Guardaste el gasto'), findsNothing);
+    expect(find.text('Guardar gasto'), findsOneWidget);
+  });
+
+  testWidgets('an amount the form turns down is not saved', (tester) async {
+    // With the pause of a real answer, which nothing turned down waits for.
+    final Session session = await open(
+      tester,
+      thinking: const Duration(milliseconds: 700),
+    );
+    final int movements = session.ledger.movements.length;
+    final int free = session.ledger.freeUntilPayday;
+    await ask(tester, session, ScriptedAgent.starters[4]);
+    final String form = session.turns.single.surfaceIds.single;
+
+    await tester.enterText(find.byType(TextField).first, '99000000');
+    await settle(tester);
+    expect(find.text('Es más de lo que hay en la cuenta.'), findsOneWidget);
+    await tester.ensureVisible(find.text('Guardar gasto'));
+    await tester.tap(find.text('Guardar gasto'));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Long before a pause would end: the form is open again, as it was.
+    expect(session.busy, isFalse);
+    expect(session.turns, hasLength(1));
+    expect(session.settledOf(form), isNull);
+    expect(find.text('Guardaste el gasto'), findsNothing);
+    await settle(tester);
+    expect(session.ledger.movements, hasLength(movements));
+    expect(session.ledger.freeUntilPayday, free);
+    expect(find.text('Es más de lo que hay en la cuenta.'), findsOneWidget);
   });
 
   testWidgets('Nueva starts over, and the one before can come back', (

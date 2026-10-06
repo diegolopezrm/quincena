@@ -272,6 +272,9 @@ void main() {
       await answer(tester);
       expect(session.settledOf(form), isNull);
       expect(session.ledger.freeUntilPayday, 1369300);
+      // Nothing was saved, and nothing on screen says it was.
+      expect(find.text('Guardaste el gasto'), findsNothing);
+      expect(find.text('Tocaste una acción'), findsOneWidget);
 
       // Saved, then corrected, and the correction fails: the first save
       // stands, and the form stays open to try again.

@@ -352,7 +352,9 @@ class _TurnView extends StatelessWidget {
           if (turn.question case final String question)
             _Question(question)
           else if (turn.note case final TurnNote note)
-            _Note(switch (note) {
+            // A save whose answer did not arrive saved nothing: the note
+            // says what was tapped, not that it was saved.
+            _Note(switch (turn.error == null ? note : TurnNote.other) {
               TurnNote.savedExpense => context.l10n.noteSavedExpense,
               TurnNote.choseMonthly => context.l10n.noteChoseMonthly,
               TurnNote.askedCancel => context.l10n.noteAskedCancel,
