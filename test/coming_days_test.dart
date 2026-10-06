@@ -476,6 +476,54 @@ void main() {
     );
   });
 
+  testWidgets('with nothing left to spend, a purchase says it takes its own '
+      'price from the reserve', (tester) async {
+    // 3.000.000 after the pay and a client's 1.000.000, 15 % of it kept,
+    // and rent of 2.900.000 on the 10th: 50.000 short of anything to spend.
+    final OwnController own = await harness.openPage(
+      tester,
+      (OwnController own) =>
+          ComingDaysPage(own: own, tryPurchase: true, price: 10000),
+      data: (QuincenaStore store, Account bank, _) async {
+        await store.addEntry(
+          accountId: bank.id,
+          amount: d('1000000'),
+          kind: EntryKind.income,
+          date: DateTime(2026, 10, 2, 9),
+          category: 'freelance',
+          payee: 'Estudio Sur',
+        );
+        await store.setSetting(
+          'freelance',
+          jsonEncode(
+            FreelancePlan(
+              reservePercent: 15,
+              reserveSince: DateTime(2026, 10, 1),
+            ).toJson(),
+          ),
+        );
+        await store.addRecurring(
+          name: 'Arriendo',
+          amount: Money(d('2900000'), Asset.cop),
+          cadence: Cadence.monthly,
+          nextDate: DateTime(2026, 10, 10),
+          accountId: bank.id,
+          category: 'housing',
+        );
+      },
+    );
+    expect(own.ledger!.freeUntilPayday, -50000);
+    expect(find.text('Te alcanza, pero tocando lo apartado'), findsWidgets);
+    expect(
+      find.text(
+        'Hasta el 15 de octubre no te queda nada para gastar: usarías '
+        '${pesos(10000)} de tu reserva de ingresos variables. Tu saldo mínimo '
+        'estimado sería ${pesos(90000)} el 10 oct.',
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('Inicio and the 30 days count the pay after payday and say '
       'the same', (tester) async {
     // 2.000.000 after the pay, 2.400.000 each payday, and rent of 2.300.000
@@ -581,6 +629,48 @@ void main() {
     await show(tester, own, ComingDaysPage(own: own));
     expect(
       find.text('No te quedas sin plata en estos 30 días.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('paid monthly, both screens look as far as a payday 31 days '
+      'away', (tester) async {
+    // Paid on the 3rd: today, and next on the 3rd of November, 31 days
+    // away, with rent of 1.500.000 due that day.
+    final OwnController own = await harness.openPage(
+      tester,
+      home,
+      data: (QuincenaStore store, Account bank, _) async {
+        await store.saveProfile(
+          const Profile(name: 'Ana', base: Asset.cop, schedule: Monthly(3)),
+        );
+        await store.addRecurring(
+          name: 'Arriendo',
+          amount: Money(d('1500000'), Asset.cop),
+          cadence: Cadence.monthly,
+          nextDate: DateTime(2026, 11, 3),
+          accountId: bank.id,
+          category: 'housing',
+        );
+      },
+    );
+    expect(own.ledger!.nextPayday, DateTime(2026, 11, 3));
+    expect(own.ledger!.freeUntilPayday, 500000);
+    // What can be spent leaves the rent out: so does the lowest point.
+    expect(own.projection!.lowestBeforePayday.sure, 500000);
+    expect(
+      find.text(
+        'Tu saldo mínimo estimado será ${pesos(500000)} el 3 de noviembre.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.textContaining('es el de hoy'), findsNothing);
+
+    await show(tester, own, ComingDaysPage(own: own));
+    expect(
+      find.text(
+        'Saldo mínimo estimado antes del pago: ${pesos(500000)} el 3 nov',
+      ),
       findsOneWidget,
     );
   });

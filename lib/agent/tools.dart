@@ -112,8 +112,9 @@ List<Tool> accountTools(
         '(short). usesSetAside, usesReserve and usesCushion say how much of '
         'each it would take: never call a purchase that takes any of them '
         'one that fits. '
-        'Bought after the next payday it counts on the expected pay and says '
-        'so (countsOnExpectedPay); without a known pay it counts none '
+        'Bought on the next payday or after it, it counts on the expected '
+        'pay still to come and says so (countsOnExpectedPay); without a '
+        'known pay it counts none '
         '(payUnknown). It also weighs the same purchase today and the day '
         'after the next payday, to compare. It is an estimate from what is '
         'scheduled, never a promise: never call a purchase safe.',
@@ -187,7 +188,10 @@ List<Tool> accountTools(
         'pay and what clients should pay by then, as the app judges it.',
     onCall: (_) {
       final Ledger ledger = current();
-      final Projection p = Projection.of(ledger, horizon: comingDays);
+      final Projection p = Projection.of(
+        ledger,
+        horizon: comingHorizon(ledger),
+      );
       final ProjectedDay low = p.lowestBeforePayday;
       final ProjectedDay? tight = p.firstTight;
       return <String, Object?>{

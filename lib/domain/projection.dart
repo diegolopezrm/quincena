@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart' show immutable;
 
 import '../data/category.dart';
@@ -67,6 +69,15 @@ class ProjectedEvent {
 /// them says about the days to come, the other says too.
 const int comingDays = 30;
 
+/// The days ahead those screens look at for [ledger]: [comingDays], or as
+/// far as the next payday when a monthly pay puts it 31 days away, so the
+/// lowest point before payday counts every charge «Puedes gastar» leaves
+/// out.
+int comingHorizon(Ledger ledger) => math.max(
+  comingDays,
+  _day(ledger.nextPayday).difference(_day(ledger.today)).inDays,
+);
+
 /// One day of a projection.
 @immutable
 class ProjectedDay {
@@ -99,8 +110,9 @@ class ProjectedDay {
 ///
 /// It starts from the ledger's balance today and adds, on their days, the
 /// movements entered ahead and the recurring charges, which are scheduled,
-/// and the pay on each payday, which is expected. A projection is never a
-/// balance: [ProjectedDay.sure] is what happens if nothing else does.
+/// and the pay on each payday, which is expected, unless it already came
+/// in the days before. A projection is never a balance:
+/// [ProjectedDay.sure] is what happens if nothing else does.
 @immutable
 class Projection {
   const Projection._({
@@ -166,6 +178,7 @@ class Projection {
     }
 
     final DateTime? late = _latePay(ledger);
+    final DateTime? early = _paidEarly(ledger);
     final int? pay = ledger.pay;
     if (pay != null) {
       if (late != null) {
@@ -184,6 +197,8 @@ class Projection {
         !d.isAfter(end);
         d = ledger.schedule.nextAfter(d)
       ) {
+        // Already in the balance: it is not expected a second time.
+        if (_day(d) == early) continue;
         events.add(
           ProjectedEvent(
             date: _day(d),
@@ -291,6 +306,28 @@ DateTime? _latePay(Ledger ledger) {
         m.amount * 2 >= pay,
   );
   return arrived ? null : last;
+}
+
+/// The next payday, when its pay already came in the days before it, as
+/// it does the working day before a payday on a weekend or a holiday: an
+/// income of at least half the pay since three days before it, after the
+/// last payday. Null when it has not, or when the pay is not known.
+DateTime? _paidEarly(Ledger ledger) {
+  final int? pay = ledger.pay;
+  if (pay == null) return null;
+  final DateTime today = _day(ledger.today);
+  final DateTime next = _day(ledger.nextPayday);
+  final DateTime last = _day(ledger.schedule.lastOnOrBefore(today));
+  final DateTime from = next.subtract(const Duration(days: 3));
+  final bool arrived = ledger.movements.any(
+    (Movement m) =>
+        m.flow == Flow.income &&
+        !_day(m.date).isBefore(from) &&
+        _day(m.date).isAfter(last) &&
+        !_day(m.date).isAfter(today) &&
+        m.amount * 2 >= pay,
+  );
+  return arrived ? next : null;
 }
 
 DateTime _day(DateTime moment) =>

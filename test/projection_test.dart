@@ -275,6 +275,56 @@ void main() {
     expect(paid.latePay, isNull);
   });
 
+  test('a pay that came the working day before payday is not expected '
+      'again on payday', () async {
+    // The 15th of November is a Sunday, and rent of 3.000.000 is due on the
+    // 20th.
+    final Account b = await bank('100000');
+    await profile(pay: '2400000');
+    await store.addRecurring(
+      name: 'Arriendo',
+      amount: Money(d('3000000'), Asset.cop),
+      cadence: Cadence.monthly,
+      nextDate: DateTime(2026, 11, 20),
+      accountId: b.id,
+      category: 'housing',
+    );
+    List<DateTime> pays(Projection p) => <DateTime>[
+      for (final ProjectedDay d in p.days)
+        for (final ProjectedEvent e in d.events)
+          if (e.kind == ProjectedKind.pay) d.date,
+    ];
+    // Before it comes, it is expected on the 15th.
+    final Projection before = Projection.of(
+      (await build(on: DateTime(2026, 11, 13))).ledger,
+      horizon: comingDays,
+    );
+    expect(pays(before), <DateTime>[
+      DateTime(2026, 11, 15),
+      DateTime(2026, 11, 30),
+    ]);
+
+    // It came on Friday the 13th.
+    await store.addEntry(
+      accountId: b.id,
+      amount: d('2400000'),
+      kind: EntryKind.income,
+      date: DateTime(2026, 11, 13, 8),
+      category: 'salary',
+      payee: 'Nómina',
+    );
+    final Projection p = Projection.of(
+      (await build(on: DateTime(2026, 11, 13))).ledger,
+      horizon: comingDays,
+    );
+    expect(p.ledger.nextPayday, DateTime(2026, 11, 15));
+    // It is in the balance already: the next one to come is the 30th's.
+    expect(pays(p), <DateTime>[DateTime(2026, 11, 30)]);
+    // So the rent leaves the money short until then.
+    expect(p.firstTight!.date, DateTime(2026, 11, 20));
+    expect(p.judged(p.firstTight!), 2500000 - 3000000);
+  });
+
   test('a payday before the balances were written down is not late: the '
       'pay was already in them', () async {
     // Set up on the 3rd, three days after the 30th, with no income since.

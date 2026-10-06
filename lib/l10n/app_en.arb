@@ -264,7 +264,7 @@
   "comingLowest": "Lowest estimated balance before payday: {amount} {when}",
   "comingTight": "{when} you'd dip below your safety buffer.",
   "comingRunsOut": "{when} you'd run out of money.",
-  "@comingRunsOut": {"placeholders": {"date": {"type": "String"}}},
+  "@comingRunsOut": {"placeholders": {"when": {"type": "String"}}},
   "comingRunsOutBadge": "Out of money",
   "comingNoTight": "You stay above your safety buffer for the next 30 days.",
   "comingNoTightZero": "You don't run out of money in the next 30 days.",

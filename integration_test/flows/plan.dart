@@ -2938,6 +2938,40 @@ final List<AppFlow> planFlows = <AppFlow>[
         );
         expect(f.shows(dayShortMonth(DateTime(2026, 10, 25))), isTrue);
       });
+      await f.tap('Después del pago');
+      await f.tap('Otra fecha');
+      await _pickDay(f, '${l.nextPayday.day}');
+      final PurchaseCheck onPayday = check(500000, l.nextPayday);
+      await f.step(
+        'Con el ${dayShortMonth(l.nextPayday)}, el mismo día del pago, '
+        'también alcanza: cuenta con el pago de ese día, como «Después del '
+        'pago», en vez de mirar la quincena siguiente sin ningún pago.',
+      );
+      await f.check(
+        'El mismo día del pago cuenta con ese pago: alcanza, con un saldo '
+        'mínimo de ${_pesos(l, onPayday.lowest)}',
+        () {
+          expect(onPayday.verdict, PurchaseVerdict.fits);
+          expect(onPayday.reliesOnPay, isTrue);
+          expect(onPayday.lowest, after.lowest);
+          expect(f.shows(dayShortMonth(l.nextPayday)), isTrue);
+          expect(f.shows('Te alcanza, según lo que sabe la app'), isTrue);
+          expect(
+            _says(
+              f,
+              'Tu saldo mínimo estimado sería ${_pesos(l, onPayday.lowest)}',
+            ),
+            isTrue,
+          );
+          expect(
+            f.shows(
+              'Cuenta con tu pago de ${pesos(2400000)} del '
+              '${dayShortMonth(l.nextPayday)}, que todavía no llega.',
+            ),
+            isTrue,
+          );
+        },
+      );
       await f.back();
       await f.check('Probar una compra no anota nada', () {
         expect(own.snapshot!.entries.length, entries);

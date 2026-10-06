@@ -642,7 +642,7 @@ class OwnController extends ChangeNotifier {
     final Ledger? l = ledger;
     if (l == null) return null;
     if (!identical(_projected?.ledger, l)) {
-      _projected = Projection.of(l, horizon: comingDays);
+      _projected = Projection.of(l, horizon: comingHorizon(l));
     }
     return _projected;
   }

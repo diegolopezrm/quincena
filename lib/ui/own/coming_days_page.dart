@@ -162,6 +162,7 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
       String amount(int minor) => pesos(ledger.major(minor));
       final int price = _trying ? _priceIn(ledger) : 0;
       final List<ProjectedEvent> moves = _moves;
+      final int horizon = comingHorizon(ledger);
       final PurchaseCheck? check = price > 0
           ? checkPurchase(
               ledger,
@@ -169,19 +170,19 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
               date: _date(ledger),
               label: _what.text.trim(),
               tryOut: moves,
-              atLeast: 30,
+              atLeast: horizon,
             )
           : null;
       // What is scheduled, over the same days Inicio looks at: the lowest
       // point and the first tight day are told from it, whatever is tried.
       final Projection scheduled = Projection.of(
         ledger,
-        horizon: comingDays,
+        horizon: horizon,
         tryOut: moves,
       );
       final Projection projection = check?.projection ?? scheduled;
       final List<ProjectedDay> days = projection.days
-          .take(comingDays + 1)
+          .take(horizon + 1)
           .toList();
       final int selected = math.min(_selected, days.length - 1);
       final ProjectedDay low = scheduled.lowestBeforePayday;
