@@ -11,6 +11,7 @@ import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
 import 'capture_rules_page.dart';
+import 'disclosure.dart';
 import 'inbox_page.dart';
 import 'look.dart';
 import 'read_images.dart';
@@ -73,14 +74,17 @@ class _CaptureSettingsPageState extends State<CaptureSettingsPage>
 
   Future<void> _save(CaptureSettings s) => own.store.saveCaptureSettings(s);
 
-  /// Turning the location on asks for it while the app is in use and then,
-  /// after saying why, for all the time: payments arrive with the app
-  /// closed. Either way the person decides; with only the first, it works
-  /// while the app is open.
+  /// Turning the location on first says, in the app, what is used, when,
+  /// what for and where it goes. Only once the person accepts does Android
+  /// ask for it while the app is in use and then, after saying why again,
+  /// for all the time: payments arrive with the app closed. With only the
+  /// first, it works while the app is open. A no asks for nothing and
+  /// leaves it off.
   Future<void> _useLocation(bool on) async {
     if (!on) return _save(own.captureSettings.copyWith(useLocation: false));
     final AppLocalizations l = context.l10n;
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    if (!await _discloseLocation()) return;
     LocationAccess access = await CaptureChannel.locationAccess();
     if (access == LocationAccess.none) {
       access = await CaptureChannel.askForLocation();
@@ -106,32 +110,81 @@ class _CaptureSettingsPageState extends State<CaptureSettingsPage>
   }
 
   Future<void> _allowAlways() async {
+    if (!await _explainAlways()) return;
     final LocationAccess access =
         await CaptureChannel.askForBackgroundLocation();
     if (mounted) setState(() => _location = access);
   }
 
+  /// What the location is used for, before any of it is asked for.
+  Future<bool> _discloseLocation() async {
+    if (!mounted) return false;
+    final AppLocalizations l = context.l10n;
+    return askConsent(
+      context,
+      title: l.captureLocationAskTitle,
+      lead: l.captureLocationAskLead,
+      rows: <DisclosureRow>[
+        (
+          icon: Glyph.mapPin,
+          label: l.disclosureUses,
+          text: l.captureLocationAskWhat,
+        ),
+        (
+          icon: Glyph.clock,
+          label: l.disclosureWhen,
+          text: l.captureLocationAskWhen,
+        ),
+        (
+          icon: Glyph.deviceMobile,
+          label: l.disclosureWhere,
+          text: l.captureLocationAskWhere,
+        ),
+      ],
+      next: _android
+          ? l.captureLocationAskNextAndroid
+          : l.captureLocationAskNextIos,
+    );
+  }
+
+  /// Why all the time, right before Android asks for it.
   Future<bool> _explainAlways() async {
     if (!mounted) return false;
     final AppLocalizations l = context.l10n;
-    return await showDialog<bool>(
-          context: context,
-          builder: (BuildContext context) => AlertDialog(
-            title: Text(l.captureAlwaysTitle),
-            content: Text(l.captureAlwaysBody),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: Text(l.notNow),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: Text(l.continueLabel),
-              ),
-            ],
-          ),
-        ) ??
-        false;
+    return askConsent(
+      context,
+      title: l.captureAlwaysTitle,
+      lead: l.captureAlwaysBody,
+    );
+  }
+
+  /// What reading notifications means, before Android's screen to allow it.
+  Future<void> _allowNotifications() async {
+    final AppLocalizations l = context.l10n;
+    final bool accepted = await askConsent(
+      context,
+      title: l.captureNotificationsAskTitle,
+      lead: l.captureNotificationsAskLead,
+      rows: <DisclosureRow>[
+        (
+          icon: Glyph.bell,
+          label: l.disclosureReads,
+          text: l.captureNotificationsAskWhat,
+        ),
+        (
+          icon: Glyph.clock,
+          label: l.disclosureWhen,
+          text: l.captureNotificationsAskWhen,
+        ),
+        (
+          icon: Glyph.deviceMobile,
+          label: l.disclosureWhere,
+          text: l.captureNotificationsAskWhere,
+        ),
+      ],
+      next: l.captureNotificationsAskNext,
+    );
+    if (accepted) await CaptureChannel.openNotificationAccess();
   }
 
   Widget _platform(AppLocalizations l) {
@@ -193,7 +246,7 @@ class _CaptureSettingsPageState extends State<CaptureSettingsPage>
               )
             else
               FilledButton.icon(
-                onPressed: CaptureChannel.openNotificationAccess,
+                onPressed: _allowNotifications,
                 icon: const Icon(Glyph.bell, size: 18),
                 label: Text(l.captureAndroidGrant),
               ),

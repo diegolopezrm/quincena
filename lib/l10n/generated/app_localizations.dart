@@ -3408,6 +3408,114 @@ abstract class AppLocalizations {
   /// **'Continuar'**
   String get continueLabel;
 
+  /// No description provided for @acceptLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Aceptar'**
+  String get acceptLabel;
+
+  /// No description provided for @disclosureUses.
+  ///
+  /// In es, this message translates to:
+  /// **'Qué usa'**
+  String get disclosureUses;
+
+  /// No description provided for @disclosureReads.
+  ///
+  /// In es, this message translates to:
+  /// **'Qué lee'**
+  String get disclosureReads;
+
+  /// No description provided for @disclosureWhen.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuándo'**
+  String get disclosureWhen;
+
+  /// No description provided for @disclosureWhere.
+  ///
+  /// In es, this message translates to:
+  /// **'Dónde queda'**
+  String get disclosureWhere;
+
+  /// No description provided for @captureLocationAskTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Ubicación de tus pagos'**
+  String get captureLocationAskTitle;
+
+  /// No description provided for @captureLocationAskLead.
+  ///
+  /// In es, this message translates to:
+  /// **'Quincena recoge datos de ubicación para sugerir el comercio de un pago, incluso cuando la app está cerrada o no se usa.'**
+  String get captureLocationAskLead;
+
+  /// No description provided for @captureLocationAskWhat.
+  ///
+  /// In es, this message translates to:
+  /// **'La ubicación precisa del teléfono.'**
+  String get captureLocationAskWhat;
+
+  /// No description provided for @captureLocationAskWhen.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo cuando llega una notificación de pago, también con la app cerrada o sin usarla.'**
+  String get captureLocationAskWhen;
+
+  /// No description provided for @captureLocationAskWhere.
+  ///
+  /// In es, this message translates to:
+  /// **'En este teléfono. Para encontrar el comercio, solo las coordenadas van a OpenStreetMap a través de Photon: nada más, y a nadie más.'**
+  String get captureLocationAskWhere;
+
+  /// No description provided for @captureLocationAskNextAndroid.
+  ///
+  /// In es, this message translates to:
+  /// **'Si aceptas, Android te pedirá permiso para usar la ubicación.'**
+  String get captureLocationAskNextAndroid;
+
+  /// No description provided for @captureLocationAskNextIos.
+  ///
+  /// In es, this message translates to:
+  /// **'Si aceptas, Quincena usará la ubicación que tu atajo le pase con cada pago.'**
+  String get captureLocationAskNextIos;
+
+  /// No description provided for @captureNotificationsAskTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Leer tus notificaciones de pagos'**
+  String get captureNotificationsAskTitle;
+
+  /// No description provided for @captureNotificationsAskLead.
+  ///
+  /// In es, this message translates to:
+  /// **'Quincena lee las notificaciones de este teléfono para anotar tus pagos sin que tengas que escribirlos.'**
+  String get captureNotificationsAskLead;
+
+  /// No description provided for @captureNotificationsAskWhat.
+  ///
+  /// In es, this message translates to:
+  /// **'El texto de las notificaciones que llegan, como las de las apps de tus bancos y billeteras y los SMS. Solo guarda las que traen un monto con su moneda, con la app que la mostró y la hora; las demás pasan sin guardarse y los códigos de verificación nunca se guardan.'**
+  String get captureNotificationsAskWhat;
+
+  /// No description provided for @captureNotificationsAskWhen.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada vez que llega una notificación, también con la app cerrada o sin usarla.'**
+  String get captureNotificationsAskWhen;
+
+  /// No description provided for @captureNotificationsAskWhere.
+  ///
+  /// In es, this message translates to:
+  /// **'En este teléfono. Quincena no envía su texto a ningún servidor ni a nadie.'**
+  String get captureNotificationsAskWhere;
+
+  /// No description provided for @captureNotificationsAskNext.
+  ///
+  /// In es, this message translates to:
+  /// **'Si aceptas, Android abrirá el acceso a notificaciones para que actives Quincena.'**
+  String get captureNotificationsAskNext;
+
   /// No description provided for @captureImagesTitle.
   ///
   /// In es, this message translates to:

@@ -2138,7 +2138,9 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
     data: fullAccount,
     manual: <String>[
       'Los diálogos de permisos de Android (notificaciones, ubicación al usar '
-          'la app y «Permitir todo el tiempo»), que esta prueba responde sola.',
+          'la app y «Permitir todo el tiempo»), que esta prueba responde sola, '
+          'y que cada uno aparezca justo después de «Aceptar» en el aviso de '
+          'Quincena, nunca antes.',
       'Que «Agregar a la pantalla de inicio» muestre el diálogo del lanzador y '
           'el widget quede puesto.',
     ],
@@ -2174,7 +2176,22 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           'bancos: arriba está «Permitir acceso a notificaciones».',
         );
         await f.tap('Permitir acceso a notificaciones');
-        await f.check('El botón lleva a dar el acceso en el teléfono', () {
+        await f.step(
+          'Antes de ir a Android, Quincena dice qué lee (las notificaciones de '
+          'bancos, billeteras y SMS; guarda solo las que traen un monto), '
+          'cuándo y que se queda en el teléfono, con «Ahora no» y «Aceptar».',
+        );
+        await f.check('Con el aviso abierto todavía no se abrió nada', () {
+          expect(phone.asks, isNot(contains('openNotificationAccess')));
+        });
+        await f.tap('Ahora no');
+        await f.check('«Ahora no» no lleva a los ajustes del teléfono', () {
+          expect(phone.asks, isNot(contains('openNotificationAccess')));
+          expect(f.shows('Permitir acceso a notificaciones'), isTrue);
+        });
+        await f.tap('Permitir acceso a notificaciones');
+        await f.tap('Aceptar');
+        await f.check('Con «Aceptar» lleva a dar el acceso en el teléfono', () {
           expect(phone.asks.last, 'openNotificationAccess');
         });
         // The person gives it there and comes back to the app.
@@ -2189,13 +2206,51 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           expect(f.shows('Permitir acceso a notificaciones'), isFalse);
         });
         // The location was on: off, and on again from nothing.
+        bool locationAsked() =>
+            phone.asks.any((String a) => a == 'location' || a == 'always');
         await f.tap('Usar la ubicación del pago');
         phone.location = 'none';
         await f.tap('Usar la ubicación del pago');
         await f.step(
-          'Al encender la ubicación, Android la da con la app abierta y '
-          'Quincena explica por qué la pide también con la app cerrada.',
+          'Al encender la ubicación, antes de que Android pida nada, Quincena '
+          'dice qué usa (la ubicación precisa), para qué, cuándo (solo al '
+          'llegar una notificación de pago, también con la app cerrada) y que '
+          'solo las coordenadas van a OpenStreetMap. Abajo, «Ahora no» y '
+          '«Aceptar».',
         );
+        await f.check('Con el aviso abierto Android no ha pedido nada', () {
+          expect(locationAsked(), isFalse);
+          expect(_switchOf(f, 'Usar la ubicación del pago'), isFalse);
+        });
+        await f.back();
+        await f.check('Volver atrás es un no: no pide nada y sigue '
+            'apagada', () async {
+          expect(locationAsked(), isFalse);
+          expect(_switchOf(f, 'Usar la ubicación del pago'), isFalse);
+          final CaptureSettings saved = await _read(
+            f,
+            () => _store(f).captureSettings(),
+          );
+          expect(saved.useLocation, isFalse);
+        });
+        await f.tap('Usar la ubicación del pago');
+        await f.tap('Ahora no');
+        await f.check('«Ahora no» tampoco pide nada', () {
+          expect(locationAsked(), isFalse);
+          expect(_switchOf(f, 'Usar la ubicación del pago'), isFalse);
+        });
+        await f.tap('Usar la ubicación del pago');
+        await f.tap('Aceptar');
+        await f.step(
+          'Con «Aceptar», Android la pide con la app abierta y, dada, Quincena '
+          'explica por qué la usa también con la app cerrada y que Android '
+          'pedirá elegir «Permitir todo el tiempo».',
+        );
+        await f.check('Android la pidió justo después de «Aceptar», y todo el '
+            'tiempo todavía no', () {
+          expect(phone.asks.last, 'location');
+          expect(phone.asks.where((String a) => a == 'always'), isEmpty);
+        });
         await f.tap('Ahora no');
         await f.reveal(find.text('Permitir todo el tiempo'));
         await f.step(
@@ -2211,17 +2266,32 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           expect(saved.useLocation, isTrue);
         });
         await f.tap('Permitir todo el tiempo');
-        await f.check('«Permitir todo el tiempo» lo pide y el aviso se va', () {
+        await f.step(
+          '«Permitir todo el tiempo» vuelve a explicar, antes de que Android '
+          'lo pida, por qué usa la ubicación con la app cerrada.',
+        );
+        await f.check('Con la explicación abierta todavía no lo pidió', () {
+          expect(phone.asks.where((String a) => a == 'always'), isEmpty);
+        });
+        await f.tap('Aceptar');
+        await f.check('Con «Aceptar» lo pide y el aviso naranja se va', () {
           expect(phone.asks.last, 'always');
           expect(f.shows('Permitir todo el tiempo'), isFalse);
         });
-        // Again, this time saying yes to all the time.
+        // Again, with Android already letting it in use.
         await f.tap('Usar la ubicación del pago');
         phone.location = 'foreground';
+        final int asked = phone.asks.length;
         await f.tap('Usar la ubicación del pago');
-        await f.tap('Continuar');
-        await f.check('Con «Continuar» la pide todo el tiempo de una vez', () {
-          expect(phone.asks.last, 'always');
+        await f.check('Aunque Android ya la dé, primero viene el aviso', () {
+          expect(f.shows('Ubicación de tus pagos'), isTrue);
+          expect(phone.asks, hasLength(asked));
+        });
+        await f.tap('Aceptar');
+        await f.tap('Aceptar');
+        await f.check('Con «Aceptar» en los dos avisos la pide todo el tiempo '
+            'de una vez', () {
+          expect(phone.asks.sublist(asked), <String>['always']);
           expect(phone.location, 'always');
           expect(_own(f).captureSettings.useLocation, isTrue);
           expect(f.shows('Permitir todo el tiempo'), isFalse);
@@ -2231,6 +2301,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         phone.location = 'none';
         phone.locationAnswer = 'none';
         await f.tap('Usar la ubicación del pago');
+        await f.tap('Aceptar');
         await f.step(
           'Si Android la niega, el interruptor queda apagado y abajo ofrece '
           '«Abrir ajustes» para darla en el teléfono.',

@@ -1166,8 +1166,9 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
           'app cerrada (Atajos en iPhone, acceso a notificaciones en Android).',
       'Los botones «Añadir» de los atajos listos y «Abrir Atajos», que abren '
           'la app Atajos del iPhone.',
-      'En Android, «Permitir acceso a notificaciones» abre los ajustes del '
-          'sistema y, al volver, dice «Acceso a notificaciones activado».',
+      'En Android, «Permitir acceso a notificaciones» explica qué lee y, con '
+          '«Aceptar», abre los ajustes del sistema; al volver dice «Acceso a '
+          'notificaciones activado».',
     ],
     (FlowRun f) async {
       final OwnController own = f.own;
@@ -1306,10 +1307,10 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         'verlas, corregirla, apagar otra y borrar las que no sirven.',
     data: _withRules,
     manual: <String>[
-      'En Android, prender «Usar la ubicación del pago» pide el permiso de '
-          'ubicación del sistema y, después de «Ubicación con la app cerrada», '
-          '«Permitir todo el tiempo»; negarlo muestra el aviso con «Abrir '
-          'ajustes».',
+      'En Android, prender «Usar la ubicación del pago» muestra «Ubicación '
+          'de tus pagos» y, con «Aceptar», pide el permiso de ubicación del '
+          'sistema y, después de «Ubicación con la app cerrada», «Permitir '
+          'todo el tiempo»; negarlo muestra el aviso con «Abrir ajustes».',
     ],
     (FlowRun f) async {
       final OwnController own = f.own;
@@ -1451,8 +1452,17 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       });
       await f.tapFound(location);
       await f.step(
-        'Prendida otra vez: en el iPhone no pide nada aquí, porque la '
-        'ubicación la entrega el atajo con cada pago.',
+        'Al prenderla otra vez, antes Quincena dice qué usa, cuándo y que '
+        'solo las coordenadas van a OpenStreetMap, con «Ahora no» y '
+        '«Aceptar».',
+      );
+      await f.check('Con el aviso abierto sigue apagada', () async {
+        expect((await saved()).useLocation, isFalse);
+      });
+      await f.tap('Aceptar');
+      await f.step(
+        'Con «Aceptar» quedó prendida: en el iPhone no pide nada aquí, porque '
+        'la ubicación la entrega el atajo con cada pago.',
       );
       await f.check('La ubicación quedó prendida', () async {
         expect((await saved()).useLocation, isTrue);

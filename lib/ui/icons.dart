@@ -90,6 +90,8 @@ abstract final class Glyph {
   static const IconData lock = IconData(0xe2fa, fontFamily: _family);
   static const IconData globe = IconData(0xe288, fontFamily: _family);
   static const IconData deviceMobile = IconData(0xe1e0, fontFamily: _family);
+  static const IconData mapPin = IconData(0xe316, fontFamily: _family);
+  static const IconData clock = IconData(0xe19a, fontFamily: _family);
   static const IconData envelope = IconData(0xe214, fontFamily: _family);
   static const IconData bell = IconData(0xe0ce, fontFamily: _family);
   static const IconData camera = IconData(0xe10e, fontFamily: _family);
