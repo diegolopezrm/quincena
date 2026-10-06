@@ -1177,7 +1177,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         'app',
         () async {
           expect(await _setting(f, 'app.theme'), 'dark');
-          expect(await _setting(f, 'app.locale'), 'es');
+          expect(await _setting(f, 'app.language'), 'es');
         },
       );
       await f.back();
@@ -1197,7 +1197,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(settings.locale, isNull);
         expect(settings.themeMode, ThemeMode.system);
         expect(await _setting(f, 'app.theme'), 'system');
-        expect(await _setting(f, 'app.locale'), isEmpty);
+        expect(await _setting(f, 'app.language'), isEmpty);
       });
     },
   ),
@@ -1289,20 +1289,25 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
           null,
         );
       }
-      await f.back();
       await f.step(
-        'Cierra el inspector, toca «Copiar la sesión» en Ajustes y cierra la '
-        'hoja: abajo avisa que la sesión se copió sin lo que escribió.',
+        'Cierra el inspector y toca «Copiar la sesión» en Ajustes: la hoja se '
+        'cierra sola y abajo avisa que la sesión se copió sin lo que '
+        'escribió.',
       );
       await f.check('Lo copiado trae la sesión sin «Regalo para mamá»', () {
         expect(copied, isNotNull);
         expect(copied, contains('"draft"'));
         expect(copied, isNot(contains('Regalo para mamá')));
+      });
+      await f.check('La hoja se cerró y el aviso se ve, sin nada encima', () {
+        expect(find.byType(BottomSheet), findsNothing);
         expect(
-          find.text(
-            'Sesión copiada, sin lo que escribiste. Pégala en un issue y se '
-            'puede reproducir.',
-          ),
+          find
+              .text(
+                'Sesión copiada, sin lo que escribiste. Pégala en un issue y '
+                'se puede reproducir.',
+              )
+              .hitTestable(),
           findsOneWidget,
         );
       });

@@ -1050,11 +1050,23 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       );
       await f.tapTip('Ajustes');
       await f.tap('Colchón');
-      await f.tester.enterText(find.byType(TextField), '200000');
+      await f.tester.enterText(find.byType(TextField), '0');
+      await f.tap('Guardar');
       await f.step(
-        '«Colchón» explica que no cuenta en lo que puedes gastar. Se escribe '
-        '200.000.',
+        '«Colchón» explica que no cuenta en lo que puedes gastar. Con 0 y '
+        '«Guardar» el cuadro sigue abierto y dice «Escribe un monto mayor que '
+        'cero.»; para no tener colchón está «Cancelar».',
       );
+      await f.check(
+        'Un colchón de 0 no se guarda y el cuadro dice por qué',
+        () {
+          expect(_own(f).profile!.cushion, isNull);
+          expect(f.shows('Escribe un monto mayor que cero.'), isTrue);
+          expect(find.byType(AlertDialog), findsOneWidget);
+        },
+      );
+      await f.tester.enterText(find.byType(TextField), '200000');
+      await f.step('Se corrige a 200.000.');
       await f.tap('Guardar');
       await f.back();
       await f.step(
@@ -2117,23 +2129,25 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tapTip('Ajustes');
       await f.step(
         'Al abrir otra vez la hoja, «Tu key» está marcada y dice que responde '
-        '${GeminiClient.defaultModel}; ya no pide la key.',
+        '${GeminiClient.defaultModel}; el campo queda vacío, por si una key '
+        'que no funcionó hay que cambiarla, y no muestra la de antes.',
       );
-      await f.check('La hoja ya no pide la key', () {
-        expect(find.widgetWithText(TextField, 'Key de Gemini'), findsNothing);
+      await f.check('Dice quién responde, y la key de antes no se ve', () {
         expect(
           f.screenText,
           contains('Responde ${GeminiClient.defaultModel}.'),
         );
+        expect(_keyField(f).controller!.text, isEmpty);
       });
       await f.tap('Demo');
       await f.check('«Demo» vuelve a las respuestas sin red', () {
         expect(_session(f).mode, AgentMode.demo);
       });
       await f.tap('Tu key');
-      await f.check('«Tu key» vuelve a la key de antes sin pedirla', () {
+      await f.check('«Tu key» vuelve a la key de antes sin escribirla', () {
         expect(_session(f).mode, AgentMode.live);
-        expect(find.widgetWithText(TextField, 'Key de Gemini'), findsNothing);
+        expect(_session(f).canGoLive, isTrue);
+        expect(_keyField(f).controller!.text, isEmpty);
       });
       await f.back();
       await f.check('Cerrada la hoja, arriba sigue EN VIVO', () {
@@ -3266,6 +3280,10 @@ Future<List<Object?>?> _openBackup(FlowRun f, Uint8List file, String? code) =>
         await elsewhere.close();
       }
     });
+
+/// The field for a Gemini key in the demo's settings.
+TextField _keyField(FlowRun f) =>
+    f.tester.widget<TextField>(find.widgetWithText(TextField, 'Key de Gemini'));
 
 /// Lets the messages at the bottom go, as when the person reads them,
 /// before something that says one of its own.
