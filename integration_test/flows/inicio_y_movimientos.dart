@@ -1,6 +1,7 @@
 // Flows of Inicio (02) and Movimientos (03).
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quincena/data/category.dart';
 import 'package:quincena/data/ledger.dart';
@@ -45,16 +46,32 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         () => expect(f.shows(_money(own, ledger.freeUntilPayday)), isTrue),
       );
       await f.check(
-        'Las líneas de la tarjeta suman la cifra: lo que hay, menos pagos, '
-        'colchón, sobres y reserva',
-        () => expect(
-          ledger.balance -
-              ledger.committedUntilPayday -
-              ledger.cushion -
-              ledger.setAside -
-              ledger.reserved,
-          ledger.freeUntilPayday,
-        ),
+        'La tarjeta muestra cada línea de la suma: lo que hay, lo que debes en '
+        'tarjetas, los pagos y la reserva',
+        () {
+          final int debt = own.spendableCardDebt;
+          for (final int line in <int>[
+            ledger.balance + debt,
+            -debt,
+            -ledger.committedUntilPayday,
+            -ledger.reserved,
+          ]) {
+            expect(f.shows(_money(own, line)), isTrue, reason: '$line');
+          }
+          expect(
+            ledger.balance +
+                debt -
+                debt -
+                ledger.committedUntilPayday -
+                ledger.cushion -
+                ledger.setAside -
+                ledger.reserved,
+            ledger.freeUntilPayday,
+          );
+          // No cushion and nothing in envelopes: no line for them.
+          expect(f.shows('Colchón'), isFalse);
+          expect(f.shows('Apartado en sobres'), isFalse);
+        },
       );
       await f.check(
         '«En tus cuentas de uso diario» muestra '
@@ -81,6 +98,20 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
           );
         }
       });
+      await f.check(
+        'Lo que dice cada cuenta en pesos es su saldo de hoy, el mismo de '
+        'Cuentas',
+        () {
+          for (final Account a in own.accounts) {
+            if (!a.spendable || a.asset != Asset.cop) continue;
+            expect(
+              own.spendableParts[a.id],
+              ledger.minor(own.balances[a.id]!.amount.toDouble()),
+              reason: a.name,
+            );
+          }
+        },
+      );
       await f.check(
         'Lo que aporta cada cuenta suma lo que hay en ellas, tarjetas '
         'incluidas',
@@ -172,6 +203,31 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.check('El día elegido es el ${weekdayDayMonth(last)}', () {
         expect(f.shows(weekdayDayMonth(last)), isTrue);
       });
+      // Dragged from today to the payday's line, twelve days of thirty in.
+      await f.reveal(chart);
+      final Rect line = f.tester.getRect(chart.first);
+      await f.tester.dragFrom(
+        Offset(line.left + 2, line.center.dy),
+        Offset(line.width * 12 / 30 - 2, 0),
+      );
+      await settle(f.tester);
+      final DateTime payday = DateTime(2026, 10, 15);
+      await f.top();
+      await f.step(
+        'Arrastra el dedo por la gráfica desde «Hoy» hasta la línea de «Tu '
+        'pago»: arriba de la lista queda el jueves 15, el día del pago.',
+      );
+      await f.check(
+        'Al soltar, el día elegido es el ${weekdayDayMonth(payday)}',
+        () {
+          final String text = f.screenText;
+          expect(text, contains(weekdayDayMonth(payday)));
+          expect(
+            text.indexOf(weekdayDayMonth(payday)),
+            lessThan(text.indexOf(weekdayDayMonth(DateTime(2026, 10, 4)))),
+          );
+        },
+      );
       final DateTime day18 = DateTime(2026, 10, 18);
       await f.tap(weekdayDayMonth(day18));
       await f.top();
@@ -208,6 +264,20 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.check('Aparece el aviso de que solo es una prueba', () {
         expect(f.shows('Quitar lo que pruebas'), isTrue);
       });
+      // The 5th, the Televisor's day: what is sure stays, and what is tried
+      // gets its instalment back.
+      final ProjectedDay day5 = projection.days.firstWhere(
+        (ProjectedDay d) => d.date == DateTime(2026, 10, 5),
+      );
+      final int tv = -day5.events
+          .firstWhere((ProjectedEvent e) => e.label == 'Televisor')
+          .amount;
+      final String tried =
+          'Quedan ${_money(own, day5.sure)} · con lo que pruebas, '
+          '${_money(own, day5.likely + tv)}';
+      await f.check('El 5 oct dice «$tried»: la cuota vuelve al saldo', () {
+        expect(f.screenText, contains(tried));
+      });
       await f.check('Probar otra fecha no cambia los pagos ni la cifra', () {
         expect(_fixed(own), fixed);
         expect(own.ledger!.committedUntilPayday, committed);
@@ -219,7 +289,13 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       );
       await f.check('Ya no hay nada en prueba', () {
         expect(f.shows('Quitar lo que pruebas'), isFalse);
+        expect(f.screenText, isNot(contains(tried)));
       });
+      await f.check(
+        'Sin nada en prueba, ningún día dice «con lo que pruebas»: lo de más '
+        'es lo que esperas recibir',
+        () => expect(f.screenText, isNot(contains('con lo que pruebas'))),
+      );
       await f.tap('¿Me alcanza?');
       await f.step(
         'El botón «¿Me alcanza?» de arriba convierte la página en la prueba '
@@ -487,8 +563,9 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.back();
       await f.tap('Repartir');
       await f.page(
-        'En «Después», «Repartir» abre «Reparte tu quincena»: la plata que '
-        'llegó propuesta en sobres, para ajustarlos antes de gastar.',
+        '«Repartir» abre «Reparte tu quincena»: hay \$7.961 para repartir y '
+        'la propuesta ya pone 150.000 para el viaje, así que abajo dice «Te '
+        'pasas por».',
       );
       await f.check('Abre «Reparte tu quincena»', () {
         expect(f.shows('Reparte tu quincena'), isTrue);
@@ -765,6 +842,13 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.check('Lo que puedes gastar volvió a ${_money(own, free)}', () {
         expect(own.ledger!.freeUntilPayday, free);
         expect(f.shows('Puedes gastar'), isTrue);
+        expect(f.shows(_money(own, free)), isTrue);
+      });
+      await f.check('La bicicleta ya no está entre los movimientos', () {
+        expect(
+          own.snapshot!.entries.where((Entry e) => e.payee == 'Bicicleta'),
+          isEmpty,
+        );
       });
     },
   ),
@@ -782,6 +866,9 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
           'cuadre con Inicio.',
       'El límite de preguntas del día: «Te quedan N preguntas hoy» baja al '
           'preguntar y al llegar a cero no deja seguir.',
+      'Con el teléfono en modo avión, tocar una pregunta lista: debe decir '
+          '«Sin conexión a internet…» y no gastar una de las preguntas del '
+          'día.',
     ],
     (FlowRun f) async {
       await f.reveal(find.text('PREGÚNTALE A TU PLATA'));
@@ -797,6 +884,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.check('Abre «Pregúntale a tu plata» sin preguntar nada aún', () {
         expect(f.shows('Pregúntale a tu plata'), isTrue);
         expect(f.shows('Qué ve Gemini'), isTrue);
+        expect(f.shows('Te quedan 30 preguntas hoy'), isTrue);
       });
       await f.tapTip('Qué ve Gemini');
       await f.page(
@@ -818,8 +906,9 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         await f.tester.tap(question.last);
         await f.waitFor(find.textContaining('No pude responder'));
         await f.step(
-          'Tocar «$asked» la hace de una vez. Sin conexión con Gemini, la '
-          'conversación dice «No pude responder esta vez».',
+          'Tocar «$asked» la hace de una vez. En esta prueba Gemini no '
+          'contesta, así que la conversación dice «No pude responder esta '
+          'vez».',
         );
         await f.check('«$asked» queda preguntada, sin respuesta inventada', () {
           expect(f.shows(asked), isTrue);
@@ -830,6 +919,17 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         });
         await f.back();
       }
+      await f.tap('Otra pregunta');
+      await f.step(
+        'Después de tres preguntas sin respuesta, «Otra pregunta» dice «Te '
+        'quedan 27 preguntas hoy»: las tres que no se respondieron se '
+        'contaron.',
+      );
+      await f.check(
+        'Las preguntas que no se respondieron no gastan las del día: siguen '
+        '30',
+        () => expect(f.shows('Te quedan 30 preguntas hoy'), isTrue),
+      );
     },
   ),
   AppFlow(
@@ -1018,6 +1118,149 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
     },
   ),
   AppFlow(
+    '02-14-ver-el-dia-que-me-quedo-sin-plata',
+    'Ver el día que me quedo sin plata',
+    area: 'Inicio',
+    goal:
+        'Ya me pagaron, pero la matrícula del 8 me deja en rojo; quiero ver '
+        'qué día me quedo sin plata y probar pagarla después del pago.',
+    data: _runsOutOnThe8th,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Ledger ledger = own.ledger!;
+      final DateTime day8 = DateTime(2026, 10, 8);
+      final Entry fee = _entry(own, 'Matrícula');
+      await f.reveal(find.text('Próximos días'));
+      await f.step(
+        '«Próximos días» avisa en naranja «El 8 oct te quedarías sin plata.» '
+        'y lista la matrícula de \$2.000.000 de ese día.',
+      );
+      await f.check('El primer día sin plata es el 8 de octubre', () {
+        expect(own.projection!.firstTight!.date, day8);
+        expect(f.shows('El 8 oct te quedarías sin plata.'), isTrue);
+      });
+      await f.tap('Cierre de la quincena');
+      await f.page(
+        'En el cierre, «Qué viene» lista la matrícula y dice en rojo cuánto te '
+        'falta; «Una acción posible» avisa del 8 y propone mover un cobro.',
+        most: 2,
+      );
+      final PeriodClose close = closePeriod(ledger)!;
+      await f.check(
+        'La acción es el día sin plata, que va antes que comparar categorías',
+        () {
+          expect(close.action, CloseAction.tightDay);
+          expect(close.tightDay, day8);
+          expect(
+            f.screenText,
+            contains(
+              'El 8 de octubre te quedarías sin plata. Mira qué cobro podrías '
+              'mover de fecha.',
+            ),
+          );
+          expect(f.screenText, contains('8 oct · Matrícula'));
+        },
+      );
+      await f.check(
+        '«Qué viene» dice «Te faltan ${_money(own, -ledger.freeUntilPayday)} '
+        'para llegar al pago», como Inicio, y no un «Puedes gastar» negativo',
+        () {
+          expect(ledger.freeUntilPayday, lessThan(0));
+          expect(
+            f.shows(
+              'Te faltan ${_money(own, -ledger.freeUntilPayday)} para llegar '
+              'al pago',
+            ),
+            isTrue,
+          );
+          expect(f.screenText, isNot(contains('Puedes gastar hasta el pago')));
+        },
+      );
+      // The second «Ver los próximos 30 días», under the action.
+      await f.tap('Ver los próximos 30 días');
+      await f.top();
+      await f.step(
+        '«Ver los próximos 30 días» de la acción abre la gráfica: el jueves 8 '
+        'lleva la marca «Sin plata» y la matrícula, su ícono de calendario.',
+      );
+      await f.check('El 8 oct está marcado «Sin plata»', () {
+        expect(f.shows('Próximos 30 días'), isTrue);
+        expect(f.shows('Sin plata'), isTrue);
+        expect(f.shows('El 8 oct te quedarías sin plata.'), isTrue);
+      });
+      await f.tapFound(find.byTooltip('Mover en la simulación').first);
+      await _pickDay(f, 16);
+      await f.top();
+      final ProjectedDay on8 = own.projection!.days.firstWhere(
+        (ProjectedDay d) => d.date == day8,
+      );
+      final String tried =
+          'Quedan ${_money(own, on8.sure)} · con lo que pruebas, '
+          '${_money(own, on8.sure + 2000000)}';
+      await f.step(
+        'Con la matrícula movida al 16, después del pago, el 8 dice «con lo '
+        'que pruebas, \$1.740.000», pero arriba sigue «te quedarías sin '
+        'plata».',
+      );
+      await f.check('El 8 oct dice «$tried»', () {
+        expect(f.screenText, contains(tried));
+      });
+      await f.check('La prueba no cambia la fecha de la matrícula', () {
+        expect(_entry(own, 'Matrícula').date, fee.date);
+        expect(own.ledger!.freeUntilPayday, ledger.freeUntilPayday);
+      });
+    },
+  ),
+  AppFlow(
+    '02-15-mirar-inicio-de-noche',
+    'Mirar Inicio con el modo oscuro',
+    area: 'Inicio',
+    goal:
+        'Tengo el teléfono en modo oscuro y quiero leer Inicio y mis '
+        'movimientos sin que nada se pierda.',
+    data: fullAccount,
+    dark: true,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final String figure = _money(own, own.ledger!.freeUntilPayday);
+      await f.page(
+        'Con el teléfono en modo oscuro, Inicio pasa a fondo oscuro con letras '
+        'claras; la cifra, la suma y las tareas siguen en su lugar.',
+        most: 3,
+      );
+      await f.check('La app sigue el modo oscuro del teléfono', () {
+        expect(_theme(f).brightness, Brightness.dark);
+      });
+      await f.check('La cifra $figure se lee clara sobre el fondo', () {
+        expect(
+          _contrast(_inkOf(f, figure), _theme(f).scaffoldBackgroundColor),
+          greaterThan(7),
+        );
+      });
+      await f.tap('Movimientos');
+      await f.step(
+        'Movimientos de noche: los gastos en letra clara, los ingresos en '
+        'verde y las transferencias en gris.',
+      );
+      final String income = pesos(1000000, signed: true);
+      await f.check('El ingreso $income se lee sobre el fondo oscuro', () {
+        expect(
+          _contrast(_inkOf(f, income), _theme(f).scaffoldBackgroundColor),
+          greaterThan(4.5),
+        );
+      });
+      await f.tap('Inicio');
+      await f.tap('¿De dónde sale?');
+      await f.step(
+        'La hoja «¿De dónde sale?» también se abre oscura, con la suma y cada '
+        'cuenta legibles.',
+      );
+      await f.check('La hoja dice la misma cifra que Inicio', () {
+        expect(f.screenText, contains(figure));
+      });
+    },
+  ),
+  AppFlow(
     '03-01-registrar-un-gasto',
     'Registrar un gasto a mano',
     area: 'Movimientos',
@@ -1177,7 +1420,15 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
           '«$query» muestra ${expected.length} movimientos, los que coinciden',
           () {
             expect(expected, isNotEmpty);
-            expect(find.byType(MovementRow), findsNWidgets(expected.length));
+            expect(
+              <String>{
+                for (final MovementRow r in f.tester.widgetList<MovementRow>(
+                  find.byType(MovementRow),
+                ))
+                  r.entry.id,
+              },
+              <String>{for (final Entry e in expected) e.id},
+            );
           },
         );
       }
@@ -1217,8 +1468,8 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await _open(f, old);
       await f.page(
         'Tocar un movimiento abre «Editar movimiento» con todo lo que tiene: '
-        'monto, cuenta, categoría, fecha y nota, y abajo «Dividir» y '
-        '«Eliminar».',
+        'monto, cuenta, categoría, fecha y nota, y abajo «Dividir este gasto» '
+        'y «Eliminar».',
         most: 2,
       );
       await f.check('El formulario trae el monto y la categoría guardados', () {
@@ -1326,8 +1577,23 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         expect(f.shows(pesos(7834)), isTrue);
         expect(find.text(pesos(7833)), findsNWidgets(2));
       });
-      // Juan did not eat: his box off.
-      await f.tapFound(find.byType(Checkbox).last);
+      // Ana and Juan unticked: only the person is left.
+      await f.tapFound(find.byType(Checkbox).at(1));
+      await f.tapFound(find.byType(Checkbox).at(2));
+      await f.tap('Guardar');
+      await f.step(
+        'Sin Ana ni Juan marcados quedas solo tú: «Guardar» no divide y pide '
+        '«$_splitNeedsShare»',
+      );
+      await f.check('No guarda una división en la que solo quedas tú', () {
+        expect(own.splitOf(crepes.id), isNull);
+        expect(f.shows(_splitNeedsShare), isTrue);
+      });
+      // Ana ate, Juan did not: her box on again.
+      await f.tapFound(find.byType(Checkbox).at(1));
+      await f.check('Al marcar a Ana, el aviso se va', () {
+        expect(f.shows(_splitNeedsShare), isFalse);
+      });
       await f.tap('Por montos');
       await f.type('Tu parte', '8000');
       await f.type('Parte de Ana', '10000');
@@ -1352,10 +1618,17 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         expect(own.splitOf(crepes.id), isNull);
       });
       await f.type('Parte de Ana', '15500');
+      await f.type('Nombre del grupo', 'Ana y yo');
+      await f.type('¿Qué fue?', 'Crepes del viernes');
+      await f.page(
+        'Con 15.500 para Ana ya suma. Arriba, el grupo se llama «Ana y yo» y '
+        'el gasto «Crepes del viernes», en vez del nombre del comercio.',
+        most: 2,
+      );
       await f.tap('Guardar');
       await f.step(
-        'Con 15.500 para Ana ya suma. Al guardar vuelves a Movimientos y la '
-        'fila de las crepes agrega «Dividido: tu parte…».',
+        'Al guardar vuelves a Movimientos y la fila de las crepes agrega '
+        '«Dividido: tu parte…».',
       );
       await f.check('La fila dice «Dividido: tu parte ${pesos(8000)}»', () {
         expect(f.screenText, contains('Dividido: tu parte ${pesos(8000)}'));
@@ -1365,8 +1638,15 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         expect(split.shares[meId], 8000);
         expect(split.othersPart, 15500);
       });
-      await f.check('El grupo se llama como el gasto', () {
-        expect(own.splitOf(crepes.id)!.$1.name, 'Crepes & Waffles');
+      await f.check('El grupo y el gasto llevan los nombres escritos', () {
+        final (Group group, SharedExpense split) = own.splitOf(crepes.id)!;
+        expect(group.name, 'Ana y yo');
+        expect(split.label, 'Crepes del viernes');
+        expect(group.members.map((Member m) => m.name), <String>[
+          '',
+          'Ana',
+          'Juan',
+        ]);
       });
       await f.check(
         'Lo que puedes gastar no cambia: lo de Ana aún no llega',
@@ -1524,8 +1804,11 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       final OwnController own = f.own;
       final int free = own.ledger!.freeUntilPayday;
       final int spent = _spentIn(own, 2026, 10);
+      final int count = own.snapshot!.entries.length;
       final Decimal bank = _held(own, 'Bancolombia');
       final Decimal nequi = _held(own, 'Nequi');
+      final int bankPart = own.spendableParts[_account(own, 'Bancolombia').id]!;
+      final int nequiPart = own.spendableParts[_account(own, 'Nequi').id]!;
       await f.tapTip('Agregar movimiento');
       await f.tap('Transferencia');
       await f.step(
@@ -1561,6 +1844,23 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         expect(_held(own, 'Bancolombia'), bank - Decimal.parse('50000'));
         expect(_held(own, 'Nequi'), nequi + Decimal.parse('50000'));
       });
+      await f.check('Quedó como una transferencia de dos partes', () {
+        expect(own.snapshot!.entries, hasLength(count + 2));
+      });
+      await f.check(
+        '«¿De dónde sale?» pasa los 50.000 de la línea de Bancolombia a la de '
+        'Nequi',
+        () {
+          expect(
+            own.spendableParts[_account(own, 'Bancolombia').id],
+            bankPart - 50000,
+          );
+          expect(
+            own.spendableParts[_account(own, 'Nequi').id],
+            nequiPart + 50000,
+          );
+        },
+      );
       await f.check(
         'No es gasto: lo gastado y lo que puedes gastar siguen',
         () {
@@ -1605,12 +1905,9 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.check('Las dos cuentas volvieron a su saldo', () {
         expect(_held(own, 'Bancolombia'), bank);
         expect(_held(own, 'Nequi'), nequi);
-        expect(
-          own.snapshot!.entries.where(
-            (Entry e) => e.isTransfer && e.note.isEmpty && e.date.day == 3,
-          ),
-          isEmpty,
-        );
+      });
+      await f.check('Se borraron las dos partes y nada más', () {
+        expect(own.snapshot!.entries, hasLength(count));
       });
     },
   ),
@@ -1714,6 +2011,21 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       );
       await f.check('Lo escrito en «Llegó» se queda', () {
         expect(_fieldShows('Llegó', '98,5'), findsOneWidget);
+      });
+      await f.type('Llegó', '');
+      await f.tap('Guardar');
+      await f.step(
+        'Con «Llegó» vacío, «Guardar» no guarda y avisa «Escribe un monto» '
+        'bajo «Llegó», el campo que falta, no bajo el monto que ya está.',
+      );
+      await f.check('El aviso sale bajo «Llegó» y no bajo «Monto»', () {
+        expect(_fieldShows('Llegó', 'Escribe un monto'), findsOneWidget);
+        expect(_fieldShows('Monto', 'Escribe un monto'), findsNothing);
+        expect(_held(own, 'Bancolombia'), bank);
+      });
+      await f.type('Llegó', '98,5');
+      await f.check('Al escribir lo que llegó, el aviso se va', () {
+        expect(f.shows('Escribe un monto'), isFalse);
       });
       await f.tap('Guardar');
       await f.tap('Movimientos');
@@ -2057,10 +2369,435 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       });
     },
   ),
+  AppFlow(
+    '03-15-cambiar-un-gasto-a-ingreso',
+    'Cambiar un gasto a ingreso',
+    area: 'Movimientos',
+    goal:
+        'Falabella me devolvió 85.000 y lo anoté como gasto por error; quiero '
+        'que cuente como plata que me entró.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final int free = own.ledger!.freeUntilPayday;
+      final int count = own.snapshot!.entries.length;
+      final Decimal bank = _held(own, 'Bancolombia');
+      await f.tapTip('Agregar movimiento');
+      await f.type('Monto', '85000');
+      await f.tap('Compras');
+      await f.type('¿Dónde o a quién?', 'Devolución Falabella');
+      await f.tap('Guardar');
+      await f.step(
+        'Anotado por error como gasto en Compras: la cifra bajó 85.000 y '
+        'ahora dice «Te faltan».',
+      );
+      await f.check('Como gasto, lo que puedes gastar bajó 85.000', () {
+        expect(own.ledger!.freeUntilPayday, free - 85000);
+        expect(f.shows(_money(own, 85000 - free)), isTrue);
+      });
+      final Entry wrong = _entry(own, 'Devolución Falabella');
+      await f.tap('Movimientos');
+      await _open(f, wrong);
+      await f.tap('Ingreso');
+      await f.step(
+        'Abierto, toca «Ingreso»: las categorías pasan a las de plata que '
+        'entra, ninguna queda elegida, el campo dice «¿De dónde?» y ya no '
+        'ofrece dividir.',
+      );
+      await f.check(
+        'Al pasar a ingreso no queda ninguna categoría elegida',
+        () {
+          expect(
+            f.tester
+                .widgetList<ChoiceChip>(find.byType(ChoiceChip))
+                .where((ChoiceChip c) => c.selected),
+            isEmpty,
+          );
+          expect(
+            _fieldShows('¿De dónde?', 'Devolución Falabella'),
+            findsOneWidget,
+          );
+          expect(_fieldShows('Monto', '85.000'), findsOneWidget);
+        },
+      );
+      await f.check('Como ingreso ya no ofrece «Dividir este gasto»', () {
+        expect(f.shows('Dividir este gasto'), isFalse);
+        expect(f.shows('Eliminar'), isTrue);
+      });
+      await f.tap('Reembolsos');
+      await f.tap('Guardar');
+      await f.reveal(_row(wrong));
+      await f.step(
+        'Guardado: la fila de «Devolución Falabella» queda en «Reembolsos · '
+        'Bancolombia», con +\$85.000 en verde.',
+      );
+      final Entry fixed = own.snapshot!.entries.firstWhere(
+        (Entry e) => e.id == wrong.id,
+      );
+      await f.check(
+        'Es el mismo movimiento, ahora un ingreso de 85.000 en Reembolsos',
+        () {
+          expect(own.snapshot!.entries, hasLength(count + 1));
+          expect(fixed.kind, EntryKind.income);
+          expect(fixed.amount, Decimal.parse('85000'));
+          expect(fixed.category, 'refund');
+          expect(f.shows('Reembolsos · Bancolombia'), isTrue);
+        },
+      );
+      await f.check('Bancolombia tiene 85.000 más que antes del error', () {
+        expect(_held(own, 'Bancolombia'), bank + Decimal.parse('85000'));
+      });
+      await f.tap('Inicio');
+      await f.step(
+        'En Inicio la cifra quedó 85.000 por encima de la de antes del error: '
+        'la devolución cuenta como plata que entró.',
+      );
+      await f.check(
+        'Lo que puedes gastar es ${_money(own, free + 85000)}, 85.000 más que '
+        'antes',
+        () {
+          expect(own.ledger!.freeUntilPayday, free + 85000);
+          expect(f.shows(_money(own, free + 85000)), isTrue);
+        },
+      );
+    },
+  ),
+  AppFlow(
+    '03-16-anotar-el-pago-de-la-tarjeta',
+    'Anotar el pago de la tarjeta',
+    area: 'Movimientos',
+    goal:
+        'Pagué 480.000 de la Visa desde Bancolombia y lo anoté como gasto; '
+        'quiero que quede como pago a la tarjeta, sin contarlo dos veces.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final int free = own.ledger!.freeUntilPayday;
+      final int spent = _spentIn(own, 2026, 10);
+      final int count = own.snapshot!.entries.length;
+      final int debt = own.spendableCardDebt;
+      final Decimal bank = _held(own, 'Bancolombia');
+      final Decimal visa = _held(own, 'Visa');
+      await f.tapTip('Agregar movimiento');
+      await f.type('Monto', '480000');
+      await f.tap('Compras');
+      // Tapped again, the chip lets go: no category.
+      await f.tap('Compras');
+      await f.check('Tocar dos veces «Compras» la deja sin elegir', () {
+        expect(
+          f.tester
+              .widgetList<ChoiceChip>(find.byType(ChoiceChip))
+              .where((ChoiceChip c) => c.selected),
+          isEmpty,
+        );
+      });
+      await f.type('¿Dónde o a quién?', 'Pago Visa');
+      await f.tap('Guardar');
+      await f.step(
+        'Anotado como gasto, con «Compras» tocada dos veces para dejarla sin '
+        'elegir: la cifra baja 480.000, como si fuera plata gastada.',
+      );
+      final Entry wrong = _entry(own, 'Pago Visa');
+      await f.check('Sin categoría elegida, el gasto queda en «Otros»', () {
+        expect(wrong.category, 'other');
+        expect(own.ledger!.freeUntilPayday, free - 480000);
+        expect(_spentIn(own, 2026, 10), spent + 480000);
+      });
+      await f.tap('Movimientos');
+      await _open(f, wrong);
+      await f.tap('Transferencia');
+      await f.tapFound(find.byType(DropdownButtonFormField<String>).last);
+      await f.step(
+        'Toca «Transferencia» y abre «Hacia»: la lista de tus cuentas, con '
+        'Nequi marcado porque es la que propone la app.',
+      );
+      await f.tapFound(find.text('Visa').last);
+      await f.tap('Guardar');
+      await f.reveal(find.text('Bancolombia → Visa'));
+      await f.step(
+        'Con Visa en «Hacia» y guardado, la fila es «Bancolombia → Visa», sin '
+        'signo, y el gasto «Pago Visa» ya no está.',
+      );
+      await f.check('El gasto se volvió una transferencia de dos partes', () {
+        expect(
+          own.snapshot!.entries.where((Entry e) => e.payee == 'Pago Visa'),
+          isEmpty,
+        );
+        expect(own.snapshot!.entries, hasLength(count + 2));
+        final Entry into = own.snapshot!.entries.firstWhere(
+          (Entry e) =>
+              e.transferId != null && e.accountId == _account(own, 'Visa').id,
+        );
+        final Entry out = own.snapshot!.entries.firstWhere(
+          (Entry e) => e.transferId == into.transferId && e.id != into.id,
+        );
+        expect(into.amount, Decimal.parse('480000'));
+        expect(out.amount, Decimal.parse('-480000'));
+        expect(out.accountId, _account(own, 'Bancolombia').id);
+      });
+      await f.check(
+        'Bancolombia pagó 480.000 y la Visa debe 480.000 menos',
+        () {
+          expect(_held(own, 'Bancolombia'), bank - Decimal.parse('480000'));
+          expect(_held(own, 'Visa'), visa + Decimal.parse('480000'));
+        },
+      );
+      await f.check(
+        'Pagar la tarjeta no es gastar: lo gastado del mes y lo que puedes '
+        'gastar vuelven a lo de antes',
+        () {
+          expect(_spentIn(own, 2026, 10), spent);
+          expect(own.ledger!.freeUntilPayday, free);
+        },
+      );
+      await f.tap('Inicio');
+      await f.step(
+        'En Inicio, «Lo que debes en tarjetas» bajó 480.000 y lo que puedes '
+        'gastar es el mismo de antes del error.',
+      );
+      await f.check(
+        '«Lo que debes en tarjetas» dice ${_money(own, -(debt - 480000))}',
+        () {
+          expect(own.spendableCardDebt, debt - 480000);
+          expect(f.shows(_money(own, -(debt - 480000))), isTrue);
+          expect(f.shows(_money(own, free)), isTrue);
+        },
+      );
+    },
+  ),
+  AppFlow(
+    '03-17-borrar-un-gasto-dividido',
+    'Borrar un gasto que dividí',
+    area: 'Movimientos',
+    goal:
+        'Dividí las crepes con Ana, pero estaban anotadas de más; quiero '
+        'borrarlas sin que Ana me quede debiendo.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Entry crepes = _entry(own, 'Crepes & Waffles');
+      final int free = own.ledger!.freeUntilPayday;
+      await f.tap('Movimientos');
+      await _splitWithAna(f, crepes);
+      await f.step(
+        'Las crepes quedan divididas con Ana en partes iguales: la fila dice '
+        '«Dividido: tu parte…».',
+      );
+      await f.check('Ana te debe 11.750 por las crepes', () {
+        final (Group group, SharedExpense split) = own.splitOf(crepes.id)!;
+        expect(split.othersPart, 11750);
+        expect(group.balances['p-ana'], -11750);
+      });
+      await f.check('Sin nombre escrito, el grupo toma el del comercio', () {
+        expect(own.splitOf(crepes.id)!.$1.name, 'Crepes & Waffles');
+      });
+      await _open(f, crepes);
+      await f.tap('Eliminar');
+      await f.step(
+        '«Eliminar» pregunta antes de borrar y avisa que la división con Ana '
+        'se va con el movimiento.',
+      );
+      await f.check('La pregunta dice que también se quita la división', () {
+        expect(f.shows(_deleteSplitBody), isTrue);
+      });
+      await f.tap('Eliminar');
+      await f.step('Borradas las crepes, la fila ya no está en Movimientos.');
+      await f.check('El movimiento ya no existe', () {
+        expect(
+          own.snapshot!.entries.any((Entry e) => e.id == crepes.id),
+          isFalse,
+        );
+      });
+      await f.check('La división se fue con él: Ana ya no te debe nada', () {
+        expect(own.splitOf(crepes.id), isNull);
+        for (final Group g in own.groups) {
+          expect(
+            g.expenses.where((SharedExpense x) => x.entryId == crepes.id),
+            isEmpty,
+          );
+          expect(g.balances['p-ana'] ?? 0, 0);
+        }
+      });
+      await f.check('Nequi recuperó los 23.500 y la cifra subió lo mismo', () {
+        expect(own.ledger!.freeUntilPayday, free + 23500);
+      });
+      await f.tap('Plan');
+      await f.tap('Gastos compartidos');
+      await f.page(
+        'En Plan › «Gastos compartidos», el grupo de las crepes ya no tiene '
+        'nada pendiente con Ana.',
+        most: 2,
+      );
+    },
+  ),
+  AppFlow(
+    '03-18-corregir-un-gasto-dividido',
+    'Corregir el monto de un gasto dividido',
+    area: 'Movimientos',
+    goal:
+        'Las crepes que dividí con Ana costaron 30.000 y no 23.500; quiero '
+        'corregir el monto sin tener que dividirlas otra vez.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Entry crepes = _entry(own, 'Crepes & Waffles');
+      final int spent = _spentIn(own, 2026, 10);
+      await f.tap('Movimientos');
+      await _splitWithAna(f, crepes);
+      await f.step(
+        'Las crepes divididas con Ana: 11.750 cada uno de los 23.500; la '
+        'fila dice «Dividido: tu parte…».',
+      );
+      await _open(f, crepes);
+      await f.type('Monto', '30000');
+      await f.tap('Guardar');
+      await f.reveal(_row(crepes));
+      await f.step(
+        'Corregido el monto a 30.000, la división se ajusta sola: en partes '
+        'iguales, 15.000 para cada uno.',
+      );
+      await f.check(
+        'Tu parte y la de Ana suman lo que costó: 15.000 cada uno',
+        () {
+          final SharedExpense split = own.splitOf(crepes.id)!.$2;
+          expect(split.amount, 30000);
+          expect(split.shares, <String, int>{meId: 15000, 'p-ana': 15000});
+        },
+      );
+      await f.check(
+        'La fila dice «Dividido: tu parte ${pesos(15000)}», lo que la app '
+        'cuenta como tu gasto',
+        () {
+          expect(f.screenText, contains('Dividido: tu parte ${pesos(15000)}'));
+          // The crepes count 15.000 of yours instead of 11.750.
+          expect(_spentIn(own, 2026, 10), spent - 11750 + 3250);
+        },
+      );
+      await _open(f, crepes);
+      await f.tap('Cambiar la división');
+      await f.tap('Por montos');
+      await f.type('Tu parte', '10000');
+      await f.type('Parte de Ana', '20000');
+      await f.tap('Guardar');
+      await f.reveal(_row(crepes));
+      await f.step(
+        'Por montos, Ana pidió más: 20.000 para ella y 10.000 para ti. La '
+        'fila sigue marcada «Dividido: tu…», cortada por la cuenta.',
+      );
+      await _open(f, crepes);
+      await f.type('Monto', '36000');
+      await f.tap('Guardar');
+      await f.reveal(_row(crepes));
+      await f.step(
+        'Con la propina, la fila pasa a −\$36.000: Ana sigue debiendo sus '
+        '20.000 y tu parte, que la línea corta, sube a 16.000.',
+      );
+      await f.check(
+        'Por montos, lo de Ana no cambia y tu parte toma la diferencia',
+        () {
+          final SharedExpense split = own.splitOf(crepes.id)!.$2;
+          expect(split.shares, <String, int>{meId: 16000, 'p-ana': 20000});
+          expect(f.screenText, contains('Dividido: tu parte ${pesos(16000)}'));
+        },
+      );
+      await f.check('Lo que te deben en el grupo es 20.000', () {
+        final Group group = own.splitOf(crepes.id)!.$1;
+        expect(group.balances['p-ana'], -20000);
+      });
+    },
+  ),
 ];
 
 /// [minor] in the ledger's unit, as the app writes it.
 String _money(OwnController own, int minor) => pesos(own.ledger!.major(minor));
+
+/// What the split sheet says when no one else has a part.
+const String _splitNeedsShare = 'Marca al menos a otra persona con su parte.';
+
+/// What deleting a split movement warns of.
+const String _deleteSplitBody =
+    'También se quita su división: lo que te deben por este gasto deja de '
+    'contar.';
+
+/// Splits [entry] in equal parts with Ana, in a group made for it, from
+/// the list of movements on screen.
+Future<void> _splitWithAna(FlowRun f, Entry entry) async {
+  await _open(f, entry);
+  await f.tap('Dividir este gasto');
+  await f.type('¿Con quién lo divides?', 'Ana');
+  await f.tap('Guardar');
+  await f.reveal(_row(entry));
+}
+
+/// The theme of the screen on top.
+ThemeData _theme(FlowRun f) =>
+    Theme.of(f.tester.element(find.byType(Scaffold).last));
+
+/// The color [text] is painted in.
+Color _inkOf(FlowRun f, String text) => f.tester
+    .renderObject<RenderParagraph>(find.text(text).first)
+    .text
+    .style!
+    .color!;
+
+/// How far apart two colors read, as WCAG measures it: 4.5 is enough for
+/// text, 7 is plenty.
+double _contrast(Color a, Color b) {
+  final double x = a.computeLuminance();
+  final double y = b.computeLuminance();
+  return x > y ? (x + 0.05) / (y + 0.05) : (y + 0.05) / (x + 0.05);
+}
+
+/// Someone paid on the 30th whose tuition of 2.000.000, due on the 8th,
+/// is more than what there is: that day runs out of money, the week after
+/// payday, with a whole fortnight behind to close.
+Future<QuincenaStore> _runsOutOnThe8th() async {
+  final QuincenaStore store = await emptyStore();
+  await store.ensureCategories();
+  await store.saveProfile(
+    Profile(
+      name: 'Diego',
+      base: Asset.cop,
+      schedule: const TwiceMonthly(),
+      pay: Decimal.parse('1800000'),
+    ),
+  );
+  await store.setSetting('app.mode', 'own');
+  final Account bank = await store.addAccount(
+    name: 'Bancolombia',
+    kind: AccountKind.bank,
+    asset: Asset.cop,
+    opening: Decimal.parse('500000'),
+    institution: 'Bancolombia',
+  );
+  for (final (String amount, DateTime on, String category, String payee)
+      in <(String, DateTime, String, String)>[
+        ('200000', DateTime(2026, 8, 30, 12), 'groceries', 'D1'),
+        ('80000', DateTime(2026, 9, 10, 20), 'restaurants', 'Crepes'),
+        ('210000', DateTime(2026, 9, 16, 12), 'groceries', 'D1'),
+        ('70000', DateTime(2026, 9, 20, 20), 'restaurants', 'Rappi'),
+        // Entered ahead: it is due on the 8th.
+        ('2000000', DateTime(2026, 10, 8, 9), 'other', 'Matrícula'),
+      ]) {
+    await store.addEntry(
+      accountId: bank.id,
+      amount: Decimal.parse(amount),
+      kind: EntryKind.expense,
+      date: on,
+      category: category,
+      payee: payee,
+    );
+  }
+  await store.addEntry(
+    accountId: bank.id,
+    amount: Decimal.parse('1800000'),
+    kind: EntryKind.income,
+    date: DateTime(2026, 9, 30, 8),
+    category: 'salary',
+    payee: 'Nómina',
+  );
+  return store;
+}
 
 /// What the purchase check says, as its title.
 String _verdict(PurchaseVerdict v) => switch (v) {
