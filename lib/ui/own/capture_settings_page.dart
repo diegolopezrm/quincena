@@ -141,9 +141,13 @@ class _CaptureSettingsPageState extends State<CaptureSettingsPage>
           text: l.captureLocationAskWhere,
         ),
       ],
-      next: _android
-          ? l.captureLocationAskNextAndroid
-          : l.captureLocationAskNextIos,
+      // Android asks nothing more when it already lets Quincena have the
+      // location all the time.
+      next: !_android
+          ? l.captureLocationAskNextIos
+          : _location == LocationAccess.always
+          ? null
+          : l.captureLocationAskNextAndroid,
     );
   }
 

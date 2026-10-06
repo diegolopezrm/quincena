@@ -9,7 +9,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/capture/inbox.dart';
+import 'package:quincena/l10n/l10n.dart';
 import 'package:quincena/own/own_controller.dart';
+import 'package:quincena/theme/theme.dart';
 import 'package:quincena/ui/own/capture_settings_page.dart';
 
 import 'own_flow_test.dart' show settle;
@@ -77,6 +79,22 @@ bool _on(WidgetTester tester) =>
 
 Future<OwnController> _open(WidgetTester tester) =>
     openPage(tester, (OwnController own) => CaptureSettingsPage(own: own));
+
+/// The same page on a phone whose language is English.
+Future<OwnController> _openInEnglish(WidgetTester tester) async {
+  final OwnController own = await _open(tester);
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: quincenaTheme(Brightness.light),
+      locale: const Locale('en'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: appLocales,
+      home: CaptureSettingsPage(own: own),
+    ),
+  );
+  await settle(tester);
+  return own;
+}
 
 Future<CaptureSettings> _saved(WidgetTester tester, OwnController own) async =>
     (await tester.runAsync(() => own.store.captureSettings()))!;
@@ -243,6 +261,25 @@ void main() {
       });
     });
 
+    testWidgets('already allowed all the time, it still explains first, '
+        'without saying Android will ask, and asks nothing', (
+      WidgetTester tester,
+    ) async {
+      await _as(TargetPlatform.android, () async {
+        final _FakePhone phone = _FakePhone(tester)..location = 'always';
+        final OwnController own = await _open(tester);
+        await _tap(tester, _locationSwitch);
+        expect(find.text(_locationTitle), findsOneWidget);
+        expect(find.textContaining('Android te pedirá'), findsNothing);
+        expect(_on(tester), isFalse);
+        await _tap(tester, find.text('Aceptar'));
+        expect(find.text(_alwaysTitle), findsNothing);
+        expect(phone.requests, isEmpty);
+        expect(_on(tester), isTrue);
+        expect((await _saved(tester, own)).useLocation, isTrue);
+      });
+    });
+
     testWidgets('«Permitir todo el tiempo» explains before Android asks, and '
         'a no there asks for nothing', (WidgetTester tester) async {
       await _as(TargetPlatform.android, () async {
@@ -368,6 +405,97 @@ void main() {
 
         await _tap(tester, grant);
         await _tap(tester, find.text('Aceptar'));
+        expect(phone.requests, <String>['openNotificationAccess']);
+      });
+    });
+  });
+
+  group('in English', () {
+    testWidgets('the location says the same, with Google\'s sentence, and '
+        'only «Accept» goes on to each of Android\'s requests', (
+      WidgetTester tester,
+    ) async {
+      await _as(TargetPlatform.android, () async {
+        final _FakePhone phone = _FakePhone(tester);
+        await _openInEnglish(tester);
+        await _tap(
+          tester,
+          find.widgetWithText(SwitchListTile, 'Use where the payment happened'),
+        );
+        expect(find.text('Location of your payments'), findsOneWidget);
+        expect(
+          find.text(
+            'Quincena collects location data to suggest the shop of a '
+            'payment, even when the app is closed or not in use.',
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('What it uses'), findsOneWidget);
+        expect(find.text("Your phone's precise location."), findsOneWidget);
+        expect(find.text('When'), findsOneWidget);
+        expect(find.text('Where it stays'), findsOneWidget);
+        expect(
+          find.text(
+            'If you accept, Android will ask you for permission to use your '
+            'location.',
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('Not now'), findsOneWidget);
+        expect(phone.requests, isEmpty);
+
+        await _tap(tester, find.text('Accept'));
+        expect(phone.requests, <String>['askForLocation']);
+        expect(find.text('Location while Quincena is closed'), findsOneWidget);
+        expect(
+          find.textContaining('even when the app is closed or not in use'),
+          findsOneWidget,
+        );
+        expect(find.textContaining('"Allow all the time"'), findsOneWidget);
+        await _tap(tester, find.text('Not now'));
+        expect(phone.requests, <String>['askForLocation']);
+
+        await _tap(tester, find.text('Allow all the time'));
+        expect(find.text('Location while Quincena is closed'), findsOneWidget);
+        expect(phone.requests, <String>['askForLocation']);
+        await _tap(tester, find.text('Accept'));
+        expect(phone.requests, <String>[
+          'askForLocation',
+          'askForBackgroundLocation',
+        ]);
+      });
+    });
+
+    testWidgets('reading notifications says what it reads before Android\'s '
+        'screen', (WidgetTester tester) async {
+      await _as(TargetPlatform.android, () async {
+        final _FakePhone phone = _FakePhone(tester);
+        await _openInEnglish(tester);
+        final Finder grant = find.text('Allow notification access');
+        await _tap(tester, grant);
+        expect(find.text('Reading your payment notifications'), findsOneWidget);
+        expect(find.text('What it reads'), findsOneWidget);
+        expect(find.textContaining('bank and wallet apps'), findsOneWidget);
+        expect(
+          find.text(
+            "On this phone. Quincena doesn't send their text to any server or "
+            'anyone.',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.text(
+            'If you accept, Android will open notification access so you can '
+            'turn Quincena on.',
+          ),
+          findsOneWidget,
+        );
+        await _systemBack(tester);
+        expect(find.text('Reading your payment notifications'), findsNothing);
+        expect(phone.requests, isEmpty);
+
+        await _tap(tester, grant);
+        await _tap(tester, find.text('Accept'));
         expect(phone.requests, <String>['openNotificationAccess']);
       });
     });
