@@ -1954,7 +1954,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rulesBody =>
-      'They\'re created when you record something in Needs review. A rule only affects what comes in later; nothing already recorded changes.';
+      'They\'re created when you record something in Needs review. A rule affects what comes in later and what still waits there; nothing already recorded changes.';
 
   @override
   String get rulesEmpty =>

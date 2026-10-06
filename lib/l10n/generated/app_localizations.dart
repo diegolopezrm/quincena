@@ -3107,7 +3107,7 @@ abstract class AppLocalizations {
   /// No description provided for @rulesBody.
   ///
   /// In es, this message translates to:
-  /// **'Se crean cuando registras algo en Por revisar. Una regla solo cambia lo que llegue después: lo ya registrado se queda como está.'**
+  /// **'Se crean cuando registras algo en Por revisar. Una regla cambia lo que llegue después y lo que aún espera ahí: lo ya registrado se queda como está.'**
   String get rulesBody;
 
   /// No description provided for @rulesEmpty.

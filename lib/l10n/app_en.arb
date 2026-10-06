@@ -509,7 +509,7 @@
   "ruleMissingAccount": "an account that's gone",
   "ruleCardKey": "Card *{digits}",
   "rulesTitle": "Learned rules",
-  "rulesBody": "They're created when you record something in Needs review. A rule only affects what comes in later; nothing already recorded changes.",
+  "rulesBody": "They're created when you record something in Needs review. A rule affects what comes in later and what still waits there; nothing already recorded changes.",
   "rulesEmpty": "No rules yet. They show up when you record your first transactions.",
   "rulesMerchants": "Shops",
   "rulesCards": "Cards",

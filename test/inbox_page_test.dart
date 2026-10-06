@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'package:quincena/capture/capture_service.dart';
 import 'package:quincena/capture/event.dart';
 import 'package:quincena/capture/inbox.dart';
 import 'package:quincena/domain/pay_schedule.dart';
@@ -142,6 +143,120 @@ void main() {
       expect(find.text('NECESITAN INFORMACIÓN'), findsNothing);
     },
   );
+
+  testWidgets('what the card taught reaches what waits with the same card, '
+      'and goes back with Deshacer', (tester) async {
+    await open(tester, () async {
+      final QuincenaStore store = await withCaptures();
+      await CaptureService(store, now: () => screensNow).ingest(<CaptureEvent>[
+        CaptureEvent(
+          source: CaptureSource.notification,
+          at: DateTime(2026, 10, 3, 9, 50),
+          app: 'com.todo1.mobile',
+          appName: 'Bancolombia',
+          title: 'Bancolombia',
+          text: r'Bancolombia · Compra por $25.000 en Carulla T.Deb *1234',
+        ),
+      ]);
+      return store;
+    });
+    Finder on(String payee, String text) => find.descendant(
+      of: find.ancestor(of: find.text(payee), matching: find.byType(InboxCard)),
+      matching: find.text(text),
+    );
+    expect(on('Carulla', 'Elegir la cuenta'), findsOneWidget);
+
+    await tester.tap(on('Éxito Laureles', 'Elegir la cuenta'));
+    await settle(tester);
+    await tester.tap(find.text('Bancolombia').last);
+    await settle(tester);
+    // Carulla, paid with the same card, no longer asks.
+    expect(on('Carulla', 'Mercado · Bancolombia'), findsOneWidget);
+    expect(on('Carulla', 'Registrar gasto'), findsOneWidget);
+    expect(find.text('NECESITAN INFORMACIÓN'), findsNothing);
+
+    await tester.tap(
+      find.descendant(
+        of: find.byType(SnackBar),
+        matching: find.text('Deshacer'),
+      ),
+    );
+    await settle(tester);
+    expect(on('Carulla', 'Elegir la cuenta'), findsOneWidget);
+    expect(on('Éxito Laureles', 'Elegir la cuenta'), findsOneWidget);
+  });
+
+  testWidgets('pesos that arrived from the dollar account stay what arrived', (
+    tester,
+  ) async {
+    final OwnController own = await open(tester, () async {
+      final QuincenaStore store = await withCaptures();
+      await CaptureService(store, now: () => screensNow).ingest(<CaptureEvent>[
+        CaptureEvent(
+          source: CaptureSource.paste,
+          at: screensNow,
+          text: r'Bancolombia: Recibiste $331.284 de GLOBAL66 COLOMBIA',
+        ),
+      ]);
+      return store;
+    });
+    Account named(String name) =>
+        own.accounts.firstWhere((Account a) => a.name == name);
+    final Account bank = named('Bancolombia');
+    final Account dollars = named('Cuenta en dólares');
+    final Decimal bankBefore = own.balances[bank.id]!.amount;
+    final Decimal dollarsBefore = own.balances[dollars.id]!.amount;
+    Finder menu(String label) => find.ancestor(
+      of: find.text(label),
+      matching: find.byType(DropdownButtonFormField<String>),
+    );
+    String field(String label) => tester
+        .widget<TextField>(find.widgetWithText(TextField, label))
+        .controller!
+        .text;
+
+    final Finder fromOwn = find.descendant(
+      of: find.ancestor(
+        of: find.text('Global66 Colombia'),
+        matching: find.byType(InboxCard),
+      ),
+      matching: find.text('¿Viene de otra cuenta tuya?'),
+    );
+    await tester.ensureVisible(fromOwn);
+    await tester.tap(fromOwn);
+    await settle(tester);
+    expect(field('Monto'), '331.284');
+
+    await tester.tap(menu('Hacia'));
+    await settle(tester);
+    await tester.tap(find.text('Bancolombia').last);
+    await settle(tester);
+    await tester.tap(menu('Desde'));
+    await settle(tester);
+    await tester.tap(find.text('Cuenta en dólares').last);
+    await settle(tester);
+    // What the alert says arrived is what arrived; what left comes from
+    // the day's rate.
+    expect(field('Llegó'), '331.284');
+    expect(field('Monto'), '100');
+
+    // Typing what left keeps what the bank said arrived.
+    await tester.enterText(find.widgetWithText(TextField, 'Monto'), '100,5');
+    await settle(tester);
+    expect(field('Llegó'), '331.284');
+    await tester.enterText(find.widgetWithText(TextField, 'Monto'), '100');
+    await settle(tester);
+
+    final Finder record = find.text('Registrar transferencia');
+    await tester.ensureVisible(record);
+    await tester.tap(record);
+    await settle(tester);
+    expect(
+      own.balances[dollars.id]!.amount,
+      dollarsBefore - Decimal.parse('100'),
+    );
+    expect(own.balances[bank.id]!.amount, bankBefore + Decimal.parse('331284'));
+  });
 
   testWidgets('the form asks for the account instead of guessing one', (
     tester,

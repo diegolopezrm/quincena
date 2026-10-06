@@ -143,6 +143,10 @@ class _EntryFormState extends State<_EntryForm> {
         : _decimalText(_legs.$2.amount, _assetOf(_legs.$2.accountId)),
   );
   late bool _receivedTouched = _legs != null;
+
+  /// Whether the person typed what left: until then, money that arrived
+  /// keeps what its alert says arrived.
+  bool _amountTouched = false;
   late final TextEditingController _payee = TextEditingController(
     text: _editing?.payee ?? _capture?.suggestion.payee ?? '',
   );
@@ -216,8 +220,38 @@ class _EntryFormState extends State<_EntryForm> {
       _toAccountId != null &&
       _assetOf(_accountId) != _assetOf(_toAccountId);
 
+  @override
+  void initState() {
+    super.initState();
+    if (_arrived) _suggestReceived();
+  }
+
   /// Fills what arrives with what the rates say, until the person types it.
+  /// Money that arrived says how much arrived, in the account it arrived
+  /// in: across currencies that is what arrives, and what left is worked
+  /// back from the rates.
   void _suggestReceived() {
+    final Decimal? arrived = _arrived && !_amountTouched
+        ? _capture?.parsed.amount
+        : null;
+    if (arrived != null) {
+      final Asset from = _assetOf(_accountId);
+      if (!_crossCurrency) {
+        _amount.text = _decimalText(arrived, from);
+        return;
+      }
+      final Asset to = _assetOf(_toAccountId);
+      _received.text = _decimalText(arrived, to);
+      _receivedTouched = true;
+      final Money? left = own.rates.convert(Money(arrived, to), from);
+      if (left != null) {
+        _amount.text = _decimalText(
+          left.amount.round(scale: from.decimals),
+          from,
+        );
+      }
+      return;
+    }
     if (!_crossCurrency || _receivedTouched) return;
     final Decimal? sent = parseAmount(_amount.text);
     if (sent == null) return;
@@ -501,7 +535,10 @@ class _EntryFormState extends State<_EntryForm> {
                 decimal: true,
               ),
               style: context.type.displaySmall,
-              onChanged: (_) => setState(_suggestReceived),
+              onChanged: (_) => setState(() {
+                _amountTouched = true;
+                _suggestReceived();
+              }),
               decoration: InputDecoration(
                 labelText: l.amount,
                 suffixText: _assetOf(_accountId).code,

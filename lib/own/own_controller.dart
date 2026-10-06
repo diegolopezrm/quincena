@@ -932,9 +932,15 @@ class OwnController extends ChangeNotifier {
     _ratesFetchedAt = await store.ratesFetchedAt();
     // Read with everything else on each change, rather than through
     // streams of their own: one source of change, one rebuild.
-    _inbox = await store.inbox(
-      statuses: <InboxStatus>{InboxStatus.pending, InboxStatus.duplicate},
-    );
+    _captureSettings = await store.captureSettings();
+    // What waits for its account takes what the person taught the app
+    // since it arrived.
+    _inbox = <InboxItem>[
+      for (final InboxItem i in await store.inbox(
+        statuses: <InboxStatus>{InboxStatus.pending, InboxStatus.duplicate},
+      ))
+        CaptureService.withRules(i, _captureSettings, accounts),
+    ];
     _automatic = <InboxItem>[
       for (final InboxItem i in await store.inbox(
         statuses: <InboxStatus>{InboxStatus.accepted},
@@ -942,7 +948,6 @@ class OwnController extends ChangeNotifier {
       ))
         if (i.automatic) i,
     ];
-    _captureSettings = await store.captureSettings();
     _plan = EnvelopePlan.fromJson(_json(await store.setting(_planKey)));
     _wishes = <Wish>[
       for (final Object? w in _list(await store.setting(_wishesKey)))

@@ -1954,7 +1954,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get rulesBody =>
-      'Se crean cuando registras algo en Por revisar. Una regla solo cambia lo que llegue después: lo ya registrado se queda como está.';
+      'Se crean cuando registras algo en Por revisar. Una regla cambia lo que llegue después y lo que aún espera ahí: lo ya registrado se queda como está.';
 
   @override
   String get rulesEmpty =>

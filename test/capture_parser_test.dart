@@ -93,6 +93,20 @@ void main() {
       expect(p.merchant, 'Acme Colombia SAS');
     });
 
+    test('a transfer received, said with the noun first', () {
+      final ParsedCapture p = parse(
+        r'Transferencia recibida por $120.000 de CAMILO RUIZ',
+      );
+      expect(p.kind, EntryKind.income);
+      expect(p.amount, d('120000'));
+      expect(p.merchant, 'Camilo Ruiz');
+      // A card's payment the bank received is still money that left.
+      expect(
+        parse(r'Pago recibido a tu tarjeta *1234 por $480.000').kind,
+        EntryKind.expense,
+      );
+    });
+
     test('Nequi, with its exclamations', () {
       final ParsedCapture paid = parse(
         r'¡Listo! Pagaste $23.500 en CREPES & WAFFLES con tu tarjeta Nequi.',

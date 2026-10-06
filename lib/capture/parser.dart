@@ -88,7 +88,7 @@ final RegExp _advert = RegExp(
 );
 
 final RegExp _income = RegExp(
-  r'\b(recibiste|recibio|recibimos (un|una)|te (envio|envia|transfirio|transfirieron|consigno|consignaron|pago|llego)|abon\w*|consignacion|deposito|nomina|reembolso|devolucion|reintegro|ingreso de|received|you got|deposited|credited|refund)\b',
+  r'\b(recibiste|recibio|recibid[oa]s?|recibimos (un|una)|te (envio|envia|transfirio|transfirieron|consigno|consignaron|pago|llego)|abon\w*|consignacion|deposito|nomina|reembolso|devolucion|reintegro|ingreso de|received|you got|deposited|credited|refund)\b',
 );
 final RegExp _expense = RegExp(
   r'\b(compr\w*|pagaste|pago|pagos|retir\w*|debit\w*|cargo|transferiste|enviaste|envio de|envio (?:exitoso|realizado)|transferencia (?:exitosa|realizada|enviada)|pasaste|avance|purchase|you paid|you sent|spent|charged|withdraw\w*|recibimos tu pago)\b',
