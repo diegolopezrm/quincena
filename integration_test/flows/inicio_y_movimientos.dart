@@ -4,30 +4,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quincena/data/category.dart';
 import 'package:quincena/data/ledger.dart';
+import 'package:quincena/domain/categories.dart';
 import 'package:quincena/domain/decisions.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/projection.dart';
 import 'package:quincena/domain/records.dart';
+import 'package:quincena/domain/shared.dart';
 import 'package:quincena/format/dates.dart';
 import 'package:quincena/format/money.dart';
 import 'package:quincena/money/asset.dart';
+import 'package:quincena/money/money.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/store/store.dart';
+import 'package:quincena/ui/own/look.dart';
 import 'package:quincena/ui/own/movement_list.dart';
 
 import '../../test/own_flow_test.dart' show settle;
 import '../tour.dart';
 import 'flow.dart';
-
-Future<void> Function(FlowRun) _dbg(Future<void> Function(FlowRun) play) =>
-    (FlowRun f) async {
-      try {
-        await play(f);
-      } catch (e, s) {
-        debugPrint('DBG $e\n$s');
-        rethrow;
-      }
-    };
 
 final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
   AppFlow(
@@ -38,7 +32,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         'Quiero saber cuánta plata puedo gastar hasta que me paguen y de '
         'dónde sale esa cifra.',
     data: fullAccount,
-    _dbg((FlowRun f) async {
+    (FlowRun f) async {
       final OwnController own = f.own;
       final Ledger ledger = own.ledger!;
       await f.step(
@@ -115,7 +109,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.check('Cerrar la hoja no cambia la cifra', () {
         expect(own.ledger!.freeUntilPayday, ledger.freeUntilPayday);
       });
-    }),
+    },
   ),
   AppFlow(
     '02-02-ver-los-proximos-dias',
@@ -125,7 +119,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         'Quiero ver qué pagos vienen antes de la quincena y probar qué pasa '
         'si muevo uno de fecha.',
     data: fullAccount,
-    _dbg((FlowRun f) async {
+    (FlowRun f) async {
       final OwnController own = f.own;
       final Projection projection = own.projection!;
       final ProjectedDay low = projection.lowestBeforePayday;
@@ -140,6 +134,18 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
           f.screenText,
           contains('${_money(own, low.sure)} el ${dayMonth(low.date)}'),
         ),
+      );
+      await f.check(
+        'Sin colchón, el día en rojo se dice «te quedarías sin plata»',
+        () {
+          final ProjectedDay tight = projection.firstTight!;
+          expect(own.ledger!.cushion, 0);
+          expect(
+            f.shows('El ${dayShortMonth(tight.date)} te quedarías sin plata.'),
+            isTrue,
+          );
+          expect(f.screenText, isNot(contains('colchón')));
+        },
       );
       await f.tap('Ver 30 días');
       await f.page(
@@ -166,23 +172,45 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.check('El día elegido es el ${weekdayDayMonth(last)}', () {
         expect(f.shows(weekdayDayMonth(last)), isTrue);
       });
+      final DateTime day18 = DateTime(2026, 10, 18);
+      await f.tap(weekdayDayMonth(day18));
+      await f.top();
+      await f.step(
+        'Tocar un día de la lista también lo elige: el domingo 18, con el '
+        'cobro esperado de Estudio Norte, pasa arriba.',
+      );
+      await f.check('El día tocado quedó arriba de la lista', () {
+        final String text = f.screenText;
+        expect(text, contains(weekdayDayMonth(DateTime(2026, 10, 4))));
+        expect(
+          text.indexOf(weekdayDayMonth(day18)),
+          lessThan(text.indexOf(weekdayDayMonth(DateTime(2026, 10, 4)))),
+        );
+      });
       final List<String> fixed = _fixed(own);
+      final int committed = own.ledger!.committedUntilPayday;
       await f.tapFound(find.byTooltip('Mover en la simulación').first);
       await f.step(
         'El ícono de calendario junto a un cobro abre «Mover en la '
         'simulación»: un calendario para probar pagarlo otro día.',
       );
+      await _tapPicker(f, 'Cancelar');
+      await f.check('«Cancelar» no prueba nada', () {
+        expect(f.shows('Quitar lo que pruebas'), isFalse);
+      });
+      await f.tapFound(find.byTooltip('Mover en la simulación').first);
       await _pickDay(f, 14);
       await f.top();
       await f.step(
         'Con el Televisor movido al 14 aparece «Estás probando: nada de esto '
-        'se guarda» y la línea punteada muestra el saldo con el cambio.',
+        'se guarda ni cambia tus pagos.» y la línea punteada cambia.',
       );
       await f.check('Aparece el aviso de que solo es una prueba', () {
         expect(f.shows('Quitar lo que pruebas'), isTrue);
       });
-      await f.check('Probar otra fecha no cambia los pagos fijos', () {
+      await f.check('Probar otra fecha no cambia los pagos ni la cifra', () {
         expect(_fixed(own), fixed);
+        expect(own.ledger!.committedUntilPayday, committed);
       });
       await f.tap('Quitar lo que pruebas');
       await f.step(
@@ -192,6 +220,15 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.check('Ya no hay nada en prueba', () {
         expect(f.shows('Quitar lo que pruebas'), isFalse);
       });
+      await f.tap('¿Me alcanza?');
+      await f.step(
+        'El botón «¿Me alcanza?» de arriba convierte la página en la prueba '
+        'de una compra: pide el precio, qué es y cuándo.',
+      );
+      await f.check('La página pasa a probar una compra', () {
+        expect(f.shows('¿Cuánto cuesta?'), isTrue);
+        expect(f.shows('Después del pago'), isTrue);
+      });
       await f.tapTip('Cierre de la quincena');
       await f.step(
         'El ícono de recibo, arriba a la derecha, abre «Cierre de la '
@@ -200,7 +237,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.check('Abre «Cierre de la quincena»', () {
         expect(f.shows('Qué cambió'), isTrue);
       });
-    }),
+    },
   ),
   AppFlow(
     '02-03-saber-si-me-alcanza',
@@ -210,7 +247,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         'Vi unos tenis y quiero saber si me alcanza para comprarlos hoy o si '
         'mejor espero al pago.',
     data: fullAccount,
-    _dbg((FlowRun f) async {
+    (FlowRun f) async {
       final OwnController own = f.own;
       final Ledger ledger = own.ledger!;
       final int entries = own.snapshot!.entries.length;
@@ -266,6 +303,15 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         '«Otra fecha» abre un calendario: solo deja elegir desde hoy y hasta '
         'dos meses adelante.',
       );
+      await _tapPicker(f, 'Cancelar');
+      await f.check('«Cancelar» deja elegido «Después del pago»', () {
+        final SegmentedButton<Object?> when = f.tester.widget(
+          find.byWidgetPredicate((Widget w) => w is SegmentedButton),
+        );
+        expect(when.selected.single.toString(), contains('afterPay'));
+        expect(f.shows(_verdict(after.verdict)), isTrue);
+      });
+      await f.tap('Otra fecha');
       await _pickDay(f, 9);
       await f.step(
         'Elegido el 9, el botón dice «9 oct» y el veredicto es para ese día.',
@@ -316,7 +362,23 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
           expect(f.shows(_verdict(v)), isFalse);
         }
       });
-    }),
+      await f.back();
+      // The keyboard's own key does what «Ver» does.
+      await f.reveal(find.widgetWithText(TextField, 'Precio'));
+      await f.tester.enterText(
+        find.widgetWithText(TextField, 'Precio'),
+        '50000',
+      );
+      await f.tester.testTextInput.receiveAction(TextInputAction.go);
+      await settle(f.tester);
+      await f.step(
+        'La tecla «Ir» del teclado hace lo mismo que «Ver»: abre «¿Me '
+        'alcanza?» con los 50.000.',
+      );
+      await f.check('La tecla del teclado abre la prueba con el precio', () {
+        expect(_fieldShows('¿Cuánto cuesta?', '50.000'), findsOneWidget);
+      });
+    },
   ),
   AppFlow(
     '02-04-ver-el-cierre-de-la-quincena',
@@ -326,7 +388,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         'Ya me pagaron y quiero ver cómo me fue en la quincena que terminó '
         'y qué viene.',
     data: fullAccount,
-    _dbg((FlowRun f) async {
+    (FlowRun f) async {
       final OwnController own = f.own;
       final Ledger ledger = own.ledger!;
       final PeriodClose close = closePeriod(
@@ -346,18 +408,37 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.check('Dice que gastaste ${_money(own, close.spent)}', () {
         expect(f.screenText, contains(_money(own, close.spent)));
       });
-      final String category = close.changes.first.category.labelIn('es');
+      final CategoryChange first = close.changes.first;
+      final String category = first.category.labelIn('es');
+      await f.check(
+        'Lo que más cambió es $category: '
+        '${_money(own, first.before ?? 0)} antes, ${_money(own, first.now)} ahora',
+        () {
+          expect(f.screenText, contains(_money(own, first.now)));
+          expect(f.screenText, contains(_money(own, first.difference)));
+        },
+      );
       await f.tap(category);
       await f.step(
-        'Toca «$category»: una hoja lista los pagos de esa categoría en la '
-        'quincena, con su día y monto.',
+        'Toca «$category», que bajó a \$0: la hoja dice que en esta quincena '
+        'no hubo pagos de $category y muestra los de la anterior.',
       );
-      await f.check('La hoja muestra los pagos de $category con su monto', () {
-        for (final Movement m in close.movementsOf(
+      await f.check('La hoja no queda vacía: trae los pagos de antes', () {
+        expect(close.movementsOf(ledger, first.category), isEmpty);
+        final List<Movement> before = close.movementsBefore(
           ledger,
-          close.changes.first.category,
-        )) {
-          expect(f.screenText, contains(_money(own, m.amount)));
+          first.category,
+        );
+        expect(before, isNotEmpty);
+        expect(
+          f.shows(
+            'En esta quincena no hubo pagos de $category. Estos son los de '
+            'la anterior:',
+          ),
+          isTrue,
+        );
+        for (final Movement m in before) {
+          expect(f.screenText, contains(_money(own, -m.amount)));
         }
       });
       await f.back();
@@ -369,7 +450,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.check('Abre «Próximos 30 días»', () {
         expect(f.shows('Próximos 30 días'), isTrue);
       });
-    }),
+    },
   ),
   AppFlow(
     '02-05-atender-lo-que-esta-por-hacer',
@@ -379,7 +460,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         'Quiero saber qué me falta hacer para que la cifra sea cierta y '
         'hacerlo desde Inicio.',
     data: fullAccount,
-    _dbg((FlowRun f) async {
+    (FlowRun f) async {
       final OwnController own = f.own;
       final int pending = own.pendingInbox.length;
       final int free = own.ledger!.freeUntilPayday;
@@ -448,7 +529,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
           expect(now.freeUntilPayday, 0);
         },
       );
-    }),
+    },
   ),
   AppFlow(
     '02-06-registrar-el-pago-que-no-aparece',
@@ -458,7 +539,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         'Me pagaron el 30 pero la app no lo vio; quiero anotarlo para que '
         'cuente.',
     data: _newcomer,
-    _dbg((FlowRun f) async {
+    (FlowRun f) async {
       final OwnController own = f.own;
       final int free = own.ledger!.freeUntilPayday;
       final DateTime late = own.projection!.latePay!;
@@ -472,8 +553,8 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       });
       await f.tap('Registrar');
       await f.step(
-        '«Registrar» abre el formulario ya en «Ingreso», pero con el monto, '
-        'la categoría y la fecha por llenar.',
+        '«Registrar» abre el formulario ya en «Ingreso», pero sin monto ni '
+        'categoría y con la fecha en «Hoy»: hay que llenarlos.',
       );
       await f.check('El formulario abre como ingreso', () {
         expect(f.shows('Agregar movimiento'), isTrue);
@@ -515,7 +596,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.check('Inicio ahora propone repartir la quincena que llegó', () {
         expect(f.shows('Te llegó la quincena: ${pesos(2400000)}'), isTrue);
       });
-    }),
+    },
   ),
   AppFlow(
     '02-07-decir-mis-pagos-fijos',
@@ -525,13 +606,13 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         'La cifra dice «Provisional»; quiero decirle a la app que no tengo '
         'pagos fijos para que deje de serlo.',
     data: _newcomer,
-    _dbg((FlowRun f) async {
+    (FlowRun f) async {
       final OwnController own = f.own;
       final int free = own.ledger!.freeUntilPayday;
       await f.reveal(find.text('Agrega tus pagos fijos'));
       await f.step(
-        '«Agrega tus pagos fijos» avisa que uno de tus gastos parece fijo y '
-        'que revisarlo vuelve cierta la cifra.',
+        'En «Después», «Agrega tus pagos fijos» dice «Uno parece pago fijo: '
+        'revísalo», con «Agregar».',
       );
       await f.check('Dice que un gasto parece pago fijo', () {
         expect(f.shows('Uno parece pago fijo: revísalo'), isTrue);
@@ -578,7 +659,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.check('La cifra no cambia: no había pagos que restar', () {
         expect(own.ledger!.freeUntilPayday, free);
       });
-    }),
+    },
   ),
   AppFlow(
     '02-08-poner-la-tasa-que-falta',
@@ -588,7 +669,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         'Tengo euros y la app los cuenta como cero; quiero decirle a cuánto '
         'están para que sumen.',
     data: _newcomer,
-    _dbg((FlowRun f) async {
+    (FlowRun f) async {
       final OwnController own = f.own;
       final int free = own.ledger!.freeUntilPayday;
       await f.reveal(find.text('Falta la tasa de EUR'));
@@ -633,7 +714,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.check('Lo que puedes gastar subió 1.350.000, a $after', () {
         expect(own.ledger!.freeUntilPayday, free + 1350000);
       });
-    }),
+    },
   ),
   AppFlow(
     '02-09-cuando-no-me-alcanza',
@@ -643,7 +724,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         'Compré algo caro y quiero ver cuánto me falta para llegar al pago, '
         'y deshacerlo si me equivoqué.',
     data: fullAccount,
-    _dbg((FlowRun f) async {
+    (FlowRun f) async {
       final OwnController own = f.own;
       final int free = own.ledger!.freeUntilPayday;
       await f.tapTip('Agregar movimiento');
@@ -685,7 +766,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         expect(own.ledger!.freeUntilPayday, free);
         expect(f.shows('Puedes gastar'), isTrue);
       });
-    }),
+    },
   ),
   AppFlow(
     '02-10-preguntarle-a-mi-plata',
@@ -702,7 +783,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       'El límite de preguntas del día: «Te quedan N preguntas hoy» baja al '
           'preguntar y al llegar a cero no deja seguir.',
     ],
-    _dbg((FlowRun f) async {
+    (FlowRun f) async {
       await f.reveal(find.text('PREGÚNTALE A TU PLATA'));
       await f.step(
         '«Pregúntale a tu plata» ofrece tres preguntas listas y «Otra '
@@ -727,20 +808,29 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.back();
       // Asked at once, the question waits on Gemini: no settling until the
       // answer, or the word that there is none, arrives.
-      final Finder question = find.text(
+      for (final String asked in <String>[
         '¿Cuánto puedo gastar antes de que me paguen?',
-      );
-      await f.reveal(question);
-      await f.tester.tap(question.last);
-      await f.waitFor(find.textContaining('No pude responder'));
-      await f.step(
-        'Una pregunta lista se hace de una vez. Aquí no hay conexión con '
-        'Gemini, así que la conversación dice «No pude responder esta vez».',
-      );
-      await f.check('Sin Gemini, la app dice que no pudo responder', () {
-        expect(f.shows('No pude responder esta vez. Prueba de nuevo.'), isTrue);
-      });
-    }),
+        '¿En qué se me fue la plata este mes?',
+        '¿Cuánto tengo en total, con dólares y cripto?',
+      ]) {
+        final Finder question = find.text(asked);
+        await f.reveal(question);
+        await f.tester.tap(question.last);
+        await f.waitFor(find.textContaining('No pude responder'));
+        await f.step(
+          'Tocar «$asked» la hace de una vez. Sin conexión con Gemini, la '
+          'conversación dice «No pude responder esta vez».',
+        );
+        await f.check('«$asked» queda preguntada, sin respuesta inventada', () {
+          expect(f.shows(asked), isTrue);
+          expect(
+            f.shows('No pude responder esta vez. Prueba de nuevo.'),
+            isTrue,
+          );
+        });
+        await f.back();
+      }
+    },
   ),
   AppFlow(
     '02-11-moverme-desde-inicio',
@@ -749,8 +839,12 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
     goal:
         'Quiero llegar rápido desde Inicio a lo pendiente, a los ajustes, '
         'a una cuenta y a todos mis movimientos.',
+    manual: <String>[
+      'Con la captura automática encendida, que el número de la bandeja suba '
+          'cuando llega una notificación real del banco.',
+    ],
     data: fullAccount,
-    _dbg((FlowRun f) async {
+    (FlowRun f) async {
       final OwnController own = f.own;
       final int pending = own.pendingInbox.length;
       await f.step(
@@ -778,8 +872,19 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         '«Tus cuentas» lista cada cuenta con su saldo; la tarjeta dice lo '
         'que debes y el cupo libre.',
       );
-      await f.tap('Efectivo');
-      await f.step('Tocar una cuenta abre su página: saldo y sus movimientos.');
+      await f.tap('Nequi');
+      await f.step(
+        'Tocar Nequi abre su página: el saldo de hoy y sus movimientos, del '
+        'más reciente.',
+      );
+      await f.check(
+        'La página de Nequi muestra su saldo y sus movimientos',
+        () {
+          expect(f.shows(_money(own, 1700)), isTrue);
+          expect(f.shows('Crepes & Waffles'), isTrue);
+          expect(f.shows('Metro de Medellín'), isTrue);
+        },
+      );
       await f.back();
       await f.reveal(find.text('Ver todos'));
       await f.step(
@@ -792,6 +897,17 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
           expect(f.shows(e.payee), isTrue, reason: e.payee);
         }
       });
+      final Entry newest = visibleEntries(own).first;
+      await _open(f, newest);
+      await f.step(
+        'Tocar uno de los últimos movimientos lo abre ahí mismo para '
+        'editarlo, sin ir a Movimientos.',
+      );
+      await f.check('Abre «Editar movimiento» con ${newest.payee}', () {
+        expect(f.shows('Editar movimiento'), isTrue);
+        expect(_fieldShows('¿Dónde o a quién?', newest.payee), findsOneWidget);
+      });
+      await f.back();
       await f.tap('Ver todos');
       await f.step(
         '«Ver todos» cambia a la pestaña Movimientos y la abre arriba: el '
@@ -801,7 +917,1145 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         expect(f.shows('Buscar movimientos'), isTrue);
         expect(f.shows('HOY'), isTrue);
       });
-    }),
+    },
+  ),
+  AppFlow(
+    '02-12-mirar-inicio-recien-empezando',
+    'Mirar Inicio recién empezando',
+    area: 'Inicio',
+    goal:
+        'Acabo de instalar la app y quiero entender qué me dice Inicio antes '
+        'de tener cuentas o historia.',
+    data: _noAccounts,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      await f.tap('¿De dónde sale?');
+      await f.page(
+        '«¿De dónde sale?» sin cuentas: todo da \$0 y «Lo que supone» dice '
+        'que no tiene pagos fijos ni sabe cuánto te pagan.',
+        most: 2,
+      );
+      await f.check('Sin cuentas no hay nada que gastar', () {
+        expect(own.ledger!.freeUntilPayday, 0);
+        expect(own.provisional, isTrue);
+      });
+      await f.check('Dice lo que supone: sin pagos fijos y sin pago', () {
+        expect(f.screenText, contains('No tiene pagos fijos'));
+        expect(f.screenText, contains('No sabe cuánto te pagan'));
+      });
+      await f.back();
+      await f.tap('Ver 30 días');
+      await f.step(
+        '«Próximos 30 días» sin nada programado: la línea plana y, abajo, '
+        '«Nada programado en estos días.»',
+      );
+      await f.check('Dice que no hay nada programado', () {
+        expect(f.shows('Nada programado en estos días.'), isTrue);
+      });
+      await f.tapTip('Cierre de la quincena');
+      await f.step(
+        'El cierre aún no tiene qué mostrar: explica que aparece cuando haya '
+        'una quincena completa, de un pago al siguiente.',
+      );
+      await f.check('El cierre explica por qué está vacío', () {
+        expect(
+          f.shows(
+            'Todavía no hay una quincena completa registrada. El cierre '
+            'aparece cuando haya una, de un pago al siguiente.',
+          ),
+          isTrue,
+        );
+      });
+    },
+  ),
+  AppFlow(
+    '02-13-ver-en-que-gaste-mas',
+    'Ver en qué gasté más esta quincena',
+    area: 'Inicio',
+    goal:
+        'Siento que se me fue más plata en restaurantes y quiero ver cuáles '
+        'pagos fueron.',
+    data: _eatingOutMore,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Ledger ledger = own.ledger!;
+      final PeriodClose close = closePeriod(ledger)!;
+      await f.reveal(find.text('Cierre de la quincena'));
+      await f.step(
+        'En la semana después del pago, «Próximos días» ofrece «Cierre de la '
+        'quincena».',
+      );
+      await f.tap('Cierre de la quincena');
+      await f.page(
+        'El cierre compara con la quincena anterior: gastaste \$90.000 más y '
+        'Restaurantes subió; «Una acción posible» invita a mirar esos pagos.',
+        most: 2,
+      );
+      await f.check(
+        'Propone mirar Restaurantes, que pasó de 100.000 a 200.000',
+        () {
+          expect(close.action, CloseAction.lookAtCategory);
+          expect(close.actionCategory, Category.restaurants);
+          expect(
+            f.screenText,
+            contains(
+              'Restaurantes pasó de ${pesos(100000)} a ${pesos(200000)} frente '
+              'a la quincena anterior.',
+            ),
+          );
+        },
+      );
+      await f.tap('Ver los pagos');
+      await f.step(
+        '«Ver los pagos» abre la hoja de Restaurantes de la quincena: Crepes '
+        'y Rappi, del más grande al más chico.',
+      );
+      await f.check('La hoja trae los dos pagos de restaurantes', () {
+        expect(f.shows('Restaurantes del 15 sept al 29 sept'), isTrue);
+        expect(f.shows(pesos(-110000)), isTrue);
+        expect(f.shows(pesos(-90000)), isTrue);
+      });
+    },
+  ),
+  AppFlow(
+    '03-01-registrar-un-gasto',
+    'Registrar un gasto a mano',
+    area: 'Movimientos',
+    goal:
+        'Pagué un almuerzo en efectivo y quiero anotarlo para que lo que '
+        'puedo gastar baje.',
+    manual: <String>[
+      'Con el widget de Quincena en la pantalla de inicio, que después de '
+          'guardar el gasto muestre la misma cifra que Inicio («Te faltan» '
+          'incluido).',
+    ],
+    data: fullAccount,
+    (FlowRun f) async {
+      final int free = f.own.ledger!.freeUntilPayday;
+      final int entries = f.own.snapshot!.entries.length;
+      final Decimal cash = _held(f.own, 'Efectivo');
+      await f.step('Inicio: cuánto puedes gastar antes de anotar el gasto.');
+      await f.tapTip('Agregar movimiento');
+      await f.step(
+        'Toca «Movimiento»: el formulario abre en «Gasto», con Bancolombia, '
+        'tu primera cuenta, ya elegida.',
+      );
+      await f.type('Monto', '32000');
+      // The account is a menu: open it and pick Efectivo.
+      await f.tapFound(find.byType(DropdownButtonFormField<String>));
+      await f.step(
+        'Escribe 32.000 y abre «Cuenta»: aparecen tus cuentas para elegir de '
+        'dónde salió la plata.',
+      );
+      await f.tapFound(find.text('Efectivo').last);
+      await f.tap('Restaurantes');
+      await f.type('¿Dónde o a quién?', 'Almuerzo');
+      await f.step(
+        'Con Efectivo, Restaurantes y «Almuerzo» escrito, el formulario '
+        'queda listo para guardar.',
+      );
+      await f.tap('Guardar');
+      await f.step(
+        'De vuelta en Inicio la cifra bajó los 32.000 del almuerzo: como era '
+        'más de lo que tenías, ahora dice «Te faltan».',
+      );
+      await f.check('Queda un movimiento más', () {
+        expect(f.own.snapshot!.entries.length, entries + 1);
+      });
+      await f.check('El gasto quedó en Efectivo, en Restaurantes', () {
+        final Entry e = f.own.snapshot!.entries.firstWhere(
+          (Entry e) => e.payee == 'Almuerzo',
+        );
+        expect(e.category, 'restaurants');
+        expect(e.amount.toString(), '-32000');
+        expect(e.accountId, _account(f.own, 'Efectivo').id);
+      });
+      final String before = pesos(f.own.ledger!.major(free));
+      final String after = pesos(f.own.ledger!.major(free - 32000));
+      await f.check('Lo que puedes gastar pasó de $before a $after', () {
+        expect(f.own.ledger!.freeUntilPayday, free - 32000);
+      });
+      await f.check(
+        'La tarjeta dice «Te faltan» ${pesos(f.own.ledger!.major(32000 - free))}',
+        () {
+          expect(f.shows('Te faltan'), isTrue);
+          expect(f.shows(pesos(f.own.ledger!.major(32000 - free))), isTrue);
+        },
+      );
+      await f.check('El efectivo bajó 32.000', () {
+        expect(_held(f.own, 'Efectivo'), cash - Decimal.fromInt(32000));
+      });
+      await f.tap('Movimientos');
+      await f.step(
+        'En Movimientos, el almuerzo encabeza «Hoy»: Restaurantes, Efectivo '
+        'y −\$32.000.',
+      );
+      await f.check(
+        'Movimientos lo muestra primero, con su categoría y cuenta',
+        () {
+          expect(visibleEntries(f.own).first.payee, 'Almuerzo');
+          expect(f.shows('Restaurantes · Efectivo'), isTrue);
+        },
+      );
+    },
+  ),
+  AppFlow(
+    '03-02-buscar-un-movimiento',
+    'Buscar un movimiento',
+    area: 'Movimientos',
+    goal:
+        'Quiero encontrar rápido lo que pagué en el Éxito, lo que gasté en '
+        'transporte y todo lo que salió de Nequi.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      await f.tap('Movimientos');
+      await f.page(
+        'Movimientos: el buscador arriba y los movimientos agrupados por día, '
+        'del más reciente: «Hoy», «Ayer» y luego cada fecha.',
+        most: 3,
+      );
+      await f.check('Los días van del más reciente al más viejo', () {
+        expect(f.shows('HOY'), isTrue);
+        expect(f.shows('AYER'), isTrue);
+        final List<Entry> shown = visibleEntries(own);
+        for (var i = 1; i < shown.length; i++) {
+          expect(shown[i].date.isAfter(shown[i - 1].date), isFalse);
+        }
+      });
+      await f.tester.drag(
+        find.byType(CustomScrollView).first,
+        const Offset(0, -500),
+      );
+      await settle(f.tester);
+      await f.step(
+        'Al bajar por la lista, el botón «Movimiento» se esconde para no '
+        'tapar los montos.',
+      );
+      await f.check('El botón flotante se escondió', () {
+        expect(_fabShown(f), isFalse);
+      });
+      await f.tester.drag(
+        find.byType(CustomScrollView).first,
+        const Offset(0, 120),
+      );
+      await settle(f.tester);
+      await f.step('Al subir un poco, el botón vuelve.');
+      await f.check('El botón flotante volvió', () {
+        expect(_fabShown(f), isTrue);
+      });
+      await f.top();
+      for (final (String query, String caption) in <(String, String)>[
+        (
+          'uber',
+          'Escribe «uber» en minúscula: queda solo el Uber del jueves 1 de '
+              'octubre.',
+        ),
+        (
+          'exito',
+          'Sin tilde, «exito» también encuentra el Éxito Laureles: así se '
+              'escribe rápido en el teléfono.',
+        ),
+        (
+          'transporte',
+          '«transporte» busca por categoría: Uber y el Metro de Medellín.',
+        ),
+        (
+          'nequi',
+          '«nequi» busca por cuenta: los dos gastos pagados desde Nequi.',
+        ),
+        (
+          'ahorro',
+          '«ahorro» busca en las notas: la transferencia a Binance, que dice '
+              '«Ahorro en USDT».',
+        ),
+      ]) {
+        await _search(f, query);
+        await f.step(caption);
+        final List<Entry> expected = _found(f, query);
+        await f.check(
+          '«$query» muestra ${expected.length} movimientos, los que coinciden',
+          () {
+            expect(expected, isNotEmpty);
+            expect(find.byType(MovementRow), findsNWidgets(expected.length));
+          },
+        );
+      }
+      await _search(f, 'zapatos rojos');
+      await f.step(
+        'Si nada coincide, la lista lo dice: «Nada coincide con la '
+        'búsqueda.»',
+      );
+      await f.check('Sin coincidencias, avisa', () {
+        expect(f.shows('Nada coincide con la búsqueda.'), isTrue);
+        expect(find.byType(MovementRow), findsNothing);
+      });
+      await _search(f, '');
+      await f.step('Al borrar la búsqueda vuelven todos los movimientos.');
+      await f.check('Sin búsqueda vuelve la lista completa', () {
+        expect(f.shows('HOY'), isTrue);
+        expect(f.shows('Nada coincide con la búsqueda.'), isFalse);
+      });
+    },
+  ),
+  AppFlow(
+    '03-03-corregir-un-movimiento',
+    'Corregir un movimiento',
+    area: 'Movimientos',
+    goal:
+        'Anoté mal la compra del Éxito: fue con la Visa, en ropa, por menos '
+        'y el día antes; quiero corregirla.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Entry old = _entryOf(own, 'Éxito Laureles', '-187400');
+      final int free = own.ledger!.freeUntilPayday;
+      final Decimal bank = _held(own, 'Bancolombia');
+      final Decimal visa = _held(own, 'Visa');
+      final int count = own.snapshot!.entries.length;
+      await f.tap('Movimientos');
+      await _open(f, old);
+      await f.page(
+        'Tocar un movimiento abre «Editar movimiento» con todo lo que tiene: '
+        'monto, cuenta, categoría, fecha y nota, y abajo «Dividir» y '
+        '«Eliminar».',
+        most: 2,
+      );
+      await f.check('El formulario trae el monto y la categoría guardados', () {
+        expect(f.shows('Editar movimiento'), isTrue);
+        expect(
+          find.descendant(
+            of: find.byType(TextField),
+            matching: find.text('187.400'),
+          ),
+          findsOneWidget,
+        );
+      });
+      await f.type('Monto', '178400');
+      await f.tapFound(find.byType(DropdownButtonFormField<String>));
+      await f.tapFound(find.text('Visa').last);
+      await f.tap('Compras');
+      await f.step(
+        'Cambia el monto a 178.400, la cuenta a Visa y la categoría a '
+        '«Compras»: el chip elegido se marca.',
+      );
+      await _openDate(f);
+      await f.step(
+        '«Fecha» abre el calendario en el día del movimiento, el 2 de '
+        'octubre.',
+      );
+      await _tapPicker(f, 'Cancelar');
+      await f.step('«Cancelar» cierra el calendario y la fecha sigue igual.');
+      await f.check('Cancelar no cambia la fecha', () {
+        expect(f.shows('Ayer'), isTrue);
+      });
+      await _openDate(f);
+      await _pickDay(f, 1);
+      await f.type('Nota (opcional)', 'Ropa para el viaje');
+      await f.step(
+        'Elegido el 1 y escrita la nota, la fecha dice «1 oct 2026». Falta '
+        '«Guardar».',
+      );
+      await f.tap('Guardar');
+      await f.reveal(_row(old));
+      await f.step(
+        'Guardado: el movimiento pasa al jueves 1 de octubre, en «Compras · '
+        'Visa» y por −\$178.400.',
+      );
+      final Entry now = own.snapshot!.entries.firstWhere(
+        (Entry e) => e.id == old.id,
+      );
+      await f.check('Es el mismo movimiento, no uno nuevo', () {
+        expect(own.snapshot!.entries.length, count);
+      });
+      await f.check('Quedó en Visa, Compras, 178.400, el 1 de octubre', () {
+        expect(now.accountId, _account(own, 'Visa').id);
+        expect(now.category, 'shopping');
+        expect(now.amount, Decimal.parse('-178400'));
+        expect(now.date.day, 1);
+        expect(now.note, 'Ropa para el viaje');
+      });
+      await f.check('Bancolombia recuperó los 187.400', () {
+        expect(_held(own, 'Bancolombia'), bank + Decimal.parse('187400'));
+      });
+      await f.check('La Visa debe 178.400 más', () {
+        expect(_held(own, 'Visa'), visa - Decimal.parse('178400'));
+      });
+      await f.check('Lo que puedes gastar subió los 9.000 de diferencia', () {
+        expect(own.ledger!.freeUntilPayday, free + 9000);
+      });
+    },
+  ),
+  AppFlow(
+    '03-04-dividir-un-gasto',
+    'Dividir un gasto con amigos',
+    area: 'Movimientos',
+    goal:
+        'Pagué las crepes con Ana y quiero que la app sepa que ella me debe '
+        'su parte.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Entry crepes = _entry(own, 'Crepes & Waffles');
+      final int free = own.ledger!.freeUntilPayday;
+      final int spent = _spentIn(own, 2026, 10);
+      await f.tap('Movimientos');
+      await f.tap('Crepes & Waffles');
+      await f.tap('Dividir este gasto');
+      await f.page(
+        '«Dividir este gasto» abre «Dividir un gasto»: un grupo nuevo, con '
+        'el valor del movimiento fijo y «En partes iguales» elegido.',
+        most: 2,
+      );
+      await f.tap('Guardar');
+      await f.step(
+        'Sin nadie con quien dividir, «Guardar» avisa: «Agrega al menos a '
+        'una persona más.»',
+      );
+      await f.check('No guarda una división solo contigo', () {
+        expect(f.shows('Agrega al menos a una persona más.'), isTrue);
+        expect(own.splitOf(crepes.id), isNull);
+      });
+      await f.type('¿Con quién lo divides?', 'Ana, Juan');
+      await f.page(
+        'Con «Ana, Juan» quedan tres partes iguales; el peso que sobra del '
+        'redondeo queda en tu parte, y abajo dice cuánto te deben.',
+        most: 2,
+      );
+      await f.check('Tres partes: \$7.834 para ti y \$7.833 para cada uno', () {
+        expect(f.shows(pesos(7834)), isTrue);
+        expect(find.text(pesos(7833)), findsNWidgets(2));
+      });
+      // Juan did not eat: his box off.
+      await f.tapFound(find.byType(Checkbox).last);
+      await f.tap('Por montos');
+      await f.type('Tu parte', '8000');
+      await f.type('Parte de Ana', '10000');
+      await f.page(
+        'Sin Juan y «Por montos»: 8.000 para ti y 10.000 para Ana. Abajo, '
+        'en naranja, faltan \$5.500 para el total.',
+        most: 2,
+      );
+      await f.check('Dice cuánto falta para el total', () {
+        expect(f.shows('Faltan ${pesos(5500)} para el total'), isTrue);
+      });
+      await f.check('El aviso de antes se fue al escribir los nombres', () {
+        expect(f.shows('Agrega al menos a una persona más.'), isFalse);
+      });
+      await f.tap('Guardar');
+      await f.step(
+        '«Guardar» no deja guardar partes que no suman: «Las partes no suman '
+        'el total.»',
+      );
+      await f.check('No guarda partes que no suman', () {
+        expect(f.shows('Las partes no suman el total.'), isTrue);
+        expect(own.splitOf(crepes.id), isNull);
+      });
+      await f.type('Parte de Ana', '15500');
+      await f.tap('Guardar');
+      await f.step(
+        'Con 15.500 para Ana ya suma. Al guardar vuelves a Movimientos y la '
+        'fila de las crepes agrega «Dividido: tu parte…».',
+      );
+      await f.check('La fila dice «Dividido: tu parte ${pesos(8000)}»', () {
+        expect(f.screenText, contains('Dividido: tu parte ${pesos(8000)}'));
+      });
+      await f.check('Ana te debe 15.500 y tu parte es 8.000', () {
+        final SharedExpense split = own.splitOf(crepes.id)!.$2;
+        expect(split.shares[meId], 8000);
+        expect(split.othersPart, 15500);
+      });
+      await f.check('El grupo se llama como el gasto', () {
+        expect(own.splitOf(crepes.id)!.$1.name, 'Crepes & Waffles');
+      });
+      await f.check(
+        'Lo que puedes gastar no cambia: lo de Ana aún no llega',
+        () {
+          expect(own.ledger!.freeUntilPayday, free);
+        },
+      );
+      await f.check('Tu gasto del mes baja 15.500: solo cuenta tu parte', () {
+        expect(_spentIn(own, 2026, 10), spent - 15500);
+      });
+      await f.tap('Crepes & Waffles');
+      await f.tap('Cambiar la división');
+      await f.step(
+        'Al abrirlo de nuevo, el botón dice «Cambiar la división»: la hoja '
+        'trae las partes de antes, 8.000 y 15.500, y suma «Quitar la '
+        'división».',
+      );
+      await f.check('La hoja trae las partes guardadas', () {
+        expect(_fieldShows('Tu parte', '8.000'), findsOneWidget);
+        expect(_fieldShows('Parte de Ana', '15.500'), findsOneWidget);
+      });
+      await f.tap('Quitar la división');
+      await f.step('«Quitar la división» lo deja como un gasto solo tuyo.');
+      await f.check(
+        'Ya no está dividido y el gasto del mes vuelve a ser el de antes',
+        () {
+          expect(own.splitOf(crepes.id), isNull);
+          expect(_spentIn(own, 2026, 10), spent);
+        },
+      );
+    },
+  ),
+  AppFlow(
+    '03-05-borrar-un-movimiento',
+    'Borrar un movimiento',
+    area: 'Movimientos',
+    goal:
+        'Ya cancelé el gimnasio y ese cobro quedó anotado de más; quiero '
+        'borrarlo.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Entry gym = _entry(own, 'Fit24 gimnasio');
+      final int free = own.ledger!.freeUntilPayday;
+      final Decimal bank = _held(own, 'Bancolombia');
+      await f.tap('Movimientos');
+      await f.tap('Fit24 gimnasio');
+      await f.tap('Eliminar');
+      await f.step(
+        '«Eliminar» no borra de una vez: pregunta «¿Eliminar este '
+        'movimiento?» con «Cancelar» y «Eliminar».',
+      );
+      await f.tap('Cancelar');
+      await f.step('«Cancelar» vuelve al formulario y no borra nada.');
+      await f.check('Cancelar no borra el movimiento', () {
+        expect(own.snapshot!.entries.any((Entry e) => e.id == gym.id), isTrue);
+      });
+      await f.tap('Eliminar');
+      await f.tap('Eliminar');
+      await f.step(
+        'Confirmado, el formulario se cierra y el gimnasio ya no está en la '
+        'lista.',
+      );
+      await f.check('El movimiento ya no existe', () {
+        expect(own.snapshot!.entries.any((Entry e) => e.id == gym.id), isFalse);
+        expect(f.shows('Fit24 gimnasio'), isFalse);
+      });
+      await f.check('Bancolombia recuperó los 119.000', () {
+        expect(_held(own, 'Bancolombia'), bank + Decimal.parse('119000'));
+      });
+      await f.check('Lo que puedes gastar subió 119.000', () {
+        expect(own.ledger!.freeUntilPayday, free + 119000);
+      });
+    },
+  ),
+  AppFlow(
+    '03-06-registrar-un-ingreso',
+    'Registrar un ingreso',
+    area: 'Movimientos',
+    goal:
+        'Un cliente me pagó un trabajo a Nequi y quiero anotarlo para que '
+        'cuente, apartando la reserva que tengo para independientes.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Ledger ledger = own.ledger!;
+      final Decimal nequi = _held(own, 'Nequi');
+      await f.tapTip('Agregar movimiento');
+      await f.tap('Ingreso');
+      await f.step(
+        'En «Ingreso» las categorías cambian a las de plata que entra y el '
+        'campo pregunta «¿De dónde?».',
+      );
+      await f.check('Muestra las categorías de ingreso, no las de gasto', () {
+        expect(f.shows('Trabajos independientes'), isTrue);
+        expect(f.shows('Salario'), isTrue);
+        expect(f.shows('Mercado'), isFalse);
+        expect(f.shows('¿De dónde?'), isTrue);
+      });
+      await f.tap('Guardar');
+      await f.step(
+        'Sin monto, «Guardar» no guarda: el campo dice «Escribe un monto».',
+      );
+      await f.check('Sin monto no guarda nada', () {
+        expect(f.shows('Escribe un monto'), isTrue);
+        expect(f.shows('Agregar movimiento'), isTrue);
+      });
+      await f.type('Monto', '350000');
+      await f.check('Al escribir el monto, el aviso se va', () {
+        expect(f.shows('Escribe un monto'), isFalse);
+      });
+      await f.tapFound(find.byType(DropdownButtonFormField<String>));
+      await f.tapFound(find.text('Nequi').last);
+      await f.tap('Trabajos independientes');
+      await f.type('¿De dónde?', 'Cliente Acme');
+      await f.step(
+        'Con 350.000 a Nequi, «Trabajos independientes» y «Cliente Acme», '
+        'queda listo.',
+      );
+      await f.tap('Guardar');
+      await f.page(
+        'En Inicio la cifra subió, pero no los 350.000: la «Reserva de '
+        'ingresos variables» apartó su 15 %.',
+        most: 2,
+      );
+      await f.check(
+        'El ingreso quedó en Nequi, en Trabajos independientes',
+        () {
+          final Entry e = _entryOf(own, 'Cliente Acme', '350000');
+          expect(e.category, 'freelance');
+          expect(e.kind, EntryKind.income);
+          expect(_held(own, 'Nequi'), nequi + Decimal.parse('350000'));
+        },
+      );
+      await f.check('La reserva apartó 52.500, el 15 % del pago', () {
+        expect(own.ledger!.reserved, ledger.reserved + 52500);
+        expect(f.screenText, contains(_money(own, -own.ledger!.reserved)));
+      });
+      await f.check('Lo que puedes gastar subió 297.500, a '
+          '${_money(own, ledger.freeUntilPayday + 297500)}', () {
+        expect(own.ledger!.freeUntilPayday, ledger.freeUntilPayday + 297500);
+        expect(f.shows(_money(own, ledger.freeUntilPayday + 297500)), isTrue);
+      });
+    },
+  ),
+  AppFlow(
+    '03-07-pasar-plata-entre-mis-cuentas',
+    'Pasar plata entre mis cuentas',
+    area: 'Movimientos',
+    goal:
+        'Pasé plata de Bancolombia a Nequi y quiero anotarlo sin que cuente '
+        'como gasto ni como ingreso.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final int free = own.ledger!.freeUntilPayday;
+      final int spent = _spentIn(own, 2026, 10);
+      final Decimal bank = _held(own, 'Bancolombia');
+      final Decimal nequi = _held(own, 'Nequi');
+      await f.tapTip('Agregar movimiento');
+      await f.tap('Transferencia');
+      await f.step(
+        '«Transferencia» cambia «Cuenta» por «Desde» y «Hacia», y quita la '
+        'categoría: no es gasto ni ingreso.',
+      );
+      await f.check('Pide desde y hacia, sin categoría', () {
+        expect(f.shows('Desde'), isTrue);
+        expect(f.shows('Hacia'), isTrue);
+        expect(f.shows('Categoría'), isFalse);
+      });
+      await f.type('Monto', '50000');
+      await f.tapFound(find.byType(DropdownButtonFormField<String>).last);
+      await f.tapFound(find.text('Bancolombia').last);
+      await f.tap('Guardar');
+      await f.step(
+        'Con Bancolombia en las dos, «Guardar» avisa: «Elige dos cuentas '
+        'distintas».',
+      );
+      await f.check('No guarda una transferencia a la misma cuenta', () {
+        expect(f.shows('Elige dos cuentas distintas'), isTrue);
+        expect(_held(own, 'Bancolombia'), bank);
+      });
+      await f.tapFound(find.byType(DropdownButtonFormField<String>).last);
+      await f.tapFound(find.text('Nequi').last);
+      await f.tap('Guardar');
+      await f.tap('Movimientos');
+      await f.step(
+        'Con Nequi en «Hacia» se guarda. En Movimientos aparece como '
+        '«Bancolombia → Nequi», con el monto en gris y sin signo.',
+      );
+      await f.check('Bancolombia bajó 50.000 y Nequi subió 50.000', () {
+        expect(_held(own, 'Bancolombia'), bank - Decimal.parse('50000'));
+        expect(_held(own, 'Nequi'), nequi + Decimal.parse('50000'));
+      });
+      await f.check(
+        'No es gasto: lo gastado y lo que puedes gastar siguen',
+        () {
+          expect(_spentIn(own, 2026, 10), spent);
+          expect(own.ledger!.freeUntilPayday, free);
+        },
+      );
+      await _search(f, 'nequi');
+      await f.step(
+        'Buscar «nequi» la encuentra, aunque Nequi sea la cuenta a la que '
+        'llegó.',
+      );
+      await f.check('La búsqueda por la cuenta de llegada la encuentra', () {
+        expect(f.shows('Bancolombia → Nequi'), isTrue);
+      });
+      await f.tap('Bancolombia → Nequi');
+      await f.step(
+        'Abierta, se edita como una sola: «Transferencia», 50.000, desde '
+        'Bancolombia hacia Nequi.',
+      );
+      await f.type('Monto', '80000');
+      await f.tap('Guardar');
+      await f.step('Cambiado el monto a 80.000, la fila lo dice.');
+      await f.check('Las dos partes pasaron a 80.000', () {
+        expect(_held(own, 'Bancolombia'), bank - Decimal.parse('80000'));
+        expect(_held(own, 'Nequi'), nequi + Decimal.parse('80000'));
+      });
+      await f.tap('Bancolombia → Nequi');
+      await f.tap('Eliminar');
+      await f.step(
+        'Al eliminarla, la pregunta avisa: «Se eliminan las dos partes de la '
+        'transferencia.»',
+      );
+      await f.check('Avisa que se borran las dos partes', () {
+        expect(
+          f.shows('Se eliminan las dos partes de la transferencia.'),
+          isTrue,
+        );
+      });
+      await f.tap('Eliminar');
+      await f.step('Borrada, Bancolombia y Nequi quedan como estaban.');
+      await f.check('Las dos cuentas volvieron a su saldo', () {
+        expect(_held(own, 'Bancolombia'), bank);
+        expect(_held(own, 'Nequi'), nequi);
+        expect(
+          own.snapshot!.entries.where(
+            (Entry e) => e.isTransfer && e.note.isEmpty && e.date.day == 3,
+          ),
+          isEmpty,
+        );
+      });
+    },
+  ),
+  AppFlow(
+    '03-08-registrar-un-gasto-en-dolares',
+    'Registrar un gasto en dólares',
+    area: 'Movimientos',
+    goal:
+        'Compré algo en Amazon con mi cuenta en dólares y quiero anotarlo en '
+        'dólares, sin hacer la cuenta a pesos.',
+    manual: <String>[
+      'En un iPhone real, escribir 12.50 con el teclado numérico de la región '
+          'Colombia (que trae coma) y con uno que trae punto: debe quedar 12,50 '
+          'USD en los dos.',
+    ],
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final int free = own.ledger!.freeUntilPayday;
+      final Decimal dollars = _held(own, 'Cuenta en dólares');
+      await f.tapTip('Agregar movimiento');
+      await f.tapFound(find.byType(DropdownButtonFormField<String>));
+      await f.tapFound(find.text('Cuenta en dólares').last);
+      await _typeKeys(f, 'Monto', '12.50');
+      await f.step(
+        'Elegida «Cuenta en dólares», el monto dice USD. Escrito con el punto '
+        'del teclado, 12.50 queda «12,50»: el punto se vuelve coma decimal.',
+      );
+      await f.check('El monto quedó en 12,50 dólares', () {
+        expect(_fieldShows('Monto', '12,50'), findsOneWidget);
+        expect(f.shows('USD'), isTrue);
+      });
+      await f.tap('Compras');
+      await f.type('¿Dónde o a quién?', 'Amazon');
+      await f.tap('Guardar');
+      await f.step(
+        'De vuelta en Inicio, «Puedes gastar» no se mueve: la cuenta en '
+        'dólares no es de uso diario.',
+      );
+      await f.tap('Movimientos');
+      final Money cost = own.inBase(Money(Decimal.parse('-12.5'), Asset.usd))!;
+      await f.step(
+        'En Movimientos, Amazon dice −US\$12,50 y debajo, en pesos, cuánto '
+        'es con la tasa del día.',
+      );
+      await f.check('Se guardó −12,50 en la cuenta en dólares', () {
+        final Entry e = _entryOf(own, 'Amazon', '-12.5');
+        expect(e.accountId, _account(own, 'Cuenta en dólares').id);
+        expect(
+          _held(own, 'Cuenta en dólares'),
+          dollars - Decimal.parse('12.5'),
+        );
+      });
+      await f.check(
+        'La fila muestra ≈ ${moneyText(cost, base: Asset.cop)} en pesos',
+        () {
+          expect(f.shows('≈ ${moneyText(cost, base: Asset.cop)}'), isTrue);
+        },
+      );
+      await f.check(
+        'Lo que puedes gastar no cambia: la cuenta en dólares no es de uso '
+        'diario',
+        () => expect(own.ledger!.freeUntilPayday, free),
+      );
+    },
+  ),
+  AppFlow(
+    '03-09-pasar-pesos-a-dolares',
+    'Pasar pesos a mi cuenta en dólares',
+    area: 'Movimientos',
+    goal:
+        'Mandé pesos de Bancolombia a mi cuenta en dólares y quiero anotar '
+        'lo que salió y lo que llegó de verdad.',
+    manual: <String>[
+      'Con conexión, que «Llegó» proponga lo que da la TRM del día y no la '
+          'tasa fija de las pruebas.',
+    ],
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final int free = own.ledger!.freeUntilPayday;
+      final Decimal bank = _held(own, 'Bancolombia');
+      final Decimal dollars = _held(own, 'Cuenta en dólares');
+      await f.tapTip('Agregar movimiento');
+      await f.tap('Transferencia');
+      await f.tapFound(find.byType(DropdownButtonFormField<String>).last);
+      await f.tapFound(find.text('Cuenta en dólares').last);
+      await f.type('Monto', '331284');
+      await f.step(
+        'Hacia «Cuenta en dólares» aparece «Llegó», en USD: con 331.284 '
+        'pesos la app propone 100 dólares, con la tasa que tiene.',
+      );
+      await f.check('Propone 100 dólares con la tasa de 3.312,84', () {
+        expect(_fieldShows('Llegó', '100'), findsOneWidget);
+      });
+      await f.type('Llegó', '98,5');
+      await f.type('Monto', '331300');
+      await f.step(
+        'El banco cobró comisión: llegaron 98,5. Escrito en «Llegó», ya no '
+        'cambia aunque se corrija el monto a 331.300.',
+      );
+      await f.check('Lo escrito en «Llegó» se queda', () {
+        expect(_fieldShows('Llegó', '98,5'), findsOneWidget);
+      });
+      await f.tap('Guardar');
+      await f.tap('Movimientos');
+      await f.step(
+        'En Movimientos: «Bancolombia → Cuenta en dólares», por los pesos que '
+        'salieron.',
+      );
+      await f.check('Salieron 331.300 pesos y llegaron 98,50 dólares', () {
+        expect(_held(own, 'Bancolombia'), bank - Decimal.parse('331300'));
+        expect(
+          _held(own, 'Cuenta en dólares'),
+          dollars + Decimal.parse('98.5'),
+        );
+      });
+      await f.check(
+        'Lo que puedes gastar bajó 331.300: esa plata ya no es de uso diario',
+        () => expect(own.ledger!.freeUntilPayday, free - 331300),
+      );
+    },
+  ),
+  AppFlow(
+    '03-10-crear-una-categoria',
+    'Crear una categoría mía',
+    area: 'Movimientos',
+    goal:
+        'Quiero llevar aparte lo que gasto en mi perro, en una categoría '
+        'que se llame Mascotas.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final int categories = own.categories.length;
+      await f.tapTip('Agregar movimiento');
+      await f.tap('Nueva categoría');
+      await f.step(
+        '«Nueva categoría», al final de los chips, abre una ventana que pide '
+        'el nombre.',
+      );
+      await f.tap('Cancelar');
+      await f.check('«Cancelar» no crea nada', () {
+        expect(own.categories.length, categories);
+      });
+      await f.tap('Nueva categoría');
+      await f.tap('Guardar');
+      await f.check('Sin nombre tampoco crea nada', () {
+        expect(own.categories.length, categories);
+      });
+      await f.tap('Nueva categoría');
+      await f.tester.enterText(find.byType(TextField).last, 'Mascotas');
+      await settle(f.tester);
+      await f.step('Escribe «Mascotas» y toca «Guardar».');
+      await f.tap('Guardar');
+      await f.step(
+        'La categoría nueva aparece entre las demás, ya elegida para este '
+        'gasto.',
+      );
+      final CategoryItem? pets = own.categories
+          .where((CategoryItem c) => c.name == 'Mascotas')
+          .firstOrNull;
+      await f.check('Quedó creada como categoría de gasto', () {
+        expect(pets, isNotNull);
+        expect(pets!.income, isFalse);
+        expect(own.categories.length, categories + 1);
+      });
+      await f.check('El chip de Mascotas quedó elegido', () {
+        final ChoiceChip chip = f.tester.widget<ChoiceChip>(
+          find.widgetWithText(ChoiceChip, 'Mascotas'),
+        );
+        expect(chip.selected, isTrue);
+      });
+      await f.type('Monto', '85000');
+      await f.type('¿Dónde o a quién?', 'Veterinaria');
+      await f.tap('Guardar');
+      await f.tap('Movimientos');
+      await f.step('Guardado, la fila dice «Mascotas · Bancolombia».');
+      await f.check('El gasto quedó en Mascotas', () {
+        expect(_entryOf(own, 'Veterinaria', '-85000').category, pets!.key);
+        expect(f.shows('Mascotas · Bancolombia'), isTrue);
+      });
+      await f.tapTip('Agregar movimiento');
+      await f.tap('Ingreso');
+      await f.step(
+        'En un ingreso no aparece: Mascotas es una categoría de gasto.',
+      );
+      await f.check('Mascotas no está entre las de ingreso', () {
+        expect(f.shows('Mascotas'), isFalse);
+      });
+    },
+  ),
+  AppFlow(
+    '03-11-anotar-un-pago-que-viene',
+    'Anotar un pago que viene',
+    area: 'Movimientos',
+    goal:
+        'La factura de EPM llega el 10 y quiero anotarla desde ya para que '
+        'la cifra la cuente antes de pagarla.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final int free = own.ledger!.freeUntilPayday;
+      final int committed = own.ledger!.committedUntilPayday;
+      final Decimal bank = _held(own, 'Bancolombia');
+      await f.tapTip('Agregar movimiento');
+      await f.type('Monto', '120000');
+      await f.tap('Servicios');
+      await f.type('¿Dónde o a quién?', 'EPM');
+      await _openDate(f);
+      await _pickDay(f, 10);
+      await f.step(
+        'Un gasto de 120.000 en Servicios, «EPM», con fecha del 10 de '
+        'octubre: todavía no pasa.',
+      );
+      await f.tap('Guardar');
+      await f.page(
+        'En Inicio, «Pagos hasta el 15 oct» sumó los 120.000 y la cifra '
+        'bajó tanto que ahora dice «Te faltan».',
+        most: 2,
+      );
+      await f.check('Lo comprometido hasta el pago subió 120.000', () {
+        expect(own.ledger!.committedUntilPayday, committed + 120000);
+        expect(own.ledger!.freeUntilPayday, free - 120000);
+      });
+      await f.check('Bancolombia no baja todavía: es del 10', () {
+        expect(_held(own, 'Bancolombia'), bank);
+      });
+      await f.check('«Próximos días» lo pone el 10 oct', () {
+        expect(
+          own.projection!.days.any(
+            (ProjectedDay d) =>
+                d.date == DateTime(2026, 10, 10) &&
+                d.events.any((ProjectedEvent e) => e.label == 'EPM'),
+          ),
+          isTrue,
+        );
+      });
+      await f.tap('Movimientos');
+      await f.step(
+        'En Movimientos va arriba de todo, en el sábado 10, marcado '
+        '«Programado», aunque la línea lo corta en «Progra…».',
+      );
+      await f.check('La fila dice «Programado»', () {
+        expect(f.screenText, contains('Servicios · Bancolombia · Programado'));
+      });
+    },
+  ),
+  AppFlow(
+    '03-12-empezar-sin-movimientos',
+    'Empezar sin movimientos',
+    area: 'Movimientos',
+    goal:
+        'Acabo de entrar y no tengo nada anotado; quiero saber por dónde '
+        'empezar y anotar lo primero.',
+    data: _noAccounts,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      await f.page(
+        'Sin cuentas, Inicio dice \$0 y solo pide pagos fijos. Abajo, «Tus '
+        'cuentas» queda vacío y «Últimos movimientos» dice «Aquí aparecerá '
+        'tu plata…».',
+        most: 3,
+      );
+      await f.check('No hay cuentas ni movimientos', () {
+        expect(own.accounts, isEmpty);
+        expect(f.shows('Aquí aparecerá tu plata entrando y saliendo.'), isTrue);
+      });
+      await f.tapTip('Agregar movimiento');
+      await f.step(
+        'Sin cuentas, «Movimiento» no abre el formulario: abajo pide '
+        '«Primero agrega una cuenta.»',
+      );
+      await f.check('Pide una cuenta antes del primer movimiento', () {
+        expect(f.shows('Primero agrega una cuenta.'), isTrue);
+        expect(f.shows('Agregar movimiento'), isFalse);
+      });
+      await f.tap('Cuentas');
+      await f.check('En Cuentas no flota el botón «Movimiento»', () {
+        expect(find.byTooltip('Agregar movimiento'), findsNothing);
+      });
+      await f.tap('Agregar cuenta');
+      await f.type('Nombre', 'Nequi');
+      await f.tap(_kindWallet);
+      await f.type('¿Cuánto tiene hoy?', '150000');
+      await f.step('En Cuentas, «Agregar cuenta»: Nequi, con 150.000 hoy.');
+      await f.tap('Guardar');
+      await f.tap('Movimientos');
+      await f.step(
+        'Movimientos, todavía vacío, dice dónde aparecerá la plata y que se '
+        'registra con «Movimiento».',
+      );
+      await f.check('Movimientos muestra el aviso de vacío', () {
+        expect(f.shows('Aquí aparecerá tu plata entrando y saliendo.'), isTrue);
+      });
+      await f.tapTip('Agregar movimiento');
+      await f.step(
+        'Con una sola cuenta el formulario ofrece «Gasto» e «Ingreso»: no '
+        'hay a dónde transferir.',
+      );
+      await f.check('Sin otra cuenta no ofrece transferir', () {
+        expect(f.shows('Transferencia'), isFalse);
+      });
+      await f.type('Monto', '12000');
+      await f.tap('Transporte');
+      await f.type('¿Dónde o a quién?', 'Bus');
+      await f.tap('Guardar');
+      await f.step('El primer movimiento ya está en la lista, en «Hoy».');
+      await f.check('Quedó el primer movimiento, en Nequi', () {
+        expect(own.snapshot!.entries, hasLength(1));
+        expect(_held(own, 'Nequi'), Decimal.parse('138000'));
+        expect(f.shows('Bus'), isTrue);
+      });
+      await f.tap('Inicio');
+      await f.reveal(find.text('Bus'));
+      await f.step('En Inicio, «Últimos movimientos» ya lo muestra.');
+      await f.check('Inicio ya no muestra el aviso de vacío', () {
+        expect(
+          f.shows('Aquí aparecerá tu plata entrando y saliendo.'),
+          isFalse,
+        );
+      });
+    },
+  ),
+  AppFlow(
+    '03-13-registrar-en-ingles',
+    'Registrar un gasto con la app en inglés',
+    area: 'Movimientos',
+    english: true,
+    goal:
+        'Tengo el teléfono en inglés y quiero anotar un café y una compra en '
+        'dólares con los números como los escribo en inglés.',
+    manual: <String>[
+      'Con el iPhone en inglés de verdad, que el teclado numérico traiga el '
+          'punto decimal y 10.50 quede en diez dólares con cincuenta.',
+    ],
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final int free = own.ledger!.freeUntilPayday;
+      await f.tapTip('Add transaction');
+      await f.type('Amount', '4500');
+      await f.tap('Eating out');
+      await f.type('Where or to whom?', 'Coffee');
+      await f.step(
+        'En inglés: «Add transaction», 4,500 escrito con coma de miles, '
+        '«Eating out» y «Coffee».',
+      );
+      await f.check('El monto se agrupa con coma: 4,500', () {
+        expect(_fieldShows('Amount', '4,500'), findsOneWidget);
+      });
+      await f.tap('Save');
+      await f.step(
+        'En Home, «You can spend» bajó 4,500, con los montos escritos en '
+        'inglés.',
+      );
+      await f.check(
+        'Lo que puedes gastar bajó 4.500 y se lee ${_money(own, free - 4500)}',
+        () {
+          expect(own.ledger!.freeUntilPayday, free - 4500);
+          expect(f.shows(_money(own, free - 4500)), isTrue);
+          expect(_money(own, free - 4500), contains(','));
+        },
+      );
+      await f.tapTip('Add transaction');
+      await f.tapFound(find.byType(DropdownButtonFormField<String>));
+      await f.tapFound(find.text('Cuenta en dólares').last);
+      await _typeKeys(f, 'Amount', '10.50');
+      await f.tap('Shopping');
+      await f.type('Where or to whom?', 'Kindle book');
+      await f.step(
+        'En dólares, el punto es el decimal: 10.50 queda «10.50» y no mil '
+        'cincuenta.',
+      );
+      await f.tap('Save');
+      await f.tap('Transactions');
+      await f.step(
+        'En «Transactions», bajo «Today», el café y el libro, el de dólares '
+        'con su valor en pesos debajo.',
+      );
+      await f.check('Se guardaron −4.500 pesos y −10,50 dólares', () {
+        expect(_entryOf(own, 'Coffee', '-4500').category, 'restaurants');
+        expect(
+          _entryOf(own, 'Kindle book', '-10.5').accountId,
+          _account(own, 'Cuenta en dólares').id,
+        );
+        expect(f.shows('TODAY'), isTrue);
+      });
+    },
+  ),
+  AppFlow(
+    '03-14-dividir-con-un-grupo',
+    'Dividir un gasto con un grupo que ya tengo',
+    area: 'Movimientos',
+    goal:
+        'Hice el mercado del paseo y quiero dividirlo con Laura y Camilo, '
+        'que ya están en el grupo del paseo.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Entry market = _entryOf(own, 'Éxito Laureles', '-187400');
+      final Group trip = own.groups.firstWhere(
+        (Group g) => g.name == 'Paseo a Guatapé',
+      );
+      final int expenses = trip.expenses.length;
+      await f.tap('Movimientos');
+      await _open(f, market);
+      await f.tap('Dividir este gasto');
+      await f.tapFound(find.byType(DropdownButtonFormField<String?>));
+      await f.step(
+        '«Grupo» ofrece «Un grupo nuevo» o los que ya tienes, como «Paseo a '
+        'Guatapé».',
+      );
+      await f.tapFound(find.text('Paseo a Guatapé').last);
+      await f.page(
+        'Con el grupo elegido no hay que escribir nombres: salen Tú, Laura y '
+        'Camilo, cada uno con su parte de los 187.400.',
+        most: 2,
+      );
+      await f.check('No pide nombres: los trae el grupo', () {
+        expect(f.shows('¿Con quién lo divides?'), isFalse);
+        expect(f.shows('Laura'), isTrue);
+        expect(f.shows('Camilo'), isTrue);
+      });
+      await f.tap('Guardar');
+      await f.step(
+        'Guardado, la fila del Éxito agrega «Dividid…», cortado por la cuenta, '
+        'y el grupo del paseo suma el mercado.',
+      );
+      await f.check('El grupo del paseo tiene el mercado, en tres partes', () {
+        final Group now = own.groups.firstWhere((Group g) => g.id == trip.id);
+        expect(now.expenses, hasLength(expenses + 1));
+        final SharedExpense added = now.expenses.firstWhere(
+          (SharedExpense x) => x.entryId == market.id,
+        );
+        expect(added.shares.values.fold(0, (int a, int b) => a + b), 187400);
+        expect(
+          added.shares.keys,
+          containsAll(<String>[meId, 'laura', 'camilo']),
+        );
+        expect(added.shares[meId], 62468);
+      });
+      await f.check('La fila dice «Dividido: tu parte ${pesos(62468)}»', () {
+        expect(f.screenText, contains('Dividido: tu parte ${pesos(62468)}'));
+      });
+    },
   ),
 ];
 
@@ -912,4 +2166,188 @@ Future<void> _pickDay(FlowRun f, int day) async {
     ),
   );
   await settle(f.tester);
+}
+
+/// The account called [name].
+Account _account(OwnController own, String name) =>
+    own.accounts.firstWhere((Account a) => a.name == name);
+
+/// What the account called [name] holds now, in its own currency.
+Decimal _held(OwnController own, String name) =>
+    own.balances[_account(own, name).id]!.amount;
+
+/// The movement paid to or received from [payee] for [amount], signed.
+Entry _entryOf(OwnController own, String payee, String amount) =>
+    own.snapshot!.entries.firstWhere(
+      (Entry e) => e.payee == payee && e.amount == Decimal.parse(amount),
+    );
+
+/// The row of [entry] in a list of movements.
+Finder _row(Entry entry) => find.byWidgetPredicate(
+  (Widget w) => w is MovementRow && w.entry.id == entry.id,
+);
+
+/// Opens [entry] from the list on screen.
+Future<void> _open(FlowRun f, Entry entry) => f.tapFound(_row(entry));
+
+/// The field labelled [label] when it holds [text].
+Finder _fieldShows(String label, String text) => find.descendant(
+  of: find.widgetWithText(TextField, label),
+  matching: find.text(text),
+);
+
+/// What the ledger counts as spent in [month] of [year].
+int _spentIn(OwnController own, int year, int month) => own.ledger!
+    .expensesIn(year, month)
+    .fold(0, (int sum, Movement m) => sum + m.amount);
+
+/// Whether the floating «Movimiento» button is in sight.
+bool _fabShown(FlowRun f) =>
+    f.tester
+        .widget<AnimatedOpacity>(
+          find.descendant(
+            of: find.byType(ScrollAwareFab),
+            matching: find.byType(AnimatedOpacity),
+          ),
+        )
+        .opacity ==
+    1;
+
+/// Types [text] in the search of Movimientos, replacing what was there.
+Future<void> _search(FlowRun f, String text) async {
+  await f.top();
+  await f.tester.enterText(find.byType(TextField).first, text);
+  await settle(f.tester);
+}
+
+/// The movements a person searching [query] expects: those whose name,
+/// note, account or category has it, with or without accents.
+List<Entry> _found(FlowRun f, String query) {
+  final OwnController own = f.own;
+  final String q = _plain(query);
+  return <Entry>[
+    for (final Entry e in visibleEntries(own))
+      if (<String>[
+        e.payee,
+        e.note,
+        // A transfer by either of its accounts.
+        for (final Entry leg in own.snapshot!.entries)
+          if (leg.id == e.id ||
+              (e.transferId != null && leg.transferId == e.transferId))
+            own.snapshot!.account(leg.accountId)?.name ?? '',
+        if (e.category case final String c)
+          categoryLabel(c, 'es', custom: _customName(own, c)),
+      ].any((String s) => _plain(s).contains(q)))
+        e,
+  ];
+}
+
+String? _customName(OwnController own, String key) {
+  for (final CategoryItem c in own.categories) {
+    if (c.key == key) return c.name;
+  }
+  return null;
+}
+
+/// [text] in lowercase without accents.
+String _plain(String text) => text
+    .toLowerCase()
+    .replaceAll(RegExp('[áà]'), 'a')
+    .replaceAll(RegExp('[éè]'), 'e')
+    .replaceAll(RegExp('[íì]'), 'i')
+    .replaceAll(RegExp('[óò]'), 'o')
+    .replaceAll(RegExp('[úùü]'), 'u')
+    .replaceAll('ñ', 'n');
+
+/// Taps [label] on the open date picker, as Material writes it.
+Future<void> _tapPicker(FlowRun f, String label) async {
+  await f.tester.tap(
+    find
+        .byWidgetPredicate(
+          (Widget w) =>
+              w is Text && (w.data == label || w.data == label.toUpperCase()),
+        )
+        .last,
+  );
+  await settle(f.tester);
+}
+
+/// Types [text] in the field labelled [label] a key at a time, as a
+/// keyboard does: the amount field reads a point typed last as a decimal.
+Future<void> _typeKeys(FlowRun f, String label, String text) async {
+  final Finder field = find.widgetWithText(TextField, label);
+  await f.reveal(field);
+  for (var i = 1; i <= text.length; i++) {
+    final String typed = f.tester
+        .widget<TextField>(field.first)
+        .controller!
+        .text;
+    await f.tester.enterText(field.first, typed + text[i - 1]);
+    await f.tester.pump();
+  }
+  await settle(f.tester);
+}
+
+/// The wallet kind of account, as the account form names it.
+const String _kindWallet = 'Billetera digital';
+
+/// Someone who has just started: the profile, no accounts and nothing
+/// recorded.
+Future<QuincenaStore> _noAccounts() async {
+  final QuincenaStore store = await emptyStore();
+  await store.ensureCategories();
+  await store.saveProfile(
+    const Profile(name: 'Diego', base: Asset.cop, schedule: TwiceMonthly()),
+  );
+  await store.setSetting('app.mode', 'own');
+  return store;
+}
+
+/// Someone who eats out more: two whole fortnights behind, the second with
+/// twice the restaurants of the first, and the pay of the 30th in.
+Future<QuincenaStore> _eatingOutMore() async {
+  final QuincenaStore store = await emptyStore();
+  await store.ensureCategories();
+  await store.saveProfile(
+    Profile(
+      name: 'Diego',
+      base: Asset.cop,
+      schedule: const TwiceMonthly(),
+      pay: Decimal.parse('2000000'),
+    ),
+  );
+  await store.setSetting('app.mode', 'own');
+  final Account bank = await store.addAccount(
+    name: 'Bancolombia',
+    kind: AccountKind.bank,
+    asset: Asset.cop,
+    opening: Decimal.parse('1000000'),
+    institution: 'Bancolombia',
+  );
+  for (final (String amount, DateTime on, String category, String payee)
+      in <(String, DateTime, String, String)>[
+        ('300000', DateTime(2026, 8, 30, 12), 'groceries', 'Éxito'),
+        ('100000', DateTime(2026, 9, 5, 20), 'restaurants', 'Crepes'),
+        ('290000', DateTime(2026, 9, 16, 12), 'groceries', 'D1'),
+        ('110000', DateTime(2026, 9, 18, 20), 'restaurants', 'Crepes'),
+        ('90000', DateTime(2026, 9, 25, 21), 'restaurants', 'Rappi'),
+      ]) {
+    await store.addEntry(
+      accountId: bank.id,
+      amount: Decimal.parse(amount),
+      kind: EntryKind.expense,
+      date: on,
+      category: category,
+      payee: payee,
+    );
+  }
+  await store.addEntry(
+    accountId: bank.id,
+    amount: Decimal.parse('2000000'),
+    kind: EntryKind.income,
+    date: DateTime(2026, 9, 30, 8),
+    category: 'salary',
+    payee: 'Nómina',
+  );
+  return store;
 }
