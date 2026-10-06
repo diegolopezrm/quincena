@@ -178,6 +178,9 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
       final int selected = math.min(_selected, days.length - 1);
       final ProjectedDay low = projection.lowestBeforePayday;
       final ProjectedDay? tight = projection.firstTight;
+      // Whether the dashed line has something tried in it, or only the
+      // money expected.
+      final bool trying = moves.isNotEmpty || check != null;
       return Scaffold(
         appBar: AppBar(
           backgroundColor: context.colors.canvas,
@@ -332,6 +335,7 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
                   day: days[selected],
                   ledger: ledger,
                   onMove: (ProjectedEvent e) => _move(e, ledger),
+                  trying: trying,
                   highlighted: true,
                 ),
                 const SizedBox(height: 8),
@@ -343,6 +347,7 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
                         day: days[i],
                         ledger: ledger,
                         onMove: (ProjectedEvent e) => _move(e, ledger),
+                        trying: trying,
                       ),
                     ),
                 if (days.every((ProjectedDay d) => d.events.isEmpty))
@@ -608,12 +613,17 @@ class _DayDetail extends StatelessWidget {
     required this.day,
     required this.ledger,
     required this.onMove,
+    required this.trying,
     this.highlighted = false,
   });
 
   final ProjectedDay day;
   final Ledger ledger;
   final ValueChanged<ProjectedEvent> onMove;
+
+  /// Whether something is being tried: without it, what the day would
+  /// have besides is only the money expected.
+  final bool trying;
   final bool highlighted;
 
   String _label(AppLocalizations l, ProjectedEvent e) => switch (e.kind) {
@@ -652,7 +662,9 @@ class _DayDetail extends StatelessWidget {
                 <String>[
                   l.comingLeft(amount(day.sure)),
                   if (day.likely != day.sure)
-                    l.comingLeftTrying(amount(day.likely)),
+                    (trying ? l.comingLeftTrying : l.comingLeftExpected)(
+                      amount(day.likely),
+                    ),
                 ].join(' · '),
                 style: context.type.bodySmall,
               ),

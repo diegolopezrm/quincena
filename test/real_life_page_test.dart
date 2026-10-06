@@ -146,6 +146,148 @@ void main() {
     });
   });
 
+  testWidgets('a split needs someone besides the person with a part', (
+    tester,
+  ) async {
+    final OwnController own = await openPage(
+      tester,
+      (OwnController own) => Scaffold(
+        body: ListenableBuilder(
+          listenable: own,
+          builder: (BuildContext context, _) =>
+              CustomScrollView(slivers: <Widget>[MovementsTab(own: own)]),
+        ),
+      ),
+      data: (QuincenaStore store, Account bank, _) => dinner(store, bank),
+    );
+    await tapText(tester, 'Cena');
+    await tapText(tester, 'Dividir este gasto');
+    await tester.enterText(
+      find.widgetWithText(TextField, '¿Con quién lo divides?'),
+      'Ana, Juan',
+    );
+    await settle(tester);
+    // Ana and Juan unticked: the whole dinner would be the person's.
+    await tester.tap(find.byType(Checkbox).at(1));
+    await tester.tap(find.byType(Checkbox).at(2));
+    await settle(tester);
+    await tapText(tester, 'Guardar');
+    final Entry dinnerEntry = own.snapshot!.entries.singleWhere(
+      (Entry e) => e.payee == 'Cena',
+    );
+    expect(own.splitOf(dinnerEntry.id), isNull);
+    expect(
+      find.text('Marca al menos a otra persona con su parte.'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byType(Checkbox).at(1));
+    await settle(tester);
+    expect(
+      find.text('Marca al menos a otra persona con su parte.'),
+      findsNothing,
+    );
+    await tapText(tester, 'Guardar');
+    expect(own.splitOf(dinnerEntry.id)!.$2.shares, <String, int>{
+      meId: 60000,
+      'p-ana': 60000,
+    });
+  });
+
+  testWidgets('a split follows its movement: deleted, put right or no '
+      'longer an expense', (tester) async {
+    final OwnController own = await openPage(
+      tester,
+      (OwnController own) => Scaffold(
+        body: ListenableBuilder(
+          listenable: own,
+          builder: (BuildContext context, _) =>
+              CustomScrollView(slivers: <Widget>[MovementsTab(own: own)]),
+        ),
+      ),
+      data: (QuincenaStore store, Account bank, _) async {
+        await dinner(store, bank);
+        await store.addEntry(
+          accountId: bank.id,
+          amount: d('60000'),
+          kind: EntryKind.expense,
+          date: DateTime(2026, 10, 1, 13),
+          category: 'restaurants',
+          payee: 'Almuerzo',
+        );
+      },
+    );
+    Future<Entry> splitWithAna(String payee) async {
+      await tapText(tester, payee);
+      await tapText(tester, 'Dividir este gasto');
+      await tester.enterText(
+        find.widgetWithText(TextField, '¿Con quién lo divides?'),
+        'Ana',
+      );
+      await settle(tester);
+      await tapText(tester, 'Guardar');
+      final Entry entry = own.snapshot!.entries.singleWhere(
+        (Entry e) => e.payee == payee,
+      );
+      expect(own.splitOf(entry.id), isNotNull);
+      return entry;
+    }
+
+    int owed() => <int>[
+      for (final Group g in own.groups) g.balances['p-ana'] ?? 0,
+    ].fold(0, (int a, int b) => a + b);
+
+    final Entry cena = await splitWithAna('Cena');
+    expect(owed(), -60000);
+    await tapText(tester, 'Cena');
+    await tapText(tester, 'Eliminar');
+    expect(
+      find.text(
+        'También se quita su división: lo que te deben por este gasto deja '
+        'de contar.',
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Eliminar').last);
+    await settle(tester);
+    expect(own.snapshot!.entries.any((Entry e) => e.id == cena.id), isFalse);
+    expect(own.splitOf(cena.id), isNull);
+    expect(owed(), 0);
+
+    // Put right at 70.000, the lunch is split again at the new amount.
+    final Entry lunch = await splitWithAna('Almuerzo');
+    expect(owed(), -30000);
+    await tapText(tester, 'Almuerzo');
+    await tester.enterText(find.widgetWithText(TextField, 'Monto'), '70000');
+    await settle(tester);
+    await tapText(tester, 'Guardar');
+    expect(own.splitOf(lunch.id)!.$2.shares, <String, int>{
+      meId: 35000,
+      'p-ana': 35000,
+    });
+    expect(owed(), -35000);
+    expect(
+      find.textContaining('Dividido: tu parte ${pesos(35000)}'),
+      findsOneWidget,
+    );
+
+    // Told it was money in, it is no longer something to split, and the
+    // form stops offering to split it as soon as it says so.
+    await tapText(tester, 'Almuerzo');
+    await tapText(tester, 'Ingreso');
+    expect(find.text('Cambiar la división'), findsNothing);
+    await tapText(tester, 'Gasto');
+    expect(find.text('Cambiar la división'), findsOneWidget);
+    await tapText(tester, 'Ingreso');
+    await tapText(tester, 'Guardar');
+    expect(
+      own.snapshot!.entries.singleWhere((Entry e) => e.id == lunch.id).kind,
+      EntryKind.income,
+    );
+    expect(own.splitOf(lunch.id), isNull);
+    expect(owed(), 0);
+  });
+
   testWidgets('a repayment tied to its movement is money back, and a '
       'reminder goes only when shared', (tester) async {
     final List<MethodCall> calls = <MethodCall>[];

@@ -719,6 +719,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteTransferBody => 'Both sides of the transfer are deleted.';
 
   @override
+  String get deleteSplitBody =>
+      'Its split goes too: what you\'re owed for it stops counting.';
+
+  @override
   String get invalidAmount => 'Enter an amount';
 
   @override
@@ -1014,6 +1018,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String comingLeftExpected(String amount) {
+    return 'if what you expect arrives, $amount';
+  }
+
+  @override
   String get comingUnderCushion => 'Below your buffer';
 
   @override
@@ -1179,6 +1188,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String closeFree(String amount) {
     return 'You can spend until payday: $amount';
+  }
+
+  @override
+  String closeShort(String amount) {
+    return 'You\'re $amount short of payday';
   }
 
   @override
@@ -3494,6 +3508,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get splitNeedsSomeone => 'Add at least one more person.';
+
+  @override
+  String get splitNeedsShare => 'Tick at least one other person with a share.';
 
   @override
   String get splitRemove => 'Remove the split';

@@ -322,4 +322,76 @@ void main() {
     expect(find.text('Sin plata'), findsWidgets);
     expect(find.text('Bajo tu colchón'), findsNothing);
   });
+
+  testWidgets('the close says what is missing, not a negative to spend', (
+    tester,
+  ) async {
+    final OwnController own = await open(
+      tester,
+      (OwnController own) => ClosePage(own: own),
+    );
+    expect(
+      find.text('Puedes gastar hasta el pago: ${pesos(500000)}'),
+      findsOneWidget,
+    );
+    // 800.000 due on the 8th: 300.000 short of payday.
+    await tester.runAsync(() async {
+      await own.store.addEntry(
+        accountId: own.accounts.single.id,
+        amount: d('800000'),
+        kind: EntryKind.expense,
+        date: DateTime(2026, 10, 8, 9),
+        category: 'other',
+        payee: 'Matrícula',
+      );
+    });
+    await settle(tester);
+    expect(own.ledger!.freeUntilPayday, -300000);
+    expect(
+      find.text('Te faltan ${pesos(300000)} para llegar al pago'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Puedes gastar hasta el pago'), findsNothing);
+  });
+
+  testWidgets('a day says what is expected apart from what is tried', (
+    tester,
+  ) async {
+    final OwnController own = await open(
+      tester,
+      (OwnController own) => ComingDaysPage(own: own),
+    );
+    // With the pay known, the 15th expects it.
+    await tester.runAsync(
+      () => own.store.saveProfile(
+        Profile(
+          name: 'Ana',
+          base: Asset.cop,
+          schedule: const TwiceMonthly(),
+          cushion: d('100000'),
+          pay: d('2000000'),
+        ),
+      ),
+    );
+    await settle(tester);
+    // 900.000 less the internet of the 10th; 2.000.000 more if paid.
+    final Finder expected = find.text(
+      'Quedan ${pesos(600000)} · si llega lo que esperas, ${pesos(2600000)}',
+    );
+    await harness.reveal(tester, expected);
+    expect(expected, findsOneWidget);
+    expect(find.textContaining('con lo que pruebas'), findsNothing);
+
+    await harness.tapText(tester, '¿Me alcanza?');
+    await tester.enterText(
+      find.widgetWithText(TextField, '¿Cuánto cuesta?'),
+      '50.000',
+    );
+    await settle(tester);
+    final Finder tried = find.text(
+      'Quedan ${pesos(600000)} · con lo que pruebas, ${pesos(2550000)}',
+    );
+    await harness.reveal(tester, tried);
+    expect(tried, findsOneWidget);
+  });
 }

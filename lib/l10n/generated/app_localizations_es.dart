@@ -720,6 +720,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'Se eliminan las dos partes de la transferencia.';
 
   @override
+  String get deleteSplitBody =>
+      'También se quita su división: lo que te deben por este gasto deja de contar.';
+
+  @override
   String get invalidAmount => 'Escribe un monto';
 
   @override
@@ -1015,6 +1019,11 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String comingLeftExpected(String amount) {
+    return 'si llega lo que esperas, $amount';
+  }
+
+  @override
   String get comingUnderCushion => 'Bajo tu colchón';
 
   @override
@@ -1180,6 +1189,11 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String closeFree(String amount) {
     return 'Puedes gastar hasta el pago: $amount';
+  }
+
+  @override
+  String closeShort(String amount) {
+    return 'Te faltan $amount para llegar al pago';
   }
 
   @override
@@ -3489,6 +3503,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get splitNeedsSomeone => 'Agrega al menos a una persona más.';
+
+  @override
+  String get splitNeedsShare => 'Marca al menos a otra persona con su parte.';
 
   @override
   String get splitRemove => 'Quitar la división';

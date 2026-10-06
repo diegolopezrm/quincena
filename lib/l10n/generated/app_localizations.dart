@@ -1286,6 +1286,12 @@ abstract class AppLocalizations {
   /// **'Se eliminan las dos partes de la transferencia.'**
   String get deleteTransferBody;
 
+  /// No description provided for @deleteSplitBody.
+  ///
+  /// In es, this message translates to:
+  /// **'También se quita su división: lo que te deben por este gasto deja de contar.'**
+  String get deleteSplitBody;
+
   /// No description provided for @invalidAmount.
   ///
   /// In es, this message translates to:
@@ -1676,6 +1682,12 @@ abstract class AppLocalizations {
   /// **'con lo que pruebas, {amount}'**
   String comingLeftTrying(String amount);
 
+  /// No description provided for @comingLeftExpected.
+  ///
+  /// In es, this message translates to:
+  /// **'si llega lo que esperas, {amount}'**
+  String comingLeftExpected(String amount);
+
   /// No description provided for @comingUnderCushion.
   ///
   /// In es, this message translates to:
@@ -1927,6 +1939,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Puedes gastar hasta el pago: {amount}'**
   String closeFree(String amount);
+
+  /// No description provided for @closeShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Te faltan {amount} para llegar al pago'**
+  String closeShort(String amount);
 
   /// No description provided for @closeSeeDays.
   ///
@@ -5557,6 +5575,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Agrega al menos a una persona más.'**
   String get splitNeedsSomeone;
+
+  /// No description provided for @splitNeedsShare.
+  ///
+  /// In es, this message translates to:
+  /// **'Marca al menos a otra persona con su parte.'**
+  String get splitNeedsShare;
 
   /// No description provided for @splitRemove.
   ///

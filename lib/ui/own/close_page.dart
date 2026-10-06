@@ -236,9 +236,16 @@ class ClosePage extends StatelessWidget {
               style: context.type.bodySmall,
             ),
           const SizedBox(height: 8),
+          // Below nothing, what is missing, as the home card says it.
           Text(
-            l.closeFree(amount(ledger.freeUntilPayday)),
-            style: context.type.titleSmall,
+            ledger.freeUntilPayday < 0
+                ? l.closeShort(amount(-ledger.freeUntilPayday))
+                : l.closeFree(amount(ledger.freeUntilPayday)),
+            style: context.type.titleSmall?.copyWith(
+              color: ledger.freeUntilPayday < 0
+                  ? context.colors.negative
+                  : null,
+            ),
           ),
           Align(
             alignment: Alignment.centerLeft,

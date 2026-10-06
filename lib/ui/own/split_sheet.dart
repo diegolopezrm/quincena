@@ -235,6 +235,14 @@ class _SplitSheetState extends State<_SplitSheet> {
       setState(() => _error = l.splitNeedsSomeone);
       return;
     }
+    // Someone besides whoever paid has a part, or nothing is split.
+    final String payer = widget.entry != null ? meId : _paidBy;
+    if (!shares.entries.any(
+      (MapEntry<String, int> s) => s.key != payer && s.value > 0,
+    )) {
+      setState(() => _error = l.splitNeedsShare);
+      return;
+    }
     final NavigatorState navigator = Navigator.of(context);
     final DateTime now = DateTime.now();
     Group group =
