@@ -499,7 +499,10 @@ void main() {
     });
     final Map<String, Object?> asked = (buy['asked']! as Map)
         .cast<String, Object?>();
-    expect(asked['verdict'], isIn(<String>['fits', 'belowCushion', 'short']));
+    expect(
+      asked['verdict'],
+      isIn(<String>['fits', 'takesApart', 'belowCushion', 'short']),
+    );
     expect(buy['afterPayday'], isA<Map<Object?, Object?>>());
     expect(
       (await call('can_i_buy', <String, dynamic>{'amount': -1}))['error'],

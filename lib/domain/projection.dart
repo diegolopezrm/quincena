@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart' show immutable;
 
 import '../data/category.dart';
@@ -63,6 +65,19 @@ class ProjectedEvent {
   final Category? category;
 }
 
+/// How many days ahead Inicio and «Próximos 30 días» look: what one of
+/// them says about the days to come, the other says too.
+const int comingDays = 30;
+
+/// The days ahead those screens look at for [ledger]: [comingDays], or as
+/// far as the next payday when a monthly pay puts it 31 days away, so the
+/// lowest point before payday counts every charge «Puedes gastar» leaves
+/// out.
+int comingHorizon(Ledger ledger) => math.max(
+  comingDays,
+  _day(ledger.nextPayday).difference(_day(ledger.today)).inDays,
+);
+
 /// One day of a projection.
 @immutable
 class ProjectedDay {
@@ -71,6 +86,7 @@ class ProjectedDay {
     required this.sure,
     required this.likely,
     required this.events,
+    this.expected = 0,
   });
 
   final DateTime date;
@@ -81,6 +97,10 @@ class ProjectedDay {
   /// The balance also counting the expected pay and anything tried out.
   final int likely;
 
+  /// What is only expected by this day, from today: the pay and what
+  /// clients should pay. Part of [likely], never of [sure].
+  final int expected;
+
   /// What happens that day.
   final List<ProjectedEvent> events;
 }
@@ -90,8 +110,9 @@ class ProjectedDay {
 ///
 /// It starts from the ledger's balance today and adds, on their days, the
 /// movements entered ahead and the recurring charges, which are scheduled,
-/// and the pay on each payday, which is expected. A projection is never a
-/// balance: [ProjectedDay.sure] is what happens if nothing else does.
+/// and the pay on each payday, which is expected, unless it already came
+/// in the days before. A projection is never a balance:
+/// [ProjectedDay.sure] is what happens if nothing else does.
 @immutable
 class Projection {
   const Projection._({
@@ -157,6 +178,7 @@ class Projection {
     }
 
     final DateTime? late = _latePay(ledger);
+    final DateTime? early = _paidEarly(ledger);
     final int? pay = ledger.pay;
     if (pay != null) {
       if (late != null) {
@@ -175,6 +197,8 @@ class Projection {
         !d.isAfter(end);
         d = ledger.schedule.nextAfter(d)
       ) {
+        // Already in the balance: it is not expected a second time.
+        if (_day(d) == early) continue;
         events.add(
           ProjectedEvent(
             date: _day(d),
@@ -189,6 +213,7 @@ class Projection {
     final List<ProjectedDay> days = <ProjectedDay>[];
     int sure = ledger.balance;
     int likely = sure;
+    int expected = 0;
     for (int i = 0; i <= horizon; i++) {
       final DateTime date = today.add(Duration(days: i));
       final List<ProjectedEvent> on = <ProjectedEvent>[
@@ -197,10 +222,17 @@ class Projection {
       ];
       for (final ProjectedEvent e in on) {
         if (e.certainty == Certainty.scheduled) sure += e.amount;
+        if (e.certainty == Certainty.expected) expected += e.amount;
         likely += e.amount;
       }
       days.add(
-        ProjectedDay(date: date, sure: sure, likely: likely, events: on),
+        ProjectedDay(
+          date: date,
+          sure: sure,
+          likely: likely,
+          events: on,
+          expected: expected,
+        ),
       );
     }
     return Projection._(ledger: ledger, days: days, latePay: late);
@@ -228,11 +260,23 @@ class Projection {
     return low;
   }
 
-  /// The first day the sure balance falls under the cushion, or under zero
-  /// without one.
+  /// The balance [day] is judged by when saying whether money runs short:
+  /// until the next payday, only what is sure, as what can be spent says;
+  /// after it, also the pay and what clients should pay by then, as the
+  /// person said they come. Without it every month would run out the day
+  /// after payday. What is being tried out never counts.
+  int judged(ProjectedDay day) =>
+      day.date.isAfter(nextPayday) ? day.sure + day.expected : day.sure;
+
+  /// Whether [day] falls under the cushion, or under zero without one, as
+  /// [judged] says.
+  bool tight(ProjectedDay day) => judged(day) < cushion;
+
+  /// The first day that falls under the cushion, or under zero without
+  /// one, as [judged] says.
   ProjectedDay? get firstTight {
     for (final ProjectedDay d in days) {
-      if (d.sure < cushion) return d;
+      if (tight(d)) return d;
     }
     return null;
   }
@@ -262,6 +306,28 @@ DateTime? _latePay(Ledger ledger) {
         m.amount * 2 >= pay,
   );
   return arrived ? null : last;
+}
+
+/// The next payday, when its pay already came in the days before it, as
+/// it does the working day before a payday on a weekend or a holiday: an
+/// income of at least half the pay since three days before it, after the
+/// last payday. Null when it has not, or when the pay is not known.
+DateTime? _paidEarly(Ledger ledger) {
+  final int? pay = ledger.pay;
+  if (pay == null) return null;
+  final DateTime today = _day(ledger.today);
+  final DateTime next = _day(ledger.nextPayday);
+  final DateTime last = _day(ledger.schedule.lastOnOrBefore(today));
+  final DateTime from = next.subtract(const Duration(days: 3));
+  final bool arrived = ledger.movements.any(
+    (Movement m) =>
+        m.flow == Flow.income &&
+        !_day(m.date).isBefore(from) &&
+        _day(m.date).isAfter(last) &&
+        !_day(m.date).isAfter(today) &&
+        m.amount * 2 >= pay,
+  );
+  return arrived ? next : null;
 }
 
 DateTime _day(DateTime moment) =>

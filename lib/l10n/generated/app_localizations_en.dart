@@ -974,18 +974,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get comingTitle => 'Next 30 days';
 
   @override
-  String comingLowest(String amount, String date) {
-    return 'Lowest estimated balance before payday: $amount on $date';
+  String comingLowest(String amount, String when) {
+    return 'Lowest estimated balance before payday: $amount $when';
   }
 
   @override
-  String comingTight(String date) {
-    return 'On $date you\'d dip below your safety buffer.';
+  String comingTight(String when) {
+    return '$when you\'d dip below your safety buffer.';
   }
 
   @override
-  String comingRunsOut(String date) {
-    return 'On $date you\'d run out of money.';
+  String comingRunsOut(String when) {
+    return '$when you\'d run out of money.';
   }
 
   @override
@@ -1075,29 +1075,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get buyFits => 'It fits, from what the app knows';
 
   @override
-  String buyFitsBody(String amount, String date) {
-    return 'Your lowest estimated balance would be $amount on $date, above your safety buffer.';
+  String buyFitsBody(String amount, String when) {
+    return 'Your lowest estimated balance would be $amount $when, above your safety buffer.';
   }
 
   @override
-  String buyFitsBodyNoCushion(String amount, String date) {
-    return 'Your lowest estimated balance would be $amount on $date.';
+  String buyFitsBodyNoCushion(String amount, String when) {
+    return 'Your lowest estimated balance would be $amount $when.';
   }
 
   @override
   String get buyBelow => 'You\'d dip below your safety buffer';
 
   @override
-  String buyBelowBody(String date, String amount, String cushion) {
-    return 'On $date you\'d have $amount; your buffer is $cushion.';
+  String buyBelowBody(String when, String amount, String cushion) {
+    return '$when you\'d have $amount; your buffer is $cushion.';
   }
 
   @override
   String get buyShort => 'It doesn\'t stretch to payday';
 
   @override
-  String buyShortBody(String date, String amount) {
-    return 'On $date you\'d be $amount short.';
+  String buyShortBody(String when, String amount) {
+    return '$when you\'d be $amount short.';
   }
 
   @override
@@ -1250,8 +1250,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get closeSpentNone => 'You recorded no spending this pay period.';
 
   @override
-  String comingLowestWithout(String amount, String date) {
-    return 'Without what you\'re trying out, lowest estimated balance before payday: $amount on $date';
+  String comingLowestWithout(String amount, String when) {
+    return 'Without what you\'re trying out, lowest estimated balance before payday: $amount $when';
   }
 
   @override
@@ -1373,20 +1373,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get envelopesToSplit => 'To split';
-
-  @override
-  String envelopesToSplitBody(String committed, String cushion) {
-    return 'What you have to spend, minus $committed due by payday and your $cushion safety buffer.';
-  }
-
-  @override
-  String envelopesToSplitBodyReserve(
-    String committed,
-    String cushion,
-    String reserve,
-  ) {
-    return 'What you have to spend, minus $committed due by payday, your $cushion safety buffer and $reserve kept from variable income.';
-  }
 
   @override
   String get envelopeDaily => 'Day to day';
@@ -5619,5 +5605,69 @@ class AppLocalizationsEn extends AppLocalizations {
       one: 'Record 1 of the $total ready',
     );
     return '$_temp0';
+  }
+
+  @override
+  String dayWhen(String date) {
+    return 'on $date';
+  }
+
+  @override
+  String get todayWhen => 'today';
+
+  @override
+  String comingLowestLineToday(String amount) {
+    return 'Your lowest estimated balance before payday is today\'s: $amount.';
+  }
+
+  @override
+  String get buyTakesApart => 'It fits, but only with money you keep apart';
+
+  @override
+  String buyWithinFree(String free, String payday) {
+    return 'It fits in the $free you can spend until $payday.';
+  }
+
+  @override
+  String buyOverFree(String free, String payday, String used) {
+    return 'That\'s more than the $free you can spend until $payday: you\'d use $used.';
+  }
+
+  @override
+  String buyUses(String used) {
+    return 'You\'d use $used.';
+  }
+
+  @override
+  String buyAlsoUses(String used) {
+    return 'You\'d also use $used.';
+  }
+
+  @override
+  String buyUsesSetAside(String amount) {
+    return '$amount set aside in envelopes';
+  }
+
+  @override
+  String buyUsesReserve(String amount) {
+    return '$amount of what you keep from variable income';
+  }
+
+  @override
+  String buyUsesCushion(String amount) {
+    return '$amount of your safety buffer';
+  }
+
+  @override
+  String buyNothingFree(String payday, String used) {
+    return 'Until $payday you have nothing left to spend: you\'d use $used.';
+  }
+
+  @override
+  String get envelopesSpentLine => 'Spent from the day to day';
+
+  @override
+  String freelanceReserveOutside(String amount) {
+    return 'What you were paid into accounts that aren\'t for everyday use ($amount) isn\'t kept apart: it never counted in what you can spend.';
   }
 }

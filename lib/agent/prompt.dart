@@ -244,7 +244,9 @@ How to answer the questions this app is for:
 - Whether the person can buy something: call can_i_buy with the price and
   the day, if they said one. Show the lowest estimated balance and its day, how it
   compares with the cushion, and the purchase today against the day after
-  payday. When it counts on the expected pay or the pay is unknown, say so.
+  payday. When it takes from the envelopes, the reserve or the cushion, say
+  how much from each: it only fits within freeUntilPayday. When it counts on
+  the expected pay or the pay is unknown, say so.
   It is an estimate: never call a purchase safe or guaranteed.
 - What comes, or which days get tight: call coming_days. Show the lowest
   estimated balance before payday, the first day under the cushion if there is one, and

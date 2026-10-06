@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -197,6 +199,129 @@ void main() {
 
     test('the plan of a period belongs to it', () async {
       expect(periodStart(await ledger()), DateTime(2026, 9, 30));
+    });
+  });
+
+  group('the day to day', () {
+    const List<Envelope> split = <Envelope>[
+      Envelope(id: 'daily', kind: EnvelopeKind.daily, name: '', amount: 200000),
+      Envelope(
+        id: 'g',
+        kind: EnvelopeKind.goal,
+        name: 'Cartagena',
+        amount: 100000,
+        goalId: 'g1',
+      ),
+    ];
+
+    Future<void> pay(String payee, String amount, DateTime on) =>
+        store.addEntry(
+          accountId: bank.id,
+          amount: d(amount),
+          kind: EntryKind.expense,
+          date: on,
+          category: 'utilities',
+          payee: payee,
+        );
+
+    test('counts what was spent from it after the split, and nothing '
+        'committed before', () async {
+      // Spent before the split, a fee entered ahead for the 8th, and
+      // internet due on the 10th.
+      await spend('300000', DateTime(2026, 10, 1, 12), 'groceries');
+      await pay('Matrícula', '80000', DateTime(2026, 10, 8, 9));
+      await store.addRecurring(
+        name: 'Internet',
+        amount: Money(d('100000'), Asset.cop),
+        cadence: Cadence.monthly,
+        nextDate: DateTime(2026, 10, 10),
+        accountId: bank.id,
+        category: 'utilities',
+      );
+      final Ledger before = await ledger();
+      final EnvelopePlan plan = EnvelopePlan.made(before, split);
+      expect(plan.period, DateTime(2026, 9, 30));
+      // Just split, the day to day has nothing spent from it.
+      expect(dailySpent(before, plan), 0);
+      final int left = allocatable(before) - plan.assigned;
+      expect(unassigned(before, plan), left);
+
+      // A lunch after the split comes out of the day to day, not out of
+      // what no envelope holds.
+      await spend('50000', DateTime(2026, 10, 3, 13), 'restaurants');
+      final Ledger lunch = await ledger(setAside: plan.setAside);
+      expect(dailySpent(lunch, plan), 50000);
+      expect(unassigned(lunch, plan), left);
+      // What can be spent is what the day to day has left and what no
+      // envelope holds, with nothing counted twice.
+      expect(lunch.freeUntilPayday, unassigned(lunch, plan) + 150000);
+
+      // On the 11th the fee and internet are paid: both were committed
+      // when the money was split, so neither is the day to day.
+      await pay('INTERNET', '100000', DateTime(2026, 10, 10, 8));
+      final Ledger later = buildLedger(
+        (await store.snapshot())!,
+        today: DateTime(2026, 10, 11),
+        setAside: plan.setAside,
+      ).ledger;
+      expect(later.committedUntilPayday, 0);
+      expect(dailySpent(later, plan), 50000);
+      expect(unassigned(later, plan), left);
+      expect(later.freeUntilPayday, unassigned(later, plan) + 150000);
+    });
+
+    test('spending over the day to day comes out of what is left', () async {
+      final EnvelopePlan plan = EnvelopePlan.made(await ledger(), split);
+      final int left = unassigned(await ledger(), plan);
+      await spend('260000', DateTime(2026, 10, 3, 13), 'restaurants');
+      final Ledger l = await ledger(setAside: plan.setAside);
+      expect(dailySpent(l, plan), 260000);
+      expect(unassigned(l, plan), left - 60000);
+      expect(l.freeUntilPayday, unassigned(l, plan));
+    });
+
+    test('a second charge of a committed payment is the day to day', () async {
+      await store.addRecurring(
+        name: 'Netflix',
+        amount: Money(d('26900'), Asset.cop),
+        cadence: Cadence.monthly,
+        nextDate: DateTime(2026, 10, 12),
+        accountId: bank.id,
+        category: 'subscriptions',
+      );
+      final EnvelopePlan plan = EnvelopePlan.made(await ledger(), split);
+      for (final int day in <int>[12, 13]) {
+        await pay('Netflix', '26900', DateTime(2026, 10, day, 8));
+      }
+      final Ledger l = buildLedger(
+        (await store.snapshot())!,
+        today: DateTime(2026, 10, 13),
+      ).ledger;
+      expect(dailySpent(l, plan), 26900);
+    });
+
+    test('what it knew is kept with the plan, and an older plan counts '
+        'from payday', () async {
+      await spend('300000', DateTime(2026, 10, 1, 12), 'groceries');
+      final Ledger l = await ledger();
+      final EnvelopePlan plan = EnvelopePlan.made(l, split);
+      final EnvelopePlan back = EnvelopePlan.fromJson(
+        jsonDecode(jsonEncode(plan.toJson())),
+      )!;
+      expect(back, plan);
+      expect(dailySpent(l, back), 0);
+      // Changing the envelopes keeps when it was made.
+      final EnvelopePlan changed = plan.copyWith(
+        envelopes: <Envelope>[split.first.copyWith(amount: 250000)],
+      );
+      expect(changed.daily, 250000);
+      expect(dailySpent(l, changed), 0);
+      // Saved before plans kept it: nothing tells what came after.
+      final EnvelopePlan older = EnvelopePlan.fromJson(<String, Object?>{
+        'period': '2026-09-30',
+        'envelopes': <Object?>[for (final Envelope e in split) e.toJson()],
+      })!;
+      expect(dailySpent(l, older), 300000);
     });
   });
 

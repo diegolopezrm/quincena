@@ -8,10 +8,17 @@ import 'projection.dart';
 
 /// Where buying something leaves the money to spend.
 enum PurchaseVerdict {
-  /// The lowest point stays at or above the cushion.
+  /// The lowest point stays at or above everything kept apart: the
+  /// cushion, what envelopes set aside and the reserve kept from variable
+  /// payments. Before payday, that is a price within what can be spent.
   fits,
 
-  /// It stays above zero, but goes under the cushion.
+  /// It stays at or above the cushion, but takes from what envelopes set
+  /// aside or from the reserve: more than there is to spend.
+  takesApart,
+
+  /// It stays above zero, but goes under the cushion, after taking all of
+  /// what envelopes set aside and the reserve.
   belowCushion,
 
   /// The money runs out before the pay that would cover it.
@@ -30,9 +37,13 @@ class PurchaseCheck {
     required this.lowest,
     required this.lowestOn,
     required this.verdict,
+    required this.afterPay,
     required this.reliesOnPay,
     required this.payUnknown,
     required this.projection,
+    this.usesSetAside = 0,
+    this.usesReserve = 0,
+    this.usesCushion = 0,
   });
 
   /// In the ledger's smallest unit.
@@ -50,20 +61,35 @@ class PurchaseCheck {
   final DateTime lowestOn;
   final PurchaseVerdict verdict;
 
-  /// Bought after the next payday, it counts on the pay the person said
-  /// they get, which has not arrived yet.
+  /// Bought on the next payday or after it, when what can be spent until
+  /// it is no longer the measure, whether a pay is counted or not.
+  final bool afterPay;
+
+  /// Bought on the next payday or after it, it counts on the pay the
+  /// person said they get, which has not arrived yet.
   final bool reliesOnPay;
 
-  /// Bought after the next payday, but the app does not know what the pay
-  /// is: the check counts no pay at all.
+  /// Bought on the next payday or after it, but the app does not know what
+  /// the pay is: the check counts no pay at all.
   final bool payUnknown;
 
   /// The projection with the purchase in it, as something tried out.
   final Projection projection;
+
+  /// What the purchase would take from what is kept apart, in the ledger's
+  /// unit: what envelopes set aside first, as they are only on paper and
+  /// can be split again; then the reserve kept from variable payments; the
+  /// cushion last, as it is what is kept untouched. Together, what the
+  /// price goes over what can be spent by, and never more than the price:
+  /// what was already short of it before buying is not the purchase's.
+  final int usesSetAside;
+  final int usesReserve;
+  final int usesCushion;
 }
 
 /// Weighs buying something for [price] on [date] against the money to
-/// spend: the lowest it gets from that day to the payday after it.
+/// spend: the lowest it gets from that day to the payday after it, against
+/// everything «Puedes gastar» leaves out besides what is committed.
 ///
 /// [tryOut] adds what else the person is trying, such as a charge moved to
 /// another day; the check counts it with the purchase.
@@ -78,8 +104,11 @@ PurchaseCheck checkPurchase(
   final DateTime today = _day(ledger.today);
   final DateTime day = _day(date).isBefore(today) ? today : _day(date);
   final DateTime until = _day(ledger.schedule.nextAfter(day));
-  final bool afterPay = day.isAfter(_day(ledger.nextPayday));
-  final bool reliesOnPay = afterPay && ledger.pay != null;
+  // Bought on payday, it is weighed until the payday after, so it counts
+  // the pay of that day, as a purchase the day after does: without it, a
+  // whole period would have no pay at all.
+  final bool afterPay = !day.isBefore(_day(ledger.nextPayday));
+  final bool counting = afterPay && ledger.pay != null;
   final Projection p = Projection.of(
     ledger,
     horizon: math.max(until.difference(today).inDays, atLeast),
@@ -95,7 +124,7 @@ PurchaseCheck checkPurchase(
     ],
   );
   // The likely balance has everything tried out. Before payday the pay it
-  // expects does not count; after it, it does, except the pay of the
+  // expects does not count; from payday on, it does, except the pay of the
   // closing day: what matters is getting there.
   int expected = 0;
   int? lowest;
@@ -103,7 +132,7 @@ PurchaseCheck checkPurchase(
   for (final ProjectedDay d in p.days) {
     expected += _payOn(d);
     if (d.date.isBefore(day) || d.date.isAfter(until)) continue;
-    final int b = !reliesOnPay
+    final int b = !counting
         ? d.likely - expected
         : d.date == until
         ? d.likely - _payOn(d)
@@ -114,6 +143,45 @@ PurchaseCheck checkPurchase(
     }
   }
   final int low = lowest ?? ledger.balance - price;
+  // It counts on a pay only when one is still to come before the window
+  // closes: one that came early is in the balance already.
+  final bool reliesOnPay =
+      counting &&
+      p.days.any(
+        (ProjectedDay d) =>
+            d.date.isBefore(until) &&
+            d.events.any(
+              (ProjectedEvent e) =>
+                  e.kind == ProjectedKind.pay ||
+                  e.kind == ProjectedKind.latePay,
+            ),
+      );
+  // What is kept apart stays in the accounts, so the projection still
+  // holds it: the lowest point has to stay above all of it for the
+  // purchase to fit, as «Puedes gastar» leaves all of it out. Below that,
+  // it is taken from the top: the envelopes, the reserve, the cushion.
+  final int cushion = math.max(0, ledger.cushion);
+  final int reserve = math.max(0, ledger.reserved);
+  final int envelopes = math.max(0, ledger.setAside);
+  final int kept = cushion + reserve + envelopes;
+  int under(int balance) => math.min(kept, math.max(0, kept - balance));
+  final int over = under(low);
+  // Without the purchase every day of the window is [price] higher. What
+  // was already short of what is kept apart, when there is nothing left
+  // to spend, is not the purchase's: it takes what is left after that.
+  int already = under(low + price);
+  int taking = over - already;
+  int take(int from) {
+    final int gone = math.min(already, from);
+    already -= gone;
+    final int taken = math.min(taking, from - gone);
+    taking -= taken;
+    return taken;
+  }
+
+  final int usesSetAside = take(envelopes);
+  final int usesReserve = take(reserve);
+  final int usesCushion = take(cushion);
   return PurchaseCheck(
     price: price,
     date: day,
@@ -122,12 +190,18 @@ PurchaseCheck checkPurchase(
     lowestOn: lowestOn,
     verdict: low < 0
         ? PurchaseVerdict.short
-        : low < ledger.cushion
+        : low < cushion
         ? PurchaseVerdict.belowCushion
+        : over > 0
+        ? PurchaseVerdict.takesApart
         : PurchaseVerdict.fits,
+    afterPay: afterPay,
     reliesOnPay: reliesOnPay,
     payUnknown: afterPay && ledger.pay == null,
     projection: p,
+    usesSetAside: usesSetAside,
+    usesReserve: usesReserve,
+    usesCushion: usesCushion,
   );
 }
 

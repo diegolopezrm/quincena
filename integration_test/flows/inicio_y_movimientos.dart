@@ -170,25 +170,43 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         ),
       );
       await f.check(
-        'Sin colchón, el día en rojo se dice «te quedarías sin plata»',
+        'Inicio mira los mismos 30 días que «Ver 30 días»: ninguno queda sin '
+        'plata, así que no avisa nada, y sin colchón no habla de él',
         () {
-          final ProjectedDay tight = projection.firstTight!;
           expect(own.ledger!.cushion, 0);
           expect(
-            f.shows('El ${dayShortMonth(tight.date)} te quedarías sin plata.'),
-            isTrue,
+            projection.days.last.date,
+            own.today.add(const Duration(days: 30)),
           );
+          expect(projection.firstTight, isNull);
+          expect(f.screenText, isNot(contains('te quedarías sin plata')));
           expect(f.screenText, isNot(contains('colchón')));
         },
       );
       await f.tap('Ver 30 días');
       await f.page(
         'Toca «Ver 30 días»: la gráfica del saldo día por día durante un '
-        'mes, con el día del pago marcado y, debajo, lo que pasa cada día.',
+        'mes, con el día del pago marcado, «No te quedas sin plata en estos '
+        '30 días.», como calla Inicio, y debajo lo que pasa cada día.',
       );
       await f.check('Abre «Próximos 30 días»', () {
         expect(f.shows('Próximos 30 días'), isTrue);
       });
+      await f.check(
+        'Dice lo mismo que Inicio: el mismo saldo mínimo y ningún día sin '
+        'plata',
+        () {
+          expect(
+            f.screenText,
+            contains(
+              'Saldo mínimo estimado antes del pago: ${_money(own, low.sure)} '
+              'el ${dayShortMonth(low.date)}',
+            ),
+          );
+          expect(f.shows('No te quedas sin plata en estos 30 días.'), isTrue);
+          expect(f.screenText, isNot(contains('colchón')));
+        },
+      );
       // The chart picks the day under the finger.
       final Finder chart = find.byWidgetPredicate(
         (Widget w) => w is GestureDetector && w.onHorizontalDragUpdate != null,
@@ -344,8 +362,11 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         atLeast: 30,
       );
       await f.page(
-        'Toca «Ver»: abre «¿Me alcanza?» con el precio puesto, el veredicto '
-        'para hoy, la comparación con esperar al pago y los días que vienen.',
+        'Toca «Ver»: 120.000 es más de los '
+        '${_money(own, ledger.freeUntilPayday)} que puedes gastar, así que '
+        'dice «Te alcanza, pero tocando lo apartado» y cuánto sale de la '
+        'reserva; debajo, la comparación con esperar al pago y los días que '
+        'vienen.',
       );
       await f.check(
         'Para hoy dice «${_verdict(today.verdict)}», como calcula la app',
@@ -358,7 +379,28 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.check(
         'Con 120.000, más de los ${_money(own, ledger.freeUntilPayday)} que '
         'puedes gastar, no dice que te alcanza',
-        () => expect(today.verdict, isNot(PurchaseVerdict.fits)),
+        () {
+          expect(today.verdict, isNot(PurchaseVerdict.fits));
+          expect(f.shows(_verdict(PurchaseVerdict.fits)), isFalse);
+        },
+      );
+      final int fromReserve = 120000 - ledger.freeUntilPayday;
+      await f.check(
+        'Dice de dónde sale lo que falta: ${_money(own, fromReserve)} de los '
+        '${_money(own, ledger.reserved)} de la reserva',
+        () {
+          expect(today.verdict, PurchaseVerdict.takesApart);
+          expect(today.usesReserve, fromReserve);
+          expect(
+            f.screenText,
+            contains(
+              'Es más de los ${_money(own, ledger.freeUntilPayday)} que '
+              'puedes gastar hasta el 15 de octubre: usarías '
+              '${_money(own, fromReserve)} de tu reserva de ingresos '
+              'variables.',
+            ),
+          );
+        },
       );
       await f.type('¿Qué es? (opcional)', 'Tenis');
       await f.tap('Después del pago');
@@ -566,16 +608,32 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.back();
       await f.tap('Repartir');
       await f.page(
-        '«Repartir» abre «Reparte tu quincena»: hay \$7.961 para repartir, '
-        'y la propuesta los pone en el viaje sin pasarse de lo que hay.',
+        '«Repartir» abre «Reparte tu quincena»: hay ${_money(own, free)} '
+        'para repartir, con la suma que lo explica, y la propuesta no pasa '
+        'de eso: el viaje se lleva todo y el día a día queda vacío.',
       );
       await f.check('Abre «Reparte tu quincena»', () {
         expect(f.shows('Reparte tu quincena'), isTrue);
       });
-      await f.check('La propuesta no reparte más de lo que hay', () {
+      await f.check(
+        'La propuesta pone los ${_money(own, free)} en el viaje, sin pasarse: '
+        '«Sin asignar» queda en ${_money(own, 0)}',
+        () {
+          expect(
+            _fieldShows(
+              'Viaje a Cartagena',
+              formatDecimal(Decimal.fromInt(free), decimals: 0, trim: true),
+            ),
+            findsOneWidget,
+          );
+          expect(f.shows('Te pasas por'), isFalse);
+          expect(f.shows('Sin asignar'), isTrue);
+        },
+      );
+      await f.tap('Guardar el reparto');
+      await f.check('Guarda sin avisar: no se pasa de lo que hay', () {
         expect(f.shows('Asignas más de lo que hay'), isFalse);
       });
-      await f.tap('Guardar el reparto');
       await f.top();
       await f.step(
         'Guardado el reparto, Inicio ya no pide repartir y la tarjeta suma '
@@ -2791,6 +2849,7 @@ Future<QuincenaStore> _runsOutOnThe8th() async {
 /// What the purchase check says, as its title.
 String _verdict(PurchaseVerdict v) => switch (v) {
   PurchaseVerdict.fits => 'Te alcanza, según lo que sabe la app',
+  PurchaseVerdict.takesApart => 'Te alcanza, pero tocando lo apartado',
   PurchaseVerdict.belowCushion => 'Quedarías por debajo de tu colchón',
   PurchaseVerdict.short => 'No alcanza antes del pago',
 };

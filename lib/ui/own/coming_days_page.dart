@@ -15,6 +15,7 @@ import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import '../standing.dart' show sentence;
 import 'amount_input.dart';
 import 'close_page.dart';
 import 'coming_chart.dart';
@@ -161,6 +162,7 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
       String amount(int minor) => pesos(ledger.major(minor));
       final int price = _trying ? _priceIn(ledger) : 0;
       final List<ProjectedEvent> moves = _moves;
+      final int horizon = comingHorizon(ledger);
       final PurchaseCheck? check = price > 0
           ? checkPurchase(
               ledger,
@@ -168,16 +170,24 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
               date: _date(ledger),
               label: _what.text.trim(),
               tryOut: moves,
-              atLeast: 30,
+              atLeast: horizon,
             )
           : null;
-      final Projection projection =
-          check?.projection ??
-          Projection.of(ledger, horizon: 30, tryOut: moves);
-      final List<ProjectedDay> days = projection.days.take(31).toList();
+      // What is scheduled, over the same days Inicio looks at: the lowest
+      // point and the first tight day are told from it, whatever is tried.
+      final Projection scheduled = Projection.of(
+        ledger,
+        horizon: horizon,
+        tryOut: moves,
+      );
+      final Projection projection = check?.projection ?? scheduled;
+      final List<ProjectedDay> days = projection.days
+          .take(horizon + 1)
+          .toList();
       final int selected = math.min(_selected, days.length - 1);
-      final ProjectedDay low = projection.lowestBeforePayday;
-      final ProjectedDay? tight = projection.firstTight;
+      final ProjectedDay low = scheduled.lowestBeforePayday;
+      final ProjectedDay? tight = scheduled.firstTight;
+      final String lowOn = dayOrToday(l, low.date, ledger.today);
       // Whether the dashed line has something tried in it, or only the
       // money expected.
       final bool trying = moves.isNotEmpty || check != null;
@@ -268,10 +278,7 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
                       Text(
                         (check == null
                             ? l.comingLowest
-                            : l.comingLowestWithout)(
-                          amount(low.sure),
-                          dayShortMonth(low.date),
-                        ),
+                            : l.comingLowestWithout)(amount(low.sure), lowOn),
                         style: context.type.titleSmall,
                       ),
                       const SizedBox(height: 2),
@@ -279,7 +286,11 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
                         tight != null
                             ? (ledger.cushion > 0
                                   ? l.comingTight
-                                  : l.comingRunsOut)(dayShortMonth(tight.date))
+                                  : l.comingRunsOut)(
+                                sentence(
+                                  dayOrToday(l, tight.date, ledger.today),
+                                ),
+                              )
                             : ledger.cushion > 0
                             ? l.comingNoTight
                             : l.comingNoTightZero,
@@ -291,12 +302,10 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
                       ComingChart(
                         days: days,
                         cushion: ledger.cushion,
+                        isTight: scheduled.tight,
                         selected: selected,
                         onSelect: (int i) => setState(() => _selected = i),
-                        semanticsLabel: l.comingLowest(
-                          amount(low.sure),
-                          dayShortMonth(low.date),
-                        ),
+                        semanticsLabel: l.comingLowest(amount(low.sure), lowOn),
                         payday: _dayOf(ledger.nextPayday),
                         startLabel: l.buyToday,
                         paydayLabel: l.comingPay,
@@ -334,6 +343,7 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
                 _DayDetail(
                   day: days[selected],
                   ledger: ledger,
+                  under: scheduled.tight(days[selected]),
                   onMove: (ProjectedEvent e) => _move(e, ledger),
                   trying: trying,
                   highlighted: true,
@@ -346,6 +356,7 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
                       child: _DayDetail(
                         day: days[i],
                         ledger: ledger,
+                        under: scheduled.tight(days[i]),
                         onMove: (ProjectedEvent e) => _move(e, ledger),
                         trying: trying,
                       ),
@@ -473,7 +484,20 @@ class _Verdict extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
     String amount(int minor) => pesos(ledger.major(minor));
-    final String on = dayShortMonth(check.lowestOn);
+    final String on = dayOrToday(l, check.lowestOn, ledger.today);
+    // What it takes from what is kept apart, said by name and amount. The
+    // cushion only when the title does not say it already.
+    String uses({required bool cushion}) => listOf(l, <String>[
+      if (check.usesSetAside > 0) l.buyUsesSetAside(amount(check.usesSetAside)),
+      if (check.usesReserve > 0) l.buyUsesReserve(amount(check.usesReserve)),
+      if (cushion && check.usesCushion > 0)
+        l.buyUsesCushion(amount(check.usesCushion)),
+    ]);
+    final int free = ledger.freeUntilPayday;
+    final String payday = dayMonth(ledger.nextPayday);
+    final String lowest = ledger.cushion > 0
+        ? l.buyFitsBody(amount(check.lowest), on)
+        : l.buyFitsBodyNoCushion(amount(check.lowest), on);
     final (
       String title,
       String body,
@@ -482,21 +506,50 @@ class _Verdict extends StatelessWidget {
     ) = switch (check.verdict) {
       PurchaseVerdict.fits => (
         l.buyFits,
-        ledger.cushion > 0
-            ? l.buyFitsBody(amount(check.lowest), on)
-            : l.buyFitsBodyNoCushion(amount(check.lowest), on),
+        <String>[
+          // Before payday it says it is within «Puedes gastar».
+          if (!check.afterPay && check.price <= free)
+            l.buyWithinFree(amount(free), payday),
+          lowest,
+        ].join(' '),
         context.colors.positive,
         context.colors.brandSoft,
       ),
+      PurchaseVerdict.takesApart => (
+        l.buyTakesApart,
+        <String>[
+          if (check.afterPay)
+            l.buyUses(uses(cushion: false))
+          else if (free > 0)
+            l.buyOverFree(amount(free), payday, uses(cushion: false))
+          else
+            l.buyNothingFree(payday, uses(cushion: false)),
+          lowest,
+        ].join(' '),
+        context.colors.caution,
+        context.colors.cautionSoft,
+      ),
       PurchaseVerdict.belowCushion => (
         l.buyBelow,
-        l.buyBelowBody(on, amount(check.lowest), amount(ledger.cushion)),
+        <String>[
+          l.buyBelowBody(
+            sentence(on),
+            amount(check.lowest),
+            amount(ledger.cushion),
+          ),
+          if (uses(cushion: false) case final String used when used.isNotEmpty)
+            l.buyAlsoUses(used),
+        ].join(' '),
         context.colors.caution,
         context.colors.cautionSoft,
       ),
       PurchaseVerdict.short => (
         l.buyShort,
-        l.buyShortBody(on, amount(-check.lowest)),
+        <String>[
+          l.buyShortBody(sentence(on), amount(-check.lowest)),
+          if (uses(cushion: true) case final String used when used.isNotEmpty)
+            l.buyAlsoUses(used),
+        ].join(' '),
         context.colors.negative,
         context.colors.negativeSoft,
       ),
@@ -578,6 +631,7 @@ class _Compare extends StatelessWidget {
             style: context.type.titleSmall?.copyWith(
               color: switch (c.verdict) {
                 PurchaseVerdict.fits => context.colors.ink,
+                PurchaseVerdict.takesApart ||
                 PurchaseVerdict.belowCushion => context.colors.caution,
                 PurchaseVerdict.short => context.colors.negative,
               },
@@ -585,6 +639,7 @@ class _Compare extends StatelessWidget {
           ),
           Text(switch (c.verdict) {
             PurchaseVerdict.fits => l.buyFits,
+            PurchaseVerdict.takesApart => l.buyTakesApart,
             PurchaseVerdict.belowCushion => l.buyBelow,
             PurchaseVerdict.short => l.buyShort,
           }, style: context.type.bodySmall),
@@ -612,6 +667,7 @@ class _DayDetail extends StatelessWidget {
   const _DayDetail({
     required this.day,
     required this.ledger,
+    required this.under,
     required this.onMove,
     required this.trying,
     this.highlighted = false,
@@ -619,6 +675,10 @@ class _DayDetail extends StatelessWidget {
 
   final ProjectedDay day;
   final Ledger ledger;
+
+  /// Whether the day falls under the cushion, or out of money, by the same
+  /// rule as the line above the chart.
+  final bool under;
   final ValueChanged<ProjectedEvent> onMove;
 
   /// Whether something is being tried: without it, what the day would
@@ -638,7 +698,6 @@ class _DayDetail extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
     String amount(int minor) => pesos(ledger.major(minor));
-    final bool under = day.sure < ledger.cushion;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.fromLTRB(14, 12, 6, 10),
@@ -728,3 +787,18 @@ class _DayDetail extends StatelessWidget {
 
 DateTime _dayOf(DateTime moment) =>
     DateTime(moment.year, moment.month, moment.day);
+
+/// [day] as these screens say it in a sentence: «el 3 oct», or «hoy» when
+/// it is [today], which is never named as if it were another day.
+String dayOrToday(AppLocalizations l, DateTime day, DateTime today) =>
+    _dayOf(day) == _dayOf(today) ? l.todayWhen : l.dayWhen(dayShortMonth(day));
+
+/// [items] said as one list: «a, b y c».
+String listOf(AppLocalizations l, List<String> items) => items.length < 2
+    ? items.join()
+    : l.listAnd(
+        items.take(items.length - 1).join(', '),
+        items.last,
+        // Each item here starts with an amount.
+        'other',
+      );

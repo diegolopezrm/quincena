@@ -373,13 +373,35 @@ void main() {
     );
   });
 
-  testWidgets('what there is to split names the reserve it leaves out', (
+  /// The amount on the line of the sum that says [label].
+  String lineOf(WidgetTester tester, String label) {
+    final Finder row = find.ancestor(
+      of: find.text(label),
+      matching: find.byType(Row),
+    );
+    return tester
+        .widgetList<Text>(
+          find.descendant(of: row.first, matching: find.byType(Text)),
+        )
+        .map((Text t) => t.data ?? t.textSpan?.toPlainText() ?? '')
+        .firstWhere((String t) => t != label);
+  }
+
+  testWidgets('what there is to split is a sum that adds up, line by line', (
     tester,
   ) async {
-    await openPage(
+    final OwnController own = await openPage(
       tester,
       (OwnController own) => EnvelopesPage(own: own),
       data: (QuincenaStore store, Account bank, Account card) async {
+        await store.saveProfile(
+          Profile(
+            name: 'Ana',
+            base: Asset.cop,
+            schedule: const TwiceMonthly(),
+            cushion: d('200000'),
+          ),
+        );
         await store.addEntry(
           accountId: bank.id,
           amount: d('1000000'),
@@ -387,6 +409,22 @@ void main() {
           date: DateTime(2026, 10, 2, 9),
           category: 'freelance',
           payee: 'Estudio Sur',
+        );
+        await store.addEntry(
+          accountId: card.id,
+          amount: d('300000'),
+          kind: EntryKind.expense,
+          date: DateTime(2026, 10, 2, 20),
+          category: 'shopping',
+          payee: 'Falabella',
+        );
+        await store.addRecurring(
+          name: 'Internet',
+          amount: Money(d('100000'), Asset.cop),
+          cadence: Cadence.monthly,
+          nextDate: DateTime(2026, 10, 10),
+          accountId: bank.id,
+          category: 'utilities',
         );
         await store.setSetting(
           'freelance',
@@ -399,16 +437,95 @@ void main() {
         );
       },
     );
-    // 3.000.000 in the bank, less 15 % of the client's 1.000.000.
-    expect(find.text(pesos(2850000)), findsOneWidget);
+    // 3.000.000 in the bank and 300.000 owed on the Visa; internet, the
+    // cushion and 15 % of the client's 1.000.000 left out.
+    expect(lineOf(tester, 'En tus cuentas de uso diario'), pesos(3000000));
+    expect(lineOf(tester, 'Lo que debes en tarjetas'), pesos(-300000));
+    expect(lineOf(tester, 'Pagos hasta el 15 oct'), pesos(-100000));
+    expect(lineOf(tester, 'Colchón'), pesos(-200000));
+    expect(lineOf(tester, 'Reserva de ingresos variables'), pesos(-150000));
     expect(
-      find.text(
-        'Lo que hay para gastar, menos ${pesos(0)} comprometidos hasta el '
-        'pago, ${pesos(0)} de colchón y ${pesos(150000)} de la reserva de '
-        'ingresos variables.',
+      3000000 - 300000 - 100000 - 200000 - 150000,
+      own.ledger!.freeUntilPayday,
+    );
+    expect(find.text(pesos(2250000)), findsWidgets);
+  });
+
+  testWidgets('with nothing committed, no cushion and no reserve, the sum '
+      'names none of them', (tester) async {
+    await openPage(tester, (OwnController own) => EnvelopesPage(own: own));
+    expect(lineOf(tester, 'En tus cuentas de uso diario'), pesos(2000000));
+    for (final String gone in <String>[
+      'Lo que debes en tarjetas',
+      'Colchón',
+      'Reserva de ingresos variables',
+    ]) {
+      expect(find.text(gone), findsNothing);
+    }
+    expect(find.textContaining('Pagos hasta'), findsNothing);
+    expect(find.textContaining('colchón'), findsNothing);
+  });
+
+  testWidgets('just split, the day to day has spent nothing; a lunch after '
+      'comes out of it and not of what is left', (tester) async {
+    final OwnController own = await openPage(
+      tester,
+      (OwnController own) => Scaffold(
+        body: ListenableBuilder(
+          listenable: own,
+          builder: (BuildContext context, _) =>
+              SingleChildScrollView(child: PlanTab(own: own)),
+        ),
       ),
+      // Spent before the split.
+      data: (QuincenaStore store, Account bank, Account card) => store.addEntry(
+        accountId: bank.id,
+        amount: d('398200'),
+        kind: EntryKind.expense,
+        date: DateTime(2026, 10, 1, 12),
+        category: 'groceries',
+        payee: 'Éxito',
+      ),
+    );
+    await tester.tap(find.text('Repartir en sobres'));
+    await settle(tester);
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Día a día'),
+      '200.000',
+    );
+    await settle(tester);
+    await tester.tap(find.text('Guardar el reparto'));
+    await settle(tester);
+    expect(find.text('Llevas ${pesos(0)} de ${pesos(200000)}'), findsOneWidget);
+    expect(find.textContaining('Te pasaste por'), findsNothing);
+    // 2.000.000 less what went before the split and the day to day.
+    expect(lineOf(tester, 'Sin asignar'), pesos(1401800));
+
+    await tester.runAsync(
+      () => own.store.addEntry(
+        accountId: own.accounts.first.id,
+        amount: d('50000'),
+        kind: EntryKind.expense,
+        date: DateTime(2026, 10, 3, 13),
+        category: 'restaurants',
+        payee: 'Almuerzo',
+      ),
+    );
+    await settle(tester);
+    expect(
+      find.text('Llevas ${pesos(50000)} de ${pesos(200000)}'),
       findsOneWidget,
     );
+    expect(lineOf(tester, 'Sin asignar'), pesos(1401800));
+    // What can be spent is what the day to day has left and what is not
+    // assigned.
+    expect(own.ledger!.freeUntilPayday, 1401800 + 150000);
+
+    // Opened again, the split counts the lunch as the day to day's.
+    await tester.tap(find.text('Ajustar el reparto'));
+    await settle(tester);
+    expect(lineOf(tester, 'Gastado del día a día'), pesos(50000, signed: true));
+    expect(lineOf(tester, 'Sin asignar'), pesos(1401800));
   });
 
   testWidgets('a goal whose date went by opens its calendar, to move it', (

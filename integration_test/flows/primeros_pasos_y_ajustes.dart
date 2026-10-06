@@ -18,6 +18,7 @@ import 'package:quincena/backup/backup.dart';
 import 'package:quincena/capture/event.dart';
 import 'package:quincena/capture/inbox.dart';
 import 'package:quincena/domain/pay_schedule.dart';
+import 'package:quincena/domain/projection.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/exchanges/binance_link.dart';
 import 'package:quincena/format/money.dart';
@@ -253,7 +254,9 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tap('Empezar');
       await f.page(
         'Toca «Empezar»: puedes gastar el banco y el efectivo menos lo que '
-        'debes en la tarjeta hasta el 15 de octubre, sin «Provisional».',
+        'debes en la tarjeta hasta el 15 de octubre, sin «Provisional». '
+        'Más abajo, «Próximos días» dice que el mínimo antes del pago es el '
+        'de hoy y no avisa de ningún día sin plata.',
       );
       await f.check(
         'Puedes gastar ${pesos(1080000)}: el banco y el efectivo menos la '
@@ -276,6 +279,34 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         expect(_own(f).provisional, isFalse);
         expect(f.shows('Provisional: faltan tus pagos fijos'), isFalse);
       });
+      await f.check(
+        '«Próximos días» no avisa que te quedes sin plata: los pagos del 15 y '
+        'del 31 de octubre llegan antes del arriendo del 5 de noviembre, y '
+        'sin colchón no habla de él',
+        () {
+          final Projection p = _own(f).projection!;
+          expect(_own(f).ledger!.cushion, 0);
+          expect(p.firstTight, isNull);
+          expect(f.screenText, isNot(contains('te quedarías sin plata')));
+          expect(f.screenText, isNot(contains('colchón')));
+        },
+      );
+      await f.check(
+        'Nada baja el saldo antes del pago: dice que el mínimo es el de hoy, '
+        'sin nombrar el 3 de octubre como otro día',
+        () {
+          final ProjectedDay low = _own(f).projection!.lowestBeforePayday;
+          expect(low.date, DateTime(2026, 10, 3));
+          expect(
+            f.shows(
+              'Tu saldo mínimo estimado antes del pago es el de hoy: '
+              '${pesos(1080000)}.',
+            ),
+            isTrue,
+          );
+          expect(f.screenText, isNot(contains('el 3 de octubre')));
+        },
+      );
       await f.check('La app abre en adelante en tus cuentas', () async {
         expect(await _read(f, () => _store(f).setting('app.mode')), 'own');
       });
