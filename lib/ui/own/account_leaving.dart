@@ -125,9 +125,15 @@ class _LeavingDialogState extends State<_LeavingDialog> {
     final NetWorth before = own.netWorth();
     final NetWorth after = own.netWorth(without: _ids, movedTo: _movedTo);
     var held = Money.zero(base);
+    // Whether it also leaves the money to spend: each of them that holds
+    // or owes something is for everyday use.
+    var everyday = true;
     for (final Account a in widget.accounts) {
       if (a.archived) continue;
-      if (own.partOfTotal(a) case final Money part) held += part;
+      if (own.partOfTotal(a) case final Money part) {
+        held += part;
+        if (!part.isZero && !a.spendable) everyday = false;
+      }
     }
     final Money apart = after.instalments - before.instalments;
     final TextStyle? body = context.type.bodyMedium;
@@ -143,9 +149,13 @@ class _LeavingDialogState extends State<_LeavingDialog> {
     ];
     final List<String> worth = <String>[
       if (held.isNegative)
-        l.accountLeavingOwed(count, money(held.abs()))
+        everyday
+            ? l.accountLeavingOwedSpendable(count, money(held.abs()))
+            : l.accountLeavingOwed(count, money(held.abs()))
       else if (!held.isZero)
-        l.accountLeavingHeld(count, money(held)),
+        everyday
+            ? l.accountLeavingHeldSpendable(count, money(held))
+            : l.accountLeavingHeld(count, money(held)),
       if (apart.isNegative)
         l.accountLeavingInstalmentsCard(money(apart.abs()))
       else if (!apart.isZero)

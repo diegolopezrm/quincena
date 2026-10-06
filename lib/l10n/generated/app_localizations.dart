@@ -1094,10 +1094,22 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{Lo que se debe en ella, {amount}, deja de restar de tu patrimonio.} other{Lo que se debe en ellas, {amount}, deja de restar de tu patrimonio.}}'**
   String accountLeavingOwed(int count, String amount);
 
+  /// No description provided for @accountLeavingHeldSpendable.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Lo que tiene, {amount}, deja de contar en tu patrimonio y en lo que puedes gastar hasta el pago.} other{Lo que tienen, {amount}, deja de contar en tu patrimonio y en lo que puedes gastar hasta el pago.}}'**
+  String accountLeavingHeldSpendable(int count, String amount);
+
+  /// No description provided for @accountLeavingOwedSpendable.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Lo que se debe en ella, {amount}, deja de restar de tu patrimonio y de lo que puedes gastar hasta el pago.} other{Lo que se debe en ellas, {amount}, deja de restar de tu patrimonio y de lo que puedes gastar hasta el pago.}}'**
+  String accountLeavingOwedSpendable(int count, String amount);
+
   /// No description provided for @accountLeavingInstalmentsApart.
   ///
   /// In es, this message translates to:
-  /// **'Lo que falta de las cuotas, {amount}, ya no queda en la deuda de una tarjeta: resta aparte de tu patrimonio.'**
+  /// **'Lo que falta de las cuotas, {amount}, ya no queda en la deuda de una tarjeta: resta aparte de tu patrimonio, y las cuotas que vienen se cuentan como comprometidas.'**
   String accountLeavingInstalmentsApart(String amount);
 
   /// No description provided for @accountLeavingInstalmentsCard.

@@ -81,7 +81,12 @@ void main() {
       now: () => now,
       readNative: false,
     );
-    addTearDown(own.dispose);
+    // Saving the rates reloads the controller: what is still reading the
+    // store finishes before the store closes.
+    addTearDown(() async {
+      own.dispose();
+      await pumpEventQueue(times: 50);
+    });
     // Opening the app fetches the rates of what is held.
     await own.start();
     while (own.refreshingRates || own.ratesFetchedAt == null) {

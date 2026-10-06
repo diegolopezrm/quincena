@@ -668,8 +668,34 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String accountLeavingHeldSpendable(int count, String amount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'What they hold, $amount, stops counting in your net worth and in what you can spend until payday.',
+      one:
+          'What it holds, $amount, stops counting in your net worth and in what you can spend until payday.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String accountLeavingOwedSpendable(int count, String amount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'What is owed on them, $amount, is no longer taken off your net worth or what you can spend until payday.',
+      one:
+          'What is owed on it, $amount, is no longer taken off your net worth or what you can spend until payday.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String accountLeavingInstalmentsApart(String amount) {
-    return 'What is left of the installments, $amount, is no longer in a card\'s debt: it comes off your net worth on its own.';
+    return 'What is left of the installments, $amount, is no longer in a card\'s debt: it comes off your net worth on its own, and upcoming installments are counted as payments due.';
   }
 
   @override

@@ -668,8 +668,34 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String accountLeavingHeldSpendable(int count, String amount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Lo que tienen, $amount, deja de contar en tu patrimonio y en lo que puedes gastar hasta el pago.',
+      one:
+          'Lo que tiene, $amount, deja de contar en tu patrimonio y en lo que puedes gastar hasta el pago.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String accountLeavingOwedSpendable(int count, String amount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Lo que se debe en ellas, $amount, deja de restar de tu patrimonio y de lo que puedes gastar hasta el pago.',
+      one:
+          'Lo que se debe en ella, $amount, deja de restar de tu patrimonio y de lo que puedes gastar hasta el pago.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String accountLeavingInstalmentsApart(String amount) {
-    return 'Lo que falta de las cuotas, $amount, ya no queda en la deuda de una tarjeta: resta aparte de tu patrimonio.';
+    return 'Lo que falta de las cuotas, $amount, ya no queda en la deuda de una tarjeta: resta aparte de tu patrimonio, y las cuotas que vienen se cuentan como comprometidas.';
   }
 
   @override

@@ -138,7 +138,10 @@ void main() {
     expect(asked, contains('«Cuentas archivadas»'));
     expect(
       asked,
-      contains('Lo que tiene, ${cop(held)}, deja de contar en tu patrimonio.'),
+      contains(
+        'Lo que tiene, ${cop(held)}, deja de contar en tu patrimonio y en lo '
+        'que puedes gastar hasta el pago.',
+      ),
     );
     expect(
       asked,
@@ -174,12 +177,125 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('archiving says when it also changes the money to spend: a '
+      'card still owed on does, savings do not', (tester) async {
+    final OwnController own = await open(tester);
+    final Account visa = named(own, 'Visa')!;
+    await tester.runAsync(() async {
+      await own.store.addEntry(
+        accountId: visa.id,
+        amount: d('100000'),
+        kind: EntryKind.expense,
+        date: DateTime(2026, 10, 2, 12),
+        category: 'shopping',
+      );
+      await own.store.addAccount(
+        name: 'Ahorros',
+        kind: AccountKind.bank,
+        asset: Asset.cop,
+        opening: d('500000'),
+        spendable: false,
+      );
+    });
+    await settle(tester);
+    final int free = own.ledger!.freeUntilPayday;
+    final Money debt = Money(d('100000'), Asset.cop);
+
+    await openForm(tester, 'Visa');
+    await tapText(tester, 'Archivar');
+    expect(
+      said(tester),
+      contains(
+        'Lo que se debe en ella, ${cop(debt)}, deja de restar de tu '
+        'patrimonio y de lo que puedes gastar hasta el pago.',
+      ),
+    );
+    await tester.tap(find.text('Archivar').last);
+    await settle(tester);
+    // As it said: the debt no longer takes from the money to spend.
+    expect(own.ledger!.freeUntilPayday, free + 100000);
+
+    await tapText(tester, 'Ahorros');
+    await tester.tap(find.byTooltip('Editar cuenta'));
+    await settle(tester);
+    await tapText(tester, 'Archivar');
+    final String asked = <String>[
+      for (final RichText t in tester.widgetList<RichText>(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.byType(RichText),
+        ),
+      ))
+        t.text.toPlainText(),
+    ].join(' | ').replaceAll(' ', ' ').replaceAll(signJoiner, '');
+    expect(
+      asked,
+      contains(
+        'Lo que tiene, ${cop(Money(d('500000'), Asset.cop))}, deja de '
+        'contar en tu patrimonio.',
+      ),
+    );
+    expect(asked, isNot(contains('puedes gastar')));
+    await tester.tap(find.text('Archivar').last);
+    await settle(tester);
+    expect(own.ledger!.freeUntilPayday, free + 100000);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('an archived account, deleted from its page, is not offered to '
+      'be archived again', (tester) async {
+    final OwnController own = await open(tester);
+    final Account nequi = named(own, 'Nequi')!;
+    final int entries = own.snapshot!.entries.length;
+    final Money worth = own.netWorth().total;
+    final Money held = own.partOfTotal(nequi)!;
+    await tester.runAsync(() => own.archiveAccounts(<String>{nequi.id}));
+    await settle(tester);
+
+    await tapText(tester, 'Cuentas archivadas');
+    await tapText(tester, 'Nequi');
+    await tester.tap(find.byTooltip('Editar cuenta'));
+    await settle(tester);
+    // Its form brings it back or deletes it; archiving it is done.
+    Finder inSheet(String text) => find.descendant(
+      of: find.byType(BottomSheet),
+      matching: find.text(text),
+    );
+    expect(inSheet('Restaurar'), findsOneWidget);
+    expect(inSheet('Archivar'), findsNothing);
+    await tapText(tester, 'Eliminar');
+    expect(find.text('¿Eliminar Nequi?'), findsOneWidget);
+    final Finder inDialog = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.text('Archivar'),
+    );
+    expect(inDialog, findsNothing);
+    final String asked = said(tester);
+    expect(asked, isNot(contains('mejor archívala')));
+    // Archived, it was already out of the net worth: deleting it changes
+    // nothing there.
+    expect(
+      asked,
+      contains('Tu patrimonio sigue en ${cop(own.netWorth().total)}.'),
+    );
+    await tester.tap(find.text('Eliminar').last);
+    await settle(tester);
+
+    expect(own.snapshot!.account(nequi.id), isNull);
+    expect(own.archivedAccounts, isEmpty);
+    expect(own.snapshot!.entries.length, entries - 2);
+    expect(own.netWorth().total, worth - held);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('deleting a card says what is paid from it, moves it where the '
       'person says, and says how the net worth changes', (tester) async {
     final OwnController own = await open(tester);
     final Account bank = named(own, 'Bancolombia')!;
     final Account visa = named(own, 'Visa')!;
 
+    // On the card, the phone was counted the day it was bought.
+    expect(own.ledger!.upcoming.where((m) => m.merchant == 'Celular'), isEmpty);
     await openForm(tester, 'Visa');
     await tapText(tester, 'Eliminar');
     final String asked = said(tester);
@@ -216,6 +332,25 @@ void main() {
     );
     expect(own.instalments.single.accountId, bank.id);
     expect(own.netWorth().total, worth - phone);
+    // Out of a card, what is left of the phone is still to come out of the
+    // bank: its instalments are committed, as its form says, the same as
+    // the net worth takes them apart.
+    expect(
+      own.ledger!.upcoming.where((m) => m.merchant == 'Celular'),
+      isNotEmpty,
+    );
+    unawaited(
+      showInstalmentSheet(
+        tester.element(find.byType(AccountsTab)),
+        own: own,
+        plan: own.instalments.single,
+      ),
+    );
+    await settle(tester);
+    expect(
+      find.text('Las cuotas que vienen se cuentan como comprometidas.'),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 

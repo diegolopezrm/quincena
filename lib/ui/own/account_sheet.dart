@@ -248,7 +248,8 @@ class _AccountFormState extends State<_AccountForm> {
       widget.own,
       <Account>[_editing!],
       delete: delete,
-      archive: widget.archive,
+      // One already archived is not offered to be archived again.
+      archive: widget.archive && !_editing.archived,
     );
     if (done != null && mounted) Navigator.of(context).pop();
   }

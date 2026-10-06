@@ -402,6 +402,16 @@ void main() {
       },
     );
 
+    test('one paid from an account that is not a card still counts as '
+        'committed: the purchase is not in its balance', () async {
+      final Ledger before = await ledger();
+      final Ledger after = await withPlans(<Instalments>[
+        tv(accountId: bank.id),
+      ]);
+      expect(after.freeUntilPayday, before.freeUntilPayday - 200000);
+      expect(after.upcoming.where((m) => m.merchant == 'Televisor').length, 2);
+    });
+
     test('a partial payment leaves the rest of that one committed', () async {
       final Ledger after = await withPlans(<Instalments>[
         tv(payments: <(DateTime, int)>[(DateTime(2026, 10, 2), 150000)]),

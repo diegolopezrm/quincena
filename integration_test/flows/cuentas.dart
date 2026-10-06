@@ -931,8 +931,9 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Eliminar');
       await f.step(
         '«Eliminar», al final del formulario, pide confirmar: cuántos '
-        'movimientos se borran y que no se puede deshacer, cuánto baja el '
-        'patrimonio y por qué, y ofrece «Archivar» en su lugar.',
+        'movimientos se borran y que no se puede deshacer, que lo que tiene '
+        'deja de contar en el patrimonio y en lo que puedes gastar, y ofrece '
+        '«Archivar» en su lugar.',
       );
       await f.check('El aviso cuenta los $inNequi movimientos de Nequi', () {
         expect(
@@ -949,7 +950,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
             contains(
               _plainText(
                 'Lo que tiene, ${_cop(held)}, deja de contar en tu '
-                'patrimonio.',
+                'patrimonio y en lo que puedes gastar hasta el pago.',
               ),
             ),
           );
@@ -1698,6 +1699,10 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       });
       final Money celular = _pesos('1290000');
       final Money instalments = own.netWorth().instalments;
+      // On the Visa, the phone was counted the day it was bought.
+      final List<Object> comingPhone = <Object>[
+        ...own.ledger!.upcoming.where((m) => m.merchant == 'Celular'),
+      ];
       await f.tapTip('Editar cuenta');
       await f.tap('Eliminar');
       await f.page(
@@ -1798,6 +1803,18 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         },
       );
       await f.check(
+        'Fuera de una tarjeta, las cuotas que vienen del Celular cuentan como '
+        'comprometidas: salen de Bancolombia, como el patrimonio las resta '
+        'aparte',
+        () {
+          expect(comingPhone, isEmpty);
+          expect(
+            own.ledger!.upcoming.where((m) => m.merchant == 'Celular'),
+            isNotEmpty,
+          );
+        },
+      );
+      await f.check(
         'Netflix sigue entre los pagos fijos y sigue restando de lo que '
         'puedes gastar: ${pesos(own.ledger!.major(free))}',
         () {
@@ -1846,6 +1863,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       final Money held = own.partOfTotal(nequi)!;
       final Money worth = own.netWorth().total;
       final Money everyday = _everyday(own);
+      final int free = own.ledger!.freeUntilPayday;
       final int entries = own.snapshot!.entries.length;
       final int inNequi = own.snapshot!.entries
           .where((Entry e) => e.accountId == nequi.id)
@@ -1861,7 +1879,8 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.step(
         '«Archivar» pregunta antes: sus movimientos se quedan, deja de '
         'aparecer en Cuentas y al elegir una cuenta, se restaura desde '
-        '«Cuentas archivadas», y el patrimonio baja lo que tiene Nequi.',
+        '«Cuentas archivadas», y lo que tiene Nequi deja de contar en el '
+        'patrimonio y en lo que puedes gastar.',
       );
       await f.check(
         'El aviso dice que sus $inNequi movimientos se quedan y dónde '
@@ -1881,7 +1900,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
           contains(
             _plainText(
               'Lo que tiene, ${_cop(held)}, deja de contar en tu '
-              'patrimonio.',
+              'patrimonio y en lo que puedes gastar hasta el pago.',
             ),
           ),
         );
@@ -1922,6 +1941,16 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
             _cop(everyday - held),
           );
         },
+      );
+      await f.check(
+        'Lo que puedes gastar hasta el pago bajó ${_cop(held)}, lo que tiene '
+        'Nequi, como dijo el aviso',
+        () => expect(
+          Decimal.parse(
+            '${own.ledger!.major(free - own.ledger!.freeUntilPayday)}',
+          ),
+          held.amount,
+        ),
       );
       await f.reveal(find.text('Cuentas archivadas'));
       await f.step(
