@@ -60,14 +60,20 @@ class ImportCandidate {
   bool get isNew => !recorded && !importedBefore;
 
   /// A move whose other account is not known yet: a card's payment the
-  /// card's statement does not say the source of, when more than one
-  /// account could have paid it. Recorded as it is, it would be income on
-  /// the card, so it waits for the person to say which.
+  /// card's statement does not say the source of, when it is not clear
+  /// which of the person's accounts paid it. Recorded as it is, it would
+  /// be income on the card, so it waits for the person to say which.
   bool get waitsForAccount =>
       kind == EntryKind.transfer && otherAccountId == null && otherLeg == null;
 
+  /// A card's payment that can only be income on the card: none of the
+  /// person's other accounts keeps the card's currency, so it cannot be a
+  /// move from one. Income would raise what can be spent with money that
+  /// came from nowhere, so only the person checks it.
+  bool get paidFromNowhere => cardPayment && kind == EntryKind.income;
+
   /// Whether it is checked to import when the review opens.
-  bool get proposed => isNew && !waitsForAccount;
+  bool get proposed => isNew && !waitsForAccount && !paidFromNowhere;
 
   bool get income => line.amount > Decimal.zero;
 
@@ -294,13 +300,14 @@ class StatementImporter {
       final Entry? leg = card ? _mirror(l, elsewhere, sides) : null;
       if (leg != null) elsewhere.remove(leg);
       final String? other = !card ? null : leg?.accountId ?? _named(l, sides);
-      // On the card, the payment came from one of the person's everyday
-      // accounts: it is a move even when which one is left to the person.
+      // On the card, the payment came from another of the person's
+      // accounts: it is a move even when which one is left to the person,
+      // when one keeps the card's currency.
       final bool asks =
           card &&
           other == null &&
           account.kind == AccountKind.card &&
-          sides.isNotEmpty;
+          sameAsset.isNotEmpty;
       out.add(
         ImportCandidate(
           line: l,

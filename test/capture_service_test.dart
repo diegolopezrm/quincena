@@ -517,6 +517,33 @@ Fecha
     expect(back.suggestion.category, isNull);
   });
 
+  test('a rule that names the very account that was only guessed makes the '
+      'capture ready', () async {
+    await store.updateAccount(nequi.copyWith(spendable: false));
+    await capture.ingest(<CaptureEvent>[
+      CaptureEvent(
+        source: CaptureSource.paste,
+        at: now,
+        text: r'Compra por $25.000 en TIENDA LA ESQUINA con T.Cred *9876',
+      ),
+    ]);
+    final InboxItem guessed = (await pending()).single;
+    expect(guessed.suggestion.accountId, bancolombia.id);
+    expect(guessed.suggestion.why, contains('only'));
+    final List<Account> accounts = await store.accounts();
+
+    // The person said, on another purchase with the same card, that it is
+    // Bancolombia's: the guess was right, and now it is known.
+    final CaptureSettings s = (await store.captureSettings()).withRule(
+      CaptureRule(kind: RuleKind.card, key: '9876', target: bancolombia.id),
+    );
+    final InboxItem taught = CaptureService.withRules(guessed, s, accounts);
+    expect(taught.suggestion.accountId, bancolombia.id);
+    expect(taught.suggestion.why, contains('card'));
+    expect(taught.suggestion.why, isNot(contains('only')));
+    expect(CaptureService.isReady(taught, accounts), isTrue);
+  });
+
   test(
     'an account\'s number teaches where that account goes, not a card',
     () async {
@@ -572,6 +599,38 @@ Fecha
       expect(purchase.suggestion.accountId, isNull);
     },
   );
+
+  test('the number of the account money went to teaches nothing about the '
+      'person\'s', () async {
+    // Diego sends money from Nequi to his own Bancolombia account *9999.
+    await capture.ingest(<CaptureEvent>[
+      push(
+        r'Nequi: Enviaste $100.000 a la cuenta Bancolombia *9999',
+        app: 'com.nequi.MobileApp',
+      ),
+    ]);
+    final InboxItem sent = (await pending()).single;
+    expect(sent.parsed.account, isNull);
+    expect(sent.parsed.card, isNull);
+    final Accepted done = await capture.accept(sent, accountId: nequi.id);
+    expect(
+      done.learned.map((RuleChange c) => c.rule.kind),
+      isNot(contains(RuleKind.account)),
+    );
+    expect((await store.captureSettings()).accountNumbers, isEmpty);
+
+    // Bancolombia's alert for the same money is not taken for Nequi's.
+    await capture.ingest(<CaptureEvent>[
+      push(
+        r'Bancolombia: Recibiste $100.000 en tu cuenta *9999',
+        at: now.add(const Duration(minutes: 1)),
+      ),
+    ]);
+    final InboxItem got = (await store.inbox()).firstWhere(
+      (InboxItem i) => i.parsed.account == '9999',
+    );
+    expect(got.suggestion.accountId, isNot(nequi.id));
+  });
 
   test(
     'a card rule taught from an account\'s number before still holds',

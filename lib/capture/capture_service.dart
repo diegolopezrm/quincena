@@ -369,7 +369,13 @@ class CaptureService {
         'learned',
       ];
     }
-    if (accountId == s.accountId && category == s.category) return item;
+    // A rule can confirm the very account that was only guessed: the
+    // account stays, and the guess is known now.
+    if (accountId == s.accountId &&
+        category == s.category &&
+        listEquals(why, s.why)) {
+      return item;
+    }
     return item.copyWith(
       suggestion: Suggestion(
         accountId: accountId,

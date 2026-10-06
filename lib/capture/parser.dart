@@ -122,6 +122,18 @@ final RegExp _cardWord = RegExp(
 );
 final RegExp _accountWord = RegExp(r'\b(?:cuenta|cta|ahorros|corriente)\b');
 
+// The account money went to ("a la cuenta *9999") and, for money in, the
+// one it came from ("de la cuenta *1111"): someone else's, or another of
+// the person's, not the one the alert is about; a card's own account
+// ("asociada a la cuenta") is the one. Matched against the folded text
+// right before the digits.
+final RegExp _accountTo = RegExp(
+  r'(?<!(?:asociad|vinculad)[ao]\s)\b(?:a|hacia|para)\s+(?:la|una|otra)\s+(?:cuenta|cta)\b\D*$',
+);
+final RegExp _accountFrom = RegExp(
+  r'\bde(?:sde)?\s+(?:la|una|otra)\s+(?:cuenta|cta)\b\D*$',
+);
+
 // Dates as banks write them, matched against the normalized text:
 // `01/10/2026`, `1 de octubre de 2026`, `01 Oct 2026`, `2026-10-01` and
 // `Oct 1, 2026`.
@@ -175,6 +187,18 @@ final List<RegExp> _merchantAfter = <RegExp>[
   ),
   RegExp(r'\bde\s+(?!tu\b|su\b|\$)(.+?)' + _stop, caseSensitive: false),
 ];
+
+/// Who sent money in, when the alert names them before the amount.
+final RegExp _senderBefore = RegExp(
+  r'\brecibid[oa]s?\s+de\s+(?!tu\b|su\b|\$)(.+?)' + _stop,
+  caseSensitive: false,
+);
+
+/// An account's kind, where a merchant's name would be: a shop called
+/// "Depósito …" is still a shop.
+final RegExp _accountKind = RegExp(
+  r'^(?:ahorros|corriente|cuenta|tarjeta|producto)\b',
+);
 final RegExp _merchantBefore = RegExp(
   r'^(?:[^:·]*[:·]\s*)?(.+?)\s+te\s+(?:envi[oó]|mand[oó]|gir[oó]|transfiri[oó]|pag[oó]|consign[oó])(?![a-z])',
   caseSensitive: false,
@@ -243,7 +267,7 @@ ParsedCapture parseCapture(CaptureEvent event) {
   final String? merchant = receipt.payee != null
       ? prettyMerchant(receipt.payee!)
       : _merchant(text, kind);
-  final ({String? card, String? account}) digits = _digitsIn(text);
+  final ({String? card, String? account}) digits = _digitsIn(text, kind);
   var confidence = 0.2;
   if (amount != null) confidence += 0.35;
   if (kind != null) confidence += 0.3;
@@ -289,7 +313,14 @@ FoundAmount? _movementAmount(String text) {
 /// The last digits [text] gives of a card and of an account. They are an
 /// account's when the word closest before them names one ("en tu cuenta
 /// *5678", "Ahorros *5678"), and a card's otherwise, as a bare `*1234` is.
-({String? card, String? account}) _digitsIn(String text) {
+/// Someone else's account, the one money of [kind] went to or came from,
+/// is neither.
+({String? card, String? account}) _digitsIn(String text, EntryKind? kind) {
+  final RegExp? elsewhere = switch (kind) {
+    EntryKind.expense => _accountTo,
+    EntryKind.income => _accountFrom,
+    _ => null,
+  };
   String? card;
   String? account;
   var from = 0;
@@ -303,6 +334,7 @@ FoundAmount? _movementAmount(String text) {
         word.allMatches(before).map((RegExpMatch w) => w.start).lastOrNull ??
         -1;
     if (last(_accountWord) > last(_cardWord)) {
+      if (elsewhere?.hasMatch(before) ?? false) continue;
       account ??= found;
     } else {
       card ??= found;
@@ -328,27 +360,31 @@ String? _merchant(String text, EntryKind? kind) {
   final List<RegExp> order = kind == EntryKind.income
       ? <RegExp>[_merchantAfter[2], _merchantAfter[0], _merchantAfter[1]]
       : _merchantAfter;
-  // Money in can name who sent it before the amount: "Pago recibido de
-  // CAMILO RUIZ por $40.000".
-  final List<String> places = <String>[
-    tail,
-    if (kind == EntryKind.income && amounts.isNotEmpty)
-      text.substring(0, amounts.first.start),
-  ];
-  for (final String place in places) {
-    for (final RegExp r in order) {
+  String? named(String place, List<RegExp> patterns) {
+    for (final RegExp r in patterns) {
       final RegExpMatch? m = r.firstMatch(place);
       if (m == null) continue;
       final String name = _clean(m.group(1)!);
       if (name.isEmpty || findAmounts(name).isNotEmpty) continue;
       if (RegExp(r'^\W*\d').hasMatch(name)) continue;
       if (_isDate(name)) continue;
-      // An account's kind is not who got the money.
-      if (_productWord.hasMatch(_fold(name))) continue;
+      // An account's kind is not who got the money: "en tu cuenta de
+      // ahorros".
+      if (_accountKind.hasMatch(_fold(name))) continue;
       return prettyMerchant(name);
     }
+    return null;
   }
-  return null;
+
+  return named(tail, order) ??
+      // Money in can name who sent it before the amount, after the word
+      // that says it was received: "Pago recibido de CAMILO RUIZ por
+      // $40.000". Not "Abono de nómina por", which names no one.
+      (kind == EntryKind.income && amounts.isNotEmpty
+          ? named(text.substring(0, amounts.first.start), <RegExp>[
+              _senderBefore,
+            ])
+          : null);
 }
 
 /// Lowercase and without accents, every other character kept where it is,

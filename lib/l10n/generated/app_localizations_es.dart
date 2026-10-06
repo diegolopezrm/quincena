@@ -5652,4 +5652,17 @@ class AppLocalizationsEs extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String statementPaymentNoSource(int count, String currency) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Los $count pagos a la tarjeta quedan sin marcar: ninguna otra cuenta tuya está en $currency, y marcados contarían como ingreso. Regístralos como movimientos entre tus cuentas desde la que los pagó.',
+      one:
+          'El pago a la tarjeta queda sin marcar: ninguna otra cuenta tuya está en $currency, y marcado contaría como ingreso. Regístralo como movimiento entre tus cuentas desde la que lo pagó.',
+    );
+    return '$_temp0';
+  }
 }

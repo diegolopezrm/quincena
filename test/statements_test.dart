@@ -692,6 +692,51 @@ void main() {
         expect(paid.isTransfer, isTrue);
       });
 
+      test('on the card, with no everyday account it could come from, is not '
+          'checked as income', () async {
+        // Cash is the only other account in pesos.
+        await store.updateAccount(bank.copyWith(kind: AccountKind.cash));
+        final StatementImporter importer = StatementImporter(store);
+        final ImportCandidate fromCash = (await importer.prepare(
+          card,
+          cardStatement(),
+        )).last;
+        expect(fromCash.line.amount, d('480000'));
+        expect(fromCash.kind, isNot(EntryKind.income));
+        expect(fromCash.proposed, isFalse);
+
+        // A card in dollars, and every other account in pesos.
+        final Account dollars = await store.addAccount(
+          name: 'Visa dólares',
+          kind: AccountKind.card,
+          asset: Asset.usd,
+        );
+        final List<ImportCandidate> all = await importer.prepare(
+          dollars,
+          readTable(
+            parseCsv(
+              'Fecha;Descripción;Valor\n'
+              '15/09/2026;AMAZON;45,90\n'
+              '16/09/2026;NETFLIX;9,99\n'
+              '25/09/2026;SU PAGO GRACIAS;-200,00\n',
+            ),
+          ),
+        );
+        final ImportCandidate payment = all.last;
+        expect(payment.line.amount, d('200'));
+        expect(payment.cardPayment, isTrue);
+        expect(payment.isNew, isTrue);
+        expect(payment.proposed, isFalse);
+        // What is proposed brings no money into the card.
+        await importer.record(dollars, <ImportCandidate>[
+          for (final ImportCandidate c in all)
+            if (c.proposed) c,
+        ]);
+        final List<Entry> onCard = await store.entries(accountId: dollars.id);
+        expect(onCard, hasLength(2));
+        expect(onCard.where((Entry e) => e.amount > Decimal.zero), isEmpty);
+      });
+
       test('is not a refund on the card', () async {
         final List<ImportCandidate> all = await StatementImporter(store)
             .prepare(

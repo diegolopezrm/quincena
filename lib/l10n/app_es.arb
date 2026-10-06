@@ -1775,5 +1775,7 @@
   "pickAccountNumberNote": "La próxima vez, lo de la cuenta *{digits} irá directo a la que elijas.",
   "@pickAccountNumberNote": {"placeholders": {"digits": {"type": "String"}}},
   "statementPaymentWaits": "{count, plural, =1{El pago a la tarjeta queda sin marcar hasta que digas de cuál de tus cuentas salió: márcalo y elige la cuenta.} other{Los {count} pagos a la tarjeta quedan sin marcar hasta que digas de cuál de tus cuentas salieron: márcalos y elige la cuenta.}}",
-  "@statementPaymentWaits": {"placeholders": {"count": {"type": "int"}}}
+  "@statementPaymentWaits": {"placeholders": {"count": {"type": "int"}}},
+  "statementPaymentNoSource": "{count, plural, =1{El pago a la tarjeta queda sin marcar: ninguna otra cuenta tuya está en {currency}, y marcado contaría como ingreso. Regístralo como movimiento entre tus cuentas desde la que lo pagó.} other{Los {count} pagos a la tarjeta quedan sin marcar: ninguna otra cuenta tuya está en {currency}, y marcados contarían como ingreso. Regístralos como movimientos entre tus cuentas desde la que los pagó.}}",
+  "@statementPaymentNoSource": {"placeholders": {"count": {"type": "int"}, "currency": {"type": "String"}}}
 }

@@ -236,13 +236,15 @@ class _StatementPageState extends State<StatementPage> {
         else
           fresh[i],
     ];
-    // A line that went from new to already there, or the other way, takes
-    // what is proposed now.
+    // A line that went from new to already there, or the other way, or
+    // that now waits for the account that paid it, takes what is proposed
+    // now.
     final List<ImportCandidate> before = _candidates;
     bool kept(int i) =>
         before.length == all.length &&
         before[i].isNew == all[i].isNew &&
-        before[i].waitsForAccount == all[i].waitsForAccount;
+        before[i].waitsForAccount == all[i].waitsForAccount &&
+        before[i].paidFromNowhere == all[i].paidFromNowhere;
     final Set<int> chosen = <int>{
       for (var i = 0; i < all.length; i++)
         if (kept(i) ? _chosen.contains(i) : all[i].proposed) i,
@@ -406,11 +408,11 @@ class _StatementPageState extends State<StatementPage> {
               _LineSheet(own: own, account: account, candidate: _candidates[i]),
         );
     if (changed == null || !mounted) return;
-    // A payment that waited for its account is checked once it has one.
+    // A payment that waited for its account is checked once it has one,
+    // or once the person said what it is.
+    bool waits(ImportCandidate c) => c.waitsForAccount || c.paidFromNowhere;
     final bool placed =
-        _candidates[i].waitsForAccount &&
-        !changed.waitsForAccount &&
-        changed.isNew;
+        waits(_candidates[i]) && !waits(changed) && changed.isNew;
     _edited[i] = changed;
     setState(() {
       _candidates = <ImportCandidate>[
@@ -707,9 +709,13 @@ class _StatementPageState extends State<StatementPage> {
         if (all[i].proposed) i,
     ];
     final int fresh = all.where((ImportCandidate c) => c.isNew).length;
-    // Card payments that wait for the account they came from.
+    // Card payments that wait for the account they came from, and those
+    // no account of the person could have paid.
     final int waiting = all
         .where((ImportCandidate c) => c.isNew && c.waitsForAccount)
+        .length;
+    final int nowhere = all
+        .where((ImportCandidate c) => c.isNew && c.paidFromNowhere)
         .length;
     final int unsorted = all
         .where(
@@ -885,6 +891,13 @@ class _StatementPageState extends State<StatementPage> {
               if (waiting > 0)
                 Text(
                   l.statementPaymentWaits(waiting),
+                  style: context.type.bodySmall?.copyWith(
+                    color: context.colors.caution,
+                  ),
+                ),
+              if (nowhere > 0 && account != null)
+                Text(
+                  l.statementPaymentNoSource(nowhere, account.asset.code),
                   style: context.type.bodySmall?.copyWith(
                     color: context.colors.caution,
                   ),
@@ -1075,7 +1088,7 @@ class _CandidateRow extends StatelessWidget {
       color: context.colors.caution,
     );
     final String? category = c.category;
-    final bool waits = c.waitsForAccount;
+    final bool waits = c.waitsForAccount || c.paidFromNowhere;
     final Account? to = c.kind == EntryKind.transfer ? other : null;
     final bool out = c.line.amount < Decimal.zero;
     final String? move = to == null

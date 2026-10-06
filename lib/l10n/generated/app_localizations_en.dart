@@ -5661,4 +5661,17 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String statementPaymentNoSource(int count, String currency) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'The $count card payments stay unchecked: none of your other accounts is in $currency, and checked they would count as income. Record them as transfers between your accounts from the one that paid them.',
+      one:
+          'The card payment stays unchecked: none of your other accounts is in $currency, and checked it would count as income. Record it as a transfer between your accounts from the one that paid it.',
+    );
+    return '$_temp0';
+  }
 }

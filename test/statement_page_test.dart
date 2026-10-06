@@ -511,6 +511,56 @@ void main() {
     expect(own.ledger!.freeUntilPayday, lessThanOrEqualTo(free));
   });
 
+  testWidgets('a card payment no account of the person could have paid is '
+      'left unchecked, also after changing the account', (tester) async {
+    final (QuincenaStore store, OwnController own, _) = await world(tester);
+    late Account dollars;
+    await tester.runAsync(() async {
+      dollars = await store.addAccount(
+        name: 'Visa dólares',
+        kind: AccountKind.card,
+        asset: Asset.usd,
+      );
+    });
+    // Opened in Bancolombia first, where the payment is money out.
+    await open(
+      tester,
+      own,
+      readTable(
+        parseCsv(
+          'Fecha;Descripción;Valor\n'
+          '15/10/2026;AMAZON;45,90\n'
+          '16/10/2026;NETFLIX;9,99\n'
+          '20/10/2026;SU PAGO GRACIAS;-200,00\n',
+        ),
+      ),
+    );
+    expect(tester.widget<Checkbox>(box('SU Pago Gracias')).value, isTrue);
+
+    await tester.tap(find.byType(DropdownButtonFormField<String>).first);
+    await settle(tester);
+    await tester.tap(find.text('Visa dólares · USD').last);
+    await settle(tester);
+    // On the card it could only be income: nothing in dollars paid it.
+    expect(tester.widget<Checkbox>(box('SU Pago Gracias')).value, isFalse);
+    expect(
+      find.text(
+        'El pago a la tarjeta queda sin marcar: ninguna otra cuenta tuya '
+        'está en USD, y marcado contaría como ingreso. Regístralo como '
+        'movimiento entre tus cuentas desde la que lo pagó.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Importar 2 movimientos'), findsOneWidget);
+    await tester.tap(find.text('Importar 2 movimientos'));
+    await settle(tester);
+    final List<Entry> onCard =
+        await tester.runAsync(() => store.entries(accountId: dollars.id)) ??
+        const <Entry>[];
+    expect(onCard, hasLength(2));
+    expect(onCard.where((Entry e) => e.amount > Decimal.zero), isEmpty);
+  });
+
   testWidgets('checking a card payment asks which account it came from', (
     tester,
   ) async {

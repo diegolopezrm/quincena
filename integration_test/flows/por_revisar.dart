@@ -1511,7 +1511,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
     area: 'Por revisar',
     goal:
         'Aún no tengo nada por revisar y solo uso una cuenta: quiero pegar '
-        'el mensaje de una compra y registrarla.',
+        'el mensaje de una compra y registrarla, y que lo que la app aprenda '
+        'de mi tarjeta les llegue a las compras que esperan.',
     data: _oneAccount,
     manual: <String>[
       'El botón «Leer un pantallazo o PDF» del estado vacío sigue al selector '
@@ -1601,6 +1602,57 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
           own.ledger!.freeUntilPayday,
           free - own.ledger!.minor(27500),
         ),
+      );
+      await f.tapTip('Por revisar');
+      await _paste(f, r'Compraste $8.500 en JUAN VALDEZ con T.Deb *4321');
+      await _hideNotice(f);
+      await _paste(f, r'Compraste $14.000 en CINE COLOMBIA con T.Deb *4321');
+      await _hideNotice(f);
+      await f.top();
+      await f.step(
+        'Dos compras con la tarjeta *4321 y sin banco: las dos proponen '
+        'Bancolombia por ser tu única cuenta en pesos y piden revisarla.',
+      );
+      InboxItem waiting(String payee) =>
+          own.pendingInbox.firstWhere((InboxItem i) => _payee(i) == payee);
+      await f.check('Las dos esperan con Bancolombia como suposición', () {
+        for (final String payee in <String>['Juan Valdez', 'Cine Colombia']) {
+          final InboxItem i = waiting(payee);
+          expect(i.parsed.card, '4321');
+          expect(i.suggestion.accountId, bank.id);
+          expect(i.suggestion.why, contains('only'));
+          expect(CaptureService.isReady(i, own.accounts), isFalse);
+        }
+        expect(f.shows('NECESITAN INFORMACIÓN'), isTrue);
+      });
+      await _tapOn(f, 'Juan Valdez', 'Registrar gasto');
+      await _hideNotice(f);
+      await f.top();
+      await f.step(
+        'Registrada la de Juan Valdez en Bancolombia, la app aprende que la '
+        'tarjeta *4321 es de Bancolombia: Cine Colombia pasa sola a «Listos '
+        'para registrar» y ya no pide revisar la cuenta.',
+      );
+      await f.check(
+        'Cine Colombia ya no es una suposición: la tarjeta dice que es '
+        'Bancolombia',
+        () {
+          expect(own.captureSettings.cardAccounts['4321'], bank.id);
+          final InboxItem cine = waiting('Cine Colombia');
+          expect(cine.suggestion.accountId, bank.id);
+          expect(cine.suggestion.why, contains('card'));
+          expect(cine.suggestion.why, isNot(contains('only')));
+          expect(CaptureService.isReady(cine, own.accounts), isTrue);
+          expect(
+            find.descendant(
+              of: _card('Cine Colombia'),
+              matching: find.textContaining('Revisa la cuenta'),
+            ),
+            findsNothing,
+          );
+          expect(f.shows('LISTOS PARA REGISTRAR'), isTrue);
+          expect(f.shows('NECESITAN INFORMACIÓN'), isFalse);
+        },
       );
     },
   ),
@@ -3037,6 +3089,71 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       });
     },
   ),
+  AppFlow(
+    '08-08-tarjeta-en-dolares',
+    'Importar el extracto de una tarjeta en dólares',
+    area: 'Importar extracto',
+    goal:
+        'Mi tarjeta factura en dólares y la pago desde mi cuenta en pesos: '
+        'quiero traer sus compras sin que el pago cuente como un ingreso.',
+    data: _dollarCard,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Account card = _account(own, 'Visa dólares');
+      final Account bank = _account(own, 'Bancolombia');
+      final Decimal owedBefore = own.balances[card.id]!.amount;
+      final Decimal bankBefore = own.balances[bank.id]!.amount;
+      final StatementRead read = await _openStatement(
+        f,
+        _dollarCardCsv,
+        account: 'Visa dólares',
+      );
+      await f.page(
+        'El extracto de la Visa en dólares: las compras quedan como deuda. «SU '
+        'Pago Gracias» queda sin marcar, con «¿De cuál de tus cuentas salió '
+        'este pago?», y arriba un aviso: ninguna otra cuenta tuya está en '
+        'USD, y marcado contaría como ingreso.',
+      );
+      final List<ImportCandidate> all = await _prepared(f, card, read);
+      await f.check('El pago no viene marcado como ingreso de la tarjeta', () {
+        final ImportCandidate pay = all.firstWhere(
+          (ImportCandidate c) => c.cardPayment,
+        );
+        expect(pay.line.amount, Decimal.parse('120'));
+        expect(pay.paidFromNowhere, isTrue);
+        expect(pay.proposed, isFalse);
+        expect(_ticked(f, 'SU Pago Gracias'), isFalse);
+        expect(_ticked(f, 'Amazon Mktplace'), isTrue);
+        expect(f.shows('Importar 2 movimientos'), isTrue);
+        expect(
+          f.screenText,
+          contains(
+            'El pago a la tarjeta queda sin marcar: ninguna otra cuenta tuya '
+            'está en USD, y marcado contaría como ingreso.',
+          ),
+        );
+      });
+      await f.reveal(find.text('Sumarlos a mi saldo'));
+      await f.tap('Sumarlos a mi saldo');
+      await f.tap('Importar 2 movimientos');
+      await f.waitFor(find.text('Se importaron 2 movimientos.'));
+      await f.step(
+        'Con «Sumarlos a mi saldo», importadas las 2 compras: «Lo que debes en '
+        'Visa dólares: US\$120,00 → US\$175,89». El pago no bajó la deuda.',
+      );
+      await f.check('La deuda subió solo por las compras', () {
+        expect(f.screenText, contains('US\$175,89'));
+        final List<Entry> made = _imported(own, card);
+        expect(made, hasLength(2));
+        expect(made.where((Entry e) => e.amount > Decimal.zero), isEmpty);
+        expect(
+          own.balances[card.id]!.amount,
+          owedBefore - Decimal.parse('55.89'),
+        );
+        expect(own.balances[bank.id]!.amount, bankBefore);
+      });
+    },
+  ),
 ];
 
 /// Diego's account, with more of what the phone caught that morning: a
@@ -3125,6 +3242,36 @@ Future<QuincenaStore> _twoCards() async {
     opening: Decimal.parse('-250000'),
     institution: 'Davivienda',
     creditLimit: Decimal.parse('2000000'),
+  );
+  return store;
+}
+
+/// Someone who spends from one account in pesos and has a card billed in
+/// dollars, with no other account in dollars.
+Future<QuincenaStore> _dollarCard() async {
+  final QuincenaStore store = QuincenaStore(
+    QuincenaDatabase(NativeDatabase.memory()),
+    now: () => screensNow,
+  );
+  await store.ensureCategories();
+  await store.saveProfile(
+    const Profile(name: 'Diego', base: Asset.cop, schedule: TwiceMonthly()),
+  );
+  await store.setSetting('app.mode', 'own');
+  await store.addAccount(
+    name: 'Bancolombia',
+    kind: AccountKind.bank,
+    asset: Asset.cop,
+    opening: Decimal.parse('1500000'),
+    institution: 'Bancolombia',
+  );
+  await store.addAccount(
+    name: 'Visa dólares',
+    kind: AccountKind.card,
+    asset: Asset.usd,
+    opening: Decimal.parse('-120'),
+    institution: 'Bancolombia',
+    creditLimit: Decimal.parse('2000'),
   );
   return store;
 }
@@ -3321,6 +3468,14 @@ const String _twoCardsCsv =
     'Fecha;Descripción;Valor\n'
     '01/10/2026;PAGO PSE CLARO;-89.900\n'
     '02/10/2026;PAGO TARJETA CREDITO;-250.000\n';
+
+/// The dollar card's statement: two purchases and the payment, which came
+/// from an account in pesos.
+const String _dollarCardCsv =
+    'Fecha;Descripción;Valor\n'
+    '28/09/2026;SU PAGO GRACIAS;-120,00\n'
+    '30/09/2026;AMAZON MKTPLACE;45,90\n'
+    '02/10/2026;NETFLIX.COM;9,99\n';
 
 /// A savings account's statement with a card's payment in it.
 const String _noCardCsv =
