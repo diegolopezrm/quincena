@@ -5836,4 +5836,58 @@ class AppLocalizationsEs extends AppLocalizations {
   String freelanceReserveOutside(String amount) {
     return 'Lo que cobraste en cuentas que no son de uso diario ($amount) no se aparta: nunca contó en lo que puedes gastar.';
   }
+
+  @override
+  String whyAccount(String digits, String account) {
+    return 'la cuenta *$digits es $account';
+  }
+
+  @override
+  String ruleLearnedAccount(String digits, String account) {
+    return 'Desde ahora, la cuenta *$digits va a $account.';
+  }
+
+  @override
+  String ruleAccountKey(String digits) {
+    return 'Cuenta *$digits';
+  }
+
+  @override
+  String get rulesAccounts => 'Números de cuenta';
+
+  @override
+  String whichAccountNumber(String institution, String digits) {
+    return 'Detectamos $institution y la cuenta *$digits, pero aún no sabemos cuál de tus cuentas es.';
+  }
+
+  @override
+  String pickAccountNumberNote(String digits) {
+    return 'La próxima vez, lo de la cuenta *$digits irá directo a la que elijas.';
+  }
+
+  @override
+  String statementPaymentWaits(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Los $count pagos a la tarjeta quedan sin marcar hasta que digas de cuál de tus cuentas salieron: márcalos y elige la cuenta.',
+      one:
+          'El pago a la tarjeta queda sin marcar hasta que digas de cuál de tus cuentas salió: márcalo y elige la cuenta.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String statementPaymentNoSource(int count, String currency) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Los $count pagos a la tarjeta quedan sin marcar: ninguna otra cuenta tuya está en $currency, y marcados contarían como ingreso. Regístralos como movimientos entre tus cuentas desde la que los pagó.',
+      one:
+          'El pago a la tarjeta queda sin marcar: ninguna otra cuenta tuya está en $currency, y marcado contaría como ingreso. Regístralo como movimiento entre tus cuentas desde la que lo pagó.',
+    );
+    return '$_temp0';
+  }
 }

@@ -5846,4 +5846,58 @@ class AppLocalizationsEn extends AppLocalizations {
   String freelanceReserveOutside(String amount) {
     return 'What you were paid into accounts that aren\'t for everyday use ($amount) isn\'t kept apart: it never counted in what you can spend.';
   }
+
+  @override
+  String whyAccount(String digits, String account) {
+    return 'account *$digits is $account';
+  }
+
+  @override
+  String ruleLearnedAccount(String digits, String account) {
+    return 'From now on, account *$digits goes to $account.';
+  }
+
+  @override
+  String ruleAccountKey(String digits) {
+    return 'Account *$digits';
+  }
+
+  @override
+  String get rulesAccounts => 'Account numbers';
+
+  @override
+  String whichAccountNumber(String institution, String digits) {
+    return 'We detected $institution and account *$digits, but we don\'t know yet which of your accounts it is.';
+  }
+
+  @override
+  String pickAccountNumberNote(String digits) {
+    return 'Next time, transactions on account *$digits will go straight to the one you choose.';
+  }
+
+  @override
+  String statementPaymentWaits(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'The $count card payments stay unchecked until you say which of your accounts they came from: check them and choose the account.',
+      one:
+          'The card payment stays unchecked until you say which of your accounts it came from: check it and choose the account.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String statementPaymentNoSource(int count, String currency) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'The $count card payments stay unchecked: none of your other accounts is in $currency, and checked they would count as income. Record them as transfers between your accounts from the one that paid them.',
+      one:
+          'The card payment stays unchecked: none of your other accounts is in $currency, and checked it would count as income. Record it as a transfer between your accounts from the one that paid it.',
+    );
+    return '$_temp0';
+  }
 }

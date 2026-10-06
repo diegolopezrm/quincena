@@ -66,6 +66,11 @@ class _StatementPageState extends State<StatementPage> {
   String? _accountId;
   List<ImportCandidate> _candidates = const <ImportCandidate>[];
   final Set<int> _chosen = <int>{};
+
+  /// What the person made of each line, by its place in the statement:
+  /// read again, flipped or for another account, the line keeps it where
+  /// it still applies.
+  final Map<int, ImportCandidate> _edited = <int, ImportCandidate>{};
   bool _saving = false;
 
   /// The last import stopped before saving every line.
@@ -205,28 +210,52 @@ class _StatementPageState extends State<StatementPage> {
       }
     }
     _accountId ??= own.accounts.firstOrNull?.id;
+    // Another statement: nothing of the last one carries over.
     _read = read;
+    _flipped = false;
+    _edited.clear();
+    _candidates = const <ImportCandidate>[];
     await _prepare();
   }
 
-  Future<void> _prepare({bool flip = false}) async {
+  /// Reads the statement's lines for the account, as they are now and the
+  /// way the person left them: what they made of each line, and whether
+  /// they checked it, while the line is what it was.
+  Future<void> _prepare() async {
     final Account? account = _account;
     final StatementRead? read = _read;
     if (account == null || read == null) return;
-    final List<ImportCandidate> all = await StatementImporter(
+    final List<ImportCandidate> fresh = await StatementImporter(
       own.store,
-    ).prepare(account, read, flip: flip);
+    ).prepare(account, read, flip: _flipped);
     if (!mounted) return;
+    final List<ImportCandidate> all = <ImportCandidate>[
+      for (var i = 0; i < fresh.length; i++)
+        if (_edited[i] case final ImportCandidate edited)
+          StatementImporter.keepChanges(fresh[i], edited, account, own.accounts)
+        else
+          fresh[i],
+    ];
+    // A line that went from new to already there, or the other way, or
+    // that now waits for the account that paid it, takes what is proposed
+    // now.
+    final List<ImportCandidate> before = _candidates;
+    bool kept(int i) =>
+        before.length == all.length &&
+        before[i].isNew == all[i].isNew &&
+        before[i].waitsForAccount == all[i].waitsForAccount &&
+        before[i].paidFromNowhere == all[i].paidFromNowhere;
+    final Set<int> chosen = <int>{
+      for (var i = 0; i < all.length; i++)
+        if (kept(i) ? _chosen.contains(i) : all[i].proposed) i,
+    };
     setState(() {
       _candidates = all;
       _closing = StatementImporter.closing(account, all);
       _matchClosing = false;
       _chosen
         ..clear()
-        ..addAll(<int>[
-          for (var i = 0; i < all.length; i++)
-            if (all[i].proposed) i,
-        ]);
+        ..addAll(chosen);
       _stage = _Stage.review;
     });
   }
@@ -235,7 +264,7 @@ class _StatementPageState extends State<StatementPage> {
 
   Future<void> _flip() async {
     _flipped = !_flipped;
-    await _prepare(flip: _flipped);
+    await _prepare();
   }
 
   Future<void> _import() async {
@@ -265,7 +294,7 @@ class _StatementPageState extends State<StatementPage> {
       });
       // What was saved before it stopped reads as imported now, so trying
       // again does not save it twice.
-      await _prepare(flip: _flipped);
+      await _prepare();
       return;
     }
     if (!mounted) return;
@@ -379,12 +408,19 @@ class _StatementPageState extends State<StatementPage> {
               _LineSheet(own: own, account: account, candidate: _candidates[i]),
         );
     if (changed == null || !mounted) return;
-    setState(
-      () => _candidates = <ImportCandidate>[
+    // A payment that waited for its account is checked once it has one,
+    // or once the person said what it is.
+    bool waits(ImportCandidate c) => c.waitsForAccount || c.paidFromNowhere;
+    final bool placed =
+        waits(_candidates[i]) && !waits(changed) && changed.isNew;
+    _edited[i] = changed;
+    setState(() {
+      _candidates = <ImportCandidate>[
         for (var j = 0; j < _candidates.length; j++)
           j == i ? changed : _candidates[j],
-      ],
-    );
+      ];
+      if (placed) _chosen.add(i);
+    });
   }
 
   @override
@@ -672,7 +708,15 @@ class _StatementPageState extends State<StatementPage> {
       for (var i = 0; i < all.length; i++)
         if (all[i].proposed) i,
     ];
-    final int fresh = newOnes.length;
+    final int fresh = all.where((ImportCandidate c) => c.isNew).length;
+    // Card payments that wait for the account they came from, and those
+    // no account of the person could have paid.
+    final int waiting = all
+        .where((ImportCandidate c) => c.isNew && c.waitsForAccount)
+        .length;
+    final int nowhere = all
+        .where((ImportCandidate c) => c.isNew && c.paidFromNowhere)
+        .length;
     final int unsorted = all
         .where(
           (ImportCandidate c) =>
@@ -686,7 +730,7 @@ class _StatementPageState extends State<StatementPage> {
         .length;
     // What was already there and the person checked anyway: it would be
     // recorded a second time.
-    final int repeatsChosen = _chosen.where((int i) => !all[i].proposed).length;
+    final int repeatsChosen = _chosen.where((int i) => !all[i].isNew).length;
     final bool everything = _chosen.isNotEmpty && _chosen.containsAll(newOnes);
     final Account? account = _account;
     // What the checked lines bring in and take out.
@@ -820,7 +864,7 @@ class _StatementPageState extends State<StatementPage> {
                     ? null
                     : (String? id) {
                         setState(() => _accountId = id);
-                        _prepare(flip: _flipped);
+                        _prepare();
                       },
               ),
               const SizedBox(height: 16),
@@ -844,6 +888,20 @@ class _StatementPageState extends State<StatementPage> {
               ),
               if (cardMoves)
                 Text(l.statementTransferNote, style: context.type.bodySmall),
+              if (waiting > 0)
+                Text(
+                  l.statementPaymentWaits(waiting),
+                  style: context.type.bodySmall?.copyWith(
+                    color: context.colors.caution,
+                  ),
+                ),
+              if (nowhere > 0 && account != null)
+                Text(
+                  l.statementPaymentNoSource(nowhere, account.asset.code),
+                  style: context.type.bodySmall?.copyWith(
+                    color: context.colors.caution,
+                  ),
+                ),
               if (cardless)
                 Text(
                   l.statementAddCard,
@@ -902,9 +960,12 @@ class _StatementPageState extends State<StatementPage> {
                       base: base,
                       oneYear: oneYear,
                       chosen: _chosen.contains(i),
-                      onChanged: (bool on) => setState(
-                        () => on ? _chosen.add(i) : _chosen.remove(i),
-                      ),
+                      // A payment waiting for its account asks for it first.
+                      onChanged: (bool on) => on && all[i].waitsForAccount
+                          ? _review(i)
+                          : setState(
+                              () => on ? _chosen.add(i) : _chosen.remove(i),
+                            ),
                       onOpen: () => _review(i),
                     ),
                 ],
@@ -1027,6 +1088,7 @@ class _CandidateRow extends StatelessWidget {
       color: context.colors.caution,
     );
     final String? category = c.category;
+    final bool waits = c.waitsForAccount || c.paidFromNowhere;
     final Account? to = c.kind == EntryKind.transfer ? other : null;
     final bool out = c.line.amount < Decimal.zero;
     final String? move = to == null
@@ -1086,6 +1148,8 @@ class _CandidateRow extends StatelessWidget {
               TextSpan(text: ' · $badge', style: caution)
             else if (move != null)
               TextSpan(text: ' · $move')
+            else if (waits)
+              TextSpan(text: ' · ${l.statementPaidFrom}', style: caution)
             else if (category != null)
               TextSpan(
                 text:
@@ -1093,7 +1157,11 @@ class _CandidateRow extends StatelessWidget {
               )
             else
               TextSpan(text: ' · ${l.statementGiveCategory}', style: caution),
-            if (badge == null && move == null && c.cardPayment && askCard)
+            if (badge == null &&
+                move == null &&
+                !waits &&
+                c.cardPayment &&
+                askCard)
               TextSpan(
                 text: a?.kind == AccountKind.card
                     ? '\n${l.statementPaidFrom}'
@@ -1142,13 +1210,24 @@ class _LineSheetState extends State<_LineSheet> {
       if (a.id != widget.account.id && a.asset == widget.account.asset) a,
   ];
 
-  /// The other account of a move: the one found, or a card for money out
-  /// of an account that is not one.
+  /// The other account of a move: the one found, a card for money out of
+  /// an account that is not one, or an everyday account for a card's
+  /// payment.
   late String? _other =
       c.otherAccountId ??
       (widget.account.kind != AccountKind.card && c.line.amount < Decimal.zero
               ? _others
                     .where((Account a) => a.kind == AccountKind.card)
+                    .firstOrNull
+              : widget.account.kind == AccountKind.card &&
+                    c.line.amount > Decimal.zero
+              ? _others
+                    .where(
+                      (Account a) =>
+                          a.spendable &&
+                          (a.kind == AccountKind.bank ||
+                              a.kind == AccountKind.wallet),
+                    )
                     .firstOrNull
               : null)
           ?.id ??

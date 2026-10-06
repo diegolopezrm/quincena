@@ -18,6 +18,7 @@ class ParsedCapture {
     this.kind,
     this.merchant,
     this.card,
+    this.account,
     this.institution,
     this.when,
     this.confidence = 0,
@@ -34,8 +35,12 @@ class ParsedCapture {
   final EntryKind? kind;
   final String? merchant;
 
-  /// The last four digits of the card or account, when the message says.
+  /// The last four digits of the card, when the message says.
   final String? card;
+
+  /// The last four digits of the account, when the message names one
+  /// ("en tu cuenta *5678", "Ahorros *5678"): not a card's.
+  final String? account;
   final String? institution;
 
   /// When it happened, if the message says; otherwise when it arrived.
@@ -57,6 +62,7 @@ class ParsedCapture {
     if (kind != null) 'kind': kind!.name,
     if (merchant != null) 'merchant': merchant,
     if (card != null) 'card': card,
+    if (account != null) 'account': account,
     if (institution != null) 'institution': institution,
     if (when != null) 'when': when!.toIso8601String(),
     'confidence': confidence,
@@ -71,6 +77,7 @@ class ParsedCapture {
         : null,
     merchant: json['merchant'] as String?,
     card: json['card'] as String?,
+    account: json['account'] as String?,
     institution: json['institution'] as String?,
     when: DateTime.tryParse('${json['when']}'),
     confidence: (json['confidence'] as num?)?.toDouble() ?? 0,
@@ -88,7 +95,7 @@ final RegExp _advert = RegExp(
 );
 
 final RegExp _income = RegExp(
-  r'\b(recibiste|recibio|recibid[oa]s?|recibimos (un|una)|te (envio|envia|transfirio|transfirieron|consigno|consignaron|pago|llego)|abon\w*|consignacion|deposito|nomina|reembolso|devolucion|reintegro|ingreso de|received|you got|deposited|credited|refund)\b',
+  r'\b(recibiste|recibio|recibid[oa]s?|recibimos (un|una)|te (envio|envia|enviaron|mando|mandaron|transfirio|transfirieron|consigno|consignaron|giro|giraron|pago|pagaron|llego|llegaron|depositaron|devolvieron)|llegaron(?: \S+){0,4} a (?:tu|su)|transferencia entrante|pago recibido de (?!tu |su )|abon\w*|consignacion|deposito|nomina|reembolso|devolucion|reintegro|ingreso (?:de|por|a)|received|you got|deposited|credited|refund)\b',
 );
 final RegExp _expense = RegExp(
   r'\b(compr\w*|pagaste|pago|pagos|retir\w*|debit\w*|cargo|transferiste|enviaste|envio de|envio (?:exitoso|realizado)|transferencia (?:exitosa|realizada|enviada)|pasaste|avance|purchase|you paid|you sent|spent|charged|withdraw\w*|recibimos tu pago)\b',
@@ -101,9 +108,30 @@ final RegExp _notTheMovement = RegExp(
   caseSensitive: false,
 );
 
-final RegExp _card = RegExp(
-  r'(?:\*\s?|terminad[ao]\s+en\s+|(?:tarjeta|cuenta|t\.?\s?cred|t\.?\s?deb)\D{0,14})(\d{4})\b',
+/// Last digits as alerts write them: `*1234`, `terminada en 1234`, `T.Deb
+/// *1234`, `cuenta de ahorros *1234`.
+final RegExp _digits = RegExp(
+  r'(?:\*\s?|terminad[ao]\s+en\s+|(?:tarjeta|cuenta|cta|ahorros|corriente|t\.?\s?cred|t\.?\s?deb)\D{0,14})(\d{4})\b',
   caseSensitive: false,
+);
+
+// What the last digits belong to, by the word before them, matched
+// against the folded text.
+final RegExp _cardWord = RegExp(
+  r'\b(?:tarjeta|tarj|t\.?\s?(?:cred|deb)\w*|tc|tdc|visa|mastercard|amex)\b',
+);
+final RegExp _accountWord = RegExp(r'\b(?:cuenta|cta|ahorros|corriente)\b');
+
+// The account money went to ("a la cuenta *9999") and, for money in, the
+// one it came from ("de la cuenta *1111"): someone else's, or another of
+// the person's, not the one the alert is about; a card's own account
+// ("asociada a la cuenta") is the one. Matched against the folded text
+// right before the digits.
+final RegExp _accountTo = RegExp(
+  r'(?<!(?:asociad|vinculad)[ao]\s)\b(?:a|hacia|para)\s+(?:la|una|otra)\s+(?:cuenta|cta)\b\D*$',
+);
+final RegExp _accountFrom = RegExp(
+  r'\bde(?:sde)?\s+(?:la|una|otra)\s+(?:cuenta|cta)\b\D*$',
 );
 
 // Dates as banks write them, matched against the normalized text:
@@ -159,8 +187,20 @@ final List<RegExp> _merchantAfter = <RegExp>[
   ),
   RegExp(r'\bde\s+(?!tu\b|su\b|\$)(.+?)' + _stop, caseSensitive: false),
 ];
+
+/// Who sent money in, when the alert names them before the amount.
+final RegExp _senderBefore = RegExp(
+  r'\brecibid[oa]s?\s+de\s+(?!tu\b|su\b|\$)(.+?)' + _stop,
+  caseSensitive: false,
+);
+
+/// An account's kind, where a merchant's name would be: a shop called
+/// "Depósito …" is still a shop.
+final RegExp _accountKind = RegExp(
+  r'^(?:ahorros|corriente|cuenta|tarjeta|producto)\b',
+);
 final RegExp _merchantBefore = RegExp(
-  r'^(?:[^:·]*[:·]\s*)?(.+?)\s+te\s+(?:envi[oó]|transfiri[oó]|pag[oó]|consign[oó])(?![a-z])',
+  r'^(?:[^:·]*[:·]\s*)?(.+?)\s+te\s+(?:envi[oó]|mand[oó]|gir[oó]|transfiri[oó]|pag[oó]|consign[oó])(?![a-z])',
   caseSensitive: false,
 );
 
@@ -199,7 +239,8 @@ ParsedCapture parseCapture(CaptureEvent event) {
       asset: found.isNotEmpty ? found.first.asset : null,
       kind: EntryKind.expense,
       merchant: event.merchant == null ? null : prettyMerchant(event.merchant!),
-      card: _cardIn(event.card ?? ''),
+      // Apple Pay pays with a card, whatever its name says.
+      card: _digits.firstMatch(event.card ?? '')?.group(1),
       institution: findInstitution(<String?>[event.card]) ?? institution,
       when: event.at,
       confidence: found.isNotEmpty || bare != null ? 0.95 : 0.3,
@@ -226,6 +267,7 @@ ParsedCapture parseCapture(CaptureEvent event) {
   final String? merchant = receipt.payee != null
       ? prettyMerchant(receipt.payee!)
       : _merchant(text, kind);
+  final ({String? card, String? account}) digits = _digitsIn(text, kind);
   var confidence = 0.2;
   if (amount != null) confidence += 0.35;
   if (kind != null) confidence += 0.3;
@@ -242,18 +284,21 @@ ParsedCapture parseCapture(CaptureEvent event) {
     asset: amount?.asset,
     kind: kind,
     merchant: merchant,
-    card: _cardIn(text),
+    card: digits.card,
+    account: digits.account,
     institution: institution,
     when: _whenIn(text, event.at) ?? event.at,
     confidence: confidence.clamp(0, 1),
   );
 }
 
-/// Both verbs appear ("recibiste el pago"): the one said first decides.
+/// Both verbs appear ("recibiste el pago"): the one said first decides,
+/// and from the same word the longer saying ("pago recibido de", not
+/// "pago").
 EntryKind _firstOf(String plain) {
   final int i = _income.firstMatch(plain)?.start ?? plain.length;
   final int e = _expense.firstMatch(plain)?.start ?? plain.length;
-  return i < e ? EntryKind.income : EntryKind.expense;
+  return i <= e ? EntryKind.income : EntryKind.expense;
 }
 
 FoundAmount? _movementAmount(String text) {
@@ -265,7 +310,38 @@ FoundAmount? _movementAmount(String text) {
   return null;
 }
 
-String? _cardIn(String text) => _card.firstMatch(text)?.group(1);
+/// The last digits [text] gives of a card and of an account. They are an
+/// account's when the word closest before them names one ("en tu cuenta
+/// *5678", "Ahorros *5678"), and a card's otherwise, as a bare `*1234` is.
+/// Someone else's account, the one money of [kind] went to or came from,
+/// is neither.
+({String? card, String? account}) _digitsIn(String text, EntryKind? kind) {
+  final RegExp? elsewhere = switch (kind) {
+    EntryKind.expense => _accountTo,
+    EntryKind.income => _accountFrom,
+    _ => null,
+  };
+  String? card;
+  String? account;
+  var from = 0;
+  for (final RegExpMatch m in _digits.allMatches(text)) {
+    final String found = m.group(1)!;
+    final String before = _fold(
+      text.substring(math.max(from, m.start - 30), m.end - found.length),
+    );
+    from = m.end;
+    int last(RegExp word) =>
+        word.allMatches(before).map((RegExpMatch w) => w.start).lastOrNull ??
+        -1;
+    if (last(_accountWord) > last(_cardWord)) {
+      if (elsewhere?.hasMatch(before) ?? false) continue;
+      account ??= found;
+    } else {
+      card ??= found;
+    }
+  }
+  return (card: card, account: account);
+}
 
 String? _merchant(String text, EntryKind? kind) {
   // Someone sent money: their name comes before the verb.
@@ -284,16 +360,31 @@ String? _merchant(String text, EntryKind? kind) {
   final List<RegExp> order = kind == EntryKind.income
       ? <RegExp>[_merchantAfter[2], _merchantAfter[0], _merchantAfter[1]]
       : _merchantAfter;
-  for (final RegExp r in order) {
-    final RegExpMatch? m = r.firstMatch(tail);
-    if (m == null) continue;
-    final String name = _clean(m.group(1)!);
-    if (name.isEmpty || findAmounts(name).isNotEmpty) continue;
-    if (RegExp(r'^\W*\d').hasMatch(name)) continue;
-    if (_isDate(name)) continue;
-    return prettyMerchant(name);
+  String? named(String place, List<RegExp> patterns) {
+    for (final RegExp r in patterns) {
+      final RegExpMatch? m = r.firstMatch(place);
+      if (m == null) continue;
+      final String name = _clean(m.group(1)!);
+      if (name.isEmpty || findAmounts(name).isNotEmpty) continue;
+      if (RegExp(r'^\W*\d').hasMatch(name)) continue;
+      if (_isDate(name)) continue;
+      // An account's kind is not who got the money: "en tu cuenta de
+      // ahorros".
+      if (_accountKind.hasMatch(_fold(name))) continue;
+      return prettyMerchant(name);
+    }
+    return null;
   }
-  return null;
+
+  return named(tail, order) ??
+      // Money in can name who sent it before the amount, after the word
+      // that says it was received: "Pago recibido de CAMILO RUIZ por
+      // $40.000". Not "Abono de nómina por", which names no one.
+      (kind == EntryKind.income && amounts.isNotEmpty
+          ? named(text.substring(0, amounts.first.start), <RegExp>[
+              _senderBefore,
+            ])
+          : null);
 }
 
 /// Lowercase and without accents, every other character kept where it is,
@@ -321,14 +412,18 @@ String _fold(String text) {
   return out.toString();
 }
 
+/// Whether [text] is a date, or starts with a month: its name or its
+/// abbreviation, not a name that starts like one ("Maria", "Julian").
 bool _isDate(String text) {
   final String plain = _fold(text);
   return _dateWords.hasMatch(plain) ||
       _dateMonthFirst.hasMatch(plain) ||
-      RegExp(
-        r'^(?:ene|feb|mar|abr|may|jun|jul|ago|sep|set|oct|nov|dic)[a-z]*\b',
-      ).hasMatch(plain);
+      _month.hasMatch(plain);
 }
+
+final RegExp _month = RegExp(
+  r'^(?:ene(?:ro)?|feb(?:rero)?|mar(?:zo)?|abr(?:il)?|mayo?|jun(?:io)?|jul(?:io)?|ago(?:sto)?|sep(?:tiembre)?|set(?:iembre)?|oct(?:ubre)?|nov(?:iembre)?|dic(?:iembre)?)\b',
+);
 
 // A receipt's labels, matched against a normalized line without its
 // leading punctuation: "¿Cuánto?" reads as `cuanto?`.

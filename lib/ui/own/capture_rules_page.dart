@@ -49,6 +49,7 @@ class CaptureRulesPage extends StatelessWidget {
                     in <(RuleKind, String)>[
                       (RuleKind.merchant, l.rulesMerchants),
                       (RuleKind.card, l.rulesCards),
+                      (RuleKind.account, l.rulesAccounts),
                       (RuleKind.institution, l.rulesInstitutions),
                     ])
                   if (of(kind).isNotEmpty) ...<Widget>[

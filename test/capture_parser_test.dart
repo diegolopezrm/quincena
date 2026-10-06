@@ -82,6 +82,8 @@ void main() {
       expect(p.kind, EntryKind.expense);
       expect(p.merchant, 'Fit24');
       expect(knownCategory(p.merchant!), 'subscriptions');
+      expect(p.card, isNull);
+      expect(p.account, '1234');
     });
 
     test('a salary arriving', () {
@@ -105,6 +107,126 @@ void main() {
         parse(r'Pago recibido a tu tarjeta *1234 por $480.000').kind,
         EntryKind.expense,
       );
+    });
+
+    test('money someone sent, however the bank says it', () {
+      const Map<String, String?> said = <String, String?>{
+        r'Te enviaron $50.000 desde Nequi': null,
+        r'Daviplata: Te enviaron $40.000': null,
+        r'Te enviaron plata: $45.000 de MARIA LOPEZ': 'Maria Lopez',
+        r'Te llegaron $45.000 de MARIA LOPEZ': 'Maria Lopez',
+        r'Llegaron $40.000 a tu Nequi': null,
+        r'Te mandaron $40.000': null,
+        r'MARIA LOPEZ te mandó $40.000': 'Maria Lopez',
+        r'Te pagaron $40.000': null,
+        r'Te giraron $40.000 de CAMILO RUIZ': 'Camilo Ruiz',
+        r'Transferencia entrante por $100.000 de CAMILO RUIZ': 'Camilo Ruiz',
+        r'Ingreso por $200.000 a tu cuenta': null,
+        r'Pago recibido de CAMILO RUIZ por $40.000': 'Camilo Ruiz',
+        r'Recibiste $80.000 de JUAN PEREZ': 'Juan Perez',
+        r'Recibiste un abono de $300.000': null,
+        r'Abono a tu cuenta de ahorros por $300.000': null,
+        r'Bancolombia le informa abono por $1.200.000 en su cuenta *1234': null,
+      };
+      for (final MapEntry<String, String?> e in said.entries) {
+        final ParsedCapture p = parse(e.key);
+        expect(p.kind, EntryKind.income, reason: e.key);
+        expect(p.merchant, e.value, reason: e.key);
+      }
+      // A card's payment the bank received is still money that left, and
+      // money sent is still sent.
+      expect(
+        parse(r'Pago recibido a tu tarjeta *1234 por $480.000').kind,
+        EntryKind.expense,
+      );
+      expect(parse(r'Enviaste $40.000 a CAMILO RUIZ').kind, EntryKind.expense);
+      expect(
+        parse(r'Bancolombia: movimiento por $50.000 en tu cuenta *5678').kind,
+        isNull,
+      );
+    });
+
+    test('before the amount, only who sent it is named', () {
+      expect(parse(r'Abono de nómina por $2.500.000').merchant, isNull);
+      expect(parse(r'Ingreso de dinero por $50.000').merchant, isNull);
+      expect(parse(r'Abono de intereses por $1.234').merchant, isNull);
+      expect(
+        parse(r'Recibiste un pago de nómina por $2.500.000').merchant,
+        isNull,
+      );
+      expect(
+        parse(r'Transferencia recibida de CAMILO RUIZ por $120.000').merchant,
+        'Camilo Ruiz',
+      );
+      // A shop called Depósito is still a shop.
+      expect(
+        parse(r'Compraste $50.000 en DEPOSITO LA 80').merchant,
+        'Deposito la 80',
+      );
+      expect(
+        parse(
+          r'Compra por $80.000 en DEPOSITO DE MATERIALES EL CONSTRUCTOR',
+        ).merchant,
+        'Deposito de Materiales',
+      );
+    });
+
+    test('an account\'s number is not a card\'s', () {
+      final ParsedCapture moved = parse(
+        r'Bancolombia: movimiento por $50.000 en tu cuenta *5678',
+      );
+      expect(moved.card, isNull);
+      expect(moved.account, '5678');
+      expect(
+        parse(
+          r'Consignación recibida por $100.000 en tu cta. ahorros *5678',
+        ).account,
+        '5678',
+      );
+      expect(
+        parse(
+          r'Abono en tu cuenta de ahorros terminada en 5678 por $90.000',
+        ).account,
+        '5678',
+      );
+      // Both, each for what it is.
+      final ParsedCapture both = parse(
+        r'Compraste $45.900 con tu T.Deb *1234 asociada a tu cuenta *5678',
+      );
+      expect(both.card, '1234');
+      expect(both.account, '5678');
+      // Someone else's account: where money went, or where it came from.
+      expect(
+        parse(
+          r'Nequi: Enviaste $100.000 a la cuenta Bancolombia *9999',
+        ).account,
+        isNull,
+      );
+      expect(
+        parse(r'Recibiste $50.000 de la cuenta *1111 de CAMILO RUIZ').account,
+        isNull,
+      );
+      // The person's own, wherever the alert puts it.
+      expect(
+        parse(
+          r'Transferiste $50.000 a la cuenta *9999 desde tu cuenta *5678',
+        ).account,
+        '5678',
+      );
+      expect(parse(r'Abono a la cuenta *5678 por $90.000').account, '5678');
+      expect(
+        parse(
+          r'Retiro por $200.000 con tu tarjeta débito asociada a la cuenta *5678',
+        ).account,
+        '5678',
+      );
+      expect(
+        parse(r'Débito de la cuenta de ahorros *5678 por $40.000').account,
+        '5678',
+      );
+      // Kept with the capture, for a better reading later.
+      expect(ParsedCapture.fromJson(moved.toJson()).account, '5678');
+      expect(ParsedCapture.fromJson(moved.toJson()).card, isNull);
     });
 
     test('Nequi, with its exclamations', () {
@@ -304,7 +426,9 @@ $ 50.000,00''');
       expect(p.amount, d('50000'));
       expect(p.kind, EntryKind.expense);
       expect(p.merchant, 'Juan Pérez');
-      expect(p.card, '1234');
+      // A savings account's digits, not a card's.
+      expect(p.card, isNull);
+      expect(p.account, '1234');
       expect(p.when, DateTime(2026, 10, 1, 18, 30));
     });
 
@@ -388,7 +512,7 @@ Costo de la transferencia  $ 0,00
 Valor de la transferencia  $ 85.000,00''');
       expect(p.amount, d('85000'));
       expect(p.merchant, 'Laura Gómez');
-      expect(p.card, '1234');
+      expect(p.account, '1234');
       expect(p.when, DateTime(2026, 10, 1, 18, 30));
     });
 

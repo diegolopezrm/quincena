@@ -1824,5 +1824,20 @@
   "@buyNothingFree": {"placeholders": {"payday": {"type": "String"}, "used": {"type": "String"}}},
   "envelopesSpentLine": "Gastado del día a día",
   "freelanceReserveOutside": "Lo que cobraste en cuentas que no son de uso diario ({amount}) no se aparta: nunca contó en lo que puedes gastar.",
-  "@freelanceReserveOutside": {"placeholders": {"amount": {"type": "String"}}}
+  "@freelanceReserveOutside": {"placeholders": {"amount": {"type": "String"}}},
+  "whyAccount": "la cuenta *{digits} es {account}",
+  "@whyAccount": {"placeholders": {"digits": {"type": "String"}, "account": {"type": "String"}}},
+  "ruleLearnedAccount": "Desde ahora, la cuenta *{digits} va a {account}.",
+  "@ruleLearnedAccount": {"placeholders": {"digits": {"type": "String"}, "account": {"type": "String"}}},
+  "ruleAccountKey": "Cuenta *{digits}",
+  "@ruleAccountKey": {"placeholders": {"digits": {"type": "String"}}},
+  "rulesAccounts": "Números de cuenta",
+  "whichAccountNumber": "Detectamos {institution} y la cuenta *{digits}, pero aún no sabemos cuál de tus cuentas es.",
+  "@whichAccountNumber": {"placeholders": {"institution": {"type": "String"}, "digits": {"type": "String"}}},
+  "pickAccountNumberNote": "La próxima vez, lo de la cuenta *{digits} irá directo a la que elijas.",
+  "@pickAccountNumberNote": {"placeholders": {"digits": {"type": "String"}}},
+  "statementPaymentWaits": "{count, plural, =1{El pago a la tarjeta queda sin marcar hasta que digas de cuál de tus cuentas salió: márcalo y elige la cuenta.} other{Los {count} pagos a la tarjeta quedan sin marcar hasta que digas de cuál de tus cuentas salieron: márcalos y elige la cuenta.}}",
+  "@statementPaymentWaits": {"placeholders": {"count": {"type": "int"}}},
+  "statementPaymentNoSource": "{count, plural, =1{El pago a la tarjeta queda sin marcar: ninguna otra cuenta tuya está en {currency}, y marcado contaría como ingreso. Regístralo como movimiento entre tus cuentas desde la que lo pagó.} other{Los {count} pagos a la tarjeta quedan sin marcar: ninguna otra cuenta tuya está en {currency}, y marcados contarían como ingreso. Regístralos como movimientos entre tus cuentas desde la que los pagó.}}",
+  "@statementPaymentNoSource": {"placeholders": {"count": {"type": "int"}, "currency": {"type": "String"}}}
 }
