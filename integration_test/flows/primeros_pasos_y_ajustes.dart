@@ -2095,23 +2095,32 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tapTip('Ajustes');
       await f.step(
         'Al abrir otra vez la hoja, «Tu key» está marcada y dice que responde '
-        '${GeminiClient.defaultModel}; ya no pide la key.',
+        '${GeminiClient.defaultModel}; el campo de la key queda vacío, por si '
+        'hay que cambiarla.',
       );
-      await f.check('La hoja ya no pide la key', () {
-        expect(find.widgetWithText(TextField, 'Key de Gemini'), findsNothing);
-        expect(
-          f.screenText,
-          contains('Responde ${GeminiClient.defaultModel}.'),
-        );
-      });
+      await f.check(
+        'Conectada, la hoja dice quién responde y no muestra la key guardada',
+        () {
+          final Finder field = find.widgetWithText(TextField, 'Key de Gemini');
+          expect(field, findsOneWidget);
+          expect(f.tester.widget<TextField>(field).controller!.text, isEmpty);
+          expect(
+            f.screenText,
+            contains('Responde ${GeminiClient.defaultModel}.'),
+          );
+        },
+      );
       await f.tap('Demo');
       await f.check('«Demo» vuelve a las respuestas sin red', () {
         expect(_session(f).mode, AgentMode.demo);
       });
       await f.tap('Tu key');
-      await f.check('«Tu key» vuelve a la key de antes sin pedirla', () {
+      await f.check('«Tu key» vuelve a la key de antes sin escribirla', () {
         expect(_session(f).mode, AgentMode.live);
-        expect(find.widgetWithText(TextField, 'Key de Gemini'), findsNothing);
+        expect(
+          f.screenText,
+          contains('Responde ${GeminiClient.defaultModel}.'),
+        );
       });
       await f.back();
       await f.check('Cerrada la hoja, arriba sigue EN VIVO', () {

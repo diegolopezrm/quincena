@@ -1156,7 +1156,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         'app',
         () async {
           expect(await _setting(f, 'app.theme'), 'dark');
-          expect(await _setting(f, 'app.locale'), 'es');
+          expect(await _setting(f, 'app.language'), 'es');
         },
       );
       await f.back();
@@ -1176,7 +1176,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(settings.locale, isNull);
         expect(settings.themeMode, ThemeMode.system);
         expect(await _setting(f, 'app.theme'), 'system');
-        expect(await _setting(f, 'app.locale'), isEmpty);
+        expect(await _setting(f, 'app.language'), isEmpty);
       });
     },
   ),

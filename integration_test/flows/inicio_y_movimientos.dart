@@ -1,5 +1,6 @@
 // Flows of Inicio (02) and Movimientos (03).
 import 'package:decimal/decimal.dart';
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,11 +17,13 @@ import 'package:quincena/format/money.dart';
 import 'package:quincena/money/asset.dart';
 import 'package:quincena/money/money.dart';
 import 'package:quincena/own/own_controller.dart';
+import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
 import 'package:quincena/ui/own/look.dart';
 import 'package:quincena/ui/own/movement_list.dart';
 
 import '../../test/own_flow_test.dart' show settle;
+import '../../test_screens/accounts.dart' show screensNow;
 import '../tour.dart';
 import 'flow.dart';
 
@@ -563,29 +566,15 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.back();
       await f.tap('Repartir');
       await f.page(
-        '«Repartir» abre «Reparte tu quincena»: hay \$7.961 para repartir y '
-        'la propuesta ya pone 150.000 para el viaje, así que abajo dice «Te '
-        'pasas por».',
+        '«Repartir» abre «Reparte tu quincena»: hay \$7.961 para repartir, '
+        'y la propuesta los pone en el viaje sin pasarse de lo que hay.',
       );
       await f.check('Abre «Reparte tu quincena»', () {
         expect(f.shows('Reparte tu quincena'), isTrue);
       });
-      await f.tap('Guardar el reparto');
-      await f.step(
-        'La propuesta pone 150.000 para «Viaje a Cartagena», más de lo que '
-        'hay para repartir: al guardar, la app avisa y deja «Ajustar» o '
-        '«Guardar así».',
-      );
-      await f.check('Avisa que los sobres pasan lo que hay', () {
-        expect(f.shows('Asignas más de lo que hay'), isTrue);
+      await f.check('La propuesta no reparte más de lo que hay', () {
+        expect(f.shows('Asignas más de lo que hay'), isFalse);
       });
-      await f.tap('Ajustar');
-      await f.type('Viaje a Cartagena', '7961');
-      await f.page(
-        '«Ajustar» vuelve a los sobres. Con 7.961 para el viaje, lo que hay '
-        'para repartir queda asignado completo.',
-        most: 2,
-      );
       await f.tap('Guardar el reparto');
       await f.top();
       await f.step(
@@ -2826,7 +2815,13 @@ Entry _entry(OwnController own, String payee, {DateTime? on}) =>
 /// 30th has not shown up, no fixed payment is told yet though Rappi is
 /// charged about the same each month, and 300 euros have no rate.
 Future<QuincenaStore> _newcomer() async {
-  final QuincenaStore store = await emptyStore();
+  // Set up on 14 September, so the pay of the 30th belongs after the
+  // balances written that day and its absence is noticed.
+  DateTime at = DateTime(2026, 9, 14, 9);
+  final QuincenaStore store = QuincenaStore(
+    QuincenaDatabase(NativeDatabase.memory()),
+    now: () => at,
+  );
   await store.ensureCategories();
   await store.saveProfile(
     Profile(
@@ -2885,6 +2880,7 @@ Future<QuincenaStore> _newcomer() async {
   await add('1200000', DateTime(2026, 9, 16, 9), 'Arriendo', 'housing');
   await add('86000', DateTime(2026, 10, 1, 18), 'D1', 'groceries');
   await add('18000', DateTime(2026, 10, 2, 7), 'Uber', 'transport');
+  at = screensNow;
   return store;
 }
 
