@@ -12,23 +12,27 @@ import 'package:quincena/agent/catalog.dart';
 import 'package:quincena/agent/model_client.dart';
 import 'package:quincena/agent/scripted_agent.dart';
 import 'package:quincena/ai/allowance.dart';
+import 'package:quincena/ai/reports.dart' show ReportReason;
 import 'package:quincena/app.dart';
 import 'package:quincena/catalog/goal_planner.dart';
 import 'package:quincena/data/category.dart';
 import 'package:quincena/data/ledger.dart' show Goal, Ledger, Movement;
 import 'package:quincena/format/dates.dart';
 import 'package:quincena/format/money.dart';
-import 'package:quincena/functions/money_functions.dart' show monthlyNeeded;
+import 'package:quincena/functions/money_functions.dart'
+    show arrivalMonth, monthlyNeeded;
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/own/own_tools.dart';
 import 'package:quincena/session/session.dart';
 import 'package:quincena/store/store.dart';
+import 'package:quincena/theme/tokens.dart';
 import 'package:quincena/ui/ask_bar.dart';
 import 'package:quincena/ui/conversation.dart';
 import 'package:quincena/ui/home_page.dart';
 import 'package:quincena/ui/own/ask_page.dart';
 import 'package:quincena/ui/own/own_shell.dart';
 import 'package:quincena/ui/own/onboarding_page.dart';
+import 'package:quincena/ui/welcome.dart';
 
 import '../../test/own_flow_test.dart' show settle;
 import '../../test_screens/accounts.dart' show screensNow;
@@ -46,6 +50,10 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
     goal:
         'Antes de poner mis cuentas quiero ver cómo funciona la app con '
         'datos de ejemplo.',
+    manual: <String>[
+      'Con el teclado del teléfono, la tecla de enviar manda la pregunta y '
+          'el teclado se cierra.',
+    ],
     (FlowRun f) async {
       await f.step(
         'Primera pantalla: «Con mis cuentas» o «Con datos de ejemplo», y '
@@ -93,6 +101,11 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
           );
         },
       );
+      await f.tapTip('Preguntar');
+      await f.check('Con la barra vacía, la flecha no pregunta nada', () {
+        expect(s.turns, isEmpty);
+        expect(find.byType(Welcome), findsOneWidget);
+      });
       const String own = '¿Cuánto gasté en el Éxito?';
       await f.tester.enterText(_askField, own);
       await settle(f.tester);
@@ -113,11 +126,13 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(_askText(f), isEmpty);
       });
       const String unknown = '¿Cuánto debo en la tarjeta?';
-      await _ask(f, unknown);
+      await f.tester.enterText(_askField, unknown);
+      await f.tester.testTextInput.receiveAction(TextInputAction.send);
+      await settle(f.tester);
       await _read(
         f,
-        'Con «$unknown» no reconoce nada: dice «En la demo respondo estas '
-        'preguntas» y ofrece las cinco como botones.',
+        'Envía «$unknown» con la tecla de enviar del teclado: no lo reconoce, '
+        'dice «En la demo respondo estas preguntas» y ofrece las cinco.',
         most: 2,
       );
       await f.check('Ofrece las cinco preguntas que sí sabe responder', () {
@@ -205,6 +220,10 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         'Quiero saber cuánto apartar al mes para ir a Cartagena en diciembre '
         'y dejar ese plan guardado.',
     demo: true,
+    manual: <String>[
+      'La vibración suave al pasar por el monto que hace falta, moviendo el '
+          'control con el dedo en un teléfono.',
+    ],
     (FlowRun f) async {
       final Session s = _demo(f);
       final Ledger ledger = s.ledger;
@@ -240,7 +259,24 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       await f.check('El control quedó en ${pesos(800000)} y la meta sigue en '
           '${pesos(goal.monthly)}: simular no guarda', () {
         expect(_planner(f).monthly, 800000);
+        expect(_planner(f).onTime, isTrue);
         expect(ledger.goal('cartagena').monthly, goal.monthly);
+      });
+      await f.tester.drag(slider.last, const Offset(-600, 0));
+      await settle(f.tester);
+      final String late = arrivalMonth(
+        goal.target.toDouble(),
+        goal.saved.toDouble(),
+        100000,
+      );
+      await f.step(
+        'Ahora al mínimo, ${pesos(100000)}: el aviso se pone ámbar, dice que '
+        'llega en $late, después del ${dayMonth(goal.deadline)}.',
+      );
+      await f.check('Con ${pesos(100000)} al mes llega en $late, tarde', () {
+        expect(_planner(f).monthly, 100000);
+        expect(_planner(f).arrival, late);
+        expect(_planner(f).onTime, isFalse);
       });
       await f.tap('Volver a ${pesos(goal.monthly)}');
       await f.step(
@@ -396,6 +432,9 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         '«Revisar las marcadas»: «Antes de cancelar» dice lo que ahorra y '
         'cuándo cobra cada una; Quincena no las cancela por ella.',
       );
+      await f.check('Con dos marcadas, el botón dice «Ya las cancelé»', () {
+        expect(find.text('Ya las cancelé'), findsOneWidget);
+      });
       await f.tap('Cambiar selección');
       await _untick(f, 'Lingo Pro');
       await f.step(
@@ -431,6 +470,30 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       );
       await f.check('Solo Fit24 gimnasio quedó tachada', () {
         expect(find.text('Cancelada'), findsOneWidget);
+      });
+      final int turns = s.turns.length;
+      await f.tap('Editar');
+      await f.step(
+        'Toca «Editar» en el recibo: «Ya la cancelé» se puede tocar otra vez '
+        'y el recibo se va hasta confirmar de nuevo.',
+      );
+      await f.check('«Editar» abrió otra vez la revisión', () {
+        expect(
+          find.textContaining('Marcadas como canceladas · '),
+          findsNothing,
+        );
+      });
+      await f.tap('Ya la cancelé');
+      await _read(
+        f,
+        'La confirma otra vez: llega otra respuesta igual, con Fit24 tachada, '
+        'y la anterior se queda arriba.',
+        most: 1,
+      );
+      await f.check('Hay un solo recibo y una respuesta más', () {
+        expect(find.textContaining('Marcadas como canceladas · '), findsOne);
+        expect(s.turns, hasLength(turns + 1));
+        expect(ledger.subscriptionsMonthly, monthly);
       });
     },
   ),
@@ -588,11 +651,21 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       final Session s = _demo(f);
       final int free = s.ledger.freeUntilPayday;
       await f.tap(ScriptedAgent.starters[4]);
-      await f.tap('Guardar gasto');
+      // Two quick taps, as an impatient finger does.
+      final Finder save = find.text('Guardar gasto');
+      await f.reveal(save);
+      await f.tester.tap(save.last);
+      await f.tester.pump();
+      await f.tester.tap(save.last, warnIfMissed: false);
+      await settle(f.tester);
       await f.step(
         'Con un gasto de 45.000 guardado en la conversación, arriba a la '
         'derecha aparece «Nueva».',
       );
+      await f.check('Dos toques seguidos en «Guardar gasto» guardan uno', () {
+        expect(s.ledger.freeUntilPayday, free - 45000);
+        expect(find.textContaining('Gasto guardado · '), findsOneWidget);
+      });
       await f.tap('Nueva');
       await f.step(
         'Toca «Nueva»: vuelven las preguntas de inicio y abajo «Empezaste '
@@ -662,6 +735,10 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       await f.tester.drag(find.byType(FollowedScroll), const Offset(0, 400));
       await f.tester.pump(const Duration(milliseconds: 50));
       final double reading = _scroll(f).pixels;
+      await f.check('Mientras responde, la flecha de preguntar se apaga', () {
+        expect(s.busy, isTrue);
+        expect(_sendButton(f).onPressed, isNull);
+      });
       await f.step(
         'Toca «¿Cómo voy contra agosto?» y sube a releer mientras responde: '
         'la pantalla se queda quieta y ofrece «Ver resultado».',
@@ -678,6 +755,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       await f.check('La respuesta nueva quedó a la vista', () {
         expect(_inView(f, _surfaceOf(s, s.turns.last)), isTrue);
         expect(find.text('Ver resultado'), findsNothing);
+        expect(_sendButton(f).onPressed, isNotNull);
       });
     },
   ),
@@ -750,14 +828,16 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
     'Escoger quién responde en la demo',
     area: _demoArea,
     goal:
-        'Quiero saber quién contesta en la demo y probar con Gemini en vez '
-        'del guion.',
+        'Quiero saber quién contesta en la demo y probar con Gemini, con mi '
+        'key o sin ella, en vez del guion.',
     demo: true,
     manual: <String>[
       'Preguntar con «Gemini» elegido: necesita red y que App Check '
           'reconozca la app.',
       'Pegar una key real de Gemini en «Tu key», tocar «Conectar» y '
           'preguntar algo que no está en las cinco preguntas.',
+      'Con una key equivocada, preguntar y ver «La key no funcionó. Revísala '
+          'en Ajustes.»',
     ],
     (FlowRun f) async {
       final Session s = _demo(f);
@@ -779,6 +859,34 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(s.mode, AgentMode.demo);
         expect(find.text('Key de Gemini'), findsOneWidget);
       });
+      // Never a real key: nothing is asked with it, so nothing goes out.
+      await f.type('Key de Gemini', 'clave-de-prueba');
+      await f.tap('Conectar');
+      await f.step(
+        'Pega una key y toca «Conectar»: Ajustes se cierra y la etiqueta de '
+        'arriba pasa de «DEMO» a «EN VIVO».',
+      );
+      await f.check('Con la key responde Gemini en vivo', () {
+        expect(s.mode, AgentMode.live);
+        expect(find.text('EN VIVO'), findsOneWidget);
+      });
+      await f.tapTip('Ajustes');
+      await f.step(
+        'En Ajustes queda marcado «Tu key», dice qué modelo responde y deja '
+        'poner otra key; la que puso no se muestra.',
+      );
+      await f.check('Dice qué modelo responde y deja cambiar la key', () {
+        final Finder key = find.widgetWithText(TextField, 'Key de Gemini');
+        expect(key, findsOneWidget);
+        expect(f.tester.widget<TextField>(key).controller!.text, isEmpty);
+        expect(
+          _said(f),
+          contains(
+            'Responde ${GeminiClient.defaultModel}. Pregunta lo que quieras '
+            'sobre la cuenta.',
+          ),
+        );
+      });
       await f.tap('Gemini');
       await f.step(
         'Toca «Gemini»: responde el modelo a través de Quincena, sin key, y '
@@ -789,8 +897,8 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       });
       await f.back();
       await f.step(
-        'Cierra Ajustes: la etiqueta de arriba dice «EN VIVO», porque ya no '
-        'responde el guion.',
+        'Cierra Ajustes: la etiqueta de arriba sigue en «EN VIVO», porque ya '
+        'no responde el guion.',
       );
       await f.check('Con Gemini respondiendo, arriba dice «EN VIVO»', () {
         expect(find.text('EN VIVO'), findsOneWidget);
@@ -815,6 +923,10 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
     area: _demoArea,
     goal: 'Quiero ver la demo en inglés y en modo oscuro.',
     demo: true,
+    manual: <String>[
+      'Con «Sistema» en Idioma y en Apariencia, cambiar el idioma y el modo '
+          'oscuro del teléfono y ver que la app los sigue.',
+    ],
     (FlowRun f) async {
       final Session s = _demo(f);
       final AppSettings settings = _settings(f);
@@ -844,11 +956,17 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       await f.tap('Oscuro');
       await f.step(
         'Vuelve a «Español» y toca «Oscuro» en Apariencia: toda la app se '
-        'pone oscura.',
+        'pone oscura, también la hoja de Ajustes.',
       );
-      await f.check('Quedó en español y en modo oscuro', () {
+      await f.check('Quedó en español y en modo oscuro, Ajustes incluido', () {
         expect(settings.locale, const Locale('es'));
         expect(settings.themeMode, ThemeMode.dark);
+        expect(
+          f.tester
+              .widget<BottomSheet>(find.byType(BottomSheet))
+              .backgroundColor,
+          QuincenaColors.dark.surface,
+        );
       });
       await f.back();
       await f.step('Así se ve el inicio de la demo en modo oscuro.');
@@ -876,6 +994,12 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         'Soy desarrollador y quiero ver cómo arma la pantalla el agente y '
         'copiar la sesión para reportar un error.',
     demo: true,
+    manual: <String>[
+      'Pegar en otra app lo que dejó «Copiar la sesión» y ver que llega '
+          'entero.',
+      'El inspector con su letra de verdad (Menlo): en una prueba sin '
+          'teléfono se dibuja con cuadros.',
+    ],
     (FlowRun f) async {
       final Session s = _demo(f);
       final AppSettings settings = _settings(f);
@@ -1038,6 +1162,20 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(await _setting(f, 'app.mode'), 'own');
         expect(f.own.snapshot!.entries, hasLength(entries));
       });
+      await f.tapTip('Ajustes');
+      await f.tap('Ver los datos de ejemplo');
+      await f.tapTip('Ajustes');
+      await f.reveal(find.text('Volver a mis cuentas').last);
+      await f.step(
+        'Otra vez en la demo, Ajustes también ofrece «Volver a mis cuentas», '
+        'debajo del modo desarrollador.',
+      );
+      await f.tapFound(find.text('Volver a mis cuentas'));
+      await f.check('Desde Ajustes también vuelve a sus cuentas', () async {
+        expect(find.byType(OwnShell), findsOneWidget);
+        expect(find.byType(HomePage), findsNothing);
+        expect(await _setting(f, 'app.mode'), 'own');
+      });
     },
   ),
   AppFlow(
@@ -1051,7 +1189,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
     (FlowRun f) async {
       final OwnController own = f.own;
       final Allowance allowance = _allowance(f);
-      await f.reveal(find.text('Otra pregunta'));
+      await _showAskPanel(f);
       await f.step(
         'En Inicio, más abajo, «Pregúntale a tu plata» ofrece tres preguntas '
         'y «Otra pregunta».',
@@ -1100,7 +1238,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       await _hintTo(f, '¿Llego a mi meta de $goal?');
       await f.step(
         'Sin escribir, la barra va mostrando preguntas que esta cuenta sí '
-        'puede responder, como la de su meta «$goal».',
+        'puede responder, como la de su meta «$goal», cortada con «…».',
       );
       await f.check('Las pistas salen de esta cuenta: su meta, la tarjeta '
           'y la cripto', () {
@@ -1109,10 +1247,15 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(hints, contains('¿Cuánto debo en la tarjeta?'));
         expect(hints, contains('¿Cómo va mi cripto esta semana?'));
       });
-      await f.back();
-      await f.check('Abrir y cerrar no gasta preguntas', () {
-        expect(allowance.left, allowance.perDay);
-      });
+      await f.tapTip('Atrás');
+      await f.check(
+        'La flecha «Atrás» vuelve a Inicio sin gastar preguntas',
+        () {
+          expect(find.byType(AskPage), findsNothing);
+          expect(find.text('Otra pregunta'), findsOneWidget);
+          expect(allowance.left, allowance.perDay);
+        },
+      );
     },
   ),
   AppFlow(
@@ -1120,8 +1263,8 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
     'Preguntar cuando Gemini no responde',
     area: _askArea,
     goal:
-        'Quiero saber cuánto puedo gastar antes de que me paguen, '
-        'preguntándole a la app.',
+        'Quiero preguntarle a la app en qué se me fue la plata este mes, '
+        'aunque Gemini no esté disponible.',
     data: fullAccount,
     manual: <String>[
       'La respuesta real de Gemini a cada una de las cinco preguntas, con '
@@ -1132,68 +1275,94 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
     (FlowRun f) async {
       final Allowance allowance = _allowance(f);
       final int left = allowance.left;
-      await f.tap(_ownStarters[0]);
-      await f.waitFor(_problem, most: const Duration(seconds: 30));
+      await _tapWaiting(f, _ownStarters[1]);
       await f.step(
-        'Toca «${_ownStarters[0]}» en Inicio: abre la conversación con la '
-        'pregunta hecha y, sin Gemini, avisa que no pudo responder.',
+        'Toca «${_ownStarters[1]}» en Inicio: abre «Pregúntale a tu plata» '
+        'con la pregunta hecha y, sin Gemini, dice «No pude responder esta '
+        'vez».',
       );
       final Session s = _conversation(f);
       await f.check('La pregunta quedó con un aviso, no en blanco', () {
-        expect(s.turns.single.question, _ownStarters[0]);
-        expect(s.turns.single.error, isNotNull);
+        expect(s.turns.single.question, _ownStarters[1]);
+        expect(s.turns.single.error, AnswerProblem.other);
         expect(_problem, findsOneWidget);
       });
       await f.check(
         'Una pregunta que no tuvo respuesta no gasta del día: siguen $left',
         () => expect(allowance.left, left),
       );
-      await _ask(f, 'Qué es lo que más gasto?');
-      await f.waitFor(_problem.at(1), most: const Duration(seconds: 30));
+      await _askWaiting(f, '¿Qué es lo que más gasto?');
       await f.step(
         'Escribe otra pregunta en la barra y la envía: cada intento queda '
         'con su aviso, y la barra sigue activa para probar de nuevo.',
       );
+      await f.check('Dos intentos, dos avisos, y el cupo sigue en $left', () {
+        expect(s.turns, hasLength(2));
+        expect(s.turns.every((Turn t) => t.error != null), isTrue);
+        expect(allowance.left, left);
+      });
       await f.tap('Nueva');
       await f.step(
         'Toca «Nueva»: vuelven las cinco preguntas con el cupo del día, y '
         'abajo «Deshacer».',
       );
-      await f.check('Dice cuántas preguntas quedan: ${allowance.left}', () {
-        expect(
-          find.text('Te quedan ${allowance.left} preguntas hoy'),
-          findsOneWidget,
-        );
+      await f.check('Dice cuántas preguntas quedan: $left', () {
+        expect(s.turns, isEmpty);
+        expect(find.text('Te quedan $left preguntas hoy'), findsOneWidget);
       });
       await f.tap('Deshacer');
+      await f.step('Toca «Deshacer»: vuelven los dos intentos con sus avisos.');
       await f.check('«Deshacer» trae de vuelta los dos intentos', () {
         expect(s.turns, hasLength(2));
+      });
+      await f.tap('Nueva');
+      await _tapWaiting(f, _ownStarters[4]);
+      await f.step(
+        '«Nueva» otra vez y «${_ownStarters[4]}»: con una pregunta en la '
+        'conversación nueva, la anterior ya no se puede recuperar.',
+      );
+      await f.check('Ya no hay conversación para recuperar', () {
+        expect(s.canRestore, isFalse);
+        expect(find.text('Deshacer'), findsNothing);
+        expect(s.turns.single.question, _ownStarters[4]);
       });
     },
   ),
   AppFlow(
-    '12-03-preguntar-sin-internet',
-    'Preguntar sin internet',
+    '12-03-volver-a-preguntar',
+    'Volver a preguntar cuando falla',
     area: _askArea,
     goal:
-        'Estoy sin señal y quiero preguntarle a la app en qué se me fue la '
-        'plata este mes.',
+        'Me quedé sin señal y quiero saber cuánto puedo gastar; cuando vuelva '
+        'la red, preguntar otra vez sin perder preguntas del día.',
     data: fullAccount,
     manual: <String>[
       'Con el teléfono en modo avión, preguntar de verdad y ver el mismo '
           'aviso.',
+      'Con Gemini saturado de verdad, el aviso de «Prueba en un minuto».',
     ],
     (FlowRun f) async {
+      final OwnController own = f.own;
       final Allowance allowance = _allowance(f);
       final int left = allowance.left;
-      final Session s = await _openAsk(f, client: _Offline());
-      await f.step(
-        'Simulamos que el teléfono no tiene internet y abre «Pregúntale a tu '
-        'plata» con sus cinco preguntas.',
+      late final _StandIn model;
+      final Session s = await _openAsk(
+        f,
+        clientFor: (List<dartantic.Tool> tools) => model = _StandIn(
+          tools,
+          failures: <Object>[
+            Exception('Failed host lookup: firebasevertexai.googleapis.com'),
+            Exception('429 RESOURCE_EXHAUSTED'),
+          ],
+        ),
       );
-      await f.tap(_ownStarters[1]);
       await f.step(
-        'Toca «${_ownStarters[1]}»: dice «Sin conexión a internet» y que sus '
+        'Aquí contesta un modelo de prueba, no Gemini: la primera vez sin '
+        'internet, la segunda con Gemini saturado, la tercera sí.',
+      );
+      await f.tap(_ownStarters[0]);
+      await f.step(
+        'Toca «${_ownStarters[0]}»: dice «Sin conexión a internet» y que sus '
         'cuentas y movimientos siguen funcionando.',
       );
       await f.check('El aviso es el de estar sin conexión', () {
@@ -1203,6 +1372,36 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       await f.check(
         'Sin internet no se gasta una pregunta del día: siguen $left',
         () => expect(allowance.left, left),
+      );
+      await _ask(f, _ownStarters[0]);
+      await f.step(
+        'Con red otra vez, la escribe en la barra: ahora dice «El modelo está '
+        'recibiendo demasiadas preguntas. Prueba en un minuto.»',
+      );
+      await f.check('El aviso es el de Gemini ocupado, y siguen $left', () {
+        expect(s.turns.last.error, AnswerProblem.busy);
+        expect(allowance.left, left);
+      });
+      await _ask(f, _ownStarters[0]);
+      final String free = pesos(own.ledger!.major(own.ledger!.freeUntilPayday));
+      await _read(
+        f,
+        'La envía otra vez y ahora sí llega la respuesta: lo que puede gastar '
+        'hasta el pago, con «Calculado en tu teléfono».',
+        most: 1,
+      );
+      await f.check('Respondió con $free, lo que la cuenta calcula', () {
+        expect(s.turns.last.error, isNull);
+        expect(_said(f), contains(free));
+        expect(model.asked, 3);
+      });
+      await f.check(
+        'Solo la pregunta respondida gastó del día: quedan ${left - 1}',
+        () async {
+          expect(allowance.left, left - 1);
+          final String? saved = await _setting(f, 'gemini.usage');
+          expect((jsonDecode(saved!) as Map)['used'], 1);
+        },
       );
     },
   ),
@@ -1216,23 +1415,50 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
     data: _usedUp,
     (FlowRun f) async {
       final Allowance allowance = _allowance(f);
-      await f.tap('Otra pregunta');
+      await _showAskPanel(f);
       await f.step(
-        'Con las ${allowance.perDay} preguntas de hoy usadas, «Pregúntale a '
-        'tu plata» dice «Ya no te quedan preguntas hoy».',
+        'Con las ${allowance.perDay} preguntas de hoy usadas, Inicio sigue '
+        'ofreciendo «Pregúntale a tu plata» igual que siempre.',
       );
-      await f.check('No queda ninguna pregunta hoy', () {
-        expect(allowance.left, 0);
-        expect(find.text('Ya no te quedan preguntas hoy'), findsOneWidget);
-      });
       await f.tap(_ownStarters[2]);
       await f.step(
-        'Aun así toca «${_ownStarters[2]}»: responde «Ya usaste las '
-        'preguntas de hoy. Mañana puedes seguir preguntando.»',
+        'Toca «${_ownStarters[2]}»: abre la conversación y responde «Ya '
+        'usaste las preguntas de hoy. Mañana puedes seguir preguntando.»',
       );
+      final Session s = _conversation(f);
       await f.check('La pregunta no salió: el aviso es el del límite', () {
-        final Session s = _conversation(f);
         expect(s.turns.single.error, AnswerProblem.limit);
+        expect(allowance.left, 0);
+      });
+      await f.tap('Nueva');
+      await f.step(
+        'Toca «Nueva»: debajo de las cinco preguntas dice «Ya no te quedan '
+        'preguntas hoy».',
+      );
+      await f.check('Dice que no queda ninguna pregunta hoy', () {
+        expect(find.text('Ya no te quedan preguntas hoy'), findsOneWidget);
+      });
+      await f.tap(_ownStarters[3]);
+      await f.step(
+        'Aun así toca «${_ownStarters[3]}»: sale el mismo aviso del límite, '
+        'sin esperar a Gemini.',
+      );
+      await f.check('Tampoco salió, y el límite sigue en cero', () {
+        expect(s.turns.single.question, _ownStarters[3]);
+        expect(s.turns.single.error, AnswerProblem.limit);
+        expect(allowance.left, 0);
+      });
+      await f.tapTip('Atrás');
+      await _showAskPanel(f);
+      await f.tap(_ownStarters[0]);
+      await f.step(
+        'De vuelta en Inicio toca «${_ownStarters[0]}»: la conversación abre '
+        'con el mismo aviso, nada se le pregunta a Gemini.',
+      );
+      await f.check('Desde Inicio tampoco sale: otra vez el límite', () {
+        final Session again = _conversation(f);
+        expect(again.turns.single.question, _ownStarters[0]);
+        expect(again.turns.single.error, AnswerProblem.limit);
         expect(allowance.left, 0);
       });
     },
@@ -1287,6 +1513,10 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         '«Ver cómo se calcula lo que puedes gastar» abre la suma cuenta por '
         'cuenta, la misma de «¿De dónde sale?» en Inicio.',
       );
+      await f.check('La suma termina en $free, la cifra de la respuesta', () {
+        expect(_said(f), contains('Puedes gastar hasta el'));
+        expect(_said(f), contains(free));
+      });
       await f.back();
       await f.tap('Reportar');
       await f.step(
@@ -1296,6 +1526,11 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       await f.check('Sin escoger un motivo no se puede enviar', () {
         expect(_sendReport(f).onPressed, isNull);
       });
+      await f.tap('Es ofensiva o inapropiada');
+      await f.tap('Otra cosa');
+      await f.check('Los motivos son excluyentes: queda «Otra cosa»', () {
+        expect(_reason(f), ReportReason.other);
+      });
       await f.tap('Es incorrecta o engañosa');
       await f.type('Cuéntanos más (opcional)', 'La cifra no cuadra.');
       await f.step(
@@ -1303,6 +1538,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         '«Enviar reporte» se puede tocar.',
       );
       await f.check('Con un motivo, «Enviar reporte» se enciende', () {
+        expect(_reason(f), ReportReason.wrong);
         expect(_sendReport(f).onPressed, isNotNull);
       });
       await f.back();
@@ -1492,6 +1728,11 @@ Future<void> _hintTo(FlowRun f, String example) async {
   await settle(f.tester);
 }
 
+/// The reason picked in the report sheet.
+ReportReason? _reason(FlowRun f) => f.tester
+    .widget<RadioGroup<ReportReason>>(find.byType(RadioGroup<ReportReason>))
+    .groupValue;
+
 FilledButton _sendReport(FlowRun f) => f.tester.widget<FilledButton>(
   find.widgetWithText(FilledButton, 'Enviar reporte'),
 );
@@ -1541,32 +1782,32 @@ Future<QuincenaStore> _usedUp() async {
   return store;
 }
 
-/// A phone with no connection: every question fails the way it does there.
-class _Offline implements ModelClient {
-  @override
-  Stream<String> send(String prompt, {required List<ChatMessage> history}) =>
-      Stream<String>.error(
-        Exception('Failed host lookup: firebasevertexai.googleapis.com'),
-      );
-}
-
 /// Answers what can be spent until payday the way a model does: it asks the
 /// account through its tools, on the phone, and writes the answer in the
 /// catalog's components. No network, and never shown as Gemini's.
 class _StandIn implements ModelClient {
-  _StandIn(List<dartantic.Tool> tools)
+  _StandIn(List<dartantic.Tool> tools, {List<Object>? failures})
     : _tools = <String, dartantic.Tool>{
         for (final dartantic.Tool t in tools) t.name: t,
-      };
+      },
+      _failures = failures ?? <Object>[];
 
   final Map<String, dartantic.Tool> _tools;
+
+  /// What the next questions fail with, in order, before one is answered.
+  final List<Object> _failures;
   int _serial = 0;
+
+  /// How many questions reached it.
+  int asked = 0;
 
   @override
   Stream<String> send(
     String prompt, {
     required List<ChatMessage> history,
   }) async* {
+    asked++;
+    if (_failures.isNotEmpty) throw _failures.removeAt(0);
     final Map<Object?, Object?> overview =
         await _tools['account_overview']!.call(<String, dynamic>{})
             as Map<Object?, Object?>;
@@ -1615,3 +1856,50 @@ class _StandIn implements ModelClient {
     });
   }
 }
+
+/// Taps [text], which asks Gemini, and waits for the answer or its notice
+/// without waiting for the screen to be still: while it thinks, it moves.
+Future<void> _tapWaiting(FlowRun f, String text) async {
+  final Finder found = find.text(text);
+  await f.reveal(found);
+  await f.tester.tap(found.last);
+  await _answered(f);
+}
+
+/// Waits up to 30 seconds for the conversation's answer, or its notice.
+Future<void> _answered(FlowRun f) async {
+  final Stopwatch watch = Stopwatch()..start();
+  while (find.byType(Conversation).evaluate().isEmpty ||
+      _conversation(f).busy) {
+    if (watch.elapsed > const Duration(seconds: 30)) {
+      throw StateError('No answer after 30 s: ${f.screenText}');
+    }
+    await f.tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
+    await f.tester.pump(const Duration(milliseconds: 100));
+  }
+  await settle(f.tester);
+}
+
+/// Types [question] in the ask bar and sends it to Gemini, waiting as
+/// [_tapWaiting] does.
+Future<void> _askWaiting(FlowRun f, String question) async {
+  await f.tester.enterText(_askField, question);
+  await settle(f.tester);
+  await f.tester.tap(find.byTooltip('Preguntar'));
+  await _answered(f);
+}
+
+/// Scrolls Inicio until «Pregúntale a tu plata» shows whole, near the top.
+Future<void> _showAskPanel(FlowRun f) async {
+  final Finder first = find.text(_ownStarters[0]);
+  await f.reveal(first);
+  await Scrollable.ensureVisible(f.tester.element(first), alignment: 0.2);
+  await settle(f.tester);
+}
+
+/// The ask bar's send button.
+IconButton _sendButton(FlowRun f) => f.tester.widget<IconButton>(
+  find.descendant(of: find.byType(AskBar), matching: find.byType(IconButton)),
+);
