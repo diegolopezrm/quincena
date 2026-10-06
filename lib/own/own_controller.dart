@@ -240,6 +240,24 @@ class OwnController extends ChangeNotifier {
   Future<void> savePlan(EnvelopePlan plan) =>
       store.setSetting(_planKey, jsonEncode(plan.toJson()));
 
+  /// Deletes the savings goal [id], and its envelope with it: what was set
+  /// aside for a goal that is gone is free to spend again.
+  Future<void> deleteGoal(String id) async {
+    final EnvelopePlan? plan = _plan;
+    if (plan != null && plan.envelopes.any((Envelope e) => e.goalId == id)) {
+      await savePlan(
+        EnvelopePlan(
+          period: plan.period,
+          envelopes: <Envelope>[
+            for (final Envelope e in plan.envelopes)
+              if (e.goalId != id) e,
+          ],
+        ),
+      );
+    }
+    await store.deleteGoal(id);
+  }
+
   Future<void> saveWishes(List<Wish> wishes) => store.setSetting(
     _wishesKey,
     jsonEncode(<Object?>[for (final Wish w in wishes) w.toJson()]),

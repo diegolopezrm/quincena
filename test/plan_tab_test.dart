@@ -261,6 +261,30 @@ void main() {
     expect((await tester.runAsync(own.store.snapshot))!.goals, hasLength(1));
   });
 
+  testWidgets('a goal deleted takes its envelope, and what it set aside '
+      'is free again', (tester) async {
+    final OwnController own = await open(tester, tab);
+    await tester.tap(find.text('Repartir en sobres'));
+    await settle(tester);
+    await tester.tap(find.text('Guardar el reparto'));
+    await settle(tester);
+    expect(own.ledger!.setAside, 150000);
+    expect(own.ledger!.freeUntilPayday, 1750000);
+
+    await tester.tap(find.text('Cartagena').last);
+    await settle(tester);
+    await tester.tap(find.text('Borrar meta').last);
+    await settle(tester);
+    await tester.tap(find.text('Borrar meta').last);
+    await settle(tester);
+    expect(own.snapshot!.goals, isEmpty);
+    // Only the day to day stays, and nothing is set aside.
+    expect(own.plan!.envelopes.map((e) => e.name), <String>['']);
+    expect(own.ledger!.setAside, 0);
+    expect(own.ledger!.freeUntilPayday, 1900000);
+    expect(find.text('Cartagena'), findsNothing);
+  });
+
   testWidgets('the cushion asks where it is, and says why it cannot count', (
     tester,
   ) async {

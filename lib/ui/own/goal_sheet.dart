@@ -121,7 +121,7 @@ class _GoalSheetState extends State<_GoalSheet> {
       ),
     );
     if (sure != true) return;
-    await widget.own.store.deleteGoal(widget.goal!.id);
+    await widget.own.deleteGoal(widget.goal!.id);
     navigator.pop();
   }
 
