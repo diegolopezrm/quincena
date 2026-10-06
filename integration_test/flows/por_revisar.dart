@@ -617,6 +617,32 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.check('Lo de Bancolombia ahora va a su cuenta en pesos', () {
         expect(own.captureSettings.institutionAccounts['Bancolombia'], bank.id);
       });
+      await _hideNotice(f);
+      await f.top();
+      await f.step(
+        'La compra de Éxito Laureles, que esperaba con la tarjeta *1234, pasa '
+        'sola a «Listos para registrar» con Bancolombia: lo que aprendió del '
+        'banco le llega.',
+      );
+      await f.check(
+        'Éxito Laureles, que esperaba, ya va a Bancolombia sin preguntar',
+        () {
+          final InboxItem exito = own.pendingInbox.firstWhere(
+            (InboxItem i) => _payee(i) == 'Éxito Laureles',
+          );
+          expect(exito.suggestion.accountId, bank.id);
+          expect(exito.suggestion.why.first, 'institution');
+          expect(CaptureService.isReady(exito, own.accounts), isTrue);
+          expect(find.textContaining('falta asociarla'), findsNothing);
+          expect(
+            find.descendant(
+              of: _card('Éxito Laureles'),
+              matching: find.text('Registrar gasto'),
+            ),
+            findsOneWidget,
+          );
+        },
+      );
     },
   ),
   AppFlow(
@@ -1092,6 +1118,9 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         expect(i.parsed.kind, isNull);
         expect(i.event.source, CaptureSource.paste);
         expect(CaptureService.isReady(i, own.accounts), isFalse);
+        // «cuenta *5678» is an account's number, not a card's.
+        expect(i.parsed.card, isNull);
+        expect(i.parsed.account, '5678');
       });
       await _hideNotice(f);
       await _tapOn(f, 'Sin comercio', 'Revisar movimiento');
@@ -1105,8 +1134,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       );
       await f.tapFound(find.text('Registrar ingreso'));
       await f.step(
-        'Registrado como ingreso en Bancolombia; la tarjeta salió de la '
-        'lista.',
+        'Registrado como ingreso en Bancolombia: el aviso dice «Desde ahora, '
+        'la cuenta *5678 va a Bancolombia.», no una tarjeta.',
       );
       await f.check('Quedó un ingreso de \$50.000 en Bancolombia', () {
         final Entry e = own.snapshot!.entries.firstWhere(
@@ -1116,15 +1145,17 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         expect(e.accountId, _account(own, 'Bancolombia').id);
         expect(e.category, 'refund');
       });
-      await f.check(
-        'Aprendió la «tarjeta» *5678, aunque el mensaje decía «cuenta»',
-        () {
-          expect(
-            own.captureSettings.cardAccounts['5678'],
-            _account(own, 'Bancolombia').id,
-          );
-        },
-      );
+      await f.check('Aprendió la cuenta *5678, no una tarjeta', () {
+        expect(
+          own.captureSettings.accountNumbers['5678'],
+          _account(own, 'Bancolombia').id,
+        );
+        expect(own.captureSettings.cardAccounts.containsKey('5678'), isFalse);
+        expect(
+          f.screenText,
+          contains('Desde ahora, la cuenta *5678 va a Bancolombia.'),
+        );
+      });
       await _hideNotice(f);
       const String rappi = r'Nequi: Pagaste $32.000 en Rappi';
       await _paste(f, rappi);
@@ -1350,6 +1381,16 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
           'restaurants',
         );
       });
+      InboxItem exito() => own.pendingInbox.firstWhere(
+        (InboxItem i) => _payee(i) == 'Éxito Laureles',
+      );
+      await f.check(
+        'La compra de Éxito Laureles que espera ya propone Restaurantes',
+        () {
+          expect(exito().suggestion.category, 'restaurants');
+          expect(exito().suggestion.why, contains('learned'));
+        },
+      );
       await f.tap('Tarjeta *1234');
       await f.step(
         'Tocar «Tarjeta *1234» pregunta «¿A qué cuenta va?», con un chulo en '
@@ -1434,6 +1475,10 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       });
       await f.check('La compra de D1 vuelve a pedir la cuenta', () {
         expect(d1().suggestion.accountId, isNull);
+      });
+      await f.check('Y Éxito Laureles vuelve a lo que leyó al llegar', () {
+        expect(exito().suggestion.category, 'groceries');
+        expect(exito().suggestion.why, isNot(contains('learned')));
       });
       await f.back();
       final Finder location = find.widgetWithText(
@@ -1595,6 +1640,29 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         expect(camilo.parsed.institution, isNull);
         expect(camilo.suggestion.accountId, isNull);
         expect(f.shows('No sabemos a qué cuenta llegó.'), isTrue);
+      });
+      // How Daviplata and others say it: someone sent it to you.
+      await _paste(f, r'Te enviaron plata: $45.000 de MARIA LOPEZ');
+      await _hideNotice(f);
+      await f.top();
+      await f.step(
+        '«Te enviaron plata: \$45.000 de MARIA LOPEZ» también se lee como un '
+        'ingreso de Maria Lopez, con «Elegir la cuenta» y no «Revisar '
+        'movimiento».',
+      );
+      await f.check('«Te enviaron» es plata que entró, de Maria Lopez', () {
+        final InboxItem maria = own.pendingInbox.firstWhere(
+          (InboxItem i) => _payee(i) == 'Maria Lopez',
+        );
+        expect(maria.parsed.kind, EntryKind.income);
+        expect(maria.parsed.amount, Decimal.parse('45000'));
+        expect(
+          find.descendant(
+            of: _card('Maria Lopez'),
+            matching: find.text('Elegir la cuenta'),
+          ),
+          findsOneWidget,
+        );
       });
       await _tapOn(f, 'Camilo Ruiz', 'Elegir la cuenta');
       await f.step(
@@ -1963,6 +2031,143 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
     },
   ),
   AppFlow(
+    '07-17-mi-cuenta-por-su-numero',
+    'Que la app reconozca mi cuenta por su número',
+    area: 'Por revisar',
+    goal:
+        'Bancolombia me avisa con el número de mi cuenta de ahorros, no con '
+        'una tarjeta: quiero decirle una vez cuál es y que los próximos '
+        'avisos de esa cuenta lleguen solos.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Account bank = _account(own, 'Bancolombia');
+      await f.tapTip('Por revisar');
+      await _paste(
+        f,
+        r'Bancolombia: Recibiste $20.000 de ANDRES MEJIA en tu cuenta *5678',
+      );
+      await _hideNotice(f);
+      await f.top();
+      await f.step(
+        'Andres Mejia te pasó \$20.000 a la cuenta *5678: tienes dos cuentas '
+        'de Bancolombia, así que dice «Detectamos Bancolombia y la cuenta '
+        '*5678, pero aún no sabemos cuál de tus cuentas es.»',
+      );
+      final InboxItem andres = own.pendingInbox.firstWhere(
+        (InboxItem i) => _payee(i) == 'Andres Mejia',
+      );
+      await f.check('Leyó el número de una cuenta, no el de una tarjeta', () {
+        expect(andres.parsed.account, '5678');
+        expect(andres.parsed.card, isNull);
+        expect(andres.parsed.kind, EntryKind.income);
+        expect(
+          f.screenText,
+          contains(
+            'Detectamos Bancolombia y la cuenta *5678, pero aún no sabemos '
+            'cuál de tus cuentas es.',
+          ),
+        );
+      });
+      await _tapOn(f, 'Andres Mejia', 'Elegir la cuenta');
+      await f.step(
+        '«¿A qué cuenta llegó?» avisa «La próxima vez, lo de la cuenta *5678 '
+        'irá directo a la que elijas.», con las de Bancolombia primero.',
+      );
+      await f.check('La hoja promete recordar la cuenta, no una tarjeta', () {
+        expect(
+          f.shows(
+            'La próxima vez, lo de la cuenta *5678 irá directo a la que '
+            'elijas.',
+          ),
+          isTrue,
+        );
+        expect(find.textContaining('tarjeta *5678'), findsNothing);
+      });
+      await f.tap('Bancolombia');
+      await f.step(
+        'Elegida Bancolombia: el aviso dice «Ingreso registrado en '
+        'Bancolombia.», que Andres Mejia va a Otros ingresos «y una regla '
+        'más»: la de la cuenta *5678.',
+      );
+      await f.check('Quedó el ingreso y aprendió la cuenta por su número', () {
+        final Entry e = own.snapshot!.entries.firstWhere(
+          (Entry e) => e.sourceRef == andres.id,
+        );
+        expect(e.accountId, bank.id);
+        expect(e.amount, Decimal.parse('20000'));
+        expect(own.captureSettings.accountNumbers['5678'], bank.id);
+        expect(own.captureSettings.cardAccounts.containsKey('5678'), isFalse);
+        // The number says which account: nothing about all of Bancolombia.
+        expect(own.captureSettings.institutionAccounts, isEmpty);
+        expect(f.screenText, contains('Ingreso registrado en Bancolombia.'));
+        expect(f.screenText, contains('Y una regla más.'));
+      });
+      await _hideNotice(f);
+      await _paste(
+        f,
+        r'Bancolombia: Pagaste $35.000 a CLARO desde tu cuenta *5678',
+      );
+      await _hideNotice(f);
+      await f.top();
+      await f.step(
+        'El siguiente aviso de la cuenta *5678, el pago a Claro, llega en '
+        '«Listos para registrar» con Bancolombia.',
+      );
+      await f.check('El pago a Claro ya trae Bancolombia por su número', () {
+        final InboxItem claro = own.pendingInbox.firstWhere(
+          (InboxItem i) => _payee(i) == 'Claro',
+        );
+        expect(claro.suggestion.accountId, bank.id);
+        expect(claro.suggestion.why.first, 'account');
+        expect(CaptureService.isReady(claro, own.accounts), isTrue);
+      });
+      await _openMenu(f, 'Claro');
+      await f.tap('Detalles de detección');
+      await f.reveal(_card('Claro'));
+      await f.step(
+        'Sus detalles dicen por qué: «La cuenta *5678 es Bancolombia.»',
+      );
+      await f.check('El porqué cita la cuenta por su número', () {
+        expect(f.shows('La cuenta *5678 es Bancolombia.'), isTrue);
+      });
+      await f.back();
+      await f.tapTip('Ajustes');
+      await f.tap('Captura automática');
+      await f.reveal(find.text('Reglas aprendidas'));
+      await f.tap('Reglas aprendidas');
+      await f.page(
+        '«Reglas aprendidas» tiene su grupo «Números de cuenta», con «Cuenta '
+        '*5678 → Bancolombia», que se puede cambiar, apagar o borrar como '
+        'las demás.',
+      );
+      await f.check('La regla aparece en «Números de cuenta»', () {
+        expect(f.shows('NÚMEROS DE CUENTA'), isTrue);
+        expect(f.shows('Cuenta *5678'), isTrue);
+        expect(
+          find.descendant(
+            of: _ruleRow('Cuenta *5678'),
+            matching: find.text('→ Bancolombia'),
+          ),
+          findsOneWidget,
+        );
+      });
+      await f.tapFound(_ruleSwitch('Cuenta *5678'));
+      await f.step(
+        'Apagada, «→ Bancolombia» queda tachado: la regla se guarda, pero '
+        'los próximos avisos de la cuenta *5678 vuelven a preguntar.',
+      );
+      await f.check('Apagada, se guarda pero no se usa', () async {
+        final CaptureSettings saved = (await f.tester.runAsync(
+          () => own.store.captureSettings(),
+        ))!;
+        expect(saved.accountNumbers['5678'], bank.id);
+        expect(saved.disabledRules, contains('account:5678'));
+        expect(saved.use(RuleKind.account, '5678'), isNull);
+      });
+    },
+  ),
+  AppFlow(
     '08-01-importar-el-extracto-del-banco',
     'Importar el extracto del banco',
     area: 'Importar extracto',
@@ -2309,6 +2514,36 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.check('Ya no queda nada sin categoría', () {
         expect(f.screenText, isNot(contains('sin categoría')));
       });
+      await f.tapTip('Invertir entradas y salidas');
+      await f.step(
+        'Volteados los signos después de corregir, lo corregido se queda: '
+        'Cajero ahora «Viene de Efectivo» y Juan Perez sigue en Salidas.',
+      );
+      await f.check('Voltear no borró lo que se corrigió línea por línea', () {
+        expect(f.screenText, contains('Viene de Efectivo'));
+        expect(f.screenText, contains('1 oct · Salidas'));
+      });
+      await f.tapTip('Invertir entradas y salidas');
+      await f.tapFound(find.byType(DropdownButtonFormField<String>));
+      await f.tapFound(find.text('Nequi · COP').last);
+      await f.step(
+        'Con Nequi en «Cuenta», Cajero sigue pasando a Efectivo y Juan Perez '
+        'en Salidas.',
+      );
+      await f.check('Cambiar la cuenta tampoco borró las correcciones', () {
+        expect(f.screenText, contains('Pasa a Efectivo'));
+        expect(f.screenText, contains('1 oct · Salidas'));
+      });
+      await f.tapFound(find.byType(DropdownButtonFormField<String>));
+      await f.tapFound(find.text('Bancolombia · COP').last);
+      await f.check(
+        'De vuelta en Bancolombia quedan los mismos 4 marcados',
+        () {
+          expect(f.shows('Importar 4 movimientos'), isTrue);
+          expect(f.screenText, contains('Pasa a Efectivo'));
+          expect(_ticked(f, 'Exito Laureles'), isFalse);
+        },
+      );
       await f.tap('Importar 4 movimientos');
       await f.waitFor(find.text('Se importaron 4 movimientos.'));
       await f.step(
@@ -2532,8 +2767,9 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       );
       await f.page(
         'El extracto de la Visa trae las compras en positivo y la app las lee '
-        'como deuda. Al pago le pregunta «¿De cuál de tus cuentas salió este '
-        'pago?».',
+        'como deuda. El pago queda sin marcar, con «¿De cuál de tus cuentas '
+        'salió este pago?» y un aviso arriba: pudo salir de Bancolombia o de '
+        'Nequi.',
       );
       final List<ImportCandidate> all = await _prepared(f, visa, read);
       await f.check('Las compras quedan como gastos y Falabella ya estaba', () {
@@ -2548,29 +2784,48 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
           isTrue,
         );
       });
-      await f.check('El pago no sabe de qué cuenta salió', () {
-        final ImportCandidate pay = all.firstWhere(
-          (ImportCandidate c) => c.cardPayment,
-        );
-        expect(pay.otherAccountId, isNull);
-        expect(pay.kind, EntryKind.income);
-        expect(
-          f.screenText,
-          contains('¿De cuál de tus cuentas salió este pago?'),
-        );
-      });
-      await f.tapFound(find.text('SU Pago Gracias'));
-      await f.tap('Transferencia');
-      await f.step(
-        'En su hoja, «Transferencia» pide «Desde» y propone Bancolombia: el '
-        'pago salió de ahí.',
+      await f.check(
+        'El pago no es un ingreso: espera sin marcar a que digas de dónde '
+        'salió',
+        () {
+          final ImportCandidate pay = all.firstWhere(
+            (ImportCandidate c) => c.cardPayment,
+          );
+          expect(pay.otherAccountId, isNull);
+          expect(pay.kind, EntryKind.transfer);
+          expect(pay.waitsForAccount, isTrue);
+          expect(pay.proposed, isFalse);
+          expect(_ticked(f, 'SU Pago Gracias'), isFalse);
+          expect(f.shows('Importar 2 movimientos'), isTrue);
+          expect(
+            f.screenText,
+            contains('¿De cuál de tus cuentas salió este pago?'),
+          );
+          expect(
+            f.screenText,
+            contains(
+              'El pago a la tarjeta queda sin marcar hasta que digas de cuál '
+              'de tus cuentas salió',
+            ),
+          );
+        },
       );
+      await f.tapFound(_lineBox('SU Pago Gracias'));
+      await f.step(
+        'Marcar el pago abre su hoja: ya es una «Transferencia» y pide '
+        '«Desde», con Bancolombia propuesta.',
+      );
+      await f.check('Marcarlo pregunta la cuenta antes de marcarlo', () {
+        expect(f.shows('Revisar movimiento'), isTrue);
+        expect(_menuShows('Desde', 'Bancolombia'), isTrue);
+      });
       await f.tap('Guardar');
       await f.step(
-        'Guardado: el pago dice «Viene de Bancolombia» y arriba explica que '
-        'un pago de tarjeta no cuenta como gasto.',
+        'Guardado: el pago queda marcado, dice «Viene de Bancolombia» y arriba '
+        'explica que un pago de tarjeta no cuenta como gasto.',
       );
       await f.check('El pago quedó como movimiento desde Bancolombia', () {
+        expect(_ticked(f, 'SU Pago Gracias'), isTrue);
         expect(f.screenText, contains('Viene de Bancolombia'));
         expect(
           f.screenText,

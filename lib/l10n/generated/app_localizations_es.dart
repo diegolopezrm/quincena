@@ -5611,4 +5611,45 @@ class AppLocalizationsEs extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String whyAccount(String digits, String account) {
+    return 'la cuenta *$digits es $account';
+  }
+
+  @override
+  String ruleLearnedAccount(String digits, String account) {
+    return 'Desde ahora, la cuenta *$digits va a $account.';
+  }
+
+  @override
+  String ruleAccountKey(String digits) {
+    return 'Cuenta *$digits';
+  }
+
+  @override
+  String get rulesAccounts => 'Números de cuenta';
+
+  @override
+  String whichAccountNumber(String institution, String digits) {
+    return 'Detectamos $institution y la cuenta *$digits, pero aún no sabemos cuál de tus cuentas es.';
+  }
+
+  @override
+  String pickAccountNumberNote(String digits) {
+    return 'La próxima vez, lo de la cuenta *$digits irá directo a la que elijas.';
+  }
+
+  @override
+  String statementPaymentWaits(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Los $count pagos a la tarjeta quedan sin marcar hasta que digas de cuál de tus cuentas salieron: márcalos y elige la cuenta.',
+      one:
+          'El pago a la tarjeta queda sin marcar hasta que digas de cuál de tus cuentas salió: márcalo y elige la cuenta.',
+    );
+    return '$_temp0';
+  }
 }

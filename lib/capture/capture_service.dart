@@ -327,42 +327,90 @@ class CaptureService {
       _clear(item.parsed, item.suggestion) &&
       isReady(item, accounts);
 
-  /// [item] as the rules stand now: a capture still waiting for its account
-  /// takes the one its card's rule, or else its bank's, learned after it
-  /// arrived, as one arriving now would. Turning the rule off or deleting
-  /// it leaves the capture asking again.
+  /// [item] as the rules stand now, as one arriving now would take them:
+  /// a capture still waiting with no account, or one only guessed, takes
+  /// the one its card's rule, its account's or else its bank's says; and
+  /// its merchant takes the category the person taught. Turning a rule off
+  /// or deleting it leaves the capture as it arrived.
   static InboxItem withRules(
     InboxItem item,
     CaptureSettings settings,
     Iterable<Account> accounts,
   ) {
-    if (item.status != InboxStatus.pending ||
-        item.suggestion.accountId != null) {
-      return item;
-    }
-    final String? card = item.parsed.card;
-    final String? institution = item.parsed.institution;
-    final String? byCard = card == null
-        ? null
-        : settings.use(RuleKind.card, card);
-    final String? byBank = byCard != null || institution == null
-        ? null
-        : settings.use(RuleKind.institution, institution);
-    final String? accountId = byCard ?? byBank;
-    if (accountId == null || !accounts.any((Account a) => a.id == accountId)) {
-      return item;
-    }
+    if (item.status != InboxStatus.pending) return item;
     final Suggestion s = item.suggestion;
+    String? accountId = s.accountId;
+    String? category = s.category;
+    List<String> why = s.why;
+    if (accountId == null || why.contains('only')) {
+      final ({String accountId, String why})? ruled = _ruledAccount(
+        item.parsed,
+        settings,
+      );
+      if (ruled != null &&
+          accounts.any((Account a) => a.id == ruled.accountId)) {
+        accountId = ruled.accountId;
+        why = <String>[
+          ruled.why,
+          for (final String w in why)
+            if (w != 'only') w,
+        ];
+      }
+    }
+    final String? payee = s.payee ?? item.parsed.merchant;
+    final String? learned = payee == null || payee.isEmpty
+        ? null
+        : settings.use(RuleKind.merchant, merchantKey(payee));
+    if (learned != null && learned != category) {
+      category = learned;
+      why = <String>[
+        for (final String w in why)
+          if (w != 'merchant' && w != 'words' && w != 'learned') w,
+        'learned',
+      ];
+    }
+    if (accountId == s.accountId && category == s.category) return item;
     return item.copyWith(
       suggestion: Suggestion(
         accountId: accountId,
-        category: s.category,
+        category: category,
         payee: s.payee,
         place: s.place,
-        why: <String>[byCard != null ? 'card' : 'institution', ...s.why],
+        why: why,
       ),
     );
   }
+
+  /// The account the rules send [p] to, and which rule: its card's, its
+  /// account's, or its bank's.
+  static ({String accountId, String why})? _ruledAccount(
+    ParsedCapture p,
+    CaptureSettings settings,
+  ) {
+    final String? card = p.card;
+    final String? byCard = card == null
+        ? null
+        : settings.use(RuleKind.card, card);
+    if (byCard != null) return (accountId: byCard, why: 'card');
+    final String? number = p.account;
+    final String? byNumber = number == null
+        ? null
+        : _byNumber(settings, number);
+    if (byNumber != null) return (accountId: byNumber, why: 'account');
+    final String? institution = p.institution;
+    final String? byBank = institution == null
+        ? null
+        : settings.use(RuleKind.institution, institution);
+    if (byBank != null) return (accountId: byBank, why: 'institution');
+    return null;
+  }
+
+  /// The account an account's last [digits] go to: its rule, or a card's
+  /// with the same digits, which is how they were learned before the app
+  /// told an account's digits from a card's.
+  static String? _byNumber(CaptureSettings settings, String digits) =>
+      settings.use(RuleKind.account, digits) ??
+      settings.use(RuleKind.card, digits);
 
   Future<Suggestion> _suggest(
     CaptureEvent event,
@@ -377,6 +425,11 @@ class CaptureService {
     if (card != null && settings.use(RuleKind.card, card) != null) {
       accountId = settings.use(RuleKind.card, card);
       why.add('card');
+    }
+    final String? number = parsed.account;
+    if (accountId == null && number != null) {
+      accountId = _byNumber(settings, number);
+      if (accountId != null) why.add('account');
     }
     final String? institution = parsed.institution;
     if (accountId == null && institution != null) {
@@ -529,6 +582,7 @@ class CaptureService {
         ? null
         : merchantKey(payee);
     final String? card = item.parsed.card;
+    final String? number = item.parsed.account;
     final String? institution = item.parsed.institution;
     final List<RuleChange> changes = <RuleChange>[];
     void learn(RuleKind kind, String key, String target) {
@@ -541,6 +595,7 @@ class CaptureService {
       final String? before = switch (kind) {
         RuleKind.merchant => s.merchantCategories[key],
         RuleKind.card => s.cardAccounts[key],
+        RuleKind.account => s.accountNumbers[key],
         RuleKind.institution => s.institutionAccounts[key],
       };
       if (before == target) return;
@@ -551,11 +606,17 @@ class CaptureService {
     if (key != null && key.isNotEmpty && category != null) {
       learn(RuleKind.merchant, key, category);
     }
+    // The most precise thing the alert names: the card, or else the
+    // account's digits, or else the bank.
     if (card != null) learn(RuleKind.card, card, accountId);
+    if (number != null && card == null) {
+      learn(RuleKind.account, number, accountId);
+    }
     // A charge in another currency went where that currency is kept: it
     // says nothing about where the bank's other alerts go.
     if (institution != null &&
         card == null &&
+        number == null &&
         teachesInstitution(item.parsed, (await store.profile())?.base)) {
       learn(RuleKind.institution, institution, accountId);
     }

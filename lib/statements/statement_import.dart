@@ -56,8 +56,18 @@ class ImportCandidate {
   /// It reads like the payment of a credit card.
   final bool cardPayment;
 
+  /// Neither in the account already nor imported before.
+  bool get isNew => !recorded && !importedBefore;
+
+  /// A move whose other account is not known yet: a card's payment the
+  /// card's statement does not say the source of, when more than one
+  /// account could have paid it. Recorded as it is, it would be income on
+  /// the card, so it waits for the person to say which.
+  bool get waitsForAccount =>
+      kind == EntryKind.transfer && otherAccountId == null && otherLeg == null;
+
   /// Whether it is checked to import when the review opens.
-  bool get proposed => !recorded && !importedBefore;
+  bool get proposed => isNew && !waitsForAccount;
 
   bool get income => line.amount > Decimal.zero;
 
@@ -284,6 +294,13 @@ class StatementImporter {
       final Entry? leg = card ? _mirror(l, elsewhere, sides) : null;
       if (leg != null) elsewhere.remove(leg);
       final String? other = !card ? null : leg?.accountId ?? _named(l, sides);
+      // On the card, the payment came from one of the person's everyday
+      // accounts: it is a move even when which one is left to the person.
+      final bool asks =
+          card &&
+          other == null &&
+          account.kind == AccountKind.card &&
+          sides.isNotEmpty;
       out.add(
         ImportCandidate(
           line: l,
@@ -292,7 +309,7 @@ class StatementImporter {
           category: _category(l, payee, settings),
           recorded: match != null,
           importedBefore: before,
-          kind: other != null
+          kind: other != null || asks
               ? EntryKind.transfer
               : l.amount > Decimal.zero
               ? EntryKind.income
@@ -423,6 +440,52 @@ class StatementImporter {
     return null;
   }
 
+  /// [fresh], a line read again, flipped or for another [account], with
+  /// what the person had made of it in [edited] where that still applies:
+  /// the kind and the category they chose, with the sign the kind gives;
+  /// for a move, the other account, unless it is [account] itself or keeps
+  /// another currency, and the sign the statement gives now.
+  static ImportCandidate keepChanges(
+    ImportCandidate fresh,
+    ImportCandidate edited,
+    Account account,
+    Iterable<Account> accounts,
+  ) {
+    switch (edited.kind) {
+      case EntryKind.transfer:
+        final Account? there = accounts
+            .where((Account a) => a.id == edited.otherAccountId)
+            .firstOrNull;
+        if (there == null ||
+            there.id == account.id ||
+            there.asset != account.asset) {
+          return fresh;
+        }
+        return fresh.copyWith(
+          kind: EntryKind.transfer,
+          clearCategory: true,
+          clearOther: true,
+          otherAccountId: there.id,
+          otherLeg: fresh.otherLeg?.accountId == there.id
+              ? fresh.otherLeg
+              : null,
+          cardPayment: false,
+        );
+      case EntryKind.expense || EntryKind.income:
+        final Decimal size = fresh.line.amount.abs();
+        return fresh.copyWith(
+          amount: edited.kind == EntryKind.expense ? -size : size,
+          kind: edited.kind,
+          category: edited.category,
+          clearCategory: edited.category == null,
+          clearOther: true,
+          cardPayment: false,
+        );
+      default:
+        return fresh;
+    }
+  }
+
   /// Whether a line dated [date] is from before the balance the person
   /// wrote for [account].
   static bool older(Account account, DateTime date) {
@@ -500,14 +563,19 @@ class StatementImporter {
   }
 
   /// Records [chosen] in [account], a move between accounts with both its
-  /// sides, and keeps the balances the person wrote as [rule] says.
-  /// Returns how many lines were recorded.
+  /// sides, and keeps the balances the person wrote as [rule] says. A move
+  /// still waiting for its other account is left out: it would count as
+  /// income or spending. Returns how many lines were recorded.
   Future<int> record(
     Account account,
     List<ImportCandidate> chosen, {
     BalanceRule rule = BalanceRule.add,
     ClosingBalance? closing,
   }) async {
+    chosen = <ImportCandidate>[
+      for (final ImportCandidate c in chosen)
+        if (!c.waitsForAccount) c,
+    ];
     final List<Entry> before = rule == BalanceRule.statement
         ? await store.entries(accountId: account.id)
         : const <Entry>[];

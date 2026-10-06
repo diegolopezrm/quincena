@@ -8,6 +8,7 @@ import 'package:http/testing.dart';
 import 'package:quincena/capture/capture_service.dart';
 import 'package:quincena/capture/event.dart';
 import 'package:quincena/capture/inbox.dart';
+import 'package:quincena/capture/merchants.dart';
 import 'package:quincena/capture/places.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
@@ -466,6 +467,130 @@ Fecha
     final InboxItem recorded = waiting.copyWith(status: InboxStatus.accepted);
     expect(CaptureService.withRules(recorded, s, accounts), same(recorded));
   });
+
+  test('what is learned reaches a capture whose account was only a guess, '
+      'and its merchant\'s category', () async {
+    // Nequi is put away: Bancolombia is the only everyday account in pesos.
+    await store.updateAccount(nequi.copyWith(spendable: false));
+    await capture.ingest(<CaptureEvent>[
+      CaptureEvent(
+        source: CaptureSource.paste,
+        at: now,
+        text: r'Compra por $25.000 en TIENDA LA ESQUINA con T.Cred *9876',
+      ),
+    ]);
+    final InboxItem guessed = (await pending()).single;
+    expect(guessed.suggestion.accountId, bancolombia.id);
+    expect(guessed.suggestion.why, contains('only'));
+    expect(guessed.suggestion.category, isNull);
+    final List<Account> accounts = await store.accounts();
+    expect(CaptureService.isReady(guessed, accounts), isFalse);
+
+    // The person said, on another purchase with the same card, that it is
+    // Nequi's, and that the shop is groceries.
+    final CaptureSettings s = (await store.captureSettings())
+        .withRule(
+          CaptureRule(kind: RuleKind.card, key: '9876', target: nequi.id),
+        )
+        .withRule(
+          CaptureRule(
+            kind: RuleKind.merchant,
+            key: merchantKey('Tienda La Esquina'),
+            target: 'groceries',
+          ),
+        );
+    final InboxItem taught = CaptureService.withRules(guessed, s, accounts);
+    expect(taught.suggestion.accountId, nequi.id);
+    expect(taught.suggestion.why, isNot(contains('only')));
+    expect(taught.suggestion.why, containsAll(<String>['card', 'learned']));
+    expect(taught.suggestion.category, 'groceries');
+    expect(CaptureService.isReady(taught, accounts), isTrue);
+    expect(CaptureService.isClear(taught, accounts), isTrue);
+
+    // Without the rules, it is what it was.
+    final InboxItem back = CaptureService.withRules(
+      guessed,
+      const CaptureSettings(),
+      accounts,
+    );
+    expect(back.suggestion.accountId, bancolombia.id);
+    expect(back.suggestion.category, isNull);
+  });
+
+  test(
+    'an account\'s number teaches where that account goes, not a card',
+    () async {
+      await capture.ingest(<CaptureEvent>[
+        push(r'Bancolombia: movimiento por $50.000 en tu cuenta *5678'),
+      ]);
+      final InboxItem moved = (await pending()).single;
+      expect(moved.parsed.card, isNull);
+      expect(moved.parsed.account, '5678');
+      final Accepted done = await capture.accept(
+        moved,
+        accountId: bancolombia.id,
+        kind: EntryKind.income,
+      );
+      expect(
+        done.learned.map((RuleChange c) => (c.rule.kind, c.rule.key)),
+        <(RuleKind, String)>[(RuleKind.account, '5678')],
+      );
+      final CaptureSettings s = await store.captureSettings();
+      expect(s.cardAccounts, isEmpty);
+      expect(s.institutionAccounts, isEmpty);
+      expect(s.accountNumbers, <String, String>{'5678': bancolombia.id});
+      expect(s.rules.map((CaptureRule r) => r.id), contains('account:5678'));
+      // Kept and read back like every other rule.
+      expect(
+        CaptureSettings.fromJson(s.toJson()).accountNumbers['5678'],
+        bancolombia.id,
+      );
+
+      // The account's next alert goes there, even from a bank with no
+      // account in the app; a card with the same digits does not.
+      await capture.ingest(<CaptureEvent>[
+        push(
+          r'Davivienda: Recibiste $20.000 en tu cuenta *5678',
+          app: 'com.davivienda.daviviendaapp',
+          at: now.add(const Duration(minutes: 1)),
+        ),
+        push(
+          r'Davivienda: Compra por $10.000 en D1 con tu tarjeta *5678',
+          app: 'com.davivienda.daviviendaapp',
+          at: now.add(const Duration(minutes: 2)),
+        ),
+      ]);
+      final List<InboxItem> next = await pending();
+      final InboxItem income = next.firstWhere(
+        (InboxItem i) => i.parsed.account == '5678',
+      );
+      expect(income.suggestion.accountId, bancolombia.id);
+      expect(income.suggestion.why, contains('account'));
+      final InboxItem purchase = next.firstWhere(
+        (InboxItem i) => i.parsed.card == '5678',
+      );
+      expect(purchase.suggestion.accountId, isNull);
+    },
+  );
+
+  test(
+    'a card rule taught from an account\'s number before still holds',
+    () async {
+      // Before the app told them apart, "cuenta *5678" taught a card's rule.
+      await store.saveCaptureSettings(
+        (await store.captureSettings()).withRule(
+          CaptureRule(kind: RuleKind.card, key: '5678', target: nequi.id),
+        ),
+      );
+      await capture.ingest(<CaptureEvent>[
+        push(
+          r'Davivienda: Recibiste $20.000 en tu cuenta *5678',
+          app: 'com.davivienda.daviviendaapp',
+        ),
+      ]);
+      expect((await pending()).single.suggestion.accountId, nequi.id);
+    },
+  );
 
   test('what the person writes about a capture is kept with it', () async {
     await capture.ingest(<CaptureEvent>[

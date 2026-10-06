@@ -10,6 +10,7 @@ import 'package:intl/intl.dart';
 import 'package:quincena/capture/capture_service.dart';
 import 'package:quincena/capture/event.dart';
 import 'package:quincena/capture/inbox.dart';
+import 'package:quincena/capture/merchants.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/l10n/l10n.dart';
@@ -184,6 +185,126 @@ void main() {
     await settle(tester);
     expect(on('Carulla', 'Elegir la cuenta'), findsOneWidget);
     expect(on('Éxito Laureles', 'Elegir la cuenta'), findsOneWidget);
+  });
+
+  testWidgets(
+    'a category taught on one capture reaches the same shop waiting',
+    (tester) async {
+      final OwnController own = await open(tester, () async {
+        final QuincenaStore store = await withCaptures();
+        await CaptureService(store, now: () => screensNow).ingest(
+          <CaptureEvent>[
+            for (final (String amount, int minute) in <(String, int)>[
+              (r'$9.800', 50),
+              (r'$12.000', 55),
+            ])
+              CaptureEvent(
+                source: CaptureSource.notification,
+                at: DateTime(2026, 10, 3, 9, minute),
+                app: 'com.nequi.MobileApp',
+                appName: 'Nequi',
+                title: 'Nequi',
+                text: 'Nequi · Pagaste $amount en Tienda La Esquina',
+              ),
+          ],
+        );
+        return store;
+      });
+      List<InboxItem> shop() => <InboxItem>[
+        for (final InboxItem i in own.pendingInbox)
+          if (i.suggestion.payee == 'Tienda La Esquina') i,
+      ];
+      expect(shop(), hasLength(2));
+      expect(shop().map((InboxItem i) => i.suggestion.category), <String?>[
+        null,
+        null,
+      ]);
+
+      // One of them goes to Mercado.
+      await tester.tap(
+        find.descendant(
+          of: find.ancestor(
+            of: find.textContaining('9.800'),
+            matching: find.byType(InboxCard),
+          ),
+          matching: find.text('Editar'),
+        ),
+      );
+      await settle(tester);
+      await tester.tap(find.text('Mercado'));
+      await settle(tester);
+      await tester.ensureVisible(find.text('Registrar gasto').last);
+      await tester.tap(find.text('Registrar gasto').last);
+      await settle(tester);
+      expect(
+        own.captureSettings.merchantCategories[merchantKey(
+          'Tienda La Esquina',
+        )],
+        'groceries',
+      );
+      // The other, still waiting, already says Mercado, and why.
+      final InboxItem other = shop().single;
+      expect(other.suggestion.category, 'groceries');
+      expect(other.suggestion.why, contains('learned'));
+      expect(CaptureService.isClear(other, own.accounts), isTrue);
+      expect(find.text('Mercado · Nequi'), findsOneWidget);
+    },
+  );
+
+  testWidgets('an account\'s number is learned as the account, not a card', (
+    tester,
+  ) async {
+    final OwnController own = await open(tester, withCaptures);
+    final Account bank = own.accounts.firstWhere(
+      (Account a) => a.name == 'Bancolombia',
+    );
+    await tester.runAsync(
+      () => own.ingestText(
+        r'Bancolombia: movimiento por $50.000 en tu cuenta *5678',
+      ),
+    );
+    await settle(tester);
+    await tester.tap(find.text('Revisar movimiento'));
+    await settle(tester);
+    await tester.tap(find.text('Ingreso'));
+    await settle(tester);
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await settle(tester);
+    await tester.tap(find.text('Bancolombia').last);
+    await settle(tester);
+    await tester.ensureVisible(find.text('Registrar ingreso').last);
+    await tester.tap(find.text('Registrar ingreso').last);
+    await settle(tester);
+    expect(
+      find.textContaining('Desde ahora, la cuenta *5678 va a Bancolombia.'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('tarjeta *5678'), findsNothing);
+    final CaptureSettings settings = own.captureSettings;
+    expect(settings.cardAccounts.containsKey('5678'), isFalse);
+    expect(settings.accountNumbers['5678'], bank.id);
+
+    // The account's next alert knows where it goes, and says why.
+    await tester.runAsync(
+      () =>
+          own.ingestText(r'Bancolombia: Recibiste $20.000 en tu cuenta *5678'),
+    );
+    await settle(tester);
+    final InboxItem next = own.pendingInbox.firstWhere(
+      (InboxItem i) => i.parsed.account == '5678',
+    );
+    expect(next.suggestion.accountId, bank.id);
+    expect(CaptureService.isReady(next, own.accounts), isTrue);
+    expect(
+      find.descendant(
+        of: find.ancestor(
+          of: find.textContaining('20.000'),
+          matching: find.byType(InboxCard),
+        ),
+        matching: find.text('Registrar ingreso'),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('pesos that arrived from the dollar account stay what arrived', (

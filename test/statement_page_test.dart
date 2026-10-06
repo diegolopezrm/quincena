@@ -477,14 +477,207 @@ void main() {
       ),
       accountId: visa.id,
     );
+    // Bancolombia or Nequi: it waits, unchecked, for the person to say.
     expect(
-      find.text(
-        '20 oct · Sin categoría\n¿De cuál de tus cuentas salió este pago?',
-      ),
+      find.text('20 oct · ¿De cuál de tus cuentas salió este pago?'),
       findsOneWidget,
     );
     expect(find.text('¿Es el pago de una tarjeta tuya?'), findsNothing);
+    expect(
+      find.text(
+        'El pago a la tarjeta queda sin marcar hasta que digas de cuál de '
+        'tus cuentas salió: márcalo y elige la cuenta.',
+      ),
+      findsOneWidget,
+    );
+    expect(tester.widget<Checkbox>(box('Recibido')).value, isFalse);
+    expect(find.text('Importar 2 movimientos'), findsOneWidget);
+
+    // Imported without opening it, it is not income on the card: what is
+    // owed on it and what can be spent move only by the purchases.
+    final int free = own.ledger!.freeUntilPayday;
+    await tester.tap(find.text('Importar 2 movimientos'));
+    await settle(tester);
+    final List<Entry> onCard =
+        await tester.runAsync(() => store.entries(accountId: visa.id)) ??
+        const <Entry>[];
+    expect(
+      <Decimal>[for (final Entry e in onCard) e.amount],
+      unorderedEquals(<Decimal>[
+        Decimal.parse('-45900'),
+        Decimal.parse('-26900'),
+      ]),
+    );
+    expect(own.ledger!.freeUntilPayday, lessThanOrEqualTo(free));
   });
+
+  testWidgets('checking a card payment asks which account it came from', (
+    tester,
+  ) async {
+    final (QuincenaStore store, OwnController own, Account bank) = await world(
+      tester,
+    );
+    late Account visa;
+    late Account nequi;
+    await tester.runAsync(() async {
+      visa = await store.addAccount(
+        name: 'Visa',
+        kind: AccountKind.card,
+        asset: Asset.cop,
+      );
+      nequi = await store.addAccount(
+        name: 'Nequi',
+        kind: AccountKind.wallet,
+        asset: Asset.cop,
+      );
+    });
+    await open(
+      tester,
+      own,
+      readTable(
+        parseCsv(
+          'Fecha;Descripción;Valor\n'
+          '15/10/2026;RAPPI;45.900\n'
+          '16/10/2026;NETFLIX;26.900\n'
+          '20/10/2026;SU PAGO GRACIAS;-480.000\n',
+        ),
+      ),
+      accountId: visa.id,
+    );
+    await tester.tap(box('SU Pago Gracias'));
+    await settle(tester);
+    // The line's sheet, already a move, asks from where.
+    expect(find.text('Revisar movimiento'), findsOneWidget);
+    expect(find.text('Desde'), findsOneWidget);
+    // Closed without saying, it stays unchecked.
+    await tester.tapAt(const Offset(20, 20));
+    await settle(tester);
+    expect(tester.widget<Checkbox>(box('SU Pago Gracias')).value, isFalse);
+
+    await tester.tap(box('SU Pago Gracias'));
+    await settle(tester);
+    await tester.tap(find.byType(DropdownButtonFormField<String>).last);
+    await settle(tester);
+    await tester.tap(find.text('Nequi').last);
+    await settle(tester);
+    await tapOn(tester, find.text('Guardar'));
+    await settle(tester);
+    expect(find.text('20 oct · Viene de Nequi'), findsOneWidget);
+    expect(tester.widget<Checkbox>(box('SU Pago Gracias')).value, isTrue);
+    expect(
+      find.textContaining('queda sin marcar hasta que digas'),
+      findsNothing,
+    );
+    await tester.tap(find.text('Importar 3 movimientos'));
+    await settle(tester);
+    final List<Entry> fromNequi =
+        await tester.runAsync(() => store.entries(accountId: nequi.id)) ??
+        const <Entry>[];
+    expect(fromNequi.single.amount, Decimal.parse('-480000'));
+    expect(fromNequi.single.isTransfer, isTrue);
+    final List<Entry> onBank =
+        await tester.runAsync(() => store.entries(accountId: bank.id)) ??
+        const <Entry>[];
+    expect(onBank, isEmpty);
+  });
+
+  testWidgets(
+    'what was changed on a line stays when the signs flip or the account '
+    'changes',
+    (tester) async {
+      final (QuincenaStore store, OwnController own, Account bank) =
+          await world(tester);
+      await tester.runAsync(() async {
+        await store.addAccount(
+          name: 'Nequi',
+          kind: AccountKind.wallet,
+          asset: Asset.cop,
+        );
+        await store.addAccount(
+          name: 'Efectivo',
+          kind: AccountKind.cash,
+          asset: Asset.cop,
+        );
+      });
+      await open(
+        tester,
+        own,
+        readTable(
+          parseCsv(
+            'Fecha;Descripción;Valor\n'
+            '01/09/2026;COMPRA EN EXITO LAURELES;-45.900\n'
+            '04/09/2026;PAGO A JUAN PEREZ;-30.000\n'
+            '05/09/2026;RETIRO CAJERO;-200.000\n',
+          ),
+        ),
+      );
+      // Juan Perez was transport, the withdrawal went to cash, and Éxito
+      // is left out.
+      await tester.tap(find.text('Juan Perez'));
+      await settle(tester);
+      await tapOn(tester, find.text('Transporte'));
+      await tapOn(tester, find.text('Guardar'));
+      await settle(tester);
+      await tester.tap(find.text('Cajero'));
+      await settle(tester);
+      await tapOn(tester, find.text('Transferencia'));
+      await settle(tester);
+      await tester.tap(find.byType(DropdownButtonFormField<String>).last);
+      await settle(tester);
+      await tester.tap(find.text('Efectivo').last);
+      await settle(tester);
+      await tapOn(tester, find.text('Guardar'));
+      await settle(tester);
+      await tester.tap(box('Exito Laureles'));
+      await settle(tester);
+      expect(find.text('4 sept · Transporte'), findsOneWidget);
+      expect(find.text('5 sept · Pasa a Efectivo'), findsOneWidget);
+
+      // Flipped, each keeps what the person said; the move comes back.
+      await tester.tap(find.byTooltip('Invertir entradas y salidas'));
+      await settle(tester);
+      expect(find.text('4 sept · Transporte'), findsOneWidget);
+      expect(find.text('5 sept · Viene de Efectivo'), findsOneWidget);
+      expect(tester.widget<Checkbox>(box('Exito Laureles')).value, isFalse);
+      await tester.tap(find.byTooltip('Invertir entradas y salidas'));
+      await settle(tester);
+
+      // In Nequi too; in Efectivo the withdrawal cannot go to itself.
+      await tester.tap(find.byType(DropdownButtonFormField<String>).first);
+      await settle(tester);
+      await tester.tap(find.text('Nequi · COP').last);
+      await settle(tester);
+      expect(find.text('4 sept · Transporte'), findsOneWidget);
+      expect(find.text('5 sept · Pasa a Efectivo'), findsOneWidget);
+      expect(tester.widget<Checkbox>(box('Exito Laureles')).value, isFalse);
+      await tester.tap(find.byType(DropdownButtonFormField<String>).first);
+      await settle(tester);
+      await tester.tap(find.text('Efectivo · COP').last);
+      await settle(tester);
+      expect(find.text('4 sept · Transporte'), findsOneWidget);
+      expect(find.text('5 sept · Sin categoría'), findsOneWidget);
+      await tester.tap(find.byType(DropdownButtonFormField<String>).first);
+      await settle(tester);
+      await tester.tap(find.text('Bancolombia · COP').last);
+      await settle(tester);
+      expect(find.text('5 sept · Pasa a Efectivo'), findsOneWidget);
+
+      await tester.tap(find.text('Importar 2 movimientos'));
+      await settle(tester);
+      final List<Entry> saved =
+          await tester.runAsync(() => store.entries(accountId: bank.id)) ??
+          const <Entry>[];
+      expect(
+        <(Decimal, String?, bool)>[
+          for (final Entry e in saved) (e.amount, e.category, e.isTransfer),
+        ],
+        unorderedEquals(<(Decimal, String?, bool)>[
+          (Decimal.parse('-30000'), 'transport', false),
+          (Decimal.parse('-200000'), null, true),
+        ]),
+      );
+    },
+  );
   testWidgets(
     'lines that add up to nothing do not claim to be in the balance',
     (tester) async {

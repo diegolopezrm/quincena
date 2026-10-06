@@ -47,8 +47,9 @@ class Suggestion {
   /// The place nearest to where the phone was, when the location was on.
   final NearbyPlace? place;
 
-  /// Short reasons: `card`, `institution`, `currency`, `only` (the single
-  /// account in the base currency), `learned`, `merchant`, `words`, `place`.
+  /// Short reasons: `card`, `account` (the account's last digits),
+  /// `institution`, `currency`, `only` (the single account in the base
+  /// currency), `learned`, `merchant`, `words`, `place`.
   final List<String> why;
 
   Map<String, Object?> toJson() => <String, Object?>{
@@ -140,6 +141,7 @@ class CaptureSettings {
     this.appNames = const <String, String>{},
     this.merchantCategories = const <String, String>{},
     this.cardAccounts = const <String, String>{},
+    this.accountNumbers = const <String, String>{},
     this.institutionAccounts = const <String, String>{},
     this.disabledRules = const <String>{},
   });
@@ -161,8 +163,13 @@ class CaptureSettings {
   /// Merchant key to category, learned from what the person confirmed.
   final Map<String, String> merchantCategories;
 
-  /// Card or account last digits to account id.
+  /// A card's last digits to account id. Before the app told cards and
+  /// accounts apart, an account's digits were learned here too.
   final Map<String, String> cardAccounts;
+
+  /// An account's last digits, as its bank's alerts write them ("en tu
+  /// cuenta *5678"), to account id.
+  final Map<String, String> accountNumbers;
 
   /// Institution name to account id, for alerts that name no card.
   final Map<String, String> institutionAccounts;
@@ -178,6 +185,7 @@ class CaptureSettings {
     'appNames': appNames,
     'merchantCategories': merchantCategories,
     'cardAccounts': cardAccounts,
+    'accountNumbers': accountNumbers,
     'institutionAccounts': institutionAccounts,
     'disabledRules': disabledRules.toList()..sort(),
   };
@@ -199,6 +207,7 @@ class CaptureSettings {
       appNames: map('appNames'),
       merchantCategories: map('merchantCategories'),
       cardAccounts: map('cardAccounts'),
+      accountNumbers: map('accountNumbers'),
       institutionAccounts: map('institutionAccounts'),
       disabledRules: <String>{
         for (final Object? r
@@ -215,6 +224,7 @@ class CaptureSettings {
     Map<String, String>? appNames,
     Map<String, String>? merchantCategories,
     Map<String, String>? cardAccounts,
+    Map<String, String>? accountNumbers,
     Map<String, String>? institutionAccounts,
     Set<String>? disabledRules,
   }) => CaptureSettings(
@@ -224,6 +234,7 @@ class CaptureSettings {
     appNames: appNames ?? this.appNames,
     merchantCategories: merchantCategories ?? this.merchantCategories,
     cardAccounts: cardAccounts ?? this.cardAccounts,
+    accountNumbers: accountNumbers ?? this.accountNumbers,
     institutionAccounts: institutionAccounts ?? this.institutionAccounts,
     disabledRules: disabledRules ?? this.disabledRules,
   );
@@ -234,6 +245,8 @@ class CaptureSettings {
       _rule(RuleKind.merchant, e),
     for (final MapEntry<String, String> e in cardAccounts.entries)
       _rule(RuleKind.card, e),
+    for (final MapEntry<String, String> e in accountNumbers.entries)
+      _rule(RuleKind.account, e),
     for (final MapEntry<String, String> e in institutionAccounts.entries)
       _rule(RuleKind.institution, e),
   ];
@@ -255,6 +268,7 @@ class CaptureSettings {
   Map<String, String> _map(RuleKind kind) => switch (kind) {
     RuleKind.merchant => merchantCategories,
     RuleKind.card => cardAccounts,
+    RuleKind.account => accountNumbers,
     RuleKind.institution => institutionAccounts,
   };
 
@@ -275,6 +289,7 @@ class CaptureSettings {
         disabledRules: off,
       ),
       RuleKind.card => copyWith(cardAccounts: map, disabledRules: off),
+      RuleKind.account => copyWith(accountNumbers: map, disabledRules: off),
       RuleKind.institution => copyWith(
         institutionAccounts: map,
         disabledRules: off,
@@ -298,6 +313,7 @@ class CaptureSettings {
         disabledRules: off,
       ),
       RuleKind.card => copyWith(cardAccounts: map, disabledRules: off),
+      RuleKind.account => copyWith(accountNumbers: map, disabledRules: off),
       RuleKind.institution => copyWith(
         institutionAccounts: map,
         disabledRules: off,
@@ -311,8 +327,11 @@ enum RuleKind {
   /// A merchant's name, to a category.
   merchant,
 
-  /// A card's or an account's last digits, to an account.
+  /// A card's last digits, to an account.
   card,
+
+  /// An account's last digits, to that account.
+  account,
 
   /// A bank or a wallet whose alerts name no card, to an account.
   institution,
@@ -333,7 +352,8 @@ class CaptureRule {
 
   final RuleKind kind;
 
-  /// What it matches: a merchant's key, last digits, an institution.
+  /// What it matches: a merchant's key, a card's or an account's last
+  /// digits, an institution.
   final String key;
 
   /// A category for a merchant, an account id otherwise.

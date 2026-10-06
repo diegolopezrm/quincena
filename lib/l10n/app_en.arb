@@ -1431,5 +1431,12 @@
   "inboxAddPaste": "A message you copied",
   "inboxAddPasteBody": "Paste the bank's notification, text or email.",
   "inboxWaiting": "{count, plural, =1{1 transaction to review} other{{count} transactions to review}}",
-  "inboxRecordSome": "{count, plural, =1{Record 1 of the {total} ready} other{Record {count} of the {total} ready}}"
+  "inboxRecordSome": "{count, plural, =1{Record 1 of the {total} ready} other{Record {count} of the {total} ready}}",
+  "whyAccount": "account *{digits} is {account}",
+  "ruleLearnedAccount": "From now on, account *{digits} goes to {account}.",
+  "ruleAccountKey": "Account *{digits}",
+  "rulesAccounts": "Account numbers",
+  "whichAccountNumber": "We detected {institution} and account *{digits}, but we don't know yet which of your accounts it is.",
+  "pickAccountNumberNote": "Next time, transactions on account *{digits} will go straight to the one you choose.",
+  "statementPaymentWaits": "{count, plural, =1{The card payment stays unchecked until you say which of your accounts it came from: check it and choose the account.} other{The {count} card payments stay unchecked until you say which of your accounts they came from: check them and choose the account.}}"
 }

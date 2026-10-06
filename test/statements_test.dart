@@ -408,6 +408,107 @@ void main() {
       );
     });
 
+    test(
+      'what the person made of a line holds when it is read again',
+      () async {
+        final Account cash = await store.addAccount(
+          name: 'Efectivo',
+          kind: AccountKind.cash,
+          asset: Asset.cop,
+        );
+        final Account dollars = await store.addAccount(
+          name: 'Dólares',
+          kind: AccountKind.bank,
+          asset: Asset.usd,
+        );
+        final StatementImporter importer = StatementImporter(store);
+        StatementRead read() => readTable(
+          parseCsv(
+            'Fecha;Descripción;Valor\n'
+            '04/09/2026;PAGO A JUAN PEREZ;-30.000\n'
+            '05/09/2026;RETIRO CAJERO;-200.000\n',
+          ),
+        );
+        final List<Account> accounts = await store.accounts();
+        final List<ImportCandidate> first = await importer.prepare(
+          bank,
+          read(),
+        );
+        // Juan Perez was transport; the withdrawal went to cash.
+        final ImportCandidate juan = first[0].copyWith(category: 'transport');
+        final ImportCandidate withdrawal = first[1].copyWith(
+          kind: EntryKind.transfer,
+          clearCategory: true,
+          clearOther: true,
+          otherAccountId: cash.id,
+        );
+
+        // Flipped: what the person said stays said, and the move follows the
+        // statement's sign.
+        final List<ImportCandidate> flipped = await importer.prepare(
+          bank,
+          read(),
+          flip: true,
+        );
+        final ImportCandidate juanAgain = StatementImporter.keepChanges(
+          flipped[0],
+          juan,
+          bank,
+          accounts,
+        );
+        expect(juanAgain.kind, EntryKind.expense);
+        expect(juanAgain.line.amount, d('-30000'));
+        expect(juanAgain.category, 'transport');
+        expect(juanAgain.ref, flipped[0].ref);
+        final ImportCandidate fromCash = StatementImporter.keepChanges(
+          flipped[1],
+          withdrawal,
+          bank,
+          accounts,
+        );
+        expect(fromCash.kind, EntryKind.transfer);
+        expect(fromCash.otherAccountId, cash.id);
+        expect(fromCash.line.amount, d('200000'));
+
+        // For another account the category holds; a move to the account
+        // itself, or to one in another currency, does not.
+        final List<ImportCandidate> inCash = await importer.prepare(
+          cash,
+          read(),
+        );
+        expect(
+          StatementImporter.keepChanges(
+            inCash[0],
+            juan,
+            cash,
+            accounts,
+          ).category,
+          'transport',
+        );
+        final ImportCandidate itself = StatementImporter.keepChanges(
+          inCash[1],
+          withdrawal,
+          cash,
+          accounts,
+        );
+        expect(itself.kind, EntryKind.expense);
+        expect(itself.otherAccountId, isNull);
+        final List<ImportCandidate> inDollars = await importer.prepare(
+          dollars,
+          read(),
+        );
+        expect(
+          StatementImporter.keepChanges(
+            inDollars[1],
+            withdrawal,
+            dollars,
+            accounts,
+          ).otherAccountId,
+          isNull,
+        );
+      },
+    );
+
     group('a card payment', () {
       StatementRead bankStatement() => readTable(
         parseCsv(
@@ -548,6 +649,47 @@ void main() {
         final ImportCandidate bancolombia = await paying('PAGO TC BANCOLOMBIA');
         expect(bancolombia.kind, EntryKind.transfer);
         expect(bancolombia.otherAccountId, master.id);
+      });
+
+      test('on the card, with more than one account it could come from, waits '
+          'for the person instead of counting as income', () async {
+        final Account nequi = await store.addAccount(
+          name: 'Nequi',
+          kind: AccountKind.wallet,
+          asset: Asset.cop,
+        );
+        final StatementImporter importer = StatementImporter(store);
+        final List<ImportCandidate> all = await importer.prepare(
+          card,
+          cardStatement(),
+        );
+        final ImportCandidate payment = all.last;
+        expect(payment.line.amount, d('480000'));
+        expect(payment.cardPayment, isTrue);
+        expect(payment.kind, EntryKind.transfer);
+        expect(payment.otherAccountId, isNull);
+        expect(payment.waitsForAccount, isTrue);
+        // New, but not checked: nothing says where the money came from.
+        expect(payment.isNew, isTrue);
+        expect(payment.proposed, isFalse);
+        expect(all.where((ImportCandidate c) => c.proposed), hasLength(2));
+
+        // Recorded as it came, it is left out rather than made income.
+        expect(await importer.record(card, all), 2);
+        final List<Entry> onCard = await store.entries(accountId: card.id);
+        expect(onCard, hasLength(2));
+        expect(onCard.where((Entry e) => e.amount > Decimal.zero), isEmpty);
+
+        // Said which, it is a move from there.
+        final ImportCandidate fromNequi = payment.copyWith(
+          otherAccountId: nequi.id,
+          cardPayment: false,
+        );
+        expect(fromNequi.waitsForAccount, isFalse);
+        expect(await importer.record(card, <ImportCandidate>[fromNequi]), 1);
+        final Entry paid = (await store.entries(accountId: nequi.id)).single;
+        expect(paid.amount, d('-480000'));
+        expect(paid.isTransfer, isTrue);
       });
 
       test('is not a refund on the card', () async {

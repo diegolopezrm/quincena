@@ -8643,6 +8643,48 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{count, plural, =1{Registrar 1 de los {total} listos} other{Registrar {count} de los {total} listos}}'**
   String inboxRecordSome(int count, int total);
+
+  /// No description provided for @whyAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'la cuenta *{digits} es {account}'**
+  String whyAccount(String digits, String account);
+
+  /// No description provided for @ruleLearnedAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde ahora, la cuenta *{digits} va a {account}.'**
+  String ruleLearnedAccount(String digits, String account);
+
+  /// No description provided for @ruleAccountKey.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta *{digits}'**
+  String ruleAccountKey(String digits);
+
+  /// No description provided for @rulesAccounts.
+  ///
+  /// In es, this message translates to:
+  /// **'Números de cuenta'**
+  String get rulesAccounts;
+
+  /// No description provided for @whichAccountNumber.
+  ///
+  /// In es, this message translates to:
+  /// **'Detectamos {institution} y la cuenta *{digits}, pero aún no sabemos cuál de tus cuentas es.'**
+  String whichAccountNumber(String institution, String digits);
+
+  /// No description provided for @pickAccountNumberNote.
+  ///
+  /// In es, this message translates to:
+  /// **'La próxima vez, lo de la cuenta *{digits} irá directo a la que elijas.'**
+  String pickAccountNumberNote(String digits);
+
+  /// No description provided for @statementPaymentWaits.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{El pago a la tarjeta queda sin marcar hasta que digas de cuál de tus cuentas salió: márcalo y elige la cuenta.} other{Los {count} pagos a la tarjeta quedan sin marcar hasta que digas de cuál de tus cuentas salieron: márcalos y elige la cuenta.}}'**
+  String statementPaymentWaits(int count);
 }
 
 class _AppLocalizationsDelegate

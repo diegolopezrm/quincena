@@ -1762,5 +1762,18 @@
   "inboxWaiting": "{count, plural, =1{1 movimiento por revisar} other{{count} movimientos por revisar}}",
   "@inboxWaiting": {"placeholders": {"count": {"type": "int"}}},
   "inboxRecordSome": "{count, plural, =1{Registrar 1 de los {total} listos} other{Registrar {count} de los {total} listos}}",
-  "@inboxRecordSome": {"placeholders": {"count": {"type": "int"}, "total": {"type": "int"}}}
+  "@inboxRecordSome": {"placeholders": {"count": {"type": "int"}, "total": {"type": "int"}}},
+  "whyAccount": "la cuenta *{digits} es {account}",
+  "@whyAccount": {"placeholders": {"digits": {"type": "String"}, "account": {"type": "String"}}},
+  "ruleLearnedAccount": "Desde ahora, la cuenta *{digits} va a {account}.",
+  "@ruleLearnedAccount": {"placeholders": {"digits": {"type": "String"}, "account": {"type": "String"}}},
+  "ruleAccountKey": "Cuenta *{digits}",
+  "@ruleAccountKey": {"placeholders": {"digits": {"type": "String"}}},
+  "rulesAccounts": "Números de cuenta",
+  "whichAccountNumber": "Detectamos {institution} y la cuenta *{digits}, pero aún no sabemos cuál de tus cuentas es.",
+  "@whichAccountNumber": {"placeholders": {"institution": {"type": "String"}, "digits": {"type": "String"}}},
+  "pickAccountNumberNote": "La próxima vez, lo de la cuenta *{digits} irá directo a la que elijas.",
+  "@pickAccountNumberNote": {"placeholders": {"digits": {"type": "String"}}},
+  "statementPaymentWaits": "{count, plural, =1{El pago a la tarjeta queda sin marcar hasta que digas de cuál de tus cuentas salió: márcalo y elige la cuenta.} other{Los {count} pagos a la tarjeta quedan sin marcar hasta que digas de cuál de tus cuentas salieron: márcalos y elige la cuenta.}}",
+  "@statementPaymentWaits": {"placeholders": {"count": {"type": "int"}}}
 }

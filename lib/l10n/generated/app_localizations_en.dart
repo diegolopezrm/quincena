@@ -5620,4 +5620,45 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String whyAccount(String digits, String account) {
+    return 'account *$digits is $account';
+  }
+
+  @override
+  String ruleLearnedAccount(String digits, String account) {
+    return 'From now on, account *$digits goes to $account.';
+  }
+
+  @override
+  String ruleAccountKey(String digits) {
+    return 'Account *$digits';
+  }
+
+  @override
+  String get rulesAccounts => 'Account numbers';
+
+  @override
+  String whichAccountNumber(String institution, String digits) {
+    return 'We detected $institution and account *$digits, but we don\'t know yet which of your accounts it is.';
+  }
+
+  @override
+  String pickAccountNumberNote(String digits) {
+    return 'Next time, transactions on account *$digits will go straight to the one you choose.';
+  }
+
+  @override
+  String statementPaymentWaits(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'The $count card payments stay unchecked until you say which of your accounts they came from: check them and choose the account.',
+      one:
+          'The card payment stays unchecked until you say which of your accounts it came from: check it and choose the account.',
+    );
+    return '$_temp0';
+  }
 }
