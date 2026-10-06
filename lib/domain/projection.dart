@@ -63,6 +63,10 @@ class ProjectedEvent {
   final Category? category;
 }
 
+/// How many days ahead Inicio and «Próximos 30 días» look: what one of
+/// them says about the days to come, the other says too.
+const int comingDays = 30;
+
 /// One day of a projection.
 @immutable
 class ProjectedDay {
@@ -71,6 +75,7 @@ class ProjectedDay {
     required this.sure,
     required this.likely,
     required this.events,
+    this.expected = 0,
   });
 
   final DateTime date;
@@ -80,6 +85,10 @@ class ProjectedDay {
 
   /// The balance also counting the expected pay and anything tried out.
   final int likely;
+
+  /// What is only expected by this day, from today: the pay and what
+  /// clients should pay. Part of [likely], never of [sure].
+  final int expected;
 
   /// What happens that day.
   final List<ProjectedEvent> events;
@@ -189,6 +198,7 @@ class Projection {
     final List<ProjectedDay> days = <ProjectedDay>[];
     int sure = ledger.balance;
     int likely = sure;
+    int expected = 0;
     for (int i = 0; i <= horizon; i++) {
       final DateTime date = today.add(Duration(days: i));
       final List<ProjectedEvent> on = <ProjectedEvent>[
@@ -197,10 +207,17 @@ class Projection {
       ];
       for (final ProjectedEvent e in on) {
         if (e.certainty == Certainty.scheduled) sure += e.amount;
+        if (e.certainty == Certainty.expected) expected += e.amount;
         likely += e.amount;
       }
       days.add(
-        ProjectedDay(date: date, sure: sure, likely: likely, events: on),
+        ProjectedDay(
+          date: date,
+          sure: sure,
+          likely: likely,
+          events: on,
+          expected: expected,
+        ),
       );
     }
     return Projection._(ledger: ledger, days: days, latePay: late);
@@ -228,11 +245,23 @@ class Projection {
     return low;
   }
 
-  /// The first day the sure balance falls under the cushion, or under zero
-  /// without one.
+  /// The balance [day] is judged by when saying whether money runs short:
+  /// until the next payday, only what is sure, as what can be spent says;
+  /// after it, also the pay and what clients should pay by then, as the
+  /// person said they come. Without it every month would run out the day
+  /// after payday. What is being tried out never counts.
+  int judged(ProjectedDay day) =>
+      day.date.isAfter(nextPayday) ? day.sure + day.expected : day.sure;
+
+  /// Whether [day] falls under the cushion, or under zero without one, as
+  /// [judged] says.
+  bool tight(ProjectedDay day) => judged(day) < cushion;
+
+  /// The first day that falls under the cushion, or under zero without
+  /// one, as [judged] says.
   ProjectedDay? get firstTight {
     for (final ProjectedDay d in days) {
-      if (d.sure < cushion) return d;
+      if (tight(d)) return d;
     }
     return null;
   }

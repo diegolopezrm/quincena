@@ -228,6 +228,17 @@ class FreelancePage extends StatelessWidget {
                             : l.freelanceReserveOff,
                         style: context.type.bodyMedium,
                       ),
+                      // Why a client's payment kept elsewhere adds nothing.
+                      if (plan.reservePercent > 0 &&
+                          own.collectedOutsideReserve > 0) ...<Widget>[
+                        const SizedBox(height: 6),
+                        Text(
+                          l.freelanceReserveOutside(
+                            amount(own.collectedOutsideReserve),
+                          ),
+                          style: context.type.bodySmall,
+                        ),
+                      ],
                       const SizedBox(height: 6),
                       Text(l.freelanceNoTax, style: context.type.bodySmall),
                       if (reserve > 0)

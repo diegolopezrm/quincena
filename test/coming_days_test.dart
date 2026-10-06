@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'package:quincena/domain/freelance.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/format/money.dart';
@@ -393,5 +396,192 @@ void main() {
     );
     await harness.reveal(tester, tried);
     expect(tried, findsOneWidget);
+  });
+
+  /// [page] over the same [own], as the app opens it.
+  Future<void> show(WidgetTester tester, OwnController own, Widget page) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: quincenaTheme(Brightness.light),
+        locale: const Locale('es'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: appLocales,
+        home: page,
+      ),
+    );
+    await settle(tester);
+  }
+
+  Widget home(OwnController own) => Scaffold(
+    body: SingleChildScrollView(
+      child: OwnHomeTab(own: own, onSeeAll: () {}),
+    ),
+  );
+
+  testWidgets('a purchase over what there is to spend says what it takes '
+      'from the reserve', (tester) async {
+    // 2.000.000 after the pay and a client's 1.000.000, 15 % of it kept.
+    final OwnController own = await harness.openPage(
+      tester,
+      (OwnController own) =>
+          ComingDaysPage(own: own, tryPurchase: true, price: 2900000),
+      data: (QuincenaStore store, Account bank, _) async {
+        await store.addEntry(
+          accountId: bank.id,
+          amount: d('1000000'),
+          kind: EntryKind.income,
+          date: DateTime(2026, 10, 2, 9),
+          category: 'freelance',
+          payee: 'Estudio Sur',
+        );
+        await store.setSetting(
+          'freelance',
+          jsonEncode(
+            FreelancePlan(
+              reservePercent: 15,
+              reserveSince: DateTime(2026, 10, 1),
+            ).toJson(),
+          ),
+        );
+      },
+    );
+    expect(own.ledger!.reserved, 150000);
+    expect(own.ledger!.freeUntilPayday, 2850000);
+    // 3.000.000 less 2.900.000 leaves 100.000 from today on: 50.000 of the
+    // reserve. Today is said as today.
+    expect(find.text('Te alcanza, según lo que sabe la app'), findsNothing);
+    expect(find.text('Te alcanza, pero tocando lo apartado'), findsWidgets);
+    expect(
+      find.text(
+        'Es más de los ${pesos(2850000)} que puedes gastar hasta el 15 de '
+        'octubre: usarías ${pesos(50000)} de tu reserva de ingresos '
+        'variables. Tu saldo mínimo estimado sería ${pesos(100000)} hoy.',
+      ),
+      findsOneWidget,
+    );
+
+    // Within what there is to spend it fits, and says so.
+    await tester.enterText(
+      find.widgetWithText(TextField, '¿Cuánto cuesta?'),
+      '2.850.000',
+    );
+    await settle(tester);
+    expect(find.text('Te alcanza, según lo que sabe la app'), findsWidgets);
+    expect(
+      find.textContaining(
+        'Cabe en los ${pesos(2850000)} que puedes gastar hasta el 15 de '
+        'octubre.',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('Inicio and the 30 days count the pay after payday and say '
+      'the same', (tester) async {
+    // 2.000.000 after the pay, 2.400.000 each payday, and rent of 2.300.000
+    // on the 5th of November, after two paydays.
+    final OwnController own = await harness.openPage(
+      tester,
+      home,
+      data: (QuincenaStore store, Account bank, _) async {
+        await store.saveProfile(
+          Profile(
+            name: 'Ana',
+            base: Asset.cop,
+            schedule: const TwiceMonthly(),
+            pay: d('2400000'),
+          ),
+        );
+        await store.addRecurring(
+          name: 'Arriendo',
+          amount: Money(d('2300000'), Asset.cop),
+          cadence: Cadence.monthly,
+          nextDate: DateTime(2026, 11, 5),
+          accountId: bank.id,
+          category: 'housing',
+        );
+      },
+    );
+    expect(own.ledger!.cushion, 0);
+    expect(find.textContaining('te quedarías sin plata'), findsNothing);
+    expect(find.textContaining('colchón'), findsNothing);
+    // Nothing lowers the balance before payday: its lowest is today's.
+    expect(
+      find.text(
+        'Tu saldo mínimo estimado antes del pago es el de hoy: '
+        '${pesos(2000000)}.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.textContaining('el 3 de octubre'), findsNothing);
+
+    await show(tester, own, ComingDaysPage(own: own));
+    expect(
+      find.text('Saldo mínimo estimado antes del pago: ${pesos(2000000)} hoy'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('No te quedas sin plata en estos 30 días.'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('colchón'), findsNothing);
+  });
+
+  testWidgets('a day the pay does not cover is out of money on both '
+      'screens', (tester) async {
+    // Rent of 5.000.000 on the 20th: the pay of the 15th does not cover it.
+    final OwnController own = await harness.openPage(
+      tester,
+      home,
+      data: (QuincenaStore store, Account bank, _) async {
+        await store.saveProfile(
+          Profile(
+            name: 'Ana',
+            base: Asset.cop,
+            schedule: const TwiceMonthly(),
+            pay: d('2400000'),
+          ),
+        );
+        await store.addRecurring(
+          name: 'Arriendo',
+          amount: Money(d('5000000'), Asset.cop),
+          cadence: Cadence.monthly,
+          nextDate: DateTime(2026, 10, 20),
+          accountId: bank.id,
+          category: 'housing',
+        );
+      },
+    );
+    expect(find.text('El 20 oct te quedarías sin plata.'), findsOneWidget);
+    await show(tester, own, ComingDaysPage(own: own));
+    expect(find.text('El 20 oct te quedarías sin plata.'), findsOneWidget);
+    await harness.reveal(tester, find.text('Sin plata'));
+    expect(find.text('Sin plata'), findsOneWidget);
+  });
+
+  testWidgets('a lack past the 30 days is not told on Inicio either', (
+    tester,
+  ) async {
+    // No pay known, and rent of 2.300.000 on the 5th of November: 33 days
+    // away, beyond what either screen looks at.
+    final OwnController own = await harness.openPage(
+      tester,
+      home,
+      data: (QuincenaStore store, Account bank, _) => store.addRecurring(
+        name: 'Arriendo',
+        amount: Money(d('2300000'), Asset.cop),
+        cadence: Cadence.monthly,
+        nextDate: DateTime(2026, 11, 5),
+        accountId: bank.id,
+        category: 'housing',
+      ),
+    );
+    expect(own.projection!.days.last.date, DateTime(2026, 11, 2));
+    expect(find.textContaining('te quedarías sin plata'), findsNothing);
+    await show(tester, own, ComingDaysPage(own: own));
+    expect(
+      find.text('No te quedas sin plata en estos 30 días.'),
+      findsOneWidget,
+    );
   });
 }

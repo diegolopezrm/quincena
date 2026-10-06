@@ -21,10 +21,15 @@ class ComingChart extends StatelessWidget {
     this.startLabel = '',
     this.paydayLabel = '',
     this.endLabel = '',
+    this.isTight,
   });
 
   final List<ProjectedDay> days;
   final int cushion;
+
+  /// Whether a day falls under the cushion, as the words beside the chart
+  /// judge it; without it, when what is sure does.
+  final bool Function(ProjectedDay day)? isTight;
 
   /// Marked with a dotted line, when it falls in [days].
   final DateTime? payday;
@@ -107,6 +112,7 @@ class ComingChart extends StatelessWidget {
         painter: _ComingPainter(
           days: days,
           cushion: cushion,
+          isTight: isTight ?? (ProjectedDay d) => d.sure < cushion,
           selected: selected,
           paydayAt: paydayAt,
           sure: context.colors.brand,
@@ -125,6 +131,7 @@ class _ComingPainter extends CustomPainter {
   _ComingPainter({
     required this.days,
     required this.cushion,
+    required this.isTight,
     required this.selected,
     required this.paydayAt,
     required this.sure,
@@ -137,6 +144,7 @@ class _ComingPainter extends CustomPainter {
 
   final List<ProjectedDay> days;
   final int cushion;
+  final bool Function(ProjectedDay day) isTight;
   final int selected;
   final int paydayAt;
   final Color sure;
@@ -166,7 +174,7 @@ class _ComingPainter extends CustomPainter {
     // Days under the cushion, shaded behind everything.
     final Paint shade = Paint()..color = tight;
     for (var i = 0; i < days.length; i++) {
-      if (days[i].sure < cushion) {
+      if (isTight(days[i])) {
         canvas.drawRect(
           Rect.fromLTWH(x(i) - step / 2, 0, step, size.height),
           shade,

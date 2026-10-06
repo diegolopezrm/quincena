@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -126,6 +128,74 @@ void main() {
       expect(after.payUnknown, isTrue);
       expect(after.reliesOnPay, isFalse);
       expect(after.verdict, PurchaseVerdict.short);
+    });
+
+    test('what envelopes and the reserve keep apart is not there to buy '
+        'with', () async {
+      // 900.000, less internet's 300.000, the cushion's 100.000, 100.000
+      // in envelopes and a reserve of 150.000: 250.000 to spend.
+      final Ledger l = buildLedger(
+        (await store.snapshot())!,
+        today: today,
+        setAside: 100000,
+        reserved: 150000,
+      ).ledger;
+      expect(l.freeUntilPayday, 250000);
+      PurchaseCheck buy(int price) =>
+          checkPurchase(l, price: price, date: today);
+
+      final PurchaseCheck fits = buy(250000);
+      expect(fits.verdict, PurchaseVerdict.fits);
+      expect(fits.usesSetAside + fits.usesReserve + fits.usesCushion, 0);
+
+      // 50.000 over what there is to spend: from the envelopes first.
+      final PurchaseCheck over = buy(300000);
+      expect(over.lowest, 300000);
+      expect(over.verdict, PurchaseVerdict.takesApart);
+      expect(over.usesSetAside, 50000);
+      expect(over.usesReserve, 0);
+      expect(over.usesCushion, 0);
+
+      // All of the envelopes and part of the reserve.
+      final PurchaseCheck more = buy(400000);
+      expect(more.verdict, PurchaseVerdict.takesApart);
+      expect(more.usesSetAside, 100000);
+      expect(more.usesReserve, 50000);
+
+      // Under the cushion, it has taken everything above it.
+      final PurchaseCheck under = buy(550000);
+      expect(under.verdict, PurchaseVerdict.belowCushion);
+      expect(under.usesSetAside, 100000);
+      expect(under.usesReserve, 150000);
+      expect(under.usesCushion, 50000);
+
+      expect(buy(700000).verdict, PurchaseVerdict.short);
+    });
+
+    test('a purchase fits only within what there is to spend', () async {
+      final Ledger l = buildLedger(
+        (await store.snapshot())!,
+        today: today,
+        setAside: 40000,
+        reserved: 150000,
+      ).ledger;
+      for (var price = 10000; price <= 800000; price += 10000) {
+        final PurchaseCheck c = checkPurchase(l, price: price, date: today);
+        expect(
+          c.verdict == PurchaseVerdict.fits,
+          price <= l.freeUntilPayday,
+          reason: '$price against ${l.freeUntilPayday}',
+        );
+        // What it takes from what is kept apart is what it goes over by.
+        expect(
+          c.usesSetAside + c.usesReserve + c.usesCushion,
+          math.min(
+            math.max(0, price - l.freeUntilPayday),
+            l.cushion + l.setAside + l.reserved,
+          ),
+          reason: '$price',
+        );
+      }
     });
 
     test('the calendar sees the purchase the check weighed', () async {

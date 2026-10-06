@@ -1625,20 +1625,20 @@ abstract class AppLocalizations {
   /// No description provided for @comingLowest.
   ///
   /// In es, this message translates to:
-  /// **'Saldo mínimo estimado antes del pago: {amount} el {date}'**
-  String comingLowest(String amount, String date);
+  /// **'Saldo mínimo estimado antes del pago: {amount} {when}'**
+  String comingLowest(String amount, String when);
 
   /// No description provided for @comingTight.
   ///
   /// In es, this message translates to:
-  /// **'El {date} quedarías bajo tu colchón.'**
-  String comingTight(String date);
+  /// **'{when} quedarías bajo tu colchón.'**
+  String comingTight(String when);
 
   /// No description provided for @comingRunsOut.
   ///
   /// In es, this message translates to:
-  /// **'El {date} te quedarías sin plata.'**
-  String comingRunsOut(String date);
+  /// **'{when} te quedarías sin plata.'**
+  String comingRunsOut(String when);
 
   /// No description provided for @comingRunsOutBadge.
   ///
@@ -1793,14 +1793,14 @@ abstract class AppLocalizations {
   /// No description provided for @buyFitsBody.
   ///
   /// In es, this message translates to:
-  /// **'Tu saldo mínimo estimado sería {amount} el {date}, por encima de tu colchón.'**
-  String buyFitsBody(String amount, String date);
+  /// **'Tu saldo mínimo estimado sería {amount} {when}, por encima de tu colchón.'**
+  String buyFitsBody(String amount, String when);
 
   /// No description provided for @buyFitsBodyNoCushion.
   ///
   /// In es, this message translates to:
-  /// **'Tu saldo mínimo estimado sería {amount} el {date}.'**
-  String buyFitsBodyNoCushion(String amount, String date);
+  /// **'Tu saldo mínimo estimado sería {amount} {when}.'**
+  String buyFitsBodyNoCushion(String amount, String when);
 
   /// No description provided for @buyBelow.
   ///
@@ -1811,8 +1811,8 @@ abstract class AppLocalizations {
   /// No description provided for @buyBelowBody.
   ///
   /// In es, this message translates to:
-  /// **'El {date} quedarías con {amount}; tu colchón es {cushion}.'**
-  String buyBelowBody(String date, String amount, String cushion);
+  /// **'{when} quedarías con {amount}; tu colchón es {cushion}.'**
+  String buyBelowBody(String when, String amount, String cushion);
 
   /// No description provided for @buyShort.
   ///
@@ -1823,8 +1823,8 @@ abstract class AppLocalizations {
   /// No description provided for @buyShortBody.
   ///
   /// In es, this message translates to:
-  /// **'El {date} te faltarían {amount}.'**
-  String buyShortBody(String date, String amount);
+  /// **'{when} te faltarían {amount}.'**
+  String buyShortBody(String when, String amount);
 
   /// No description provided for @buyReliesOnPay.
   ///
@@ -2033,8 +2033,8 @@ abstract class AppLocalizations {
   /// No description provided for @comingLowestWithout.
   ///
   /// In es, this message translates to:
-  /// **'Sin lo que pruebas, saldo mínimo estimado antes del pago: {amount} el {date}'**
-  String comingLowestWithout(String amount, String date);
+  /// **'Sin lo que pruebas, saldo mínimo estimado antes del pago: {amount} {when}'**
+  String comingLowestWithout(String amount, String when);
 
   /// No description provided for @computedBuy.
   ///
@@ -2239,22 +2239,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Para repartir'**
   String get envelopesToSplit;
-
-  /// No description provided for @envelopesToSplitBody.
-  ///
-  /// In es, this message translates to:
-  /// **'Lo que hay para gastar, menos {committed} comprometidos hasta el pago y {cushion} de colchón.'**
-  String envelopesToSplitBody(String committed, String cushion);
-
-  /// No description provided for @envelopesToSplitBodyReserve.
-  ///
-  /// In es, this message translates to:
-  /// **'Lo que hay para gastar, menos {committed} comprometidos hasta el pago, {cushion} de colchón y {reserve} de la reserva de ingresos variables.'**
-  String envelopesToSplitBodyReserve(
-    String committed,
-    String cushion,
-    String reserve,
-  );
 
   /// No description provided for @envelopeDaily.
   ///
@@ -8643,6 +8627,90 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{count, plural, =1{Registrar 1 de los {total} listos} other{Registrar {count} de los {total} listos}}'**
   String inboxRecordSome(int count, int total);
+
+  /// No description provided for @dayWhen.
+  ///
+  /// In es, this message translates to:
+  /// **'el {date}'**
+  String dayWhen(String date);
+
+  /// No description provided for @todayWhen.
+  ///
+  /// In es, this message translates to:
+  /// **'hoy'**
+  String get todayWhen;
+
+  /// No description provided for @comingLowestLineToday.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu saldo mínimo estimado antes del pago es el de hoy: {amount}.'**
+  String comingLowestLineToday(String amount);
+
+  /// No description provided for @buyTakesApart.
+  ///
+  /// In es, this message translates to:
+  /// **'Te alcanza, pero tocando lo apartado'**
+  String get buyTakesApart;
+
+  /// No description provided for @buyWithinFree.
+  ///
+  /// In es, this message translates to:
+  /// **'Cabe en los {free} que puedes gastar hasta el {payday}.'**
+  String buyWithinFree(String free, String payday);
+
+  /// No description provided for @buyOverFree.
+  ///
+  /// In es, this message translates to:
+  /// **'Es más de los {free} que puedes gastar hasta el {payday}: usarías {used}.'**
+  String buyOverFree(String free, String payday, String used);
+
+  /// No description provided for @buyUses.
+  ///
+  /// In es, this message translates to:
+  /// **'Usarías {used}.'**
+  String buyUses(String used);
+
+  /// No description provided for @buyAlsoUses.
+  ///
+  /// In es, this message translates to:
+  /// **'Además usarías {used}.'**
+  String buyAlsoUses(String used);
+
+  /// No description provided for @buyUsesSetAside.
+  ///
+  /// In es, this message translates to:
+  /// **'{amount} de lo apartado en sobres'**
+  String buyUsesSetAside(String amount);
+
+  /// No description provided for @buyUsesReserve.
+  ///
+  /// In es, this message translates to:
+  /// **'{amount} de tu reserva de ingresos variables'**
+  String buyUsesReserve(String amount);
+
+  /// No description provided for @buyUsesCushion.
+  ///
+  /// In es, this message translates to:
+  /// **'{amount} de tu colchón'**
+  String buyUsesCushion(String amount);
+
+  /// No description provided for @buyNothingFree.
+  ///
+  /// In es, this message translates to:
+  /// **'Hasta el {payday} no te queda nada para gastar: usarías {used}.'**
+  String buyNothingFree(String payday, String used);
+
+  /// No description provided for @envelopesSpentLine.
+  ///
+  /// In es, this message translates to:
+  /// **'Gastado del día a día'**
+  String get envelopesSpentLine;
+
+  /// No description provided for @freelanceReserveOutside.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que cobraste en cuentas que no son de uso diario ({amount}) no se aparta: nunca contó en lo que puedes gastar.'**
+  String freelanceReserveOutside(String amount);
 }
 
 class _AppLocalizationsDelegate

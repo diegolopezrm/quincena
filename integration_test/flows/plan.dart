@@ -267,8 +267,9 @@ final List<AppFlow> planFlows = <AppFlow>[
       await _openPlan(f);
       await f.tap('Repartir en sobres');
       await f.page(
-        '«Reparte tu quincena» propone el día a día y lo de la meta. Abajo, '
-        '«Sin asignar» dice cuánto queda libre.',
+        '«Reparte tu quincena»: «Para repartir» con la suma que lo explica, '
+        'la propuesta para el día a día y la meta y, abajo, «Sin asignar», '
+        'lo que no queda en ningún sobre.',
       );
       final List<Envelope> proposal = proposeEnvelopes(
         l,
@@ -345,18 +346,25 @@ final List<AppFlow> planFlows = <AppFlow>[
       await f.top();
       final int spent = spentThisPeriod(own.ledger!);
       await f.step(
-        'De vuelta en Plan, recién repartido, la tarjeta ya dice «Te pasaste '
-        'por»: cuenta los ${_pesos(l, spent)} gastados desde el 30 de '
-        'septiembre, antes de repartir.',
+        'De vuelta en Plan, recién repartido, la tarjeta dice «Llevas \$0 de '
+        '\$200.000»: los ${_pesos(l, spent)} gastados desde el 30 de '
+        'septiembre se fueron antes de repartir, no del sobre.',
       );
       await f.check(
-        'Recién repartido, el día a día no dice que ya te pasaste (cuenta '
-        '${_pesos(l, spent)} gastados antes de repartir)',
-        () => expect(
-          f.shows('Te pasaste por ${_pesos(l, spent - l.minor(200000))}'),
-          isFalse,
-        ),
+        'Recién repartido, el día a día no dice que ya te pasaste (no cuenta '
+        'los ${_pesos(l, spent)} gastados antes de repartir)',
+        () {
+          expect(f.shows('Te pasaste por'), isFalse);
+          expect(dailySpent(own.ledger!, own.plan!), 0);
+          expect(
+            f.shows('Llevas ${_pesos(l, 0)} de ${_pesos(l, l.minor(200000))}'),
+            isTrue,
+          );
+        },
       );
+      await f.check('«Sin asignar» sigue en ${_pesos(l, left)} al guardar', () {
+        expect(_says(f, 'Sin asignar | ${_pesos(l, left)}'), isTrue);
+      });
       await f.check('Quedan guardados tres sobres de este periodo', () {
         final EnvelopePlan plan = own.plan!;
         expect(plan.envelopes.map((Envelope e) => e.amount), <int>[
@@ -388,18 +396,32 @@ final List<AppFlow> planFlows = <AppFlow>[
       await _openPlan(f);
       await f.top();
       await f.step(
-        'Tras un almuerzo de 50.000 la tarjeta los suma a lo gastado y '
-        'además cambia «Sin asignar» por «Te pasas por» '
-        '${_pesos(l, l.minor(50000) - left)}: cuenta el gasto dos veces.',
+        'Tras un almuerzo de 50.000 la tarjeta dice «Llevas \$50.000 de '
+        '\$200.000» y «Sin asignar» sigue en ${_pesos(l, left)}: el gasto '
+        'sale del día a día una sola vez.',
       );
       await f.check(
-        'El almuerzo cuenta en el día a día: lo gastado sube 50.000',
-        () => expect(spentThisPeriod(own.ledger!), spent + l.minor(50000)),
+        'El almuerzo cuenta en el día a día: lleva 50.000 de 200.000',
+        () {
+          expect(dailySpent(own.ledger!, own.plan!), l.minor(50000));
+          expect(
+            f.shows(
+              'Llevas ${_pesos(l, l.minor(50000))} de '
+              '${_pesos(l, l.minor(200000))}',
+            ),
+            isTrue,
+          );
+        },
       );
       await f.check(
         'Un gasto del día a día no baja «Sin asignar», que sigue en '
         '${_pesos(l, left)}',
         () => expect(_says(f, 'Sin asignar | ${_pesos(l, left)}'), isTrue),
+      );
+      await f.check(
+        '«Puedes gastar» es lo que no tiene sobre más lo que le queda al día '
+        'a día: ${_pesos(l, left)} y ${_pesos(l, l.minor(150000))}',
+        () => expect(own.ledger!.freeUntilPayday, left + l.minor(150000)),
       );
     },
   ),
@@ -422,9 +444,33 @@ final List<AppFlow> planFlows = <AppFlow>[
       );
       await f.tap('Repartir en sobres');
       await f.step(
-        'La propuesta no pasa de lo que hay: los ${_pesos(l, money)} se van '
-        'a la meta y el día a día queda vacío, aunque faltan 12 días para el '
-        'pago.',
+        'La suma de arriba dice de dónde salen los ${_pesos(l, money)}: lo de '
+        'tus cuentas, menos la tarjeta, los pagos y la reserva. La propuesta '
+        'no pasa de eso: todo a la meta y el día a día vacío, aunque faltan '
+        '12 días para el pago.',
+      );
+      final int debt = own.spendableCardDebt;
+      await f.check(
+        '«Para repartir» se explica con una suma que da '
+        '${_pesos(l, money)}, la reserva de ${_pesos(l, l.reserved)} incluida',
+        () {
+          expect(
+            l.balance + debt - debt - l.committedUntilPayday - l.reserved,
+            money,
+          );
+          expect(l.cushion, 0);
+          for (final String line in <String>[
+            'En tus cuentas de uso diario | ${_pesos(l, l.balance + debt)}',
+            'Lo que debes en tarjetas | ${_pesos(l, -debt)}',
+            'Pagos hasta el ${dayShortMonth(l.nextPayday)} | '
+                '${_pesos(l, -l.committedUntilPayday)}',
+            'Reserva de ingresos variables | ${_pesos(l, -l.reserved)}',
+          ]) {
+            expect(_says(f, line), isTrue, reason: line);
+          }
+          // No cushion: no line for it.
+          expect(f.shows('Colchón'), isFalse);
+        },
       );
       await f.check('La propuesta no deja «Te pasas por»: la meta se lleva '
           '${_pesos(l, money)} y el día a día nada', () {
@@ -492,8 +538,21 @@ final List<AppFlow> planFlows = <AppFlow>[
       final int stillOver = l.minor(100000) + goals - money;
       await f.step(
         'Con 100.000 de día a día «Te pasas por» baja a '
-        '${_pesos(l, stillOver)}. Arriba, «Te pasaste por» cuenta los '
-        '${_pesos(l, spent)} gastados desde el 30 de septiembre.',
+        '${_pesos(l, stillOver)}. Arriba, «Llevas \$0 de \$100.000»: los '
+        '${_pesos(l, spent)} gastados desde el 30 de septiembre se fueron '
+        'antes de repartir.',
+      );
+      await f.check(
+        'El día a día no cuenta los ${_pesos(l, spent)} gastados antes de '
+        'repartir',
+        () {
+          expect(dailySpent(own.ledger!, own.plan!), 0);
+          expect(f.shows('Te pasaste por'), isFalse);
+          expect(
+            f.shows('Llevas ${_pesos(l, 0)} de ${_pesos(l, l.minor(100000))}'),
+            isTrue,
+          );
+        },
       );
       await f.check(
         'El reparto ajustado quedó con 100.000 de día a día y «Te pasas por» '
@@ -3307,10 +3366,12 @@ final List<AppFlow> planFlows = <AppFlow>[
         label: 'Tenis',
         atLeast: 30,
       );
+      final int fromReserve = l.minor(100000) - free;
       await f.step(
-        'Unos tenis de 100.000: dice «Te alcanza», con un saldo mínimo de '
-        '${_pesos(l, shoes.lowest)}, aunque para gastar solo hay '
-        '${_pesos(l, free)}: se los come a la reserva.',
+        'Unos tenis de 100.000: para gastar solo hay ${_pesos(l, free)}, así '
+        'que dice «Te alcanza, pero tocando lo apartado» y que usarías '
+        '${_pesos(l, fromReserve)} de la reserva; el saldo mínimo sería '
+        '${_pesos(l, shoes.lowest)}.',
       );
       await f.check(
         'El saldo mínimo que muestra es el que calcula la app: '
@@ -3322,13 +3383,58 @@ final List<AppFlow> planFlows = <AppFlow>[
         'reserva, una compra de ${pesos(100000)} no dice «Te alcanza»',
         () => expect(f.shows('Te alcanza, según lo que sabe la app'), isFalse),
       );
+      await f.check(
+        'Dice que tocaría la reserva: usarías ${_pesos(l, fromReserve)} de '
+        'ella',
+        () {
+          expect(shoes.verdict, PurchaseVerdict.takesApart);
+          expect(shoes.usesReserve, fromReserve);
+          expect(f.shows('Te alcanza, pero tocando lo apartado'), isTrue);
+          expect(
+            _says(
+              f,
+              'usarías ${_pesos(l, fromReserve)} de tu reserva de ingresos '
+              'variables',
+            ),
+            isTrue,
+          );
+        },
+      );
+      final PurchaseCheck later = checkPurchase(
+        own.ledger!,
+        price: l.minor(100000),
+        date: l.nextPayday.add(const Duration(days: 1)),
+        label: 'Tenis',
+      );
+      await f.check(
+        'Esperar al ${dayShortMonth(later.date)} también toca la reserva: la '
+        'app no sabe cuánto te pagan y no cuenta ningún pago',
+        () {
+          expect(later.verdict, PurchaseVerdict.takesApart);
+          expect(later.payUnknown, isTrue);
+          expect(
+            find.text('Te alcanza, pero tocando lo apartado'),
+            findsNWidgets(3),
+          );
+          expect(f.shows('sin contar tu pago'), isTrue);
+        },
+      );
       await f.type('¿Cuánto cuesta?', '7000');
       await f.step(
-        'Con 7.000, menos de lo que puedes gastar, «Te alcanza» sí es cierto.',
+        'Con 7.000, menos de lo que puedes gastar, «Te alcanza» sí es cierto '
+        'y lo dice: cabe en los ${_pesos(l, free)} que puedes gastar.',
       );
       await f.check('Una compra de 7.000 cabe en lo que puedes gastar', () {
         expect(l.minor(7000), lessThanOrEqualTo(free));
         expect(f.shows('Te alcanza, según lo que sabe la app'), isTrue);
+        expect(
+          _says(
+            f,
+            'Cabe en los ${_pesos(l, free)} que puedes gastar hasta el 15 de '
+            'octubre.',
+          ),
+          isTrue,
+        );
       });
       await f.check('Probar compras no anota nada', () {
         expect(own.snapshot!.entries.length, entries);
@@ -3503,8 +3609,101 @@ final List<AppFlow> planFlows = <AppFlow>[
       await f.top();
       await f.step(
         'En Plan, la tarjeta muestra el reparto con el viaje y el regalo '
-        'apartados; arriba ya dice «Te pasaste por», por lo gastado antes.',
+        'apartados; arriba, «Llevas \$0 de \$200.000»: lo gastado antes de '
+        'repartir no sale del sobre.',
       );
+      await f.check('Recién repartido, el día a día no lleva nada gastado', () {
+        expect(dailySpent(own.ledger!, own.plan!), 0);
+        expect(f.shows('Te pasaste por'), isFalse);
+        expect(
+          f.shows('Llevas ${_pesos(l, 0)} de ${_pesos(l, l.minor(200000))}'),
+          isTrue,
+        );
+      });
+    },
+  ),
+  AppFlow(
+    '06-31-cobrar-en-la-cuenta-en-dolares',
+    'Cobrar a un cliente en la cuenta en dólares',
+    area: 'Plan',
+    goal:
+        'Un cliente me pagó en mi cuenta en dólares: no quiero que la reserva '
+        'me quite de lo que puedo gastar una plata que nunca estuvo ahí.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Ledger l = own.ledger!;
+      final int free = l.freeUntilPayday;
+      final int reserve = l.reserved;
+      await f.step(
+        'Inicio: «Puedes gastar» es ${_pesos(l, free)} y deja fuera '
+        '${_pesos(l, reserve)} de reserva, el 15 % de lo que Estudio Sur '
+        'pagó a Bancolombia.',
+      );
+      await f.tapTip('Agregar movimiento');
+      await f.tap('Ingreso');
+      await f.tapFound(find.byType(DropdownButtonFormField<String>));
+      await f.tapFound(find.text('Cuenta en dólares').last);
+      await f.type('Monto', '500');
+      await f.tap('Trabajos independientes');
+      await f.type('¿De dónde?', 'Upwork');
+      await f.step(
+        'Un ingreso de 500 dólares en «Cuenta en dólares», como «Trabajos '
+        'independientes», de Upwork.',
+      );
+      await f.tap('Guardar');
+      final int outside = l.minor(
+        own.inBase(Money(Decimal.fromInt(500), Asset.usd))!.amount.toDouble(),
+      );
+      await f.step(
+        'De vuelta en Inicio, «Puedes gastar» sigue en ${_pesos(l, free)}: '
+        'ni el cobro ni su 15 % pasan por las cuentas de uso diario.',
+      );
+      await f.check(
+        'El cobro quedó en la cuenta en dólares, como trabajo independiente',
+        () {
+          final Entry e = _entry(own, 'Upwork');
+          expect(e.amount, Decimal.fromInt(500));
+          expect(e.category, 'freelance');
+          expect(own.snapshot!.account(e.accountId)!.name, 'Cuenta en dólares');
+        },
+      );
+      await f.check(
+        'La reserva sigue en ${_pesos(l, reserve)} y lo que puedes gastar en '
+        '${_pesos(l, free)}: nada se aparta de ${_pesos(l, outside)} que '
+        'nunca estuvieron ahí',
+        () {
+          expect(own.ledger!.reserved, reserve);
+          expect(own.ledger!.freeUntilPayday, free);
+          expect(own.collectedOutsideReserve, outside);
+        },
+      );
+      await _openPlan(f);
+      await f.tap('Ingresos variables');
+      await f.reveal(find.textContaining('no se aparta'));
+      await f.step(
+        'En «Ingresos variables», la reserva sigue en ${_pesos(l, reserve)} y '
+        'dice por qué: lo cobrado en cuentas que no son de uso diario no se '
+        'aparta.',
+      );
+      await f.check('Explica que los ${_pesos(l, outside)} no se apartan', () {
+        expect(
+          _says(
+            f,
+            'Lo que cobraste en cuentas que no son de uso diario '
+            '(${_pesos(l, outside)}) no se aparta: nunca contó en lo que '
+            'puedes gastar.',
+          ),
+          isTrue,
+        );
+        expect(
+          _says(
+            f,
+            'Tienes apartados ${_pesos(l, reserve)} desde el 1 de octubre.',
+          ),
+          isTrue,
+        );
+      });
     },
   ),
 ];

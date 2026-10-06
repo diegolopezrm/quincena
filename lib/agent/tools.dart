@@ -105,8 +105,13 @@ List<Tool> accountTools(
     description:
         'Weighs buying something for an amount on a day against the money to '
         'spend: the lowest the balance gets from that day to the payday after '
-        'it, counting what is committed, and whether that stays at or above '
-        'the cushion (fits), goes under it (belowCushion) or runs out (short). '
+        'it, counting what is committed, and whether that stays above '
+        'everything kept apart, as freeUntilPayday does (fits), takes from '
+        'what envelopes set aside or the reserve kept from variable income '
+        '(takesApart), goes under the cushion (belowCushion) or runs out '
+        '(short). usesSetAside, usesReserve and usesCushion say how much of '
+        'each it would take: never call a purchase that takes any of them '
+        'one that fits. '
         'Bought after the next payday it counts on the expected pay and says '
         'so (countsOnExpectedPay); without a known pay it counts none '
         '(payUnknown). It also weighs the same purchase today and the day '
@@ -146,6 +151,9 @@ List<Tool> accountTools(
           'lowestOn': _day(c.lowestOn),
           'until': _day(c.until),
           'verdict': c.verdict.name,
+          if (c.usesSetAside > 0) 'usesSetAside': ledger.major(c.usesSetAside),
+          if (c.usesReserve > 0) 'usesReserve': ledger.major(c.usesReserve),
+          if (c.usesCushion > 0) 'usesCushion': ledger.major(c.usesCushion),
           'countsOnExpectedPay': c.reliesOnPay,
           'payUnknown': c.payUnknown,
         };
@@ -154,7 +162,11 @@ List<Tool> accountTools(
       return <String, Object?>{
         'currency': ledger.currency.code,
         'price': amount,
+        'freeUntilPayday': ledger.major(ledger.freeUntilPayday),
         'cushion': ledger.major(ledger.cushion),
+        if (ledger.setAside > 0)
+          'setAsideInEnvelopes': ledger.major(ledger.setAside),
+        if (ledger.reserved > 0) 'reserved': ledger.major(ledger.reserved),
         'committedUntilPayday': ledger.major(ledger.committedUntilPayday),
         'nextPayday': _day(ledger.nextPayday),
         'asked': weigh(asked),
@@ -170,10 +182,12 @@ List<Tool> accountTools(
         'lowest estimated balance before payday and its day, the first day '
         'under the cushion if there is one, and every scheduled charge, '
         'movement and expected pay with its day. What is sure (the balance and what is '
-        'scheduled) is kept apart from the pay, which is only expected.',
+        'scheduled) is kept apart from the pay, which is only expected. '
+        'Until payday a day is judged by what is sure; after it, also by the '
+        'pay and what clients should pay by then, as the app judges it.',
     onCall: (_) {
       final Ledger ledger = current();
-      final Projection p = Projection.of(ledger, horizon: 30);
+      final Projection p = Projection.of(ledger, horizon: comingDays);
       final ProjectedDay low = p.lowestBeforePayday;
       final ProjectedDay? tight = p.firstTight;
       return <String, Object?>{

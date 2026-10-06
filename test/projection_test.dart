@@ -115,11 +115,67 @@ void main() {
     expect(on(10, 20).sure, 500000 - 1650000);
     expect(on(10, 20).likely, 2900000 - 1650000);
     expect(p.ledger.committedUntilPayday, 0);
-    // Without the pay, the money runs out on the 20th.
-    expect(p.firstTight!.date, DateTime(2026, 10, 20));
+    // The rent comes after the payday of the 15th: what the 20th is judged
+    // by counts that pay, as the person said they get it.
+    expect(p.judged(on(10, 20)), 2900000 - 1650000);
+    expect(p.firstTight, isNull);
     // November's rent and pays are there too, within 45 days.
     expect(on(11, 15).likely, 2900000 - 1650000 + 2400000 + 2400000);
     expect(on(11, 15).sure, 500000 - 1650000);
+  });
+
+  test('right after setting up, the pays before a charge count: no day '
+      'out of money', () async {
+    // 1.500.000 in the bank and 60.000 in cash, 480.000 owed on the card,
+    // paid 2.400.000 each fortnight, and rent of 1.650.000 on the 5th of
+    // November, two paydays away.
+    final Account b = await bank('1500000');
+    await store.addAccount(
+      name: 'Efectivo',
+      kind: AccountKind.cash,
+      asset: Asset.cop,
+      opening: d('60000'),
+    );
+    await store.addAccount(
+      name: 'Tarjeta',
+      kind: AccountKind.card,
+      asset: Asset.cop,
+      opening: d('-480000'),
+    );
+    await profile(pay: '2400000');
+    await store.addRecurring(
+      name: 'Arriendo',
+      amount: Money(d('1650000'), Asset.cop),
+      cadence: Cadence.monthly,
+      nextDate: DateTime(2026, 11, 5),
+      accountId: b.id,
+      category: 'housing',
+    );
+    final Projection p = Projection.of((await build()).ledger);
+    expect(p.days.last.date, DateTime(2026, 11, 17));
+    expect(p.firstTight, isNull);
+    // Without the pay known, nothing but what is sure counts.
+    await profile();
+    expect(
+      Projection.of((await build()).ledger).firstTight!.date,
+      DateTime(2026, 11, 5),
+    );
+  });
+
+  test('until payday only what is sure counts, pay or not', () async {
+    final Account b = await bank('500000');
+    await profile(pay: '2400000');
+    await store.addRecurring(
+      name: 'Arriendo',
+      amount: Money(d('900000'), Asset.cop),
+      cadence: Cadence.monthly,
+      nextDate: DateTime(2026, 10, 12),
+      accountId: b.id,
+      category: 'housing',
+    );
+    final Projection p = Projection.of((await build()).ledger);
+    expect(p.firstTight!.date, DateTime(2026, 10, 12));
+    expect(p.judged(p.firstTight!), -400000);
   });
 
   test(

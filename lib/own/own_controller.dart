@@ -246,8 +246,7 @@ class OwnController extends ChangeNotifier {
     final EnvelopePlan? plan = _plan;
     if (plan != null && plan.envelopes.any((Envelope e) => e.goalId == id)) {
       await savePlan(
-        EnvelopePlan(
-          period: plan.period,
+        plan.copyWith(
           envelopes: <Envelope>[
             for (final Envelope e in plan.envelopes)
               if (e.goalId != id) e,
@@ -435,13 +434,21 @@ class OwnController extends ChangeNotifier {
 
   /// What arrived from clients since the reserve started, in the base
   /// currency's smallest unit: incomes filed as freelance work and those
-  /// linked to a collected payment.
+  /// linked to a collected payment, into the accounts for everyday use.
   int get collectedForReserve {
     final StoreSnapshot? s = _snapshot;
     return s == null ? 0 : _collected(s, today);
   }
 
-  int _collected(StoreSnapshot s, DateTime day) {
+  /// What arrived from clients since the reserve started into accounts not
+  /// for everyday use: never in what can be spent, so nothing of it is
+  /// kept apart from it.
+  int get collectedOutsideReserve {
+    final StoreSnapshot? s = _snapshot;
+    return s == null ? 0 : _collected(s, today, everyday: false);
+  }
+
+  int _collected(StoreSnapshot s, DateTime day, {bool everyday = true}) {
     final Asset base = s.profile.base;
     final RateTable table = RateTable(s.rates);
     final Decimal unit = Decimal.ten.pow(base.decimals).toDecimal();
@@ -458,6 +465,8 @@ class OwnController extends ChangeNotifier {
       if (e.date.isAfter(endOfDay(day))) continue;
       final Account? a = s.account(e.accountId);
       if (a == null) continue;
+      // As the money to spend counts accounts.
+      if ((a.spendable && !a.archived) != everyday) continue;
       final Money? m = table.convert(Money(e.amount, a.asset), base);
       if (m != null) total += (m.amount * unit).round().toBigInt().toInt();
     }
@@ -627,11 +636,14 @@ class OwnController extends ChangeNotifier {
   Profile? get profile => _snapshot?.profile;
   Ledger? get ledger => _build?.ledger;
 
-  /// The coming days, from the ledger as it is now.
+  /// The coming days, from the ledger as it is now, as far as Inicio and
+  /// «Próximos 30 días» look.
   Projection? get projection {
     final Ledger? l = ledger;
     if (l == null) return null;
-    if (!identical(_projected?.ledger, l)) _projected = Projection.of(l);
+    if (!identical(_projected?.ledger, l)) {
+      _projected = Projection.of(l, horizon: comingDays);
+    }
     return _projected;
   }
 

@@ -977,18 +977,18 @@ class AppLocalizationsEs extends AppLocalizations {
   String get comingTitle => 'Próximos 30 días';
 
   @override
-  String comingLowest(String amount, String date) {
-    return 'Saldo mínimo estimado antes del pago: $amount el $date';
+  String comingLowest(String amount, String when) {
+    return 'Saldo mínimo estimado antes del pago: $amount $when';
   }
 
   @override
-  String comingTight(String date) {
-    return 'El $date quedarías bajo tu colchón.';
+  String comingTight(String when) {
+    return '$when quedarías bajo tu colchón.';
   }
 
   @override
-  String comingRunsOut(String date) {
-    return 'El $date te quedarías sin plata.';
+  String comingRunsOut(String when) {
+    return '$when te quedarías sin plata.';
   }
 
   @override
@@ -1076,29 +1076,29 @@ class AppLocalizationsEs extends AppLocalizations {
   String get buyFits => 'Te alcanza, según lo que sabe la app';
 
   @override
-  String buyFitsBody(String amount, String date) {
-    return 'Tu saldo mínimo estimado sería $amount el $date, por encima de tu colchón.';
+  String buyFitsBody(String amount, String when) {
+    return 'Tu saldo mínimo estimado sería $amount $when, por encima de tu colchón.';
   }
 
   @override
-  String buyFitsBodyNoCushion(String amount, String date) {
-    return 'Tu saldo mínimo estimado sería $amount el $date.';
+  String buyFitsBodyNoCushion(String amount, String when) {
+    return 'Tu saldo mínimo estimado sería $amount $when.';
   }
 
   @override
   String get buyBelow => 'Quedarías por debajo de tu colchón';
 
   @override
-  String buyBelowBody(String date, String amount, String cushion) {
-    return 'El $date quedarías con $amount; tu colchón es $cushion.';
+  String buyBelowBody(String when, String amount, String cushion) {
+    return '$when quedarías con $amount; tu colchón es $cushion.';
   }
 
   @override
   String get buyShort => 'No alcanza antes del pago';
 
   @override
-  String buyShortBody(String date, String amount) {
-    return 'El $date te faltarían $amount.';
+  String buyShortBody(String when, String amount) {
+    return '$when te faltarían $amount.';
   }
 
   @override
@@ -1251,8 +1251,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get closeSpentNone => 'No registraste gastos en esta quincena.';
 
   @override
-  String comingLowestWithout(String amount, String date) {
-    return 'Sin lo que pruebas, saldo mínimo estimado antes del pago: $amount el $date';
+  String comingLowestWithout(String amount, String when) {
+    return 'Sin lo que pruebas, saldo mínimo estimado antes del pago: $amount $when';
   }
 
   @override
@@ -1373,20 +1373,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get envelopesToSplit => 'Para repartir';
-
-  @override
-  String envelopesToSplitBody(String committed, String cushion) {
-    return 'Lo que hay para gastar, menos $committed comprometidos hasta el pago y $cushion de colchón.';
-  }
-
-  @override
-  String envelopesToSplitBodyReserve(
-    String committed,
-    String cushion,
-    String reserve,
-  ) {
-    return 'Lo que hay para gastar, menos $committed comprometidos hasta el pago, $cushion de colchón y $reserve de la reserva de ingresos variables.';
-  }
 
   @override
   String get envelopeDaily => 'Día a día';
@@ -5610,5 +5596,69 @@ class AppLocalizationsEs extends AppLocalizations {
       one: 'Registrar 1 de los $total listos',
     );
     return '$_temp0';
+  }
+
+  @override
+  String dayWhen(String date) {
+    return 'el $date';
+  }
+
+  @override
+  String get todayWhen => 'hoy';
+
+  @override
+  String comingLowestLineToday(String amount) {
+    return 'Tu saldo mínimo estimado antes del pago es el de hoy: $amount.';
+  }
+
+  @override
+  String get buyTakesApart => 'Te alcanza, pero tocando lo apartado';
+
+  @override
+  String buyWithinFree(String free, String payday) {
+    return 'Cabe en los $free que puedes gastar hasta el $payday.';
+  }
+
+  @override
+  String buyOverFree(String free, String payday, String used) {
+    return 'Es más de los $free que puedes gastar hasta el $payday: usarías $used.';
+  }
+
+  @override
+  String buyUses(String used) {
+    return 'Usarías $used.';
+  }
+
+  @override
+  String buyAlsoUses(String used) {
+    return 'Además usarías $used.';
+  }
+
+  @override
+  String buyUsesSetAside(String amount) {
+    return '$amount de lo apartado en sobres';
+  }
+
+  @override
+  String buyUsesReserve(String amount) {
+    return '$amount de tu reserva de ingresos variables';
+  }
+
+  @override
+  String buyUsesCushion(String amount) {
+    return '$amount de tu colchón';
+  }
+
+  @override
+  String buyNothingFree(String payday, String used) {
+    return 'Hasta el $payday no te queda nada para gastar: usarías $used.';
+  }
+
+  @override
+  String get envelopesSpentLine => 'Gastado del día a día';
+
+  @override
+  String freelanceReserveOutside(String amount) {
+    return 'Lo que cobraste en cuentas que no son de uso diario ($amount) no se aparta: nunca contó en lo que puedes gastar.';
   }
 }
