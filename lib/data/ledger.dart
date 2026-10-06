@@ -134,6 +134,7 @@ class Ledger {
     this.reserved = 0,
     this.pay,
     List<Movement> expected = const <Movement>[],
+    this.since,
   }) : movements = List<Movement>.of(movements)
          ..sort((Movement a, Movement b) => a.date.compareTo(b.date)),
        upcoming = List<Movement>.unmodifiable(upcoming),
@@ -178,6 +179,10 @@ class Ledger {
   /// Payments expected from clients, on the day they should come: like the
   /// pay, not money until they are there.
   final List<Movement> expected;
+
+  /// When the person first wrote down what their accounts held, when it is
+  /// known: what came in before it was already in [openingBalance].
+  final DateTime? since;
 
   /// [amount] in whole units of [currency]: pesos stay as they are, cents
   /// become dollars. What the agent's tools and the catalog read.

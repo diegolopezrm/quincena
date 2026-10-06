@@ -775,6 +775,17 @@ class OwnController extends ChangeNotifier {
     await _reload();
   }
 
+  /// What one [from] is worth in [to]: from the rates kept, or asked of the
+  /// sources when none connects them, and kept. Null when no source knows.
+  Future<Decimal?> rateBetween(Asset from, Asset to) async {
+    final Decimal? kept = rates.rate(from, to);
+    if (kept != null) return kept;
+    final List<Rate> fetched = await _fetcher.fetch(<Asset>[from], to);
+    if (fetched.isEmpty) return null;
+    await store.saveRates(fetched);
+    return RateTable(fetched).rate(from, to);
+  }
+
   /// What the sources said one [asset] is worth in [quote] at today's last
   /// fetch, even where the person typed their own rate; null when it was
   /// not fetched today.

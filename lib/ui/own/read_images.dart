@@ -41,12 +41,17 @@ Future<void> readImages(BuildContext context, OwnController own) async {
     allowedExtensions: pdf ? const <String>['pdf'] : null,
   );
   if (files.isEmpty) return;
-  messenger.showSnackBar(
-    SnackBar(
-      content: Text(l.readingImages),
-      duration: const Duration(minutes: 1),
-    ),
-  );
+  // Alone, so the answer below takes its place: queued behind an earlier
+  // answer, the minute it lasts would hold this one back.
+  messenger
+    ..clearSnackBars()
+    ..removeCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        content: Text(l.readingImages),
+        duration: const Duration(minutes: 1),
+      ),
+    );
   final List<String> texts = <String>[];
   for (final PlatformFile file in files) {
     final String? text = await CaptureChannel.readText(

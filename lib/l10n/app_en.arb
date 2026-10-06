@@ -225,6 +225,7 @@
   "settingsCushionBody": "Money you want to leave untouched. It isn't included in what you can spend until payday.",
   "settingsNotSet": "Not set",
   "settingsRemove": "Remove",
+  "settingsAmountAboveZero": "Enter an amount above zero.",
   "freeExplainCushion": "Safety buffer",
   "freeExplainAssumptions": "What it assumes",
   "freeExplainAssumeToday": "It counts what your everyday accounts hold today and takes away what's due by {payday}.",

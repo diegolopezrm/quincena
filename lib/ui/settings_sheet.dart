@@ -20,7 +20,8 @@ Future<void> showSettings(
   context: context,
   showDragHandle: true,
   isScrollControlled: true,
-  backgroundColor: context.colors.surface,
+  // No color of its own: the theme's surface, read as the sheet draws, so
+  // it turns dark with the rest when the person picks dark in it.
   constraints: const BoxConstraints(maxWidth: 560),
   builder: (BuildContext context) => _Settings(
     settings: settings,
@@ -85,10 +86,13 @@ class _SettingsState extends State<_Settings> {
 
   Future<void> _copySession() async {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final NavigatorState navigator = Navigator.of(context);
     final String copied = context.l10n.sessionCopied;
     await Clipboard.setData(
       ClipboardData(text: widget.session.recorder.build().encode()),
     );
+    // Open, the sheet would cover the line that says it was copied.
+    if (mounted) navigator.pop();
     messenger.showSnackBar(SnackBar(content: Text(copied)));
   }
 

@@ -239,8 +239,9 @@ class Projection {
 }
 
 /// The last payday, when it passed without income of at least half the
-/// pay around it. Null when the pay arrived, when it is not known, or when
-/// today is payday.
+/// pay around it. Null when the pay arrived, when it is not known, when
+/// today is payday, or when the balances were written down after it: the
+/// pay was already in them.
 DateTime? _latePay(Ledger ledger) {
   final int? pay = ledger.pay;
   if (pay == null) return null;
@@ -249,6 +250,9 @@ DateTime? _latePay(Ledger ledger) {
   if (!last.isBefore(today)) return null;
   // A payday more than a pay period back is not late, it is history.
   if (today.difference(last).inDays > 10) return null;
+  if (ledger.since case final DateTime since when last.isBefore(_day(since))) {
+    return null;
+  }
   final DateTime from = last.subtract(const Duration(days: 3));
   final bool arrived = ledger.movements.any(
     (Movement m) =>

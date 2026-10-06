@@ -257,6 +257,7 @@
   "settingsCushionBody": "Lo que quieres guardar sin tocar. No cuenta en lo que puedes gastar hasta el pago.",
   "settingsNotSet": "Sin definir",
   "settingsRemove": "Quitar",
+  "settingsAmountAboveZero": "Escribe un monto mayor que cero.",
   "freeExplainCushion": "Colchón que guardas",
   "freeExplainAssumptions": "Lo que supone",
   "freeExplainAssumeToday": "Cuenta lo que hay hoy en tus cuentas de uso diario y resta lo que vence hasta el {payday}.",

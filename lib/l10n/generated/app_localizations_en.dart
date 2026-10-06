@@ -782,6 +782,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsRemove => 'Remove';
 
   @override
+  String get settingsAmountAboveZero => 'Enter an amount above zero.';
+
+  @override
   String get freeExplainCushion => 'Safety buffer';
 
   @override

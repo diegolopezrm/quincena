@@ -174,6 +174,13 @@ LedgerBuild buildLedger(
     for (final Account a in s.accounts)
       if (spendable(a.id)) a.id: inBase(a.openingMoney),
   };
+  // The first balance written down: a pay before it was already in it.
+  DateTime? since;
+  for (final Account a in s.accounts) {
+    final DateTime? written = a.balanceSince;
+    if (!spendable(a.id) || written == null) continue;
+    if (since == null || written.isBefore(since)) since = written;
+  }
   final Ledger ledger = Ledger(
     owner: s.profile.name,
     today: today,
@@ -216,6 +223,7 @@ LedgerBuild buildLedger(
       final Decimal p when p > Decimal.zero => inBase(Money(p, base)),
       _ => null,
     },
+    since: since,
   );
   // What each spendable account adds to the balance, worked out with the
   // ledger's own arithmetic, so the parts always add up to the whole.

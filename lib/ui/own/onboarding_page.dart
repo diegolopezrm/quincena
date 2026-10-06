@@ -31,9 +31,13 @@ class OnboardingPage extends StatefulWidget {
     required this.onDone,
     required this.onCancel,
     this.newOwn,
+    this.now,
   });
 
   final QuincenaStore store;
+
+  /// The app's clock: the pay schedule's dates start from its today.
+  final DateTime Function()? now;
 
   /// Makes the controller the accounts step adds accounts through.
   ///
@@ -70,7 +74,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   OwnController? _own;
 
   DateTime get _today {
-    final DateTime now = DateTime.now();
+    final DateTime now = (widget.now ?? DateTime.now)();
     return DateTime(now.year, now.month, now.day);
   }
 

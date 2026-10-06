@@ -248,6 +248,34 @@ void main() {
       expect(await there.code(), isNull);
     });
 
+    test('replacing the data keeps how this phone opens and what it '
+        'shows outside the app', () async {
+      final QuincenaStore other = emptyStore();
+      addTearDown(other.close);
+      await other.setSetting('app.mode', 'own');
+      await other.setSetting('app.theme', 'dark');
+      await other.setSetting('reminders.close', 'yes');
+      await other.setSetting('widget.hideAmounts', 'yes');
+      await other.setSetting('sync.state', '{"device":"x"}');
+      final Backups there = Backups(other, keys: MemoryBackupKeyStore());
+      await there.restore(await there.open(await backups.plain()));
+
+      expect((await other.profile())?.name, 'Ana');
+      // Without it the app would open on its first screen next time.
+      expect(await other.setting('app.mode'), 'own');
+      expect(await other.setting('app.theme'), 'dark');
+      expect(await other.setting('reminders.close'), 'yes');
+      expect(await other.setting('widget.hideAmounts'), 'yes');
+      // What syncing knew was about the data that left: it starts again.
+      expect(await other.setting('sync.state'), isNull);
+      // And none of it travels in a file.
+      final Map<String, Object?> export = await other.exportJson();
+      expect(
+        (export['settings']! as Map<String, Object?>).keys,
+        isNot(contains(anyOf(QuincenaStore.deviceSettings))),
+      );
+    });
+
     test('a card\'s limit comes back from another phone\'s backup', () async {
       await phone.addAccount(
         name: 'Visa',
