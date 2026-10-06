@@ -68,5 +68,9 @@ void main() {
     expect(copied, contains('"draft"'));
     expect(copied, isNot(contains('Regalo para mamá')));
     expect(copied, contains('[redacted]'));
+    // The sheet goes, so the line that says it was copied shows.
+    expect(find.byType(BottomSheet), findsNothing);
+    expect(find.textContaining('Sesión copiada'), findsOneWidget);
+    expect(find.textContaining('Sesión copiada').hitTestable(), findsOneWidget);
   });
 }

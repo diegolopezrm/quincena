@@ -1400,6 +1400,12 @@ abstract class AppLocalizations {
   /// **'Quitar'**
   String get settingsRemove;
 
+  /// No description provided for @settingsAmountAboveZero.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe un monto mayor que cero.'**
+  String get settingsAmountAboveZero;
+
   /// No description provided for @freeExplainCushion.
   ///
   /// In es, this message translates to:

@@ -996,33 +996,11 @@ Future<void> showPasteDialog(BuildContext context, OwnController own) async {
   final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
   final ClipboardData? clip = await Clipboard.getData(Clipboard.kTextPlain);
   if (!context.mounted) return;
-  final TextEditingController text = TextEditingController(
-    text: clip?.text?.trim() ?? '',
-  );
   final String? typed = await showDialog<String>(
     context: context,
-    builder: (BuildContext context) => AlertDialog(
-      title: Text(l.pasteMessage),
-      content: TextField(
-        controller: text,
-        autofocus: true,
-        minLines: 3,
-        maxLines: 6,
-        decoration: InputDecoration(hintText: l.pasteHint),
-      ),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l.cancel),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(text.text),
-          child: Text(l.pasteRead),
-        ),
-      ],
-    ),
+    builder: (BuildContext context) =>
+        _PasteDialog(initial: clip?.text?.trim() ?? ''),
   );
-  text.dispose();
   if (typed == null || typed.trim().isEmpty) return;
   final IngestReport r = await own.ingestText(typed.trim());
   messenger.showSnackBar(
@@ -1038,4 +1016,52 @@ Future<void> showPasteDialog(BuildContext context, OwnController own) async {
       ),
     ),
   );
+}
+
+/// Where a message from the bank is pasted. It owns its field's text, so
+/// the field can still draw while the dialog closes.
+class _PasteDialog extends StatefulWidget {
+  const _PasteDialog({required this.initial});
+
+  final String initial;
+
+  @override
+  State<_PasteDialog> createState() => _PasteDialogState();
+}
+
+class _PasteDialogState extends State<_PasteDialog> {
+  late final TextEditingController _text = TextEditingController(
+    text: widget.initial,
+  );
+
+  @override
+  void dispose() {
+    _text.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    return AlertDialog(
+      title: Text(l.pasteMessage),
+      content: TextField(
+        controller: _text,
+        autofocus: true,
+        minLines: 3,
+        maxLines: 6,
+        decoration: InputDecoration(hintText: l.pasteHint),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_text.text),
+          child: Text(l.pasteRead),
+        ),
+      ],
+    );
+  }
 }

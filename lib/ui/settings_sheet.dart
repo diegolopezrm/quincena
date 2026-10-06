@@ -86,10 +86,13 @@ class _SettingsState extends State<_Settings> {
 
   Future<void> _copySession() async {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final NavigatorState navigator = Navigator.of(context);
     final String copied = context.l10n.sessionCopied;
     await Clipboard.setData(
       ClipboardData(text: widget.session.recorder.build().encode()),
     );
+    // Open, the sheet would cover the line that says it was copied.
+    if (mounted) navigator.pop();
     messenger.showSnackBar(SnackBar(content: Text(copied)));
   }
 

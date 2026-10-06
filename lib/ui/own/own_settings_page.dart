@@ -102,6 +102,13 @@ class OwnSettingsPage extends StatelessWidget {
         prefix: sign == null ? null : '$sign ',
         suffix: sign == null ? base.code : null,
         canRemove: current != null,
+        check: (String text) {
+          if (text.trim().isEmpty) return null;
+          final Decimal? value = parseAmount(text);
+          return value != null && value > Decimal.zero
+              ? null
+              : context.l10n.settingsAmountAboveZero;
+        },
       ),
     );
     if (typed == null) return;
@@ -134,7 +141,18 @@ class OwnSettingsPage extends StatelessWidget {
       ),
     );
     if (picked == null || picked == p.base) return;
-    await own.store.saveProfile(p.copyWith(base: picked));
+    // The pay and the cushion were said in the old currency: the same money
+    // in the new one, with room for the cents a way back needs. With no rate
+    // between the two they stay as they were.
+    final Decimal? rate = p.pay == null && p.cushion == null
+        ? null
+        : await own.rateBetween(p.base, picked);
+    Decimal? same(Decimal? amount) => amount == null || rate == null
+        ? amount
+        : (amount * rate).round(scale: picked.decimals + 6);
+    await own.store.saveProfile(
+      p.copyWith(base: picked, pay: same(p.pay), cushion: same(p.cushion)),
+    );
     await own.refreshRates(force: true);
   }
 
@@ -199,6 +217,7 @@ class OwnSettingsPage extends StatelessWidget {
   Future<void> _deleteAll(BuildContext context) async {
     final AppLocalizations l = context.l10n;
     final NavigatorState navigator = Navigator.of(context);
+    final ModalRoute<Object?>? page = ModalRoute.of(context);
     final bool? sure = await _confirm(
       context,
       title: l.deleteAllTitle,
@@ -207,9 +226,20 @@ class OwnSettingsPage extends StatelessWidget {
       destructive: true,
     );
     if (sure != true) return;
+    // A Binance key lives in the keychain, apart from the data: it goes
+    // first, through the link that kept it.
+    if (BinanceLink.available) {
+      try {
+        await own.binance.disconnect();
+      } on Object {
+        // No keychain here, so no key either.
+      }
+    }
     await own.store.wipe();
-    // The sync and backup keys live in the keychain, apart from the data:
-    // they go too. Backups already made still open with their code.
+    // The reminders the phone keeps name the person's payments: none stays.
+    await Reminders.cancel();
+    // The sync and backup keys live in the keychain too. Backups already
+    // made still open with their code.
     try {
       await SecureKeyStore().delete();
     } on Object {
@@ -218,6 +248,11 @@ class OwnSettingsPage extends StatelessWidget {
     await Backups(own.store).forget();
     navigator.popUntil((Route<void> r) => r.isFirst);
     await modes.wiped();
+    // The theme and the language went with the rest: once this page is gone,
+    // the app looks as the phone does, as it will when it opens next. Not
+    // before, while it still draws the accounts it showed.
+    if (page != null) await page.completed;
+    settings.forget();
   }
 
   Future<bool?> _confirm(
@@ -689,6 +724,7 @@ class _TextDialog extends StatefulWidget {
     this.prefix,
     this.suffix,
     this.canRemove = false,
+    this.check,
   });
 
   final String title;
@@ -703,6 +739,10 @@ class _TextDialog extends StatefulWidget {
   /// Offers "Quitar", which answers with an empty text.
   final bool canRemove;
 
+  /// What is wrong with the text typed, said under the field instead of
+  /// saving it; null when it can be saved.
+  final String? Function(String text)? check;
+
   @override
   State<_TextDialog> createState() => _TextDialogState();
 }
@@ -711,11 +751,21 @@ class _TextDialogState extends State<_TextDialog> {
   late final TextEditingController _text = TextEditingController(
     text: widget.initial,
   );
+  String? _error;
 
   @override
   void dispose() {
     _text.dispose();
     super.dispose();
+  }
+
+  void _save() {
+    final String? error = widget.check?.call(_text.text);
+    if (error != null) {
+      setState(() => _error = error);
+      return;
+    }
+    Navigator.of(context).pop(_text.text);
   }
 
   @override
@@ -740,8 +790,13 @@ class _TextDialogState extends State<_TextDialog> {
             decoration: InputDecoration(
               prefixText: widget.prefix,
               suffixText: widget.suffix,
+              errorText: _error,
+              errorMaxLines: 3,
             ),
-            onSubmitted: (String v) => Navigator.of(context).pop(v),
+            onChanged: (_) {
+              if (_error != null) setState(() => _error = null);
+            },
+            onSubmitted: (_) => _save(),
           ),
         ],
       ),
@@ -755,10 +810,7 @@ class _TextDialogState extends State<_TextDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: Text(l.cancel),
         ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(_text.text),
-          child: Text(l.save),
-        ),
+        TextButton(onPressed: _save, child: Text(l.save)),
       ],
     );
   }

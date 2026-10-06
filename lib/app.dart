@@ -58,6 +58,15 @@ class AppSettings extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Back to the phone's theme and language, as when everything was
+  /// deleted: what was kept of them went with the rest.
+  void forget() {
+    _themeMode = ThemeMode.system;
+    _locale = null;
+    _developer = false;
+    notifyListeners();
+  }
+
   bool _developer = false;
 
   /// Whether the genui_gen inspector is drawn over the conversation.

@@ -102,7 +102,90 @@ void main() {
     await settle(tester);
     expect((await tester.runAsync(store.profile))!.cushion, isNull);
     expect(find.text('Sin definir'), findsOneWidget);
+
+    // A zero is no amount: the dialog stays and says so, until it is fixed.
+    await tester.tap(find.text('Colchón'));
+    await settle(tester);
+    await tester.enterText(find.byType(TextField), '0');
+    await tester.tap(find.text('Guardar'));
+    await settle(tester);
+    expect(find.text('Escribe un monto mayor que cero.'), findsOneWidget);
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect((await tester.runAsync(store.profile))!.cushion, isNull);
+    await tester.enterText(find.byType(TextField), '80000');
+    await tester.pump();
+    expect(find.text('Escribe un monto mayor que cero.'), findsNothing);
+    await tester.tap(find.text('Guardar'));
+    await settle(tester);
+    expect(
+      (await tester.runAsync(store.profile))!.cushion,
+      Decimal.parse('80000'),
+    );
   });
+  testWidgets('a new currency for the totals keeps the pay and the cushion '
+      'the same money', (tester) async {
+    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    tester.platformDispatcher.localesTestValue = const <Locale>[Locale('es')];
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+    final QuincenaStore store = (await tester.runAsync(() async {
+      final QuincenaStore store = QuincenaStore(
+        QuincenaDatabase(NativeDatabase.memory()),
+        now: () => now,
+      );
+      await store.ensureCategories();
+      await store.saveProfile(
+        Profile(
+          name: 'Ana',
+          base: Asset.cop,
+          schedule: const TwiceMonthly(),
+          pay: Decimal.parse('2400000'),
+          cushion: Decimal.parse('200000'),
+        ),
+      );
+      await store.setSetting('app.mode', 'own');
+      await store.addAccount(
+        name: 'Bancolombia',
+        kind: AccountKind.bank,
+        asset: Asset.cop,
+        opening: Decimal.parse('900000'),
+      );
+      return store;
+    }))!;
+    addTearDown(() => tester.runAsync(store.close));
+    // The dollar at 4.000, as the sources say it.
+    await tester.pumpWidget(
+      QuincenaApp(
+        store: store,
+        startInDemo: false,
+        fetcher: fakeRates(),
+        now: () => now,
+      ),
+    );
+    await settle(tester);
+    await tester.tap(find.byTooltip('Ajustes'));
+    await settle(tester);
+
+    Future<Profile> pick(String currency) async {
+      await tester.tap(find.text('Moneda de los totales'));
+      await settle(tester);
+      await tester.tap(find.text(currency));
+      await settle(tester);
+      return (await tester.runAsync(store.profile))!;
+    }
+
+    final Profile usd = await pick('USD · Dólar estadounidense');
+    expect(usd.base, Asset.usd);
+    expect(usd.pay!.round(scale: 2), Decimal.parse('600'));
+    expect(usd.cushion!.round(scale: 2), Decimal.parse('50'));
+
+    // And back, to the very peso.
+    final Profile cop = await pick('COP · Peso colombiano');
+    expect(cop.pay!.round(), Decimal.parse('2400000'));
+    expect(cop.cushion!.round(), Decimal.parse('200000'));
+  });
+
   test('reminders fall on the next six paydays, at nine', () {
     expect(
       Reminders.days(const TwiceMonthly(), DateTime(2026, 10, 3, 10)),

@@ -779,6 +779,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsRemove => 'Quitar';
 
   @override
+  String get settingsAmountAboveZero => 'Escribe un monto mayor que cero.';
+
+  @override
   String get freeExplainCushion => 'Colchón que guardas';
 
   @override

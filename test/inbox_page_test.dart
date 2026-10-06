@@ -195,6 +195,28 @@ void main() {
     expect(find.byType(TextField), findsOneWidget);
   });
 
+  testWidgets('the message dialog closes cleanly, cancelled or read', (
+    tester,
+  ) async {
+    await open(tester, withCaptures);
+    for (final String close in <String>['Cancelar', 'Leer']) {
+      await tester.tap(find.text('Leer un pago'));
+      await settle(tester);
+      await tester.tap(find.text('Un mensaje que copiaste'));
+      await settle(tester);
+      await tester.enterText(
+        find.byType(TextField),
+        r'Bancolombia le informa Compra por $64.000 en FARMATODO.',
+      );
+      await tester.pump();
+      await tester.tap(find.text(close));
+      await settle(tester);
+      // The field still draws while the dialog goes: its text must too.
+      expect(tester.takeException(), isNull, reason: close);
+      expect(find.text('Pegar un mensaje'), findsNothing);
+    }
+  });
+
   testWidgets('a narrow phone keeps the title whole and the name its room', (
     tester,
   ) async {
