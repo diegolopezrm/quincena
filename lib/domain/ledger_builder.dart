@@ -220,6 +220,26 @@ LedgerBuild buildLedger(
     if (account == null || !ledger.settled(m)) continue;
     parts[account] = (parts[account] ?? 0) + Ledger.effect(m);
   }
+  // A transfer between two of them, as paying a card from the bank, takes
+  // nothing from the money to spend but moves it from one part to the
+  // other: what left the one is what the other gets, so they still add up.
+  for (final List<Entry> legs in byTransfer.values) {
+    if (legs.length != 2 || legs.any((Entry e) => e.isTrade)) continue;
+    final Entry from = legs[0].amount < Decimal.zero ? legs[0] : legs[1];
+    final Entry to = identical(from, legs[0]) ? legs[1] : legs[0];
+    if (!spendable(from.accountId) || !spendable(to.accountId)) continue;
+    final DateTime day = DateTime(
+      from.date.year,
+      from.date.month,
+      from.date.day,
+    );
+    if (day.isAfter(today)) continue;
+    final int moved = inBase(
+      Money(from.amount.abs(), accounts[from.accountId]!.asset),
+    );
+    parts[from.accountId] = (parts[from.accountId] ?? 0) - moved;
+    parts[to.accountId] = (parts[to.accountId] ?? 0) + moved;
+  }
   return LedgerBuild(ledger, unconverted, parts);
 }
 

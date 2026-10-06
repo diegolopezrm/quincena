@@ -190,6 +190,38 @@ void main() {
       expect(await store.accounts(), isEmpty);
     });
 
+    test(
+      'a read that fails says so, and keeps the time of the last good one',
+      () async {
+        final WalletLink link = WalletLink(
+          store,
+          readerFor: () => ChainReader(client: chains()),
+          now: () => DateTime(2026, 10, 2, 9),
+        );
+        await link.add(btc);
+        await link.sync();
+        final DateTime? read = link.syncedAt;
+        expect(read, DateTime(2026, 10, 2, 9));
+        // Later, with the chain out of reach.
+        final WalletLink later = WalletLink(
+          store,
+          readerFor: () => ChainReader(
+            client: MockClient((_) async => http.Response('down', 503)),
+          ),
+          now: () => DateTime(2026, 10, 2, 18),
+        );
+        await later.load();
+        await later.sync();
+        expect(later.failed, btc.address);
+        expect(later.syncedAt, read);
+
+        // Once it is not followed, what could not be read of it is no news.
+        await later.remove(btc);
+        expect(later.wallets, isEmpty);
+        expect(later.failed, isNull);
+      },
+    );
+
     test('the wallets followed are remembered', () async {
       final WalletLink first = WalletLink(
         store,

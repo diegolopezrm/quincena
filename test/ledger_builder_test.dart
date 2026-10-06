@@ -299,6 +299,57 @@ void main() {
     expect(l.freeUntilPayday, 4158000 - 1696900);
   });
 
+  test(
+    'paying a card from the bank moves their parts, not the total',
+    () async {
+      final Account bank = await store.addAccount(
+        name: 'Bancolombia',
+        kind: AccountKind.bank,
+        asset: Asset.cop,
+        opening: d('1000000'),
+      );
+      final Account card = await store.addAccount(
+        name: 'Visa',
+        kind: AccountKind.card,
+        asset: Asset.cop,
+        opening: d('-300000'),
+      );
+      final Account nequi = await store.addAccount(
+        name: 'Nequi',
+        kind: AccountKind.wallet,
+        asset: Asset.cop,
+        opening: d('0'),
+      );
+      await store.addTransfer(
+        fromAccountId: bank.id,
+        toAccountId: card.id,
+        sent: d('300000'),
+        date: DateTime(2026, 10, 2),
+      );
+      // A top-up dated ahead has not moved anything yet.
+      await store.addTransfer(
+        fromAccountId: bank.id,
+        toAccountId: nequi.id,
+        sent: d('50000'),
+        date: DateTime(2026, 10, 10),
+      );
+
+      final LedgerBuild built = buildLedger(
+        (await store.snapshot())!,
+        today: today,
+      );
+      expect(built.parts, <String, int>{
+        bank.id: 700000,
+        card.id: 0,
+        nequi.id: 0,
+      });
+      expect(
+        built.parts.values.fold(0, (int sum, int v) => sum + v),
+        built.ledger.balance,
+      );
+    },
+  );
+
   test('a subscription says when it is charged next, by its cadence', () async {
     await store.addRecurring(
       name: 'Dominio',

@@ -139,7 +139,8 @@ class _WalletsPageState extends State<WalletsPage> {
         title: Text(l.walletsTitle, style: context.type.titleLarge),
         actions: <Widget>[
           IconButton(
-            tooltip: l.ratesRefresh,
+            // It reads the wallets again, not the rates.
+            tooltip: l.portfolioRefresh,
             onPressed: own.wallets.syncing ? null : own.wallets.sync,
             icon: const Icon(Glyph.arrowCounterClockwise),
           ),

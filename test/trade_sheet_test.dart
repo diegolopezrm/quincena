@@ -1,5 +1,7 @@
 // Recording a purchase or a sale of a coin: what the form says while it is
 // filled in.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -28,10 +30,12 @@ void main() {
     final Account bitcoin = own.accounts.firstWhere(
       (Account a) => a.asset == Asset.btc,
     );
-    showTradeSheet(
-      tester.element(find.byType(PortfolioPage)),
-      own: own,
-      account: bitcoin,
+    unawaited(
+      showTradeSheet(
+        tester.element(find.byType(PortfolioPage)),
+        own: own,
+        account: bitcoin,
+      ),
     );
     await settle(tester);
 
@@ -59,11 +63,13 @@ void main() {
     final Account bitcoin = own.accounts.firstWhere(
       (Account a) => a.asset == Asset.btc,
     );
-    showTradeSheet(
-      tester.element(find.byType(PortfolioPage)),
-      own: own,
-      account: bitcoin,
-      sell: true,
+    unawaited(
+      showTradeSheet(
+        tester.element(find.byType(PortfolioPage)),
+        own: own,
+        account: bitcoin,
+        sell: true,
+      ),
     );
     await settle(tester);
     final Finder quantity = find.widgetWithText(TextField, 'Cantidad de BTC');

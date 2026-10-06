@@ -283,7 +283,10 @@ Portfolio buildPortfolio(
       : rates.rate(Asset.usd, base);
 
   Pair? priceOf(Asset asset) {
-    final Ticker? t = tickers[asset.code];
+    // A price the person typed is the one every total in the app uses:
+    // here too, over the market's, or one coin would be worth two things.
+    final bool typed = rates.used(asset, Asset.usd).any((Rate r) => r.manual);
+    final Ticker? t = typed ? null : tickers[asset.code];
     final Decimal? usd = t?.price ?? rates.rate(asset, Asset.usd);
     if (usd == null || dollar == null) return null;
     return Pair(usd * dollar, usd);

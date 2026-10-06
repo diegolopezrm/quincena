@@ -110,6 +110,15 @@ class _AccountFormState extends State<_AccountForm> {
     return formatDecimal(shown, decimals: _editing.asset.decimals, trim: true);
   }
 
+  /// Today's balance as the form showed it on opening.
+  late final String _shownBalance;
+
+  @override
+  void initState() {
+    super.initState();
+    _shownBalance = _balance.text;
+  }
+
   @override
   void dispose() {
     _name.dispose();
@@ -185,8 +194,13 @@ class _AccountFormState extends State<_AccountForm> {
         institution: _institution.text,
         spendable: _spendable,
         // The person corrected today's balance: the opening absorbs the
-        // difference, and the movements stay as they were.
-        opening: _editing.opening + (balance - _currentBalance.amount),
+        // difference, and the movements stay as they were. Left as it was
+        // shown, it stays as it is: a card's credit in the person's favor
+        // shows below zero, and saving another change must not make it a
+        // debt.
+        opening: _balance.text == _shownBalance
+            ? _editing.opening
+            : _editing.opening + (balance - _currentBalance.amount),
         openingCost: openingCost,
         clearOpeningCost: openingCost == null,
         creditLimit: limit,
@@ -196,6 +210,17 @@ class _AccountFormState extends State<_AccountForm> {
       saved = edited;
     }
     if (mounted) Navigator.of(context).pop(saved);
+  }
+
+  /// Takes a field's error away, redrawing only when there was one.
+  void _clear(VoidCallback error) {
+    if (_nameError == null &&
+        _balanceError == null &&
+        _limitError == null &&
+        _costError == null) {
+      return;
+    }
+    setState(error);
   }
 
   Future<void> _delete() async {
@@ -249,10 +274,13 @@ class _AccountFormState extends State<_AccountForm> {
               style: context.type.headlineMedium,
             ),
             const SizedBox(height: 20),
+            // A field's error goes as soon as it is typed again: left there,
+            // it would still say the name is missing once it is written.
             TextField(
               controller: _name,
               autofocus: !editing && widget.draft == null,
               textCapitalization: TextCapitalization.sentences,
+              onChanged: (_) => _clear(() => _nameError = null),
               decoration: InputDecoration(
                 labelText: l.accountName,
                 hintText: l.accountNameHint,
@@ -311,6 +339,7 @@ class _AccountFormState extends State<_AccountForm> {
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
+              onChanged: (_) => _clear(() => _balanceError = null),
               decoration: InputDecoration(
                 labelText: _kind == AccountKind.card
                     ? l.accountDebtNow
@@ -329,6 +358,7 @@ class _AccountFormState extends State<_AccountForm> {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
+                onChanged: (_) => _clear(() => _limitError = null),
                 decoration: InputDecoration(
                   labelText: l.cardLimitField,
                   helperText: l.cardLimitHelp,
@@ -345,6 +375,7 @@ class _AccountFormState extends State<_AccountForm> {
                 asset: _costAsset,
                 choices: <Asset>{_defaultAsset, Asset.usd}.toList(),
                 error: _costError,
+                onChanged: () => _clear(() => _costError = null),
                 onAsset: (Asset a) => setState(() => _costAsset = a),
               ),
             ],
@@ -394,6 +425,7 @@ class _OpeningCost extends StatelessWidget {
     required this.asset,
     required this.choices,
     required this.error,
+    required this.onChanged,
     required this.onAsset,
   });
 
@@ -401,6 +433,7 @@ class _OpeningCost extends StatelessWidget {
   final Asset asset;
   final List<Asset> choices;
   final String? error;
+  final VoidCallback onChanged;
   final ValueChanged<Asset> onAsset;
 
   @override
@@ -415,6 +448,7 @@ class _OpeningCost extends StatelessWidget {
             AmountInputFormatter(maxDecimals: asset.decimals),
           ],
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          onChanged: (_) => onChanged(),
           decoration: InputDecoration(
             labelText: l.accountOpeningCost,
             helperText: l.accountOpeningCostHelp,
