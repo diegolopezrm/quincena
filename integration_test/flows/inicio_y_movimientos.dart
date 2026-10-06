@@ -1456,8 +1456,8 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         ),
         (
           'ahorro',
-          '«ahorro» busca en las notas: la transferencia a Binance, que dice '
-              '«Ahorro en USDT».',
+          '«ahorro» busca en las notas: la compra de USDT en Binance, que '
+              'dice «Ahorro en USDT».',
         ),
       ]) {
         await _search(f, query);

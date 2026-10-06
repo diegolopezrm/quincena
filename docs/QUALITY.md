@@ -30,8 +30,9 @@ Checked against each provider's published requirements on 2 October 2026.
 with `dart format`, `flutter analyze --fatal-infos` and a check that the
 generated catalog is current.
 
-- **Accessibility.** `test/own_accessibility_test.dart` opens 51 screens
-  of someone's own money (home, movements, accounts, where the net worth
+- **Accessibility.** `test/own_accessibility_test.dart` opens 53 screens
+  of someone's own money (home, movements, accounts, the archived ones,
+  what deleting a card asks first, where the net worth
   and the money to spend come from, a card, crypto, Binance, wallets, a
   statement, "Por revisar", automatic capture, the next 30 days, "¿Me
   alcanza?", the close, Plan, envelopes, the cushion in days, wishes, what

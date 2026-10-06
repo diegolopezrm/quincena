@@ -141,8 +141,9 @@ class _TradeFormState extends State<_TradeForm> {
     });
     if (_quantityError != null || _totalError != null || _saving) return;
     setState(() => _saving = true);
-    // A purchase today is dated now, so it sorts after what came before it.
-    final DateTime now = DateTime.now();
+    // A purchase today is dated now, by the app's clock, so it sorts after
+    // what came before it.
+    final DateTime now = own.now();
     final DateTime when = DateUtils.isSameDay(_date, now) ? now : _date;
     final Account? other = _otherAccount;
     if (other == null) {

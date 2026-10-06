@@ -282,6 +282,42 @@ void main() {
       },
     );
 
+    test('an archived account and the charges moved off it travel in the '
+        'file', () async {
+      await fill();
+      final Account bank = (await store.accounts()).firstWhere(
+        (Account a) => a.asset == Asset.cop,
+      );
+      final Account btc = (await store.accounts()).firstWhere(
+        (Account a) => a.asset == Asset.btc,
+      );
+      await store.addRecurring(
+        name: 'Netflix',
+        amount: Money(d('26900'), Asset.cop),
+        cadence: Cadence.monthly,
+        nextDate: DateTime(2026, 10, 12),
+        accountId: btc.id,
+      );
+      await store.moveRecurring(<String>{btc.id}, bank.id);
+      await store.updateAccount(btc.copyWith(archived: true));
+      final Map<String, Money> before = await store.watchBalances().first;
+      final Map<String, Object?> file = await store.exportJson();
+
+      await store.wipe();
+      await store.importJson(file);
+      expect(await store.accounts(), hasLength(1));
+      final Account back = (await store.accounts(
+        archived: true,
+      )).firstWhere((Account a) => a.id == btc.id);
+      expect(back.archived, isTrue);
+      expect(await store.watchBalances().first, before);
+      expect(
+        (await store.entries()).where((Entry e) => e.accountId == btc.id),
+        hasLength(1),
+      );
+      expect((await store.recurring()).single.accountId, bank.id);
+    });
+
     test('costs, learned rules and wallets travel in the file', () async {
       await fill();
       final Account btc = (await store.accounts()).firstWhere(

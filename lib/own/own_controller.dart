@@ -74,8 +74,8 @@ class OwnController extends ChangeNotifier {
       _portfolio ??= PortfolioController(this, market: _market);
   PortfolioController? _portfolio;
 
-  /// Their Binance account, when they link it.
-  BinanceLink get binance => _binance ??= BinanceLink(store);
+  /// Their Binance account, when they link it, read on the app's clock.
+  BinanceLink get binance => _binance ??= BinanceLink(store, now: _now);
   BinanceLink? _binance;
 
   /// The wallets they follow by public address.
@@ -678,6 +678,67 @@ class OwnController extends ChangeNotifier {
       if (!a.archived) a,
   ];
 
+  /// The accounts put away: their movements stay in the history, but they
+  /// count in no total and no list offers them.
+  List<Account> get archivedAccounts => <Account>[
+    for (final Account a in _snapshot?.accounts ?? const <Account>[])
+      if (a.archived) a,
+  ];
+
+  /// The recurring charges and purchases in instalments paid from one of
+  /// [accountIds].
+  (List<RecurringCharge>, List<Instalments>) paidFrom(Set<String> accountIds) =>
+      (
+        <RecurringCharge>[
+          for (final RecurringCharge r in recurring)
+            if (accountIds.contains(r.accountId)) r,
+        ],
+        <Instalments>[
+          for (final Instalments p in _instalments)
+            if (accountIds.contains(p.accountId)) p,
+        ],
+      );
+
+  /// Archives [accountIds], movements and all. What is paid from them moves
+  /// to [movedTo], or to no account in particular, so nothing is left on an
+  /// account no list offers. All of it or nothing.
+  Future<void> archiveAccounts(Set<String> accountIds, {String? movedTo}) =>
+      store.db.transaction(() async {
+        await _movePaidFrom(accountIds, movedTo);
+        for (final String id in accountIds) {
+          if (_snapshot?.account(id) case final Account a) {
+            await store.updateAccount(a.copyWith(archived: true));
+          }
+        }
+      });
+
+  /// Brings the archived account [id] back to Cuentas, the lists and the
+  /// totals.
+  Future<void> restoreAccount(String id) async {
+    if (_snapshot?.account(id) case final Account a) {
+      await store.updateAccount(a.copyWith(archived: false));
+    }
+  }
+
+  /// Deletes [accountId] and every movement in it. What is paid from it
+  /// moves to [movedTo], or to no account in particular. All of it or
+  /// nothing.
+  Future<void> deleteAccount(String accountId, {String? movedTo}) =>
+      store.db.transaction(() async {
+        await _movePaidFrom(<String>{accountId}, movedTo);
+        await store.deleteAccount(accountId);
+      });
+
+  Future<void> _movePaidFrom(Set<String> from, String? to) async {
+    await store.moveRecurring(from, to);
+    if (_instalments.any((Instalments p) => from.contains(p.accountId))) {
+      await _saveInstalments(<Instalments>[
+        for (final Instalments p in _instalments)
+          from.contains(p.accountId) ? p.withAccount(to) : p,
+      ]);
+    }
+  }
+
   List<CategoryItem> get categories =>
       _snapshot?.categories ?? const <CategoryItem>[];
 
@@ -725,16 +786,25 @@ class OwnController extends ChangeNotifier {
   /// What the person is worth: the accounts as [total] adds them, plus
   /// what others owe them, less what they owe others and what is left to
   /// pay of purchases in instalments outside a credit card.
-  NetWorth netWorth() {
+  ///
+  /// With [without], what it would be with those accounts archived or
+  /// deleted and what is paid from them moved to [movedTo], to say so
+  /// before it happens.
+  NetWorth netWorth({Set<String> without = const <String>{}, String? movedTo}) {
     final Asset base = profile?.base ?? Asset.cop;
     Money money(int minor) =>
         Money(Decimal.fromInt(minor).shift(-base.decimals), base);
     final (int owed, int owing) = sharedBalance;
+    var accounts = total();
+    for (final Account a in this.accounts) {
+      if (!without.contains(a.id)) continue;
+      if (partOfTotal(a) case final Money part) accounts -= part;
+    }
     var left = 0;
     var estimated = false;
     for (final Instalments p in _instalments) {
       // A card's balance already holds what was bought on it.
-      final String? id = p.accountId;
+      final String? id = without.contains(p.accountId) ? movedTo : p.accountId;
       if (id != null && _snapshot?.account(id)?.kind == AccountKind.card) {
         continue;
       }
@@ -746,7 +816,7 @@ class OwnController extends ChangeNotifier {
       if (!p.totalKnown) estimated = true;
     }
     return NetWorth(
-      accounts: total(),
+      accounts: accounts,
       owed: money(owed),
       owing: money(owing),
       instalments: money(left),
@@ -774,9 +844,11 @@ class OwnController extends ChangeNotifier {
     }
     _refreshing = true;
     _notify();
-    final List<Rate> fetched = await _fetcher.fetch(<Asset>[
-      for (final Account a in accounts) a.asset,
-    ], p.base);
+    final List<Rate> fetched = await _fetcher.fetch(
+      <Asset>[for (final Account a in accounts) a.asset],
+      p.base,
+      at: _now(),
+    );
     _ratesFailed =
         fetched.isEmpty && accounts.any((Account a) => a.asset != p.base);
     if (fetched.isNotEmpty) {
@@ -792,7 +864,11 @@ class OwnController extends ChangeNotifier {
   Future<Decimal?> rateBetween(Asset from, Asset to) async {
     final Decimal? kept = rates.rate(from, to);
     if (kept != null) return kept;
-    final List<Rate> fetched = await _fetcher.fetch(<Asset>[from], to);
+    final List<Rate> fetched = await _fetcher.fetch(
+      <Asset>[from],
+      to,
+      at: _now(),
+    );
     if (fetched.isEmpty) return null;
     await store.saveRates(fetched);
     return RateTable(fetched).rate(from, to);
@@ -818,10 +894,11 @@ class OwnController extends ChangeNotifier {
     _refreshing = true;
     _notify();
     try {
-      final List<Rate> fetched = await _fetcher.fetch(<Asset>[
-        for (final Account a in accounts) a.asset,
-        Asset.of(asset),
-      ], p.base);
+      final List<Rate> fetched = await _fetcher.fetch(
+        <Asset>[for (final Account a in accounts) a.asset, Asset.of(asset)],
+        p.base,
+        at: _now(),
+      );
       if (fetched.isNotEmpty) _lastFetched = (today, fetched);
       if (RateTable(fetched).rate(Asset.of(asset), Asset.of(quote)) == null) {
         return false;

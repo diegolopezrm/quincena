@@ -37,8 +37,16 @@ class RateFetcher {
         "vigenciadesde <= '${day.toIso8601String().substring(0, 10)}T23:59:59'",
   });
 
-  /// Rates that let every asset in [assets] be converted to [base].
-  Future<List<Rate>> fetch(Iterable<Asset> assets, Asset base) async {
+  /// Rates that let every asset in [assets] be converted to [base], as of
+  /// [at]: the TRM in force that day, and prices stamped with that moment.
+  /// [at] is the app's clock, which a test or a screenshot sets to another
+  /// day than the device's; the device's when not given.
+  Future<List<Rate>> fetch(
+    Iterable<Asset> assets,
+    Asset base, {
+    DateTime? at,
+  }) async {
+    final DateTime now = at ?? DateTime.now();
     final Set<Asset> wanted = <Asset>{...assets, base};
     final List<String> crypto = <String>[
       for (final Asset a in wanted)
@@ -50,9 +58,9 @@ class RateFetcher {
     ];
     final bool needsCop = wanted.any((Asset a) => a.code == 'COP');
     final List<Future<List<Rate>>> calls = <Future<List<Rate>>>[
-      if (needsCop) _guard(trm()),
-      if (crypto.isNotEmpty) _guard(binance(crypto)),
-      if (otherFiat.isNotEmpty) _guard(ecb(otherFiat)),
+      if (needsCop) _guard(trm(at: now)),
+      if (crypto.isNotEmpty) _guard(binance(crypto, at: now)),
+      if (otherFiat.isNotEmpty) _guard(ecb(otherFiat, at: now)),
     ];
     return <Rate>[for (final List<Rate> r in await Future.wait(calls)) ...r];
   }
@@ -60,9 +68,10 @@ class RateFetcher {
   Future<List<Rate>> _guard(Future<List<Rate>> call) =>
       call.timeout(timeout).catchError((Object _) => const <Rate>[]);
 
-  /// USD/COP from the TRM in force today.
-  Future<List<Rate>> trm() async {
-    final List<Object?> rows = await _getList(_trm(DateTime.now()));
+  /// USD/COP from the TRM in force on the day of [at], today when not
+  /// given.
+  Future<List<Rate>> trm({DateTime? at}) async {
+    final List<Object?> rows = await _getList(_trm(at ?? DateTime.now()));
     if (rows.isEmpty) return const <Rate>[];
     final Map<String, Object?> row = rows.first! as Map<String, Object?>;
     final Decimal? value = Decimal.tryParse('${row['valor']}');
@@ -79,9 +88,10 @@ class RateFetcher {
     ];
   }
 
-  /// Each of [codes] in USDT. Tickers Binance does not list are left out.
-  Future<List<Rate>> binance(List<String> codes) async {
-    final DateTime now = DateTime.now();
+  /// Each of [codes] in USDT, stamped [at], now when not given. Tickers
+  /// Binance does not list are left out.
+  Future<List<Rate>> binance(List<String> codes, {DateTime? at}) async {
+    final DateTime now = at ?? DateTime.now();
     final List<Rate> rates = <Rate>[];
     // One request per symbol: a single unknown symbol makes Binance reject
     // a whole batch.
@@ -111,8 +121,9 @@ class RateFetcher {
     return rates;
   }
 
-  /// One dollar in each of [codes], from the ECB's reference rates.
-  Future<List<Rate>> ecb(List<String> codes) async {
+  /// One dollar in each of [codes], from the ECB's reference rates, dated
+  /// by the day they are published for, or [at] when the answer has none.
+  Future<List<Rate>> ecb(List<String> codes, {DateTime? at}) async {
     final Map<String, Object?> body = await _getMap(
       Uri.https('api.frankfurter.dev', '/v1/latest', {
         'base': 'USD',
@@ -120,7 +131,7 @@ class RateFetcher {
       }),
     );
     final DateTime asOf =
-        DateTime.tryParse('${body['date']}') ?? DateTime.now();
+        DateTime.tryParse('${body['date']}') ?? at ?? DateTime.now();
     final Map<String, Object?> values =
         (body['rates'] as Map<String, Object?>?) ?? const <String, Object?>{};
     return <Rate>[

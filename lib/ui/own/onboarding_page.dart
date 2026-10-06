@@ -372,8 +372,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   children: <Widget>[
                     for (final Account a in own.accounts)
                       InkWell(
-                        onTap: () =>
-                            showAccountSheet(context, own: own, account: a),
+                        // An account just made has nothing to keep:
+                        // removing it here is deleting it.
+                        onTap: () => showAccountSheet(
+                          context,
+                          own: own,
+                          account: a,
+                          archive: false,
+                        ),
                         child: IgnorePointer(
                           child: AccountRow(own: own, account: a),
                         ),

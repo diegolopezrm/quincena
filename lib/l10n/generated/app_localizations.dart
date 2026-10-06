@@ -1022,6 +1022,144 @@ abstract class AppLocalizations {
   /// **'{count, plural, =0{No tiene movimientos.} =1{Se borra también su movimiento. No se puede deshacer.} other{Se borran también sus {count} movimientos. No se puede deshacer.}}'**
   String deleteAccountBody(int count);
 
+  /// No description provided for @archive.
+  ///
+  /// In es, this message translates to:
+  /// **'Archivar'**
+  String get archive;
+
+  /// No description provided for @restore.
+  ///
+  /// In es, this message translates to:
+  /// **'Restaurar'**
+  String get restore;
+
+  /// No description provided for @archiveAccountTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Archivar {names}?'**
+  String archiveAccountTitle(String names);
+
+  /// No description provided for @archiveAccountKept.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Su movimiento se queda en tu historial.} other{Sus {count} movimientos se quedan en tu historial.}}'**
+  String archiveAccountKept(int count);
+
+  /// No description provided for @archiveAccountHidden.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Deja de aparecer en Cuentas y al elegir una cuenta. La puedes restaurar cuando quieras desde «Cuentas archivadas», en Cuentas.} other{Dejan de aparecer en Cuentas y al elegir una cuenta. Las puedes restaurar cuando quieras desde «Cuentas archivadas», en Cuentas.}}'**
+  String archiveAccountHidden(int count);
+
+  /// No description provided for @deleteAccountPreferArchive.
+  ///
+  /// In es, this message translates to:
+  /// **'Si la cerraste, mejor archívala: su historial se queda y deja de aparecer en Cuentas.'**
+  String get deleteAccountPreferArchive;
+
+  /// No description provided for @accountLeavingTransfers.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Una transferencia con otra cuenta se queda en esa cuenta como ingreso o gasto.} other{{count} transferencias con otras cuentas se quedan en esas cuentas como ingresos o gastos.}}'**
+  String accountLeavingTransfers(int count);
+
+  /// No description provided for @accountLeavingCharges.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{{names} se paga desde aquí.} other{{names} se pagan desde aquí.}}'**
+  String accountLeavingCharges(int count, String names);
+
+  /// No description provided for @accountLeavingMoveTo.
+  ///
+  /// In es, this message translates to:
+  /// **'Se pagarán con'**
+  String get accountLeavingMoveTo;
+
+  /// No description provided for @accountLeavingNoAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin cuenta'**
+  String get accountLeavingNoAccount;
+
+  /// No description provided for @accountLeavingHeld.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Lo que tiene, {amount}, deja de contar en tu patrimonio.} other{Lo que tienen, {amount}, deja de contar en tu patrimonio.}}'**
+  String accountLeavingHeld(int count, String amount);
+
+  /// No description provided for @accountLeavingOwed.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Lo que se debe en ella, {amount}, deja de restar de tu patrimonio.} other{Lo que se debe en ellas, {amount}, deja de restar de tu patrimonio.}}'**
+  String accountLeavingOwed(int count, String amount);
+
+  /// No description provided for @accountLeavingHeldSpendable.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Lo que tiene, {amount}, deja de contar en tu patrimonio y en lo que puedes gastar hasta el pago.} other{Lo que tienen, {amount}, deja de contar en tu patrimonio y en lo que puedes gastar hasta el pago.}}'**
+  String accountLeavingHeldSpendable(int count, String amount);
+
+  /// No description provided for @accountLeavingOwedSpendable.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Lo que se debe en ella, {amount}, deja de restar de tu patrimonio y de lo que puedes gastar hasta el pago.} other{Lo que se debe en ellas, {amount}, deja de restar de tu patrimonio y de lo que puedes gastar hasta el pago.}}'**
+  String accountLeavingOwedSpendable(int count, String amount);
+
+  /// No description provided for @accountLeavingInstalmentsApart.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que falta de las cuotas, {amount}, ya no queda en la deuda de una tarjeta: resta aparte de tu patrimonio, y las cuotas que vienen se cuentan como comprometidas.'**
+  String accountLeavingInstalmentsApart(String amount);
+
+  /// No description provided for @accountLeavingInstalmentsCard.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que falta de las cuotas, {amount}, pasa a la deuda de la tarjeta.'**
+  String accountLeavingInstalmentsCard(String amount);
+
+  /// No description provided for @accountLeavingWorthSame.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu patrimonio sigue en {total}.'**
+  String accountLeavingWorthSame(String total);
+
+  /// No description provided for @accountLeavingWorth.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu patrimonio pasa de {before} a {after}.'**
+  String accountLeavingWorth(String before, String after);
+
+  /// No description provided for @archivedAccountsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuentas archivadas'**
+  String get archivedAccountsTitle;
+
+  /// No description provided for @archivedAccountsCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Una cuenta, fuera de tus totales} other{{count} cuentas, fuera de tus totales}}'**
+  String archivedAccountsCount(int count);
+
+  /// No description provided for @archivedAccountsBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Sus movimientos siguen en tu historial, pero no cuentan en tus totales ni aparecen al elegir una cuenta. Al restaurar una, vuelve a Cuentas y a tus totales.'**
+  String get archivedAccountsBody;
+
+  /// No description provided for @archivedAccountsNone.
+  ///
+  /// In es, this message translates to:
+  /// **'No tienes cuentas archivadas.'**
+  String get archivedAccountsNone;
+
+  /// No description provided for @accountArchivedNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Archivada: no cuenta en tus totales ni aparece al elegir una cuenta.'**
+  String get accountArchivedNote;
+
   /// No description provided for @groupSpendable.
   ///
   /// In es, this message translates to:
@@ -3992,6 +4130,18 @@ abstract class AppLocalizations {
   /// **'Aún sin leer'**
   String get binanceNeverSynced;
 
+  /// No description provided for @binanceReadFailedAt.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo leer. Última lectura: {when}'**
+  String binanceReadFailedAt(String when);
+
+  /// No description provided for @binanceReadFailedNever.
+  ///
+  /// In es, this message translates to:
+  /// **'No se ha podido leer todavía'**
+  String get binanceReadFailedNever;
+
   /// No description provided for @binanceSyncNow.
   ///
   /// In es, this message translates to:
@@ -4045,6 +4195,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Archivarlas'**
   String get binanceArchive;
+
+  /// No description provided for @binanceArchiveWhy.
+  ///
+  /// In es, this message translates to:
+  /// **'Binance ya trae estos saldos: archivarlas evita contarlos dos veces.'**
+  String get binanceArchiveWhy;
 
   /// No description provided for @binanceLabelP2p.
   ///

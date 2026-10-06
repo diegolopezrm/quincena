@@ -7,6 +7,7 @@ import '../../money/money.dart';
 import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
+import 'account_leaving.dart';
 import 'account_sheet.dart';
 import 'balance_explained.dart';
 import 'entry_sheet.dart';
@@ -60,7 +61,7 @@ class AccountPage extends StatelessWidget {
             surfaceTintColor: Colors.transparent,
             title: Text(account.name, style: context.type.titleLarge),
             actions: <Widget>[
-              if (!account.asset.isCrypto)
+              if (!account.asset.isCrypto && !account.archived)
                 IconButton(
                   tooltip: l.statementTitle,
                   onPressed: () => Navigator.of(context).push(
@@ -80,23 +81,29 @@ class AccountPage extends StatelessWidget {
                     account: account,
                   );
                   if (saved != null) return;
-                  // Deleted from the sheet: back to where it was opened
-                  // from, not to an empty page.
-                  final bool gone = !(await own.store.accounts(
+                  // Deleted or archived from the sheet: back to where it
+                  // was opened from, not to an empty page or one put away.
+                  final Account? now = (await own.store.accounts(
                     archived: true,
-                  )).any((Account a) => a.id == accountId);
+                  )).where((Account a) => a.id == accountId).firstOrNull;
+                  final bool gone =
+                      now == null || (now.archived && !account.archived);
                   if (gone && context.mounted) Navigator.of(context).pop();
                 },
                 icon: const Icon(Glyph.pencilSimple),
               ),
             ],
           ),
-          floatingActionButton: FloatingActionButton(
-            tooltip: l.addMovement,
-            onPressed: () =>
-                showEntrySheet(context, own: own, accountId: account.id),
-            child: const Icon(Glyph.plus),
-          ),
+          // An archived account takes no new movements: it is offered in
+          // no list, the form's included.
+          floatingActionButton: account.archived
+              ? null
+              : FloatingActionButton(
+                  tooltip: l.addMovement,
+                  onPressed: () =>
+                      showEntrySheet(context, own: own, accountId: account.id),
+                  child: const Icon(Glyph.plus),
+                ),
           body: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 760),
@@ -108,6 +115,10 @@ class AccountPage extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                     sliver: SliverList.list(
                       children: <Widget>[
+                        if (account.archived) ...<Widget>[
+                          ArchivedNote(own: own, account: account),
+                          const SizedBox(height: 16),
+                        ],
                         Row(
                           children: <Widget>[
                             if (account.asset.isCrypto)

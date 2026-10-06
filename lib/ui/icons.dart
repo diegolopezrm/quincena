@@ -73,6 +73,7 @@ abstract final class Glyph {
   static const IconData uploadSimple = IconData(0xe4c0, fontFamily: _family);
   static const IconData warning = IconData(0xe4e0, fontFamily: _family);
   static const IconData tray = IconData(0xe4aa, fontFamily: _family);
+  static const IconData archive = IconData(0xe00c, fontFamily: _family);
   static const IconData handCoins = IconData(0xea8c, fontFamily: _family);
   static const IconData vault = IconData(0xe76e, fontFamily: _family);
   static const IconData chartLineUp = IconData(0xe156, fontFamily: _family);

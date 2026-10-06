@@ -13,6 +13,7 @@ import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import 'account_leaving.dart';
 import 'account_page.dart';
 import 'account_sheet.dart';
 import 'amount_input.dart';
@@ -329,6 +330,10 @@ class AccountsTab extends StatelessWidget {
           label: Text(l.addAccount),
         ),
         const SizedBox(height: 24),
+        if (own.archivedAccounts.isNotEmpty) ...<Widget>[
+          ArchivedAccountsRow(own: own),
+          const SizedBox(height: 16),
+        ],
         RatesSummary(own: own),
       ],
     );

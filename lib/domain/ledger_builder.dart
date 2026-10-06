@@ -21,8 +21,7 @@ import 'shared.dart';
 ///
 /// [setAside] is what this period's envelopes keep apart, in the base
 /// currency's smallest unit. The [instalments] still to pay join the
-/// charges to come, unless their debt is already in an account counted
-/// here.
+/// charges to come, unless their debt is already in a card counted here.
 ///
 /// [shared] says what of each movement others owe, or paid back: of an
 /// expense paid for others, only the person's part is spending and the
@@ -166,7 +165,10 @@ LedgerBuild buildLedger(
       instalments,
       today: today,
       until: horizon,
-      counted: spendable,
+      // Only a card holds what was bought on it: from any other account
+      // the instalments are still to come out of it.
+      counted: (String id) =>
+          spendable(id) && accounts[id]!.kind == AccountKind.card,
     ),
   ];
 

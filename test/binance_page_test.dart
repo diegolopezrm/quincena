@@ -70,6 +70,8 @@ void main() {
     (String, String)? keys,
     bool trading = false,
     Future<void> Function(QuincenaStore store)? data,
+    http.Client? client,
+    Widget Function(OwnController own)? page,
   }) async {
     tester.view.physicalSize = const Size(1170, 2532);
     tester.view.devicePixelRatio = 3;
@@ -91,7 +93,7 @@ void main() {
         clientFor: (String k, String s) => BinanceClient(
           key: k,
           secret: s,
-          client: binance(trading: trading),
+          client: client ?? binance(trading: trading),
         ),
         now: () => now,
       ),
@@ -111,7 +113,7 @@ void main() {
         locale: const Locale('es'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: appLocales,
-        home: BinancePage(own: own),
+        home: page?.call(own) ?? BinancePage(own: own),
       ),
     );
     await settle(tester);
@@ -220,6 +222,119 @@ void main() {
     await settle(tester);
     expect(find.textContaining('llevabas a mano: Mi USDT'), findsOneWidget);
     expect(find.text('Archivarlas'), findsOneWidget);
+  });
+
+  testWidgets('archiving the balances kept by hand asks first, says what it '
+      'does, and they can be brought back', (tester) async {
+    Future<void> both(QuincenaStore store) async {
+      await store.addAccount(
+        name: 'Mi USDT',
+        kind: AccountKind.exchange,
+        asset: Asset.usdt,
+        opening: Decimal.fromInt(500),
+        institution: 'Binance',
+        spendable: false,
+      );
+      await store.addAccount(
+        name: 'Tether (USDT)',
+        kind: AccountKind.exchange,
+        asset: Asset.usdt,
+        opening: Decimal.fromInt(500),
+        institution: 'Binance',
+        spendable: false,
+        syncRef: 'binance:USDT',
+      );
+    }
+
+    final (OwnController own, MemoryVault _) = await open(
+      tester,
+      keys: ('key', 'secret'),
+      data: both,
+    );
+    Account? manual() => own.snapshot!.accounts
+        .where((Account a) => a.name == 'Mi USDT')
+        .firstOrNull;
+    await reach(tester, find.text('Archivarlas'));
+    await tester.tap(find.text('Archivarlas'));
+    await settle(tester);
+    expect(find.text('¿Archivar Mi USDT?'), findsOneWidget);
+    expect(find.textContaining('evita contarlos dos veces'), findsOneWidget);
+    expect(find.textContaining('«Cuentas archivadas»'), findsOneWidget);
+
+    await tester.tap(find.text('Cancelar'));
+    await settle(tester);
+    expect(manual()!.archived, isFalse);
+
+    await tester.tap(find.text('Archivarlas'));
+    await settle(tester);
+    await tester.tap(find.text('Archivar').last);
+    await settle(tester);
+    expect(manual()!.archived, isTrue);
+    expect(own.archivedAccounts.map((Account a) => a.name), <String>[
+      'Mi USDT',
+    ]);
+    await tester.runAsync(() => own.restoreAccount(manual()!.id));
+    await settle(tester);
+    expect(manual()!.archived, isFalse);
+  });
+
+  testWidgets('the row among the sources says a read failed, not only the '
+      'page', (tester) async {
+    // Binance stopped taking the key since the last good read.
+    final http.Client refused = MockClient(
+      (http.Request request) async => request.url.path == '/api/v3/time'
+          ? http.Response(jsonEncode(<String, Object?>{'serverTime': 1}), 200)
+          : http.Response(
+              '{"code":-2015,"msg":"Invalid API-key, IP, or permissions."}',
+              401,
+            ),
+    );
+    Future<void> readBefore(QuincenaStore store) => store.setSetting(
+      'binance',
+      jsonEncode(<String, Object?>{
+        'syncedAt': DateTime(2026, 10, 2, 9, 40).toIso8601String(),
+      }),
+    );
+    final (OwnController own, MemoryVault _) = await open(
+      tester,
+      keys: ('key', 'secret'),
+      data: readBefore,
+      client: refused,
+      page: (OwnController own) =>
+          Scaffold(body: BinanceCard(own: own, compact: true)),
+    );
+    await tester.runAsync(own.binance.load);
+    await settle(tester);
+    expect(find.textContaining('Leída 2 oct · 9:40'), findsOneWidget);
+
+    await tester.runAsync(own.binance.sync);
+    await settle(tester);
+    expect(own.binance.problem, isNotNull);
+    expect(find.textContaining('Leída 2 oct'), findsNothing);
+    expect(
+      find.textContaining('No se pudo leer. Última lectura: 2 oct · 9:40'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('the row says Binance could not be read even once', (
+    tester,
+  ) async {
+    final (OwnController own, MemoryVault _) = await open(
+      tester,
+      keys: ('key', 'secret'),
+      client: MockClient((_) async => http.Response('', 500)),
+      page: (OwnController own) =>
+          Scaffold(body: BinanceCard(own: own, compact: true)),
+    );
+    // As opening the crypto page does: never read, so it reads now.
+    await tester.runAsync(
+      () => own.binance.syncIfOlder(const Duration(minutes: 30)),
+    );
+    await settle(tester);
+    expect(own.binance.problem, isNotNull);
+    expect(find.text('Aún sin leer'), findsNothing);
+    expect(find.text('No se ha podido leer todavía'), findsOneWidget);
   });
 }
 
