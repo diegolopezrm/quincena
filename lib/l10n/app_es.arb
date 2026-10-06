@@ -1839,5 +1839,8 @@
   "statementPaymentWaits": "{count, plural, =1{El pago a la tarjeta queda sin marcar hasta que digas de cuál de tus cuentas salió: márcalo y elige la cuenta.} other{Los {count} pagos a la tarjeta quedan sin marcar hasta que digas de cuál de tus cuentas salieron: márcalos y elige la cuenta.}}",
   "@statementPaymentWaits": {"placeholders": {"count": {"type": "int"}}},
   "statementPaymentNoSource": "{count, plural, =1{El pago a la tarjeta queda sin marcar: ninguna otra cuenta tuya está en {currency}, y marcado contaría como ingreso. Regístralo como movimiento entre tus cuentas desde la que lo pagó.} other{Los {count} pagos a la tarjeta quedan sin marcar: ninguna otra cuenta tuya está en {currency}, y marcados contarían como ingreso. Regístralos como movimientos entre tus cuentas desde la que los pagó.}}",
-  "@statementPaymentNoSource": {"placeholders": {"count": {"type": "int"}, "currency": {"type": "String"}}}
+  "@statementPaymentNoSource": {"placeholders": {"count": {"type": "int"}, "currency": {"type": "String"}}},
+  "replacedBySelection": "Reemplazada por tu nueva selección",
+  "seeNewSelection": "Ver la nueva",
+  "rulesEmptyWithMovements": "No tienes reglas ahora. Cuando registres algo en Por revisar, se crea la de su comercio, su tarjeta o su banco. Tus movimientos no cambian."
 }

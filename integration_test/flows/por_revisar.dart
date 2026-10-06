@@ -1467,8 +1467,9 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.tapFound(_ruleTrash('Exito Laureles'));
       await f.tapFound(_ruleTrash('Tarjeta *1234'));
       await f.step(
-        'Sin reglas: «Todavía no hay reglas. Aparecen cuando registras tus '
-        'primeros movimientos.»',
+        'Sin reglas, y con movimientos ya anotados: «No tienes reglas ahora. '
+        'Cuando registres algo en Por revisar, se crea la de su comercio, su '
+        'tarjeta o su banco.»',
       );
       await f.check('No queda ninguna regla', () async {
         expect((await saved()).rules, isEmpty);
@@ -3386,7 +3387,7 @@ Future<void> _undoFromNotice(FlowRun f) => f.tapFound(
 /// Takes the notice at the bottom away, as its time running out would.
 Future<void> _hideNotice(FlowRun f) async {
   for (final ScaffoldMessengerState m in f.tester.stateList(
-    find.byType(ScaffoldMessenger),
+    find.byWidgetPredicate((Widget w) => w is ScaffoldMessenger),
   )) {
     m.removeCurrentSnackBar();
   }

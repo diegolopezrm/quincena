@@ -285,6 +285,53 @@ void main() {
       expect(await laptop.contents(), await phone.contents());
     });
 
+    // The limit docs/SYNC.md describes under "Whole records": versions are
+    // of the whole movement, so edits to two of its fields are two
+    // versions, and only one of them can stay. A merge field by field would
+    // keep both and turn this test around.
+    test('a name changed on one and a note added on the other are two '
+        'versions: keeping one lets the other go', () async {
+      await send(phone, laptop);
+      final Entry lunch = await phone.store.addEntry(
+        accountId: await bank(phone),
+        amount: d('30000'),
+        kind: EntryKind.expense,
+        date: DateTime(2026, 10, 3),
+        category: 'restaurants',
+        payee: 'Almuerzo',
+      );
+      await send(phone, laptop);
+      phone.later();
+      await phone.store.updateEntry(lunch.copyWith(payee: 'Almuerzo con Juan'));
+      laptop.later(const Duration(minutes: 5));
+      final Entry there = (await laptop.store.entries()).single;
+      await laptop.store.updateEntry(there.copyWith(note: 'Pagó la mitad'));
+      await send(laptop, phone);
+
+      // The later one shows; the other waits whole, with its old note.
+      Entry shown = (await phone.store.entries()).single;
+      expect(shown.payee, 'Almuerzo');
+      expect(shown.note, 'Pagó la mitad');
+      final SyncConflict waiting = (await phone.sync.conflicts()).single;
+      expect(waiting.record.data!['payee'], 'Almuerzo con Juan');
+      expect(waiting.record.data!['note'], isNot('Pagó la mitad'));
+
+      // Traer de vuelta, then Descartar on what it replaced: the name stays
+      // and the note is gone, on both devices.
+      phone.later();
+      await phone.sync.restore(waiting);
+      final SyncConflict replaced = (await phone.sync.conflicts()).single;
+      expect(replaced.record.data!['note'], 'Pagó la mitad');
+      await phone.sync.dismiss(replaced);
+      await send(phone, laptop);
+      for (final Device x in <Device>[phone, laptop]) {
+        shown = (await x.store.entries()).single;
+        expect(shown.payee, 'Almuerzo con Juan');
+        expect(shown.note, isNot('Pagó la mitad'));
+      }
+      expect(await phone.sync.conflicts(), isEmpty);
+    });
+
     test('deleted on one, edited on the other: it stays deleted, the edit '
         'is kept, and an old file brings nothing back', () async {
       final Entry gym = await phone.store.addEntry(

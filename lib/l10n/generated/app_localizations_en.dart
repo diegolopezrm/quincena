@@ -5900,4 +5900,14 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get replacedBySelection => 'Replaced by your new selection';
+
+  @override
+  String get seeNewSelection => 'See the new one';
+
+  @override
+  String get rulesEmptyWithMovements =>
+      'You don\'t have any rules right now. When you record something in Needs review, one is created for its shop, card or bank. Your transactions stay as they are.';
 }

@@ -8915,6 +8915,24 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{count, plural, =1{El pago a la tarjeta queda sin marcar: ninguna otra cuenta tuya está en {currency}, y marcado contaría como ingreso. Regístralo como movimiento entre tus cuentas desde la que lo pagó.} other{Los {count} pagos a la tarjeta quedan sin marcar: ninguna otra cuenta tuya está en {currency}, y marcados contarían como ingreso. Regístralos como movimientos entre tus cuentas desde la que los pagó.}}'**
   String statementPaymentNoSource(int count, String currency);
+
+  /// No description provided for @replacedBySelection.
+  ///
+  /// In es, this message translates to:
+  /// **'Reemplazada por tu nueva selección'**
+  String get replacedBySelection;
+
+  /// No description provided for @seeNewSelection.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver la nueva'**
+  String get seeNewSelection;
+
+  /// No description provided for @rulesEmptyWithMovements.
+  ///
+  /// In es, this message translates to:
+  /// **'No tienes reglas ahora. Cuando registres algo en Por revisar, se crea la de su comercio, su tarjeta o su banco. Tus movimientos no cambian.'**
+  String get rulesEmptyWithMovements;
 }
 
 class _AppLocalizationsDelegate

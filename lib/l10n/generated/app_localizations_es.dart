@@ -5890,4 +5890,14 @@ class AppLocalizationsEs extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get replacedBySelection => 'Reemplazada por tu nueva selección';
+
+  @override
+  String get seeNewSelection => 'Ver la nueva';
+
+  @override
+  String get rulesEmptyWithMovements =>
+      'No tienes reglas ahora. Cuando registres algo en Por revisar, se crea la de su comercio, su tarjeta o su banco. Tus movimientos no cambian.';
 }
