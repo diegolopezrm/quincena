@@ -149,6 +149,29 @@ void main() {
       expect(await again.take(), isTrue);
       expect(again.left, 2);
     });
+
+    test('take back one that got no answer, that day only', () async {
+      final Allowance allowance = Allowance(store, perDay: 3, now: () => today);
+      await allowance.load();
+      // Nothing taken, nothing to give back.
+      await allowance.giveBack();
+      expect(allowance.left, 3);
+
+      expect(await allowance.take(), isTrue);
+      await allowance.giveBack();
+      expect(allowance.left, 3);
+      final Allowance again = Allowance(store, perDay: 3, now: () => today);
+      await again.load();
+      expect(again.left, 3);
+
+      // One taken yesterday stays yesterday's.
+      expect(await allowance.take(), isTrue);
+      today = now.add(const Duration(days: 1));
+      await allowance.giveBack();
+      expect(allowance.left, 3);
+      today = now;
+      expect(allowance.left, 2);
+    });
   });
 
   group('the person\'s own accounts', () {
@@ -435,6 +458,30 @@ void main() {
       await session.ask('¿Y en qué se me fue?');
       expect(session.turns.last.error, AnswerProblem.limit);
       expect(model.asked, 1);
+    });
+
+    test('a question that got no answer is not one of the day\'s', () async {
+      final Allowance allowance = Allowance(store, perDay: 2, now: () => now);
+      await allowance.load();
+      final Session session = Session(
+        mode: AgentMode.gemini,
+        client: UnreachableModel(),
+        errorWindow: Duration.zero,
+        ledgerOf: () => own.ledger!,
+        toolsFor: (_) => ownTools(own),
+        own: true,
+        allowance: allowance,
+      );
+      addTearDown(session.dispose);
+
+      await session.ask('¿Cuánto me queda libre?');
+      expect(session.turns.last.error, AnswerProblem.offline);
+      expect(allowance.left, 2);
+
+      // Kept on the device that way too.
+      final Allowance again = Allowance(store, perDay: 2, now: () => now);
+      await again.load();
+      expect(again.left, 2);
     });
   });
   test('can I buy it, what comes and the close, as tools', () async {
