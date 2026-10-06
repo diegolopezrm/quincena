@@ -389,6 +389,92 @@ void main() {
     expect(struck, findsNothing);
   });
 
+  testWidgets('a review a newer selection replaced confirms nothing', (
+    tester,
+  ) async {
+    final Session session = await open(tester);
+    await ask(tester, session, ScriptedAgent.starters[2]);
+    await tick(tester, 'Fit24 gimnasio');
+    await tick(tester, 'Lingo Pro');
+    await press(tester, 'Revisar las marcadas');
+    expect(find.text('Ya las cancelé'), findsOneWidget);
+
+    // The review of the two gives way to the list, and says so.
+    await press(tester, 'Cambiar selección');
+    expect(find.text('Reemplazada por tu nueva selección'), findsOneWidget);
+    expect(find.text('Ver la nueva'), findsOneWidget);
+    await tick(tester, 'Lingo Pro');
+    await press(tester, 'Revisar las marcadas');
+    await press(tester, 'Ya la cancelé');
+    expect(screen(tester), contains('Cancelada: Fit24 gimnasio'));
+    final int turns = session.turns.length;
+
+    // Its «Ya las cancelé» is still on screen, and takes no taps.
+    final Finder stale = find.text('Ya las cancelé');
+    expect(stale, findsOneWidget);
+    await tester.ensureVisible(stale);
+    await settle(tester);
+    await tester.tap(stale, warnIfMissed: false);
+    await settle(tester);
+    expect(session.turns, hasLength(turns));
+    expect(screen(tester), isNot(contains('Canceladas: ')));
+
+    // «Ver la nueva» goes to the list the new choice was made in.
+    final Finder newer = find.textContaining('al mes en suscripciones').at(1);
+    await tester.ensureVisible(find.text('Ver la nueva'));
+    await settle(tester);
+    final double before = tester.getTopLeft(newer).dy;
+    await tester.tap(find.text('Ver la nueva'));
+    await settle(tester);
+    expect(tester.getTopLeft(newer).dy, lessThan(before));
+    expect(onScreen(tester, newer), isTrue);
+  });
+
+  testWidgets('reviewing the list again replaces the review before it', (
+    tester,
+  ) async {
+    final Session session = await open(tester);
+    await ask(tester, session, ScriptedAgent.starters[2]);
+    await tick(tester, 'Fit24 gimnasio');
+    await tick(tester, 'Lingo Pro');
+    await press(tester, 'Revisar las marcadas');
+
+    // Back up in the same list, one fewer, and reviewed again.
+    final Finder lingo = find.byWidgetPredicate(
+      (Widget w) =>
+          w is Checkbox &&
+          w.semanticLabel ==
+              'Seleccionar Lingo Pro para '
+                  'cancelar',
+    );
+    await tester.ensureVisible(lingo.first);
+    await settle(tester);
+    await tester.tap(lingo.first);
+    await settle(tester);
+    await tester.tap(find.text('Revisar las marcadas').first);
+    await settle(tester);
+    expect(find.text('Reemplazada por tu nueva selección'), findsOneWidget);
+    final int turns = session.turns.length;
+
+    final Finder stale = find.text('Ya las cancelé');
+    await tester.ensureVisible(stale);
+    await settle(tester);
+    await tester.tap(stale, warnIfMissed: false);
+    await settle(tester);
+    expect(session.turns, hasLength(turns));
+
+    // The newer one still confirms, and one already confirmed keeps its
+    // receipt when the selection changes after it.
+    await press(tester, 'Ya la cancelé');
+    expect(screen(tester), contains('Cancelada: Fit24 gimnasio'));
+    await tester.ensureVisible(find.text('Revisar las marcadas').first);
+    await settle(tester);
+    await tester.tap(find.text('Revisar las marcadas').first);
+    await settle(tester);
+    expect(find.textContaining('Marcadas como canceladas · '), findsOneWidget);
+    expect(find.text('Reemplazada por tu nueva selección'), findsOneWidget);
+  });
+
   testWidgets('the expense form checks the amount before saving', (
     tester,
   ) async {

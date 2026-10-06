@@ -5611,4 +5611,10 @@ class AppLocalizationsEs extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get replacedBySelection => 'Reemplazada por tu nueva selección';
+
+  @override
+  String get seeNewSelection => 'Ver la nueva';
 }

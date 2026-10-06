@@ -382,11 +382,16 @@ class _TurnView extends StatelessWidget {
                     : () => onShow!(settled.turn),
               ),
               const SizedBox(height: 6),
+            ] else if (_replacement(id) case final Turn newer) ...<Widget>[
+              _Replaced(onSeeNew: onShow == null ? null : () => onShow!(newer)),
+              const SizedBox(height: 6),
             ],
             _Arrive(
               key: ValueKey<String>(id),
               child: _Closed(
-                closed: session.settledOf(id) != null,
+                closed:
+                    session.settledOf(id) != null ||
+                    session.replacedBy(id) != null,
                 child: Surface(
                   surfaceContext: session.controller.contextFor(id),
                 ),
@@ -459,6 +464,16 @@ class _TurnView extends StatelessWidget {
     final bool answering =
         session.busy && identical(settled.turn, session.turns.lastOrNull);
     return answering ? null : settled;
+  }
+
+  /// The turn with the choice that replaced the surface [id], once it has
+  /// its answer.
+  Turn? _replacement(String id) {
+    final Turn? newer = session.replacedBy(id);
+    if (newer == null || !session.turns.contains(newer)) return null;
+    final bool answering =
+        session.busy && identical(newer, session.turns.lastOrNull);
+    return answering ? null : newer;
   }
 }
 
@@ -542,6 +557,54 @@ class _Receipt extends StatelessWidget {
             style: compact,
             icon: const Icon(Glyph.arrowDown, size: 18),
             label: Text(l.seeResult),
+          ),
+      ],
+    );
+  }
+}
+
+/// Over a surface a newer choice replaced: that it did, and a way to the
+/// newer one.
+class _Replaced extends StatelessWidget {
+  const _Replaced({this.onSeeNew});
+
+  final VoidCallback? onSeeNew;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    return Wrap(
+      spacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: <Widget>[
+        Semantics(
+          liveRegion: true,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Icon(
+                Glyph.arrowsClockwise,
+                size: 20,
+                color: context.colors.inkSoft,
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  l.replacedBySelection,
+                  style: context.type.labelLarge,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (onSeeNew case final VoidCallback see)
+          TextButton.icon(
+            onPressed: see,
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+            ),
+            icon: const Icon(Glyph.arrowDown, size: 18),
+            label: Text(l.seeNewSelection),
           ),
       ],
     );

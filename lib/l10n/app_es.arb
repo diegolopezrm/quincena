@@ -1762,5 +1762,7 @@
   "inboxWaiting": "{count, plural, =1{1 movimiento por revisar} other{{count} movimientos por revisar}}",
   "@inboxWaiting": {"placeholders": {"count": {"type": "int"}}},
   "inboxRecordSome": "{count, plural, =1{Registrar 1 de los {total} listos} other{Registrar {count} de los {total} listos}}",
-  "@inboxRecordSome": {"placeholders": {"count": {"type": "int"}, "total": {"type": "int"}}}
+  "@inboxRecordSome": {"placeholders": {"count": {"type": "int"}, "total": {"type": "int"}}},
+  "replacedBySelection": "Reemplazada por tu nueva selección",
+  "seeNewSelection": "Ver la nueva"
 }

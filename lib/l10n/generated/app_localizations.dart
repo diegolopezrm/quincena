@@ -8643,6 +8643,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{count, plural, =1{Registrar 1 de los {total} listos} other{Registrar {count} de los {total} listos}}'**
   String inboxRecordSome(int count, int total);
+
+  /// No description provided for @replacedBySelection.
+  ///
+  /// In es, this message translates to:
+  /// **'Reemplazada por tu nueva selección'**
+  String get replacedBySelection;
+
+  /// No description provided for @seeNewSelection.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver la nueva'**
+  String get seeNewSelection;
 }
 
 class _AppLocalizationsDelegate

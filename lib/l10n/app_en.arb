@@ -1431,5 +1431,7 @@
   "inboxAddPaste": "A message you copied",
   "inboxAddPasteBody": "Paste the bank's notification, text or email.",
   "inboxWaiting": "{count, plural, =1{1 transaction to review} other{{count} transactions to review}}",
-  "inboxRecordSome": "{count, plural, =1{Record 1 of the {total} ready} other{Record {count} of the {total} ready}}"
+  "inboxRecordSome": "{count, plural, =1{Record 1 of the {total} ready} other{Record {count} of the {total} ready}}",
+  "replacedBySelection": "Replaced by your new selection",
+  "seeNewSelection": "See the new one"
 }
