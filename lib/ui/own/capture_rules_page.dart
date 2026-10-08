@@ -41,14 +41,22 @@ class CaptureRulesPage extends StatelessWidget {
               children: <Widget>[
                 Text(l.rulesBody, style: context.type.bodyMedium),
                 const SizedBox(height: 20),
+                // Someone with movements had rules, or will: the first
+                // movements are not what is missing.
                 if (rules.isEmpty)
                   Block(
-                    child: Text(l.rulesEmpty, style: context.type.bodyMedium),
+                    child: Text(
+                      (own.snapshot?.entries ?? const <Entry>[]).isEmpty
+                          ? l.rulesEmpty
+                          : l.rulesEmptyWithMovements,
+                      style: context.type.bodyMedium,
+                    ),
                   ),
                 for (final (RuleKind kind, String label)
                     in <(RuleKind, String)>[
                       (RuleKind.merchant, l.rulesMerchants),
                       (RuleKind.card, l.rulesCards),
+                      (RuleKind.account, l.rulesAccounts),
                       (RuleKind.institution, l.rulesInstitutions),
                     ])
                   if (of(kind).isNotEmpty) ...<Widget>[

@@ -23,6 +23,15 @@ String rateKindLabel(AppLocalizations l, RateKind kind) => switch (kind) {
   RateKind.monthly => l.rateMonthly,
 };
 
+/// Whether a purchase paid from [account] is already in it, as on a card
+/// the money to spend counts: its instalments are not committed again.
+/// From any other account they are still to come out of it.
+bool heldByCard(Account? account) =>
+    account != null &&
+    account.kind == AccountKind.card &&
+    account.spendable &&
+    !account.archived;
+
 /// Purchases in instalments, as the bank or the shop stated them. What was
 /// not stated stays an estimate, never a final figure.
 class InstalmentsPage extends StatelessWidget {
@@ -416,7 +425,7 @@ class InstalmentDetailPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  account != null && account.spendable && !account.archived
+                  heldByCard(account)
                       ? l.instalCountedOnce
                       : l.instalCountedAsComing,
                   style: context.type.bodySmall,
@@ -736,7 +745,12 @@ class _InstalmentSheetState extends State<_InstalmentSheet> {
   late DateTime _firstDue =
       widget.plan?.firstDue ??
       DateTime(own.today.year, own.today.month + 1, own.today.day);
-  late String? _accountId = widget.plan?.accountId;
+  // An account deleted or archived since is none the list offers: the
+  // purchase reads as paid outside Quincena.
+  late String? _accountId = own.accounts
+      .where((Account a) => a.id == widget.plan?.accountId)
+      .firstOrNull
+      ?.id;
   String? _error;
 
   TextEditingController _money(int? minor, {bool zero = false}) =>
@@ -961,7 +975,7 @@ class _InstalmentSheetState extends State<_InstalmentSheet> {
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
               child: Text(
-                account != null && account.spendable
+                heldByCard(account)
                     ? l.instalCountedOnce
                     : l.instalCountedAsComing,
                 style: context.type.bodySmall,

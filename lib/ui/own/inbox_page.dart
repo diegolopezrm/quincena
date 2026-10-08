@@ -466,6 +466,7 @@ class _InboxCardState extends State<InboxCard> {
     final ParsedCapture p = item.parsed;
     final String? institution = p.institution;
     final String? card = p.card;
+    final String? number = p.account;
     final Asset asset = p.asset ?? own.profile?.base ?? Asset.cop;
     bool likely(Account a) => a.spendable && a.asset == asset;
     final List<Account> there = institution == null
@@ -479,13 +480,17 @@ class _InboxCardState extends State<InboxCard> {
       for (final Account a in own.accounts)
         if (!first.contains(a.id) && !likely(a)) a,
     ];
-    // Only what confirming will learn: a card's rule, or else the bank's,
-    // unless the person turned it off.
+    // Only what confirming will learn: a card's rule, or else the
+    // account's, or else the bank's, unless the person turned it off.
     final Set<String> off = own.captureSettings.disabledRules;
     final String? note = card != null
         ? off.contains(CaptureRule.idOf(RuleKind.card, card))
               ? null
               : l.pickAccountCardNote(card)
+        : number != null
+        ? off.contains(CaptureRule.idOf(RuleKind.account, number))
+              ? null
+              : l.pickAccountNumberNote(number)
         : institution != null &&
               CaptureService.teachesInstitution(p, own.profile?.base) &&
               !off.contains(CaptureRule.idOf(RuleKind.institution, institution))

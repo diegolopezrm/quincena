@@ -511,6 +511,16 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(find.text('Ya las cancelé'), findsOneWidget);
       });
       await f.tap('Cambiar selección');
+      await f.check(
+        'La revisión de las dos dice que la reemplazó la selección nueva',
+        () {
+          expect(
+            find.text('Reemplazada por tu nueva selección'),
+            findsOneWidget,
+          );
+          expect(find.text('Ver la nueva'), findsOneWidget);
+        },
+      );
       await _untick(f, 'Lingo Pro');
       await f.step(
         '«Cambiar selección» trae la lista con las dos marcadas; quita Lingo '
@@ -572,20 +582,29 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       });
       // The first review, from before «Cambiar selección», with both.
       final Finder stale = find.text('Ya las cancelé');
-      await f.reveal(stale);
-      await Scrollable.ensureVisible(f.tester.element(stale), alignment: 0.5);
+      final Finder replaced = find.text('Reemplazada por tu nueva selección');
+      await f.reveal(replaced);
+      await Scrollable.ensureVisible(f.tester.element(replaced));
       await settle(f.tester);
       await f.step(
-        'Más arriba sigue la primera revisión, la de las dos: su «Ya las '
-        'cancelé» se ve igual de activo que antes de «Cambiar selección».',
+        'Más arriba sigue la primera revisión, la de las dos: atenuada, con '
+        '«Reemplazada por tu nueva selección» y «Ver la nueva» encima.',
       );
       final int answered = s.turns.length;
+      await f.check('Su «Ya las cancelé» está a la vista', () {
+        final Size screen =
+            f.tester.view.physicalSize / f.tester.view.devicePixelRatio;
+        expect(
+          f.tester.getCenter(stale).dy,
+          inExclusiveRange(0, screen.height),
+        );
+      });
       await f.tester.tap(stale, warnIfMissed: false);
       await settle(f.tester);
       await _read(
         f,
-        'Lo toca: llega «Canceladas: Fit24 gimnasio y Lingo Pro», aunque la '
-        'última revisión dejó solo Fit24 y ya estaba confirmada.',
+        'Toca su «Ya las cancelé»: no pasa nada, no llega ninguna respuesta '
+        'y sigue confirmada solo Fit24 gimnasio.',
         most: 1,
       );
       await f.check(
@@ -593,6 +612,8 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         () {
           expect(s.turns, hasLength(answered));
           expect(find.textContaining('Canceladas: '), findsNothing);
+          expect(find.text('Cancelada'), findsNWidgets(2));
+          expect(ledger.subscriptionsMonthly, monthly);
         },
       );
     },
@@ -1318,17 +1339,23 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       }
       await f.step(
         'Cierra el inspector y toca «Copiar la sesión» en Ajustes: la hoja se '
-        'cierra y abajo avisa que la sesión se copió sin lo que escribió.',
+        'cierra sola y abajo avisa que la sesión se copió sin lo que '
+        'escribió.',
       );
       await f.check('Lo copiado trae la sesión sin «Regalo para mamá»', () {
         expect(copied, isNotNull);
         expect(copied, contains('"draft"'));
         expect(copied, isNot(contains('Regalo para mamá')));
+      });
+      await f.check('La hoja se cerró y el aviso se ve, sin nada encima', () {
+        expect(find.byType(BottomSheet), findsNothing);
         expect(
-          find.text(
-            'Sesión copiada, sin lo que escribiste. Pégala en un issue y se '
-            'puede reproducir.',
-          ),
+          find
+              .text(
+                'Sesión copiada, sin lo que escribiste. Pégala en un issue y '
+                'se puede reproducir.',
+              )
+              .hitTestable(),
           findsOneWidget,
         );
       });

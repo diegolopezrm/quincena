@@ -1022,6 +1022,144 @@ abstract class AppLocalizations {
   /// **'{count, plural, =0{No tiene movimientos.} =1{Se borra también su movimiento. No se puede deshacer.} other{Se borran también sus {count} movimientos. No se puede deshacer.}}'**
   String deleteAccountBody(int count);
 
+  /// No description provided for @archive.
+  ///
+  /// In es, this message translates to:
+  /// **'Archivar'**
+  String get archive;
+
+  /// No description provided for @restore.
+  ///
+  /// In es, this message translates to:
+  /// **'Restaurar'**
+  String get restore;
+
+  /// No description provided for @archiveAccountTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Archivar {names}?'**
+  String archiveAccountTitle(String names);
+
+  /// No description provided for @archiveAccountKept.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Su movimiento se queda en tu historial.} other{Sus {count} movimientos se quedan en tu historial.}}'**
+  String archiveAccountKept(int count);
+
+  /// No description provided for @archiveAccountHidden.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Deja de aparecer en Cuentas y al elegir una cuenta. La puedes restaurar cuando quieras desde «Cuentas archivadas», en Cuentas.} other{Dejan de aparecer en Cuentas y al elegir una cuenta. Las puedes restaurar cuando quieras desde «Cuentas archivadas», en Cuentas.}}'**
+  String archiveAccountHidden(int count);
+
+  /// No description provided for @deleteAccountPreferArchive.
+  ///
+  /// In es, this message translates to:
+  /// **'Si la cerraste, mejor archívala: su historial se queda y deja de aparecer en Cuentas.'**
+  String get deleteAccountPreferArchive;
+
+  /// No description provided for @accountLeavingTransfers.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Una transferencia con otra cuenta se queda en esa cuenta como ingreso o gasto.} other{{count} transferencias con otras cuentas se quedan en esas cuentas como ingresos o gastos.}}'**
+  String accountLeavingTransfers(int count);
+
+  /// No description provided for @accountLeavingCharges.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{{names} se paga desde aquí.} other{{names} se pagan desde aquí.}}'**
+  String accountLeavingCharges(int count, String names);
+
+  /// No description provided for @accountLeavingMoveTo.
+  ///
+  /// In es, this message translates to:
+  /// **'Se pagarán con'**
+  String get accountLeavingMoveTo;
+
+  /// No description provided for @accountLeavingNoAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin cuenta'**
+  String get accountLeavingNoAccount;
+
+  /// No description provided for @accountLeavingHeld.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Lo que tiene, {amount}, deja de contar en tu patrimonio.} other{Lo que tienen, {amount}, deja de contar en tu patrimonio.}}'**
+  String accountLeavingHeld(int count, String amount);
+
+  /// No description provided for @accountLeavingOwed.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Lo que se debe en ella, {amount}, deja de restar de tu patrimonio.} other{Lo que se debe en ellas, {amount}, deja de restar de tu patrimonio.}}'**
+  String accountLeavingOwed(int count, String amount);
+
+  /// No description provided for @accountLeavingHeldSpendable.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Lo que tiene, {amount}, deja de contar en tu patrimonio y en lo que puedes gastar hasta el pago.} other{Lo que tienen, {amount}, deja de contar en tu patrimonio y en lo que puedes gastar hasta el pago.}}'**
+  String accountLeavingHeldSpendable(int count, String amount);
+
+  /// No description provided for @accountLeavingOwedSpendable.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Lo que se debe en ella, {amount}, deja de restar de tu patrimonio y de lo que puedes gastar hasta el pago.} other{Lo que se debe en ellas, {amount}, deja de restar de tu patrimonio y de lo que puedes gastar hasta el pago.}}'**
+  String accountLeavingOwedSpendable(int count, String amount);
+
+  /// No description provided for @accountLeavingInstalmentsApart.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que falta de las cuotas, {amount}, ya no queda en la deuda de una tarjeta: resta aparte de tu patrimonio, y las cuotas que vienen se cuentan como comprometidas.'**
+  String accountLeavingInstalmentsApart(String amount);
+
+  /// No description provided for @accountLeavingInstalmentsCard.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que falta de las cuotas, {amount}, pasa a la deuda de la tarjeta.'**
+  String accountLeavingInstalmentsCard(String amount);
+
+  /// No description provided for @accountLeavingWorthSame.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu patrimonio sigue en {total}.'**
+  String accountLeavingWorthSame(String total);
+
+  /// No description provided for @accountLeavingWorth.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu patrimonio pasa de {before} a {after}.'**
+  String accountLeavingWorth(String before, String after);
+
+  /// No description provided for @archivedAccountsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuentas archivadas'**
+  String get archivedAccountsTitle;
+
+  /// No description provided for @archivedAccountsCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Una cuenta, fuera de tus totales} other{{count} cuentas, fuera de tus totales}}'**
+  String archivedAccountsCount(int count);
+
+  /// No description provided for @archivedAccountsBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Sus movimientos siguen en tu historial, pero no cuentan en tus totales ni aparecen al elegir una cuenta. Al restaurar una, vuelve a Cuentas y a tus totales.'**
+  String get archivedAccountsBody;
+
+  /// No description provided for @archivedAccountsNone.
+  ///
+  /// In es, this message translates to:
+  /// **'No tienes cuentas archivadas.'**
+  String get archivedAccountsNone;
+
+  /// No description provided for @accountArchivedNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Archivada: no cuenta en tus totales ni aparece al elegir una cuenta.'**
+  String get accountArchivedNote;
+
   /// No description provided for @groupSpendable.
   ///
   /// In es, this message translates to:
@@ -1625,20 +1763,20 @@ abstract class AppLocalizations {
   /// No description provided for @comingLowest.
   ///
   /// In es, this message translates to:
-  /// **'Saldo mínimo estimado antes del pago: {amount} el {date}'**
-  String comingLowest(String amount, String date);
+  /// **'Saldo mínimo estimado antes del pago: {amount} {when}'**
+  String comingLowest(String amount, String when);
 
   /// No description provided for @comingTight.
   ///
   /// In es, this message translates to:
-  /// **'El {date} quedarías bajo tu colchón.'**
-  String comingTight(String date);
+  /// **'{when} quedarías bajo tu colchón.'**
+  String comingTight(String when);
 
   /// No description provided for @comingRunsOut.
   ///
   /// In es, this message translates to:
-  /// **'El {date} te quedarías sin plata.'**
-  String comingRunsOut(String date);
+  /// **'{when} te quedarías sin plata.'**
+  String comingRunsOut(String when);
 
   /// No description provided for @comingRunsOutBadge.
   ///
@@ -1793,14 +1931,14 @@ abstract class AppLocalizations {
   /// No description provided for @buyFitsBody.
   ///
   /// In es, this message translates to:
-  /// **'Tu saldo mínimo estimado sería {amount} el {date}, por encima de tu colchón.'**
-  String buyFitsBody(String amount, String date);
+  /// **'Tu saldo mínimo estimado sería {amount} {when}, por encima de tu colchón.'**
+  String buyFitsBody(String amount, String when);
 
   /// No description provided for @buyFitsBodyNoCushion.
   ///
   /// In es, this message translates to:
-  /// **'Tu saldo mínimo estimado sería {amount} el {date}.'**
-  String buyFitsBodyNoCushion(String amount, String date);
+  /// **'Tu saldo mínimo estimado sería {amount} {when}.'**
+  String buyFitsBodyNoCushion(String amount, String when);
 
   /// No description provided for @buyBelow.
   ///
@@ -1811,8 +1949,8 @@ abstract class AppLocalizations {
   /// No description provided for @buyBelowBody.
   ///
   /// In es, this message translates to:
-  /// **'El {date} quedarías con {amount}; tu colchón es {cushion}.'**
-  String buyBelowBody(String date, String amount, String cushion);
+  /// **'{when} quedarías con {amount}; tu colchón es {cushion}.'**
+  String buyBelowBody(String when, String amount, String cushion);
 
   /// No description provided for @buyShort.
   ///
@@ -1823,8 +1961,8 @@ abstract class AppLocalizations {
   /// No description provided for @buyShortBody.
   ///
   /// In es, this message translates to:
-  /// **'El {date} te faltarían {amount}.'**
-  String buyShortBody(String date, String amount);
+  /// **'{when} te faltarían {amount}.'**
+  String buyShortBody(String when, String amount);
 
   /// No description provided for @buyReliesOnPay.
   ///
@@ -2033,8 +2171,8 @@ abstract class AppLocalizations {
   /// No description provided for @comingLowestWithout.
   ///
   /// In es, this message translates to:
-  /// **'Sin lo que pruebas, saldo mínimo estimado antes del pago: {amount} el {date}'**
-  String comingLowestWithout(String amount, String date);
+  /// **'Sin lo que pruebas, saldo mínimo estimado antes del pago: {amount} {when}'**
+  String comingLowestWithout(String amount, String when);
 
   /// No description provided for @computedBuy.
   ///
@@ -2239,22 +2377,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Para repartir'**
   String get envelopesToSplit;
-
-  /// No description provided for @envelopesToSplitBody.
-  ///
-  /// In es, this message translates to:
-  /// **'Lo que hay para gastar, menos {committed} comprometidos hasta el pago y {cushion} de colchón.'**
-  String envelopesToSplitBody(String committed, String cushion);
-
-  /// No description provided for @envelopesToSplitBodyReserve.
-  ///
-  /// In es, this message translates to:
-  /// **'Lo que hay para gastar, menos {committed} comprometidos hasta el pago, {cushion} de colchón y {reserve} de la reserva de ingresos variables.'**
-  String envelopesToSplitBodyReserve(
-    String committed,
-    String cushion,
-    String reserve,
-  );
 
   /// No description provided for @envelopeDaily.
   ///
@@ -4008,6 +4130,18 @@ abstract class AppLocalizations {
   /// **'Aún sin leer'**
   String get binanceNeverSynced;
 
+  /// No description provided for @binanceReadFailedAt.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo leer. Última lectura: {when}'**
+  String binanceReadFailedAt(String when);
+
+  /// No description provided for @binanceReadFailedNever.
+  ///
+  /// In es, this message translates to:
+  /// **'No se ha podido leer todavía'**
+  String get binanceReadFailedNever;
+
   /// No description provided for @binanceSyncNow.
   ///
   /// In es, this message translates to:
@@ -4061,6 +4195,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Archivarlas'**
   String get binanceArchive;
+
+  /// No description provided for @binanceArchiveWhy.
+  ///
+  /// In es, this message translates to:
+  /// **'Binance ya trae estos saldos: archivarlas evita contarlos dos veces.'**
+  String get binanceArchiveWhy;
 
   /// No description provided for @binanceLabelP2p.
   ///
@@ -8733,6 +8873,156 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Un mensaje de ejemplo, como los que manda el banco. Puedes cambiarlo antes de leerlo.'**
   String get examplePasteNote;
+
+  /// No description provided for @dayWhen.
+  ///
+  /// In es, this message translates to:
+  /// **'el {date}'**
+  String dayWhen(String date);
+
+  /// No description provided for @todayWhen.
+  ///
+  /// In es, this message translates to:
+  /// **'hoy'**
+  String get todayWhen;
+
+  /// No description provided for @comingLowestLineToday.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu saldo mínimo estimado antes del pago es el de hoy: {amount}.'**
+  String comingLowestLineToday(String amount);
+
+  /// No description provided for @buyTakesApart.
+  ///
+  /// In es, this message translates to:
+  /// **'Te alcanza, pero tocando lo apartado'**
+  String get buyTakesApart;
+
+  /// No description provided for @buyWithinFree.
+  ///
+  /// In es, this message translates to:
+  /// **'Cabe en los {free} que puedes gastar hasta el {payday}.'**
+  String buyWithinFree(String free, String payday);
+
+  /// No description provided for @buyOverFree.
+  ///
+  /// In es, this message translates to:
+  /// **'Es más de los {free} que puedes gastar hasta el {payday}: usarías {used}.'**
+  String buyOverFree(String free, String payday, String used);
+
+  /// No description provided for @buyUses.
+  ///
+  /// In es, this message translates to:
+  /// **'Usarías {used}.'**
+  String buyUses(String used);
+
+  /// No description provided for @buyAlsoUses.
+  ///
+  /// In es, this message translates to:
+  /// **'Además usarías {used}.'**
+  String buyAlsoUses(String used);
+
+  /// No description provided for @buyUsesSetAside.
+  ///
+  /// In es, this message translates to:
+  /// **'{amount} de lo apartado en sobres'**
+  String buyUsesSetAside(String amount);
+
+  /// No description provided for @buyUsesReserve.
+  ///
+  /// In es, this message translates to:
+  /// **'{amount} de tu reserva de ingresos variables'**
+  String buyUsesReserve(String amount);
+
+  /// No description provided for @buyUsesCushion.
+  ///
+  /// In es, this message translates to:
+  /// **'{amount} de tu colchón'**
+  String buyUsesCushion(String amount);
+
+  /// No description provided for @buyNothingFree.
+  ///
+  /// In es, this message translates to:
+  /// **'Hasta el {payday} no te queda nada para gastar: usarías {used}.'**
+  String buyNothingFree(String payday, String used);
+
+  /// No description provided for @envelopesSpentLine.
+  ///
+  /// In es, this message translates to:
+  /// **'Gastado del día a día'**
+  String get envelopesSpentLine;
+
+  /// No description provided for @freelanceReserveOutside.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que cobraste en cuentas que no son de uso diario ({amount}) no se aparta: nunca contó en lo que puedes gastar.'**
+  String freelanceReserveOutside(String amount);
+
+  /// No description provided for @whyAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'la cuenta *{digits} es {account}'**
+  String whyAccount(String digits, String account);
+
+  /// No description provided for @ruleLearnedAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde ahora, la cuenta *{digits} va a {account}.'**
+  String ruleLearnedAccount(String digits, String account);
+
+  /// No description provided for @ruleAccountKey.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta *{digits}'**
+  String ruleAccountKey(String digits);
+
+  /// No description provided for @rulesAccounts.
+  ///
+  /// In es, this message translates to:
+  /// **'Números de cuenta'**
+  String get rulesAccounts;
+
+  /// No description provided for @whichAccountNumber.
+  ///
+  /// In es, this message translates to:
+  /// **'Detectamos {institution} y la cuenta *{digits}, pero aún no sabemos cuál de tus cuentas es.'**
+  String whichAccountNumber(String institution, String digits);
+
+  /// No description provided for @pickAccountNumberNote.
+  ///
+  /// In es, this message translates to:
+  /// **'La próxima vez, lo de la cuenta *{digits} irá directo a la que elijas.'**
+  String pickAccountNumberNote(String digits);
+
+  /// No description provided for @statementPaymentWaits.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{El pago a la tarjeta queda sin marcar hasta que digas de cuál de tus cuentas salió: márcalo y elige la cuenta.} other{Los {count} pagos a la tarjeta quedan sin marcar hasta que digas de cuál de tus cuentas salieron: márcalos y elige la cuenta.}}'**
+  String statementPaymentWaits(int count);
+
+  /// No description provided for @statementPaymentNoSource.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{El pago a la tarjeta queda sin marcar: ninguna otra cuenta tuya está en {currency}, y marcado contaría como ingreso. Regístralo como movimiento entre tus cuentas desde la que lo pagó.} other{Los {count} pagos a la tarjeta quedan sin marcar: ninguna otra cuenta tuya está en {currency}, y marcados contarían como ingreso. Regístralos como movimientos entre tus cuentas desde la que los pagó.}}'**
+  String statementPaymentNoSource(int count, String currency);
+
+  /// No description provided for @replacedBySelection.
+  ///
+  /// In es, this message translates to:
+  /// **'Reemplazada por tu nueva selección'**
+  String get replacedBySelection;
+
+  /// No description provided for @seeNewSelection.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver la nueva'**
+  String get seeNewSelection;
+
+  /// No description provided for @rulesEmptyWithMovements.
+  ///
+  /// In es, this message translates to:
+  /// **'No tienes reglas ahora. Cuando registres algo en Por revisar, se crea la de su comercio, su tarjeta o su banco. Tus movimientos no cambian.'**
+  String get rulesEmptyWithMovements;
 }
 
 class _AppLocalizationsDelegate

@@ -118,12 +118,24 @@ class _EnvelopesPageState extends State<EnvelopesPage> {
     });
   }
 
+  /// What the day to day of this period's plan has spent since it was
+  /// made: part of what it holds, so still part of what there is to split.
+  int _spent(Ledger ledger) => switch (own.plan) {
+    final EnvelopePlan plan => dailySpent(ledger, plan),
+    null => 0,
+  };
+
+  /// What no envelope would hold with [envelopes], as Plan's card will say.
+  int _left(Ledger ledger, List<Envelope> envelopes) => unassigned(
+    ledger,
+    EnvelopePlan(period: periodStart(ledger), envelopes: envelopes),
+    spent: _spent(ledger),
+  );
+
   Future<void> _save(Ledger ledger) async {
     final AppLocalizations l = context.l10n;
     final List<Envelope> envelopes = _current(ledger);
-    final int over =
-        envelopes.fold(0, (int s, Envelope e) => s + e.amount) -
-        allocatable(ledger);
+    final int over = -_left(ledger, envelopes);
     if (over > 0) {
       final bool? sure = await showDialog<bool>(
         context: context,
@@ -145,8 +157,10 @@ class _EnvelopesPageState extends State<EnvelopesPage> {
       if (sure != true) return;
     }
     setState(() => _saving = true);
+    // Changed, a plan keeps what it had counted when it was made.
     await own.savePlan(
-      EnvelopePlan(period: periodStart(ledger), envelopes: envelopes),
+      own.plan?.copyWith(envelopes: envelopes) ??
+          EnvelopePlan.made(ledger, envelopes),
     );
     if (mounted) Navigator.of(context).pop();
   }
@@ -156,10 +170,27 @@ class _EnvelopesPageState extends State<EnvelopesPage> {
     final AppLocalizations l = context.l10n;
     final Ledger ledger = own.ledger!;
     String amount(int minor) => pesos(ledger.major(minor));
-    final int money = allocatable(ledger);
+    final int spent = _spent(ledger);
+    final int money = allocatable(ledger) + spent;
     final List<Envelope> now = _current(ledger);
-    final int assigned = now.fold(0, (int s, Envelope e) => s + e.amount);
-    final int left = money - assigned;
+    final int left = _left(ledger, now);
+    final int debt = own.spendableCardDebt;
+    // The sum behind what there is to split, as Inicio's card says it:
+    // each thing taken out only when there is some, so it adds up.
+    final List<(String, String)> sum = <(String, String)>[
+      (l.standingAvailable, amount(ledger.balance + debt)),
+      if (debt > 0) (l.standingCardDebtLine, amount(-debt)),
+      if (ledger.committedUntilPayday > 0)
+        (
+          l.standingPaymentsBefore(dayShortMonth(ledger.nextPayday)),
+          amount(-ledger.committedUntilPayday),
+        ),
+      if (ledger.cushion > 0) (l.standingCushionLine, amount(-ledger.cushion)),
+      if (ledger.reserved > 0)
+        (l.standingReserveLine, amount(-ledger.reserved)),
+      if (spent > 0)
+        (l.envelopesSpentLine, pesos(ledger.major(spent), signed: true)),
+    ];
     return Scaffold(
       appBar: AppBar(
         backgroundColor: context.colors.canvas,
@@ -187,20 +218,26 @@ class _EnvelopesPageState extends State<EnvelopesPage> {
                   children: <Widget>[
                     Text(l.envelopesToSplit, style: context.type.labelMedium),
                     Figures(amount(money), style: context.type.headlineMedium),
-                    // Every amount taken out is named, so the sum adds up.
-                    Text(
-                      ledger.reserved > 0
-                          ? l.envelopesToSplitBodyReserve(
-                              amount(ledger.committedUntilPayday),
-                              amount(ledger.cushion),
-                              amount(ledger.reserved),
-                            )
-                          : l.envelopesToSplitBody(
-                              amount(ledger.committedUntilPayday),
-                              amount(ledger.cushion),
-                            ),
-                      style: context.type.bodySmall,
-                    ),
+                    const SizedBox(height: 6),
+                    for (final (String label, String value) in sum)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: MergeSemantics(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Expanded(
+                                child: Text(
+                                  label,
+                                  style: context.type.bodySmall,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Figures(value, style: context.type.bodySmall),
+                            ],
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),

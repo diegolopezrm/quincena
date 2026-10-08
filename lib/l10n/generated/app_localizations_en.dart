@@ -575,6 +575,170 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get archive => 'Archive';
+
+  @override
+  String get restore => 'Restore';
+
+  @override
+  String archiveAccountTitle(String names) {
+    return 'Archive $names?';
+  }
+
+  @override
+  String archiveAccountKept(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count transactions stay in your history.',
+      one: 'One transaction stays in your history.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String archiveAccountHidden(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'They stop showing in Accounts and when you pick an account. You can restore them any time from \"Archived accounts\", in Accounts.',
+      one:
+          'It stops showing in Accounts and when you pick an account. You can restore it any time from \"Archived accounts\", in Accounts.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deleteAccountPreferArchive =>
+      'If you closed it, archive it instead: its history stays and it stops showing in Accounts.';
+
+  @override
+  String accountLeavingTransfers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count transfers with other accounts stay in those accounts as income or spending.',
+      one:
+          'A transfer with another account stays in that account as income or spending.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String accountLeavingCharges(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$names are paid from here.',
+      one: '$names is paid from here.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get accountLeavingMoveTo => 'To be paid from';
+
+  @override
+  String get accountLeavingNoAccount => 'No account';
+
+  @override
+  String accountLeavingHeld(int count, String amount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'What they hold, $amount, stops counting in your net worth.',
+      one: 'What it holds, $amount, stops counting in your net worth.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String accountLeavingOwed(int count, String amount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'What is owed on them, $amount, is no longer taken off your net worth.',
+      one:
+          'What is owed on it, $amount, is no longer taken off your net worth.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String accountLeavingHeldSpendable(int count, String amount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'What they hold, $amount, stops counting in your net worth and in what you can spend until payday.',
+      one:
+          'What it holds, $amount, stops counting in your net worth and in what you can spend until payday.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String accountLeavingOwedSpendable(int count, String amount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'What is owed on them, $amount, is no longer taken off your net worth or what you can spend until payday.',
+      one:
+          'What is owed on it, $amount, is no longer taken off your net worth or what you can spend until payday.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String accountLeavingInstalmentsApart(String amount) {
+    return 'What is left of the installments, $amount, is no longer in a card\'s debt: it comes off your net worth on its own, and upcoming installments are counted as payments due.';
+  }
+
+  @override
+  String accountLeavingInstalmentsCard(String amount) {
+    return 'What is left of the installments, $amount, goes into the card\'s debt.';
+  }
+
+  @override
+  String accountLeavingWorthSame(String total) {
+    return 'Your net worth stays at $total.';
+  }
+
+  @override
+  String accountLeavingWorth(String before, String after) {
+    return 'Your net worth goes from $before to $after.';
+  }
+
+  @override
+  String get archivedAccountsTitle => 'Archived accounts';
+
+  @override
+  String archivedAccountsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count accounts, out of your totals',
+      one: 'One account, out of your totals',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get archivedAccountsBody =>
+      'Their transactions stay in your history, but they don\'t count in your totals or show up when you pick an account. Restore one and it goes back to Accounts and your totals.';
+
+  @override
+  String get archivedAccountsNone => 'You have no archived accounts.';
+
+  @override
+  String get accountArchivedNote =>
+      'Archived: it doesn\'t count in your totals or show up when you pick an account.';
+
+  @override
   String get groupSpendable => 'Everyday accounts';
 
   @override
@@ -974,18 +1138,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get comingTitle => 'Next 30 days';
 
   @override
-  String comingLowest(String amount, String date) {
-    return 'Lowest estimated balance before payday: $amount on $date';
+  String comingLowest(String amount, String when) {
+    return 'Lowest estimated balance before payday: $amount $when';
   }
 
   @override
-  String comingTight(String date) {
-    return 'On $date you\'d dip below your safety buffer.';
+  String comingTight(String when) {
+    return '$when you\'d dip below your safety buffer.';
   }
 
   @override
-  String comingRunsOut(String date) {
-    return 'On $date you\'d run out of money.';
+  String comingRunsOut(String when) {
+    return '$when you\'d run out of money.';
   }
 
   @override
@@ -1075,29 +1239,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get buyFits => 'It fits, from what the app knows';
 
   @override
-  String buyFitsBody(String amount, String date) {
-    return 'Your lowest estimated balance would be $amount on $date, above your safety buffer.';
+  String buyFitsBody(String amount, String when) {
+    return 'Your lowest estimated balance would be $amount $when, above your safety buffer.';
   }
 
   @override
-  String buyFitsBodyNoCushion(String amount, String date) {
-    return 'Your lowest estimated balance would be $amount on $date.';
+  String buyFitsBodyNoCushion(String amount, String when) {
+    return 'Your lowest estimated balance would be $amount $when.';
   }
 
   @override
   String get buyBelow => 'You\'d dip below your safety buffer';
 
   @override
-  String buyBelowBody(String date, String amount, String cushion) {
-    return 'On $date you\'d have $amount; your buffer is $cushion.';
+  String buyBelowBody(String when, String amount, String cushion) {
+    return '$when you\'d have $amount; your buffer is $cushion.';
   }
 
   @override
   String get buyShort => 'It doesn\'t stretch to payday';
 
   @override
-  String buyShortBody(String date, String amount) {
-    return 'On $date you\'d be $amount short.';
+  String buyShortBody(String when, String amount) {
+    return '$when you\'d be $amount short.';
   }
 
   @override
@@ -1250,8 +1414,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get closeSpentNone => 'You recorded no spending this pay period.';
 
   @override
-  String comingLowestWithout(String amount, String date) {
-    return 'Without what you\'re trying out, lowest estimated balance before payday: $amount on $date';
+  String comingLowestWithout(String amount, String when) {
+    return 'Without what you\'re trying out, lowest estimated balance before payday: $amount $when';
   }
 
   @override
@@ -1373,20 +1537,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get envelopesToSplit => 'To split';
-
-  @override
-  String envelopesToSplitBody(String committed, String cushion) {
-    return 'What you have to spend, minus $committed due by payday and your $cushion safety buffer.';
-  }
-
-  @override
-  String envelopesToSplitBodyReserve(
-    String committed,
-    String cushion,
-    String reserve,
-  ) {
-    return 'What you have to spend, minus $committed due by payday, your $cushion safety buffer and $reserve kept from variable income.';
-  }
 
   @override
   String get envelopeDaily => 'Day to day';
@@ -2505,6 +2655,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get binanceNeverSynced => 'Not read yet';
 
   @override
+  String binanceReadFailedAt(String when) {
+    return 'Couldn\'t read it. Last read: $when';
+  }
+
+  @override
+  String get binanceReadFailedNever => 'Couldn\'t read it yet';
+
+  @override
   String get binanceSyncNow => 'Read now';
 
   @override
@@ -2543,6 +2701,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get binanceArchive => 'Archive them';
+
+  @override
+  String get binanceArchiveWhy =>
+      'Binance already brings these balances: archiving them keeps them from counting twice.';
 
   @override
   String get binanceLabelP2p => 'Binance P2P';
@@ -5677,4 +5839,132 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get examplePasteNote =>
       'A sample message, like the ones banks send. You can change it before reading it.';
+
+  @override
+  String dayWhen(String date) {
+    return 'on $date';
+  }
+
+  @override
+  String get todayWhen => 'today';
+
+  @override
+  String comingLowestLineToday(String amount) {
+    return 'Your lowest estimated balance before payday is today\'s: $amount.';
+  }
+
+  @override
+  String get buyTakesApart => 'It fits, but only with money you keep apart';
+
+  @override
+  String buyWithinFree(String free, String payday) {
+    return 'It fits in the $free you can spend until $payday.';
+  }
+
+  @override
+  String buyOverFree(String free, String payday, String used) {
+    return 'That\'s more than the $free you can spend until $payday: you\'d use $used.';
+  }
+
+  @override
+  String buyUses(String used) {
+    return 'You\'d use $used.';
+  }
+
+  @override
+  String buyAlsoUses(String used) {
+    return 'You\'d also use $used.';
+  }
+
+  @override
+  String buyUsesSetAside(String amount) {
+    return '$amount set aside in envelopes';
+  }
+
+  @override
+  String buyUsesReserve(String amount) {
+    return '$amount of what you keep from variable income';
+  }
+
+  @override
+  String buyUsesCushion(String amount) {
+    return '$amount of your safety buffer';
+  }
+
+  @override
+  String buyNothingFree(String payday, String used) {
+    return 'Until $payday you have nothing left to spend: you\'d use $used.';
+  }
+
+  @override
+  String get envelopesSpentLine => 'Spent from the day to day';
+
+  @override
+  String freelanceReserveOutside(String amount) {
+    return 'What you were paid into accounts that aren\'t for everyday use ($amount) isn\'t kept apart: it never counted in what you can spend.';
+  }
+
+  @override
+  String whyAccount(String digits, String account) {
+    return 'account *$digits is $account';
+  }
+
+  @override
+  String ruleLearnedAccount(String digits, String account) {
+    return 'From now on, account *$digits goes to $account.';
+  }
+
+  @override
+  String ruleAccountKey(String digits) {
+    return 'Account *$digits';
+  }
+
+  @override
+  String get rulesAccounts => 'Account numbers';
+
+  @override
+  String whichAccountNumber(String institution, String digits) {
+    return 'We detected $institution and account *$digits, but we don\'t know yet which of your accounts it is.';
+  }
+
+  @override
+  String pickAccountNumberNote(String digits) {
+    return 'Next time, transactions on account *$digits will go straight to the one you choose.';
+  }
+
+  @override
+  String statementPaymentWaits(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'The $count card payments stay unchecked until you say which of your accounts they came from: check them and choose the account.',
+      one:
+          'The card payment stays unchecked until you say which of your accounts it came from: check it and choose the account.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String statementPaymentNoSource(int count, String currency) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'The $count card payments stay unchecked: none of your other accounts is in $currency, and checked they would count as income. Record them as transfers between your accounts from the one that paid them.',
+      one:
+          'The card payment stays unchecked: none of your other accounts is in $currency, and checked it would count as income. Record it as a transfer between your accounts from the one that paid it.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get replacedBySelection => 'Replaced by your new selection';
+
+  @override
+  String get seeNewSelection => 'See the new one';
+
+  @override
+  String get rulesEmptyWithMovements =>
+      'You don\'t have any rules right now. When you record something in Needs review, one is created for its shop, card or bank. Your transactions stay as they are.';
 }

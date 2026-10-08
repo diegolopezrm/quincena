@@ -18,6 +18,7 @@ import 'package:quincena/backup/backup.dart';
 import 'package:quincena/capture/event.dart';
 import 'package:quincena/capture/inbox.dart';
 import 'package:quincena/domain/pay_schedule.dart';
+import 'package:quincena/domain/projection.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/exchanges/binance_link.dart';
 import 'package:quincena/format/money.dart';
@@ -256,7 +257,9 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tap('Empezar');
       await f.page(
         'Toca «Empezar»: puedes gastar el banco y el efectivo menos lo que '
-        'debes en la tarjeta hasta el 15 de octubre, sin «Provisional».',
+        'debes en la tarjeta hasta el 15 de octubre, sin «Provisional». '
+        'Más abajo, «Próximos días» dice que el mínimo antes del pago es el '
+        'de hoy y no avisa de ningún día sin plata.',
       );
       await f.check(
         'Puedes gastar ${pesos(1080000)}: el banco y el efectivo menos la '
@@ -279,6 +282,34 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         expect(_own(f).provisional, isFalse);
         expect(f.shows('Provisional: faltan tus pagos fijos'), isFalse);
       });
+      await f.check(
+        '«Próximos días» no avisa que te quedes sin plata: los pagos del 15 y '
+        'del 31 de octubre llegan antes del arriendo del 5 de noviembre, y '
+        'sin colchón no habla de él',
+        () {
+          final Projection p = _own(f).projection!;
+          expect(_own(f).ledger!.cushion, 0);
+          expect(p.firstTight, isNull);
+          expect(f.screenText, isNot(contains('te quedarías sin plata')));
+          expect(f.screenText, isNot(contains('colchón')));
+        },
+      );
+      await f.check(
+        'Nada baja el saldo antes del pago: dice que el mínimo es el de hoy, '
+        'sin nombrar el 3 de octubre como otro día',
+        () {
+          final ProjectedDay low = _own(f).projection!.lowestBeforePayday;
+          expect(low.date, DateTime(2026, 10, 3));
+          expect(
+            f.shows(
+              'Tu saldo mínimo estimado antes del pago es el de hoy: '
+              '${pesos(1080000)}.',
+            ),
+            isTrue,
+          );
+          expect(f.screenText, isNot(contains('el 3 de octubre')));
+        },
+      );
       await f.check('La app abre en adelante en tus cuentas', () async {
         expect(await _read(f, () => _store(f).setting('app.mode')), 'own');
       });
@@ -1053,11 +1084,23 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       );
       await f.tapTip('Ajustes');
       await f.tap('Colchón');
-      await f.tester.enterText(find.byType(TextField), '200000');
+      await f.tester.enterText(find.byType(TextField), '0');
+      await f.tap('Guardar');
       await f.step(
-        '«Colchón» explica que no cuenta en lo que puedes gastar. Se escribe '
-        '200.000.',
+        '«Colchón» explica que no cuenta en lo que puedes gastar. Con 0 y '
+        '«Guardar» el cuadro sigue abierto y dice «Escribe un monto mayor que '
+        'cero.»; para no tener colchón está «Cancelar».',
       );
+      await f.check(
+        'Un colchón de 0 no se guarda y el cuadro dice por qué',
+        () {
+          expect(_own(f).profile!.cushion, isNull);
+          expect(f.shows('Escribe un monto mayor que cero.'), isTrue);
+          expect(find.byType(AlertDialog), findsOneWidget);
+        },
+      );
+      await f.tester.enterText(find.byType(TextField), '200000');
+      await f.step('Se corrige a 200.000.');
       await f.tap('Guardar');
       await f.back();
       await f.step(
@@ -1458,8 +1501,10 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         await f.tapFound(find.byTooltip('Borrar regla').first);
       }
       await f.step(
-        'Con todas borradas: «Todavía no hay reglas. Aparecen cuando '
-        'registras tus primeros movimientos.», aunque ya tienes muchos.',
+        'Con todas borradas, a alguien con muchos movimientos le dice «No '
+        'tienes reglas ahora. Cuando registres algo en Por revisar, se crea '
+        'la de su comercio, su tarjeta o su banco. Tus movimientos no '
+        'cambian.»',
       );
       await f.check('No queda ninguna regla guardada', () async {
         final CaptureSettings saved = await _read(
@@ -1467,8 +1512,17 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           () => _store(f).captureSettings(),
         );
         expect(saved.rules, isEmpty);
-        expect(f.screenText, contains('Todavía no hay reglas.'));
       });
+      await f.check(
+        'Con ${_own(f).snapshot!.entries.length} movimientos, no habla de '
+        'los primeros sino de cómo vuelven las reglas',
+        () {
+          expect(_own(f).snapshot!.entries, isNotEmpty);
+          expect(f.screenText, contains('No tienes reglas ahora.'));
+          expect(f.screenText, isNot(contains('primeros movimientos')));
+          expect(f.screenText, contains('Tus movimientos no cambian.'));
+        },
+      );
       await f.back();
       await f.check('La fila dice «Ninguna todavía»', () {
         expect(f.shows('Ninguna todavía'), isTrue);
@@ -1735,11 +1789,17 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         expect(f.shows('Ajustes'), isTrue);
         expect(phone.scheduledClose(), isNotEmpty);
       });
-      await f.tap('Borrar todo');
-      await f.tap('Borrar todo');
+      await f.tap('English');
+      await f.check('Antes de borrar, la app está en inglés', () {
+        expect(_app(f).locale, const Locale('en'));
+        expect(f.shows('Delete everything'), isTrue);
+      });
+      await f.tap('Delete everything');
+      await f.tap('Delete everything');
       await f.step(
-        'Con «Borrar todo» la app vuelve a «¿Cómo quieres empezar?», como '
-        'recién instalada: también vuelve a los colores del teléfono.',
+        'En inglés, «Delete everything» y confirmar: la app vuelve a «¿Cómo '
+        'quieres empezar?», como recién instalada, ya en el idioma y los '
+        'colores del teléfono, sin esperar a volver a abrirla.',
       );
       await f.check(
         'No queda perfil, cuentas, movimientos ni pagos fijos',
@@ -1775,7 +1835,12 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           expect(_app(f).themeMode, ThemeMode.system);
           expect(_app(f).locale, isNull);
           expect(_brightness(f), Brightness.light);
+          expect(f.shows('¿Cómo quieres empezar?'), isTrue);
           expect(await _read(f, () => _store(f).setting('app.theme')), isNull);
+          expect(
+            await _read(f, () => _store(f).setting('app.language')),
+            isNull,
+          );
         },
       );
       await f.tap('Con mis cuentas');
@@ -2094,21 +2159,16 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tapTip('Ajustes');
       await f.step(
         'Al abrir otra vez la hoja, «Tu key» está marcada y dice que responde '
-        '${GeminiClient.defaultModel}; el campo de la key queda vacío, por si '
-        'hay que cambiarla.',
+        '${GeminiClient.defaultModel}; el campo queda vacío, por si una key '
+        'que no funcionó hay que cambiarla, y no muestra la de antes.',
       );
-      await f.check(
-        'Conectada, la hoja dice quién responde y no muestra la key guardada',
-        () {
-          final Finder field = find.widgetWithText(TextField, 'Key de Gemini');
-          expect(field, findsOneWidget);
-          expect(f.tester.widget<TextField>(field).controller!.text, isEmpty);
-          expect(
-            f.screenText,
-            contains('Responde ${GeminiClient.defaultModel}.'),
-          );
-        },
-      );
+      await f.check('Dice quién responde, y la key de antes no se ve', () {
+        expect(
+          f.screenText,
+          contains('Responde ${GeminiClient.defaultModel}.'),
+        );
+        expect(_keyField(f).controller!.text, isEmpty);
+      });
       await f.tap('Demo');
       await f.check('«Demo» vuelve a las respuestas sin red', () {
         expect(_session(f).mode, AgentMode.demo);
@@ -2116,10 +2176,8 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tap('Tu key');
       await f.check('«Tu key» vuelve a la key de antes sin escribirla', () {
         expect(_session(f).mode, AgentMode.live);
-        expect(
-          f.screenText,
-          contains('Responde ${GeminiClient.defaultModel}.'),
-        );
+        expect(_session(f).canGoLive, isTrue);
+        expect(_keyField(f).controller!.text, isEmpty);
       });
       await f.back();
       await f.check('Cerrada la hoja, arriba sigue EN VIVO', () {
@@ -2639,11 +2697,11 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tap('Varios dispositivos');
       await f.tap('Empezar en este dispositivo');
       await f.tap('Copiar el código');
-      await _waitMessages(f);
       await f.tap('Guardar mis cambios en un archivo');
       await f.step(
-        '«Guardar mis cambios en un archivo» guarda quincena-2026-10-03.qsync '
-        'y dice «Archivo guardado. Ábrelo en tu otro dispositivo.»',
+        'Copia el código y enseguida toca «Guardar mis cambios en un '
+        'archivo»: guarda quincena-2026-10-03.qsync y el aviso de abajo ya '
+        'dice «Archivo guardado. Ábrelo en tu otro dispositivo.»',
       );
       final Uint8List? saved = phone.saved['quincena-2026-10-03.qsync'];
       await f.check('Se guardó el archivo cifrado del 3 de octubre', () {
@@ -2657,6 +2715,10 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           f.shows('Archivo guardado. Ábrelo en tu otro dispositivo.'),
           isTrue,
         );
+      });
+      await f.check('El aviso del código copiado ya no está, ni espera', () {
+        expect(f.shows('Código copiado.'), isFalse);
+        expect(find.byType(SnackBar), findsOneWidget);
       });
       // The computer joins with the code copied and opens the file.
       final (QuincenaStore computer, SyncService there) = await _otherDevice(f);
@@ -2692,15 +2754,23 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         expect(f.shows('Listo: un cambio.'), isTrue);
       });
       phone.toPick.add(await _read(f, there.export));
-      await _waitMessages(f);
       await f.tap('Abrir un archivo de otro dispositivo');
-      await f.step(
-        'Abrir otra vez un archivo con lo mismo no duplica nada: «Ya estaba '
-        'todo al día.»',
+      // Right after the tap, before the picture takes its time: queued, the
+      // notice before would still be the one showing.
+      await f.check(
+        'Al momento, el aviso es el de este archivo y no el de antes',
+        () {
+          expect(f.shows('Ya estaba todo al día.'), isTrue);
+          expect(f.shows('Listo: un cambio.'), isFalse);
+          expect(find.byType(SnackBar), findsOneWidget);
+        },
       );
-      await f.check('Nada se duplicó y lo dice', () {
+      await f.step(
+        'Abrir enseguida otra vez un archivo con lo mismo no duplica nada, y '
+        'el aviso cambia al momento: «Ya estaba todo al día.»',
+      );
+      await f.check('Nada se duplicó', () {
         expect(_own(f).snapshot!.entries, hasLength(mine + 1));
-        expect(f.shows('Ya estaba todo al día.'), isTrue);
       });
       await f.back();
       await f.back();
@@ -3099,11 +3169,20 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           ),
         ),
       );
-      await _waitMessages(f);
       await f.tap('Importar un archivo');
+      // Right after the tap, before the picture takes its time: queued, the
+      // notice about the other file would still be the one showing.
+      await f.check('Al momento, el aviso es el de este archivo', () {
+        expect(f.screenText, contains('Actualiza la app'));
+        expect(
+          f.screenText,
+          isNot(contains('Ese archivo no lo exportó Quincena.')),
+        );
+        expect(find.byType(SnackBar), findsOneWidget);
+      });
       await f.step(
-        'Uno de una Quincena más nueva: «Actualiza la app y vuelve a '
-        'intentarlo; no se cambió nada.»',
+        'Enseguida, uno de una Quincena más nueva: el aviso cambia al momento '
+        'a «Actualiza la app y vuelve a intentarlo; no se cambió nada.»',
       );
       await f.check('Un archivo más nuevo no cambia nada', () {
         expect(f.screenText, contains('Actualiza la app'));
@@ -3328,6 +3407,10 @@ Future<List<Object?>?> _openBackup(FlowRun f, Uint8List file, String? code) =>
         await elsewhere.close();
       }
     });
+
+/// The field for a Gemini key in the demo's settings.
+TextField _keyField(FlowRun f) =>
+    f.tester.widget<TextField>(find.widgetWithText(TextField, 'Key de Gemini'));
 
 /// Lets the messages at the bottom go, as when the person reads them,
 /// before something that says one of its own.

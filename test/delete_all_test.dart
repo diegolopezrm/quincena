@@ -86,6 +86,8 @@ void main() {
       );
       await store.setSetting('app.mode', 'own');
       await store.setSetting('app.theme', 'dark');
+      // The app in English on a phone in Spanish.
+      await store.setSetting('app.language', 'en');
       await store.addAccount(
         name: 'Bancolombia',
         kind: AccountKind.bank,
@@ -107,29 +109,35 @@ void main() {
     ThemeMode theme() =>
         tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode!;
     expect(theme(), ThemeMode.dark);
+    Locale? language() =>
+        tester.widget<MaterialApp>(find.byType(MaterialApp)).locale;
+    expect(language(), const Locale('en'));
 
-    await tester.tap(find.byTooltip('Ajustes'));
+    await tester.tap(find.byTooltip('Settings'));
     await settle(tester);
     // The payday reminder on: the phone keeps reminders that name nothing
     // but are the person's.
-    await tester.ensureVisible(find.text('Avisarme el día de pago'));
-    await tester.tap(find.text('Avisarme el día de pago'));
+    await tester.ensureVisible(find.text('Remind me on payday'));
+    await tester.tap(find.text('Remind me on payday'));
     await settle(tester);
     expect(reminders.last, 'schedule');
 
     await tester.scrollUntilVisible(
-      find.text('Borrar todo'),
+      find.text('Delete everything'),
       300,
       scrollable: find.byType(Scrollable).last,
     );
-    await tester.ensureVisible(find.text('Borrar todo'));
+    await tester.ensureVisible(find.text('Delete everything'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Borrar todo'));
+    await tester.tap(find.text('Delete everything'));
     await settle(tester);
-    await tester.tap(find.text('Borrar todo').last);
+    await tester.tap(find.text('Delete everything').last);
     await settle(tester);
 
+    // At once, in the phone's language: nothing waits for the next launch.
     expect(find.text('¿Cómo quieres empezar?'), findsOneWidget);
+    expect(language(), isNull);
+    expect(await tester.runAsync(() => store.setting('app.language')), isNull);
     expect(tester.takeException(), isNull);
     expect(reminders.last, 'cancel');
     expect(keychain.keys, isNot(contains('binance.key')));

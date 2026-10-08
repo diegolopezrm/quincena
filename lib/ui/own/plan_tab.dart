@@ -349,9 +349,11 @@ class _EnvelopesCard extends StatelessWidget {
       );
     }
     final int daily = plan.daily;
-    final int spent = spentThisPeriod(ledger);
+    // Only what was spent from it after the split: what went before, or
+    // was committed then, was never in it.
+    final int spent = dailySpent(ledger, plan);
     final bool over = daily > 0 && spent > daily;
-    final int left = allocatable(ledger) - plan.assigned;
+    final int left = unassigned(ledger, plan, spent: spent);
     return Block(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
       child: Column(

@@ -182,6 +182,76 @@ device), which orders any two versions the same way on every device.
 - The merge, the new versions and "Para revisar" are written in one
   database transaction. Tombstones are kept for good.
 
+## Whole records, not fields
+
+A version is a version of the whole record. Two edits to different fields
+of the same record, made on two devices before either saw the other's
+file, are two concurrent versions, and only one of them can stay.
+
+What happens today, with a movement «Almuerzo» on both devices:
+
+1. On the phone its name becomes «Almuerzo con Juan». On the computer,
+   before the phone's file arrives, it gets the note «Pagó la mitad».
+2. When the files cross, each version has a change the other never saw.
+   The later stamp wins whole, say the computer's: both devices show
+   «Almuerzo» with the note. The phone's version waits in "Para revisar"
+   as it was, «Almuerzo con Juan» with no note.
+3. "Para revisar" names it by its payee and amount and says it was
+   changed on both devices. It does not say which fields differ, so the
+   person cannot tell that bringing it back takes the note away.
+4. «Traer de vuelta» writes the waiting version whole, as the newest
+   change: the name comes back, the note goes, and the version it
+   replaced, with the note, waits in its turn. «Descartar» on that one
+   lets the note go on every device. «Descartar» on the first instead
+   keeps the note and loses the name. Either way one of two edits that
+   never touched the same field is lost, unless the person types it
+   again. Nothing is counted twice: amounts change only if one of the
+   edits was to the amount.
+
+`test/sync_test.dart` holds this: "a name changed on one and a note
+added on the other are two versions".
+
+### What a merge field by field would take
+
+- **Versions per field, in the file.** Any merge has to end the same on
+  every device whatever order files arrive in, as the two rules above do.
+  A three-way merge against the last version each device saw does not:
+  devices have seen different versions, so two of them merging the same
+  pair can write different records. Each field that merges on its own
+  needs its own version vector and stamp, and merges as records do now:
+  the later wins, and a concurrent loser waits, as a field.
+- **A new sync format.** Records would carry those per-field versions
+  next to `c` and `s`, under `"format": 2` in the body. A device on the
+  new format reads format 1 files by giving every field the record's
+  vector and stamp. A device on the old format refuses format 2 as newer,
+  so a device cannot start writing format 2 until every device of the
+  vault reads it. Today a device does not know the others, so that needs
+  either a record of each device and the format it reads, or the person
+  updating every device first.
+- **Hashes per field.** A device notices its own changes by a hash of the
+  whole record. It would keep one per field in its sync metadata, which
+  is stored in the device's settings, so no user table changes. Every
+  device would version each field once, the first time it writes the new
+  format.
+- **Fields that move together.** Amount, kind and account are one field,
+  since an amount means nothing without its account's currency, and a
+  goal's target goes with its date. The two legs of a transfer are two
+  records whose amounts must still merge as one, or each leg could keep a
+  different amount. Settings known by name and the items of lists stay
+  whole.
+- **"Para revisar" by field.** It would show the field and both values,
+  «Nombre: Almuerzo con Juan», and bringing it back would write that field
+  only.
+- **Tests and review.** The three-device test and the simulation of
+  random histories run per field, the test above turns around, and the
+  merge gets a review pass like the two before, since the format changes.
+
+A cheaper step needs no new format: "Para revisar" could show what differs
+between the waiting version and the one shown, and «Traer de vuelta» could
+take only the fields the person picks. The result is a new whole version
+that syncs as any edit does. The person does the merging, but nothing they
+see is lost without them choosing it.
+
 ## Revoking, deleting and keeping
 
 - **A lost device, or one that should stop syncing**: change the code. The

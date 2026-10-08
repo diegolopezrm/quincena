@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -126,6 +128,180 @@ void main() {
       expect(after.payUnknown, isTrue);
       expect(after.reliesOnPay, isFalse);
       expect(after.verdict, PurchaseVerdict.short);
+    });
+
+    test('what envelopes and the reserve keep apart is not there to buy '
+        'with', () async {
+      // 900.000, less internet's 300.000, the cushion's 100.000, 100.000
+      // in envelopes and a reserve of 150.000: 250.000 to spend.
+      final Ledger l = buildLedger(
+        (await store.snapshot())!,
+        today: today,
+        setAside: 100000,
+        reserved: 150000,
+      ).ledger;
+      expect(l.freeUntilPayday, 250000);
+      PurchaseCheck buy(int price) =>
+          checkPurchase(l, price: price, date: today);
+
+      final PurchaseCheck fits = buy(250000);
+      expect(fits.verdict, PurchaseVerdict.fits);
+      expect(fits.usesSetAside + fits.usesReserve + fits.usesCushion, 0);
+
+      // 50.000 over what there is to spend: from the envelopes first.
+      final PurchaseCheck over = buy(300000);
+      expect(over.lowest, 300000);
+      expect(over.verdict, PurchaseVerdict.takesApart);
+      expect(over.usesSetAside, 50000);
+      expect(over.usesReserve, 0);
+      expect(over.usesCushion, 0);
+
+      // All of the envelopes and part of the reserve.
+      final PurchaseCheck more = buy(400000);
+      expect(more.verdict, PurchaseVerdict.takesApart);
+      expect(more.usesSetAside, 100000);
+      expect(more.usesReserve, 50000);
+
+      // Under the cushion, it has taken everything above it.
+      final PurchaseCheck under = buy(550000);
+      expect(under.verdict, PurchaseVerdict.belowCushion);
+      expect(under.usesSetAside, 100000);
+      expect(under.usesReserve, 150000);
+      expect(under.usesCushion, 50000);
+
+      expect(buy(700000).verdict, PurchaseVerdict.short);
+    });
+
+    test('a purchase fits only within what there is to spend', () async {
+      final Ledger l = buildLedger(
+        (await store.snapshot())!,
+        today: today,
+        setAside: 40000,
+        reserved: 150000,
+      ).ledger;
+      for (var price = 10000; price <= 800000; price += 10000) {
+        final PurchaseCheck c = checkPurchase(l, price: price, date: today);
+        expect(
+          c.verdict == PurchaseVerdict.fits,
+          price <= l.freeUntilPayday,
+          reason: '$price against ${l.freeUntilPayday}',
+        );
+        // What it takes from what is kept apart is what it goes over by.
+        expect(
+          c.usesSetAside + c.usesReserve + c.usesCushion,
+          math.min(
+            math.max(0, price - l.freeUntilPayday),
+            l.cushion + l.setAside + l.reserved,
+          ),
+          reason: '$price',
+        );
+      }
+    });
+
+    test('with nothing left to spend, a purchase takes from what is kept '
+        'apart only its own price', () async {
+      // 900.000, less internet's 300.000, the cushion's 100.000, 300.000 in
+      // envelopes and a reserve of 550.000: 350.000 short of anything to
+      // spend before buying a thing, and already into the reserve.
+      final Ledger l = buildLedger(
+        (await store.snapshot())!,
+        today: today,
+        setAside: 300000,
+        reserved: 550000,
+      ).ledger;
+      expect(l.freeUntilPayday, -350000);
+
+      // 10.000 takes 10.000 of the reserve, not the 360.000 it would then
+      // be short of.
+      final PurchaseCheck small = checkPurchase(l, price: 10000, date: today);
+      expect(small.verdict, PurchaseVerdict.takesApart);
+      expect(small.usesSetAside, 0);
+      expect(small.usesReserve, 10000);
+      expect(small.usesCushion, 0);
+
+      // Down to zero: the rest of the reserve and the whole cushion.
+      final PurchaseCheck big = checkPurchase(l, price: 600000, date: today);
+      expect(big.verdict, PurchaseVerdict.belowCushion);
+      expect(big.usesReserve, 500000);
+      expect(big.usesCushion, 100000);
+
+      // Past zero, what it takes is what there was; the rest is short.
+      final PurchaseCheck short = checkPurchase(l, price: 700000, date: today);
+      expect(short.verdict, PurchaseVerdict.short);
+      expect(short.lowest, -100000);
+      expect(
+        short.usesSetAside + short.usesReserve + short.usesCushion,
+        600000,
+      );
+    });
+
+    test('bought on payday, it counts on the pay of that day, as the day '
+        'after does', () async {
+      await profile(pay: '1000000', cushion: '100000');
+      await store.addRecurring(
+        name: 'Arriendo',
+        amount: Money(d('800000'), Asset.cop),
+        cadence: Cadence.monthly,
+        nextDate: DateTime(2026, 10, 20),
+        accountId: bank.id,
+        category: 'housing',
+      );
+      final Ledger l = await ledger();
+      final PurchaseCheck before = checkPurchase(
+        l,
+        price: 100000,
+        date: DateTime(2026, 10, 14),
+      );
+      expect(before.verdict, PurchaseVerdict.fits);
+      expect(before.reliesOnPay, isFalse);
+      final PurchaseCheck on = checkPurchase(
+        l,
+        price: 100000,
+        date: DateTime(2026, 10, 15),
+      );
+      final PurchaseCheck after = checkPurchase(
+        l,
+        price: 100000,
+        date: DateTime(2026, 10, 16),
+      );
+      // 900.000 - 300.000 + 1.000.000 on the 15th - 100.000 - 800.000 on
+      // the 20th: not the whole fortnight after without the pay.
+      expect(on.until, DateTime(2026, 10, 30));
+      expect(on.reliesOnPay, isTrue);
+      expect(on.lowest, 700000);
+      expect(on.lowestOn, DateTime(2026, 10, 20));
+      expect(on.verdict, PurchaseVerdict.fits);
+      expect(on.lowest, after.lowest);
+    });
+
+    test('after a pay that came early, it counts on no pay that is still to '
+        'come', () async {
+      await profile(pay: '1000000', cushion: '100000');
+      // The 15th of November is a Sunday: the pay came on Friday the 13th.
+      await store.addEntry(
+        accountId: bank.id,
+        amount: d('1000000'),
+        kind: EntryKind.income,
+        date: DateTime(2026, 11, 13, 8),
+        category: 'salary',
+      );
+      final Ledger l = buildLedger(
+        (await store.snapshot())!,
+        today: DateTime(2026, 11, 13),
+      ).ledger;
+      final PurchaseCheck c = checkPurchase(
+        l,
+        price: 500000,
+        date: DateTime(2026, 11, 16),
+      );
+      // 900.000 and the pay, less 500.000: the pay is not counted a second
+      // time on the 15th.
+      expect(l.balance, 1900000);
+      // Still after payday: what can be spent until it is not the measure.
+      expect(c.afterPay, isTrue);
+      expect(c.reliesOnPay, isFalse);
+      expect(c.payUnknown, isFalse);
+      expect(c.lowest, 1400000);
     });
 
     test('the calendar sees the purchase the check weighed', () async {

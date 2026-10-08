@@ -17,6 +17,7 @@ import 'store/store.dart';
 import 'theme/theme.dart';
 import 'theme/tokens.dart';
 import 'ui/home_page.dart';
+import 'ui/messages.dart';
 import 'ui/own/example_bar.dart';
 import 'ui/own/onboarding_page.dart';
 import 'ui/own/own_shell.dart';
@@ -288,7 +289,7 @@ class _QuincenaAppState extends State<QuincenaApp> {
           Intl.defaultLocale = intlLocaleFor(
             Localizations.localeOf(context).languageCode,
           );
-          return _frame(child!);
+          return LatestMessenger(child: _frame(child!));
         },
         home: _home(),
       ),

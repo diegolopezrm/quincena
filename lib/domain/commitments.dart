@@ -411,6 +411,23 @@ class Instalments {
     return covered < rows.length ? rows[covered] : null;
   }
 
+  /// The same purchase, paid from [account] from now on, or from no
+  /// account in Quincena when null.
+  Instalments withAccount(String? account) => Instalments(
+    id: id,
+    name: name,
+    principal: principal,
+    count: count,
+    firstDue: firstDue,
+    rate: rate,
+    rateKind: rateKind,
+    instalment: instalment,
+    fee: fee,
+    cashPrice: cashPrice,
+    accountId: account,
+    payments: payments,
+  );
+
   Instalments withPayment(DateTime on, int amount) =>
       withPayments(<(DateTime, int)>[...payments, (on, amount)]);
 

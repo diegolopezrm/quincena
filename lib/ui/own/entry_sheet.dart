@@ -199,12 +199,18 @@ class _EntryFormState extends State<_EntryForm> {
     return null;
   }
 
-  Asset _assetOf(String? id) {
-    for (final Account a in own.accounts) {
-      if (a.id == id) return a.asset;
-    }
-    return own.profile?.base ?? Asset.cop;
-  }
+  Asset _assetOf(String? id) =>
+      (id == null ? null : own.snapshot?.account(id))?.asset ??
+      own.profile?.base ??
+      Asset.cop;
+
+  /// The accounts to choose from, and the archived one a movement being
+  /// changed is in, so it opens where it is.
+  List<Account> _choices(String? value) => <Account>[
+    ...own.accounts,
+    if (value != null && !own.accounts.any((Account a) => a.id == value))
+      ?own.snapshot?.account(value),
+  ];
 
   static String _decimalText(Decimal value, Asset asset) =>
       formatDecimal(value.abs(), decimals: asset.decimals, trim: true);
@@ -484,7 +490,7 @@ class _EntryFormState extends State<_EntryForm> {
       isExpanded: true,
       decoration: InputDecoration(labelText: label, errorText: error),
       items: <DropdownMenuItem<String>>[
-        for (final Account a in own.accounts)
+        for (final Account a in _choices(value))
           DropdownMenuItem<String>(
             value: a.id,
             child: Row(

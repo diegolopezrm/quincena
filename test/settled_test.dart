@@ -118,6 +118,49 @@ class ExpenseModel implements ModelClient {
   }
 }
 
+/// A model that answers about subscriptions as the demo does: the list,
+/// the review of the ticked ones, and what the person says they cancelled.
+class SubscriptionsModel implements ModelClient {
+  final ScriptedAgent _script = ScriptedAgent(demoLedger());
+  int _serial = 0;
+
+  /// Makes the next answer to something tapped fail.
+  bool failNext = false;
+
+  /// The events that reached the model, in order.
+  final List<String> events = <String>[];
+
+  @override
+  Stream<String> send(
+    String prompt, {
+    required List<ChatMessage> history,
+  }) async* {
+    final AgentTurn? turn;
+    if (prompt.startsWith('{')) {
+      final Map<Object?, Object?> action =
+          (jsonDecode(prompt) as Map<Object?, Object?>)['action']!
+              as Map<Object?, Object?>;
+      events.add(action['name']! as String);
+      if (failNext) {
+        failNext = false;
+        throw StateError('Gemini returned 500');
+      }
+      turn = _script.react(
+        action['name']! as String,
+        (action['context']! as Map<Object?, Object?>).cast<String, Object?>(),
+      );
+    } else {
+      turn = _script.answer(prompt);
+    }
+    for (final message in turn!.messages(
+      'model-${++_serial}',
+      quincenaCatalog.catalogId!,
+    )) {
+      yield '```json\n${jsonEncode(message.toJson())}\n```\n';
+    }
+  }
+}
+
 Future<void> open(WidgetTester tester, Session session) async {
   tester.view.physicalSize = const Size(1170, 2532);
   tester.view.devicePixelRatio = 3;
@@ -295,6 +338,66 @@ void main() {
       await answer(tester);
       expect(session.settledOf(form), isNotNull);
       expect(session.ledger.freeUntilPayday, 1369300 - 60000);
+    });
+
+    testWidgets('a review a newer choice replaced takes nothing more', (
+      tester,
+    ) async {
+      final SubscriptionsModel model = SubscriptionsModel();
+      final Session session = Session(
+        mode: AgentMode.live,
+        client: model,
+        errorWindow: Duration.zero,
+      );
+      await open(tester, session);
+      unawaited(session.ask(ScriptedAgent.starters[2]));
+      await answer(tester);
+      for (final String name in <String>['Fit24 gimnasio', 'Lingo Pro']) {
+        final Finder box = find.byWidgetPredicate(
+          (Widget w) =>
+              w is Checkbox &&
+              w.semanticLabel == 'Seleccionar $name para cancelar',
+        );
+        await tester.ensureVisible(box);
+        await tester.pumpAndSettle();
+        await tester.tap(box);
+        await tester.pumpAndSettle();
+      }
+      await tap(tester, 'Revisar las marcadas');
+      await answer(tester);
+      final String review = session.turns.last.surfaceIds.single;
+
+      // A new choice whose answer does not arrive replaces nothing.
+      model.failNext = true;
+      await tap(tester, 'Cambiar selección');
+      await answer(tester);
+      expect(session.replacedBy(review), isNull);
+      expect(find.text('Reemplazada por tu nueva selección'), findsNothing);
+
+      await tap(tester, 'Cambiar selección');
+      await answer(tester);
+      expect(session.replacedBy(review), same(session.turns.last));
+      expect(find.text('Reemplazada por tu nueva selección'), findsOneWidget);
+
+      // Its button is drawn but takes no tap, and the model hears nothing.
+      final int turns = session.turns.length;
+      await tester.ensureVisible(find.text('Ya las cancelé'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Ya las cancelé'), warnIfMissed: false);
+      await answer(tester);
+      expect(session.turns, hasLength(turns));
+      expect(model.events, isNot(contains('cancel_subscriptions')));
+      expect(session.settledOf(review), isNull);
+
+      // Nueva puts it aside with the rest, and Deshacer brings it back
+      // still replaced.
+      final Previous? previous = session.startOver();
+      await tester.pumpAndSettle();
+      expect(session.replacedBy(review), isNull);
+      session.restore(previous!);
+      await tester.pumpAndSettle();
+      expect(session.replacedBy(review), isNotNull);
+      expect(find.text('Reemplazada por tu nueva selección'), findsOneWidget);
     });
 
     testWidgets('keeps its own id, whatever id the model wrote into it', (

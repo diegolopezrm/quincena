@@ -237,4 +237,51 @@ void main() {
     expect((await tester.runAsync(store.captureSettings))!.rules, isEmpty);
     expect(find.textContaining('Todavía no hay reglas'), findsOneWidget);
   });
+
+  testWidgets('with movements and no rules left, the page says how the '
+      'next ones come, not that the first movements are missing', (
+    tester,
+  ) async {
+    final (OwnController own, QuincenaStore store) = await open(
+      tester,
+      (OwnController own) => CaptureRulesPage(own: own),
+    );
+    await tester.runAsync(() async {
+      final Account nequi = (await store.accounts()).single;
+      for (var day = 1; day <= 3; day++) {
+        await store.addEntry(
+          accountId: nequi.id,
+          amount: Decimal.parse('-12000'),
+          kind: EntryKind.expense,
+          date: DateTime(2026, 10, day, 9),
+          category: 'groceries',
+          payee: 'Panadería la Espiga',
+        );
+      }
+      await store.saveCaptureSettings(
+        const CaptureSettings().withRule(
+          const CaptureRule(
+            kind: RuleKind.merchant,
+            key: 'panaderia la espiga',
+            target: 'groceries',
+          ),
+        ),
+      );
+    });
+    await settle(tester);
+    expect(own.snapshot!.entries, hasLength(3));
+
+    await tester.tap(find.byTooltip('Borrar regla'));
+    await settle(tester);
+    expect((await tester.runAsync(store.captureSettings))!.rules, isEmpty);
+    expect(find.textContaining('primeros movimientos'), findsNothing);
+    expect(
+      find.text(
+        'No tienes reglas ahora. Cuando registres algo en Por revisar, se '
+        'crea la de su comercio, su tarjeta o su banco. Tus movimientos no '
+        'cambian.',
+      ),
+      findsOneWidget,
+    );
+  });
 }

@@ -9,6 +9,7 @@ import '../../money/money.dart';
 import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
+import 'account_leaving.dart';
 import 'amount_input.dart';
 import 'look.dart';
 
@@ -28,12 +29,15 @@ class AccountDraft {
   final String institution;
 }
 
-/// Adds an account, or edits [account]. Returns the saved account.
+/// Adds an account, or edits [account]. Returns the saved account. With
+/// [archive] false, as while setting up, an account can be deleted but is
+/// not offered to be archived.
 Future<Account?> showAccountSheet(
   BuildContext context, {
   required OwnController own,
   Account? account,
   AccountDraft? draft,
+  bool archive = true,
 }) => showModalBottomSheet<Account>(
   context: context,
   isScrollControlled: true,
@@ -42,15 +46,21 @@ Future<Account?> showAccountSheet(
   backgroundColor: context.colors.surface,
   constraints: const BoxConstraints(maxWidth: 560),
   builder: (BuildContext context) =>
-      _AccountForm(own: own, account: account, draft: draft),
+      _AccountForm(own: own, account: account, draft: draft, archive: archive),
 );
 
 class _AccountForm extends StatefulWidget {
-  const _AccountForm({required this.own, this.account, this.draft});
+  const _AccountForm({
+    required this.own,
+    this.account,
+    this.draft,
+    this.archive = true,
+  });
 
   final OwnController own;
   final Account? account;
   final AccountDraft? draft;
+  final bool archive;
 
   @override
   State<_AccountForm> createState() => _AccountFormState();
@@ -230,36 +240,22 @@ class _AccountFormState extends State<_AccountForm> {
     setState(error);
   }
 
-  Future<void> _delete() async {
-    final AppLocalizations l = context.l10n;
-    final Account account = _editing!;
-    final int count =
-        widget.own.snapshot?.entries
-            .where((Entry e) => e.accountId == account.id)
-            .length ??
-        0;
-    final bool? sure = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text(l.deleteAccountTitle(account.name)),
-        content: Text(l.deleteAccountBody(count)),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: context.colors.negative,
-            ),
-            child: Text(l.delete),
-          ),
-        ],
-      ),
+  /// Archives or deletes the account, once the person saw what goes with
+  /// it; the form closes when it is done.
+  Future<void> _leave({required bool delete}) async {
+    final Leaving? done = await confirmLeaving(
+      context,
+      widget.own,
+      <Account>[_editing!],
+      delete: delete,
+      // One already archived is not offered to be archived again.
+      archive: widget.archive && !_editing.archived,
     );
-    if (sure != true) return;
-    await widget.own.store.deleteAccount(account.id);
+    if (done != null && mounted) Navigator.of(context).pop();
+  }
+
+  Future<void> _restore() async {
+    await widget.own.restoreAccount(_editing!.id);
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -410,8 +406,22 @@ class _AccountFormState extends State<_AccountForm> {
             ),
             if (editing) ...<Widget>[
               const SizedBox(height: 8),
+              // A closed account is archived, its history kept; one
+              // archived comes back from here too.
+              if (_editing.archived)
+                TextButton.icon(
+                  onPressed: _restore,
+                  icon: const Icon(Glyph.arrowCounterClockwise, size: 18),
+                  label: Text(l.restore),
+                )
+              else if (widget.archive)
+                TextButton.icon(
+                  onPressed: () => _leave(delete: false),
+                  icon: const Icon(Glyph.archive, size: 18),
+                  label: Text(l.archive),
+                ),
               TextButton.icon(
-                onPressed: _delete,
+                onPressed: () => _leave(delete: true),
                 style: TextButton.styleFrom(
                   foregroundColor: context.colors.negative,
                 ),

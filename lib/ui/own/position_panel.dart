@@ -138,30 +138,34 @@ class _PositionPanelState extends State<PositionPanel> {
               const SizedBox(height: 6),
               Text(l.holdingNoCostHelp, style: context.type.bodySmall),
             ],
-            const SizedBox(height: 14),
-            _Buttons(
-              first: FilledButton.tonalIcon(
-                onPressed: () => showTradeSheet(
-                  context,
-                  own: widget.own,
-                  account: widget.account,
+            // An archived account takes no new movements, a trade neither.
+            if (!widget.account.archived) ...<Widget>[
+              const SizedBox(height: 14),
+              _Buttons(
+                first: FilledButton.tonalIcon(
+                  onPressed: () => showTradeSheet(
+                    context,
+                    own: widget.own,
+                    account: widget.account,
+                  ),
+                  icon: const Icon(Glyph.plus, size: 18),
+                  label: Text(l.tradeBought),
                 ),
-                icon: const Icon(Glyph.plus, size: 18),
-                label: Text(l.tradeBought),
+                second: OutlinedButton.icon(
+                  onPressed:
+                      position == null || position.quantity <= Decimal.zero
+                      ? null
+                      : () => showTradeSheet(
+                          context,
+                          own: widget.own,
+                          account: widget.account,
+                          sell: true,
+                        ),
+                  icon: const Icon(Glyph.arrowsLeftRight, size: 18),
+                  label: Text(l.tradeSold),
+                ),
               ),
-              second: OutlinedButton.icon(
-                onPressed: position == null || position.quantity <= Decimal.zero
-                    ? null
-                    : () => showTradeSheet(
-                        context,
-                        own: widget.own,
-                        account: widget.account,
-                        sell: true,
-                      ),
-                icon: const Icon(Glyph.arrowsLeftRight, size: 18),
-                label: Text(l.tradeSold),
-              ),
-            ),
+            ],
           ],
         ),
       );

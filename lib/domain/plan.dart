@@ -1,7 +1,9 @@
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart' show immutable, listEquals;
+import 'package:flutter/foundation.dart'
+    show immutable, listEquals, mapEquals, setEquals;
 
+import '../capture/merchants.dart' show merchantKey;
 import '../data/category.dart';
 import '../data/ledger.dart';
 import 'projection.dart';
@@ -90,11 +92,55 @@ class Envelope {
 /// it until the next.
 @immutable
 class EnvelopePlan {
-  const EnvelopePlan({required this.period, required this.envelopes});
+  const EnvelopePlan({
+    required this.period,
+    required this.envelopes,
+    this.counted,
+    this.fixed = const <String, int>{},
+  });
+
+  /// The split of [envelopes] made now, of the money [ledger] has to split:
+  /// it keeps what that money had already counted, so the day to day
+  /// counts only what is spent from it after.
+  factory EnvelopePlan.made(Ledger ledger, List<Envelope> envelopes) {
+    final DateTime start = periodStart(ledger);
+    final Set<String> recorded = <String>{
+      for (final Movement m in ledger.movements) m.id,
+    };
+    final Map<String, int> fixed = <String, int>{};
+    for (final Movement m in ledger.committed) {
+      // A movement dated ahead is known by its id; a charge to come, by
+      // the name it will be paid under.
+      if (recorded.contains(m.id)) continue;
+      final String key = merchantKey(m.merchant);
+      if (key.isEmpty) continue;
+      fixed[key] = (fixed[key] ?? 0) + m.amount;
+    }
+    return EnvelopePlan(
+      period: start,
+      envelopes: envelopes,
+      counted: <String>{
+        for (final Movement m in ledger.movements)
+          if (m.flow == Flow.expense && !_day(m.date).isBefore(start)) m.id,
+      },
+      fixed: fixed,
+    );
+  }
 
   /// The payday the period started on.
   final DateTime period;
   final List<Envelope> envelopes;
+
+  /// The expenses of the period the money to split had already counted
+  /// when the plan was made, by id: what was spent before, and what was
+  /// dated ahead and so committed. Null for a plan saved before plans kept
+  /// it: nothing tells what came after.
+  final Set<String>? counted;
+
+  /// The charges committed until payday when the plan was made, by the
+  /// merchant they are paid to, with what they take: paying them is not
+  /// the day to day, as the money to split had already left them out.
+  final Map<String, int> fixed;
 
   /// What the envelopes set aside: left out of the money free to spend.
   int get setAside => envelopes
@@ -109,9 +155,19 @@ class EnvelopePlan {
       .where((Envelope e) => e.kind == EnvelopeKind.daily)
       .fold(0, (int sum, Envelope e) => sum + e.amount);
 
+  /// With other [envelopes], made when this one was.
+  EnvelopePlan copyWith({List<Envelope>? envelopes}) => EnvelopePlan(
+    period: period,
+    envelopes: envelopes ?? this.envelopes,
+    counted: counted,
+    fixed: fixed,
+  );
+
   Map<String, Object?> toJson() => <String, Object?>{
     'period': _iso(period),
     'envelopes': <Object?>[for (final Envelope e in envelopes) e.toJson()],
+    if (counted case final Set<String> ids) 'counted': ids.toList()..sort(),
+    if (fixed.isNotEmpty) 'fixed': fixed,
   };
 
   static EnvelopePlan? fromJson(Object? json) {
@@ -125,6 +181,17 @@ class EnvelopePlan {
             in json['envelopes'] as List<Object?>? ?? const <Object?>[])
           ?Envelope.fromJson(e),
       ],
+      counted: switch (json['counted']) {
+        final List<Object?> ids => <String>{
+          for (final Object? id in ids) '$id',
+        },
+        _ => null,
+      },
+      fixed: <String, int>{
+        if (json['fixed'] case final Map<Object?, Object?> fixed)
+          for (final MapEntry<Object?, Object?> f in fixed.entries)
+            if (f.value case final num amount) '${f.key}': amount.round(),
+      },
     );
   }
 
@@ -132,10 +199,17 @@ class EnvelopePlan {
   bool operator ==(Object other) =>
       other is EnvelopePlan &&
       other.period == period &&
-      listEquals(other.envelopes, envelopes);
+      listEquals(other.envelopes, envelopes) &&
+      setEquals(other.counted, counted) &&
+      mapEquals(other.fixed, fixed);
 
   @override
-  int get hashCode => Object.hash(period, Object.hashAll(envelopes));
+  int get hashCode => Object.hash(
+    period,
+    Object.hashAll(envelopes),
+    counted == null ? null : Object.hashAllUnordered(counted!),
+    Object.hashAllUnordered(fixed.entries.map((e) => '${e.key}=${e.value}')),
+  );
 }
 
 /// The payday that started the period [ledger.today] is in.
@@ -277,7 +351,7 @@ int? usualPeriodSpending(Ledger ledger, {int periods = 3}) {
   return (totals.reduce((int a, int b) => a + b) / totals.length).round();
 }
 
-/// What the day to day has taken since the period started.
+/// What was spent since the period started, all of it.
 int spentThisPeriod(Ledger ledger) {
   final DateTime start = periodStart(ledger);
   return ledger.movements
@@ -288,6 +362,38 @@ int spentThisPeriod(Ledger ledger) {
             !_day(m.date).isBefore(start),
       )
       .fold(0, (int s, Movement m) => s + m.amount);
+}
+
+/// What the day to day has taken since [plan] was made: the expenses of
+/// the period that the money it split had not counted yet, less what pays
+/// a charge it had already left out as committed. Money spent before the
+/// split, or committed then, was never in the envelopes.
+int dailySpent(Ledger ledger, EnvelopePlan plan) {
+  final Set<String>? counted = plan.counted;
+  final Map<String, int> fixed = Map<String, int>.of(plan.fixed);
+  var spent = 0;
+  for (final Movement m in ledger.movements) {
+    if (m.flow != Flow.expense || !ledger.settled(m)) continue;
+    if (_day(m.date).isBefore(plan.period)) continue;
+    if (counted != null && counted.contains(m.id)) continue;
+    // A committed charge, paid: up to what it was committed for.
+    final String key = merchantKey(m.merchant);
+    final int left = fixed[key] ?? 0;
+    final int paid = math.min(left, m.amount);
+    if (paid > 0) fixed[key] = left - paid;
+    spent += m.amount - paid;
+  }
+  return spent;
+}
+
+/// What no envelope holds now: the money to split, less what the envelopes
+/// set aside and what the day to day still has. Spending from the day to
+/// day leaves it as it is; spending over it comes out of it. What can be
+/// spent is always this and what the day to day still has.
+int unassigned(Ledger ledger, EnvelopePlan plan, {int? spent}) {
+  final int daily = plan.daily;
+  final int left = math.max(0, daily - (spent ?? dailySpent(ledger, plan)));
+  return allocatable(ledger) - plan.setAside - left;
 }
 
 /// When a goal is reached at [monthly] a month, from [from]; null when

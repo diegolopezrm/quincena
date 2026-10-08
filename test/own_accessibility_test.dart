@@ -30,6 +30,7 @@ import 'package:quincena/store/store.dart';
 import 'package:quincena/theme/theme.dart';
 import 'package:quincena/ui/icons.dart';
 import 'package:quincena/ui/own/account_page.dart';
+import 'package:quincena/ui/own/account_leaving.dart';
 import 'package:quincena/ui/own/account_sheet.dart';
 import 'package:quincena/ui/own/accounts_tab.dart';
 import 'package:quincena/ui/own/ask_page.dart';
@@ -563,6 +564,25 @@ void main() {
             showAccountSheet(context, own: own, account: cardOf(own)),
       ),
       openIt,
+    ),
+    'deleting a card, asked first': (
+      (OwnController own) => opener(
+        (BuildContext context) =>
+            confirmLeaving(context, own, <Account>[cardOf(own)], delete: true),
+      ),
+      openIt,
+    ),
+    'the archived accounts': (
+      (OwnController own) => ArchivedAccountsPage(own: own),
+      (WidgetTester tester) async {
+        final OwnController own = tester
+            .widget<ArchivedAccountsPage>(find.byType(ArchivedAccountsPage))
+            .own;
+        await tester.runAsync(
+          () => own.archiveAccounts(<String>{cardOf(own).id}),
+        );
+        await settle(tester);
+      },
     ),
     'a new goal': (
       (OwnController own) =>

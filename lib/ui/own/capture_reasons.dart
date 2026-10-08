@@ -52,6 +52,10 @@ List<String> reasonList(
           item.parsed.card!,
           account,
         ),
+        'account' when item.parsed.account != null => l.whyAccount(
+          item.parsed.account!,
+          account,
+        ),
         'institution' when item.parsed.institution != null =>
           normalize(item.parsed.institution!) == normalize(account)
               ? l.whyInstitutionSame(item.parsed.institution!)
@@ -76,10 +80,12 @@ String missingAccountText(
   final AppLocalizations l = context.l10n;
   final String? institution = item.parsed.institution;
   final String? card = item.parsed.card;
+  final String? number = item.parsed.account;
   if (institution != null) {
     final int there = accountsAt(institution, own.accounts).length;
     if (there == 0) return l.whichAccountBankNone(institution);
     if (card != null) return l.whichAccountCard(institution, card);
+    if (number != null) return l.whichAccountNumber(institution, number);
     if (there > 1) return l.whichAccountBankMany(there, institution);
   }
   return item.parsed.kind == EntryKind.income
@@ -98,6 +104,7 @@ String ruleSubject(BuildContext context, CaptureRule rule) =>
     switch (rule.kind) {
       RuleKind.merchant => merchantShown(rule.key),
       RuleKind.card => context.l10n.ruleCardKey(rule.key),
+      RuleKind.account => context.l10n.ruleAccountKey(rule.key),
       RuleKind.institution => rule.key,
     };
 
@@ -116,6 +123,7 @@ String learnedText(
       target,
     ),
     RuleKind.card => l.ruleLearnedCard(first.key, target),
+    RuleKind.account => l.ruleLearnedAccount(first.key, target),
     RuleKind.institution => l.ruleLearnedInstitution(first.key, target),
   };
   return changes.length == 1

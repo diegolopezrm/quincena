@@ -543,17 +543,21 @@ class _ComingDays extends StatelessWidget {
           Text(l.homeComing, style: context.type.titleSmall),
           const SizedBox(height: 4),
           Text(
-            (expecting ? l.comingLowestLineSure : l.comingLowestLine)(
-              pesos(ledger.major(low.sure)),
-              dayMonth(low.date),
-            ),
+            // Nothing lowers it before payday: today is no day ahead.
+            !low.date.isAfter(projection.days.first.date)
+                ? l.comingLowestLineToday(pesos(ledger.major(low.sure)))
+                : (expecting ? l.comingLowestLineSure : l.comingLowestLine)(
+                    pesos(ledger.major(low.sure)),
+                    dayMonth(low.date),
+                  ),
             style: context.type.bodyMedium,
           ),
           if (tight != null)
             Text(
-              // Without a cushion, under it is out of money.
+              // Without a cushion, under it is out of money. The same words
+              // and the same days as «Próximos 30 días».
               (ledger.cushion > 0 ? l.comingTight : l.comingRunsOut)(
-                dayShortMonth(tight.date),
+                sentence(dayOrToday(l, tight.date, ledger.today)),
               ),
               style: context.type.bodySmall?.copyWith(
                 color: context.colors.caution,

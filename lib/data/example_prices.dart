@@ -71,8 +71,11 @@ class ExampleRates extends RateFetcher {
   final DateTime Function() _now;
 
   @override
-  Future<List<Rate>> fetch(Iterable<Asset> assets, Asset base) async =>
-      exampleRates(_now());
+  Future<List<Rate>> fetch(
+    Iterable<Asset> assets,
+    Asset base, {
+    DateTime? at,
+  }) async => exampleRates(at ?? _now());
 }
 
 /// Market data for the example and the store's pictures: prices that moved

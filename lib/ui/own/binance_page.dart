@@ -9,6 +9,7 @@ import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import 'account_leaving.dart';
 import 'example_bar.dart';
 import 'look.dart';
 
@@ -54,6 +55,10 @@ class BinanceCard extends StatelessWidget {
         final DateTime? at = link.syncedAt;
         // Balances written by hand are the reason to connect it.
         final bool manual = manualBinanceAccounts(own).isNotEmpty;
+        // A read that failed says so here too, not only on its page: the
+        // balances beside it are as old as the last good read.
+        final bool failed =
+            link.connected && !link.syncing && link.problem != null;
         final String body = own.example
             ? l.exampleNotConnected
             : !link.connected
@@ -64,9 +69,16 @@ class BinanceCard extends StatelessWidget {
                   : l.binanceCardBody)
             : link.syncing
             ? l.binanceSyncing
+            : failed
+            ? (at == null
+                  ? l.binanceReadFailedNever
+                  : l.binanceReadFailedAt(dayAndTime(at)))
             : at == null
             ? l.binanceNeverSynced
             : l.binanceSyncedAt(dayAndTime(at));
+        final TextStyle? bodyStyle = failed
+            ? context.type.bodySmall?.copyWith(color: context.colors.negative)
+            : context.type.bodySmall;
         Future<void> open() async {
           if (await explainExample(context, own, l.binanceTitle)) return;
           if (!context.mounted) return;
@@ -91,7 +103,7 @@ class BinanceCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(l.binanceTitle, style: context.type.titleSmall),
-                        Text(body, style: context.type.bodySmall),
+                        Text(body, style: bodyStyle),
                       ],
                     ),
                   ),
@@ -135,7 +147,7 @@ class BinanceCard extends StatelessWidget {
                           link.connected ? l.binanceTitle : l.binanceCardTitle,
                           style: context.type.titleSmall,
                         ),
-                        Text(body, style: context.type.bodySmall),
+                        Text(body, style: bodyStyle),
                         // What the key can and cannot do, before anyone is
                         // asked for one.
                         if (!link.connected) ...<Widget>[
@@ -297,11 +309,14 @@ class _BinancePageState extends State<BinancePage> {
   /// now count too.
   List<Account> get _manual => manualBinanceAccounts(widget.own);
 
-  Future<void> _archiveManual() async {
-    for (final Account a in _manual) {
-      await widget.own.store.updateAccount(a.copyWith(archived: true));
-    }
-  }
+  /// Archives them once the person saw what it does: they leave the
+  /// totals, keep their movements and wait in «Cuentas archivadas».
+  Future<void> _archiveManual() => confirmLeaving(
+    context,
+    widget.own,
+    _manual,
+    why: context.l10n.binanceArchiveWhy,
+  );
 
   String? _message(AppLocalizations l) => switch (_outcome) {
     ConnectOutcome.notReadOnly => l.binanceNotReadOnly(

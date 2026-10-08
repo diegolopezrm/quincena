@@ -108,6 +108,8 @@ class Previous {
     this._source,
     this._turns,
     this._settled,
+    this._offers,
+    this._replaced,
   );
 
   final Ledger _ledger;
@@ -116,6 +118,8 @@ class Previous {
   final AnswerSource _source;
   final List<Turn> _turns;
   final Map<String, Settled> _settled;
+  final Map<String, Set<String>> _offers;
+  final Map<String, Turn> _replaced;
 
   void _dispose() {
     _source.dispose();
@@ -273,6 +277,26 @@ class Session extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// The events that choose anew what a commit would send, each with the
+  /// commit it is about. Once one is sent, a surface still offering that
+  /// commit offers the choice before it, and takes nothing more.
+  static const Map<String, String> reselects = <String, String>{
+    'review_cancellation': 'cancel_subscriptions',
+    'change_cancellation': 'cancel_subscriptions',
+  };
+
+  /// The committing events each surface offers, by id, as the agent wrote
+  /// its components.
+  Map<String, Set<String>> _offers = <String, Set<String>>{};
+
+  /// The surfaces a newer choice replaced, by id, with the turn that
+  /// answers the newer one.
+  Map<String, Turn> _replaced = <String, Turn>{};
+
+  /// The turn answering the choice that replaced the surface [surfaceId],
+  /// or null while it is the latest.
+  Turn? replacedBy(String surfaceId) => _replaced[surfaceId];
+
   /// The expense form whose save [turn] is answering, if it is one.
   Settled? _savingIn(Turn? turn) {
     for (final Settled settled in _settled.values) {
@@ -372,6 +396,12 @@ class Session extends ChangeNotifier {
 
   void _onMessage(core.A2uiMessage message) {
     recorder.handleMessage(message);
+    if (message is core.UpdateComponentsMessage) {
+      final Set<String> offered = _commitsIn(message.components).toSet();
+      if (offered.isNotEmpty) {
+        (_offers[message.surfaceId] ??= <String>{}).addAll(offered);
+      }
+    }
     if (_mode == AgentMode.demo) return;
     // Valid to genui, and still wrong: the person would read the call itself.
     if (writtenOutCall(message) case final String where) {
@@ -406,6 +436,25 @@ class Session extends ChangeNotifier {
       }
     }
     return null;
+  }
+
+  /// The committing events [value] sends, wherever in a component.
+  static Iterable<String> _commitsIn(Object? value) sync* {
+    switch (value) {
+      case final Map<Object?, Object?> map:
+        if (map['event'] case {
+          'name': final String name,
+        } when commits.contains(name)) {
+          yield name;
+        }
+        for (final Object? inner in map.values) {
+          yield* _commitsIn(inner);
+        }
+      case final List<Object?> list:
+        for (final Object? inner in list) {
+          yield* _commitsIn(inner);
+        }
+    }
   }
 
   static final RegExp _textCall = RegExp(r'\{\s*"?call"?\s*:');
@@ -560,8 +609,16 @@ class Session extends ChangeNotifier {
       // the device's logs.
       if (kDebugMode) debugPrint('The answer did not arrive: $error');
       turn.error = _explain(error, _mode);
-      // Only a question that got its answer counts against the day.
-      await day?.giveBack();
+      // Only a question that got its answer counts against the day: one
+      // that failed before anything of it showed is given back. What did
+      // arrive is announced a moment after it is taken in, and a blank
+      // before a message cut off halfway shows nothing.
+      if (day != null) {
+        await Future<void>.delayed(Duration.zero);
+        if (turn.surfaceIds.isEmpty && turn.text.toString().trim().isEmpty) {
+          await day.giveBack();
+        }
+      }
     }
     if (!turns.contains(turn)) return;
     // An action the script has no answer for leaves nothing to show.
@@ -590,6 +647,8 @@ class Session extends ChangeNotifier {
         ...?(action['context'] as Map?)?.cast<String, Object?>(),
       };
       if (name == null || _busy) continue;
+      // What a newer choice replaced sends nothing more.
+      if (_replaced.containsKey(action['surfaceId'])) continue;
       if (name == 'ask' && context['question'] is String) {
         unawaited(ask(context['question']! as String));
         continue;
@@ -603,10 +662,39 @@ class Session extends ChangeNotifier {
         context: context,
         interaction: part.interaction,
       );
-      unawaited(
-        _run(Turn(note: _describe(name)), () => _source.react(action0)),
-      );
+      final Turn turn = Turn(note: _describe(name));
+      final List<String> replaced = _replace(name, turn);
+      unawaited(() async {
+        await _run(turn, () => _source.react(action0));
+        if (replaced.isEmpty || (turn.error == null && turns.contains(turn))) {
+          return;
+        }
+        // No answer came to the newer choice: the one before it stands.
+        for (final String id in replaced) {
+          if (identical(_replaced[id], turn)) _replaced.remove(id);
+        }
+        notifyListeners();
+      }());
     }
+  }
+
+  /// Closes every surface that still offers the commit the choice [name]
+  /// is about, as replaced by the [turn] answering it. One whose commit
+  /// already went keeps its receipt. The ids it closed.
+  List<String> _replace(String name, Turn turn) {
+    final String? commit = reselects[name];
+    if (commit == null) return const <String>[];
+    final List<String> closed = <String>[
+      for (final MapEntry<String, Set<String>> offer in _offers.entries)
+        if (offer.value.contains(commit) &&
+            !_replaced.containsKey(offer.key) &&
+            settledOf(offer.key) == null)
+          offer.key,
+    ];
+    for (final String id in closed) {
+      _replaced[id] = turn;
+    }
+    return closed;
   }
 
   /// Sends a committing action from [surfaceId], once.
@@ -804,6 +892,8 @@ class Session extends ChangeNotifier {
     _teardown();
     turns.clear();
     _settled = <String, Settled>{};
+    _offers = <String, Set<String>>{};
+    _replaced = <String, Turn>{};
     _busy = false;
     _start();
     notifyListeners();
@@ -826,9 +916,13 @@ class Session extends ChangeNotifier {
       _source,
       List<Turn>.of(turns),
       _settled,
+      _offers,
+      _replaced,
     );
     turns.clear();
     _settled = <String, Settled>{};
+    _offers = <String, Set<String>>{};
+    _replaced = <String, Turn>{};
     _start();
     notifyListeners();
     return previous;
@@ -848,6 +942,8 @@ class Session extends ChangeNotifier {
       ..clear()
       ..addAll(previous._turns);
     _settled = previous._settled;
+    _offers = previous._offers;
+    _replaced = previous._replaced;
     _busy = false;
     _listen();
     notifyListeners();

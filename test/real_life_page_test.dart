@@ -11,6 +11,8 @@ import 'package:quincena/domain/records.dart';
 import 'package:quincena/domain/shared.dart';
 import 'package:quincena/domain/trips.dart';
 import 'package:quincena/format/money.dart';
+import 'package:quincena/money/asset.dart';
+import 'package:quincena/money/rates.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/store/store.dart';
 import 'package:quincena/ui/own/freelance_page.dart';
@@ -498,6 +500,89 @@ void main() {
     expect(find.byType(AlertDialog), findsNothing);
     expect(own.ledger!.reserved, 100000);
     expect(own.ledger!.freeUntilPayday, free + 50000);
+  });
+
+  testWidgets('a client\'s payment into an account not for everyday use '
+      'is kept apart from nothing', (tester) async {
+    final OwnController own = await openPage(
+      tester,
+      (OwnController own) => FreelancePage(own: own),
+      data: (QuincenaStore store, Account bank, _) async {
+        await store.saveRates(<Rate>[
+          Rate(
+            asset: 'USD',
+            quote: 'COP',
+            value: d('4000'),
+            asOf: DateTime(2026, 10, 3),
+            source: 'trm',
+          ),
+        ]);
+        final Account dollars = await store.addAccount(
+          name: 'Cuenta en dólares',
+          kind: AccountKind.bank,
+          asset: Asset.usd,
+          opening: d('0'),
+          spendable: false,
+        );
+        await store.addEntry(
+          accountId: bank.id,
+          amount: d('1000000'),
+          kind: EntryKind.income,
+          date: DateTime(2026, 10, 2, 9),
+          category: 'freelance',
+          payee: 'Estudio Sur',
+        );
+        // 500 dollars filed as freelance work, and 250 a client paid,
+        // linked to it: 3.000.000 pesos that never were money to spend.
+        await store.addEntry(
+          accountId: dollars.id,
+          amount: d('500'),
+          kind: EntryKind.income,
+          date: DateTime(2026, 10, 2, 10),
+          category: 'freelance',
+          payee: 'Upwork',
+        );
+        final Entry linked = await store.addEntry(
+          accountId: dollars.id,
+          amount: d('250'),
+          kind: EntryKind.income,
+          date: DateTime(2026, 10, 2, 11),
+          category: 'other_income',
+          payee: 'Acme',
+        );
+        await store.setSetting(
+          'freelance',
+          jsonEncode(
+            FreelancePlan(
+              incomes: <ExpectedIncome>[
+                ExpectedIncome(
+                  id: 'acme',
+                  client: 'Acme',
+                  amount: 1000000,
+                  expected: DateTime(2026, 10, 2),
+                  status: IncomeStatus.collected,
+                  collectedOn: DateTime(2026, 10, 2),
+                  entryId: linked.id,
+                ),
+              ],
+              reservePercent: 15,
+              reserveSince: DateTime(2026, 10, 1),
+            ).toJson(),
+          ),
+        );
+      },
+    );
+    // Only the 1.000.000 that came into Bancolombia feeds the reserve.
+    expect(own.ledger!.reserved, 150000);
+    expect(own.ledger!.freeUntilPayday, 3000000 - 150000);
+    expect(
+      find.text(
+        'Lo que cobraste en cuentas que no son de uso diario '
+        '(${pesos(3000000)}) no se aparta: nunca contó en lo que puedes '
+        'gastar.',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a trip counts an expense abroad, estimated and then set to '

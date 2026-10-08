@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 
+import '../../domain/account_trace.dart';
 import '../../domain/records.dart';
 import '../../domain/shared.dart';
 import '../../format/dates.dart';
@@ -43,13 +44,29 @@ class MovementRow extends StatelessWidget {
 
   Account? _account(String id) => own.snapshot?.account(id);
 
-  String? _otherLegAccount() {
+  /// The transfer's other leg, if it is one and the leg is there.
+  Entry? _otherLeg() {
     for (final Entry e in own.snapshot?.entries ?? const <Entry>[]) {
-      if (e.transferId == entry.transferId && e.id != entry.id) {
-        return _account(e.accountId)?.name;
-      }
+      if (e.transferId == entry.transferId && e.id != entry.id) return e;
     }
     return null;
+  }
+
+  /// What a transfer was: a purchase or a sale when it traded crypto, as
+  /// the account it arrived in sees it, or in a list of one account's, as
+  /// that account does; a transfer otherwise.
+  String _transferKind(AppLocalizations l, Account account, Entry? other) {
+    final Account? there = other == null ? null : _account(other.accountId);
+    final TraceKind kind = there == null
+        ? transferKind(entry, account.asset, null)
+        : inAccount || entry.amount > Decimal.zero
+        ? transferKind(entry, account.asset, there.asset)
+        : transferKind(other!, there.asset, account.asset);
+    return switch (kind) {
+      TraceKind.bought => l.tradeBought,
+      TraceKind.sold => l.tradeSold,
+      _ => l.kindTransfer,
+    };
   }
 
   @override
@@ -63,9 +80,12 @@ class MovementRow extends StatelessWidget {
     final String categoryName = category == null
         ? ''
         : categoryNameFor(context, category, own.categories);
+    final Entry? otherLeg = transfer ? _otherLeg() : null;
     final String title;
     if (transfer) {
-      final String other = _otherLegAccount() ?? '';
+      final String other = otherLeg == null
+          ? ''
+          : _account(otherLeg.accountId)?.name ?? '';
       title = entry.amount < Decimal.zero
           ? '${account.name} → $other'
           : '$other → ${account.name}';
@@ -80,7 +100,7 @@ class MovementRow extends StatelessWidget {
     }
     final List<String> detail = <String>[
       if (transfer)
-        l.kindTransfer
+        _transferKind(l, account, otherLeg)
       else if (cost != null)
         moneyText(cost, base: own.profile?.base)
       else if (entry.payee.isNotEmpty)

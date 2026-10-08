@@ -15,6 +15,7 @@ import 'package:quincena/portfolio/market.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
 import 'package:quincena/theme/theme.dart';
+import 'package:quincena/ui/messages.dart';
 
 import 'own_flow_test.dart' show settle;
 
@@ -98,6 +99,9 @@ Future<OwnController> openPage(
       locale: const Locale('es'),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: appLocales,
+      // As in the app: a new message takes the place of the one showing.
+      builder: (BuildContext context, Widget? child) =>
+          LatestMessenger(child: child!),
       home: page(own),
     ),
   );

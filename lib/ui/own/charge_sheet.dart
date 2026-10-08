@@ -94,8 +94,13 @@ class _ChargeSheetState extends State<_ChargeSheet> {
       widget.charge?.nextDate ??
       widget.draft?.next ??
       DateTime(own.today.year, own.today.month + 1, own.today.day);
+  // An account deleted or archived since is none the list offers: the
+  // charge reads as paid from no account in particular.
   late String? _accountId = widget.charge != null
-      ? widget.charge!.accountId
+      ? own.accounts
+            .where((Account a) => a.id == widget.charge!.accountId)
+            .firstOrNull
+            ?.id
       : _mainAccount();
   late String? _category =
       widget.charge?.category ?? widget.draft?.category ?? 'subscriptions';
