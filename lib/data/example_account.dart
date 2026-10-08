@@ -13,6 +13,7 @@ import 'dart:convert';
 
 import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart' show QueryExecutor, driftRuntimeOptions;
+import 'package:flutter/services.dart' show rootBundle;
 
 import '../capture/capture_service.dart';
 import '../capture/event.dart';
@@ -38,6 +39,14 @@ import 'seed.dart';
 
 /// Whose example account it is.
 const String exampleOwner = 'Valentina';
+
+/// When Valentina last used each subscription, by its name, as the story
+/// tells it: two of them not in over a month. A list of charges cannot
+/// know it; her conversation does.
+final Map<String, DateTime> exampleLastUsed = <String, DateTime>{
+  for (final Subscription s in demoLedger().subscriptions)
+    if (s.lastUsed case final DateTime used) s.name: used,
+};
 
 /// Valentina's example account in a database in memory: made afresh each
 /// time, gone when it closes, and kept apart from the person's own.
@@ -515,6 +524,8 @@ class _Fixed {
 
 /// Her fixed payments, next due after the example's morning: the ones due
 /// before the 15th are what the story commits, the others come after it.
+/// The subscriptions go in the order the story lists them, the dearest
+/// first, which is how her conversation lists them too.
 final List<_Fixed> _fixed = <_Fixed>[
   _Fixed(
     'Arriendo apartamento',
@@ -567,22 +578,6 @@ final List<_Fixed> _fixed = <_Fixed>[
     onCard: true,
   ),
   _Fixed(
-    'Ritmo',
-    21900,
-    DateTime(2026, 10, 8),
-    'subscriptions',
-    DateTime(2023, 5, 8),
-    onCard: true,
-  ),
-  _Fixed(
-    'Nube 200 GB',
-    11900,
-    DateTime(2026, 10, 14),
-    'subscriptions',
-    DateTime(2024, 9, 14),
-    onCard: true,
-  ),
-  _Fixed(
     'Lingo Pro',
     34900,
     DateTime(2026, 10, 20),
@@ -598,17 +593,50 @@ final List<_Fixed> _fixed = <_Fixed>[
     DateTime(2026, 8, 22),
     onCard: true,
   ),
+  _Fixed(
+    'Ritmo',
+    21900,
+    DateTime(2026, 10, 8),
+    'subscriptions',
+    DateTime(2023, 5, 8),
+    onCard: true,
+  ),
+  _Fixed(
+    'Nube 200 GB',
+    11900,
+    DateTime(2026, 10, 14),
+    'subscriptions',
+    DateTime(2024, 9, 14),
+    onCard: true,
+  ),
 ];
 
-/// A statement of her payroll account for the last days of September, as
-/// the bank would export it: what "Importar extracto" reviews in the
-/// example, instead of a file of the person's own.
-StatementRead exampleStatement() => readTable(
-  parseCsv(
-    'Fecha;Descripción;Valor\n'
-    '30/09/2026;ABONO NOMINA ESTUDIO LUMEN;2.400.000\n'
-    '29/09/2026;CUOTA DE MANEJO;-14.900\n'
-    '28/09/2026;PAGO PSE PAPELERIA LA ESCUADRA;-38.700\n'
-    '26/09/2026;TRANSFERENCIA DE LAURA;42.000\n',
-  ),
-);
+/// The account [exampleStatement] is of.
+const String exampleStatementAccount = 'Cuenta de nómina';
+
+/// A made-up statement of her payroll account, as the bank would export it:
+/// what «Importar extracto» offers to try in the example, without a file.
+/// September's last pay is already in the account, a card payment moves
+/// money to the card, two charges are new, and a purchase from March is
+/// older than the balance she wrote down.
+Future<StatementRead> exampleStatement() async {
+  final StatementRead read = readTable(
+    // Read afresh each time: it is small, and a read left half done in
+    // the cache would never finish.
+    parseCsv(await rootBundle.loadString(exampleStatementAsset, cache: false)),
+  );
+  return StatementRead(
+    lines: read.lines,
+    source: read.source,
+    institution: exampleStatementAccount,
+  );
+}
+
+/// Where [exampleStatement] is kept.
+const String exampleStatementAsset =
+    'assets/statements/extracto-de-ejemplo.csv';
+
+/// A message a bank sends, to try «Leer un pago» in the example without
+/// one of the person's own.
+const String exampleMessage =
+    r'Compraste $54.900 en DROGUERIA LAURELES con tu cuenta *7310';

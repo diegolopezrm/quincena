@@ -1775,5 +1775,12 @@
   "exampleNoReminders": "En la cuenta de ejemplo no se programan avisos.",
   "exampleSection": "Cuenta de ejemplo",
   "examplePricedAt": "Precios fijos del ejemplo, del {when}",
-  "@examplePricedAt": {"placeholders": {"when": {"type": "String"}}}
+  "@examplePricedAt": {"placeholders": {"when": {"type": "String"}}},
+  "sourceScript": "Conversación del ejemplo",
+  "exampleNotConnected": "En el ejemplo no se conecta con nada",
+  "examplePricesNote": "En el ejemplo los precios son fijos: no se le piden a Binance ni a nadie. Quincena no da asesoría de inversión.",
+  "exampleStatementBody": "Prueba con un extracto inventado de la cuenta de nómina de {name}: trae un pago que ya está anotado, el pago de la tarjeta y una compra de antes de que escribiera su saldo.",
+  "@exampleStatementBody": {"placeholders": {"name": {"type": "String"}}},
+  "exampleStatementUse": "Usar el extracto de ejemplo",
+  "examplePasteNote": "Un mensaje de ejemplo, como los que manda el banco. Puedes cambiarlo antes de leerlo."
 }

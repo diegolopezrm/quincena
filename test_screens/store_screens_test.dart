@@ -1,7 +1,7 @@
 // Renders the screenshots for the App Store and Google Play, in Spanish and
-// English: the conversation, and the app's own example account as «Con
-// datos de ejemplo» opens it, so every picture is a tap away in the app.
-// Never anyone's real data.
+// English, every one from the app's own example account as «Con datos de
+// ejemplo» opens it, the answer included, so every picture is a tap away
+// in the app and the two cannot drift apart. Never anyone's real data.
 //
 // Not part of `flutter test`, like the rest of this folder. Regenerate with:
 //
@@ -27,7 +27,6 @@ import 'package:quincena/l10n/l10n.dart';
 import 'package:quincena/money/asset.dart';
 import 'package:quincena/money/money.dart';
 import 'package:quincena/money/rates.dart';
-import 'package:quincena/session/session.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
 
@@ -255,25 +254,12 @@ void main() {
     for (final String language in <String>['es', 'en']) {
       final String tag = '${s.key} $language';
 
-      testWidgets('answer $tag', (tester) async {
-        device(tester, s.value, language);
-        final Session session = Session(thinking: Duration.zero);
-        addTearDown(session.dispose);
-        await tester.pumpWidget(QuincenaApp(session: session));
-        await tester.pumpAndSettle();
-        final Future<void> answered = session.ask(
-          ScriptedAgent.startersFor(language)[1],
-        );
-        await tester.pumpAndSettle();
-        await answered;
-        await shoot(s.key, language, '01-answer');
-      });
-
       testWidgets('example $tag', (tester) async {
         device(tester, s.value, language);
         final AppLocalizations l = lookupAppLocalizations(Locale(language));
-        // A phone with nothing of anyone's: the pictures are the example
-        // that «Con datos de ejemplo» opens, as a reviewer finds it.
+        // A phone with nothing of anyone's: every picture is the example
+        // that «Con datos de ejemplo» opens, as a reviewer finds it, one
+        // tap from where the last one was taken.
         final QuincenaStore store = QuincenaStore(
           QuincenaDatabase(NativeDatabase.memory()),
         );
@@ -285,6 +271,12 @@ void main() {
         await tester.tap(find.text(l.startDemoTitle));
         await settle(tester);
         await shoot(s.key, language, '02-home');
+
+        // «Pregúntale a tu plata» on Inicio, answered by the script over
+        // the same account.
+        await tapFound(tester, ScriptedAgent.startersFor(language)[1]);
+        await shoot(s.key, language, '01-answer');
+        await back(tester);
 
         await tester.tap(find.byTooltip(l.inboxTitle));
         await settle(tester);
@@ -299,10 +291,20 @@ void main() {
         await shoot(s.key, language, '04-crypto');
         await back(tester);
 
-        // In the example, «Importar extracto» reviews its own statement.
+        // «Importar extracto» with the example's own statement.
         await tester.tap(find.byTooltip(l.settingsTitle));
         await settle(tester);
         await tapFound(tester, l.statementTitle);
+        await tapFound(tester, l.exampleStatementUse);
+        // The statement is read from the app's own files.
+        for (var i = 0; i < 50; i++) {
+          if (find.text(l.exampleStatementUse).evaluate().isEmpty) break;
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 100)),
+          );
+          await tester.pump();
+        }
+        await settle(tester);
         await shoot(s.key, language, '05-statement');
         await tester.pumpWidget(const SizedBox());
         await settle(tester);

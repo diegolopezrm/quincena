@@ -1440,5 +1440,11 @@
   "exampleOnlyBody": "This is {name}'s example account, and it is made up. Here this does nothing: it connects to nothing, asks your phone for no permissions and leaves your data alone. To use it, switch to your own accounts.",
   "exampleNoReminders": "The example account sets no reminders.",
   "exampleSection": "Example account",
-  "examplePricedAt": "The example's fixed prices, from {when}"
+  "examplePricedAt": "The example's fixed prices, from {when}",
+  "sourceScript": "Example conversation",
+  "exampleNotConnected": "Connects to nothing in the example",
+  "examplePricesNote": "In the example, prices are fixed and asked of no one, Binance included. Quincena doesn't give investment advice.",
+  "exampleStatementBody": "Try a made-up statement of {name}'s payroll account: it has a payment that's already recorded, a card payment, and a purchase from before she wrote down her balance.",
+  "exampleStatementUse": "Use the example statement",
+  "examplePasteNote": "A sample message, like the ones banks send. You can change it before reading it."
 }

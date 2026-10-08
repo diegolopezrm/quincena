@@ -38,6 +38,7 @@ class OwnHomeTab extends StatelessWidget {
     required this.own,
     required this.onSeeAll,
     this.onAsk,
+    this.questions,
   });
 
   final OwnController own;
@@ -48,6 +49,11 @@ class OwnHomeTab extends StatelessWidget {
   /// Opens a conversation with Gemini, with a question or without one. Null
   /// where Quincena's project does not serve the app.
   final void Function([String? question])? onAsk;
+
+  /// The questions offered under «Pregúntale a tu plata», each with its
+  /// icon: the ones the example's script answers, there. Null offers the
+  /// ones for the person's own accounts.
+  final List<(IconData, String)>? questions;
 
   @override
   Widget build(BuildContext context) {
@@ -96,11 +102,12 @@ class OwnHomeTab extends StatelessWidget {
           Panel(
             children: <Widget>[
               for (final (IconData icon, String question)
-                  in <(IconData, String)>[
-                    (Glyph.wallet, l.ownAskFree),
-                    (Glyph.chartDonut, l.ownAskMonth),
-                    (Glyph.coins, l.ownAskAll),
-                  ])
+                  in questions ??
+                      <(IconData, String)>[
+                        (Glyph.wallet, l.ownAskFree),
+                        (Glyph.chartDonut, l.ownAskMonth),
+                        (Glyph.coins, l.ownAskAll),
+                      ])
                 _AskRow(icon: icon, text: question, onTap: () => ask(question)),
               _AskRow(icon: Glyph.sparkle, text: l.askOther, onTap: ask),
             ],

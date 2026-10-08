@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../agent/scripted_agent.dart';
 import '../../agent/understand.dart';
 import '../../ai/cloud.dart';
 import '../../app.dart';
@@ -130,6 +131,19 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
     }
   }
 
+  /// The first three of the script's questions, with the icons its
+  /// conversation gives them.
+  static List<(IconData, String)> _exampleQuestions(BuildContext context) {
+    final List<String> asked = ScriptedAgent.startersFor(
+      Localizations.localeOf(context).languageCode,
+    );
+    return <(IconData, String)>[
+      (Glyph.chartDonut, asked[0]),
+      (Glyph.airplaneTilt, asked[1]),
+      (Glyph.arrowsClockwise, asked[2]),
+    ];
+  }
+
   void _openInbox() => Navigator.of(context).push(
     MaterialPageRoute<void>(
       builder: (BuildContext context) => InboxPage(own: own),
@@ -180,6 +194,8 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
         onAsk: own.example
             ? (widget.conversation == null ? null : _openConversation)
             : (Cloud.supported ? _openAsk : null),
+        // In the example, the questions its script answers.
+        questions: own.example ? _exampleQuestions(context) : null,
       ),
     ),
   };

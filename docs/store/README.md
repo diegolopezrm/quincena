@@ -247,9 +247,13 @@ only about the person's money, through tools, inside the app.
 > kept in memory apart from the person's own and erased on leaving it.
 > There, what only makes sense with one's own accounts (Binance, sync,
 > backups, reminders, automatic capture, the widget, deleting everything)
-> says so instead of running. "Pregúntale a tu plata" uses Gemini through
-> Firebase AI Logic,
-> protected by App Check; questions are limited to 30 a day per person.
+> says so instead of running, and "Pregúntale a tu plata" answers its five
+> questions offline with a script, over the same made-up account.
+> "Importar extracto" (Ajustes) offers a made-up statement and "Leer un
+> pago" (Por revisar) a sample bank message, so neither needs a file. With
+> one's own accounts, "Pregúntale a tu plata" uses Gemini through Firebase
+> AI Logic, protected by App Check; questions are limited to 30 a day per
+> person.
 > Connecting Binance needs a read-only API key of the reviewer's own and is
 > optional; every other feature works without it.
 >
@@ -285,6 +289,32 @@ which on Android reads:
 > If you allow it, Quincena reads your banks' and wallets' notifications,
 > only those with an amount, never security codes. What is unclear waits
 > in "Needs review".
+
+### App access
+
+For App access in Play Console's App content, and wherever Play asks how
+to reach the app: nothing needs an account, and this says where every
+screen of the pictures is.
+
+> **Español.** No hace falta cuenta ni contraseña. En la primera pantalla,
+> toca «Con datos de ejemplo»: abre toda la app con la cuenta inventada de
+> Valentina, la de las capturas, y cada pantalla de las capturas queda a un
+> toque: Inicio (con «Pregúntale a tu plata», que responde sin conexión),
+> Movimientos, Cuentas y su cripto, Plan, Por revisar (el ícono de la
+> bandeja) e Importar extracto (en Ajustes, con un extracto de ejemplo).
+> Nada de lo que se haga ahí toca datos de nadie, y se borra al salir con
+> «Usar mis cuentas».
+>
+> **English.** No account or password is needed. On the first screen, tap
+> "Con datos de ejemplo" (With sample data): it opens the whole app on
+> Valentina's made-up account, the one in the screenshots, and every
+> screen in the screenshots is one tap away: Inicio (home, with
+> "Pregúntale a tu plata", which answers offline), Movimientos
+> (transactions), Cuentas (accounts) and its crypto, Plan, Por revisar
+> (needs review, the tray icon) and Importar extracto (import a
+> statement, in Ajustes, with a sample statement). Nothing done there
+> touches anyone's data, and it is erased on leaving with "Usar mis
+> cuentas".
 
 ### Data safety
 

@@ -57,7 +57,9 @@ class WalletsRow extends StatelessWidget {
                   children: <Widget>[
                     Text(l.walletsTitle, style: context.type.titleSmall),
                     Text(
-                      link.wallets.isEmpty || at == null
+                      own.example
+                          ? l.exampleNotConnected
+                          : link.wallets.isEmpty || at == null
                           ? l.walletsCardBody
                           : l.walletsSyncedAt(dayAndTime(at)),
                       style: context.type.bodySmall,

@@ -5647,4 +5647,26 @@ class AppLocalizationsEs extends AppLocalizations {
   String examplePricedAt(String when) {
     return 'Precios fijos del ejemplo, del $when';
   }
+
+  @override
+  String get sourceScript => 'Conversación del ejemplo';
+
+  @override
+  String get exampleNotConnected => 'En el ejemplo no se conecta con nada';
+
+  @override
+  String get examplePricesNote =>
+      'En el ejemplo los precios son fijos: no se le piden a Binance ni a nadie. Quincena no da asesoría de inversión.';
+
+  @override
+  String exampleStatementBody(String name) {
+    return 'Prueba con un extracto inventado de la cuenta de nómina de $name: trae un pago que ya está anotado, el pago de la tarjeta y una compra de antes de que escribiera su saldo.';
+  }
+
+  @override
+  String get exampleStatementUse => 'Usar el extracto de ejemplo';
+
+  @override
+  String get examplePasteNote =>
+      'Un mensaje de ejemplo, como los que manda el banco. Puedes cambiarlo antes de leerlo.';
 }

@@ -14,6 +14,7 @@ import '../agent/catalog.dart';
 import '../agent/firebase_client.dart';
 import '../agent/model_client.dart';
 import '../agent/model_source.dart';
+import '../agent/scripted_agent.dart' show ScriptedKeeper;
 import '../agent/scripted_source.dart';
 import '../agent/source.dart';
 import '../agent/tools.dart';
@@ -143,9 +144,11 @@ class Session extends ChangeNotifier {
     List<dartantic.Tool> Function(Ledger ledger)? toolsFor,
     this.own = false,
     this.allowance,
+    this.keeper,
+    this.scripted = false,
   }) : _ledgerOf = ledgerOf ?? demoLedger,
        _toolsFor = toolsFor ?? ledgerTools {
-    _mode = mode;
+    _mode = scripted ? AgentMode.demo : mode;
     _apiKey = apiKey;
     _language = language;
     Intl.defaultLocale = intlLocaleFor(language);
@@ -201,14 +204,31 @@ class Session extends ChangeNotifier {
   /// uncounted.
   final Allowance? allowance;
 
+  /// Where the script keeps what the person saves, when the account lives
+  /// outside the conversation, as the example account's database does. The
+  /// conversation then reads the account as [ledgerOf] gives it at each
+  /// answer, and starting over leaves what was saved where it is.
+  final ScriptedKeeper? keeper;
+
+  /// Whether only the script answers, as in the example account: no one
+  /// else can be chosen, nothing goes out to a model and no question of the
+  /// day is spent.
+  final bool scripted;
+
   late AgentMode _mode;
   AgentMode get mode => _mode;
+
+  /// Whether the person can choose who answers.
+  bool get choosable => !scripted;
   String? _apiKey;
 
   /// Whether a model can answer: there is a key, or a client was given.
   bool get canGoLive => client != null || (_apiKey?.isNotEmpty ?? false);
 
-  late Ledger ledger;
+  /// The account this conversation is about: as it was when it started,
+  /// with what it saved, or, with a [keeper], as it is now.
+  Ledger get ledger => keeper == null ? _ledger : _ledgerOf();
+  late Ledger _ledger;
   late SurfaceController controller;
   late GenUiTraceRecorder recorder;
   late AnswerSource _source;
@@ -285,7 +305,7 @@ class Session extends ChangeNotifier {
       'instructions say.';
 
   void _start() {
-    ledger = _ledgerOf();
+    final Ledger ledger = _ledger = _ledgerOf();
     controller = SurfaceController(catalogs: <Catalog>[quincenaCatalog]);
     recorder = GenUiTraceRecorder.attach(
       controller,
@@ -310,10 +330,11 @@ class Session extends ChangeNotifier {
     );
     _source = switch (_mode) {
       AgentMode.demo => ScriptedSource(
-        ledger,
+        keeper == null ? () => ledger : _ledgerOf,
         sink: sink,
         thinking: thinking,
         language: _language,
+        keeper: _kept(keeper),
       ),
       AgentMode.live => ModelSource(
         client:
@@ -463,6 +484,20 @@ class Session extends ChangeNotifier {
         },
       ),
   ];
+
+  /// [keeper] as the script calls it: an expense saved from a form is
+  /// noted on that form, as a model's record_expense is, so the form
+  /// settles and saving it again corrects it.
+  ScriptedKeeper? _kept(ScriptedKeeper? keeper) => keeper == null
+      ? null
+      : ScriptedKeeper(
+          expense: (ExpenseToRecord expense) async {
+            final Settled? saving = _savingIn(turns.lastOrNull);
+            await keeper.expense(expense);
+            saving?._saved = true;
+          },
+          goalMonthly: keeper.goalMonthly,
+        );
 
   /// Asks the agent [question].
   Future<void> ask(String question) async {
@@ -755,8 +790,9 @@ class Session extends ChangeNotifier {
   ].any(error.contains);
 
   /// Switches who answers, and starts over with the untouched account.
+  /// Where only the script answers, it stays answering.
   void use(AgentMode mode, {String? apiKey}) {
-    _mode = mode;
+    _mode = scripted ? AgentMode.demo : mode;
     if (apiKey != null) _apiKey = apiKey.trim();
     if (mode == AgentMode.live && !canGoLive) _mode = AgentMode.demo;
     restart();
@@ -784,7 +820,7 @@ class Session extends ChangeNotifier {
     _forgetPrevious();
     _quiet();
     final Previous previous = _previous = Previous._(
-      ledger,
+      _ledger,
       controller,
       recorder,
       _source,
@@ -804,7 +840,7 @@ class Session extends ChangeNotifier {
     if (!identical(previous, _previous)) return;
     _previous = null;
     _teardown();
-    ledger = previous._ledger;
+    _ledger = previous._ledger;
     controller = previous._controller;
     recorder = previous._recorder;
     _source = previous._source;

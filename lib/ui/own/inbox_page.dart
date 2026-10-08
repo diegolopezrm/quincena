@@ -9,6 +9,7 @@ import '../../capture/event.dart';
 import '../../capture/inbox.dart';
 import '../../capture/native_channel.dart';
 import '../../capture/parser.dart';
+import '../../data/example_account.dart' show exampleMessage;
 import '../../domain/records.dart';
 import '../../format/dates.dart';
 import '../../l10n/l10n.dart';
@@ -1013,12 +1014,17 @@ enum _More { details, dismiss, mute }
 Future<void> showPasteDialog(BuildContext context, OwnController own) async {
   final AppLocalizations l = context.l10n;
   final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
-  final ClipboardData? clip = await Clipboard.getData(Clipboard.kTextPlain);
+  // The example brings a bank's message of its own to try, and leaves what
+  // the person copied alone.
+  final ClipboardData? clip = own.example
+      ? null
+      : await Clipboard.getData(Clipboard.kTextPlain);
   if (!context.mounted) return;
   final String? typed = await showDialog<String>(
     context: context,
-    builder: (BuildContext context) =>
-        _PasteDialog(initial: clip?.text?.trim() ?? ''),
+    builder: (BuildContext context) => own.example
+        ? _PasteDialog(initial: exampleMessage, note: l.examplePasteNote)
+        : _PasteDialog(initial: clip?.text?.trim() ?? ''),
   );
   if (typed == null || typed.trim().isEmpty) return;
   final IngestReport r = await own.ingestText(typed.trim());
@@ -1040,10 +1046,13 @@ Future<void> showPasteDialog(BuildContext context, OwnController own) async {
 /// Where the person pastes a message. It owns its controller, so the field
 /// can still draw while the dialog closes.
 class _PasteDialog extends StatefulWidget {
-  const _PasteDialog({required this.initial});
+  const _PasteDialog({required this.initial, this.note});
 
   /// What the clipboard held when it opened.
   final String initial;
+
+  /// What to know about [initial], under the field.
+  final String? note;
 
   @override
   State<_PasteDialog> createState() => _PasteDialogState();
@@ -1070,7 +1079,11 @@ class _PasteDialogState extends State<_PasteDialog> {
         autofocus: true,
         minLines: 3,
         maxLines: 6,
-        decoration: InputDecoration(hintText: l.pasteHint),
+        decoration: InputDecoration(
+          hintText: l.pasteHint,
+          helperText: widget.note,
+          helperMaxLines: 3,
+        ),
       ),
       actions: <Widget>[
         TextButton(

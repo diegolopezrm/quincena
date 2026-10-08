@@ -13,6 +13,7 @@ import '../capture/merchants.dart';
 import '../capture/places.dart';
 import '../agent/tools.dart';
 import '../data/clock.dart';
+import '../data/example_account.dart' show exampleLastUsed;
 import '../data/example_prices.dart';
 import '../data/ledger.dart';
 import '../domain/commitments.dart';
@@ -890,8 +891,12 @@ class OwnController extends ChangeNotifier {
   /// It goes to the account the person named, or else the first one to
   /// spend from in the base currency. An account in another currency gets
   /// the amount converted, when there is a rate for it. One saved before
-  /// with the same id is corrected instead of added again.
-  Future<void> recordExpense(ExpenseToRecord expense) async {
+  /// with the same id is corrected instead of added again. [source] says
+  /// who wrote it down: Gemini, or the example's script.
+  Future<void> recordExpense(
+    ExpenseToRecord expense, {
+    String source = 'gemini',
+  }) async {
     final Profile? p = profile;
     final Ledger? l = ledger;
     if (p == null || l == null) return;
@@ -915,7 +920,7 @@ class OwnController extends ChangeNotifier {
         ? null
         : _snapshot?.entries
               .where(
-                (Entry e) => e.source == 'gemini' && e.sourceRef == expense.id,
+                (Entry e) => e.source == source && e.sourceRef == expense.id,
               )
               .firstOrNull;
     if (earlier != null) {
@@ -937,7 +942,7 @@ class OwnController extends ChangeNotifier {
       date: _now(),
       category: expense.category.name,
       payee: expense.note,
-      source: 'gemini',
+      source: source,
       sourceRef: expense.id,
     );
     _pending?.cancel();
@@ -1069,6 +1074,9 @@ class OwnController extends ChangeNotifier {
         reserved: _freelance.reservePercent > 0
             ? _freelance.reserve(_collected(s, day))
             : 0,
+        // What the example's story tells of each subscription's use, for
+        // its conversation; nothing tells it of the person's own.
+        lastUsed: example ? exampleLastUsed : const <String, DateTime>{},
       );
       _balances = balancesOf(s.accounts, s.entries, day);
     } else {

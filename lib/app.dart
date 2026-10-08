@@ -8,6 +8,8 @@ import 'app_mode.dart';
 import 'data/example_account.dart';
 import 'l10n/l10n.dart';
 import 'money/rate_sources.dart';
+import 'own/own_controller.dart';
+import 'own/own_tools.dart';
 import 'portfolio/market.dart';
 import 'session/session.dart';
 import 'store/open.dart';
@@ -119,26 +121,29 @@ class QuincenaApp extends StatefulWidget {
 class _QuincenaAppState extends State<QuincenaApp> {
   final AppSettings _settings = AppSettings();
 
-  /// A key passed at build time starts the app with Gemini answering.
-  ///
-  /// For running locally only: a web build made with the key defined carries
-  /// it in its JavaScript, so a build for publishing must never define it.
-  static const String _buildKey = String.fromEnvironment('GEMINI_API_KEY');
-
-  static const AgentMode _firstAgent = _buildKey == ''
-      ? AgentMode.demo
-      : AgentMode.live;
-
-  /// The example's conversation over the same story, made the first time
-  /// it is opened, in the language the app is in then.
+  /// The example's conversation, made the first time it is opened in each
+  /// visit, in the language the app is in then: the script answers it,
+  /// offline, over the example's own account, and what it saves goes there.
   Session? _conversation;
 
-  Session _exampleConversation(String language) => _conversation ??= Session(
-    mode: _firstAgent,
-    apiKey: _buildKey.isEmpty ? null : _buildKey,
-    allowance: _modes?.allowance,
-    language: language,
-  );
+  /// The example account [_conversation] is about.
+  OwnController? _conversed;
+
+  Session _exampleConversation(String language) {
+    final OwnController example = _modes!.example!;
+    if (!identical(example, _conversed)) {
+      // The one from an earlier visit, which nothing shows any more.
+      _conversation?.dispose();
+      _conversed = example;
+      _conversation = Session(
+        language: language,
+        scripted: true,
+        ledgerOf: () => example.ledger!,
+        keeper: scriptedKeeper(example),
+      );
+    }
+    return _conversation!;
+  }
 
   /// Null when a test passed a session: the sample is all there is.
   late final AppModeController? _modes = widget.session != null
@@ -153,25 +158,11 @@ class _QuincenaAppState extends State<QuincenaApp> {
 
   final GlobalKey<NavigatorState> _navigator = GlobalKey<NavigatorState>();
 
-  /// What the app showed last, to notice when the example is left.
-  AppMode? _shown;
-
   @override
   void initState() {
     super.initState();
     if (_modes?.store case final QuincenaStore store) {
       unawaited(_settings.keepIn(store));
-    }
-    _modes?.addListener(_modeChanged);
-  }
-
-  /// Leaving the example leaves its conversation too: the next visit
-  /// starts it over, as fresh as the account.
-  void _modeChanged() {
-    final AppMode? before = _shown;
-    _shown = _modes?.mode;
-    if (before == AppMode.demo && _shown != AppMode.demo) {
-      _conversation?.use(_firstAgent);
     }
   }
 
@@ -223,7 +214,6 @@ class _QuincenaAppState extends State<QuincenaApp> {
 
   @override
   void dispose() {
-    _modes?.removeListener(_modeChanged);
     _settings.dispose();
     _modes?.dispose();
     if (widget.store == null) _modes?.store?.close();

@@ -119,61 +119,65 @@ class _SettingsState extends State<_Settings> {
             children: <Widget>[
               Text(t.settings, style: context.type.headlineSmall),
               const SizedBox(height: 22),
-              Text(t.whoAnswers, style: context.type.labelMedium),
-              const SizedBox(height: 10),
-              SegmentedButton<AgentMode>(
-                segments: <ButtonSegment<AgentMode>>[
-                  ButtonSegment<AgentMode>(
-                    value: AgentMode.demo,
-                    label: Text(t.modeDemo),
-                  ),
-                  // Gemini with no key where Quincena's project serves the
-                  // app; a key of the person's own then stays an option.
-                  if (Cloud.supported)
+              // Where only the script answers, as in the example account,
+              // there is no one else to choose.
+              if (widget.session.choosable) ...<Widget>[
+                Text(t.whoAnswers, style: context.type.labelMedium),
+                const SizedBox(height: 10),
+                SegmentedButton<AgentMode>(
+                  segments: <ButtonSegment<AgentMode>>[
                     ButtonSegment<AgentMode>(
-                      value: AgentMode.gemini,
-                      label: Text(t.modeGemini),
+                      value: AgentMode.demo,
+                      label: Text(t.modeDemo),
                     ),
-                  ButtonSegment<AgentMode>(
-                    value: AgentMode.live,
-                    label: Text(Cloud.supported ? t.modeOwnKey : t.modeLive),
-                  ),
-                ],
-                selected: <AgentMode>{_mode},
-                showSelectedIcon: false,
-                onSelectionChanged: (Set<AgentMode> value) =>
-                    _choose(value.first),
-              ),
-              const SizedBox(height: 10),
-              Text(switch ((_mode, live)) {
-                (AgentMode.demo, _) => t.demoExplain,
-                (AgentMode.live, true) => t.liveActive(
-                  GeminiClient.defaultModel,
-                ),
-                (AgentMode.live, false) => t.liveNeedsKey,
-                (AgentMode.gemini, _) => t.geminiExplain(
-                  FirebaseGeminiClient.defaultModel,
-                ),
-              }, style: context.type.bodySmall),
-              // Connected, it stays, so a key that did not work can be
-              // replaced where the notice about it sends the person.
-              if (_mode == AgentMode.live) ...<Widget>[
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _key,
-                  obscureText: true,
-                  autocorrect: false,
-                  enableSuggestions: false,
-                  onSubmitted: (_) => _connect(),
-                  decoration: InputDecoration(
-                    labelText: t.keyLabel,
-                    hintText: t.keyHint,
-                  ),
+                    // Gemini with no key where Quincena's project serves the
+                    // app; a key of the person's own then stays an option.
+                    if (Cloud.supported)
+                      ButtonSegment<AgentMode>(
+                        value: AgentMode.gemini,
+                        label: Text(t.modeGemini),
+                      ),
+                    ButtonSegment<AgentMode>(
+                      value: AgentMode.live,
+                      label: Text(Cloud.supported ? t.modeOwnKey : t.modeLive),
+                    ),
+                  ],
+                  selected: <AgentMode>{_mode},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (Set<AgentMode> value) =>
+                      _choose(value.first),
                 ),
                 const SizedBox(height: 10),
-                FilledButton(onPressed: _connect, child: Text(t.connect)),
+                Text(switch ((_mode, live)) {
+                  (AgentMode.demo, _) => t.demoExplain,
+                  (AgentMode.live, true) => t.liveActive(
+                    GeminiClient.defaultModel,
+                  ),
+                  (AgentMode.live, false) => t.liveNeedsKey,
+                  (AgentMode.gemini, _) => t.geminiExplain(
+                    FirebaseGeminiClient.defaultModel,
+                  ),
+                }, style: context.type.bodySmall),
+                // Connected, it stays, so a key that did not work can be
+                // replaced where the notice about it sends the person.
+                if (_mode == AgentMode.live) ...<Widget>[
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _key,
+                    obscureText: true,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    onSubmitted: (_) => _connect(),
+                    decoration: InputDecoration(
+                      labelText: t.keyLabel,
+                      hintText: t.keyHint,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  FilledButton(onPressed: _connect, child: Text(t.connect)),
+                ],
+                const SizedBox(height: 26),
               ],
-              const SizedBox(height: 26),
               Text(t.language, style: context.type.labelMedium),
               const SizedBox(height: 10),
               SegmentedButton<String>(

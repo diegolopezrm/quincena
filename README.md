@@ -6,9 +6,13 @@ Personal finance where every answer is an interface.
 
 **[Try it in the browser](https://diegolopezrm.github.io/quincena/)**, in
 Spanish or English. It needs no account and no key: it opens the whole app on
-Valentina's made-up account, kept in memory, and "Otra pregunta" on its home
-opens the conversation, where a scripted agent answers and "Lo que respondió
-Gemini" replays five sessions Gemini answered for real.
+Valentina's made-up account, kept in memory, the one in the store's
+pictures. "Pregúntale a tu plata" on its home asks a scripted agent about
+that same account, offline, so its answers say the figures the screens say,
+and what you save there shows on every screen until you leave the example.
+"Lo que respondió Gemini" replays five sessions Gemini answered for real.
+On a phone, "Con datos de ejemplo" on the first screen opens the same
+example.
 
 <p align="center">
   <img src="docs/screens/inicio.png" width="24%" alt="Home screen: what you can spend until payday, and the questions to ask">
@@ -126,10 +130,13 @@ flutter run -d chrome
 ```
 
 The example account runs offline, on a fixed day with fixed rates and
-prices. In its conversation a scripted agent answers with the same
-components, bindings and function calls a model sends, and every number in
-its answers comes from the account, so saving an expense changes the next
-answer.
+prices, in a database in memory that is built again each time it opens and
+gone when it is left. In its conversation a scripted agent answers with the
+same components, bindings and function calls a model sends, and every number
+in its answers comes from that account, so saving an expense or a goal's plan
+there changes the next answer and every screen of the example. "Importar
+extracto" offers a made-up statement to try, and "Leer un pago" a bank's
+message, so neither needs a file or a message of your own.
 
 On iOS and macOS the plugins, Firebase among them, come in as Swift packages
 (`pubspec.yaml` turns Swift Package Manager on for this app), so there is no
@@ -153,9 +160,8 @@ What is set up for production, which limits stop spending and which only
 warn, and what Google may do with what is sent on each plan is in
 [docs/PRODUCTION.md](docs/PRODUCTION.md).
 
-For the demo account, settings offers the same Gemini, or a key of your own
-from [Google AI Studio](https://aistudio.google.com). A key is not saved, and
-it only travels to Google.
+The example account never asks Gemini: its conversation is the script, so
+trying it spends none of the day's questions and sends nothing anywhere.
 
 Gemini gets the catalog through genui's prompt builder, with two of its
 defaults switched off: the chat preset forbids `updateDataModel`, which every
@@ -174,14 +180,8 @@ never committed:
 flutter run --dart-define-from-file=tool/app_check.local.json
 ```
 
-For a local run with your own key you can also pass it at build time:
-
-```bash
-flutter run -d chrome --dart-define=GEMINI_API_KEY=your-key
-```
-
-Never do either for a build you publish: a web build made with the key or
-the token defined carries it in its JavaScript.
+Never do that for a build you publish: a web build made with the token
+defined carries it in its JavaScript.
 
 ## Recording real sessions
 
@@ -189,7 +189,8 @@ the token defined carries it in its JavaScript.
 GEMINI_API_KEY=your-key flutter test tool/record
 ```
 
-asks Gemini each question on the home screen and writes what it sent to
+asks Gemini each of the five questions the example's conversation offers,
+over the same story, and writes what it sent to
 `assets/traces/` as genui_gen traces. The app replays them in "Lo que
 respondió Gemini", step by step and with no network, and
 `test/recorded_test.dart` replays every one against the current catalog on

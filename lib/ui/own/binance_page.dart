@@ -54,7 +54,9 @@ class BinanceCard extends StatelessWidget {
         final DateTime? at = link.syncedAt;
         // Balances written by hand are the reason to connect it.
         final bool manual = manualBinanceAccounts(own).isNotEmpty;
-        final String body = !link.connected
+        final String body = own.example
+            ? l.exampleNotConnected
+            : !link.connected
             ? (manual
                   ? l.binanceCardManualBody
                   : compact

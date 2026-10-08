@@ -5655,4 +5655,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String examplePricedAt(String when) {
     return 'The example\'s fixed prices, from $when';
   }
+
+  @override
+  String get sourceScript => 'Example conversation';
+
+  @override
+  String get exampleNotConnected => 'Connects to nothing in the example';
+
+  @override
+  String get examplePricesNote =>
+      'In the example, prices are fixed and asked of no one, Binance included. Quincena doesn\'t give investment advice.';
+
+  @override
+  String exampleStatementBody(String name) {
+    return 'Try a made-up statement of $name\'s payroll account: it has a payment that\'s already recorded, a card payment, and a purchase from before she wrote down her balance.';
+  }
+
+  @override
+  String get exampleStatementUse => 'Use the example statement';
+
+  @override
+  String get examplePasteNote =>
+      'A sample message, like the ones banks send. You can change it before reading it.';
 }

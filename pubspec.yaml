@@ -93,6 +93,8 @@ flutter:
   assets:
     # Real Gemini sessions, recorded with tool/record and replayed in the app.
     - assets/traces/
+    # The made-up statement «Importar extracto» offers in the example.
+    - assets/statements/
     # The fonts' and icons' licenses travel with them, for the licenses page.
     - assets/fonts/OFL-BricolageGrotesque.txt
     - assets/fonts/OFL-Geist.txt

@@ -580,7 +580,9 @@ class OwnSettingsPage extends StatelessWidget {
                         context,
                         icon: Glyph.vault,
                         title: l.walletsTitle,
-                        value: l.walletsCardBody,
+                        value: own.example
+                            ? l.exampleNotConnected
+                            : l.walletsCardBody,
                         onTap: () => _open(
                           context,
                           l.walletsTitle,
@@ -592,7 +594,9 @@ class OwnSettingsPage extends StatelessWidget {
                           context,
                           icon: Glyph.currencyBtc,
                           title: l.binanceTitle,
-                          value: own.binance.connected
+                          value: own.example
+                              ? l.exampleNotConnected
+                              : own.binance.connected
                               ? l.binanceConnected
                               : l.binanceCardBody,
                           onTap: () => _open(

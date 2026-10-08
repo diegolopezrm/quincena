@@ -8697,6 +8697,42 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Precios fijos del ejemplo, del {when}'**
   String examplePricedAt(String when);
+
+  /// No description provided for @sourceScript.
+  ///
+  /// In es, this message translates to:
+  /// **'Conversación del ejemplo'**
+  String get sourceScript;
+
+  /// No description provided for @exampleNotConnected.
+  ///
+  /// In es, this message translates to:
+  /// **'En el ejemplo no se conecta con nada'**
+  String get exampleNotConnected;
+
+  /// No description provided for @examplePricesNote.
+  ///
+  /// In es, this message translates to:
+  /// **'En el ejemplo los precios son fijos: no se le piden a Binance ni a nadie. Quincena no da asesoría de inversión.'**
+  String get examplePricesNote;
+
+  /// No description provided for @exampleStatementBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Prueba con un extracto inventado de la cuenta de nómina de {name}: trae un pago que ya está anotado, el pago de la tarjeta y una compra de antes de que escribiera su saldo.'**
+  String exampleStatementBody(String name);
+
+  /// No description provided for @exampleStatementUse.
+  ///
+  /// In es, this message translates to:
+  /// **'Usar el extracto de ejemplo'**
+  String get exampleStatementUse;
+
+  /// No description provided for @examplePasteNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Un mensaje de ejemplo, como los que manda el banco. Puedes cambiarlo antes de leerlo.'**
+  String get examplePasteNote;
 }
 
 class _AppLocalizationsDelegate

@@ -2,6 +2,7 @@
 // person's own accounts says so and does nothing, nothing done in the
 // example reaches the person's database, and its conversation tells the
 // same figure as its Inicio.
+import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,13 +11,20 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/app.dart';
 import 'package:quincena/data/clock.dart';
+import 'package:quincena/data/example_account.dart';
 import 'package:quincena/data/seed.dart';
 import 'package:quincena/format/money.dart' as format;
+import 'package:quincena/domain/records.dart';
 import 'package:quincena/money/asset.dart';
+import 'package:quincena/money/money.dart';
+import 'package:quincena/own/own_controller.dart';
+import 'package:quincena/portfolio/portfolio.dart';
+import 'package:quincena/portfolio/portfolio_controller.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
 import 'package:quincena/ui/home_page.dart';
 import 'package:quincena/ui/own/own_shell.dart';
+import 'package:quincena/ui/own/inbox_page.dart';
 import 'package:quincena/ui/own/statement_page.dart';
 
 import 'fonts.dart';
@@ -154,10 +162,130 @@ void main() {
     expect(await tester.runAsync(mine.entries), isEmpty);
     expect(await tester.runAsync(() => mine.setting('app.mode')), 'demo');
 
-    // A statement of its own, not a file of the person's.
+    // A statement of its own to try, and a file still to pick.
     await tapText(tester, 'Importar extracto');
     expect(find.byType(StatementPage), findsOneWidget);
-    expect(screen(tester), contains('Estudio Lumen'));
+    expect(find.text('Elegir archivo'), findsOneWidget);
+    expect(screen(tester), contains('Usar el extracto de ejemplo'));
+    expect(calls, isEmpty);
+  });
+
+  testWidgets('«Importar extracto» tries a statement of its own: a repeat, '
+      'a card payment and a line older than the balance', (tester) async {
+    await openExample(tester, <MethodCall>[]);
+    OwnController own() =>
+        tester.widget<OwnShell>(find.byType(OwnShell, skipOffstage: false)).own;
+    final Account bank = own().accounts.firstWhere(
+      (Account a) => a.name == exampleStatementAccount,
+    );
+    final Account card = own().accounts.firstWhere(
+      (Account a) => a.kind == AccountKind.card,
+    );
+    final Money held = own().balances[bank.id]!;
+    final Money owed = own().balances[card.id]!;
+    final int free = own().ledger!.freeUntilPayday;
+
+    await tester.tap(find.byTooltip('Ajustes'));
+    await settle(tester);
+    await tapText(tester, 'Importar extracto');
+    await tapText(tester, 'Usar el extracto de ejemplo');
+    final String review = screen(tester);
+    // September's last pay is already in the account, and left unchecked.
+    expect(review, contains('Ya registrado'));
+    expect(review, contains('Pago de tu tarjeta Tarjeta de crédito'));
+    expect(review, contains('Importar 4 movimientos'));
+    await tester.scrollUntilVisible(
+      find.text('Mi saldo ya los incluye (recomendado)'),
+      200,
+      scrollable: find
+          .byWidgetPredicate(
+            (Widget w) =>
+                w is Scrollable && w.axisDirection == AxisDirection.down,
+          )
+          .last,
+    );
+    await settle(tester);
+    expect(
+      screen(tester),
+      contains(
+        'Un movimiento es de antes del 31 de marzo, cuando escribiste el '
+        'saldo de Cuenta de nómina.',
+      ),
+    );
+
+    await tapText(tester, 'Importar 4 movimientos');
+    expect(screen(tester), contains('Se importaron 4 movimientos.'));
+    // The card payment moved money to the card; the two charges and none
+    // of March's, which the balance she wrote already had, left the bank.
+    expect(
+      own().balances[bank.id]!.amount,
+      held.amount - Decimal.fromInt(300000 + 38700 + 14900),
+    );
+    expect(
+      own().balances[card.id]!.amount,
+      owed.amount + Decimal.fromInt(300000),
+    );
+    expect(own().ledger!.freeUntilPayday, free - 38700 - 14900);
+  });
+
+  testWidgets('«Leer un pago» brings a bank\'s message of its own, and the '
+      'crypto says its prices are fixed and nothing connects', (tester) async {
+    final List<MethodCall> calls = <MethodCall>[];
+    await openExample(tester, calls);
+    OwnController own() =>
+        tester.widget<OwnShell>(find.byType(OwnShell, skipOffstage: false)).own;
+    final int waiting = own().pendingInbox.length;
+    await tester.tap(find.byTooltip('Por revisar'));
+    await settle(tester);
+    await tester.tap(find.text('Leer un pago').first);
+    await settle(tester);
+    await tester.tap(find.text('Un mensaje que copiaste'));
+    await settle(tester);
+    final TextField field = tester.widget<TextField>(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(TextField),
+      ),
+    );
+    expect(field.controller!.text, exampleMessage);
+    expect(screen(tester), contains('Un mensaje de ejemplo'));
+    await tester.tap(find.text('Leer'));
+    await settle(tester);
+    expect(own().pendingInbox, hasLength(waiting + 1));
+    // Ready to record, from the account its card digits name.
+    expect(screen(tester), contains('Drogueria Laureles'));
+    expect(screen(tester), contains('Salud · Cuenta de nómina'));
+    Navigator.of(tester.element(find.byType(InboxPage))).pop();
+    await settle(tester);
+
+    await tester.tap(find.text('Cuentas').last);
+    await settle(tester);
+    await tapText(tester, 'Rendimiento y ganancia');
+    // Real-looking figures from the fixed prices: none of them nil.
+    final PortfolioController crypto = own().portfolio;
+    expect(crypto.day!.change, isNot(0));
+    expect(crypto.portfolio!.gainRatio, isNot(0));
+    for (final Holding h in crypto.portfolio!.holdings) {
+      if (h.asset == Asset.usdt) continue;
+      expect(h.change24h, isNot(0), reason: h.asset.code);
+      expect(h.gainRatio, isNot(0), reason: h.asset.code);
+    }
+    await tester.scrollUntilVisible(
+      find.text('Billeteras propias'),
+      300,
+      scrollable: find
+          .byWidgetPredicate(
+            (Widget w) =>
+                w is Scrollable && w.axisDirection == AxisDirection.down,
+          )
+          .last,
+    );
+    await settle(tester);
+    final String said = screen(tester);
+    expect(said, isNot(matches(RegExp(r'(^|[^\d,])0(,0+)? %'))));
+    expect(find.text('En el ejemplo no se conecta con nada'), findsNWidgets(2));
+    expect(said, contains('En el ejemplo los precios son fijos'));
+    expect(said, isNot(contains('Precios de mercado de Binance')));
     expect(calls, isEmpty);
   });
 
