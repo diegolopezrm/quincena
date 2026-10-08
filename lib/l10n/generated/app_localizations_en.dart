@@ -2298,6 +2298,71 @@ class AppLocalizationsEn extends AppLocalizations {
   String get continueLabel => 'Continue';
 
   @override
+  String get acceptLabel => 'Accept';
+
+  @override
+  String get disclosureUses => 'What it uses';
+
+  @override
+  String get disclosureReads => 'What it reads';
+
+  @override
+  String get disclosureWhen => 'When';
+
+  @override
+  String get disclosureWhere => 'Where it stays';
+
+  @override
+  String get captureLocationAskTitle => 'Location of your payments';
+
+  @override
+  String get captureLocationAskLead =>
+      'Quincena collects location data to suggest the shop of a payment, even when the app is closed or not in use.';
+
+  @override
+  String get captureLocationAskWhat => 'Your phone\'s precise location.';
+
+  @override
+  String get captureLocationAskWhen =>
+      'Only when a payment notification arrives, also while the app is closed or not in use.';
+
+  @override
+  String get captureLocationAskWhere =>
+      'On this phone. To find the shop, only the coordinates go to OpenStreetMap, through Photon: nothing else, and to no one else.';
+
+  @override
+  String get captureLocationAskNextAndroid =>
+      'If you accept, Android will ask you for permission to use your location.';
+
+  @override
+  String get captureLocationAskNextIos =>
+      'If you accept, Quincena will use the location your shortcut hands over with each payment.';
+
+  @override
+  String get captureNotificationsAskTitle =>
+      'Reading your payment notifications';
+
+  @override
+  String get captureNotificationsAskLead =>
+      'Quincena reads this phone\'s notifications to note your payments without you having to type them.';
+
+  @override
+  String get captureNotificationsAskWhat =>
+      'The text of incoming notifications, such as those from your bank and wallet apps and your texts. It keeps only the ones with an amount and its currency, along with the app that showed it and the time; the rest pass by without being kept, and verification codes are never kept.';
+
+  @override
+  String get captureNotificationsAskWhen =>
+      'Every time a notification arrives, also while the app is closed or not in use.';
+
+  @override
+  String get captureNotificationsAskWhere =>
+      'On this phone. Quincena doesn\'t send their text to any server or anyone.';
+
+  @override
+  String get captureNotificationsAskNext =>
+      'If you accept, Android will open notification access so you can turn Quincena on.';
+
+  @override
   String get captureImagesTitle => 'Screenshots and receipts';
 
   @override

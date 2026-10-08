@@ -403,10 +403,69 @@ $18.500 POS 7731") and the payment waiting in To review with the shop
 found nearby. It is shared from DL SOFT's Google Drive to anyone with the
 link: https://drive.google.com/file/d/1xdb85_mDkdhPHvFe85GKVF-SWqFoob4N/view
 
+On 6 October 2026 Play rejected the app for an inadequate prominent
+disclosure: the disclosure did not say how the location is used, and the
+permission requests were not immediately preceded by one. The reviewer's
+video showed Android's location prompt right after turning the switch on,
+and Quincena's explanation only afterwards, before the background request.
+Since then the order in the app is:
+
+1. Settings, Automatic capture, turning on "Usar la ubicación del pago"
+   ("Use where the payment happened") shows "Ubicación de tus pagos"
+   ("Location of your payments"): Google's sentence ("Quincena collects
+   location data to suggest the shop of a payment, even when the app is
+   closed or not in use"), what it uses (the phone's precise location),
+   when (only when a payment notification arrives, also with the app
+   closed), where it stays (on the phone; only the coordinates go to
+   OpenStreetMap through Photon, nothing else and to no one else) and that
+   Android asks next, with "Ahora no" and "Aceptar". "Ahora no", back and
+   a tap outside ask for nothing and leave the switch off.
+2. Only after "Aceptar", Android's prompt for the location while the app
+   is in use.
+3. Once given, "Ubicación con la app cerrada" ("Location while Quincena is
+   closed") says it again and that Android will ask to choose "Permitir
+   todo el tiempo", with "Ahora no" and "Aceptar".
+4. Only after "Aceptar", Android's "Allow all the time" screen.
+
+"Permitir todo el tiempo" under the switch, for someone who said no at
+step 3, goes through step 3 as well. The feature for the next submission:
+
+> **Feature:** Finding the shop of a payment. Payment notifications arrive
+> while Quincena is closed, and many do not name the shop ("Compra POS
+> 4512"). With "Use where the payment happened" turned on (off by
+> default), Quincena reads the location once when a payment notification
+> arrives and suggests the shop nearby. Before any location permission
+> request, the in-app disclosure "Location of your payments" says what is
+> collected, what for, when and where it goes, and asks for consent with
+> "Accept"; Android's prompt comes only after it. The disclosure "Location
+> while Quincena is closed" comes right before Android's "Allow all the
+> time". The location stays on the phone; only coordinates go to Photon
+> (OpenStreetMap search).
+
+**Owner's task:** `background-location.mp4` shows the old order, so the
+declaration video must be recorded again with the new one: the switch,
+"Ubicación de tus pagos", "Aceptar", Android's prompt, "Ubicación con la
+app cerrada", "Aceptar", "Permitir todo el tiempo", then the app closed,
+a bank notification with no shop name and the payment in Por revisar with
+the shop found nearby. Then update the link and the feature text in Play
+Console (App content, Sensitive app permissions) and send the new build
+for review.
+
 **Notification access** (`BIND_NOTIFICATION_LISTENER_SERVICE`). Not a
-Play declaration, but the listing and the in-app explanation say what it
-reads: notifications with an amount next to a currency, from apps the
-person does not mute; never security codes.
+Play declaration, but the listing and the app say what it reads. Before
+Android's notification access screen, "Permitir acceso a notificaciones"
+shows "Leer tus notificaciones de pagos" ("Reading your payment
+notifications"): what it reads (the text of incoming notifications, such
+as those of the bank and wallet apps and texts; it keeps only those with
+an amount next to a currency, from apps the person does not mute, never
+security codes), when (each time one arrives, also with the app closed),
+where it stays (on the phone; the text goes to no server and no one) and
+that Android opens notification access next, with "Ahora no" and
+"Aceptar". Only "Aceptar" opens Android's screen.
+
+**Notifications** (`POST_NOTIFICATIONS`), from Android 13. Asked for only
+when the person turns on a reminder (payday close, a renewal or the end
+of a trial); it reads no data.
 
 ## Version 1.1.0
 
