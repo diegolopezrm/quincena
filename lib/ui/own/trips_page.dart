@@ -510,6 +510,7 @@ class _AdjustDialogState extends State<_AdjustDialog> {
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
     return AlertDialog(
+      scrollable: true,
       title: Text(l.tripAdjust),
       content: Column(
         mainAxisSize: MainAxisSize.min,

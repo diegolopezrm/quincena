@@ -551,6 +551,7 @@ class _AmountDialogState extends State<_AmountDialog> {
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
     return AlertDialog(
+      scrollable: true,
       title: Text(l.goalAmountTitle),
       content: TextField(
         controller: _amount,

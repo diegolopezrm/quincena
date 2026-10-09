@@ -768,6 +768,7 @@ class _RateDialogState extends State<_RateDialog> {
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
     return AlertDialog(
+      scrollable: true,
       title: Text(l.rateEdit),
       content: Column(
         mainAxisSize: MainAxisSize.min,

@@ -86,6 +86,7 @@ class _EnvelopesPageState extends State<EnvelopesPage> {
     final String? typed = await showDialog<String>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
+        scrollable: true,
         title: Text(l.envelopeAside),
         content: TextField(
           controller: name,

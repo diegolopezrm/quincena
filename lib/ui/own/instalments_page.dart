@@ -638,6 +638,7 @@ class _PaymentDialogState extends State<_PaymentDialog> {
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
     return AlertDialog(
+      scrollable: true,
       title: Text(l.instalPay),
       content: Column(
         mainAxisSize: MainAxisSize.min,

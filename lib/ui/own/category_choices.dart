@@ -89,6 +89,7 @@ class _NewCategoryDialogState extends State<_NewCategoryDialog> {
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
     return AlertDialog(
+      scrollable: true,
       title: Text(l.newCategory),
       content: TextField(
         controller: _name,

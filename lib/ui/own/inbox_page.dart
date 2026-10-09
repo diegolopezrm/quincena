@@ -1078,6 +1078,7 @@ class _PasteDialogState extends State<_PasteDialog> {
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
     return AlertDialog(
+      scrollable: true,
       title: Text(l.pasteMessage),
       content: TextField(
         controller: _text,

@@ -145,6 +145,7 @@ class _CodeDialogState extends State<_CodeDialog> {
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
     return AlertDialog(
+      scrollable: true,
       title: Text(widget.title),
       content: Column(
         mainAxisSize: MainAxisSize.min,

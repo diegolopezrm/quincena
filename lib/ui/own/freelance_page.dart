@@ -287,6 +287,7 @@ class _UseDialogState extends State<_UseDialog> {
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
     return AlertDialog(
+      scrollable: true,
       title: Text(l.freelanceUse),
       content: Column(
         mainAxisSize: MainAxisSize.min,
