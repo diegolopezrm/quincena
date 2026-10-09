@@ -33,9 +33,10 @@ a footer that says what cancelling the ticked ones would save; you cancel them
 yourself and say so, because the app never cancels anything.
 
 None of those screens is in the source. An agent composes each one at runtime
-from a catalog of components, with [genui](https://pub.dev/packages/genui)
-rendering them and [genui_gen](https://pub.dev/packages/genui_gen) deriving
-the catalog from the widgets' own constructors.
+from a catalog of components and sends it as [A2UI](https://a2ui.org), with
+[genui](https://pub.dev/packages/genui) rendering them and
+[genui_gen](https://pub.dev/packages/genui_gen) deriving the catalog from the
+widgets' own constructors.
 
 The account is made up. Valentina is a designer in Medellín, paid on the 15th
 and the last day of the month, saving for a trip while she pays off a student
@@ -248,3 +249,7 @@ Type is [Bricolage Grotesque](https://fonts.google.com/specimen/Bricolage+Grotes
 and [Geist](https://fonts.google.com/specimen/Geist), under the SIL Open Font
 License. Icons are [Phosphor](https://phosphoricons.com), under the MIT
 license. The licenses sit next to the files in `assets/`.
+
+## License
+
+Quincena is under the [MIT license](LICENSE).
