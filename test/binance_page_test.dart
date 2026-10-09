@@ -176,7 +176,7 @@ void main() {
     // A screen reader says it too, as the eye's own button.
     expect(
       tester.getSemantics(find.byTooltip('Mostrar la Secret Key')),
-      containsSemantics(tooltip: 'Mostrar la Secret Key', isButton: true),
+      isSemantics(tooltip: 'Mostrar la Secret Key', isButton: true),
     );
     await tester.tap(find.byTooltip('Mostrar la Secret Key'));
     await tester.pump();
