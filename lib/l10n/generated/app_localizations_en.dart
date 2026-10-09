@@ -6208,6 +6208,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String statementFreeChange(String before, String after) {
+    return 'You can spend until payday: $before → $after';
+  }
+
+  @override
+  String statementFreeSame(String amount) {
+    return 'You can spend until payday: $amount, the same as before';
+  }
+
+  @override
+  String statementFreeShort(String amount) {
+    return '$amount short';
+  }
+
+  @override
   String statementDebtEffect(String account, String before, String after) {
     return 'What you owe on $account: $before → $after';
   }

@@ -6205,6 +6205,21 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String statementFreeChange(String before, String after) {
+    return 'Puedes gastar hasta el pago: $before → $after';
+  }
+
+  @override
+  String statementFreeSame(String amount) {
+    return 'Puedes gastar hasta el pago: $amount, lo mismo que antes';
+  }
+
+  @override
+  String statementFreeShort(String amount) {
+    return 'te faltan $amount';
+  }
+
+  @override
   String statementDebtEffect(String account, String before, String after) {
     return 'Lo que debes en $account: $before → $after';
   }

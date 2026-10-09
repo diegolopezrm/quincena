@@ -4,6 +4,7 @@
 // and on its screens, and is gone once the example is left. No question of
 // the day is spent and nothing goes out.
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
@@ -14,6 +15,7 @@ import 'package:intl/intl.dart';
 import 'package:quincena/agent/scripted_agent.dart';
 import 'package:quincena/ai/allowance.dart';
 import 'package:quincena/app.dart';
+import 'package:quincena/catalog/budget_meter.dart';
 import 'package:quincena/data/category.dart';
 import 'package:quincena/data/clock.dart';
 import 'package:quincena/data/example_account.dart';
@@ -358,6 +360,24 @@ void main() {
     final String after = _pesos(free - 45000);
     expect(screen(tester), contains('Ahora puedes gastar $after'));
     expect(own().ledger!.freeUntilPayday, free - 45000);
+    // Against last month by the same day: a whole month against a few days
+    // would read as money saved.
+    final BudgetMeter meter = tester.widget<BudgetMeter>(
+      find.byType(BudgetMeter).last,
+    );
+    final DateTime last = DateTime(appToday.year, appToday.month - 1);
+    final int byDay = math.min(
+      appToday.day,
+      DateTime(last.year, last.month + 1, 0).day,
+    );
+    expect(meter.caption, startsWith('Al $byDay de '));
+    expect(
+      meter.limit,
+      own().ledger!
+          .inCategory(meter.category, last.year, last.month)
+          .where((Movement m) => m.date.day <= byDay)
+          .fold<int>(0, (int sum, Movement m) => sum + m.amount),
+    );
 
     // Who answers is not a choice here, and the conversation has no
     // settings of its own: language and looks are the app's.

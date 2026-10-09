@@ -9493,6 +9493,24 @@ abstract class AppLocalizations {
   /// **'Saldo de {account}: {before} → {after}'**
   String statementBalanceEffect(String account, String before, String after);
 
+  /// No description provided for @statementFreeChange.
+  ///
+  /// In es, this message translates to:
+  /// **'Puedes gastar hasta el pago: {before} → {after}'**
+  String statementFreeChange(String before, String after);
+
+  /// No description provided for @statementFreeSame.
+  ///
+  /// In es, this message translates to:
+  /// **'Puedes gastar hasta el pago: {amount}, lo mismo que antes'**
+  String statementFreeSame(String amount);
+
+  /// No description provided for @statementFreeShort.
+  ///
+  /// In es, this message translates to:
+  /// **'te faltan {amount}'**
+  String statementFreeShort(String amount);
+
   /// No description provided for @statementDebtEffect.
   ///
   /// In es, this message translates to:

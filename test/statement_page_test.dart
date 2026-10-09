@@ -8,6 +8,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
+import 'package:quincena/format/money.dart';
 import 'package:quincena/l10n/l10n.dart';
 import 'package:quincena/money/asset.dart';
 import 'package:quincena/money/money.dart';
@@ -150,6 +151,7 @@ void main() {
       findsNothing,
     );
 
+    final int freeBefore = own.ledger!.freeUntilPayday;
     await tester.tap(find.text('Importar 3 movimientos'));
     await settle(tester);
     final List<Entry> entries =
@@ -173,6 +175,16 @@ void main() {
       findsOneWidget,
     );
     expect(own.balances[bank.id]?.amount, Decimal.parse('2334200'));
+    // And what that did to the money to spend, before Inicio says it.
+    String free(int v) => v >= 0 ? pesos(v) : 'te faltan ${pesos(-v)}';
+    final int freeAfter = own.ledger!.freeUntilPayday;
+    expect(freeAfter, isNot(freeBefore));
+    expect(
+      find.text(
+        'Puedes gastar hasta el pago: ${free(freeBefore)} → ${free(freeAfter)}',
+      ),
+      findsOneWidget,
+    );
     expect(
       find.text('Uno quedó sin categoría: tócalo para ponérsela.'),
       findsOneWidget,

@@ -6,8 +6,10 @@ import 'package:flutter/material.dart';
 import '../../ai/allowance.dart';
 import '../../capture/merchants.dart';
 import '../../capture/native_channel.dart';
+import '../../data/ledger.dart';
 import '../../domain/records.dart';
 import '../../format/dates.dart';
+import '../../format/money.dart';
 import '../../data/example_account.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
@@ -99,6 +101,10 @@ class _StatementPageState extends State<StatementPage> {
   /// already had the lines, to show what the import did.
   Money? _before;
   bool _included = false;
+
+  /// What could be spent until payday before the import, to say how the
+  /// lines changed it.
+  int? _freeBefore;
 
   OwnController get own => widget.own;
 
@@ -289,6 +295,7 @@ class _StatementPageState extends State<StatementPage> {
       for (final int i in _chosen.toList()..sort()) _candidates[i],
     ];
     final Money before = own.balances[account.id] ?? account.openingMoney;
+    final int? freeBefore = own.ledger?.freeUntilPayday;
     final BalanceRule rule = _rule;
     final int n;
     try {
@@ -314,6 +321,7 @@ class _StatementPageState extends State<StatementPage> {
     setState(() {
       _imported = n;
       _before = before;
+      _freeBefore = freeBefore;
       _included = _alreadyIn(account, chosen, rule);
       _transfers = chosen
           .where((ImportCandidate c) => c.kind == EntryKind.transfer)
@@ -401,6 +409,16 @@ class _StatementPageState extends State<StatementPage> {
       moneyText(before, base: base),
       moneyText(after, base: base),
     );
+  }
+
+  /// How what can be spent until payday went from [before] to [after]:
+  /// what is missing said as missing, never as a negative to spend.
+  String _freeText(AppLocalizations l, Ledger ledger, int before, int after) {
+    String side(int free) => free >= 0
+        ? pesos(ledger.major(free))
+        : l.statementFreeShort(pesos(ledger.major(-free)));
+    if (before == after) return l.statementFreeSame(side(after));
+    return l.statementFreeChange(side(before), side(after));
   }
 
   /// Opens line [i] to change what it is recorded as.
@@ -606,6 +624,17 @@ class _StatementPageState extends State<StatementPage> {
               own.balances[account.id] ?? account.openingMoney,
               included: _included,
             ),
+            style: context.type.bodyMedium,
+          ),
+        ],
+        // What Inicio says next, before it is seen there.
+        if ((_freeBefore, own.ledger) case (
+          final int before,
+          final Ledger ledger,
+        )) ...<Widget>[
+          const SizedBox(height: 4),
+          Figures(
+            _freeText(l, ledger, before, ledger.freeUntilPayday),
             style: context.type.bodyMedium,
           ),
         ],

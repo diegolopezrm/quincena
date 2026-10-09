@@ -212,30 +212,14 @@ class ClosePage extends StatelessWidget {
             const SizedBox(height: 8),
             Text(l.closeMonthly, style: context.type.bodySmall),
             for (final CategoryChange c in close.monthly)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: Text(
-                        c.category.labelIn(lang),
-                        style: context.type.bodyMedium,
-                      ),
-                    ),
-                    Figures(amount(c.now), style: context.type.bodyMedium),
-                    if (c.before != null) ...<Widget>[
-                      const SizedBox(width: 10),
-                      Figures(
-                        c.difference == 0
-                            ? '='
-                            : pesos(ledger.major(c.difference), signed: true),
-                        style: context.type.bodySmall,
-                      ),
-                    ],
-                    // Lined up with the rows above, which open their payments.
-                    const SizedBox(width: 20),
-                  ],
-                ),
+              _MonthlyRow(
+                label: c.category.labelIn(lang),
+                amount: amount(c.now),
+                difference: switch (c.before) {
+                  null => null,
+                  _ when c.difference == 0 => '=',
+                  _ => pesos(ledger.major(c.difference), signed: true),
+                },
               ),
           ],
         ],
@@ -449,4 +433,54 @@ class _Card extends StatelessWidget {
       ],
     ),
   );
+}
+
+/// A monthly payment at the close: its month and how it compares with the
+/// month before, the figures under the name when the text is large.
+class _MonthlyRow extends StatelessWidget {
+  const _MonthlyRow({
+    required this.label,
+    required this.amount,
+    required this.difference,
+  });
+
+  final String label;
+  final String amount;
+
+  /// Against the month before; null without one recorded.
+  final String? difference;
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget name = Text(label, style: context.type.bodyMedium);
+    final List<Widget> figures = <Widget>[
+      Figures(amount, style: context.type.bodyMedium),
+      if (difference case final String d) ...<Widget>[
+        const SizedBox(width: 10),
+        Figures(d, style: context.type.bodySmall),
+      ],
+    ];
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: largeText(context)
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                name,
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: figures,
+                ),
+              ],
+            )
+          : Row(
+              children: <Widget>[
+                Expanded(child: name),
+                ...figures,
+                // Lined up with the rows above, which open their payments.
+                const SizedBox(width: 20),
+              ],
+            ),
+    );
+  }
 }

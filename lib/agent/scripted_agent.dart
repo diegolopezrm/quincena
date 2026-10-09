@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:a2ui_core/a2ui_core.dart' as core;
 import 'package:genui/genui.dart';
 
@@ -213,6 +215,15 @@ class ScriptedAgent {
   /// The month the questions are about: the last complete one.
   (int, int) get _lastMonth =>
       _month == 1 ? (_year - 1, 12) : (_year, _month - 1);
+
+  /// [day], or the last day of the month [y]-[m] when it has fewer.
+  int _byDay(int y, int m) => math.min(appToday.day, DateTime(y, m + 1, 0).day);
+
+  /// What [category] took in the month [y]-[m] up to its [day], included.
+  int _spentBy(Category category, int y, int m, int day) => ledger
+      .inCategory(category, y, m)
+      .where((Movement x) => x.date.day <= math.min(day, _byDay(y, m)))
+      .fold(0, (int sum, Movement x) => sum + x.amount);
 
   (int, int) get _monthBefore {
     final (int y, int m) = _lastMonth;
@@ -744,11 +755,16 @@ class ScriptedAgent {
                 '${dayMonth(ledger.nextPayday)}.',
           ),
         }),
+        // This month so far against last month by the same day: a whole
+        // month against a few days would read as money saved.
         _c('meter', 'BudgetMeter', {
           'category': category.name,
           'spent': ledger.spentOn(category, _year, _month),
-          'limit': ledger.spentOn(category, y, m),
-          'caption': _capital(_monthName(y, m)),
+          'limit': _spentBy(category, y, m, appToday.day),
+          'caption': _t(
+            'Al ${_byDay(y, m)} de ${_monthName(y, m)}',
+            'By ${_capital(_monthName(y, m))} ${_byDay(y, m)}',
+          ),
         }),
         ..._suggestions(<String>[_questions[1]]),
       ],
