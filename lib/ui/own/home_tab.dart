@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 
+import '../../ai/allowance.dart';
 import '../../capture/merchants.dart';
 import '../../data/ledger.dart';
 import '../../domain/decisions.dart';
@@ -39,6 +40,8 @@ class OwnHomeTab extends StatelessWidget {
     required this.onSeeAll,
     this.onAsk,
     this.questions,
+    this.allowance,
+    this.conversing = false,
   });
 
   final OwnController own;
@@ -54,6 +57,14 @@ class OwnHomeTab extends StatelessWidget {
   /// icon: the ones the example's script answers, there. Null offers the
   /// ones for the person's own accounts.
   final List<(IconData, String)>? questions;
+
+  /// The day's questions, where asking spends them: said before asking
+  /// when few are left, and the questions put away when none are.
+  final Allowance? allowance;
+
+  /// Whether a conversation is under way, to go back to it when no
+  /// question can be asked today.
+  final bool conversing;
 
   @override
   Widget build(BuildContext context) {
@@ -99,18 +110,44 @@ class OwnHomeTab extends StatelessWidget {
         if (onAsk case final void Function([String? question]) ask) ...<Widget>[
           const SizedBox(height: 24),
           SectionLabel(l.askYourMoneyLabel),
-          Panel(
-            children: <Widget>[
-              for (final (IconData icon, String question)
-                  in questions ??
-                      <(IconData, String)>[
-                        (Glyph.wallet, l.ownAskFree),
-                        (Glyph.chartDonut, l.ownAskMonth),
-                        (Glyph.coins, l.ownAskAll),
-                      ])
-                _AskRow(icon: icon, text: question, onTap: () => ask(question)),
-              _AskRow(icon: Glyph.sparkle, text: l.askOther, onTap: ask),
-            ],
+          ListenableBuilder(
+            listenable: Listenable.merge(<Listenable?>[allowance]),
+            builder: (BuildContext context, _) {
+              final Allowance? day = allowance;
+              // Used up, the questions show put away, with when they come
+              // back, instead of being offered and then turned down.
+              final bool out = day != null && day.left == 0;
+              return Panel(
+                children: <Widget>[
+                  if (day != null && (out || day.few))
+                    _AskLeft(
+                      text: out
+                          ? l.askNoneLeft(day.perDay)
+                          : l.askLeftOf(day.left, day.perDay),
+                    ),
+                  for (final (IconData icon, String question)
+                      in questions ??
+                          <(IconData, String)>[
+                            (Glyph.wallet, l.ownAskFree),
+                            (Glyph.chartDonut, l.ownAskMonth),
+                            (Glyph.coins, l.ownAskAll),
+                          ])
+                    _AskRow(
+                      icon: icon,
+                      text: question,
+                      onTap: out ? null : () => ask(question),
+                    ),
+                  if (!out)
+                    _AskRow(icon: Glyph.sparkle, text: l.askOther, onTap: ask)
+                  else if (conversing)
+                    _AskRow(
+                      icon: Glyph.chatCircleDots,
+                      text: l.askSeeConversation,
+                      onTap: ask,
+                    ),
+                ],
+              );
+            },
           ),
         ],
         const SizedBox(height: 24),
@@ -256,20 +293,49 @@ String _sound(String word) =>
     ? 'i'
     : 'other';
 
-/// One question to ask, or the way to ask another.
+/// One question to ask, or the way to ask another. Null [onTap] shows it
+/// put away, as when no question is left today.
 class _AskRow extends StatelessWidget {
   const _AskRow({required this.icon, required this.text, required this.onTap});
 
   final IconData icon;
   final String text;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) => ListTile(
-    onTap: onTap,
-    leading: Icon(icon, color: context.colors.brand),
-    title: Text(text, style: context.type.bodyMedium),
-    trailing: Icon(Glyph.caretRight, size: 18, color: context.colors.inkFaint),
+  Widget build(BuildContext context) {
+    final Widget row = ListTile(
+      onTap: onTap,
+      enabled: onTap != null,
+      leading: Icon(icon, color: context.colors.brand),
+      title: Text(text, style: context.type.bodyMedium),
+      trailing: Icon(
+        Glyph.caretRight,
+        size: 18,
+        color: context.colors.inkFaint,
+      ),
+    );
+    // Dimmed as the questions page dims them, so both read as put away.
+    return onTap == null ? Opacity(opacity: 0.5, child: row) : row;
+  }
+}
+
+/// How many of the day's questions are left, or when they come back.
+class _AskLeft extends StatelessWidget {
+  const _AskLeft({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+    child: Row(
+      children: <Widget>[
+        Icon(Glyph.clock, size: 18, color: context.colors.inkSoft),
+        const SizedBox(width: 10),
+        Expanded(child: Text(text, style: context.type.bodySmall)),
+      ],
+    ),
   );
 }
 

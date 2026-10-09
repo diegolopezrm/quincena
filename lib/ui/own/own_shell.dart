@@ -148,6 +148,8 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
         ),
       ),
     );
+    // Inicio offers the way back to the conversation once it has one.
+    if (mounted) setState(() {});
   }
 
   /// The example's conversation, with [question] asked when the script
@@ -232,6 +234,9 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
             : (Cloud.supported ? _openAsk : null),
         // In the example, the questions its script answers.
         questions: own.example ? _exampleQuestions(context) : null,
+        // The example's script spends none of the day's questions.
+        allowance: own.example ? null : widget.modes.allowance,
+        conversing: _asking?.turns.isNotEmpty ?? false,
       ),
     ),
   };

@@ -155,10 +155,13 @@ real app (App Check: App Attest on Apple devices, Play Integrity on
 Android, reCAPTCHA Enterprise on the web), to Gemini on Google Cloud's Agent
 Platform, which does not train on what it is sent. Each person signs in
 anonymously so the project can count their requests, with a cap of 20 a
-minute set on the project and 30 questions a day in the app. Gemini gets the
-numbers from tools that run on the device, the demo's plus every account in
-its own currency, never the database, and "Qué ve Gemini" in the app says
-what travels in plain words.
+minute set on the project and 30 questions a day in the app. Only asking
+counts: saving an expense, a plan or a cancellation an answer brought is
+done on the device through the same tools, with no question spent and no
+connection needed, and the conversation stays while the app is open. Gemini
+gets the numbers from tools that run on the device, the demo's plus every
+account in its own currency, never the database, and "Qué ve Gemini" in the
+app says what travels in plain words.
 
 What is set up for production, which limits stop spending and which only
 warn, and what Google may do with what is sent on each plan is in

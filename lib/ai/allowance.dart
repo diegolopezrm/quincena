@@ -33,6 +33,10 @@ class Allowance extends ChangeNotifier {
   /// The questions left today.
   int get left => math.max(0, perDay - _usedToday);
 
+  /// Whether so few are left today, though some are, that it helps to say
+  /// how many before the next one; with plenty, saying it is only noise.
+  bool get few => left > 0 && left <= 5;
+
   Future<void> load() async {
     final String? saved = await store.setting(_key);
     if (saved != null) {

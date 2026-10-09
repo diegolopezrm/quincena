@@ -20,10 +20,15 @@ class Welcome extends StatelessWidget {
     this.icons,
     this.standing = true,
     this.footer,
+    this.enabled = true,
   });
 
   final Ledger ledger;
   final ValueChanged<String> onAsk;
+
+  /// Whether the questions can be asked now: dimmed and untouchable when
+  /// the day's are used up, rather than offered and then turned down.
+  final bool enabled;
 
   /// The questions offered; the scripted agent's five by default.
   final List<String>? starters;
@@ -88,7 +93,7 @@ class Welcome extends StatelessWidget {
                     child: _Starter(
                       icon: icons[i % icons.length],
                       text: starters[i],
-                      onTap: () => onAsk(starters[i]),
+                      onTap: enabled ? () => onAsk(starters[i]) : null,
                     ),
                   ),
               ],
@@ -116,11 +121,13 @@ class _Starter extends StatelessWidget {
 
   final IconData icon;
   final String text;
-  final VoidCallback onTap;
+
+  /// Null while it cannot be asked: it shows dimmed.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
+    final Widget starter = Material(
       color: context.colors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
@@ -150,5 +157,6 @@ class _Starter extends StatelessWidget {
         ),
       ),
     );
+    return onTap == null ? Opacity(opacity: 0.5, child: starter) : starter;
   }
 }

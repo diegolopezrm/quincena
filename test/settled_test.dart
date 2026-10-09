@@ -354,9 +354,9 @@ void main() {
       await answer(tester);
       expect(session.settledOf(form), isNull);
       expect(session.ledger.freeUntilPayday, 1369300);
-      // Nothing was saved, and nothing on screen says it was.
+      // Nothing was saved, and the note says so.
       expect(find.text('Guardaste el gasto'), findsNothing);
-      expect(find.text('Tocaste una acción'), findsOneWidget);
+      expect(find.text('No se guardó el gasto'), findsOneWidget);
 
       // Saved, then corrected, and the correction fails: the first save
       // stands, and the form stays open to try again.

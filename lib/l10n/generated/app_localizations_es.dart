@@ -66,6 +66,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get noteTappedAction => 'Tocaste una acción';
 
   @override
+  String get noteExpenseNotSaved => 'No se guardó el gasto';
+
+  @override
+  String get notePlanNotSaved => 'No se guardó el plan';
+
+  @override
+  String get noteCancelNotMarked => 'No quedaron marcadas como canceladas';
+
+  @override
   String get problemKey => 'La key no funcionó. Revísala en Ajustes.';
 
   @override
@@ -80,8 +89,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get problemOther => 'No pude responder esta vez. Prueba de nuevo.';
 
   @override
-  String get problemLimit =>
-      'Ya usaste las preguntas de hoy. Mañana puedes seguir preguntando.';
+  String get problemLimit => 'Ya usaste las preguntas de hoy. Vuelven mañana.';
+
+  @override
+  String get askAgain => 'Volver a preguntar';
 
   @override
   String get askTitle => 'Pregúntale a tu plata';
@@ -108,16 +119,26 @@ class AppLocalizationsEs extends AppLocalizations {
   String get askOther => 'Otra pregunta';
 
   @override
-  String askLeft(int count) {
+  String askLeftOf(int left, int total) {
     String _temp0 = intl.Intl.pluralLogic(
-      count,
+      left,
       locale: localeName,
-      other: 'Te quedan $count preguntas hoy',
-      one: 'Te queda una pregunta hoy',
-      zero: 'Ya no te quedan preguntas hoy',
+      other: 'Te quedan $left de $total preguntas hoy',
+      one: 'Te queda 1 de $total preguntas hoy',
     );
     return '$_temp0';
   }
+
+  @override
+  String askNoneLeft(int total) {
+    return 'Ya usaste las $total preguntas de hoy. Vuelven mañana.';
+  }
+
+  @override
+  String get askBackTomorrow => 'Las preguntas vuelven mañana';
+
+  @override
+  String get askSeeConversation => 'Ver la conversación';
 
   @override
   String get askWhatSees => 'Qué ve Gemini';
@@ -222,9 +243,6 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get sessionCopied =>
       'Sesión copiada, sin lo que escribiste. Pégala en un issue y se puede reproducir.';
-
-  @override
-  String get startOver => 'Empezar de nuevo';
 
   @override
   String get about =>
@@ -1125,6 +1143,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get computedRecord => 'El gasto que se registró';
+
+  @override
+  String get computedExpenseAccounts =>
+      'Las cuentas de las que puede salir un gasto';
+
+  @override
+  String get computedPlan => 'El plan que se guardó';
 
   @override
   String get computedAccounts => 'Tus cuentas, cada una en su moneda';

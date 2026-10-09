@@ -200,6 +200,24 @@ abstract class AppLocalizations {
   /// **'Tocaste una acción'**
   String get noteTappedAction;
 
+  /// No description provided for @noteExpenseNotSaved.
+  ///
+  /// In es, this message translates to:
+  /// **'No se guardó el gasto'**
+  String get noteExpenseNotSaved;
+
+  /// No description provided for @notePlanNotSaved.
+  ///
+  /// In es, this message translates to:
+  /// **'No se guardó el plan'**
+  String get notePlanNotSaved;
+
+  /// No description provided for @noteCancelNotMarked.
+  ///
+  /// In es, this message translates to:
+  /// **'No quedaron marcadas como canceladas'**
+  String get noteCancelNotMarked;
+
   /// No description provided for @problemKey.
   ///
   /// In es, this message translates to:
@@ -227,8 +245,14 @@ abstract class AppLocalizations {
   /// No description provided for @problemLimit.
   ///
   /// In es, this message translates to:
-  /// **'Ya usaste las preguntas de hoy. Mañana puedes seguir preguntando.'**
+  /// **'Ya usaste las preguntas de hoy. Vuelven mañana.'**
   String get problemLimit;
+
+  /// No description provided for @askAgain.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver a preguntar'**
+  String get askAgain;
 
   /// No description provided for @askTitle.
   ///
@@ -278,11 +302,29 @@ abstract class AppLocalizations {
   /// **'Otra pregunta'**
   String get askOther;
 
-  /// No description provided for @askLeft.
+  /// No description provided for @askLeftOf.
   ///
   /// In es, this message translates to:
-  /// **'{count, plural, =0{Ya no te quedan preguntas hoy} =1{Te queda una pregunta hoy} other{Te quedan {count} preguntas hoy}}'**
-  String askLeft(int count);
+  /// **'{left, plural, =1{Te queda 1 de {total} preguntas hoy} other{Te quedan {left} de {total} preguntas hoy}}'**
+  String askLeftOf(int left, int total);
+
+  /// No description provided for @askNoneLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya usaste las {total} preguntas de hoy. Vuelven mañana.'**
+  String askNoneLeft(int total);
+
+  /// No description provided for @askBackTomorrow.
+  ///
+  /// In es, this message translates to:
+  /// **'Las preguntas vuelven mañana'**
+  String get askBackTomorrow;
+
+  /// No description provided for @askSeeConversation.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver la conversación'**
+  String get askSeeConversation;
 
   /// No description provided for @askWhatSees.
   ///
@@ -451,12 +493,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Sesión copiada, sin lo que escribiste. Pégala en un issue y se puede reproducir.'**
   String get sessionCopied;
-
-  /// No description provided for @startOver.
-  ///
-  /// In es, this message translates to:
-  /// **'Empezar de nuevo'**
-  String get startOver;
 
   /// No description provided for @about.
   ///
@@ -1735,6 +1771,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'El gasto que se registró'**
   String get computedRecord;
+
+  /// No description provided for @computedExpenseAccounts.
+  ///
+  /// In es, this message translates to:
+  /// **'Las cuentas de las que puede salir un gasto'**
+  String get computedExpenseAccounts;
+
+  /// No description provided for @computedPlan.
+  ///
+  /// In es, this message translates to:
+  /// **'El plan que se guardó'**
+  String get computedPlan;
 
   /// No description provided for @computedAccounts.
   ///

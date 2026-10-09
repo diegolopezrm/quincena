@@ -30,6 +30,8 @@ String computedLabel(BuildContext context, Computed c) {
     'subscriptions' => l.computedSubscriptions,
     'savings_goal' => l.computedGoal,
     'record_expense' => l.computedRecord,
+    'expense_accounts' => l.computedExpenseAccounts,
+    'save_goal_plan' => l.computedPlan,
     'accounts' => l.computedAccounts,
     'portfolio' => l.computedPortfolio,
     'can_i_buy' => l.computedBuy,

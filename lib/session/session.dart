@@ -593,18 +593,49 @@ class Session extends ChangeNotifier {
     await _run(Turn(question: text), () => _source.ask(text), asked: true);
   }
 
+  /// Whether [turn] can be asked again in its place: the latest one, a
+  /// question nothing of whose answer arrived, for a reason trying again
+  /// can fix.
+  bool canAskAgain(Turn turn) =>
+      !_busy &&
+      identical(turn, turns.lastOrNull) &&
+      turn.question != null &&
+      turn.surfaceIds.isEmpty &&
+      turn.text.toString().trim().isEmpty &&
+      switch (turn.error) {
+        AnswerProblem.offline ||
+        AnswerProblem.busy ||
+        AnswerProblem.other => true,
+        _ => false,
+      };
+
+  /// Asks [turn]'s question again, in its place, when its answer did not
+  /// arrive. The try that failed was given back to the day, so the
+  /// question counts once, when it is answered.
+  Future<void> askAgain(Turn turn) async {
+    if (!canAskAgain(turn)) return;
+    final String question = turn.question!;
+    turn
+      ..error = null
+      ..computed.clear()
+      ..text.clear();
+    await _run(turn, () => _source.ask(question), asked: true, again: true);
+  }
+
   /// Answers [turn] with [answer]. Only a question the person [asked] is
-  /// one of the day's; [here] is an answer the phone gives itself, which no
-  /// model is asked to fix.
+  /// one of the day's; [again] asks one whose answer did not arrive in its
+  /// own place; [here] is an answer the phone gives itself, which no model
+  /// is asked to fix.
   Future<void> _run(
     Turn turn,
     Future<void> Function() answer, {
     bool asked = false,
+    bool again = false,
     bool here = false,
   }) async {
     // Once the new conversation has a question, the old one stays gone.
     _forgetPrevious();
-    turns.add(turn);
+    if (!again) turns.add(turn);
     turn._here = here;
     _busy = true;
     _corrections = 0;
@@ -1051,9 +1082,15 @@ class Session extends ChangeNotifier {
 
   /// Starts an empty conversation over the untouched account, and puts this
   /// one aside for [restore] to bring back. Null when there was nothing to
-  /// keep, or an answer was still on its way, which goes with the rest.
+  /// keep, as when no question got an answer and bringing it back would
+  /// bring back only the notices, or an answer was still on its way, which
+  /// goes with the rest.
   Previous? startOver() {
-    if (turns.isEmpty || _busy) {
+    final bool answered = turns.any(
+      (Turn t) =>
+          t.surfaceIds.isNotEmpty || t.text.toString().trim().isNotEmpty,
+    );
+    if (!answered || _busy) {
       restart();
       return null;
     }
