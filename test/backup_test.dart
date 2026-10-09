@@ -22,6 +22,7 @@ import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
 import 'package:quincena/sync/sync_file.dart';
+import 'package:quincena/sync/sync_service.dart' show MemoryKeyStore;
 import 'package:quincena/sync/vault.dart';
 import 'package:quincena/ui/own/backup_flow.dart';
 
@@ -682,6 +683,70 @@ void main() {
       await tapText(tester, 'Restaurar');
       expect(find.text('Respaldo restaurado.'), findsOneWidget);
       expect(await payees(), <String>['Éxito']);
+    });
+
+    testWidgets('of the person\'s two codes, the one this device knows is '
+        'named when it does not open the backup', (tester) async {
+      // Made on another phone, with its own code.
+      late SealedBackup sealed;
+      await tester.runAsync(() async {
+        final QuincenaStore before = await phoneWithData();
+        sealed = await Backups(before, keys: MemoryBackupKeyStore()).seal();
+        await before.close();
+      });
+      // This phone syncs, and has a backup code of its own.
+      final VaultKey vault = VaultKey.generate(Random(21));
+      final MemoryKeyStore syncKeys = MemoryKeyStore();
+      final VaultKey mine = VaultKey.generate(Random(22));
+      final MemoryBackupKeyStore keys = MemoryBackupKeyStore();
+      await tester.runAsync(() async {
+        await syncKeys.write(vault.bytes);
+        await keys.write(mine.bytes);
+      });
+      await openPage(
+        tester,
+        (OwnController own) => Scaffold(
+          body: Builder(
+            builder: (BuildContext context) => TextButton(
+              onPressed: () => restoreBackup(
+                context,
+                backups: Backups(own.store, keys: keys),
+                today: own.today,
+                pick: () async => sealed.file,
+                syncKeys: syncKeys,
+              ),
+              child: const Text('Importar ahora'),
+            ),
+          ),
+        ),
+      );
+      await tapText(tester, 'Importar ahora');
+      await tester.enterText(find.byType(TextField), vault.code);
+      await tapText(tester, 'Abrir');
+      expect(
+        find.textContaining(
+          'Ese es tu código para sincronizar, no el de respaldo',
+        ),
+        findsOneWidget,
+      );
+      await tester.enterText(find.byType(TextField), mine.code);
+      await tapText(tester, 'Abrir');
+      expect(
+        find.textContaining('Ese es tu código de respaldo de ahora'),
+        findsOneWidget,
+      );
+      await tester.enterText(
+        find.byType(TextField),
+        VaultKey.generate(Random(23)).code,
+      );
+      await tapText(tester, 'Abrir');
+      expect(
+        find.textContaining('Ese código no abre este respaldo'),
+        findsOneWidget,
+      );
+      await tester.enterText(find.byType(TextField), sealed.newCode!);
+      await tapText(tester, 'Abrir');
+      expect(find.text('¿Restaurar este respaldo?'), findsOneWidget);
     });
 
     testWidgets('a sync file is sent where it opens, with nothing asked', (

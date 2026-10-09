@@ -4421,13 +4421,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get syncHow =>
-      'Empieza en el dispositivo que ya tiene tus datos. En el otro, toca «Unir este dispositivo» y escribe el código.';
+      'Empieza en el dispositivo que ya tiene tus datos y comparte o copia el código. En el otro, toca «Unir este dispositivo» y pégalo.';
 
   @override
-  String get syncYourCode => 'Tu código';
+  String get syncYourCode => 'Tu código para sincronizar';
 
   @override
-  String get syncNewCode => 'Tu código nuevo';
+  String get syncNewCode => 'Tu código nuevo para sincronizar';
 
   @override
   String get syncCodeKeep =>
@@ -4437,6 +4437,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get syncCopyCode => 'Copiar el código';
 
   @override
+  String get syncShareCode => 'Compartir el código';
+
+  @override
+  String syncCodeShareText(String code) {
+    return 'Código de Quincena para unir tus dispositivos: $code';
+  }
+
+  @override
   String get syncCodeCopied => 'Código copiado.';
 
   @override
@@ -4444,10 +4452,17 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get syncJoinBody =>
-      'Escribe el código que muestra tu otro dispositivo en Ajustes, Varios dispositivos. Los guiones no importan.';
+      'Pega el código que copiaste o compartiste desde tu otro dispositivo, en Ajustes, Varios dispositivos, o escríbelo. Los guiones no importan.';
 
   @override
   String get syncCodeField => 'Código';
+
+  @override
+  String get codePaste => 'Pegar';
+
+  @override
+  String get codeNothingCopied =>
+      'No hay nada copiado. Copia el código de donde lo guardaste, o escríbelo.';
 
   @override
   String get syncJoinAction => 'Unir';
@@ -4463,6 +4478,10 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get syncCodeCheck =>
       'El código no cuadra: revisa si hay un carácter cambiado.';
+
+  @override
+  String get syncCodeIsBackup =>
+      'Ese es tu código de respaldo, no el de sincronizar. Para unir este dispositivo usa el código que muestra el otro en Varios dispositivos.';
 
   @override
   String get syncJoined =>
@@ -4513,6 +4532,10 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get syncNotSync =>
       'Ese no es un archivo de sincronización de Quincena.';
+
+  @override
+  String get syncIsBackup =>
+      'Ese es un respaldo, no un archivo de sincronizar: se abre en Ajustes, «Restaurar un respaldo». No cambió nada.';
 
   @override
   String get syncOtherVault =>
@@ -5030,11 +5053,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get backupCodeKept => 'Ya lo guardé';
 
   @override
+  String backupCodeShareText(String code) {
+    return 'Código de respaldo de Quincena: $code';
+  }
+
+  @override
   String get backupCodeTitle => 'Respaldo cifrado';
 
   @override
   String get backupCodeBody =>
-      'Escribe el código de respaldo que Quincena te mostró la primera vez que exportaste cifrado.';
+      'Pega o escribe el código de respaldo que Quincena te mostró la primera vez que exportaste cifrado.';
 
   @override
   String get backupOpen => 'Abrir';
@@ -5042,6 +5070,14 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get backupWrongCode =>
       'Ese código no abre este respaldo. Si es el de sincronización, el de respaldo es otro.';
+
+  @override
+  String get backupCodeIsSync =>
+      'Ese es tu código para sincronizar, no el de respaldo. Este respaldo se abre con el código de respaldo que Quincena te mostró al exportar cifrado.';
+
+  @override
+  String get backupCodeIsNewer =>
+      'Ese es tu código de respaldo de ahora, pero este respaldo se hizo con otro: el que tenías antes de cambiarlo.';
 
   @override
   String get backupIsSync =>

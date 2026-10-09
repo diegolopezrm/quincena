@@ -41,12 +41,20 @@ the sync files, not those backups.
 - **The vault** is the set of the person's devices that share one key. The
   first device makes a 256-bit key with the system's secure generator
   (`Random.secure`).
-- **Linking** another device is typing the vault's code on it: the key in
+- **Linking** another device is entering the vault's code on it: the key in
   Crockford base32, 52 characters, then two of check, in groups of four.
   The first check character is Luhn mod 32, which catches any single
   character typed wrong; the second is five bits of a hash of the key. Only
   the code as written out is accepted, so a typo in the last character,
   which carries four bits of padding, is caught too.
+- **Carrying the code.** Where it is shown, the code is copied or handed
+  to the system's share sheet with a line that says which code it is, so a
+  note to oneself tells it from the backup's; where it is asked for,
+  «Pegar» reads it out of whatever was copied. Typing it is the last
+  resort. Both codes have the same shape, so a device names the other one
+  only when it keeps it: a backup's code typed to join, or the vault's
+  code typed to open a backup. There is no QR: the app has no link of its
+  own to open from a camera, and no scanner.
 - **Devices** are told apart by a random identifier kept in the keychain
   with "this device only" access, so no backup carries it to another
   device. Every save of the versions also leaves a new mark in the

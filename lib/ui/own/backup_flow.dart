@@ -7,6 +7,7 @@ import '../../backup/backup.dart';
 import '../../format/dates.dart';
 import '../../l10n/l10n.dart';
 import '../../store/store.dart';
+import '../../sync/sync_service.dart' show KeyStore, SecureKeyStore;
 import '../../sync/vault.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
@@ -76,6 +77,7 @@ Future<void> exportData(
         code: code,
         title: l.backupYourCode,
         keep: l.backupCodeKeep,
+        share: l.backupCodeShareText(code),
         done: l.backupCodeKept,
       );
     }
@@ -106,6 +108,7 @@ Future<void> restoreBackup(
   Future<void> Function()? after,
   PickFile pick = _pickWithPicker,
   SaveFile save = _saveWithPicker,
+  KeyStore? syncKeys,
 }) async {
   final AppLocalizations l = context.l10n;
   final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
@@ -140,6 +143,14 @@ Future<void> restoreBackup(
         try {
           opened = await backups.open(file, code: code);
         } on BackupException {
+          // The person has two codes: when this device knows the one typed,
+          // say which one it is.
+          if (await codeIsKey(code, (syncKeys ?? SecureKeyStore()).read)) {
+            return l.backupCodeIsSync;
+          }
+          if (await codeIsKey(code, backups.keys.read)) {
+            return l.backupCodeIsNewer;
+          }
           return l.backupWrongCode;
         } on CodeException {
           rethrow;
@@ -295,6 +306,7 @@ class _ExportSheetState extends State<_ExportSheet> {
       code: code,
       title: l.backupNewCode,
       keep: l.backupCodeKeep,
+      share: l.backupCodeShareText(code),
       done: l.backupCodeKept,
     );
   }
@@ -341,6 +353,7 @@ class _ExportSheetState extends State<_ExportSheet> {
                     code: code,
                     title: l.backupYourCode,
                     keep: l.backupCodeKeep,
+                    share: l.backupCodeShareText(code),
                   ),
                   icon: const Icon(Glyph.lock, size: 18),
                   label: Text(l.backupShowCode),

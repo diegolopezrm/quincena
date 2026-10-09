@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../backup/backup.dart' show BackupKeyStore, SecureBackupKeyStore;
 import '../../format/dates.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
@@ -20,13 +21,16 @@ import 'look.dart';
 /// Using Quincena on more than one device: the vault's code, the files
 /// that carry each device's changes, and what is waiting after a merge.
 class SyncPage extends StatefulWidget {
-  const SyncPage({super.key, required this.own, this.keys});
+  const SyncPage({super.key, required this.own, this.keys, this.backupKeys});
 
   final OwnController own;
 
   /// Where the vault's key is kept; the device's keychain unless a test
   /// says otherwise.
   final KeyStore? keys;
+
+  /// Where the backups' key is kept, to tell its code from the vault's.
+  final BackupKeyStore? backupKeys;
 
   @override
   State<SyncPage> createState() => _SyncPageState();
@@ -67,6 +71,7 @@ class _SyncPageState extends State<SyncPage> {
     code: code,
     title: title,
     keep: context.l10n.syncCodeKeep,
+    share: context.l10n.syncCodeShareText(code),
   );
 
   Future<void> _start() async {
@@ -84,6 +89,14 @@ class _SyncPageState extends State<SyncPage> {
       body: l.syncJoinBody,
       action: l.syncJoinAction,
       use: (String code) async {
+        // A backup's code would join a vault no other device is in: say
+        // which code it is instead.
+        if (await codeIsKey(
+          code,
+          (widget.backupKeys ?? SecureBackupKeyStore()).read,
+        )) {
+          return l.syncCodeIsBackup;
+        }
         await _sync.join(code);
         return null;
       },
@@ -115,10 +128,9 @@ class _SyncPageState extends State<SyncPage> {
     final List<PlatformFile> files = await FilePicker.pickFiles();
     if (files.isEmpty || !mounted) return;
     setState(() => _busy = true);
+    final Uint8List file = await files.first.xFile.readAsBytes();
     try {
-      final SyncReport report = await _sync.import(
-        await files.first.xFile.readAsBytes(),
-      );
+      final SyncReport report = await _sync.import(file);
       await _refresh();
       _say(
         report.conflicts > 0
@@ -127,7 +139,9 @@ class _SyncPageState extends State<SyncPage> {
       );
     } on SyncFileException catch (e) {
       _say(switch (e.problem) {
-        SyncFileProblem.notSync => l.syncNotSync,
+        // A backup brought here is pointed to where it opens.
+        SyncFileProblem.notSync =>
+          SealedFile.backup.marks(file) ? l.syncIsBackup : l.syncNotSync,
         SyncFileProblem.otherVault => l.syncOtherVault,
         SyncFileProblem.newer => l.syncNewer,
         SyncFileProblem.damaged => l.syncDamaged,

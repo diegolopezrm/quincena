@@ -2537,14 +2537,23 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tap('Empezar en este dispositivo');
       final String? code = await _syncCode(f);
       await f.step(
-        '«Empezar en este dispositivo» muestra «Tu código» en grupos de cuatro, '
-        'con «Copiar el código» y «Listo».',
+        '«Empezar en este dispositivo» muestra «Tu código para sincronizar» en '
+        'grupos de cuatro, con «Copiar el código», «Compartir el código» y '
+        '«Listo».',
       );
       await f.check('El código mostrado es el que guardó el teléfono', () {
         expect(code, isNotNull);
         for (final String group in code!.split('-')) {
           expect(find.text(group), findsWidgets);
         }
+      });
+      await f.tap('Compartir el código');
+      await f.check('«Compartir el código» abre la hoja de compartir con una '
+          'línea que dice qué código es, y el cuadro sigue ahí', () {
+        expect(phone.shared, <String>[
+          'Código de Quincena para unir tus dispositivos: $code',
+        ]);
+        expect(f.shows('Tu código para sincronizar'), isTrue);
       });
       await f.tap('Copiar el código');
       await f.step(
@@ -2576,7 +2585,8 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tap('Cambiar el código');
       final String? changed = await _syncCode(f);
       await f.step(
-        'Al confirmar aparece «Tu código nuevo», distinto del anterior.',
+        'Al confirmar aparece «Tu código nuevo para sincronizar», distinto del '
+        'anterior.',
       );
       await f.check('El teléfono guardó un código nuevo', () {
         expect(changed, isNotNull);
@@ -2611,8 +2621,8 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
     'Unir un teléfono nuevo con el código',
     area: 'Varios dispositivos y respaldo',
     goal:
-        'Ya uso Quincena en el computador. En el teléfono nuevo quiero escribir '
-        'el código y traer todo lo de allá.',
+        'Ya uso Quincena en el computador. En el teléfono nuevo quiero pegar '
+        'el código que me compartí y traer todo lo de allá.',
     data: _newPhone,
     manual: <String>[
       'Mover el archivo .qsync del computador al teléfono por AirDrop, '
@@ -2628,18 +2638,57 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       final String code = await _read(f, there.start);
       final Uint8List file = await _read(f, there.export);
       final int theirs = (await _read(f, computer.entries)).length;
+      // This phone opened a backup before, so it knows a backup code too.
+      final VaultKey backup = VaultKey.generate();
+      await _read(f, () => SecureBackupKeyStore().write(backup.bytes));
       await f.tapTip('Ajustes');
       await f.tap('Varios dispositivos');
       await f.tap('Unir este dispositivo');
       await f.step(
-        '«Unir este dispositivo» pide el código que muestra el otro '
-        'dispositivo; los guiones no importan.',
+        '«Unir este dispositivo» pide pegar el código que copiaste o '
+        'compartiste desde el otro dispositivo, con el botón «Pegar»; '
+        'escribirlo queda de último recurso.',
       );
       await f.tap('Cancelar');
       await f.check('Con «Cancelar» no se une', () async {
         expect(await _syncCode(f), isNull);
       });
       await f.tap('Unir este dispositivo');
+      phone.clipboard = null;
+      await f.tap('Pegar');
+      await f.step(
+        'Con nada copiado, «Pegar» lo dice: «No hay nada copiado. Copia el '
+        'código de donde lo guardaste, o escríbelo.»',
+      );
+      await f.check('Dice que no hay nada copiado', () {
+        expect(
+          f.shows(
+            'No hay nada copiado. Copia el código de donde lo guardaste, o '
+            'escríbelo.',
+          ),
+          isTrue,
+        );
+      });
+      phone.clipboard = 'Código de respaldo de Quincena: ${backup.code}';
+      await f.tap('Pegar');
+      await f.tap('Unir');
+      await f.step(
+        'Con el código de respaldo copiado, «Pegar» trae solo el código y '
+        '«Unir» dice cuál es: «Ese es tu código de respaldo, no el de '
+        'sincronizar.»',
+      );
+      await f.check('El código de respaldo no une el teléfono y dice cuál '
+          'es', () async {
+        expect(
+          f.shows(
+            'Ese es tu código de respaldo, no el de sincronizar. Para unir '
+            'este dispositivo usa el código que muestra el otro en Varios '
+            'dispositivos.',
+          ),
+          isTrue,
+        );
+        expect(await _syncCode(f), isNull);
+      });
       await f.type('Código', 'ABCD-EFGH');
       await f.tap('Unir');
       await f.step(
@@ -2674,11 +2723,22 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.check('Un código con un error no une el teléfono', () async {
         expect(await _syncCode(f), isNull);
       });
-      await f.type('Código', code.toLowerCase().replaceAll('-', ' '));
+      // What the computer shared, copied from a note to oneself.
+      phone.clipboard = 'Código de Quincena para unir tus dispositivos: $code';
+      await f.tap('Pegar');
+      await f.check(
+        '«Pegar» deja en el campo solo el código del computador',
+        () {
+          expect(
+            f.tester.widget<TextField>(find.byType(TextField)).controller!.text,
+            code,
+          );
+        },
+      );
       await f.tap('Unir');
       await f.step(
-        'Bien escrito, aunque sea en minúsculas y con espacios, une el '
-        'teléfono: «Listo. Ahora abre un archivo de tu otro dispositivo».',
+        'Con el código del computador pegado, une el teléfono: «Listo. Ahora '
+        'abre un archivo de tu otro dispositivo».',
       );
       await f.check('El teléfono quedó con el código del computador', () async {
         expect(await _syncCode(f), code);
@@ -2857,6 +2917,29 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         'Un respaldo en JSON no es de sincronizar: «Ese no es un archivo de '
         'sincronización de Quincena.»',
       );
+      // A sealed backup, brought here by mistake.
+      final SealedBackup sealed = await _read(
+        f,
+        () => Backups(_store(f)).seal(),
+      );
+      phone.toPick.add(sealed.file);
+      await _waitMessages(f);
+      await f.tap('Abrir un archivo de otro dispositivo');
+      await f.step(
+        'Un respaldo cifrado dice qué es y dónde se abre: «Ese es un respaldo, '
+        'no un archivo de sincronizar: se abre en Ajustes, «Restaurar un '
+        'respaldo». No cambió nada.»',
+      );
+      await f.check('El respaldo cifrado se reconoce y no cambia nada', () {
+        expect(
+          f.shows(
+            'Ese es un respaldo, no un archivo de sincronizar: se abre en '
+            'Ajustes, «Restaurar un respaldo». No cambió nada.',
+          ),
+          isTrue,
+        );
+        expect(_own(f).snapshot!.entries, hasLength(mine));
+      });
       // A file from a vault with another code.
       final (QuincenaStore stranger, SyncService elsewhere) =
           await _otherDevice(f);
@@ -3027,11 +3110,17 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       final String? code = await _read(f, () => Backups(_store(f)).code());
       await f.step(
         'La primera vez, antes de guardar, muestra «Tu código de respaldo» con '
-        '«Copiar el código» y «Ya lo guardé».',
+        '«Copiar el código», «Compartir el código» y «Ya lo guardé».',
       );
       await f.check('El código mostrado es el que quedó en el teléfono', () {
         expect(code, isNotNull);
         expect(find.text(code!.split('-').first), findsWidgets);
+      });
+      await f.tap('Compartir el código');
+      await f.check('«Compartir el código» lo pasa a la hoja de compartir '
+          'diciendo que es el de respaldo', () {
+        expect(phone.shared, <String>['Código de respaldo de Quincena: $code']);
+        expect(f.shows('Tu código de respaldo'), isTrue);
       });
       await f.tap('Ya lo guardé');
       await f.step(
@@ -3373,8 +3462,13 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       );
       final String code = sealed.newCode!;
       final int kept = (await _read(f, old.entries)).length;
-      await _read(f, oldSync.start);
+      final String syncCode = await _read(f, oldSync.start);
       phone.toPick.add(await _read(f, oldSync.export));
+      // This phone already syncs with the old one: it keeps that code too.
+      await _read(
+        f,
+        () => SecureKeyStore().write(VaultKey.fromCode(syncCode).bytes),
+      );
       await f.tapTip('Ajustes');
       await _waitMessages(f);
       await f.tap('Restaurar un respaldo');
@@ -3416,11 +3510,32 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         );
         expect(_own(f).snapshot!.entries, hasLength(entries));
       });
-      await f.type('Código', code);
+      phone.clipboard = syncCode;
+      await f.tap('Pegar');
       await f.tap('Abrir');
       await f.step(
-        'Con el código bueno se abre y, antes de reemplazar, dice qué trae el '
-        'respaldo del otro teléfono.',
+        'Con el código de sincronizar pegado dice cuál es: «Ese es tu código '
+        'para sincronizar, no el de respaldo.»',
+      );
+      await f.check('El código de sincronizar no abre el respaldo y se '
+          'nombra', () {
+        expect(
+          f.shows(
+            'Ese es tu código para sincronizar, no el de respaldo. Este '
+            'respaldo se abre con el código de respaldo que Quincena te '
+            'mostró al exportar cifrado.',
+          ),
+          isTrue,
+        );
+        expect(_own(f).snapshot!.entries, hasLength(entries));
+      });
+      // The backup code, from the note it was shared to.
+      phone.clipboard = 'Código de respaldo de Quincena: $code';
+      await f.tap('Pegar');
+      await f.tap('Abrir');
+      await f.step(
+        'Con el código de respaldo pegado se abre y, antes de reemplazar, dice '
+        'qué trae el respaldo del otro teléfono.',
       );
       await f.check(
         'Dice lo que trae el respaldo del teléfono viejo',
@@ -3748,6 +3863,9 @@ class _Phone {
 
   String? clipboard;
 
+  /// What reached the share sheet, which opens.
+  final List<String> shared = <String>[];
+
   /// What a screenshot reads as.
   String? screenshotText;
 
@@ -3775,6 +3893,9 @@ class _Phone {
   );
   static const MethodChannel _capture = MethodChannel(
     'dev.dlsoft.quincena/capture',
+  );
+  static const MethodChannel _share = MethodChannel(
+    'dev.dlsoft.quincena/share',
   );
 
   static Future<_Phone> install(FlowRun f) async {
@@ -3849,13 +3970,20 @@ class _Phone {
       }
       return null;
     });
+    answer(_share, (MethodCall call) {
+      if (call.method == 'text') phone.shared.add('${call.arguments}');
+      return true;
+    });
     answer(SystemChannels.platform, (MethodCall call) {
       if (call.method == 'Clipboard.setData') {
         phone.clipboard =
             (call.arguments as Map<Object?, Object?>)['text'] as String?;
       }
+      // Nothing copied reads as nothing, as on a phone.
       if (call.method == 'Clipboard.getData') {
-        return <String, Object?>{'text': phone.clipboard};
+        return phone.clipboard == null
+            ? null
+            : <String, Object?>{'text': phone.clipboard};
       }
       return null;
     });

@@ -1,17 +1,23 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../l10n/l10n.dart';
+import '../../platform/share_text.dart';
 import '../../sync/vault.dart';
 import '../../theme/tokens.dart';
+import '../icons.dart';
 
 /// Shows [code] in groups of four that never break in the middle, what it
-/// is for in [keep], and a way to copy it.
+/// is for in [keep], and ways to keep it: copied, or handed to the share
+/// sheet as [share], a line that says which code it is, so a note or a
+/// chat with oneself tells the two codes apart later.
 Future<void> showCode(
   BuildContext context, {
   required String code,
   required String title,
   required String keep,
+  required String share,
   String? done,
 }) {
   final ScaffoldMessengerState? messenger = ScaffoldMessenger.maybeOf(context);
@@ -19,7 +25,13 @@ Future<void> showCode(
     context: context,
     builder: (BuildContext context) {
       final AppLocalizations l = context.l10n;
+      void copied() {
+        if (context.mounted) Navigator.of(context).pop();
+        messenger?.showSnackBar(SnackBar(content: Text(l.syncCodeCopied)));
+      }
+
       return AlertDialog(
+        scrollable: true,
         title: Text(title),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -46,21 +58,40 @@ Future<void> showCode(
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 4,
+              children: <Widget>[
+                TextButton.icon(
+                  onPressed: () async {
+                    await Clipboard.setData(ClipboardData(text: code));
+                    copied();
+                  },
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                  ),
+                  icon: const Icon(Glyph.clipboardText, size: 18),
+                  label: Text(l.syncCopyCode),
+                ),
+                TextButton.icon(
+                  // The sheet goes over the code and comes back to it; where
+                  // there is none, the code is copied instead, and said so.
+                  onPressed: () async {
+                    if (!await ShareText.share(share)) copied();
+                  },
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                  ),
+                  icon: const Icon(Glyph.shareNetwork, size: 18),
+                  label: Text(l.syncShareCode),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
             Text(keep, style: context.type.bodySmall),
           ],
         ),
         actions: <Widget>[
-          TextButton(
-            onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: code));
-              if (context.mounted) Navigator.of(context).pop();
-              messenger?.showSnackBar(
-                SnackBar(content: Text(l.syncCodeCopied)),
-              );
-            },
-            child: Text(l.syncCopyCode),
-          ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: Text(done ?? l.syncDone),
@@ -71,9 +102,22 @@ Future<void> showCode(
   );
 }
 
+/// Whether [code] spells the key that [read] gives, when it gives one: how
+/// the app tells the person which of their two codes they typed. Anything
+/// that is not a code, or a keychain that does not answer, is no.
+Future<bool> codeIsKey(String code, Future<List<int>?> Function() read) async {
+  try {
+    final List<int>? key = await read();
+    return key != null && listEquals(VaultKey.fromCode(code).bytes, key);
+  } on Object {
+    return false;
+  }
+}
+
 /// Asks for a code until [use] takes it, and says whether it did. [use]
 /// answers null when the code worked, or what to tell the person; a code
-/// that is not one is caught here.
+/// that is not one is caught here. The code is pasted with «Pegar», or
+/// typed as a last resort.
 Future<bool> askForCode(
   BuildContext context, {
   required String title,
@@ -116,13 +160,35 @@ class _CodeDialogState extends State<_CodeDialog> {
     super.dispose();
   }
 
+  /// What was copied: the code alone when it came with words around it,
+  /// otherwise all of it, so the check below says what is wrong with it.
+  Future<void> _paste() async {
+    String copied;
+    try {
+      copied =
+          (await Clipboard.getData(Clipboard.kTextPlain))?.text?.trim() ?? '';
+    } on Object {
+      // A clipboard that cannot be read holds nothing to paste.
+      copied = '';
+    }
+    if (!mounted) return;
+    setState(() {
+      if (copied.isEmpty) {
+        _error = context.l10n.codeNothingCopied;
+        return;
+      }
+      _code.text = VaultKey.codeIn(copied) ?? copied;
+      _error = null;
+    });
+  }
+
   Future<void> _submit() async {
     final AppLocalizations l = context.l10n;
     final NavigatorState navigator = Navigator.of(context);
     setState(() => _busy = true);
     String? error;
     try {
-      error = await widget.use(_code.text);
+      error = await widget.use(VaultKey.codeIn(_code.text) ?? _code.text);
     } on CodeException catch (e) {
       error = switch (e.problem) {
         CodeProblem.length => l.syncCodeLength,
@@ -159,12 +225,28 @@ class _CodeDialogState extends State<_CodeDialog> {
             textCapitalization: TextCapitalization.characters,
             autocorrect: false,
             enableSuggestions: false,
-            maxLines: 3,
+            // A pasted code shows whole: its fourteen groups take four
+            // lines, and a field that scrolls hides where it is wrong.
+            maxLines: 5,
             minLines: 2,
             decoration: InputDecoration(
               labelText: l.syncCodeField,
               errorText: _error,
-              errorMaxLines: 3,
+              errorMaxLines: 4,
+            ),
+            onChanged: (_) {
+              if (_error != null) setState(() => _error = null);
+            },
+          ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: _busy ? null : _paste,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+              ),
+              icon: const Icon(Glyph.clipboardText, size: 18),
+              label: Text(l.codePaste),
             ),
           ),
         ],

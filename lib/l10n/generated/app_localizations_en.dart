@@ -4428,13 +4428,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncHow =>
-      'Start on the device that already has your data. On the other, tap \"Join this device\" and type the code.';
+      'Start on the device that already has your data and share or copy the code. On the other, tap \"Join this device\" and paste it.';
 
   @override
-  String get syncYourCode => 'Your code';
+  String get syncYourCode => 'Your sync code';
 
   @override
-  String get syncNewCode => 'Your new code';
+  String get syncNewCode => 'Your new sync code';
 
   @override
   String get syncCodeKeep =>
@@ -4444,6 +4444,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get syncCopyCode => 'Copy the code';
 
   @override
+  String get syncShareCode => 'Share the code';
+
+  @override
+  String syncCodeShareText(String code) {
+    return 'Quincena code to join your devices: $code';
+  }
+
+  @override
   String get syncCodeCopied => 'Code copied.';
 
   @override
@@ -4451,10 +4459,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncJoinBody =>
-      'Type the code your other device shows in Settings, More than one device. Dashes do not matter.';
+      'Paste the code you copied or shared from your other device, in Settings, More than one device, or type it. Dashes do not matter.';
 
   @override
   String get syncCodeField => 'Code';
+
+  @override
+  String get codePaste => 'Paste';
+
+  @override
+  String get codeNothingCopied =>
+      'There\'s nothing copied. Copy the code from where you kept it, or type it.';
 
   @override
   String get syncJoinAction => 'Join';
@@ -4470,6 +4485,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get syncCodeCheck =>
       'The code doesn\'t check out: look for a mistyped character.';
+
+  @override
+  String get syncCodeIsBackup =>
+      'That\'s your backup code, not your sync code. To join this device, use the code your other device shows in More than one device.';
 
   @override
   String get syncJoined =>
@@ -4519,6 +4538,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncNotSync => 'That isn\'t a Quincena sync file.';
+
+  @override
+  String get syncIsBackup =>
+      'That\'s a backup, not a sync file: it opens in Settings, \"Restore a backup\". Nothing changed.';
 
   @override
   String get syncOtherVault =>
@@ -5034,11 +5057,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupCodeKept => 'I saved it';
 
   @override
+  String backupCodeShareText(String code) {
+    return 'Quincena backup code: $code';
+  }
+
+  @override
   String get backupCodeTitle => 'Encrypted backup';
 
   @override
   String get backupCodeBody =>
-      'Type the backup code Quincena showed you the first time you exported encrypted.';
+      'Paste or type the backup code Quincena showed you the first time you exported encrypted.';
 
   @override
   String get backupOpen => 'Open';
@@ -5046,6 +5074,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get backupWrongCode =>
       'That code doesn\'t open this backup. If it\'s your sync code, the backup code is a different one.';
+
+  @override
+  String get backupCodeIsSync =>
+      'That\'s your sync code, not your backup code. This backup opens with the backup code Quincena showed you when you exported encrypted.';
+
+  @override
+  String get backupCodeIsNewer =>
+      'That\'s your current backup code, but this backup was made with another one: the one you had before changing it.';
 
   @override
   String get backupIsSync =>

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'package:quincena/backup/backup.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/money/money.dart';
 import 'package:quincena/own/own_controller.dart';
@@ -74,6 +75,44 @@ void main() {
     await tester.enterText(find.byType(TextField), code.toLowerCase());
     await tapText(tester, 'Unir');
     expect(find.textContaining('Ahora abre un archivo'), findsOneWidget);
+    expect(
+      VaultKey((await tester.runAsync<List<int>?>(keys.read))!).code,
+      code,
+    );
+  });
+
+  testWidgets('a backup code pasted to join is named for what it is', (
+    tester,
+  ) async {
+    final MemoryKeyStore keys = MemoryKeyStore();
+    final MemoryBackupKeyStore backups = MemoryBackupKeyStore();
+    final VaultKey backup = VaultKey.generate(Random(8));
+    await tester.runAsync(() => backups.write(backup.bytes));
+    await openPage(
+      tester,
+      (OwnController own) =>
+          SyncPage(own: own, keys: keys, backupKeys: backups),
+    );
+    await tapText(tester, 'Unir este dispositivo');
+    expect(find.text('Pegar'), findsOneWidget);
+    await tester.enterText(
+      find.byType(TextField),
+      'Código de respaldo de Quincena: ${backup.code}',
+    );
+    await tapText(tester, 'Unir');
+    expect(
+      find.textContaining('Ese es tu código de respaldo, no el de sincronizar'),
+      findsOneWidget,
+    );
+    expect(await tester.runAsync<List<int>?>(keys.read), isNull);
+
+    // The vault's own code, with the words it was shared with, joins.
+    final String code = VaultKey.generate(Random(9)).code;
+    await tester.enterText(
+      find.byType(TextField),
+      'Código de Quincena para unir tus dispositivos: $code',
+    );
+    await tapText(tester, 'Unir');
     expect(
       VaultKey((await tester.runAsync<List<int>?>(keys.read))!).code,
       code,

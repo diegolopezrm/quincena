@@ -883,6 +883,7 @@ class _DeleteAllDialog extends StatelessWidget {
                   code: code,
                   title: l.backupYourCode,
                   keep: l.backupCodeKeep,
+                  share: l.backupCodeShareText(code),
                 ),
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 4),

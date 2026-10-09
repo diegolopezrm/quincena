@@ -6862,19 +6862,19 @@ abstract class AppLocalizations {
   /// No description provided for @syncHow.
   ///
   /// In es, this message translates to:
-  /// **'Empieza en el dispositivo que ya tiene tus datos. En el otro, toca «Unir este dispositivo» y escribe el código.'**
+  /// **'Empieza en el dispositivo que ya tiene tus datos y comparte o copia el código. En el otro, toca «Unir este dispositivo» y pégalo.'**
   String get syncHow;
 
   /// No description provided for @syncYourCode.
   ///
   /// In es, this message translates to:
-  /// **'Tu código'**
+  /// **'Tu código para sincronizar'**
   String get syncYourCode;
 
   /// No description provided for @syncNewCode.
   ///
   /// In es, this message translates to:
-  /// **'Tu código nuevo'**
+  /// **'Tu código nuevo para sincronizar'**
   String get syncNewCode;
 
   /// No description provided for @syncCodeKeep.
@@ -6888,6 +6888,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Copiar el código'**
   String get syncCopyCode;
+
+  /// No description provided for @syncShareCode.
+  ///
+  /// In es, this message translates to:
+  /// **'Compartir el código'**
+  String get syncShareCode;
+
+  /// No description provided for @syncCodeShareText.
+  ///
+  /// In es, this message translates to:
+  /// **'Código de Quincena para unir tus dispositivos: {code}'**
+  String syncCodeShareText(String code);
 
   /// No description provided for @syncCodeCopied.
   ///
@@ -6904,7 +6916,7 @@ abstract class AppLocalizations {
   /// No description provided for @syncJoinBody.
   ///
   /// In es, this message translates to:
-  /// **'Escribe el código que muestra tu otro dispositivo en Ajustes, Varios dispositivos. Los guiones no importan.'**
+  /// **'Pega el código que copiaste o compartiste desde tu otro dispositivo, en Ajustes, Varios dispositivos, o escríbelo. Los guiones no importan.'**
   String get syncJoinBody;
 
   /// No description provided for @syncCodeField.
@@ -6912,6 +6924,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Código'**
   String get syncCodeField;
+
+  /// No description provided for @codePaste.
+  ///
+  /// In es, this message translates to:
+  /// **'Pegar'**
+  String get codePaste;
+
+  /// No description provided for @codeNothingCopied.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay nada copiado. Copia el código de donde lo guardaste, o escríbelo.'**
+  String get codeNothingCopied;
 
   /// No description provided for @syncJoinAction.
   ///
@@ -6936,6 +6960,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'El código no cuadra: revisa si hay un carácter cambiado.'**
   String get syncCodeCheck;
+
+  /// No description provided for @syncCodeIsBackup.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese es tu código de respaldo, no el de sincronizar. Para unir este dispositivo usa el código que muestra el otro en Varios dispositivos.'**
+  String get syncCodeIsBackup;
 
   /// No description provided for @syncJoined.
   ///
@@ -6984,6 +7014,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Ese no es un archivo de sincronización de Quincena.'**
   String get syncNotSync;
+
+  /// No description provided for @syncIsBackup.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese es un respaldo, no un archivo de sincronizar: se abre en Ajustes, «Restaurar un respaldo». No cambió nada.'**
+  String get syncIsBackup;
 
   /// No description provided for @syncOtherVault.
   ///
@@ -7789,6 +7825,12 @@ abstract class AppLocalizations {
   /// **'Ya lo guardé'**
   String get backupCodeKept;
 
+  /// No description provided for @backupCodeShareText.
+  ///
+  /// In es, this message translates to:
+  /// **'Código de respaldo de Quincena: {code}'**
+  String backupCodeShareText(String code);
+
   /// No description provided for @backupCodeTitle.
   ///
   /// In es, this message translates to:
@@ -7798,7 +7840,7 @@ abstract class AppLocalizations {
   /// No description provided for @backupCodeBody.
   ///
   /// In es, this message translates to:
-  /// **'Escribe el código de respaldo que Quincena te mostró la primera vez que exportaste cifrado.'**
+  /// **'Pega o escribe el código de respaldo que Quincena te mostró la primera vez que exportaste cifrado.'**
   String get backupCodeBody;
 
   /// No description provided for @backupOpen.
@@ -7812,6 +7854,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Ese código no abre este respaldo. Si es el de sincronización, el de respaldo es otro.'**
   String get backupWrongCode;
+
+  /// No description provided for @backupCodeIsSync.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese es tu código para sincronizar, no el de respaldo. Este respaldo se abre con el código de respaldo que Quincena te mostró al exportar cifrado.'**
+  String get backupCodeIsSync;
+
+  /// No description provided for @backupCodeIsNewer.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese es tu código de respaldo de ahora, pero este respaldo se hizo con otro: el que tenías antes de cambiarlo.'**
+  String get backupCodeIsNewer;
 
   /// No description provided for @backupIsSync.
   ///
