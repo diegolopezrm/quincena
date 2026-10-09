@@ -151,7 +151,17 @@ class Session extends ChangeNotifier {
     this.keeper,
     this.scripted = false,
   }) : _ledgerOf = ledgerOf ?? demoLedger,
-       _toolsFor = toolsFor ?? ledgerTools {
+       // With a keeper, what a model saves goes where the script's does,
+       // into the account every screen reads, not into a copy of it.
+       _toolsFor =
+           toolsFor ??
+           (keeper == null
+               ? ledgerTools
+               : (Ledger _) => accountTools(
+                   ledgerOf ?? demoLedger,
+                   record: keeper.expense,
+                   accounts: keeper.accounts,
+                 )) {
     _mode = scripted ? AgentMode.demo : mode;
     _apiKey = apiKey;
     _language = language;
@@ -542,10 +552,12 @@ class Session extends ChangeNotifier {
       : ScriptedKeeper(
           expense: (ExpenseToRecord expense) async {
             final Settled? saving = _savingIn(turns.lastOrNull);
-            await keeper.expense(expense);
+            final String? from = await keeper.expense(expense);
             saving?._saved = true;
+            return from;
           },
           goalMonthly: keeper.goalMonthly,
+          accounts: keeper.accounts,
         );
 
   /// Asks the agent [question].

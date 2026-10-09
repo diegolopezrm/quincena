@@ -24,7 +24,7 @@ class ExpenseToRecord {
   /// Where it was spent, or empty.
   final String note;
 
-  /// The account the person named, if they did.
+  /// The account the person chose or named, if they did.
   final String? account;
 
   /// The id the conversation gave the expense, if it did: saving one with
@@ -33,8 +33,29 @@ class ExpenseToRecord {
 }
 
 /// Saves an expense: in the sample account's memory, or in the person's
-/// own database.
-typedef RecordExpense = Future<void> Function(ExpenseToRecord expense);
+/// own database. It answers with the name of the account the expense was
+/// taken from, so the answer can say it; null where there are no accounts
+/// to tell apart, as in the sample's memory.
+typedef RecordExpense = Future<String?> Function(ExpenseToRecord expense);
+
+/// The accounts an expense can come from, by name, and the one it most
+/// likely comes from.
+class ExpenseAccounts {
+  const ExpenseAccounts(this.names, this.likely);
+
+  /// The accounts to spend from, named as the app names them.
+  final List<String> names;
+
+  /// The one an expense goes to unless the person picks another: where
+  /// they last wrote one down by hand, or else the first to spend from in
+  /// their base currency. Null when there is none.
+  final String? likely;
+
+  Map<String, Object?> toJson() => <String, Object?>{
+    'accounts': names,
+    'likely': likely,
+  };
+}
 
 /// The questions a model can ask the sample account. An expense it records
 /// goes into the account's memory and is gone on restart.
@@ -53,6 +74,7 @@ List<Tool> ledgerTools(Ledger ledger) => accountTools(
     } else {
       ledger.replace(movement);
     }
+    return null;
   },
 );
 
@@ -64,11 +86,23 @@ List<Tool> ledgerTools(Ledger ledger) => accountTools(
 /// can go into the data model as it is.
 ///
 /// [current] is read on every call, so after the person records something
-/// the next answer counts it.
+/// the next answer counts it. [accounts], where the account has accounts of
+/// its own, says which an expense can come from, for the expense form.
 List<Tool> accountTools(
   Ledger Function() current, {
   required RecordExpense record,
+  ExpenseAccounts Function()? accounts,
 }) => <Tool>[
+  if (accounts != null)
+    Tool<Map<String, dynamic>>(
+      name: 'expense_accounts',
+      description:
+          'The accounts an expense can be paid from, by name, and likely: '
+          'the one it most likely comes from, where the person last wrote '
+          'an expense down by hand or else the main one to spend from. Call '
+          'it before composing an expense form, for its AccountChoice.',
+      onCall: (_) => accounts().toJson(),
+    ),
   Tool<Map<String, dynamic>>(
     name: 'account_overview',
     description:
@@ -533,8 +567,9 @@ List<Tool> accountTools(
         'after a save_expense event arrives, never on the first request. '
         'Pass the id the event carries: the person can edit the form and '
         'save again, and the same id corrects that expense instead of '
-        'adding another. Returns what can be spent until payday afterwards '
-        'and the month so far in that category.',
+        'adding another. Returns the account it was taken from, to name '
+        'when you confirm, what can be spent until payday afterwards and '
+        'the month so far in that category.',
     inputSchema: S.object(
       properties: <String, Schema>{
         'amount': S.number(
@@ -553,8 +588,9 @@ List<Tool> accountTools(
         ),
         'account': S.string(
           description:
-              'The account it was paid from, if the person named one. Left '
-              'out, it goes to the main account to spend from.',
+              'The account it was paid from, as the person chose it in the '
+              'form or named it. Left out, it goes to the one it most likely '
+              'comes from, as expense_accounts says.',
         ),
         'id': S.string(description: 'The id in the save_expense event.'),
       },
@@ -575,7 +611,7 @@ List<Tool> accountTools(
       final String note = (args['note'] as String?)?.trim() ?? '';
       final String? account = (args['account'] as String?)?.trim();
       final String? id = (args['id'] as String?)?.trim();
-      await record(
+      final String? from = await record(
         ExpenseToRecord(
           amount: ledger.minor(amount),
           category: category,
@@ -587,6 +623,7 @@ List<Tool> accountTools(
       final Ledger after = current();
       return <String, Object?>{
         'recorded': true,
+        'account': ?from,
         'freeUntilPayday': after.major(after.freeUntilPayday),
         'nextPayday': _day(after.nextPayday),
         'categoryThisMonth': after.major(

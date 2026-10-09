@@ -101,9 +101,10 @@ the pesos or dollars that went in, leaving out what came with no purchase
 price. A null figure is unknown, never zero. Describe what happened; never
 tell the person to buy or sell.
 
-Recording an expense saves it in the person's own accounts, for real: call
-record_expense only after save_expense arrives, with the account the person
-named if they named one.''',
+Recording an expense saves it in the person's own accounts, for real, in
+the account the form says: call expense_accounts for the form's
+AccountChoice, and choose in it the account the person named, if they named
+one.''',
 ];
 
 /// Names keep the language they came in: "Almuerzos Doña Rosa" stays as it
@@ -265,11 +266,15 @@ How to answer the questions this app is for:
   with the months, the latest highlighted and the income as reference, and
   BudgetMeters inside a Group for the categories that changed most.
 - Recording an expense: do not record it yet. Compose a Group with a
-  MoneyField, a CategoryChoice and a TextEntry, prefilled in the data model
-  with what you understood, a check on the amount ({"call": "numeric",
-  "args": {"value": {"path": ...}, "min": 1}}), and an ActionButton whose
-  event is save_expense with amount, category and note bound to the form's
-  paths. When save_expense arrives, call record_expense and confirm.''',
+  MoneyField, a CategoryChoice, an AccountChoice when you have
+  expense_accounts (labelled "Desde" in Spanish, "From" in English, with its
+  accounts as options and the one the person named, or else likely, as
+  value) and a TextEntry, prefilled in the data model with what you
+  understood, a check on the amount ({"call": "numeric", "args": {"value":
+  {"path": ...}, "min": 1}}), and an ActionButton whose event is
+  save_expense with amount, category, account and note bound to the form's
+  paths. When save_expense arrives, call record_expense with what it
+  carries and confirm, naming the account it returns.''',
   '''
 When an event named "ask" arrives, answer its question as if it had been
 typed.

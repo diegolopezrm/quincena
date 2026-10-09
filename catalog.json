@@ -5,6 +5,47 @@
   "description": "Personal finance answers composed from the account.",
   "catalogId": "dev.dlsoft.quincena",
   "components": {
+    "AccountChoice": {
+      "type": "object",
+      "allOf": [
+        {
+          "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/ComponentCommon"
+        },
+        {
+          "$ref": "#/$defs/CatalogComponentCommon"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "component": {
+              "type": "string",
+              "enum": [
+                "AccountChoice"
+              ]
+            },
+            "label": {
+              "description": "The caption above the chips, such as \"Desde\".",
+              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicString"
+            },
+            "options": {
+              "description": "The accounts to choose from, named as the app names them.",
+              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicStringList"
+            },
+            "value": {
+              "description": "The name of the chosen account. The component writes the value the user chooses back to this property, so bind it to a data path if you need to read the result.",
+              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicString"
+            }
+          },
+          "required": [
+            "component",
+            "label",
+            "options",
+            "value"
+          ]
+        }
+      ],
+      "unevaluatedProperties": false
+    },
     "ActionButton": {
       "type": "object",
       "allOf": [
@@ -1936,6 +1977,9 @@
     },
     "anyComponent": {
       "oneOf": [
+        {
+          "$ref": "#/components/AccountChoice"
+        },
         {
           "$ref": "#/components/ActionButton"
         },
