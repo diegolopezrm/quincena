@@ -805,6 +805,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get archivedAccountsNone => 'You have no archived accounts.';
 
   @override
+  String get putAwayTitle => 'Archived and dismissed';
+
+  @override
+  String get putAwayBody =>
+      'What you put away without deleting it. Bring it back whenever you want.';
+
+  @override
+  String get putAwayEmpty => 'Nothing archived or dismissed.';
+
+  @override
+  String get putAwayRow => 'To bring back what you put away';
+
+  @override
+  String get putAwayCaptures => 'Dismissed in Needs review';
+
+  @override
+  String get putAwayCapturesNote => 'What arrived in the last 30 days.';
+
+  @override
+  String get putAwayAlerts => 'Charges you put away';
+
+  @override
+  String get putAwayAlertDismissed => 'Dismissed';
+
+  @override
+  String get putAwayNotRecurring => 'Not recurring';
+
+  @override
+  String get putAwayTrips => 'Taken out of a trip';
+
+  @override
+  String get bringBack => 'Bring back';
+
+  @override
+  String get offerAgain => 'Suggest again';
+
+  @override
   String get accountArchivedNote =>
       'Archived: it doesn\'t count in your totals or show up when you pick an account.';
 
@@ -2616,6 +2653,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get muteAppGo => 'Stop reading';
+
+  @override
+  String inboxDiscardedLink(int count) {
+    return 'See what you dismissed ($count)';
+  }
+
+  @override
+  String captureBroughtBack(String payee) {
+    return '$payee is back in Needs review.';
+  }
 
   @override
   String get chooseAccount => 'Choose account';
@@ -4976,6 +5023,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String tripLeftOut(String payee) {
     return '$payee no longer counts in the trip.';
   }
+
+  @override
+  String get tripLeftOutSection => 'Expenses you took out';
+
+  @override
+  String get tripPutBack => 'Part of the trip';
 
   @override
   String tripForeign(

@@ -804,6 +804,43 @@ class AppLocalizationsEs extends AppLocalizations {
   String get archivedAccountsNone => 'No tienes cuentas archivadas.';
 
   @override
+  String get putAwayTitle => 'Archivado y descartado';
+
+  @override
+  String get putAwayBody =>
+      'Lo que quitaste sin borrar. Tráelo de vuelta cuando quieras.';
+
+  @override
+  String get putAwayEmpty => 'No hay nada archivado ni descartado.';
+
+  @override
+  String get putAwayRow => 'Para traer de vuelta lo que quitaste';
+
+  @override
+  String get putAwayCaptures => 'Descartado en Por revisar';
+
+  @override
+  String get putAwayCapturesNote => 'Lo que llegó en los últimos 30 días.';
+
+  @override
+  String get putAwayAlerts => 'Cargos que marcaste';
+
+  @override
+  String get putAwayAlertDismissed => 'Descartada';
+
+  @override
+  String get putAwayNotRecurring => 'No son pagos fijos';
+
+  @override
+  String get putAwayTrips => 'Sacados de un viaje';
+
+  @override
+  String get bringBack => 'Traer de vuelta';
+
+  @override
+  String get offerAgain => 'Volver a proponer';
+
+  @override
   String get accountArchivedNote =>
       'Archivada: no cuenta en tus totales ni aparece al elegir una cuenta.';
 
@@ -2616,6 +2653,16 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get muteAppGo => 'Dejar de leer';
+
+  @override
+  String inboxDiscardedLink(int count) {
+    return 'Ver lo descartado ($count)';
+  }
+
+  @override
+  String captureBroughtBack(String payee) {
+    return '$payee volvió a Por revisar.';
+  }
 
   @override
   String get chooseAccount => 'Elegir la cuenta';
@@ -4970,6 +5017,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String tripLeftOut(String payee) {
     return '$payee ya no cuenta en el viaje.';
   }
+
+  @override
+  String get tripLeftOutSection => 'Gastos que sacaste';
+
+  @override
+  String get tripPutBack => 'Es del viaje';
 
   @override
   String tripForeign(

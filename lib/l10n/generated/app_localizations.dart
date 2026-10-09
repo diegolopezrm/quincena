@@ -1250,6 +1250,78 @@ abstract class AppLocalizations {
   /// **'No tienes cuentas archivadas.'**
   String get archivedAccountsNone;
 
+  /// No description provided for @putAwayTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Archivado y descartado'**
+  String get putAwayTitle;
+
+  /// No description provided for @putAwayBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que quitaste sin borrar. Tráelo de vuelta cuando quieras.'**
+  String get putAwayBody;
+
+  /// No description provided for @putAwayEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay nada archivado ni descartado.'**
+  String get putAwayEmpty;
+
+  /// No description provided for @putAwayRow.
+  ///
+  /// In es, this message translates to:
+  /// **'Para traer de vuelta lo que quitaste'**
+  String get putAwayRow;
+
+  /// No description provided for @putAwayCaptures.
+  ///
+  /// In es, this message translates to:
+  /// **'Descartado en Por revisar'**
+  String get putAwayCaptures;
+
+  /// No description provided for @putAwayCapturesNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que llegó en los últimos 30 días.'**
+  String get putAwayCapturesNote;
+
+  /// No description provided for @putAwayAlerts.
+  ///
+  /// In es, this message translates to:
+  /// **'Cargos que marcaste'**
+  String get putAwayAlerts;
+
+  /// No description provided for @putAwayAlertDismissed.
+  ///
+  /// In es, this message translates to:
+  /// **'Descartada'**
+  String get putAwayAlertDismissed;
+
+  /// No description provided for @putAwayNotRecurring.
+  ///
+  /// In es, this message translates to:
+  /// **'No son pagos fijos'**
+  String get putAwayNotRecurring;
+
+  /// No description provided for @putAwayTrips.
+  ///
+  /// In es, this message translates to:
+  /// **'Sacados de un viaje'**
+  String get putAwayTrips;
+
+  /// No description provided for @bringBack.
+  ///
+  /// In es, this message translates to:
+  /// **'Traer de vuelta'**
+  String get bringBack;
+
+  /// No description provided for @offerAgain.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver a proponer'**
+  String get offerAgain;
+
   /// No description provided for @accountArchivedNote.
   ///
   /// In es, this message translates to:
@@ -3955,6 +4027,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Dejar de leer'**
   String get muteAppGo;
+
+  /// No description provided for @inboxDiscardedLink.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver lo descartado ({count})'**
+  String inboxDiscardedLink(int count);
+
+  /// No description provided for @captureBroughtBack.
+  ///
+  /// In es, this message translates to:
+  /// **'{payee} volvió a Por revisar.'**
+  String captureBroughtBack(String payee);
 
   /// No description provided for @chooseAccount.
   ///
@@ -7663,6 +7747,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{payee} ya no cuenta en el viaje.'**
   String tripLeftOut(String payee);
+
+  /// No description provided for @tripLeftOutSection.
+  ///
+  /// In es, this message translates to:
+  /// **'Gastos que sacaste'**
+  String get tripLeftOutSection;
+
+  /// No description provided for @tripPutBack.
+  ///
+  /// In es, this message translates to:
+  /// **'Es del viaje'**
+  String get tripPutBack;
 
   /// No description provided for @tripForeign.
   ///

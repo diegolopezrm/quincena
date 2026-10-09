@@ -31,6 +31,7 @@ import 'code_dialogs.dart';
 import 'example_bar.dart';
 import 'look.dart';
 import 'pay_schedule_editor.dart';
+import 'put_away_page.dart';
 import 'statement_page.dart';
 import 'sync_page.dart';
 import 'wallets_page.dart';
@@ -815,6 +816,13 @@ class OwnSettingsPage extends StatelessWidget {
             title: l.importData,
             value: l.importDataSubtitle,
             onTap: () => _restore(context),
+          ),
+          _row(
+            context,
+            icon: Glyph.archive,
+            title: l.putAwayTitle,
+            value: l.putAwayRow,
+            onTap: () => openPutAway(context, own),
           ),
           if (!own.example)
             _row(

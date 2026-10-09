@@ -21,6 +21,7 @@ import 'amount_input.dart';
 import 'coming_days_page.dart' show listOf;
 import 'entry_sheet.dart';
 import 'look.dart';
+import 'put_away_page.dart' show PutAwayRow;
 import 'shared_page.dart';
 import 'split_sheet.dart' show memberName, showSplitSheet;
 
@@ -290,6 +291,7 @@ class TripPage extends StatelessWidget {
                     child: Text(l.tripIncludeEarlier),
                   ),
                 ),
+                ..._leftOut(context, trip),
                 const SizedBox(height: 8),
                 Text(l.tripSameMovements, style: context.type.bodySmall),
               ],
@@ -299,6 +301,50 @@ class TripPage extends StatelessWidget {
       );
     },
   );
+
+  /// The expenses the person said are not the trip's, newest first, each
+  /// with the way back into it.
+  List<Widget> _leftOut(BuildContext context, Trip trip) {
+    final AppLocalizations l = context.l10n;
+    final Asset? base = own.profile?.base;
+    final List<Entry> out = <Entry>[
+      for (final String id in trip.excluded)
+        if (own.entryById(id) case final Entry e
+            when e.kind == EntryKind.expense)
+          e,
+    ]..sort((Entry a, Entry b) => b.date.compareTo(a.date));
+    if (out.isEmpty) return const <Widget>[];
+    return <Widget>[
+      const SizedBox(height: 16),
+      SectionLabel(l.tripLeftOutSection),
+      Panel(
+        indent: 16,
+        children: <Widget>[
+          for (final Entry e in out)
+            PutAwayRow(
+              title: e.payee.isEmpty
+                  ? categoryNameFor(
+                      context,
+                      e.category ?? 'other',
+                      own.categories,
+                    )
+                  : e.payee,
+              subtitle: dayShortMonth(e.date),
+              amount: switch (own.snapshot?.account(e.accountId)) {
+                final Account a => moneyText(
+                  Money(e.amount, a.asset),
+                  base: base,
+                  signed: true,
+                ),
+                null => null,
+              },
+              action: l.tripPutBack,
+              onPressed: () => own.backInTrip(trip, e),
+            ),
+        ],
+      ),
+    ];
+  }
 
   /// Lets the person add expenses from before the trip, a flight or a
   /// hotel paid ahead.

@@ -1094,10 +1094,15 @@ final List<AppFlow> planFlows = <AppFlow>[
       await _tapTipBy(f, 'Fit24 gimnasio', 'No es del viaje');
       await _tapTipBy(f, 'Fit24', 'No es del viaje');
       await _hideNotice(f);
+      await f.reveal(find.text('GASTOS QUE SACASTE'));
       await f.step(
-        'Los dos cobros de Fit24 son del gimnasio en Medellín: con «No es del '
-        'viaje» salen de la lista.',
+        'Los dos cobros de Fit24 salen de la lista y esperan abajo, en '
+        '«Gastos que sacaste», cada uno con «Es del viaje» para devolverlo.',
       );
+      await f.check('Los dos están en «Gastos que sacaste»', () {
+        expect(f.shows('GASTOS QUE SACASTE'), isTrue);
+        expect(find.text('Es del viaje'), findsNWidgets(2));
+      });
       await f.check('Sin el gimnasio, al viaje le quedan '
           '${left + gym} dólares', () {
         expect(
@@ -1782,7 +1787,8 @@ final List<AppFlow> planFlows = <AppFlow>[
       await _tapTextBy(f, 'Claro', 'No es fijo');
       await f.step(
         'Con «No es fijo» Claro sale de las sugerencias y no vuelve a '
-        'aparecer; abajo lo dice con «Deshacer».',
+        'aparecer; abajo lo dice con «Deshacer», y queda en «Archivado y '
+        'descartado» por si cambias de idea.',
       );
       await f.check('Claro quedó como «no es fijo» y ya no se sugiere', () {
         expect(own.detective.notRecurring, <String>{merchantKey('Claro')});

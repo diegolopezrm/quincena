@@ -22,6 +22,7 @@ import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
 import 'package:quincena/ui/own/inbox_page.dart';
 import 'package:quincena/ui/own/own_shell.dart';
+import 'package:quincena/ui/own/put_away_page.dart';
 import 'package:quincena/ui/own/statement_page.dart';
 
 import '../../test/own_flow_test.dart' show settle;
@@ -2247,6 +2248,125 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         expect(saved.use(RuleKind.account, '5678'), isNull);
       });
     },
+  ),
+  AppFlow(
+    '07-18-recuperar-lo-descartado',
+    'Recuperar lo que descarté',
+    area: 'Por revisar',
+    goal:
+        'Descarté un pago sin querer y dejé de leer una app: quiero traerlos '
+        'de vuelta, aunque ya no esté el aviso con «Deshacer».',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final InboxItem laura = own.pendingInbox.firstWhere(
+        (InboxItem i) => _payee(i) == 'Laura Gómez',
+      );
+      await f.tapTip('Por revisar');
+      await _openMenu(f, 'Laura Gómez');
+      await f.tap('Descartar');
+      await f.step(
+        '«Descartar» quita a Laura Gómez, y abajo «Se descartó Laura Gómez.» '
+        'ofrece «Deshacer» por unos segundos.',
+      );
+      await _undoFromNotice(f);
+      await f.step(
+        '«Deshacer» la trae de vuelta, lista para registrar como estaba.',
+      );
+      await f.check('Laura Gómez espera otra vez, como estaba', () {
+        final InboxItem again = own.pendingInbox.firstWhere(
+          (InboxItem i) => i.id == laura.id,
+        );
+        expect(again.suggestion.accountId, laura.suggestion.accountId);
+        expect(CaptureService.isReady(again, own.accounts), isTrue);
+      });
+      await _openMenu(f, 'Laura Gómez');
+      await f.tap('Descartar');
+      await _hideNotice(f);
+      await _openMenu(f, 'Éxito Laureles');
+      await f.tap('Descartar y no leer más Bancolombia');
+      await f.tap('Cancelar');
+      await f.check('«Cancelar» no descarta ni deja de leer', () {
+        expect(own.captureSettings.mutedApps, isEmpty);
+        expect(own.pendingInbox.map(_payee), contains('Éxito Laureles'));
+      });
+      await _openMenu(f, 'Éxito Laureles');
+      await f.tap('Descartar y no leer más Bancolombia');
+      await f.tap('Dejar de leer');
+      await _hideNotice(f);
+      final int away =
+          own.discardedInbox.length + own.captureSettings.mutedApps.length;
+      await f.reveal(find.text('Ver lo descartado ($away)'));
+      await f.step(
+        'Pasado el aviso, al final de Por revisar queda «Ver lo descartado '
+        '($away)»: los dos pagos y la app que ya no se lee.',
+      );
+      await f.check('Cuenta los dos pagos y la app', () {
+        expect(away, 3);
+      });
+      await f.tap('Ver lo descartado ($away)');
+      await f.page(
+        '«Archivado y descartado» empieza por lo descartado en Por revisar: '
+        'Laura Gómez y Éxito Laureles, cada uno con «Traer de vuelta»; '
+        'después Bancolombia en «Apps que no se leen», con «Volver a leer».',
+      );
+      await f.check('Están los dos pagos y la app que no se lee', () {
+        expect(f.shows('DESCARTADO EN POR REVISAR'), isTrue);
+        expect(f.shows('Laura Gómez'), isTrue);
+        expect(f.shows('Éxito Laureles'), isTrue);
+        expect(f.shows('APPS QUE NO SE LEEN'), isTrue);
+      });
+      await f.tapFound(
+        find.descendant(
+          of: find.ancestor(
+            of: find.text('Laura Gómez'),
+            matching: find.byType(PutAwayRow),
+          ),
+          matching: find.text('Traer de vuelta'),
+        ),
+      );
+      await f.step(
+        '«Traer de vuelta» devuelve a Laura Gómez a Por revisar, y el aviso '
+        'lo dice.',
+      );
+      await f.check('Laura Gómez volvió a Por revisar', () {
+        expect(f.shows('Laura Gómez volvió a Por revisar.'), isTrue);
+        expect(own.pendingInbox.map((InboxItem i) => i.id), contains(laura.id));
+      });
+      await f.tap('Volver a leer');
+      await f.step(
+        'Con «Volver a leer» las notificaciones de Bancolombia vuelven a '
+        'llegar, y la app sale de la lista.',
+      );
+      await f.check('Bancolombia se lee otra vez', () {
+        expect(own.captureSettings.mutedApps, isEmpty);
+        expect(f.shows('APPS QUE NO SE LEEN'), isFalse);
+      });
+      await f.back();
+      await f.reveal(find.text('Ver lo descartado (1)'));
+      await f.step(
+        'De vuelta en Por revisar, Laura Gómez espera para registrarse y '
+        '«Ver lo descartado (1)» guarda el Éxito.',
+      );
+      await f.check('Solo queda descartado el Éxito', () {
+        expect(own.discardedInbox.map(_payee), <String>['Éxito Laureles']);
+      });
+      await f.back();
+      await f.tapTip('Ajustes');
+      await f.tap('Archivado y descartado');
+      await f.step(
+        'En Ajustes, «Tus datos» lleva al mismo lugar: «Archivado y '
+        'descartado».',
+      );
+      await f.check('Desde Ajustes se llega a la misma página', () {
+        expect(find.byType(PutAwayPage), findsOneWidget);
+        expect(f.shows('Éxito Laureles'), isTrue);
+      });
+    },
+    manual: <String>[
+      'Con Bancolombia silenciada, una notificación real del banco no llega '
+          'a Por revisar; después de «Volver a leer», la siguiente sí llega.',
+    ],
   ),
   AppFlow(
     '08-01-importar-el-extracto-del-banco',

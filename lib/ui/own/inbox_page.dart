@@ -24,6 +24,7 @@ import 'capture_reasons.dart';
 import 'discard_capture.dart';
 import 'entry_sheet.dart';
 import 'look.dart';
+import 'put_away_page.dart';
 import 'read_images.dart';
 
 /// Captures waiting to be recorded, those one tap records apart from those
@@ -307,6 +308,7 @@ class InboxPage extends StatelessWidget {
                       const SizedBox(height: 12),
                     ],
                   ],
+                  DiscardedLink(own: own),
                 ],
               ),
             ),
