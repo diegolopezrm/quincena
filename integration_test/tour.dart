@@ -378,26 +378,28 @@ final List<Scene> scenes = <Scene>[
     await t.shot('empezar');
     await t.tap('Con mis cuentas');
     await enterTextIn(t.tester, find.byType(TextField).first, 'Diego');
+    await t.shot('nombre');
+    await t.tap('Cambiar');
     await t.shot('nombre-y-moneda');
     await t.tap('Siguiente');
     // How much is paid sits under when.
-    await t.page('como-te-pagan');
+    await t.page('cuando-te-pagan');
     await t.tap('Mensual');
-    await t.shot('como-te-pagan-mensual');
+    await t.shot('cuando-te-pagan-mensual');
     await t.tap('Quincenal');
     await t.tap('Siguiente');
-    await t.shot('agrega-tus-cuentas');
-    await t.tap('Bancolombia · COP');
-    await t.page('cuenta-sugerida');
-    await t.back();
+    await t.shot('donde-tienes-tu-plata');
     await t.tap('Tarjeta de crédito · COP');
     await t.page('tarjeta-sugerida');
     await t.back();
-    // The fixed payments come after an account to pay them from.
     await t.tap('Bancolombia · COP');
+    await t.page('cuenta-sugerida');
     await t.type('¿Cuánto tiene hoy?', '1.500.000');
     await t.tap('Guardar');
-    await t.tap('Siguiente');
+    await t.tap('Empezar');
+    // The rest waits on Inicio, under the figure.
+    await t.page('inicio-por-preparar');
+    await t.tap('Agregar');
     await t.shot('pagos-fijos');
     await t.tap('Arriendo');
     await t.page('pago-fijo-sugerido');
@@ -442,10 +444,16 @@ final List<Scene> scenes = <Scene>[
     await t.back();
     await t.top();
     await t.tapTip('Agregar movimiento');
+    await t.shot('que-paso');
+    await t.tap('Gasté plata');
     await t.page('nuevo-gasto');
-    await t.tap('Ingreso');
+    await t.tap('Cambiar');
+    await t.page('nuevo-gasto-todo');
+    await t.tapTip('Cambiar qué pasó');
+    await t.tap('Me entró plata');
     await t.page('nuevo-ingreso');
-    await t.tap('Transferencia');
+    await t.tapTip('Cambiar qué pasó');
+    await t.tap('Moví plata entre mis cuentas');
     await t.page('nueva-transferencia');
     await t.back();
   }),

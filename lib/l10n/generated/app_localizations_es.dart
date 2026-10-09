@@ -402,6 +402,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get onboardingNameHint => 'Tu nombre';
 
   @override
+  String get onboardingNameMissing => 'Escribe tu nombre para seguir.';
+
+  @override
   String get onboardingBaseTitle => '¿En qué moneda quieres ver tus totales?';
 
   @override
@@ -409,18 +412,24 @@ class AppLocalizationsEs extends AppLocalizations {
       'Cada cuenta conserva su propia moneda; los totales se convierten a esta.';
 
   @override
-  String get onboardingPayTitle => '¿Cómo te pagan?';
+  String get onboardingBaseLabel => 'Moneda de tus totales';
+
+  @override
+  String get onboardingBaseChange => 'Cambiar';
+
+  @override
+  String get onboardingPayTitle => '¿Cuándo te pagan?';
 
   @override
   String get onboardingPayBody =>
       'Con esto Quincena calcula cuánto puedes gastar hasta el próximo pago.';
 
   @override
-  String get onboardingAccountsTitle => 'Agrega tus cuentas';
+  String get onboardingAccountsTitle => '¿Dónde tienes tu plata?';
 
   @override
   String get onboardingAccountsBody =>
-      'Bancos, billeteras, efectivo, tarjetas o cripto. Puedes agregar más después.';
+      'Empieza por la cuenta que más usas, con lo que tiene hoy. Las demás las agregas cuando quieras.';
 
   @override
   String get onboardingSuggestions => 'Para empezar rápido';
@@ -801,6 +810,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get yourAccounts => 'Tus cuentas';
 
   @override
+  String get firstAccountTitle => 'Agrega dónde tienes tu plata';
+
+  @override
+  String get firstAccountBody =>
+      'Con tus cuentas y lo que tienen hoy, Quincena te dice cuánto puedes gastar hasta tu próximo pago.';
+
+  @override
+  String get firstAccountAction => 'Agregar mi primera cuenta';
+
+  @override
   String get balanceToday => 'Saldo hoy';
 
   @override
@@ -861,6 +880,57 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get addMovement => 'Agregar movimiento';
+
+  @override
+  String get entryWhatHappened => '¿Qué pasó?';
+
+  @override
+  String get entrySpent => 'Gasté plata';
+
+  @override
+  String get entrySpentBody => 'Una compra, un servicio, algo que pagaste';
+
+  @override
+  String get entryGot => 'Me entró plata';
+
+  @override
+  String get entryGotBody =>
+      'Tu pago, una transferencia que te hicieron, un reembolso';
+
+  @override
+  String get entryMoved => 'Moví plata entre mis cuentas';
+
+  @override
+  String get entryMovedBody =>
+      'Pagar la tarjeta, pasar a Nequi, sacar del cajero';
+
+  @override
+  String get entryChangeKind => 'Cambiar qué pasó';
+
+  @override
+  String get entryNoCategory => 'Sin categoría';
+
+  @override
+  String entryStaysIn(String category) {
+    return 'Si no eliges una, queda en $category.';
+  }
+
+  @override
+  String entryLikeLastTime(String kind, String payee) {
+    String _temp0 = intl.Intl.selectLogic(kind, {
+      'income': 'Como la última vez de $payee.',
+      'other': 'Como la última vez en $payee.',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get entryChange => 'Cambiar';
+
+  @override
+  String entryCurrencyChanged(String from, String to) {
+    return 'Pasó de $from a $to: revisa el monto.';
+  }
 
   @override
   String get editMovement => 'Editar movimiento';
@@ -1044,6 +1114,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'Registra un gasto, un ingreso o una transferencia con «Movimiento».';
 
   @override
+  String get noMovementsNoAccount =>
+      'Con una cuenta, aquí registras lo que gastas y lo que te entra.';
+
+  @override
   String get noResults => 'Nada coincide con la búsqueda.';
 
   @override
@@ -1064,6 +1138,12 @@ class AppLocalizationsEs extends AppLocalizations {
       'También se quita su división: lo que te deben por este gasto deja de contar.';
 
   @override
+  String get kindChangeSplitTitle => '¿Ya no es un gasto?';
+
+  @override
+  String get kindChangeSplitYes => 'Sí, cambiarlo';
+
+  @override
   String get invalidAmount => 'Escribe un monto';
 
   @override
@@ -1071,6 +1151,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get needAccountFirst => 'Primero agrega una cuenta.';
+
+  @override
+  String get entryNeedsAccountTitle => 'Primero, ¿dónde tienes tu plata?';
+
+  @override
+  String get entryNeedsAccountBody =>
+      'Para registrar un movimiento, Quincena necesita saber de qué cuenta sale la plata o a cuál llega.';
 
   @override
   String get recentMovements => 'Últimos movimientos';
@@ -6668,6 +6755,62 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get fixedSuggestSubscription => 'Una suscripción';
+
+  @override
+  String get setupTitle => 'Termina de preparar Quincena';
+
+  @override
+  String get setupBody => 'Con esto, la cifra de arriba queda más precisa.';
+
+  @override
+  String setupProgress(int done, int total) {
+    return '$done de $total listos';
+  }
+
+  @override
+  String get setupHide => 'Ocultar';
+
+  @override
+  String get setupHidden => 'Listo. Todo esto sigue en Ajustes y en Plan.';
+
+  @override
+  String get setupDone => 'Listo';
+
+  @override
+  String get setupFixedTitle => 'Tus pagos fijos';
+
+  @override
+  String get setupFixedBody =>
+      'Arriendo, servicios, suscripciones: se restan antes de que lleguen.';
+
+  @override
+  String get setupPayTitle => 'Cuánto te pagan';
+
+  @override
+  String get setupPayBody => 'Para ver cómo quedas después de tu próximo pago.';
+
+  @override
+  String get setupPayAction => 'Escribir';
+
+  @override
+  String get setupCushionTitle => 'Tu colchón';
+
+  @override
+  String get setupCushionBody =>
+      'Plata que no quieres tocar; no cuenta en lo que puedes gastar.';
+
+  @override
+  String get setupCushionAction => 'Definir';
+
+  @override
+  String get setupCaptureTitle => 'Pagos que llegan solos';
+
+  @override
+  String get setupCaptureBody =>
+      'Quincena lee los avisos de tu banco y te propone cada movimiento.';
+
+  @override
+  String get setupCaptureAction => 'Activar';
 
   @override
   String get inboxReadySection => 'Listos para registrar';

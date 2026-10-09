@@ -312,15 +312,10 @@ void main() {
     );
     await tester.tap(find.widgetWithText(FilledButton, 'Registrar'));
     await settle(tester);
-    expect(
-      tester
-          .widget<SegmentedButton<EntryKind>>(
-            find.byType(SegmentedButton<EntryKind>),
-          )
-          .selected,
-      <EntryKind>{EntryKind.income},
-    );
-    Navigator.of(tester.element(find.byType(SegmentedButton<EntryKind>))).pop();
+    // Money that came in, without asking what happened.
+    expect(find.text('Me entró plata'), findsOneWidget);
+    expect(find.text('¿Qué pasó?'), findsNothing);
+    Navigator.of(tester.element(find.text('Me entró plata'))).pop();
     await settle(tester);
 
     await tester.tap(find.text('¿De dónde sale?'));

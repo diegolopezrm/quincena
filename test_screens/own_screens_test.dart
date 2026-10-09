@@ -122,9 +122,10 @@ void main() {
     await tester.ensureVisible(find.text('Guardar'));
     await tester.tap(find.text('Guardar'));
     await settle(tester);
-    await tester.tap(find.text('Siguiente'));
+    await tester.tap(find.text('Empezar'));
     await settle(tester);
-    await shoot('onboarding-4');
+    // What setting up left for later, on Inicio.
+    await shoot('onboarding-done');
   });
 
   for (final Brightness b in Brightness.values) {
@@ -154,11 +155,19 @@ void main() {
     await open(tester, store, phone, Brightness.light);
     await tester.tap(find.byTooltip('Agregar movimiento'));
     await settle(tester);
+    await shoot('entry-question');
+    await tester.tap(find.text('Gasté plata'));
+    await settle(tester);
     await tester.enterText(find.widgetWithText(TextField, 'Monto'), '45.900');
-    await tester.tap(find.text('Mercado'));
+    await tester.enterText(
+      find.widgetWithText(TextField, '¿Dónde o a quién?'),
+      'Éxito',
+    );
     await settle(tester);
     await shoot('entry-sheet');
-    await tester.tap(find.text('Transferencia'));
+    await tester.tap(find.byTooltip('Cambiar qué pasó'));
+    await settle(tester);
+    await tester.tap(find.text('Moví plata entre mis cuentas'));
     await settle(tester);
     await shoot('transfer-sheet');
   });

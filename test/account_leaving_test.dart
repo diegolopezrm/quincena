@@ -161,6 +161,8 @@ void main() {
       showEntrySheet(tester.element(find.byType(AccountsTab)), own: own),
     );
     await settle(tester);
+    await tapText(tester, 'Gasté plata');
+    await tapText(tester, 'Cambiar');
     await tester.tap(find.byType(DropdownButtonFormField<String>).first);
     await settle(tester);
     expect(find.text('Nequi'), findsNothing);

@@ -728,6 +728,12 @@ abstract class AppLocalizations {
   /// **'Tu nombre'**
   String get onboardingNameHint;
 
+  /// No description provided for @onboardingNameMissing.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe tu nombre para seguir.'**
+  String get onboardingNameMissing;
+
   /// No description provided for @onboardingBaseTitle.
   ///
   /// In es, this message translates to:
@@ -740,10 +746,22 @@ abstract class AppLocalizations {
   /// **'Cada cuenta conserva su propia moneda; los totales se convierten a esta.'**
   String get onboardingBaseBody;
 
+  /// No description provided for @onboardingBaseLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Moneda de tus totales'**
+  String get onboardingBaseLabel;
+
+  /// No description provided for @onboardingBaseChange.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar'**
+  String get onboardingBaseChange;
+
   /// No description provided for @onboardingPayTitle.
   ///
   /// In es, this message translates to:
-  /// **'¿Cómo te pagan?'**
+  /// **'¿Cuándo te pagan?'**
   String get onboardingPayTitle;
 
   /// No description provided for @onboardingPayBody.
@@ -755,13 +773,13 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingAccountsTitle.
   ///
   /// In es, this message translates to:
-  /// **'Agrega tus cuentas'**
+  /// **'¿Dónde tienes tu plata?'**
   String get onboardingAccountsTitle;
 
   /// No description provided for @onboardingAccountsBody.
   ///
   /// In es, this message translates to:
-  /// **'Bancos, billeteras, efectivo, tarjetas o cripto. Puedes agregar más después.'**
+  /// **'Empieza por la cuenta que más usas, con lo que tiene hoy. Las demás las agregas cuando quieras.'**
   String get onboardingAccountsBody;
 
   /// No description provided for @onboardingSuggestions.
@@ -1274,6 +1292,24 @@ abstract class AppLocalizations {
   /// **'Tus cuentas'**
   String get yourAccounts;
 
+  /// No description provided for @firstAccountTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Agrega dónde tienes tu plata'**
+  String get firstAccountTitle;
+
+  /// No description provided for @firstAccountBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Con tus cuentas y lo que tienen hoy, Quincena te dice cuánto puedes gastar hasta tu próximo pago.'**
+  String get firstAccountBody;
+
+  /// No description provided for @firstAccountAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar mi primera cuenta'**
+  String get firstAccountAction;
+
   /// No description provided for @balanceToday.
   ///
   /// In es, this message translates to:
@@ -1375,6 +1411,84 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Agregar movimiento'**
   String get addMovement;
+
+  /// No description provided for @entryWhatHappened.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Qué pasó?'**
+  String get entryWhatHappened;
+
+  /// No description provided for @entrySpent.
+  ///
+  /// In es, this message translates to:
+  /// **'Gasté plata'**
+  String get entrySpent;
+
+  /// No description provided for @entrySpentBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Una compra, un servicio, algo que pagaste'**
+  String get entrySpentBody;
+
+  /// No description provided for @entryGot.
+  ///
+  /// In es, this message translates to:
+  /// **'Me entró plata'**
+  String get entryGot;
+
+  /// No description provided for @entryGotBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu pago, una transferencia que te hicieron, un reembolso'**
+  String get entryGotBody;
+
+  /// No description provided for @entryMoved.
+  ///
+  /// In es, this message translates to:
+  /// **'Moví plata entre mis cuentas'**
+  String get entryMoved;
+
+  /// No description provided for @entryMovedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagar la tarjeta, pasar a Nequi, sacar del cajero'**
+  String get entryMovedBody;
+
+  /// No description provided for @entryChangeKind.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar qué pasó'**
+  String get entryChangeKind;
+
+  /// No description provided for @entryNoCategory.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin categoría'**
+  String get entryNoCategory;
+
+  /// No description provided for @entryStaysIn.
+  ///
+  /// In es, this message translates to:
+  /// **'Si no eliges una, queda en {category}.'**
+  String entryStaysIn(String category);
+
+  /// No description provided for @entryLikeLastTime.
+  ///
+  /// In es, this message translates to:
+  /// **'{kind, select, income{Como la última vez de {payee}.} other{Como la última vez en {payee}.}}'**
+  String entryLikeLastTime(String kind, String payee);
+
+  /// No description provided for @entryChange.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar'**
+  String get entryChange;
+
+  /// No description provided for @entryCurrencyChanged.
+  ///
+  /// In es, this message translates to:
+  /// **'Pasó de {from} a {to}: revisa el monto.'**
+  String entryCurrencyChanged(String from, String to);
 
   /// No description provided for @editMovement.
   ///
@@ -1682,6 +1796,12 @@ abstract class AppLocalizations {
   /// **'Registra un gasto, un ingreso o una transferencia con «Movimiento».'**
   String get noMovementsBody;
 
+  /// No description provided for @noMovementsNoAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Con una cuenta, aquí registras lo que gastas y lo que te entra.'**
+  String get noMovementsNoAccount;
+
   /// No description provided for @noResults.
   ///
   /// In es, this message translates to:
@@ -1718,6 +1838,18 @@ abstract class AppLocalizations {
   /// **'También se quita su división: lo que te deben por este gasto deja de contar.'**
   String get deleteSplitBody;
 
+  /// No description provided for @kindChangeSplitTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Ya no es un gasto?'**
+  String get kindChangeSplitTitle;
+
+  /// No description provided for @kindChangeSplitYes.
+  ///
+  /// In es, this message translates to:
+  /// **'Sí, cambiarlo'**
+  String get kindChangeSplitYes;
+
   /// No description provided for @invalidAmount.
   ///
   /// In es, this message translates to:
@@ -1735,6 +1867,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Primero agrega una cuenta.'**
   String get needAccountFirst;
+
+  /// No description provided for @entryNeedsAccountTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Primero, ¿dónde tienes tu plata?'**
+  String get entryNeedsAccountTitle;
+
+  /// No description provided for @entryNeedsAccountBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Para registrar un movimiento, Quincena necesita saber de qué cuenta sale la plata o a cuál llega.'**
+  String get entryNeedsAccountBody;
 
   /// No description provided for @recentMovements.
   ///
@@ -10151,6 +10295,108 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Una suscripción'**
   String get fixedSuggestSubscription;
+
+  /// No description provided for @setupTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Termina de preparar Quincena'**
+  String get setupTitle;
+
+  /// No description provided for @setupBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Con esto, la cifra de arriba queda más precisa.'**
+  String get setupBody;
+
+  /// No description provided for @setupProgress.
+  ///
+  /// In es, this message translates to:
+  /// **'{done} de {total} listos'**
+  String setupProgress(int done, int total);
+
+  /// No description provided for @setupHide.
+  ///
+  /// In es, this message translates to:
+  /// **'Ocultar'**
+  String get setupHide;
+
+  /// No description provided for @setupHidden.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo. Todo esto sigue en Ajustes y en Plan.'**
+  String get setupHidden;
+
+  /// No description provided for @setupDone.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo'**
+  String get setupDone;
+
+  /// No description provided for @setupFixedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus pagos fijos'**
+  String get setupFixedTitle;
+
+  /// No description provided for @setupFixedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Arriendo, servicios, suscripciones: se restan antes de que lleguen.'**
+  String get setupFixedBody;
+
+  /// No description provided for @setupPayTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuánto te pagan'**
+  String get setupPayTitle;
+
+  /// No description provided for @setupPayBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Para ver cómo quedas después de tu próximo pago.'**
+  String get setupPayBody;
+
+  /// No description provided for @setupPayAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribir'**
+  String get setupPayAction;
+
+  /// No description provided for @setupCushionTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu colchón'**
+  String get setupCushionTitle;
+
+  /// No description provided for @setupCushionBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Plata que no quieres tocar; no cuenta en lo que puedes gastar.'**
+  String get setupCushionBody;
+
+  /// No description provided for @setupCushionAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Definir'**
+  String get setupCushionAction;
+
+  /// No description provided for @setupCaptureTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagos que llegan solos'**
+  String get setupCaptureTitle;
+
+  /// No description provided for @setupCaptureBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Quincena lee los avisos de tu banco y te propone cada movimiento.'**
+  String get setupCaptureBody;
+
+  /// No description provided for @setupCaptureAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Activar'**
+  String get setupCaptureAction;
 
   /// No description provided for @inboxReadySection.
   ///

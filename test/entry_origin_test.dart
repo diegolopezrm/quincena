@@ -142,7 +142,8 @@ void main() {
       showEntrySheet(tester.element(find.byType(MovementsTab)), own: own),
     );
     await settle(tester);
-    expect(find.text('Agregar movimiento'), findsOneWidget);
+    await tapText(tester, 'Gasté plata');
+    expect(find.text('Monto'), findsOneWidget);
     expect(find.text('Anotado a mano'), findsNothing);
   });
 }

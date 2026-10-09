@@ -156,10 +156,26 @@ class FlowRun {
     }
   }
 
+  /// How many times the flow touched the screen so far, typing apart: what
+  /// a flow that measures how long a task takes compares.
+  int taps = 0;
+
   // The moves, as the tour makes them.
-  Future<void> tap(String text) => tour.tap(text);
-  Future<void> tapContaining(String text) => tour.tapContaining(text);
-  Future<void> tapTip(String tooltip) => tour.tapTip(tooltip);
+  Future<void> tap(String text) {
+    taps++;
+    return tour.tap(text);
+  }
+
+  Future<void> tapContaining(String text) {
+    taps++;
+    return tour.tapContaining(text);
+  }
+
+  Future<void> tapTip(String tooltip) {
+    taps++;
+    return tour.tapTip(tooltip);
+  }
+
   Future<void> type(String label, String text) => tour.type(label, text);
   Future<void> reveal(Finder finder) => tour.reveal(finder);
   Future<void> back() => tour.back();
@@ -172,6 +188,7 @@ class FlowRun {
 
   /// Taps what [finder] finds, after scrolling it into view.
   Future<void> tapFound(Finder finder) async {
+    taps++;
     await reveal(finder);
     await tester.tap(finder.last);
     await settle(tester);

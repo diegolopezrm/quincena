@@ -77,7 +77,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       });
       await f.tap('Usar mis cuentas');
       await f.step(
-        'Toca «Usar mis cuentas»: empieza la configuración, «Paso 1 de 4», '
+        'Toca «Usar mis cuentas»: empieza la configuración, «Paso 1 de 3», '
         'con la pregunta por tu nombre.',
       );
       await f.check('Todavía no hay un perfil guardado', () async {
@@ -95,29 +95,46 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
   ),
   AppFlow(
     '01-02-configurar-mis-cuentas',
-    'Configurar la app con mis cuentas y pagos fijos',
+    'Configurar la app en tres preguntas y terminar desde Inicio',
     area: 'Primeros pasos',
     goal:
         'Me pagan cada quincena y quiero que la app sepa qué tengo en el '
-        'banco, en efectivo, lo que debo en la tarjeta y lo que pago fijo.',
+        'banco, en efectivo y lo que debo en la tarjeta; lo que pago fijo, '
+        'después, desde Inicio.',
     (FlowRun f) async {
       await f.tap('Con mis cuentas');
+      await f.step(
+        'Paso 1 de 3: «¿Cómo te llamas?». Debajo, la moneda de los totales ya '
+        'viene en «COP · Peso colombiano», con «Cambiar» al lado.',
+      );
+      await f.check('La moneda espera detrás de «Cambiar»', () {
+        expect(f.shows('Paso 1 de 3'), isTrue);
+        expect(f.shows('COP · Peso colombiano'), isTrue);
+        expect(find.byType(DropdownButtonFormField<String>), findsNothing);
+      });
       await f.tap('Siguiente');
       await f.step(
-        'Sin nombre, «Siguiente» no avanza: el campo se pone en rojo y pide '
-        '«Tu nombre».',
+        'Sin nombre, «Siguiente» no avanza: bajo el campo dice «Escribe tu '
+        'nombre para seguir.»',
       );
+      await f.check('Dice qué falta, no repite la pista «Tu nombre»', () {
+        expect(f.shows('Escribe tu nombre para seguir.'), isTrue);
+      });
       await f.type('Tu nombre', 'Diego');
+      await f.check('Con el nombre escrito, el aviso rojo se va solo', () {
+        expect(f.shows('Escribe tu nombre para seguir.'), isFalse);
+      });
+      await f.tap('Cambiar');
       await f.tapFound(find.byType(DropdownButtonFormField<String>));
       await f.step(
-        'Con el nombre escrito, abre la moneda de los totales: pesos, dólares, '
-        'euros y otras. El aviso rojo sigue hasta volver a tocar «Siguiente».',
+        '«Cambiar» muestra la moneda de los totales, y al abrirla salen '
+        'pesos, dólares, euros y otras.',
       );
       await f.tapFound(find.text('COP · Peso colombiano').last);
       await f.tap('Siguiente');
       await f.step(
-        'Paso 2: «¿Cómo te pagan?». Viene marcado «Quincenal», los días 15 y '
-        '30, y abajo cuánto te llega cada quincena.',
+        'Paso 2: «¿Cuándo te pagan?». Viene marcado «Quincenal», los días 15 '
+        'y 30, y abajo cuánto te llega cada quincena.',
       );
       await f.type('Monto', '2400000');
       await f.step(
@@ -136,19 +153,39 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         },
       );
       await f.step(
-        'Paso 3: «Agrega tus cuentas», con sugerencias para empezar rápido: '
-        'Bancolombia, Nequi, Efectivo, tarjeta, dólares y Binance.',
+        'Paso 3, el último: «¿Dónde tienes tu plata?», con sugerencias para '
+        'empezar rápido: Bancolombia, Nequi, Efectivo, tarjeta, dólares y '
+        'Binance.',
       );
-      await f.tap('Siguiente');
+      await f.tap('Empezar');
       await f.step(
-        'Sin cuentas, «Siguiente» no avanza y avisa abajo: «Agrega al menos '
-        'una cuenta para empezar».',
+        'Sin cuentas, «Empezar» no avanza y lo dice justo encima del botón, '
+        'sin taparlo: «Agrega al menos una cuenta para empezar.»',
+      );
+      await f.check(
+        'Lo dice en la pantalla, no en un aviso que tapa el botón',
+        () {
+          expect(f.shows('Agrega al menos una cuenta para empezar.'), isTrue);
+          expect(find.byType(SnackBar), findsNothing);
+          expect(f.shows('Paso 3 de 3'), isTrue);
+        },
       );
       await f.tap('Bancolombia · COP');
+      await f.check('Lo único que falta, el saldo, ya tiene el cursor', () {
+        expect(
+          f.tester
+              .widget<TextField>(
+                find.widgetWithText(TextField, '¿Cuánto tiene hoy?'),
+              )
+              .autofocus,
+          isTrue,
+        );
+      });
       await f.type('¿Cuánto tiene hoy?', '1500000');
       await f.page(
         'Toca «Bancolombia · COP»: el formulario viene lleno con el nombre, '
-        'tipo Banco y la entidad; solo falta cuánto tiene hoy.',
+        'tipo Banco y la entidad; solo falta cuánto tiene hoy, y el cursor '
+        'ya está ahí.',
       );
       await f.tap('Guardar');
       await f.tap('Tarjeta de crédito · COP');
@@ -178,7 +215,8 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       }
       await f.step(
         'Bancolombia, la tarjeta y el efectivo quedan en la lista con su '
-        'saldo; la tarjeta muestra lo que debes.',
+        'saldo; la tarjeta muestra lo que debes. El aviso de arriba del '
+        'botón se fue con la primera cuenta.',
       );
       await f.check('Quedaron tres cuentas con lo que se escribió', () async {
         final List<Account> accounts = await _read(
@@ -199,11 +237,91 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           (Account a) => a.kind == AccountKind.card,
         );
         expect(card.creditLimit, Decimal.parse('3000000'));
+        expect(f.shows('Agrega al menos una cuenta para empezar.'), isFalse);
       });
-      await f.tap('Siguiente');
+      await f.tap('Empezar');
       await f.page(
-        'Paso 4: «¿Qué pagas fijo?», con sugerencias: Arriendo, '
-        'Administración, Servicios, Internet, Plan del celular, suscripción.',
+        'Toca «Empezar»: Inicio dice cuánto puedes gastar hasta el 15 de '
+        'octubre, el banco y el efectivo menos lo que debes en la tarjeta, '
+        'con «Provisional: faltan tus pagos fijos». Debajo, «Termina de '
+        'preparar Quincena» con lo que quedó para después; lo que te pagan '
+        'ya está.',
+      );
+      await f.check(
+        'Puedes gastar ${pesos(1080000)}: el banco y el efectivo menos la '
+        'tarjeta',
+        () {
+          // Nothing fixed falls before the 15th.
+          expect(_own(f).ledger!.freeUntilPayday, 1080000);
+          expect(f.screenText, contains(pesos(1080000)));
+        },
+      );
+      await f.check(
+        'Recién configurada, Inicio no pide registrar el pago del 30 de '
+        'septiembre, que ya estaba en los saldos escritos',
+        () {
+          expect(_own(f).projection!.latePay, isNull);
+          expect(f.shows('Registra tu pago del 30 de septiembre'), isFalse);
+        },
+      );
+      await f.check(
+        'Lo que quedó para después está en una lista bajo la cifra, con lo '
+        'que te pagan ya marcado; «Por hacer» no repite los pagos fijos',
+        () {
+          expect(f.shows('TERMINA DE PREPARAR QUINCENA'), isTrue);
+          for (final String step in <String>[
+            'Tus pagos fijos',
+            'Cuánto te pagan',
+            'Tu colchón',
+            'Pagos que llegan solos',
+          ]) {
+            expect(f.shows(step), isTrue, reason: step);
+          }
+          expect(f.shows('1 de 4 listos'), isTrue);
+          expect(f.shows('Agrega tus pagos fijos'), isFalse);
+        },
+      );
+      await f.check(
+        'Mientras no se digan los pagos fijos, la cifra es provisional',
+        () {
+          expect(_own(f).provisional, isTrue);
+          expect(f.shows('Provisional: faltan tus pagos fijos'), isTrue);
+        },
+      );
+      await f.check(
+        '«Próximos días» no avisa que te quedes sin plata: el pago del 15 '
+        'llega antes de cualquier cobro, y no hay colchón',
+        () {
+          final Projection p = _own(f).projection!;
+          expect(_own(f).ledger!.cushion, 0);
+          expect(p.firstTight, isNull);
+          expect(f.screenText, isNot(contains('te quedarías sin plata')));
+        },
+      );
+      await f.check(
+        'Nada baja el saldo antes del pago: dice que lo mínimo libre es lo '
+        'de hoy, sin nombrar el 3 de octubre como otro día',
+        () {
+          final ProjectedDay low = _own(f).projection!.lowestBeforePayday;
+          expect(low.date, DateTime(2026, 10, 3));
+          expect(
+            f.shows(
+              'Lo mínimo que tendrás libre antes del pago es lo de hoy: '
+              '${pesos(1080000)}.',
+            ),
+            isTrue,
+          );
+          expect(f.screenText, isNot(contains('el 3 de octubre')));
+        },
+      );
+      await f.check('La app abre en adelante en tus cuentas', () async {
+        expect(await _read(f, () => _store(f).setting('app.mode')), 'own');
+      });
+      await f.tap('Agregar');
+      await f.page(
+        '«Agregar», en «Tus pagos fijos», abre «¿Qué pagas fijo?», lo que '
+        'antes era un paso más: Arriendo, Administración, Servicios, '
+        'Internet, Plan del celular y una suscripción.',
       );
       await f.tap('Arriendo');
       await f.type('¿Cuánto cobra?', '1650000');
@@ -255,66 +373,22 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           expect(rent.nextDate, DateTime(2026, 11, 5));
           expect(rent.amount.amount, Decimal.parse('1650000'));
           expect(rent.category, 'housing');
+          expect(f.shows('No tengo pagos fijos'), isFalse);
         },
       );
-      await f.tap('Empezar');
+      await f.tap('Listo');
       await f.page(
-        'Toca «Empezar»: puedes gastar el banco y el efectivo menos lo que '
-        'debes en la tarjeta hasta el 15 de octubre, sin «Provisional». '
-        'Más abajo, «Próximos días» dice que el mínimo antes del pago es el '
-        'de hoy y no avisa de ningún día sin plata.',
+        'Con «Listo», de vuelta en Inicio: la cifra ya no es provisional y '
+        'no cambia, porque nada fijo cae antes del 15. En la lista, «Tus '
+        'pagos fijos» quedó marcado como listo.',
       );
-      await f.check(
-        'Puedes gastar ${pesos(1080000)}: el banco y el efectivo menos la '
-        'tarjeta',
-        () {
-          // Nothing fixed falls before the 15th.
-          expect(_own(f).ledger!.freeUntilPayday, 1080000);
-          expect(f.screenText, contains(pesos(1080000)));
-        },
-      );
-      await f.check(
-        'Recién configurada, Inicio no pide registrar el pago del 30 de '
-        'septiembre, que ya estaba en los saldos escritos',
-        () {
-          expect(_own(f).projection!.latePay, isNull);
-          expect(f.shows('Registra tu pago del 30 de septiembre'), isFalse);
-        },
-      );
-      await f.check('La cifra no es provisional', () {
+      await f.check('La cifra no es provisional y sigue igual', () {
         expect(_own(f).provisional, isFalse);
         expect(f.shows('Provisional: faltan tus pagos fijos'), isFalse);
+        expect(_own(f).ledger!.freeUntilPayday, 1080000);
       });
-      await f.check(
-        '«Próximos días» no avisa que te quedes sin plata: los pagos del 15 y '
-        'del 31 de octubre llegan antes del arriendo del 5 de noviembre, y '
-        'sin colchón no habla de él',
-        () {
-          final Projection p = _own(f).projection!;
-          expect(_own(f).ledger!.cushion, 0);
-          expect(p.firstTight, isNull);
-          expect(f.screenText, isNot(contains('te quedarías sin plata')));
-          expect(f.screenText, isNot(contains('colchón')));
-        },
-      );
-      await f.check(
-        'Nada baja el saldo antes del pago: dice que lo mínimo libre es lo '
-        'de hoy, sin nombrar el 3 de octubre como otro día',
-        () {
-          final ProjectedDay low = _own(f).projection!.lowestBeforePayday;
-          expect(low.date, DateTime(2026, 10, 3));
-          expect(
-            f.shows(
-              'Lo mínimo que tendrás libre antes del pago es lo de hoy: '
-              '${pesos(1080000)}.',
-            ),
-            isTrue,
-          );
-          expect(f.screenText, isNot(contains('el 3 de octubre')));
-        },
-      );
-      await f.check('La app abre en adelante en tus cuentas', () async {
-        expect(await _read(f, () => _store(f).setting('app.mode')), 'own');
+      await f.check('La lista lleva 2 de 4 listos', () {
+        expect(f.shows('2 de 4 listos'), isTrue);
       });
     },
   ),
@@ -403,7 +477,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         'escrito; nada se pierde.',
       );
       await f.check('El paso 1 conserva el nombre Laura', () {
-        expect(f.shows('Paso 1 de 4'), isTrue);
+        expect(f.shows('Paso 1 de 3'), isTrue);
         expect(find.widgetWithText(TextField, 'Laura'), findsOneWidget);
       });
     },
@@ -418,11 +492,12 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
     (FlowRun f) async {
       await f.tap('Con mis cuentas');
       await f.type('Tu nombre', 'Ana');
+      await f.tap('Cambiar');
       await f.tapFound(find.byType(DropdownButtonFormField<String>));
       await f.tapFound(find.text('USD · Dólar estadounidense').last);
       await f.step(
-        'Escribe «Ana» y elige «USD · Dólar estadounidense» para ver los '
-        'totales en dólares.',
+        'Escribe «Ana», toca «Cambiar» junto a la moneda y elige «USD · '
+        'Dólar estadounidense» para ver los totales en dólares.',
       );
       await f.tap('Siguiente');
       await f.tap('Mensual');
@@ -472,15 +547,22 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tap('Banco · USD');
       await f.type('¿Cuánto tiene hoy?', '2500');
       await f.tap('Guardar');
-      await f.tap('Siguiente');
+      await f.tap('Empezar');
       await f.step(
-        'En el paso 4, mientras no haya pagos fijos, abajo aparece «No tengo '
-        'pagos fijos» además de «Empezar».',
+        'Con la cuenta, «Empezar» lleva a Inicio en dólares. Sin pagos fijos '
+        'la cifra dice «Provisional», y «Termina de preparar Quincena» los '
+        'pide primero, con «Agregar».',
       );
+      await f.check('Sin pagos fijos todavía, la cifra es provisional', () {
+        expect(_own(f).provisional, isTrue);
+        expect(f.shows('Tus pagos fijos'), isTrue);
+      });
+      await f.tap('Agregar');
       await f.tap('No tengo pagos fijos');
       await f.step(
-        'Con «No tengo pagos fijos» Inicio muestra lo que puedes gastar en '
-        'dólares hasta el 25 de octubre, sin la marca «Provisional».',
+        'En «¿Qué pagas fijo?», «No tengo pagos fijos» vuelve a Inicio: lo '
+        'que puedes gastar en dólares hasta el 25 de octubre, sin la marca '
+        '«Provisional».',
       );
       final String free = pesos(_own(f).ledger!.major(250000));
       await f.check('Puedes gastar $free hasta el 25 de octubre', () {
@@ -553,37 +635,37 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tap('Bancolombia · COP');
       await f.type('¿Cuánto tiene hoy?', '500000');
       await f.tap('Guardar');
-      await f.tap('Siguiente');
       await f.tap('Empezar');
       await f.step(
         '«Empezar» sin pagos fijos: «Puedes gastar» lleva «Provisional: '
-        'faltan tus pagos fijos» y lo primero por hacer es agregarlos.',
+        'faltan tus pagos fijos», y lo primero de «Termina de preparar '
+        'Quincena» es agregarlos.',
       );
       await f.check('La cifra es provisional y llega hasta el lunes 5', () {
         expect(_own(f).provisional, isTrue);
         expect(_own(f).ledger!.nextPayday, DateTime(2026, 10, 5));
         expect(f.shows('Provisional: faltan tus pagos fijos'), isTrue);
-        expect(f.shows('Agrega tus pagos fijos'), isTrue);
+        expect(f.shows('Tus pagos fijos'), isTrue);
       });
       await f.tap('Agregar');
       await f.step(
-        '«Agregar» en «Por hacer» lleva a «Pagos fijos», donde también está '
-        '«No tengo pagos fijos».',
+        '«Agregar» lleva a «¿Qué pagas fijo?», donde también está «No tengo '
+        'pagos fijos».',
       );
       await f.tap('No tengo pagos fijos');
-      await f.check('Desde Pagos fijos también se dice que no hay', () {
+      await f.check('Desde ahí también se dice que no hay', () {
         expect(_own(f).noFixedPayments, isTrue);
         expect(_own(f).provisional, isFalse);
       });
-      await f.back();
       await f.top();
       await f.step(
-        'De vuelta en Inicio, abajo dice «Listo. Lo que puedes gastar ya no es '
-        'provisional.» y «Agrega tus pagos fijos» salió de «Por hacer».',
+        'De vuelta en Inicio, abajo dice «Listo. Lo que puedes gastar ya no '
+        'es provisional.» y «Tus pagos fijos» quedó marcado como listo.',
       );
       await f.check('Inicio ya no pide los pagos fijos', () {
         expect(f.shows('Provisional: faltan tus pagos fijos'), isFalse);
         expect(f.shows('Agrega tus pagos fijos'), isFalse);
+        expect(f.shows('1 de 4 listos'), isTrue);
         expect(f.screenText, contains(pesos(500000)));
       });
     },
@@ -612,7 +694,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.check(
         'Vuelve a la configuración, no a un Inicio sin cuentas',
         () {
-          expect(f.shows('Paso 1 de 4'), isTrue);
+          expect(f.shows('Paso 1 de 3'), isTrue);
         },
       );
       await f.check('Con el nombre de Laura ya escrito', () {
@@ -623,11 +705,10 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tap('Nequi · COP');
       await f.type('¿Cuánto tiene hoy?', '320000');
       await f.tap('Guardar');
-      await f.tap('Siguiente');
-      await f.tap('No tengo pagos fijos');
+      await f.tap('Empezar');
       await f.step(
-        'Con «Siguiente» hasta las cuentas, Nequi con 320.000 y «No tengo '
-        'pagos fijos», Laura llega a su Inicio.',
+        'Con «Siguiente» hasta las cuentas, Nequi con 320.000 y «Empezar», '
+        'Laura llega a su Inicio.',
       );
       await f.check('Puedes gastar ${pesos(320000)}', () {
         expect(_own(f).ledger!.freeUntilPayday, 320000);
@@ -653,7 +734,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       );
       await settle(f.tester);
       await f.check('«Siguiente» del teclado pasa al paso 2', () {
-        expect(f.shows('Paso 2 de 4'), isTrue);
+        expect(f.shows('Paso 2 de 3'), isTrue);
       });
       await f.tester.tap(find.byType(DropdownButtonFormField<int>).first);
       await settle(f.tester);
@@ -680,11 +761,13 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tap('Nequi · COP');
       await f.type('¿Cuánto tiene hoy?', '400000');
       await f.tap('Guardar');
-      await f.tap('Siguiente');
+      await f.tap('Empezar');
+      await f.tap('Agregar');
       await f.tap('Agregar pago fijo');
       await f.step(
-        '«Agregar pago fijo» abre el formulario vacío: cada mes, próximo cobro '
-        'el 3 de noviembre, pagado desde Nequi y en Suscripciones.',
+        '«Agregar», en «Tus pagos fijos» de Inicio, abre «¿Qué pagas fijo?»; '
+        'ahí «Agregar pago fijo» abre el formulario vacío: cada mes, próximo '
+        'cobro el 3 de noviembre, pagado desde Nequi y en Suscripciones.',
       );
       await f.tap('Guardar');
       await f.reveal(find.text('Falta el nombre o el valor.'));
@@ -749,7 +832,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tap('Borrar pago fijo');
       await f.step(
         'Con «Borrar pago fijo» la lista queda vacía y vuelve a aparecer «No '
-        'tengo pagos fijos» bajo «Empezar».',
+        'tengo pagos fijos» bajo «Listo».',
       );
       await f.check('No queda ningún pago fijo', () async {
         expect(await _read(f, () => _store(f).recurring()), isEmpty);
@@ -757,14 +840,15 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       });
       await f.tapTip('Atrás');
       await f.step(
-        '«Atrás» en el paso 4 vuelve a las cuentas: Nequi sigue ahí con sus '
-        '400.000.',
+        '«Atrás» vuelve a Inicio: Nequi sigue con sus 400.000 y la lista '
+        'sigue pidiendo los pagos fijos.',
       );
-      await f.check('El paso 3 conserva la cuenta Nequi', () {
-        expect(f.shows('Paso 3 de 4'), isTrue);
-        expect(f.shows('Nequi'), isTrue);
+      await f.check('Inicio conserva la cuenta y sigue pidiendo los fijos', () {
+        expect(_own(f).accounts.single.name, 'Nequi');
+        expect(f.shows('Tus pagos fijos'), isTrue);
+        expect(_own(f).provisional, isTrue);
       });
-      await f.tap('Siguiente');
+      await f.tap('Agregar');
       await f.tap('No tengo pagos fijos');
       await f.step(
         'Con «No tengo pagos fijos», Inicio cuenta hasta el 10 de octubre, '
@@ -789,20 +873,25 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         'Con el teléfono en inglés, la primera pantalla pregunta «How do you '
         'want to start?»: «With my accounts» o «With sample data».',
       );
+      await f.check('La primera pantalla habla de tu moneda, no de pesos', () {
+        expect(f.screenText, contains('in your currency, dollars or crypto'));
+        expect(f.screenText, isNot(contains('pesos')));
+      });
       await f.tap('With my accounts');
       await f.type('Your name', 'Sam');
+      await f.tap('Change');
       await f.tapFound(find.byType(DropdownButtonFormField<String>));
       await f.tapFound(find.text('EUR · Euro').last);
       await f.step(
-        'Paso 1 en inglés: «What\'s your name?» con Sam escrito y la moneda '
-        'de los totales en «EUR · Euro».',
+        'Paso 1 en inglés: «What\'s your name?» con Sam escrito; «Change», '
+        'junto a la moneda de los totales, la deja en «EUR · Euro».',
       );
       await f.tap('Next');
       await f.tap('Monthly');
       await f.type('Amount', '2800');
       await f.step(
-        '«How do you get paid?»: «Monthly», el día 30, y 2.800 euros en «How '
-        'much do you get each payday?».',
+        '«When do you get paid?»: «Monthly», el día 30, y 2.800 euros en '
+        '«How much do you get each payday?».',
       );
       await f.tap('Next');
       await f.check(
@@ -816,8 +905,9 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         },
       );
       await f.step(
-        '«Add your accounts», con sugerencias en euros: «Bank · EUR», «Cash · '
-        'EUR», «Credit card · EUR», «Dollar account · USD» y Binance.',
+        '«Where do you keep your money?», con sugerencias en euros: «Bank · '
+        'EUR», «Cash · EUR», «Credit card · EUR», «Dollar account · USD» y '
+        'Binance.',
       );
       await f.check('Las sugerencias están en inglés y en euros', () {
         for (final String chip in <String>[
@@ -835,10 +925,12 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tap('Bank · EUR');
       await f.type('How much is in it today?', '1500');
       await f.tap('Save');
-      await f.tap('Next');
+      await f.tap('Start');
+      await f.tap('Add');
       await f.step(
-        '«What do you pay regularly?» sugiere «Rent», «Building fee», '
-        '«Utilities», «Internet», «Phone plan» y «A subscription».',
+        'En Inicio, «Add» en «Your recurring payments» abre «What do you pay '
+        'regularly?», que sugiere «Rent», «Building fee», «Utilities», '
+        '«Internet», «Phone plan» y «A subscription».',
       );
       await f.check('Los pagos fijos sugeridos están en inglés', () {
         for (final String chip in <String>[
@@ -874,9 +966,195 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           'Próximos días',
           'Movimientos',
           'Cuentas',
+          'Termina de preparar',
         ]) {
           expect(f.screenText, isNot(contains(word)), reason: word);
         }
+      });
+    },
+  ),
+  AppFlow(
+    '01-09-llegar-a-mi-cifra',
+    'Llegar a mi cifra en pocos toques',
+    area: 'Primeros pasos',
+    goal:
+        'Quiero saber cuánto puedo gastar sin llenar formularios: decir mi '
+        'nombre, cuándo me pagan y dónde tengo la plata, y ya.',
+    (FlowRun f) async {
+      await f.tap('Con mis cuentas');
+      await enterTextIn(f.tester, find.byType(TextField).first, 'Mariana');
+      await f.step(
+        'Toca «Con mis cuentas» y escribe «Mariana»: el teclado ya estaba en '
+        'el nombre.',
+      );
+      await f.tap('Siguiente');
+      await f.tap('Monto');
+      await enterTextIn(
+        f.tester,
+        find.widgetWithText(TextField, 'Monto'),
+        '1800000',
+      );
+      await f.step(
+        'Toca «Siguiente»: la quincena del 15 y el 30 ya viene marcada. Toca '
+        '«Monto» y escribe lo que te llega, 1.800.000; es opcional.',
+      );
+      await f.tap('Siguiente');
+      await f.tap('Nequi · COP');
+      await enterTextIn(
+        f.tester,
+        find.widgetWithText(TextField, '¿Cuánto tiene hoy?'),
+        '640000',
+      );
+      await f.step(
+        'Toca «Siguiente» y «Nequi · COP»: viene con el nombre y el tipo, y '
+        'el cursor ya está en cuánto tiene hoy; escribe 640.000.',
+      );
+      await f.tap('Guardar');
+      await f.tap('Empezar');
+      final int taps = f.taps;
+      await f.page(
+        'Toca «Guardar» y «Empezar»: Inicio dice cuánto puedes gastar hasta '
+        'el 15 de octubre. Fueron $taps toques, el monto incluido.',
+      );
+      await f.check('Llegó a su cifra en $taps toques, menos de 10', () {
+        expect(taps, lessThan(10));
+      });
+      await f.check(
+        'Puedes gastar ${pesos(640000)} hasta el 15 de octubre',
+        () {
+          expect(_own(f).ledger!.freeUntilPayday, 640000);
+          expect(_own(f).ledger!.nextPayday, DateTime(2026, 10, 15));
+          expect(f.screenText, contains(pesos(640000)));
+        },
+      );
+      await f.check('Lo que quedó para después espera bajo la cifra', () {
+        expect(f.shows('TERMINA DE PREPARAR QUINCENA'), isTrue);
+        expect(f.shows('Provisional: faltan tus pagos fijos'), isTrue);
+      });
+    },
+  ),
+  AppFlow(
+    '01-10-terminar-de-preparar-quincena',
+    'Terminar de preparar Quincena desde Inicio',
+    area: 'Primeros pasos',
+    goal:
+        'Ya veo mi cifra; ahora quiero completar lo que dejé para después, a '
+        'mi ritmo, y que la lista se vaya cuando termine.',
+    manual: <String>[
+      'En un teléfono, que «Activar» lleve a los pasos para que los pagos '
+          'del banco lleguen solos (el atajo en iPhone, el permiso de '
+          'notificaciones en Android) y que, con el primer pago que llegue, '
+          'la lista se vaya de Inicio.',
+    ],
+    data: _justSetUp,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final int free = own.ledger!.freeUntilPayday;
+      await f.page(
+        'Recién configurada, Inicio muestra la cifra y debajo «Termina de '
+        'preparar Quincena»: tus pagos fijos, cuánto te pagan, tu colchón y '
+        'los pagos que llegan solos, cada uno con lo que se hace al tocarlo.',
+        most: 2,
+      );
+      await f.check('Lista las cuatro cosas, sin ninguna lista todavía', () {
+        for (final String step in <String>[
+          'Tus pagos fijos',
+          'Cuánto te pagan',
+          'Tu colchón',
+          'Pagos que llegan solos',
+        ]) {
+          expect(f.shows(step), isTrue, reason: step);
+        }
+        expect(f.screenText, isNot(contains('listos')));
+      });
+      await f.check('«Por hacer» no repite los pagos fijos', () {
+        expect(f.shows('Agrega tus pagos fijos'), isFalse);
+      });
+      await f.tap('Escribir');
+      await enterTextIn(f.tester, find.byType(TextField).last, '2400000');
+      await f.step(
+        '«Escribir» abre el mismo cuadro de Ajustes, «Lo que te pagan»: '
+        '2.400.000.',
+      );
+      await f.tap('Guardar');
+      await f.check('Quedó lo que te pagan, y la lista lo marca', () {
+        expect(own.profile!.pay, Decimal.parse('2400000'));
+        expect(f.shows('1 de 4 listos'), isTrue);
+      });
+      await f.tap('Definir');
+      await enterTextIn(f.tester, find.byType(TextField).last, '300000');
+      await f.step(
+        '«Definir» abre «Colchón», lo que no quieres tocar: 300.000.',
+      );
+      await f.tap('Guardar');
+      await f.check(
+        'El colchón sale de lo que puedes gastar: ${pesos(free - 300000)}',
+        () {
+          expect(own.profile!.cushion, Decimal.parse('300000'));
+          expect(own.ledger!.freeUntilPayday, free - 300000);
+        },
+      );
+      await f.tap('Agregar');
+      await f.tap('Arriendo');
+      await f.type('¿Cuánto cobra?', '1200000');
+      await f.tap('Guardar');
+      await f.step(
+        '«Agregar» abre «¿Qué pagas fijo?»: el arriendo, de 1.200.000, desde '
+        'Bancolombia el 1 de noviembre.',
+      );
+      await f.tap('Listo');
+      await f.check('Con el arriendo, la cifra deja de ser provisional', () {
+        expect(own.provisional, isFalse);
+        expect(own.recurring.single.name, 'Arriendo');
+        expect(f.shows('3 de 4 listos'), isTrue);
+      });
+      await f.tap('Activar');
+      await f.page(
+        '«Activar» abre «Captura automática», donde se explica cómo hacer '
+        'que los pagos del banco lleguen solos.',
+      );
+      await f.check('Abre la captura automática', () {
+        expect(f.shows('Captura automática'), isTrue);
+      });
+      await f.back();
+      await f.tapFound(find.byTooltip('Ocultar'));
+      await f.step(
+        'La «x» de la lista la oculta: abajo dice «Listo. Todo esto sigue en '
+        'Ajustes y en Plan.», con «Deshacer».',
+      );
+      await f.check('La lista se oculta y la app lo recuerda', () {
+        expect(f.shows('TERMINA DE PREPARAR QUINCENA'), isFalse);
+        expect(own.setupOpen, isFalse);
+      });
+      await f.tap('Deshacer');
+      await f.check('«Deshacer» la trae de vuelta', () {
+        expect(f.shows('TERMINA DE PREPARAR QUINCENA'), isTrue);
+        expect(own.setupOpen, isTrue);
+      });
+      await _read(
+        f,
+        () => own.capture.ingest(<CaptureEvent>[
+          CaptureEvent(
+            source: CaptureSource.notification,
+            at: screensNow,
+            app: 'com.todo1.mobile',
+            appName: 'Bancolombia',
+            title: 'Bancolombia',
+            text: r'Bancolombia · Compra por $18.000 POS 4512 T.Deb *1234',
+          ),
+        ]),
+      );
+      await settle(f.tester);
+      await f.top();
+      await f.step(
+        'Llega el primer pago desde una notificación del banco: no queda '
+        'nada por preparar y la lista se va para siempre. El pago espera en '
+        '«Por hacer».',
+      );
+      await f.check('La lista se fue y no vuelve', () {
+        expect(f.shows('TERMINA DE PREPARAR QUINCENA'), isFalse);
+        expect(own.setupOpen, isFalse);
+        expect(f.shows('Revisa 1 movimiento para actualizar tu saldo'), isTrue);
       });
     },
   ),
@@ -1958,7 +2236,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         'vacío y la moneda en pesos.',
       );
       await f.check('La configuración empieza vacía, en el paso 1', () {
-        expect(f.shows('Paso 1 de 4'), isTrue);
+        expect(f.shows('Paso 1 de 3'), isTrue);
         expect(
           f.tester
               .widget<TextField>(find.byType(TextField).first)
@@ -2069,7 +2347,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         'Ajustes y abre el paso 1 de la configuración.',
       );
       await f.check('Empieza la configuración', () {
-        expect(f.shows('Paso 1 de 4'), isTrue);
+        expect(f.shows('Paso 1 de 3'), isTrue);
         expect(f.shows('Cuenta de ejemplo de Valentina'), isFalse);
       });
     },
@@ -3999,6 +4277,27 @@ Future<QuincenaStore> _withCushionAndPay() async {
       source: 'trm',
     ),
   ]);
+  return store;
+}
+
+/// Someone who just answered the three questions: a name, paid twice a
+/// month with no amount said, 1.500.000 in Bancolombia, and the rest left
+/// for «Termina de preparar Quincena».
+Future<QuincenaStore> _justSetUp() async {
+  final QuincenaStore store = await emptyStore();
+  await store.ensureCategories();
+  await store.saveProfile(
+    const Profile(name: 'Diego', base: Asset.cop, schedule: TwiceMonthly()),
+  );
+  await store.setSetting('app.mode', 'own');
+  await store.setSetting('setup.checklist', 'open');
+  await store.addAccount(
+    name: 'Bancolombia',
+    kind: AccountKind.bank,
+    asset: Asset.cop,
+    opening: Decimal.parse('1500000'),
+    institution: 'Bancolombia',
+  );
   return store;
 }
 
