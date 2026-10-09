@@ -37,6 +37,7 @@ import '../portfolio/market.dart';
 import '../portfolio/portfolio_controller.dart';
 import '../reminders/reminders.dart';
 import '../store/store.dart';
+import 'repeats.dart';
 
 /// The person's own accounts, kept current for the screens.
 ///
@@ -605,6 +606,43 @@ class OwnController extends ChangeNotifier {
 
   static const String _noFixedKey = 'setup.noFixed';
 
+  /// The pairs of movements the person said are two payments and not one
+  /// recorded twice, by [repeatKey], with the day they said it. They go
+  /// where the movements go, in backups and to the person's other devices,
+  /// so none of them marks the pair again.
+  Map<String, String> _notRepeated = const <String, String>{};
+  Map<String, PossibleRepeat>? _repeats;
+
+  /// For each movement that may repeat another, the pair it is in; none
+  /// the person said are two.
+  Map<String, PossibleRepeat> get repeats {
+    final StoreSnapshot? s = _snapshot;
+    if (s == null) return const <String, PossibleRepeat>{};
+    return _repeats ??= possibleRepeats(
+      s.entries,
+      notRepeated: _notRepeated.keys.toSet(),
+    );
+  }
+
+  /// Remembers that the movements of [pair] are two payments. Pairs whose
+  /// movements are gone are let go on the way, so what is kept is never
+  /// longer than what it is about.
+  Future<void> sayNotRepeated(PossibleRepeat pair) {
+    final Set<String> ids = <String>{
+      for (final Entry e in _snapshot?.entries ?? const <Entry>[]) e.id,
+    };
+    return store.setSetting(
+      _notRepeatedKey,
+      jsonEncode(<String, String>{
+        for (final MapEntry<String, String> e in _notRepeated.entries)
+          if (e.key.split('+').every(ids.contains)) e.key: e.value,
+        pair.key: today.toIso8601String().substring(0, 10),
+      }),
+    );
+  }
+
+  static const String _notRepeatedKey = 'movements.notRepeated';
+
   static List<Object?> _list(String? text) => switch (_json(text)) {
     final List<Object?> list => list,
     _ => const <Object?>[],
@@ -1120,6 +1158,14 @@ class OwnController extends ChangeNotifier {
       _json(await store.setting(_detectiveKey)),
     );
     _alerts = null;
+    _notRepeated = switch (_json(await store.setting(_notRepeatedKey))) {
+      final Map<Object?, Object?> m => <String, String>{
+        for (final MapEntry<Object?, Object?> e in m.entries)
+          '${e.key}': '${e.value}',
+      },
+      _ => const <String, String>{},
+    };
+    _repeats = null;
     _groups = <Group>[
       for (final Object? g in _list(await store.setting(_groupsKey)))
         ?Group.fromJson(g),

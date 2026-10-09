@@ -1664,6 +1664,54 @@ abstract class AppLocalizations {
   /// **'Salieron {amount}'**
   String transferSent(String amount);
 
+  /// No description provided for @repeatMark.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Repetido?'**
+  String get repeatMark;
+
+  /// No description provided for @repeatTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿El mismo pago dos veces?'**
+  String get repeatTitle;
+
+  /// No description provided for @repeatBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Los dos están en {account}, por el mismo monto y en fechas cercanas.'**
+  String repeatBody(String account);
+
+  /// No description provided for @repeatNewer.
+  ///
+  /// In es, this message translates to:
+  /// **'El más reciente'**
+  String get repeatNewer;
+
+  /// No description provided for @repeatRemove.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar repetido'**
+  String get repeatRemove;
+
+  /// No description provided for @repeatRemoveWhich.
+  ///
+  /// In es, this message translates to:
+  /// **'Se quita el más reciente y el otro se queda.'**
+  String get repeatRemoveWhich;
+
+  /// No description provided for @repeatKeep.
+  ///
+  /// In es, this message translates to:
+  /// **'No es repetido'**
+  String get repeatKeep;
+
+  /// No description provided for @repeatRemoved.
+  ///
+  /// In es, this message translates to:
+  /// **'Se quitó el repetido.'**
+  String get repeatRemoved;
+
   /// No description provided for @settingsProfile.
   ///
   /// In es, this message translates to:

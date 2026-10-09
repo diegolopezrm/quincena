@@ -60,6 +60,7 @@ import 'package:quincena/ui/own/own_settings_page.dart';
 import 'package:quincena/ui/own/own_shell.dart';
 import 'package:quincena/ui/own/plan_tab.dart';
 import 'package:quincena/ui/own/portfolio_page.dart';
+import 'package:quincena/ui/own/repeat_sheet.dart';
 import 'package:quincena/ui/own/shared_page.dart';
 import 'package:quincena/ui/own/start_page.dart';
 import 'package:quincena/ui/own/statement_page.dart';
@@ -579,6 +580,13 @@ void main() {
         // What narrows the list, in sight under the search.
         expect(find.byType(ActionChip), findsNWidgets(4));
       },
+    ),
+    'a possible repeat, both side by side': (
+      (OwnController own) => opener(
+        (BuildContext context) =>
+            showRepeatSheet(context, own: own, pair: own.repeats.values.first),
+      ),
+      openIt,
     ),
     'a new movement': (
       (OwnController own) =>

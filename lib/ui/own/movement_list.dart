@@ -9,10 +9,13 @@ import '../../format/money.dart';
 import '../../l10n/l10n.dart';
 import '../../money/money.dart';
 import '../../own/own_controller.dart';
+import '../../own/repeats.dart';
 import '../../theme/tokens.dart';
+import '../icons.dart';
 import '../kit.dart';
 import 'entry_sheet.dart';
 import 'look.dart';
+import 'repeat_sheet.dart';
 
 /// The movements to show, newest first, with each transfer once: by its
 /// leg in [accountId] when the list is one account's, by the leg that left
@@ -34,6 +37,7 @@ class MovementRow extends StatelessWidget {
     required this.own,
     required this.entry,
     this.inAccount = false,
+    this.markRepeats = false,
   });
 
   final OwnController own;
@@ -41,6 +45,10 @@ class MovementRow extends StatelessWidget {
 
   /// Shown inside one account's page, where its name goes without saying.
   final bool inAccount;
+
+  /// Whether a movement that may repeat another says so, with a way to
+  /// look at both: in the full lists, where the two can be compared.
+  final bool markRepeats;
 
   Account? _account(String id) => own.snapshot?.account(id);
 
@@ -134,6 +142,11 @@ class MovementRow extends StatelessWidget {
             ),
           ),
         ),
+      if (markRepeats ? own.repeats[entry.id] : null
+          case final PossibleRepeat pair)
+        _RepeatMark(
+          onPressed: () => showRepeatSheet(context, own: own, pair: pair),
+        ),
     ];
 
     final Money money = Money(entry.amount, account.asset);
@@ -172,7 +185,12 @@ class MovementRow extends StatelessWidget {
         if (marks.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Wrap(spacing: 6, runSpacing: 4, children: marks),
+            child: Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: marks,
+            ),
           ),
       ],
     );
@@ -252,6 +270,25 @@ class _Tag extends StatelessWidget {
   );
 }
 
+/// Says a movement may repeat another, in caution's soft amber: a chip
+/// that opens both, to take the repeat away or say they are two.
+class _RepeatMark extends StatelessWidget {
+  const _RepeatMark({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => ActionChip(
+    onPressed: onPressed,
+    avatar: Icon(Glyph.copy, size: 16, color: context.colors.caution),
+    label: Text(context.l10n.repeatMark),
+    labelStyle: context.type.labelMedium?.copyWith(color: context.colors.ink),
+    backgroundColor: context.colors.cautionSoft,
+    side: BorderSide.none,
+    visualDensity: VisualDensity.compact,
+  );
+}
+
 DateTime endOfToday(DateTime today) =>
     DateTime(today.year, today.month, today.day, 23, 59, 59);
 
@@ -300,7 +337,12 @@ class MovementGroups extends StatelessWidget {
           Panel(
             children: <Widget>[
               for (final Entry e in list[i].value)
-                MovementRow(own: own, entry: e, inAccount: inAccount),
+                MovementRow(
+                  own: own,
+                  entry: e,
+                  inAccount: inAccount,
+                  markRepeats: true,
+                ),
             ],
           ),
           const SizedBox(height: 20),

@@ -1035,6 +1035,32 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get repeatMark => 'Duplicate?';
+
+  @override
+  String get repeatTitle => 'The same payment twice?';
+
+  @override
+  String repeatBody(String account) {
+    return 'Both are in $account, for the same amount, on close dates.';
+  }
+
+  @override
+  String get repeatNewer => 'The newer one';
+
+  @override
+  String get repeatRemove => 'Remove duplicate';
+
+  @override
+  String get repeatRemoveWhich => 'The newer one goes and the other stays.';
+
+  @override
+  String get repeatKeep => 'Not a duplicate';
+
+  @override
+  String get repeatRemoved => 'Duplicate removed.';
+
+  @override
   String get settingsProfile => 'Profile';
 
   @override

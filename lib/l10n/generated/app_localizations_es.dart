@@ -1035,6 +1035,33 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get repeatMark => '¿Repetido?';
+
+  @override
+  String get repeatTitle => '¿El mismo pago dos veces?';
+
+  @override
+  String repeatBody(String account) {
+    return 'Los dos están en $account, por el mismo monto y en fechas cercanas.';
+  }
+
+  @override
+  String get repeatNewer => 'El más reciente';
+
+  @override
+  String get repeatRemove => 'Quitar repetido';
+
+  @override
+  String get repeatRemoveWhich =>
+      'Se quita el más reciente y el otro se queda.';
+
+  @override
+  String get repeatKeep => 'No es repetido';
+
+  @override
+  String get repeatRemoved => 'Se quitó el repetido.';
+
+  @override
   String get settingsProfile => 'Perfil';
 
   @override

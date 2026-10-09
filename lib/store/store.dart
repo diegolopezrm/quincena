@@ -589,6 +589,12 @@ class QuincenaStore {
         ),
       );
 
+  /// Puts [entry] back as it was before it was deleted, its id included,
+  /// so what pointed at it points at it again: how a deletion is undone
+  /// while the person can still take it back.
+  Future<void> restoreEntry(Entry entry) =>
+      db.into(db.entries).insertOnConflictUpdate(_companion(entry));
+
   /// Deletes a movement; for a transfer, both of its legs.
   Future<void> deleteEntry(Entry entry) async {
     if (entry.transferId != null) {
@@ -1143,7 +1149,10 @@ class QuincenaStore {
   }
 
   /// Settings that map an id to something: each entry syncs apart.
-  static const Set<String> mapSettings = <String>{'commitments.memories'};
+  static const Set<String> mapSettings = <String>{
+    'commitments.memories',
+    'movements.notRepeated',
+  };
 
   /// Every record that syncs between the person's devices, as stored.
   /// Captures waiting for review, fetched rates and what belongs to this
@@ -1459,6 +1468,9 @@ class QuincenaStore {
     'commitments.memories',
     'commitments.instalments',
     'commitments.detective',
+    // The pairs of movements the person said are not a repeat: they go
+    // where the movements go.
+    'movements.notRepeated',
     'shared.groups',
     'freelance',
     'trips',
