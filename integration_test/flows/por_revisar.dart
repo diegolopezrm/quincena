@@ -111,6 +111,23 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
           contains('Detectamos Davivienda, pero no tienes una cuenta'),
         );
       });
+      await f.check('Cada tarjeta dice qué es o qué le falta', () async {
+        Future<void> says(String payee, String state) async {
+          await f.reveal(_card(payee));
+          expect(
+            find.descendant(of: _card(payee), matching: find.text(state)),
+            findsOneWidget,
+          );
+        }
+
+        await says('Rappi', 'Lista para registrar');
+        await says('Laura Gómez', 'Lista para registrar');
+        await says('Éxito Laureles', 'Falta elegir la cuenta');
+        await says('Claro', 'Falta elegir la cuenta');
+        await says('Falabella', 'Falta elegir la cuenta');
+        await says('Spotify', 'Posible repetido');
+        await f.top();
+      });
       await f.check('El repetido apunta al Spotify que ya estaba anotado', () {
         final InboxItem spotify = own.inbox.firstWhere(
           (InboxItem i) => i.status == InboxStatus.duplicate,
@@ -492,9 +509,36 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.tapTip('Por revisar');
       await f.reveal(_card('Spotify'));
       await f.step(
-        'En «Posibles repetidos», Spotify por US\$10,99 dice «El mismo pago ya '
-        'llegó por otra vía.»: el otro lo anotaste a mano, pero no dice cuál.',
+        'En «Posibles repetidos», Spotify por US\$10,99 dice con qué choca: '
+        '«Ya está: Spotify · US\$10,99 · 2 oct · Cuenta en dólares · anotado '
+        'a mano». «Quitar repetido» va primero.',
       );
+      await f.check('La tarjeta dice cuál es el otro, el anotado a mano', () {
+        expect(
+          f.shows(
+            'Ya está: Spotify · US\$10,99 · 2 oct · Cuenta en dólares · '
+            'anotado a mano',
+          ),
+          isTrue,
+        );
+        expect(
+          find.descendant(
+            of: _card('Spotify'),
+            matching: find.widgetWithText(FilledButton, 'Quitar repetido'),
+          ),
+          findsOneWidget,
+        );
+      });
+      await _tapOn(f, 'Spotify', 'Posible repetido');
+      await f.step(
+        'Tocar esa línea abre el Spotify que ya estaba, «Anotado a mano», para '
+        'comprobarlo antes de quitar el repetido.',
+      );
+      await f.check('Se abre el movimiento con el que choca', () {
+        expect(f.shows('Editar movimiento'), isTrue);
+        expect(f.shows('Anotado a mano'), isTrue);
+      });
+      await f.back();
       await _openMenu(f, 'Spotify');
       await f.step(
         'Su menú «⋮» tiene «Detalles de detección» y «Descartar»: un SMS no '
@@ -514,9 +558,10 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         expect(find.textContaining('SMS · Bancolombia'), findsOneWidget);
       });
       await _openMenu(f, 'Spotify');
-      await f.tap('Descartar');
+      await f.back();
+      await _tapOn(f, 'Spotify', 'Quitar repetido');
       await f.step(
-        'Con «Descartar» el repetido sale de la lista y no se anota nada '
+        'Con «Quitar repetido» el repetido sale de la lista y no se anota nada '
         'nuevo.',
       );
       await f.check('La captura quedó descartada', () async {
@@ -562,8 +607,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.tapTip('Por revisar');
       await f.reveal(_card('Spotify'));
       await f.step(
-        'Spotify espera en «Posibles repetidos» con un solo botón a la vista: '
-        '«No es repetido».',
+        'Spotify espera en «Posibles repetidos»: «Quitar repetido» va primero '
+        'y «No es repetido» al lado, para cuando son dos cobros distintos.',
       );
       await _tapOn(f, 'Spotify', 'No es repetido');
       await f.top();
@@ -722,7 +767,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.tap('Descartar y no leer más Bancolombia');
       await f.step(
         'Con «Descartar y no leer más Bancolombia» se va la compra: arriba '
-        'dice «Todo al día.» aunque el posible repetido sigue abajo.',
+        'dice «Nada por registrar.» y que queda un posible repetido por mirar, '
+        'abajo.',
       );
       await f.check('La app de Bancolombia quedó silenciada', () {
         final CaptureSettings s = own.captureSettings;
@@ -1010,9 +1056,24 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.top();
       await f.step(
         'Con el chulo de Tienda La Esquina quedan 5: vuelven a ser tarjetas, '
-        'y arriba dice «Registrar 3 de los 4 listos» porque Laura no tiene '
-        'categoría segura.',
+        'y arriba dice «Registrar 3 de los 4 listos» y, debajo, que Laura '
+        'Gómez queda por fuera porque no reconocimos su categoría.',
       );
+      await f.check('Dice cuál de los listos queda por fuera, y por qué', () {
+        expect(
+          f.shows('Queda por fuera Laura Gómez: no reconocimos su categoría.'),
+          isTrue,
+        );
+        expect(
+          find.descendant(
+            of: _card('Laura Gómez'),
+            matching: find.text(
+              'No reconocimos la categoría: quedaría en Otros ingresos.',
+            ),
+          ),
+          findsOneWidget,
+        );
+      });
       await f.check('Tienda La Esquina quedó en Otros, en Nequi', () {
         final Entry e = made().firstWhere(
           (Entry e) => e.payee == 'Tienda La Esquina',
@@ -1156,7 +1217,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.top();
       await f.step(
         'Un mensaje que no dice si entró o salió: «Quedó en Por revisar.», '
-        'con «No sabemos si es un gasto o un ingreso.» y «Revisar movimiento».',
+        'con «Sin clasificar», «Falta saber si es un gasto o un ingreso» y '
+        '«Revisar movimiento».',
       );
       await f.check('Quedó esperando sin saber si es gasto o ingreso', () {
         final InboxItem i = own.pendingInbox.firstWhere(
@@ -1168,6 +1230,9 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         // «cuenta *5678» is an account's number, not a card's.
         expect(i.parsed.card, isNull);
         expect(i.parsed.account, '5678');
+        // Neither spending nor income yet: no category of either.
+        expect(f.shows('Sin clasificar · Falta la cuenta'), isTrue);
+        expect(f.shows('Falta saber si es un gasto o un ingreso'), isTrue);
       });
       await _hideNotice(f);
       await _tapOn(f, 'Sin comercio', 'Revisar movimiento');
@@ -1628,11 +1693,9 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         expect(i.suggestion.accountId, bank.id);
         expect(i.suggestion.why, contains('only'));
         expect(CaptureService.isReady(i, own.accounts), isFalse);
+        expect(f.shows('Revisa la cuenta'), isTrue);
         expect(
-          f.shows(
-            'Revisa la cuenta: la elegimos por ser tu única de uso diario '
-            'en COP.',
-          ),
+          f.shows('La elegimos por ser tu única cuenta de uso diario en COP.'),
           isTrue,
         );
       });

@@ -162,6 +162,67 @@ void main() {
     },
   );
 
+  testWidgets('a possible repeat says what it repeats, opens it, and is '
+      'taken out first', (tester) async {
+    final OwnController own = await open(tester, withCaptures);
+    final Finder card = find.ancestor(
+      of: find.text('Spotify'),
+      matching: find.byType(InboxCard),
+    );
+    Finder on(String text) =>
+        find.descendant(of: card, matching: find.text(text));
+    await tester.scrollUntilVisible(on('Quitar repetido'), 300);
+    expect(on('Posible repetido'), findsOneWidget);
+    expect(
+      on(
+        'Ya está: Spotify · US\$10,99 · 2 oct · Cuenta en dólares · anotado '
+        'a mano',
+      ),
+      findsOneWidget,
+    );
+    // «Quitar repetido» comes first, then «No es repetido».
+    final Offset remove = tester.getTopLeft(on('Quitar repetido'));
+    final Offset keep = tester.getTopLeft(on('No es repetido'));
+    expect(
+      remove.dy < keep.dy || (remove.dy == keep.dy && remove.dx < keep.dx),
+      isTrue,
+    );
+    // What it repeats opens with a tap.
+    await tester.tap(on('Posible repetido'));
+    await settle(tester);
+    expect(find.text('Editar movimiento'), findsOneWidget);
+    expect(find.text('Anotado a mano'), findsOneWidget);
+    Navigator.of(tester.element(find.text('Editar movimiento'))).pop();
+    await settle(tester);
+
+    await tester.ensureVisible(on('Quitar repetido'));
+    await tester.tap(on('Quitar repetido'));
+    await settle(tester);
+    expect(find.text('Spotify'), findsNothing);
+    final InboxItem gone = (await tester.runAsync(
+      own.store.inbox,
+    ))!.firstWhere((InboxItem i) => i.event.text.contains('SPOTIFY'));
+    expect(gone.status, InboxStatus.dismissed);
+  });
+
+  testWidgets('with only a possible repeat left, it does not say all is done', (
+    tester,
+  ) async {
+    final OwnController own = await open(tester, withCaptures);
+    await tester.runAsync(() async {
+      for (final InboxItem i in own.pendingInbox) {
+        await own.capture.dismiss(i);
+      }
+    });
+    await settle(tester);
+    expect(find.text('Todo al día.'), findsNothing);
+    expect(find.text('Nada por registrar.'), findsOneWidget);
+    expect(
+      find.text('Queda un posible repetido por mirar, abajo.'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('a bank with no account in the app offers to add it, and '
       'promises no rule for another bank', (tester) async {
     final OwnController own = await open(tester, () async {
@@ -285,7 +346,12 @@ void main() {
     );
 
     // The person says the withdrawal was not one: it waits as spending.
+    ScaffoldMessenger.of(
+      tester.element(find.byType(InboxPage)),
+    ).removeCurrentSnackBar();
+    await settle(tester);
     await tester.ensureVisible(on('Bancolombia → Efectivo', 'No fue eso'));
+    await settle(tester);
     await tester.tap(on('Bancolombia → Efectivo', 'No fue eso'));
     await settle(tester);
     expect(find.text('Bancolombia → Efectivo'), findsNothing);
@@ -655,6 +721,7 @@ void main() {
       () => own.ingestText(r'Nequi: Pagaste $32.000 en Rappi'),
     );
     await settle(tester);
+    await tester.scrollUntilVisible(find.text('Restaurantes · Nequi'), 300);
     expect(find.text('Restaurantes · Nequi'), findsOneWidget);
 
     // Corrected in its sheet: another category, a name, an amount.
@@ -688,9 +755,11 @@ void main() {
     );
     await settle(tester);
     expect(
-      find.text('No sabemos si es un gasto o un ingreso.'),
+      find.text('Falta saber si es un gasto o un ingreso'),
       findsOneWidget,
     );
+    // Neither spending nor income yet: no category of either.
+    expect(find.text('Sin clasificar · Falta la cuenta'), findsOneWidget);
     final String shown = tester
         .widget<Text>(find.textContaining('50.000'))
         .data!;
@@ -871,16 +940,22 @@ void main() {
       final double needs = top(tester, find.text('NECESITAN INFORMACIÓN'));
       expect(top(tester, find.text('Tiendas D1')), greaterThan(needs));
       expect(
-        find.text(
-          'Revisa la cuenta: la elegimos por ser tu única de uso diario en '
-          'COP.',
-        ),
+        find.text('La elegimos por ser tu única cuenta de uso diario en COP.'),
         findsOneWidget,
       );
 
       // The shop without a category is ready, but not as clear as the
-      // bakery: the button names the share it takes.
+      // bakery: the button names the share it takes, and the line under it
+      // the one left out and why; the card says it too.
       expect(top(tester, find.text('Tienda X')), lessThan(needs));
+      expect(
+        find.text('Queda por fuera Tienda X: no reconocimos su categoría.'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('No reconocimos la categoría: quedaría en Otros.'),
+        findsOneWidget,
+      );
       await tester.tap(find.text('Registrar 2 de los 3 listos'));
       await settle(tester);
       expect(find.text('2 movimientos registrados.'), findsOneWidget);

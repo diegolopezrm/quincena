@@ -2558,6 +2558,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'Nothing waiting. When a payment arrives from your bank, it shows up here for you to record.';
 
   @override
+  String get inboxOnlyRepeats => 'Nothing to record.';
+
+  @override
+  String inboxOnlyRepeatsBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count possible duplicates are left to check, below.',
+      one: 'One possible duplicate is left to check, below.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get edit => 'Edit';
 
   @override
@@ -2599,9 +2613,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get possibleDuplicates => 'Possible repeats';
-
-  @override
-  String get duplicateLine => 'The same payment already arrived another way.';
 
   @override
   String get notDuplicate => 'Not a repeat';
@@ -6716,13 +6727,55 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountMissingShort => 'Account missing';
 
   @override
-  String get kindMissing =>
-      'We can\'t tell whether it\'s an expense or income.';
+  String get stateReady => 'Ready to record';
 
   @override
-  String accountGuessed(String asset) {
-    return 'Check the account: we picked it because it\'s your only everyday account in $asset.';
+  String get stateAccount => 'Choose the account';
+
+  @override
+  String get stateGuessed => 'Check the account';
+
+  @override
+  String get stateKind => 'Say whether it\'s spending or income';
+
+  @override
+  String get stateRepeat => 'Possible duplicate';
+
+  @override
+  String get stateMove => 'Transfer between your accounts';
+
+  @override
+  String stateCheckCategory(String category) {
+    return 'We didn\'t recognize the category: it would go to $category.';
   }
+
+  @override
+  String get stateCheckImage =>
+      'We read it from a picture: check the amount first.';
+
+  @override
+  String accountGuessedWhy(String asset) {
+    return 'We chose it because it\'s your only everyday account in $asset.';
+  }
+
+  @override
+  String repeatOf(String what) {
+    return 'Already there: $what';
+  }
+
+  @override
+  String repeatOfNotice(String what) {
+    return 'Another notice for it already arrived: $what.';
+  }
+
+  @override
+  String get removeRepeat => 'Remove duplicate';
+
+  @override
+  String get unclassified => 'Unclassified';
+
+  @override
+  String get categoryToConfirm => 'Category to confirm';
 
   @override
   String whichAccountCard(String institution, String digits) {
@@ -6830,6 +6883,28 @@ class AppLocalizationsEn extends AppLocalizations {
       locale: localeName,
       other: 'Record $count of the $total ready',
       one: 'Record 1 of the $total ready',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String inboxLeftOutCategory(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$names are left out: we didn\'t recognize their category.',
+      one: '$names is left out: we didn\'t recognize its category.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String inboxLeftOut(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$names are left out: check them one by one.',
+      one: '$names is left out: check it first.',
     );
     return '$_temp0';
   }

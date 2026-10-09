@@ -3890,6 +3890,18 @@ abstract class AppLocalizations {
   /// **'No tienes movimientos pendientes. Cuando llegue un pago de tu banco, aparece aquí para registrarlo.'**
   String get inboxEmptyBody;
 
+  /// No description provided for @inboxOnlyRepeats.
+  ///
+  /// In es, this message translates to:
+  /// **'Nada por registrar.'**
+  String get inboxOnlyRepeats;
+
+  /// No description provided for @inboxOnlyRepeatsBody.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Queda un posible repetido por mirar, abajo.} other{Quedan {count} posibles repetidos por mirar, abajo.}}'**
+  String inboxOnlyRepeatsBody(int count);
+
   /// No description provided for @edit.
   ///
   /// In es, this message translates to:
@@ -3967,12 +3979,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Posibles repetidos'**
   String get possibleDuplicates;
-
-  /// No description provided for @duplicateLine.
-  ///
-  /// In es, this message translates to:
-  /// **'El mismo pago ya llegó por otra vía.'**
-  String get duplicateLine;
 
   /// No description provided for @notDuplicate.
   ///
@@ -10182,17 +10188,89 @@ abstract class AppLocalizations {
   /// **'Falta la cuenta'**
   String get accountMissingShort;
 
-  /// No description provided for @kindMissing.
+  /// No description provided for @stateReady.
   ///
   /// In es, this message translates to:
-  /// **'No sabemos si es un gasto o un ingreso.'**
-  String get kindMissing;
+  /// **'Lista para registrar'**
+  String get stateReady;
 
-  /// No description provided for @accountGuessed.
+  /// No description provided for @stateAccount.
   ///
   /// In es, this message translates to:
-  /// **'Revisa la cuenta: la elegimos por ser tu única de uso diario en {asset}.'**
-  String accountGuessed(String asset);
+  /// **'Falta elegir la cuenta'**
+  String get stateAccount;
+
+  /// No description provided for @stateGuessed.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisa la cuenta'**
+  String get stateGuessed;
+
+  /// No description provided for @stateKind.
+  ///
+  /// In es, this message translates to:
+  /// **'Falta saber si es un gasto o un ingreso'**
+  String get stateKind;
+
+  /// No description provided for @stateRepeat.
+  ///
+  /// In es, this message translates to:
+  /// **'Posible repetido'**
+  String get stateRepeat;
+
+  /// No description provided for @stateMove.
+  ///
+  /// In es, this message translates to:
+  /// **'Transferencia entre tus cuentas'**
+  String get stateMove;
+
+  /// No description provided for @stateCheckCategory.
+  ///
+  /// In es, this message translates to:
+  /// **'No reconocimos la categoría: quedaría en {category}.'**
+  String stateCheckCategory(String category);
+
+  /// No description provided for @stateCheckImage.
+  ///
+  /// In es, this message translates to:
+  /// **'La leímos de una imagen: revisa el monto antes.'**
+  String get stateCheckImage;
+
+  /// No description provided for @accountGuessedWhy.
+  ///
+  /// In es, this message translates to:
+  /// **'La elegimos por ser tu única cuenta de uso diario en {asset}.'**
+  String accountGuessedWhy(String asset);
+
+  /// No description provided for @repeatOf.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya está: {what}'**
+  String repeatOf(String what);
+
+  /// No description provided for @repeatOfNotice.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya llegó otro aviso igual: {what}.'**
+  String repeatOfNotice(String what);
+
+  /// No description provided for @removeRepeat.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar repetido'**
+  String get removeRepeat;
+
+  /// No description provided for @unclassified.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin clasificar'**
+  String get unclassified;
+
+  /// No description provided for @categoryToConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'Categoría por confirmar'**
+  String get categoryToConfirm;
 
   /// No description provided for @whichAccountCard.
   ///
@@ -10337,6 +10415,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{count, plural, =1{Registrar 1 de los {total} listos} other{Registrar {count} de los {total} listos}}'**
   String inboxRecordSome(int count, int total);
+
+  /// No description provided for @inboxLeftOutCategory.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Queda por fuera {names}: no reconocimos su categoría.} other{Quedan por fuera {names}: no reconocimos su categoría.}}'**
+  String inboxLeftOutCategory(int count, String names);
+
+  /// No description provided for @inboxLeftOut.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Queda por fuera {names}: revísalo antes.} other{Quedan por fuera {names}: revísalos uno por uno.}}'**
+  String inboxLeftOut(int count, String names);
 
   /// No description provided for @exampleBarTitle.
   ///

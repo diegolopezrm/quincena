@@ -149,14 +149,14 @@ String learnedText(
         : l.listAnd(
             rules.take(rules.length - 1).join(', '),
             rules.last,
-            _sound(rules.last),
+            listSound(rules.last),
           ),
   );
 }
 
 /// The sound [words] start with, as listAnd picks its conjunction: Spanish
 /// says «y» before most words and «e» before an «i».
-String _sound(String words) =>
+String listSound(String words) =>
     RegExp(r'^[«"]?h?[ií](?![aeoáéó])', caseSensitive: false).hasMatch(words)
     ? 'i'
     : 'other';
