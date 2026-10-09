@@ -784,6 +784,64 @@ Lo que cambió:
 - **Notas para los revisores:** dicen dónde está cada pantalla de las
   capturas y cómo probar los atajos de iOS y la extensión de compartir.
 
+### 27 a 37. Lo que pidió el experto
+
+**Estado:** en curso desde el 9 de octubre, sobre la 1.1.0 (build 20). El
+plan completo, con el porqué de cada fase, está en
+[la revisión flujo por flujo](reviews/2026-10-09-flujo-por-flujo.md).
+
+- **27. Una sola verdad sobre la plata.** Hecha.
+  - Inicio, «Próximos días» y «¿Me alcanza?» dicen lo mismo: lo mínimo que
+    tendrás libre, con lo apartado aparte.
+  - El patrimonio muestra cada parte y suma lo que se ve.
+  - Una tarjeta se marca «Debes» o «A favor», sin signo menos.
+  - Sin tasa, cambiar la moneda de los totales pide la tasa o la deja; con
+    tasa, dice con cuál convirtió. En español, los dólares dicen US$.
+  - El mes se compara con el mismo día del mes anterior.
+  - El cierre compara los pagos de cada mes aparte del día a día.
+  - Después de importar un extracto, el resultado dice cómo cambió «Puedes
+    gastar».
+- **28. La plata siempre queda en una cuenta.** Hecha.
+  - Cuotas, saldos de grupos, préstamos, gastos compartidos y el uso de la
+    reserva preguntan de qué cuenta sale o a cuál llega, y dicen antes qué
+    va a pasar.
+  - «Pago Visa» anotado como gasto pregunta si es el pago de la tarjeta.
+  - Las metas tienen «Abonar».
+  - El cierre ofrece pasar a lo ahorrado lo que apartó el sobre de cada
+    meta.
+  - «Lo compré» en los deseos.
+  - Una compra a cuotas con tarjeta ofrece anotar la compra.
+  - Los gastos de un viaje se dividen desde el viaje.
+- **29. Metas y simulaciones en las que se puede confiar.** Hecha.
+  - Cada meta con fecha dice si llega a tiempo, o cuánto hace falta al mes.
+  - El reparto pone primero el día a día.
+  - «¿Y si…?» cuenta lo que sueles gastar al día, y «Ahorro más» se aplica
+    a una meta.
+  - El cierre ofrece a una meta solo lo que el día a día no va a necesitar.
+- **30. Que la app haga el trabajo.** En curso.
+- **31. Empezar sin aprender Quincena.** En curso.
+- **32. Encontrar lo registrado.** Hecha en parte.
+  - Búsqueda por monto, filtros con total y etiquetas enteras.
+  - Los repetidos se quitan desde la lista, y se ve de dónde vino cada
+    movimiento.
+  - Falta: contar en los viajes solo lo cobrado en su moneda.
+- **33. Plan, Ajustes y respaldos en orden.** Hecha en parte.
+  - Plan por intención y Ajustes por secciones.
+  - Respaldos que dicen qué traen; códigos que se comparten y se pegan.
+  - CSV, y los cambios de dos teléfonos se combinan viéndolos lado a lado.
+  - Falta: el QR y unir los cambios sin preguntar.
+- **34. Pregúntale a tu plata sin castigo.** Hecha.
+  - Solo preguntar gasta del día, y la conversación se queda.
+  - El gasto dice de qué cuenta sale.
+  - «Volver a preguntar».
+- **35. Todo se puede deshacer.** En curso.
+- **36. Que se sienta liviana.** Pendiente.
+- **37. Prueba en teléfonos de verdad.** En parte.
+  - Los flujos se desplazan hasta lo que van a tocar y lo dejan en el
+    centro de la pantalla. Con eso, los cuatro que se detenían en un iPhone
+    SE llegan al final.
+  - Falta la sesión con un iPhone y un Android de verdad.
+
 ## Trazabilidad de las 15 ideas
 
 Los números conservan la referencia del [registro de ideación](IDEAS_PRODUCTO.md).
