@@ -8545,6 +8545,60 @@ abstract class AppLocalizations {
   /// **'¿Viene de otra cuenta tuya?'**
   String get fromOwnAccount;
 
+  /// No description provided for @fromOwnAccountOut.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Fue a otra cuenta tuya?'**
+  String get fromOwnAccountOut;
+
+  /// No description provided for @moveBetween.
+  ///
+  /// In es, this message translates to:
+  /// **'Entre tus cuentas'**
+  String get moveBetween;
+
+  /// No description provided for @moveWhyOwnOut.
+  ///
+  /// In es, this message translates to:
+  /// **'Pasaste plata a tu {account}: no es un gasto.'**
+  String moveWhyOwnOut(String account);
+
+  /// No description provided for @moveWhyOwnIn.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegó desde tu {account}: no es un ingreso.'**
+  String moveWhyOwnIn(String account);
+
+  /// No description provided for @moveWhySelf.
+  ///
+  /// In es, this message translates to:
+  /// **'La enviaste tú: no es un ingreso.'**
+  String get moveWhySelf;
+
+  /// No description provided for @moveWhyBank.
+  ///
+  /// In es, this message translates to:
+  /// **'Viene de {bank}, donde tienes {account}: no es un ingreso.'**
+  String moveWhyBank(String bank, String account);
+
+  /// No description provided for @moveWhyCash.
+  ///
+  /// In es, this message translates to:
+  /// **'Un retiro en cajero pasa la plata a {account}: no es un gasto.'**
+  String moveWhyCash(String account);
+
+  /// No description provided for @moveWhyCard.
+  ///
+  /// In es, this message translates to:
+  /// **'Es el pago de tu {account}: lo que compraste con ella ya contó como gasto.'**
+  String moveWhyCard(String account);
+
+  /// No description provided for @notMove.
+  ///
+  /// In es, this message translates to:
+  /// **'No fue eso'**
+  String get notMove;
+
   /// No description provided for @moreActions.
   ///
   /// In es, this message translates to:
@@ -10091,6 +10145,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Transferencia registrada.'**
   String get recordedTransfer;
+
+  /// No description provided for @recordedTransferBetween.
+  ///
+  /// In es, this message translates to:
+  /// **'Transferencia registrada de {from} a {to}.'**
+  String recordedTransferBetween(String from, String to);
 
   /// No description provided for @accountMissingShort.
   ///

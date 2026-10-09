@@ -548,6 +548,64 @@ M12345678''');
     });
   });
 
+  group('money moved between the person\'s own accounts', () {
+    MoveHint move(String text, {String? app}) {
+      final ParsedCapture p = parse(text, app: app);
+      return readMove(text, institution: p.institution, kind: p.kind);
+    }
+
+    test('names the other account the alert calls the person\'s', () {
+      expect(
+        move(r'Transferiste $150.000 a tu Nequi', app: 'com.todo1.mobile').own,
+        'Nequi',
+      );
+      expect(
+        move(
+          r'Recibiste $50.000 desde tu cuenta Bancolombia',
+          app: 'com.nequi.MobileApp',
+        ).own,
+        'Bancolombia',
+      );
+      // The account the alert is about is not another one.
+      expect(
+        move(
+          r'Pagaste $35.000 a CLARO desde tu cuenta *5678',
+          app: 'com.todo1.mobile',
+        ).own,
+        isNull,
+      );
+      expect(
+        move(
+          r'Compraste $45.000 en RAPPI con tu tarjeta *1234',
+          app: 'com.todo1.mobile',
+        ).own,
+        isNull,
+      );
+    });
+
+    test('reads cash taken out at an ATM', () {
+      expect(move(r'Retiraste $200.000 en cajero ATM').withdrawal, isTrue);
+      expect(move(r'Retiro en corresponsal por $50.000').withdrawal, isTrue);
+      expect(move(r'Compraste $20.000 en CAJERO EXPRESS').withdrawal, isFalse);
+    });
+
+    test('reads the payment of a credit card', () {
+      expect(
+        move(r'Pagaste $480.000 a tu tarjeta de crédito Visa').cardPayment,
+        isTrue,
+      );
+      expect(
+        move(r'Pago de tarjeta de crédito por $480.000').cardPayment,
+        isTrue,
+      );
+      expect(
+        move(r'Pagaste $45.000 en Rappi con tu tarjeta *1234').cardPayment,
+        isFalse,
+      );
+      expect(move(r'Pago por $89.900 a Claro').cardPayment, isFalse);
+    });
+  });
+
   group('merchant names', () {
     test('are written the way people write them', () {
       expect(prettyMerchant('EXITO LAURELES'), 'Exito Laureles');

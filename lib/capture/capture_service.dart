@@ -59,7 +59,9 @@ class CaptureService {
     if (events.isEmpty) return const IngestReport();
     final CaptureSettings settings = await store.captureSettings();
     final List<Account> accounts = await store.accounts();
-    final Asset base = (await store.profile())?.base ?? Asset.cop;
+    final Profile? profile = await store.profile();
+    final Asset base = profile?.base ?? Asset.cop;
+    final String? person = profile?.name;
     final DateTime since = _now().subtract(lookBack);
     // Each side of a move between the person's accounts counts too: the
     // other bank's alert for the same money is that side seen again.
@@ -114,7 +116,9 @@ class CaptureService {
           duplicateOf: twin.id,
         );
         report += const IngestReport(duplicates: 1);
-      } else if (settings.autoRecord && _clear(parsed, suggestion)) {
+      } else if (settings.autoRecord &&
+          _clear(parsed, suggestion) &&
+          ownMove(item, accounts, person: person) == null) {
         final Entry entry = await _record(item, accounts);
         item = item.copyWith(
           status: InboxStatus.accepted,
@@ -249,7 +253,12 @@ class CaptureService {
       entryId: left.id,
     );
     await store.saveInboxItem(recorded);
-    return Accepted(left, const <RuleChange>[], item: recorded);
+    return Accepted(
+      left,
+      const <RuleChange>[],
+      item: recorded,
+      toAccountId: toAccountId,
+    );
   }
 
   /// Takes back what [accept], [acceptAll] or [acceptTransfer] did: each
@@ -326,6 +335,146 @@ class CaptureService {
     ),
   );
 
+  /// The person says [item] is no move between their accounts: it waits as
+  /// the income or the expense it reads as, and is not proposed again.
+  Future<void> notOwnMove(InboxItem item) => store.saveInboxItem(
+    item.copyWith(
+      suggestion: Suggestion(
+        accountId: item.suggestion.accountId,
+        category: item.suggestion.category,
+        payee: item.suggestion.payee,
+        place: item.suggestion.place,
+        why: <String>[...item.suggestion.why, notOwn],
+      ),
+    ),
+  );
+
+  /// What [Suggestion.why] holds once the person said a capture is not a
+  /// move between their accounts.
+  static const String notOwn = 'notOwn';
+
+  /// The move between the person's own [accounts] that [item] most likely
+  /// is, or null: money sent «a tu Nequi» or that came «desde tu
+  /// Bancolombia», money from someone with the [person]'s own name or from
+  /// a bank where they keep an account, cash taken out at an ATM, a credit
+  /// card's payment. The side the alert is about is the capture's account;
+  /// the other is the one the alert names, or the likeliest.
+  static OwnMove? ownMove(
+    InboxItem item,
+    Iterable<Account> accounts, {
+    String? person,
+  }) {
+    final ParsedCapture p = item.parsed;
+    final String? here = item.suggestion.accountId;
+    if (item.status != InboxStatus.pending ||
+        !p.isMovement ||
+        here == null ||
+        item.suggestion.why.contains(notOwn)) {
+      return null;
+    }
+    final Account? at = accounts.where((Account a) => a.id == here).firstOrNull;
+    // What a card took or got back is a purchase or a refund.
+    if (at == null || at.kind == AccountKind.card) return null;
+    final MoveHint hint = moveOf(item);
+    // The person's account at the bank the alert names as theirs: a bank
+    // or a wallet, never a card.
+    Account? theirs(String institution) => <Account>[
+      for (final Account a in accountsAt(institution, accounts))
+        if (a.id != here && a.kind != AccountKind.card) a,
+    ].firstOrNull;
+    if (p.kind == EntryKind.expense) {
+      final (Account?, String) to = hint.own != null
+          ? (theirs(hint.own!), 'own')
+          : hint.withdrawal
+          ? (_cashOf(accounts, at), 'cash')
+          : hint.cardPayment
+          ? (_cardPaid(item.event.text, accounts, at), 'card')
+          : (null, '');
+      final Account? there = to.$1;
+      return there == null
+          ? null
+          : OwnMove(fromId: here, toId: there.id, why: to.$2);
+    }
+    final String sender = item.suggestion.payee ?? p.merchant ?? '';
+    final String? bank = sender.isEmpty
+        ? null
+        : findInstitution(<String>[sender]);
+    final (Account?, String) from = hint.own != null
+        ? (theirs(hint.own!), 'own')
+        : person != null && sender.isNotEmpty && sameName(person, sender)
+        ? (_likelySource(accounts, at), 'self')
+        : bank != null && bank != p.institution
+        ? (theirs(bank), 'bank')
+        : (null, '');
+    final Account? there = from.$1;
+    return there == null
+        ? null
+        : OwnMove(fromId: there.id, toId: here, why: from.$2);
+  }
+
+  /// Where cash taken out of [from] goes: the cash in its currency.
+  static Account? _cashOf(Iterable<Account> accounts, Account from) => accounts
+      .where(
+        (Account a) =>
+            a.kind == AccountKind.cash &&
+            a.asset == from.asset &&
+            a.id != from.id,
+      )
+      .firstOrNull;
+
+  /// The card a payment out of [from] most likely paid: the only one in its
+  /// currency, the one [text] names, or the only one at its bank.
+  static Account? _cardPaid(
+    String text,
+    Iterable<Account> accounts,
+    Account from,
+  ) {
+    final List<Account> cards = <Account>[
+      for (final Account a in accounts)
+        if (a.kind == AccountKind.card && a.asset == from.asset) a,
+    ];
+    if (cards.length < 2) return cards.firstOrNull;
+    final String said = ' ${normalize(text)} ';
+    final List<Account> named = <Account>[
+      for (final Account c in cards)
+        if (normalize(c.name)
+            .split(' ')
+            .any(
+              (String w) =>
+                  w.length > 2 &&
+                  !_cardWords.contains(w) &&
+                  said.contains(' $w '),
+            ))
+          c,
+    ];
+    if (named.length == 1) return named.single;
+    if (from.institution.trim().isEmpty) return null;
+    final List<Account> same = accountsAt(from.institution, cards);
+    return same.length == 1 ? same.single : null;
+  }
+
+  /// Words in a card's name that every card's payment says.
+  static const Set<String> _cardWords = <String>{
+    'tarjeta',
+    'credito',
+    'debito',
+    'card',
+    'credit',
+  };
+
+  /// Where money the person sent themselves most likely came from: a bank
+  /// or a wallet of theirs in the same currency, an everyday one first.
+  static Account? _likelySource(Iterable<Account> accounts, Account to) {
+    final List<Account> can = <Account>[
+      for (final Account a in accounts)
+        if (a.id != to.id &&
+            a.asset == to.asset &&
+            (a.kind == AccountKind.bank || a.kind == AccountKind.wallet))
+          a,
+    ];
+    return can.where((Account a) => a.spendable).firstOrNull ?? can.firstOrNull;
+  }
+
   /// Whether confirming [p] teaches where its institution's alerts go:
   /// only an alert in the [base] currency, or with a bare `$`, does.
   static bool teachesInstitution(ParsedCapture p, Asset? base) =>
@@ -373,6 +522,7 @@ class CaptureService {
     if (accountId == null || why.contains('only')) {
       final ({String accountId, String why})? ruled = _ruledAccount(
         item.parsed,
+        moveOf(item),
         settings,
         accounts,
       );
@@ -421,6 +571,7 @@ class CaptureService {
   /// have been added after the alert arrived.
   static ({String accountId, String why})? _ruledAccount(
     ParsedCapture p,
+    MoveHint hint,
     CaptureSettings settings,
     Iterable<Account> accounts,
   ) {
@@ -440,7 +591,7 @@ class CaptureService {
         (_bankSpeaksFor(p, institution, accounts)
             ? settings.use(RuleKind.institution, institution)
             : null) ??
-        bankAccount(institution, accounts)?.id;
+        bankAccount(p, hint, institution, accounts)?.id;
     if (byBank != null) return (accountId: byBank, why: 'institution');
     return null;
   }
@@ -459,10 +610,38 @@ class CaptureService {
         accounts,
       ).any((Account a) => a.kind == AccountKind.card);
 
-  /// The one account the person has at [institution], or null.
-  static Account? bankAccount(String institution, Iterable<Account> accounts) {
+  /// What [item]'s alert says about money moving between the person's own
+  /// accounts.
+  static MoveHint moveOf(InboxItem item) => readMove(
+    item.event.text,
+    institution: item.parsed.institution,
+    kind: item.parsed.kind,
+  );
+
+  /// The one account at [institution] that [p] can be about: the only one
+  /// the person has there, or, for money that came in or that went to
+  /// another of their accounts, as [hint] tells, the only one that is not
+  /// a card, since a card takes purchases. Null when that leaves none or
+  /// several.
+  static Account? bankAccount(
+    ParsedCapture p,
+    MoveHint hint,
+    String institution,
+    Iterable<Account> accounts,
+  ) {
     final List<Account> there = accountsAt(institution, accounts);
-    return there.length == 1 ? there.single : null;
+    if (there.length == 1) return there.single;
+    final bool moves =
+        p.kind == EntryKind.income ||
+        hint.own != null ||
+        hint.withdrawal ||
+        hint.cardPayment;
+    if (!moves) return null;
+    final List<Account> banks = <Account>[
+      for (final Account a in there)
+        if (a.kind != AccountKind.card) a,
+    ];
+    return banks.length == 1 ? banks.single : null;
   }
 
   /// The account an account's last [digits] go to: its rule, or a card's
@@ -497,7 +676,12 @@ class CaptureService {
           (_bankSpeaksFor(parsed, institution, accounts)
               ? settings.use(RuleKind.institution, institution)
               : null) ??
-          bankAccount(institution, accounts)?.id;
+          bankAccount(
+            parsed,
+            readMove(event.text, institution: institution, kind: parsed.kind),
+            institution,
+            accounts,
+          )?.id;
       if (accountId != null) why.add('institution');
     }
     if (accountId == null && parsed.asset != null) {
@@ -728,6 +912,7 @@ class Accepted {
     this.learned, {
     required this.item,
     this.resolved = 0,
+    this.toAccountId,
   });
 
   final Entry entry;
@@ -738,6 +923,39 @@ class Accepted {
 
   /// How many other captures [learned] left ready to record.
   final int resolved;
+
+  /// Where the money went, when it moved between the person's accounts:
+  /// [entry] is the side it left.
+  final String? toAccountId;
+}
+
+/// Money moved between two of the person's accounts, as an alert proposes
+/// it: where it left, where it arrived, and what gave it away.
+@immutable
+class OwnMove {
+  const OwnMove({required this.fromId, required this.toId, required this.why});
+
+  final String fromId;
+  final String toId;
+
+  /// `own`, the alert names the other account («a tu Nequi»); `self`, the
+  /// person sent it to themselves; `bank`, it came from a bank where they
+  /// keep an account; `cash`, an ATM withdrawal; `card`, a card's payment.
+  final String why;
+}
+
+/// Whether [sender] is the [person]: every word of the person's name is in
+/// it, the first one first, so «Diego» is «Diego Lopez» and «Diego López»
+/// is «DIEGO LOPEZ G».
+bool sameName(String person, String sender) {
+  final List<String> mine = <String>[
+    for (final String w in normalize(person).split(' '))
+      if (w.length > 1) w,
+  ];
+  final List<String> theirs = normalize(sender).split(' ');
+  return mine.isNotEmpty &&
+      theirs.first == mine.first &&
+      mine.every(theirs.contains);
 }
 
 /// The person's accounts at [institution], by the bank they were set up

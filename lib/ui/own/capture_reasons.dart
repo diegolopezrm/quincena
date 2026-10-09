@@ -82,10 +82,14 @@ String missingAccountText(
   final String? card = item.parsed.card;
   final String? number = item.parsed.account;
   if (institution != null) {
-    final int there = accountsAt(institution, own.accounts).length;
-    if (there == 0) return l.whichAccountBankNone(institution);
+    final List<Account> at = accountsAt(institution, own.accounts);
+    if (at.isEmpty) return l.whichAccountBankNone(institution);
     if (card != null) return l.whichAccountCard(institution, card);
     if (number != null) return l.whichAccountNumber(institution, number);
+    // Money that came in reached one of the bank's accounts, not its card.
+    final int there = item.parsed.kind == EntryKind.income
+        ? at.where((Account a) => a.kind != AccountKind.card).length
+        : at.length;
     if (there > 1) return l.whichAccountBankMany(there, institution);
   }
   return item.parsed.kind == EntryKind.income
@@ -171,6 +175,11 @@ void showRecorded(
   final Entry entry = done.entry;
   final String account = _accountName(l, own, entry.accountId);
   final String said = switch (entry.kind) {
+    EntryKind.transfer when done.toAccountId != null =>
+      l.recordedTransferBetween(
+        account,
+        _accountName(l, own, done.toAccountId),
+      ),
     EntryKind.transfer => l.recordedTransfer,
     _ when entry.amount > Decimal.zero => l.recordedIncomeIn(account),
     _ => l.recordedExpenseIn(account),

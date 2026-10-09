@@ -527,6 +527,30 @@ Fecha
       );
       expect(known.suggestion.accountId, visa.id);
     });
+
+    test('money in goes to its account, not to its card', () async {
+      await capture.ingest(<CaptureEvent>[
+        push(r'Bancolombia: Recibiste $20.000 de ANDRES MEJIA'),
+        push(
+          r'Bancolombia: Compraste $40.000 en ZARA',
+          at: now.add(const Duration(minutes: 5)),
+        ),
+      ]);
+      final List<InboxItem> waiting = await pending();
+      final InboxItem andres = waiting.firstWhere(
+        (InboxItem i) => i.parsed.merchant == 'Andres Mejia',
+      );
+      expect(andres.suggestion.accountId, bancolombia.id);
+      expect(andres.suggestion.why, contains('institution'));
+      // A purchase may have been either: it still asks.
+      expect(
+        waiting
+            .firstWhere((InboxItem i) => i.parsed.merchant == 'Zara')
+            .suggestion
+            .accountId,
+        isNull,
+      );
+    });
   });
 
   test('an account at another bank teaches nothing about that bank, and '
@@ -1023,6 +1047,153 @@ Fecha
       // Only the first bakery, recorded by hand, is left.
       expect(await store.entries(), hasLength(1));
       expect((await store.captureSettings()).rules, before.rules);
+    });
+  });
+
+  group('money moved between own accounts', () {
+    late Account cash;
+    late Account visa;
+
+    setUp(() async {
+      cash = await store.addAccount(
+        name: 'Efectivo',
+        kind: AccountKind.cash,
+        asset: Asset.cop,
+      );
+      visa = await store.addAccount(
+        name: 'Visa',
+        kind: AccountKind.card,
+        asset: Asset.cop,
+        institution: 'Bancolombia',
+      );
+    });
+
+    Future<OwnMove?> moveOf(CaptureEvent event) async {
+      await capture.ingest(<CaptureEvent>[event]);
+      final InboxItem item = (await pending()).single;
+      return CaptureService.ownMove(
+        item,
+        await store.accounts(),
+        person: 'Diego',
+      );
+    }
+
+    test('«a tu Nequi» is a move from the bank to Nequi', () async {
+      final OwnMove? move = await moveOf(
+        push(r'Bancolombia: Transferiste $150.000 a tu Nequi'),
+      );
+      expect(move?.fromId, bancolombia.id);
+      expect(move?.toId, nequi.id);
+      expect(move?.why, 'own');
+    });
+
+    test('money the person sent themselves comes from their bank', () async {
+      final OwnMove? move = await moveOf(
+        push(
+          r'Nequi · Recibiste $200.000 de DIEGO LOPEZ',
+          app: 'com.nequi.MobileApp',
+        ),
+      );
+      expect(move?.fromId, bancolombia.id);
+      expect(move?.toId, nequi.id);
+      expect(move?.why, 'self');
+    });
+
+    test('money from a bank where the person keeps an account', () async {
+      final Account dollars = await store.addAccount(
+        name: 'Cuenta en dólares',
+        kind: AccountKind.bank,
+        asset: Asset.usd,
+        institution: 'Global66',
+      );
+      final OwnMove? move = await moveOf(
+        push(r'Bancolombia: Recibiste $331.284 de GLOBAL66 COLOMBIA'),
+      );
+      expect(move?.fromId, dollars.id);
+      expect(move?.toId, bancolombia.id);
+      expect(move?.why, 'bank');
+    });
+
+    test('cash taken out goes to the cash', () async {
+      final OwnMove? move = await moveOf(
+        push(r'Bancolombia: Retiraste $200.000 en cajero ATM'),
+      );
+      expect(move?.fromId, bancolombia.id);
+      expect(move?.toId, cash.id);
+      expect(move?.why, 'cash');
+    });
+
+    test('a card\'s payment goes to the card', () async {
+      final OwnMove? move = await moveOf(
+        push(r'Bancolombia: Pagaste $480.000 a tu tarjeta de crédito Visa'),
+      );
+      expect(move?.fromId, bancolombia.id);
+      expect(move?.toId, visa.id);
+      expect(move?.why, 'card');
+    });
+
+    test('someone else\'s money, or a purchase, is no move', () async {
+      expect(
+        await moveOf(
+          push(
+            r'Nequi · Laura Gómez te envió $85.000',
+            app: 'com.nequi.MobileApp',
+          ),
+        ),
+        isNull,
+      );
+      await store.saveInboxItem(
+        (await pending()).single.copyWith(status: InboxStatus.dismissed),
+      );
+      expect(
+        await moveOf(
+          push(
+            r'Bancolombia: Compraste $45.000 en RAPPI con tu T.Deb *1234',
+            at: now.add(const Duration(minutes: 9)),
+          ),
+        ),
+        isNull,
+      );
+    });
+
+    test('once the person says it is not, it is not proposed again, and '
+        'what is clear of it is not recorded on its own', () async {
+      await store.saveCaptureSettings(
+        (await store.captureSettings()).copyWith(autoRecord: true),
+      );
+      final IngestReport r = await capture.ingest(<CaptureEvent>[
+        push(
+          r'Nequi · Recibiste $200.000 de DIEGO LOPEZ por nomina',
+          app: 'com.nequi.MobileApp',
+        ),
+      ]);
+      // Clear as income, but likely the person's own money: it waits.
+      expect(r.recorded, 0);
+      final InboxItem item = (await pending()).single;
+      final List<Account> accounts = await store.accounts();
+      expect(
+        CaptureService.ownMove(item, accounts, person: 'Diego'),
+        isNotNull,
+      );
+      await capture.notOwnMove(item);
+      final InboxItem kept = (await pending()).single;
+      expect(CaptureService.ownMove(kept, accounts, person: 'Diego'), isNull);
+      expect(kept.suggestion.accountId, item.suggestion.accountId);
+    });
+
+    test('recorded as a move, it says where the money went', () async {
+      await capture.ingest(<CaptureEvent>[
+        push(r'Bancolombia: Transferiste $150.000 a tu Nequi'),
+      ]);
+      final Accepted done = await capture.acceptTransfer(
+        (await pending()).single,
+        fromAccountId: bancolombia.id,
+        toAccountId: nequi.id,
+        sent: d('150000'),
+        date: now,
+      );
+      expect(done.toAccountId, nequi.id);
+      expect(done.entry.accountId, bancolombia.id);
     });
   });
 

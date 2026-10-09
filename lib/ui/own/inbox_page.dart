@@ -121,10 +121,19 @@ class InboxPage extends StatelessWidget {
           for (final InboxItem i in pending)
             if (!CaptureService.isReady(i, accounts)) i,
         ];
-        // What automatic recording would take on its own can go together.
+        // What automatic recording would take on its own can go together;
+        // money that only changed accounts is recorded as a move, one by
+        // one.
         final List<InboxItem> clear = <InboxItem>[
           for (final InboxItem i in ready)
-            if (CaptureService.isClear(i, accounts)) i,
+            if (CaptureService.isClear(i, accounts) &&
+                CaptureService.ownMove(
+                      i,
+                      accounts,
+                      person: own.profile?.name,
+                    ) ==
+                    null)
+              i,
         ];
         final bool compact = pending.length > compactAfter;
         final List<InboxItem> repeats = <InboxItem>[
@@ -435,15 +444,79 @@ class _InboxCardState extends State<InboxCard> {
     return null;
   }
 
+  /// The move between the person's accounts the capture most likely is,
+  /// while it waits.
+  OwnMove? get _move =>
+      CaptureService.ownMove(item, own.accounts, person: own.profile?.name);
+
   /// What recording it does, said on what records it.
-  String _recordLabel(AppLocalizations l) =>
-      item.parsed.kind == EntryKind.income ? l.recordIncome : l.recordExpense;
+  String _recordLabel(AppLocalizations l, {OwnMove? move}) => move != null
+      ? l.recordTransfer
+      : item.parsed.kind == EntryKind.income
+      ? l.recordIncome
+      : l.recordExpense;
 
   Future<void> _confirm() async {
+    if (_move case final OwnMove move) return _recordMove(move);
     final Account? account = _account;
     if (account != null) return _record(account.id);
     final String? picked = await _pickAccount();
     if (picked != null && mounted) await _record(picked);
+  }
+
+  /// Records [move] as it is proposed, in one tap: what the alert says left
+  /// or arrived, and across currencies, the other side at the day's rate.
+  /// Without a rate, the form asks.
+  Future<void> _recordMove(OwnMove move) async {
+    final Account? from = own.snapshot?.account(move.fromId);
+    final Account? to = own.snapshot?.account(move.toId);
+    final Decimal? amount = item.parsed.amount;
+    if (from == null || to == null || amount == null) return;
+    final bool out = item.parsed.kind == EntryKind.expense;
+    // The side the alert is about says the amount, in its own currency.
+    final Account said = out ? from : to;
+    final Account other = out ? to : from;
+    final Asset? written = item.parsed.asset;
+    final Decimal? converted = written != null && written != said.asset
+        ? null
+        : said.asset == other.asset
+        ? amount
+        : own.rates
+              .convert(Money(amount, said.asset), other.asset)
+              ?.amount
+              .round(scale: other.asset.decimals);
+    if (converted == null) return _ownTransfer();
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    setState(() => _busy = true);
+    unawaited(HapticFeedback.lightImpact());
+    final bool across = said.asset != other.asset;
+    final Accepted done = await own.capture.acceptTransfer(
+      item,
+      fromAccountId: from.id,
+      toAccountId: to.id,
+      sent: out ? amount : converted,
+      received: !across ? null : (out ? converted : amount),
+      date: item.parsed.when ?? item.event.at,
+    );
+    showRecorded(messenger, own, done);
+  }
+
+  /// Why [move] reads as money moved between the person's accounts.
+  String _moveWhy(AppLocalizations l, OwnMove move) {
+    String name(String id) => own.snapshot?.account(id)?.name ?? '';
+    return switch (move.why) {
+      'own' when item.parsed.kind == EntryKind.income => l.moveWhyOwnIn(
+        name(move.fromId),
+      ),
+      'own' => l.moveWhyOwnOut(name(move.toId)),
+      'self' => l.moveWhySelf,
+      'bank' => l.moveWhyBank(
+        own.snapshot?.account(move.fromId)?.institution ?? '',
+        name(move.fromId),
+      ),
+      'cash' => l.moveWhyCash(name(move.toId)),
+      _ => l.moveWhyCard(name(move.toId)),
+    };
   }
 
   Future<void> _record(String accountId) async {
@@ -706,11 +779,18 @@ class _InboxCardState extends State<InboxCard> {
     // again.
     final bool recorded = i.status == InboxStatus.accepted;
     final bool waiting = !repeat && !recorded;
-    final String payee =
-        (made == null || made.payee.isEmpty ? null : made.payee) ??
-        i.suggestion.payee ??
-        i.parsed.merchant ??
-        l.noMerchant;
+    // Money that only changed accounts reads as the move it is: from one
+    // to the other, neither spent nor earned.
+    final OwnMove? move = waiting ? _move : null;
+    final String payee = move != null
+        ? '${own.snapshot?.account(move.fromId)?.name} → '
+              '${own.snapshot?.account(move.toId)?.name}'
+        : (made == null || made.payee.isEmpty ? null : made.payee) ??
+              i.suggestion.payee ??
+              i.parsed.merchant ??
+              l.noMerchant;
+    final String? disc = move != null ? null : category;
+    final String what = move != null ? l.moveBetween : categoryName;
     // When the payment happened, as the receipt says, not when it was
     // shared.
     final DateTime when = made?.date ?? i.parsed.when ?? i.event.at;
@@ -718,13 +798,14 @@ class _InboxCardState extends State<InboxCard> {
         ? '—'
         : asset == null
         ? formatDecimal(amount, decimals: 2, trim: true)
-        // Which way it went is not known yet: no sign either.
+        // Which way it went is not known yet, or it stayed the person's:
+        // no sign either.
         : moneyText(
             Money(income || kind == null ? amount : -amount, asset),
             base: own.profile?.base,
-            signed: kind != null,
+            signed: kind != null && move == null,
           );
-    final Color amountColor = income
+    final Color amountColor = income && move == null
         ? context.colors.positive
         : context.colors.ink;
     // With large text the amount and the day go under the name, which
@@ -745,7 +826,7 @@ class _InboxCardState extends State<InboxCard> {
             padding: const EdgeInsets.fromLTRB(16, 8, 4, 8),
             child: Row(
               children: <Widget>[
-                CategoryDisc(category, size: 32),
+                CategoryDisc(disc, size: 32),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -759,8 +840,8 @@ class _InboxCardState extends State<InboxCard> {
                       ),
                       Text(
                         <String>[
-                          categoryName,
-                          ?account?.name,
+                          what,
+                          if (move == null) ?account?.name,
                           dayShortMonth(when),
                         ].join(' · '),
                         style: context.type.bodySmall,
@@ -775,7 +856,7 @@ class _InboxCardState extends State<InboxCard> {
                 ),
                 if (!large) ...<Widget>[const SizedBox(width: 8), figures],
                 IconButton(
-                  tooltip: _recordLabel(l),
+                  tooltip: _recordLabel(l, move: move),
                   onPressed: _busy ? null : _confirm,
                   icon: Icon(Glyph.check, color: context.colors.brand),
                 ),
@@ -817,10 +898,10 @@ class _InboxCardState extends State<InboxCard> {
               Text.rich(
                 TextSpan(
                   children: <InlineSpan>[
-                    TextSpan(text: categoryName),
-                    if (account != null)
+                    TextSpan(text: what),
+                    if (move == null && account != null)
                       TextSpan(text: ' · ${account.name}')
-                    else if (waiting)
+                    else if (move == null && waiting)
                       TextSpan(
                         text: ' · ${l.accountMissingShort}',
                         style: TextStyle(color: context.colors.caution),
@@ -839,7 +920,7 @@ class _InboxCardState extends State<InboxCard> {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              CategoryDisc(category),
+              CategoryDisc(disc),
               const SizedBox(width: 12),
               Expanded(child: names),
               if (!stack) ...<Widget>[
@@ -922,9 +1003,22 @@ class _InboxCardState extends State<InboxCard> {
                   child: Text(why, style: context.type.bodySmall),
                 ),
             if (repeat) _caution(context, l.duplicateLine),
+            if (move != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(_moveWhy(l, move), style: context.type.bodySmall),
+              ),
             // Money that arrived may be the person's own, moved from another
-            // account: recorded as income, it would count twice.
-            if (income && waiting && own.accounts.length > 1)
+            // account, and money with no one named that left may have gone
+            // to another of theirs: recorded as income or spending, it would
+            // count twice.
+            if (waiting &&
+                move == null &&
+                own.accounts.length > 1 &&
+                (income ||
+                    (kind == EntryKind.expense &&
+                        i.suggestion.payee == null &&
+                        i.parsed.merchant == null)))
               Align(
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(
@@ -934,7 +1028,7 @@ class _InboxCardState extends State<InboxCard> {
                     foregroundColor: context.colors.inkSoft,
                   ),
                   icon: const Icon(Glyph.arrowsLeftRight, size: 16),
-                  label: Text(l.fromOwnAccount),
+                  label: Text(income ? l.fromOwnAccount : l.fromOwnAccountOut),
                 ),
               ),
             if (_details) _detection(context),
@@ -965,6 +1059,23 @@ class _InboxCardState extends State<InboxCard> {
                               : () => own.capture.notDuplicate(i),
                           child: Text(l.notDuplicate),
                         )
+                      else if (move != null) ...<Widget>[
+                        FilledButton(
+                          onPressed: _busy || amount == null
+                              ? null
+                              : () => _recordMove(move),
+                          child: Text(l.recordTransfer),
+                        ),
+                        TextButton(
+                          onPressed: _busy
+                              ? null
+                              : () => own.capture.notOwnMove(i),
+                          style: TextButton.styleFrom(
+                            foregroundColor: context.colors.ink,
+                          ),
+                          child: Text(l.notMove),
+                        ),
+                      ]
                       // Which way the money went is the form's to ask.
                       else if (kind == null)
                         FilledButton(

@@ -5518,6 +5518,43 @@ class AppLocalizationsEs extends AppLocalizations {
   String get fromOwnAccount => '¿Viene de otra cuenta tuya?';
 
   @override
+  String get fromOwnAccountOut => '¿Fue a otra cuenta tuya?';
+
+  @override
+  String get moveBetween => 'Entre tus cuentas';
+
+  @override
+  String moveWhyOwnOut(String account) {
+    return 'Pasaste plata a tu $account: no es un gasto.';
+  }
+
+  @override
+  String moveWhyOwnIn(String account) {
+    return 'Llegó desde tu $account: no es un ingreso.';
+  }
+
+  @override
+  String get moveWhySelf => 'La enviaste tú: no es un ingreso.';
+
+  @override
+  String moveWhyBank(String bank, String account) {
+    return 'Viene de $bank, donde tienes $account: no es un ingreso.';
+  }
+
+  @override
+  String moveWhyCash(String account) {
+    return 'Un retiro en cajero pasa la plata a $account: no es un gasto.';
+  }
+
+  @override
+  String moveWhyCard(String account) {
+    return 'Es el pago de tu $account: lo que compraste con ella ya contó como gasto.';
+  }
+
+  @override
+  String get notMove => 'No fue eso';
+
+  @override
   String get moreActions => 'Más acciones';
 
   @override
@@ -6644,6 +6681,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get recordedTransfer => 'Transferencia registrada.';
+
+  @override
+  String recordedTransferBetween(String from, String to) {
+    return 'Transferencia registrada de $from a $to.';
+  }
 
   @override
   String get accountMissingShort => 'Falta la cuenta';

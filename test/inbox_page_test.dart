@@ -217,6 +217,81 @@ void main() {
     expect(on('Agregar mi cuenta de Davivienda'), findsNothing);
   });
 
+  testWidgets('money sent to another own account is a move, recorded in '
+      'one tap, or an expense if the person says it was not', (tester) async {
+    final OwnController own = await open(tester, () async {
+      final QuincenaStore store = await withCaptures();
+      await CaptureService(store, now: () => screensNow).ingest(<CaptureEvent>[
+        for (final (String text, int minute) in <(String, int)>[
+          (r'Bancolombia · Transferiste $150.000 a tu Nequi', 50),
+          (r'Bancolombia · Retiraste $100.000 en cajero ATM', 55),
+        ])
+          CaptureEvent(
+            source: CaptureSource.notification,
+            at: DateTime(2026, 10, 3, 9, minute),
+            app: 'com.todo1.mobile',
+            appName: 'Bancolombia',
+            title: 'Bancolombia',
+            text: text,
+          ),
+      ]);
+      return store;
+    });
+    Finder card(String title) =>
+        find.ancestor(of: find.text(title), matching: find.byType(InboxCard));
+    Finder on(String title, String text) =>
+        find.descendant(of: card(title), matching: find.text(text));
+    final Account bank = own.accounts.firstWhere(
+      (Account a) => a.name == 'Bancolombia',
+    );
+    final Account nequi = own.accounts.firstWhere(
+      (Account a) => a.name == 'Nequi',
+    );
+    expect(on('Bancolombia → Nequi', 'Entre tus cuentas'), findsOneWidget);
+    expect(
+      on('Bancolombia → Nequi', 'Pasaste plata a tu Nequi: no es un gasto.'),
+      findsOneWidget,
+    );
+    expect(
+      on(
+        'Bancolombia → Efectivo',
+        'Un retiro en cajero pasa la plata a Efectivo: no es un gasto.',
+      ),
+      findsOneWidget,
+    );
+    // Neither goes with what is recorded all at once.
+    expect(find.textContaining('Registrar los'), findsNothing);
+
+    await tester.ensureVisible(
+      on('Bancolombia → Nequi', 'Registrar transferencia'),
+    );
+    await tester.tap(on('Bancolombia → Nequi', 'Registrar transferencia'));
+    await settle(tester);
+    expect(
+      find.text('Transferencia registrada de Bancolombia a Nequi.'),
+      findsOneWidget,
+    );
+    final List<Entry> legs = <Entry>[
+      for (final Entry e in (await tester.runAsync(own.store.entries))!)
+        if (e.transferId != null && e.amount.abs() == Decimal.parse('150000'))
+          e,
+    ];
+    expect(
+      <String, Decimal>{for (final Entry e in legs) e.accountId: e.amount},
+      <String, Decimal>{
+        bank.id: Decimal.parse('-150000'),
+        nequi.id: Decimal.parse('150000'),
+      },
+    );
+
+    // The person says the withdrawal was not one: it waits as spending.
+    await tester.ensureVisible(on('Bancolombia → Efectivo', 'No fue eso'));
+    await tester.tap(on('Bancolombia → Efectivo', 'No fue eso'));
+    await settle(tester);
+    expect(find.text('Bancolombia → Efectivo'), findsNothing);
+    expect(find.text('Registrar gasto'), findsWidgets);
+  });
+
   testWidgets('what the card taught reaches what waits with the same card, '
       'and goes back with Deshacer', (tester) async {
     await open(tester, () async {
@@ -389,16 +464,16 @@ void main() {
     );
   });
 
-  testWidgets('pesos that arrived from the dollar account stay what arrived', (
-    tester,
-  ) async {
+  testWidgets('pesos that arrived from the dollar account, said by hand, '
+      'stay what arrived', (tester) async {
     final OwnController own = await open(tester, () async {
       final QuincenaStore store = await withCaptures();
       await CaptureService(store, now: () => screensNow).ingest(<CaptureEvent>[
         CaptureEvent(
           source: CaptureSource.paste,
           at: screensNow,
-          text: r'Bancolombia: Recibiste $331.284 de GLOBAL66 COLOMBIA',
+          // A sender the app does not know as one of the person's banks.
+          text: r'Bancolombia: Recibiste $331.284 de CAMBIOS ANDES',
         ),
       ]);
       return store;
@@ -420,7 +495,7 @@ void main() {
 
     final Finder fromOwn = find.descendant(
       of: find.ancestor(
-        of: find.text('Global66 Colombia'),
+        of: find.text('Cambios Andes'),
         matching: find.byType(InboxCard),
       ),
       matching: find.text('¿Viene de otra cuenta tuya?'),
@@ -459,6 +534,57 @@ void main() {
       dollarsBefore - Decimal.parse('100'),
     );
     expect(own.balances[bank.id]!.amount, bankBefore + Decimal.parse('331284'));
+  });
+
+  testWidgets('pesos from the bank where the dollars are go in one tap, '
+      'the dollars at the day\'s rate', (tester) async {
+    final OwnController own = await open(tester, () async {
+      final QuincenaStore store = await withCaptures();
+      await CaptureService(store, now: () => screensNow).ingest(<CaptureEvent>[
+        CaptureEvent(
+          source: CaptureSource.paste,
+          at: screensNow,
+          text: r'Bancolombia: Recibiste $331.284 de GLOBAL66 COLOMBIA',
+        ),
+      ]);
+      return store;
+    });
+    Account named(String name) =>
+        own.accounts.firstWhere((Account a) => a.name == name);
+    final Account bank = named('Bancolombia');
+    final Account dollars = named('Cuenta en dólares');
+    final Decimal bankBefore = own.balances[bank.id]!.amount;
+    final Decimal dollarsBefore = own.balances[dollars.id]!.amount;
+    final Finder card = find.ancestor(
+      of: find.text('Cuenta en dólares → Bancolombia'),
+      matching: find.byType(InboxCard),
+    );
+    expect(
+      find.descendant(
+        of: card,
+        matching: find.text(
+          'Viene de Global66, donde tienes Cuenta en dólares: no es un '
+          'ingreso.',
+        ),
+      ),
+      findsOneWidget,
+    );
+    final Finder record = find.descendant(
+      of: card,
+      matching: find.text('Registrar transferencia'),
+    );
+    await tester.ensureVisible(record);
+    await tester.tap(record);
+    await settle(tester);
+    expect(
+      own.balances[dollars.id]!.amount,
+      dollarsBefore - Decimal.parse('100'),
+    );
+    expect(own.balances[bank.id]!.amount, bankBefore + Decimal.parse('331284'));
+    expect(
+      find.text('Transferencia registrada de Cuenta en dólares a Bancolombia.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('the form asks for the account instead of guessing one', (

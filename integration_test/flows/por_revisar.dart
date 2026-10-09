@@ -397,25 +397,29 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       final int rules = own.captureSettings.rules.length;
       await f.tapTip('Por revisar');
       await _paste(f, r'Nequi: Recibiste $200.000 de Diego Lopez');
-      await f.step(
-        'El aviso de Nequi, pegado con «Leer un pago», quedó como ingreso de '
-        '\$200.000 con «¿Viene de otra cuenta tuya?» debajo.',
-      );
       await _hideNotice(f);
-      await _tapOn(f, 'Diego Lopez', '¿Viene de otra cuenta tuya?');
+      await f.top();
       await f.step(
-        'La hoja abre como «Transferencia»: Nequi va en «Hacia» y en «Desde» '
-        'propone Bancolombia. El botón dice «Registrar transferencia».',
+        'El aviso de Nequi, pegado con «Leer un pago», lo envió Diego Lopez, '
+        'que eres tú: la tarjeta dice «Bancolombia → Nequi», «Entre tus '
+        'cuentas» y «La enviaste tú: no es un ingreso.»',
       );
-      await f.check('La hoja propone Bancolombia → Nequi', () {
-        expect(f.shows('Registrar transferencia'), isTrue);
-        expect(_menuShows('Desde', 'Bancolombia'), isTrue);
-        expect(_menuShows('Hacia', 'Nequi'), isTrue);
+      await f.check('Propone la transferencia Bancolombia → Nequi', () {
+        expect(f.shows('Bancolombia → Nequi'), isTrue);
+        expect(f.shows('La enviaste tú: no es un ingreso.'), isTrue);
+        expect(
+          find.descendant(
+            of: _card('Bancolombia → Nequi'),
+            matching: find.text('Registrar transferencia'),
+          ),
+          findsOneWidget,
+        );
       });
-      await f.tap('Registrar transferencia');
+      await _tapOn(f, 'Bancolombia → Nequi', 'Registrar transferencia');
       await f.step(
-        'Registrada: el aviso dice «Transferencia registrada.» y la tarjeta '
-        'salió de Por revisar.',
+        'Un solo toque en «Registrar transferencia»: el aviso dice '
+        '«Transferencia registrada de Bancolombia a Nequi.» y la tarjeta salió '
+        'de Por revisar.',
       );
       await f.check('Salieron \$200.000 de Bancolombia y llegaron a Nequi', () {
         expect(
@@ -433,6 +437,10 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
               e,
         ];
         expect(legs, hasLength(2));
+        expect(
+          f.screenText,
+          contains('Transferencia registrada de Bancolombia a Nequi.'),
+        );
       });
       await f.check(
         'No cuenta como ingreso: lo que puedes gastar no cambió',
@@ -1915,60 +1923,36 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         for (final Entry e in own.snapshot!.entries)
           if (e.sourceRef == sent.id) e,
       ];
-      final Finder from = find.ancestor(
-        of: find.text('Desde'),
-        matching: find.byType(DropdownButtonFormField<String>),
-      );
       await f.tapTip('Por revisar');
       await f.step(
-        'El aviso de Bancolombia, «Transferiste \$150.000 a tu Nequi», espera '
-        'como un gasto «Sin comercio» y sin cuenta; a diferencia de lo que '
-        'llega, no ofrece «¿Viene de otra cuenta tuya?».',
+        'El aviso de Bancolombia, «Transferiste \$150.000 a tu Nequi», ya no '
+        'espera como un gasto «Sin comercio»: la tarjeta dice «Bancolombia → '
+        'Nequi» y «Pasaste plata a tu Nequi: no es un gasto.»',
       );
       await f.check(
-        'Espera como gasto, sin cuenta ni atajo a transferencia',
+        'Se lee como una transferencia de Bancolombia a Nequi, no como gasto',
         () {
           expect(sent.parsed.kind, EntryKind.expense);
-          expect(sent.suggestion.accountId, isNull);
+          // Plata que sale hacia otra cuenta tuya sale de la cuenta del
+          // banco, no de la Visa.
+          expect(sent.suggestion.accountId, bank.id);
           expect(
-            find.descendant(
-              of: _card('Sin comercio'),
-              matching: find.text('¿Viene de otra cuenta tuya?'),
-            ),
-            findsNothing,
+            CaptureService.ownMove(
+              sent,
+              own.accounts,
+              person: own.profile?.name,
+            )?.toId,
+            nequi.id,
           );
+          expect(f.shows('Sin comercio'), isFalse);
+          expect(f.shows('Pasaste plata a tu Nequi: no es un gasto.'), isTrue);
         },
       );
-      await _tapOn(f, 'Sin comercio', 'Editar');
-      await f.tap('Transferencia');
+      await _tapOn(f, 'Bancolombia → Nequi', 'Registrar transferencia');
       await f.step(
-        'En «Revisar movimiento», «Transferencia» cambia la hoja: «Desde» '
-        'queda vacío, «Hacia» propone Nequi y el botón dice «Registrar '
-        'transferencia».',
-      );
-      await f.check('Propone Nequi como destino y deja vacío el origen', () {
-        expect(_menuShows('Hacia', 'Nequi'), isTrue);
-        expect(
-          find.descendant(of: from, matching: find.text('Bancolombia')),
-          findsNothing,
-        );
-      });
-      await f.tapFound(find.text('Registrar transferencia'));
-      await f.reveal(find.text('Elige la cuenta.'));
-      await f.step(
-        'Sin «Desde», «Registrar transferencia» no guarda: el campo se pone '
-        'en rojo con «Elige la cuenta.»',
-      );
-      await f.check('Sin origen no se registró nada', () {
-        expect(legs(), isEmpty);
-        expect(own.pendingInbox.map((InboxItem i) => i.id), contains(sent.id));
-      });
-      await f.tapFound(from);
-      await f.tapFound(find.text('Bancolombia').last);
-      await f.tapFound(find.text('Registrar transferencia'));
-      await f.step(
-        'Con Bancolombia en «Desde»: «Transferencia registrada.», con '
-        '«Deshacer», y el aviso salió de Por revisar.',
+        'Un toque en «Registrar transferencia»: «Transferencia registrada de '
+        'Bancolombia a Nequi.», con «Deshacer», y el aviso salió de Por '
+        'revisar.',
       );
       Future<void> movedOnce() async {
         expect(legs(), hasLength(2));
@@ -2002,11 +1986,7 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         expect(own.balances[nequi.id]!.amount, nequiBefore);
         expect(own.pendingInbox.map((InboxItem i) => i.id), contains(sent.id));
       });
-      await _tapOn(f, 'Sin comercio', 'Editar');
-      await f.tap('Transferencia');
-      await f.tapFound(from);
-      await f.tapFound(find.text('Bancolombia').last);
-      await f.tapFound(find.text('Registrar transferencia'));
+      await _tapOn(f, 'Bancolombia → Nequi', 'Registrar transferencia');
       await _hideNotice(f);
       await f.check('Registrada otra vez, una sola vez', movedOnce);
       // Then Nequi's own alert for the same money arrives.
@@ -2055,8 +2035,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         'mis cuentas, no como un ingreso.',
     data: fullAccount,
     manual: <String>[
-      'La tasa del día llega por la red: en el teléfono, revisar que «Monto» '
-          'proponga los dólares que de verdad salieron.',
+      'La tasa del día llega por la red: en el teléfono, revisar que la '
+          'transferencia saque de la cuenta en dólares lo que de verdad salió.',
     ],
     (FlowRun f) async {
       final OwnController own = f.own;
@@ -2072,46 +2052,39 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       final InboxItem arrived = own.pendingInbox.firstWhere(
         (InboxItem i) => i.event.text.contains('GLOBAL66'),
       );
-      final String payee = _payee(arrived);
       await f.step(
-        'Llegaron \$331.284 a Bancolombia desde Global66: la tarjeta lo trata '
-        'como un ingreso, sin cuenta, y ofrece «¿Viene de otra cuenta tuya?».',
+        'Llegaron \$331.284 a Bancolombia desde Global66, donde tienes la '
+        'cuenta en dólares: la tarjeta dice «Cuenta en dólares → '
+        'Bancolombia» y «no es un ingreso».',
       );
-      await _tapOn(f, payee, '¿Viene de otra cuenta tuya?');
-      await f.step(
-        'La hoja abre como «Transferencia» con los \$331.284 en «Monto», pero '
-        'propone Bancolombia → Nequi: no sabe a cuál de las dos de '
-        'Bancolombia llegó.',
-      );
-      final Finder from = find.ancestor(
-        of: find.text('Desde'),
-        matching: find.byType(DropdownButtonFormField<String>),
-      );
-      final Finder to = find.ancestor(
-        of: find.text('Hacia'),
-        matching: find.byType(DropdownButtonFormField<String>),
-      );
-      await f.tapFound(to);
-      await f.tapFound(find.text('Bancolombia').last);
-      await f.tapFound(from);
-      await f.tapFound(find.text('Cuenta en dólares').last);
-      await f.step(
-        'Con «Desde» en la cuenta en dólares y «Hacia» en Bancolombia aparece '
-        '«Llegó»: los \$331.284 del aviso quedan ahí y «Monto» propone '
-        'US\$100 por la tasa del día.',
-      );
-      String field(String label) => f.tester
-          .widget<TextField>(find.widgetWithText(TextField, label))
-          .controller!
-          .text;
-      await f.check('Lo que dice el aviso es lo que llegó a Bancolombia', () {
-        expect(field('Llegó'), '331.284');
-        expect(field('Monto'), '100');
+      await f.check('La plata que llega va a la cuenta, no a la Visa', () {
+        expect(arrived.suggestion.accountId, bank.id);
       });
-      await f.tapFound(find.text('Registrar transferencia'));
+      await f.check('Propone la transferencia desde la cuenta en dólares', () {
+        expect(
+          f.shows(
+            'Viene de Global66, donde tienes Cuenta en dólares: no es un '
+            'ingreso.',
+          ),
+          isTrue,
+        );
+        final OwnMove? move = CaptureService.ownMove(
+          arrived,
+          own.accounts,
+          person: own.profile?.name,
+        );
+        expect(move?.fromId, dollars.id);
+        expect(move?.toId, bank.id);
+      });
+      await _tapOn(
+        f,
+        'Cuenta en dólares → Bancolombia',
+        'Registrar transferencia',
+      );
       await f.step(
-        'Registrada: «Transferencia registrada.» y el aviso salió de Por '
-        'revisar.',
+        'Un toque en «Registrar transferencia»: «Transferencia registrada de '
+        'Cuenta en dólares a Bancolombia.» Lo que dice el aviso es lo que '
+        'llegó, y lo que salió en dólares sale de la tasa del día.',
       );
       await f.check(
         'Salieron US\$100 de la cuenta en dólares y llegaron \$331.284',
@@ -2150,8 +2123,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
     area: 'Por revisar',
     goal:
         'Bancolombia me avisa con el número de mi cuenta de ahorros, no con '
-        'una tarjeta: quiero decirle una vez cuál es y que los próximos '
-        'avisos de esa cuenta lleguen solos.',
+        'una tarjeta: quiero registrarlo una vez y que los próximos avisos de '
+        'esa cuenta lleguen solos.',
     data: fullAccount,
     (FlowRun f) async {
       final OwnController own = f.own;
@@ -2164,9 +2137,9 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await _hideNotice(f);
       await f.top();
       await f.step(
-        'Andres Mejia te pasó \$20.000 a la cuenta *5678: tienes dos cuentas '
-        'de Bancolombia, así que dice «Detectamos Bancolombia y la cuenta '
-        '*5678, pero aún no sabemos cuál de tus cuentas es.»',
+        'Andres Mejia te pasó \$20.000 a la cuenta *5678: en Bancolombia '
+        'tienes la cuenta de ahorros y la Visa, y la plata que llega no va a '
+        'una tarjeta, así que espera lista en Bancolombia.',
       );
       final InboxItem andres = own.pendingInbox.firstWhere(
         (InboxItem i) => _payee(i) == 'Andres Mejia',
@@ -2175,32 +2148,12 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         expect(andres.parsed.account, '5678');
         expect(andres.parsed.card, isNull);
         expect(andres.parsed.kind, EntryKind.income);
-        expect(
-          f.screenText,
-          contains(
-            'Detectamos Bancolombia y la cuenta *5678, pero aún no sabemos '
-            'cuál de tus cuentas es.',
-          ),
-        );
+        expect(andres.suggestion.accountId, bank.id);
+        expect(CaptureService.isReady(andres, own.accounts), isTrue);
       });
-      await _tapOn(f, 'Andres Mejia', 'Elegir la cuenta');
+      await _tapOn(f, 'Andres Mejia', 'Registrar ingreso');
       await f.step(
-        '«¿A qué cuenta llegó?» avisa «La próxima vez, lo de la cuenta *5678 '
-        'irá directo a la que elijas.», con las de Bancolombia primero.',
-      );
-      await f.check('La hoja promete recordar la cuenta, no una tarjeta', () {
-        expect(
-          f.shows(
-            'La próxima vez, lo de la cuenta *5678 irá directo a la que '
-            'elijas.',
-          ),
-          isTrue,
-        );
-        expect(find.textContaining('tarjeta *5678'), findsNothing);
-      });
-      await f.tap('Bancolombia');
-      await f.step(
-        'Elegida Bancolombia: el aviso dice «Ingreso registrado en '
+        'Registrado con un toque: el aviso dice «Ingreso registrado en '
         'Bancolombia.» y nombra las dos reglas: «Andres Mejia» va a Otros '
         'ingresos y la cuenta *5678 va a Bancolombia.',
       );

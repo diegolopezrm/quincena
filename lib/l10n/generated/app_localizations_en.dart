@@ -5520,6 +5520,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fromOwnAccount => 'Is it from another account of yours?';
 
   @override
+  String get fromOwnAccountOut => 'Did it go to another of your accounts?';
+
+  @override
+  String get moveBetween => 'Between your accounts';
+
+  @override
+  String moveWhyOwnOut(String account) {
+    return 'You moved money to your $account: it isn\'t spending.';
+  }
+
+  @override
+  String moveWhyOwnIn(String account) {
+    return 'It came from your $account: it isn\'t income.';
+  }
+
+  @override
+  String get moveWhySelf => 'You sent it yourself: it isn\'t income.';
+
+  @override
+  String moveWhyBank(String bank, String account) {
+    return 'It comes from $bank, where you have $account: it isn\'t income.';
+  }
+
+  @override
+  String moveWhyCash(String account) {
+    return 'An ATM withdrawal moves the money to $account: it isn\'t spending.';
+  }
+
+  @override
+  String moveWhyCard(String account) {
+    return 'It\'s your $account payment: what you bought with it already counted as spending.';
+  }
+
+  @override
+  String get notMove => 'That\'s not it';
+
+  @override
   String get moreActions => 'More actions';
 
   @override
@@ -6651,6 +6688,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get recordedTransfer => 'Transfer recorded.';
+
+  @override
+  String recordedTransferBetween(String from, String to) {
+    return 'Transfer recorded from $from to $to.';
+  }
 
   @override
   String get accountMissingShort => 'Account missing';
