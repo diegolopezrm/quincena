@@ -2102,13 +2102,23 @@ final List<AppFlow> planFlows = <AppFlow>[
         most: 3,
       );
       await f.tap('Guardar');
+      await f.step(
+        'Como la Visa no tiene un gasto de ese valor, pregunta «¿La compra ya '
+        'está en Visa?»: lo que debes en la tarjeta la incluye solo si está '
+        'anotada.',
+      );
+      await f.check('Pregunta si la compra ya está en la Visa', () {
+        expect(f.shows('¿La compra ya está en Visa?'), isTrue);
+      });
+      await f.tap('Ya está anotada');
       final int owed = own.instalments.fold(
         0,
         (int s, Instalments p) => s + (p.remaining ?? 0),
       );
       await f.step(
-        'El portátil queda en la lista con su primera cuota el 3 de noviembre '
-        'y «Te falta pagar» sube a ${_pesos(l, owed)}.',
+        'Con «Ya está anotada» el portátil queda en la lista con su primera '
+        'cuota el 3 de noviembre y «Te falta pagar» sube a '
+        '${_pesos(l, owed)}.',
       );
       await f.check('Quedó la compra con la tasa mensual y la Visa', () {
         final Instalments p = laptop();
