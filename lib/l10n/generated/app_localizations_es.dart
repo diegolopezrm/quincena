@@ -1720,8 +1720,8 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String closeActionGoal(String amount) {
-    return 'Puedes gastar $amount hasta el pago. Si quieres, una parte puede ir a tu meta.';
+  String closeActionGoalSpare(String amount, String spare) {
+    return 'Puedes gastar $amount hasta el pago, y lo que sueles gastar en el día a día deja libres unos $spare. Si quieres, esa parte puede ir a tu meta.';
   }
 
   @override

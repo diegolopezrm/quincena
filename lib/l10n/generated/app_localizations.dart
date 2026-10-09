@@ -2654,11 +2654,11 @@ abstract class AppLocalizations {
   /// **'{category} pasó de {before} a {now} frente a la quincena anterior. Mira esos pagos.'**
   String closeActionCategory(String category, String before, String now);
 
-  /// No description provided for @closeActionGoal.
+  /// No description provided for @closeActionGoalSpare.
   ///
   /// In es, this message translates to:
-  /// **'Puedes gastar {amount} hasta el pago. Si quieres, una parte puede ir a tu meta.'**
-  String closeActionGoal(String amount);
+  /// **'Puedes gastar {amount} hasta el pago, y lo que sueles gastar en el día a día deja libres unos {spare}. Si quieres, esa parte puede ir a tu meta.'**
+  String closeActionGoalSpare(String amount, String spare);
 
   /// No description provided for @closeContributeTo.
   ///

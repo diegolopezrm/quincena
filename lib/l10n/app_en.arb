@@ -435,7 +435,7 @@
   "@closeActionRunsOut": {"placeholders": {"date": {"type": "String"}}},
   "closeActionTight": "On {date} you'd dip below your buffer. See whether a charge could move to another day.",
   "closeActionCategory": "{category} went from {before} to {now} compared with the previous pay period. Take a look at those payments.",
-  "closeActionGoal": "You can spend {amount} until payday. If you like, part of it can go to your goal.",
+  "closeActionGoalSpare": "You can spend {amount} until payday, and what you usually spend day to day leaves about {spare} free. If you like, that part can go to your goal.",
   "closeContributeTo": "Add to {goal}",
   "closeGoalsTitle": "What you set aside for your goals",
   "closeGoalEnvelope": "{goal}: {amount} in the envelope",

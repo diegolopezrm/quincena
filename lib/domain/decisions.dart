@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show immutable;
 
 import '../data/category.dart';
 import '../data/ledger.dart';
+import 'plan.dart' show usualDailySpending;
 import 'projection.dart';
 
 /// Where buying something leaves the money to spend.
@@ -272,6 +273,7 @@ class PeriodClose {
     this.actionCategory,
     this.startBefore,
     this.monthly = const <CategoryChange>[],
+    this.spare = 0,
   });
 
   /// The period: from [start], a payday, to the day before [end], the
@@ -290,6 +292,10 @@ class PeriodClose {
   /// What the [monthlyCategories] took in the 30 days up to [end], against
   /// the 30 before when they were recorded; largest first.
   final List<CategoryChange> monthly;
+
+  /// What is free until payday beyond what the day to day usually takes by
+  /// then: what could go to a goal without leaving the days short.
+  final int spare;
 
   /// Where the period before starts; null without a whole one recorded.
   final DateTime? startBefore;
@@ -426,7 +432,12 @@ PeriodClose? closePeriod(Ledger ledger, {bool hasGoals = false}) {
       }
     }
   }
-  if (action == null && hasGoals && ledger.freeUntilPayday > 0) {
+  // Only what the day to day will not need by payday is offered to a goal.
+  final int daysLeft = _day(ledger.nextPayday).difference(today).inDays;
+  final int spare =
+      ledger.freeUntilPayday -
+      (usualDailySpending(ledger) ?? 0) * math.max(0, daysLeft);
+  if (action == null && hasGoals && spare > 0) {
     action = CloseAction.moveToGoal;
   }
   return PeriodClose(
@@ -442,6 +453,7 @@ PeriodClose? closePeriod(Ledger ledger, {bool hasGoals = false}) {
     actionCategory: actionCategory,
     startBefore: comparable ? before : null,
     monthly: monthly,
+    spare: math.max(0, spare),
   );
 }
 

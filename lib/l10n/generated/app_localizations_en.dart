@@ -1718,8 +1718,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String closeActionGoal(String amount) {
-    return 'You can spend $amount until payday. If you like, part of it can go to your goal.';
+  String closeActionGoalSpare(String amount, String spare) {
+    return 'You can spend $amount until payday, and what you usually spend day to day leaves about $spare free. If you like, that part can go to your goal.';
   }
 
   @override

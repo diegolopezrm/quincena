@@ -294,8 +294,9 @@ class ClosePage extends StatelessWidget {
                 amount(c.now),
               );
             }(),
-            CloseAction.moveToGoal => l.closeActionGoal(
+            CloseAction.moveToGoal => l.closeActionGoalSpare(
               amount(ledger.freeUntilPayday),
+              amount(close.spare),
             ),
             null => l.closeActionNone,
           }, style: context.type.bodyMedium),
@@ -319,8 +320,12 @@ class ClosePage extends StatelessWidget {
               Align(
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(
-                  onPressed: () =>
-                      showGoalContribution(context, own: own, goal: goal),
+                  onPressed: () => showGoalContribution(
+                    context,
+                    own: own,
+                    goal: goal,
+                    amount: Decimal.parse('${ledger.major(close.spare)}'),
+                  ),
                   icon: const Icon(Glyph.plus, size: 18),
                   label: Text(l.closeContributeTo(goal.name)),
                 ),

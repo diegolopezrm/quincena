@@ -384,6 +384,29 @@ void main() {
       );
     });
 
+    test('a goal is offered only what the day to day will not need', () async {
+      // One whole fortnight: 240.000 in 15 days, 16.000 a day, and 12 days
+      // to the 15th.
+      await spend('240000', DateTime(2026, 9, 15, 12), 'groceries');
+      final Ledger l = await ledger();
+      final PeriodClose close = closePeriod(l, hasGoals: true)!;
+      expect(close.spare, l.freeUntilPayday - 16000 * 12);
+      expect(close.spare, greaterThan(0));
+      expect(close.action, CloseAction.moveToGoal);
+
+      // Money left, but not past what the days to payday usually take.
+      await spend(
+        '${l.freeUntilPayday - 100000}',
+        DateTime(2026, 10, 3, 9),
+        'shopping',
+      );
+      final Ledger tight = await ledger();
+      expect(tight.freeUntilPayday, 100000);
+      final PeriodClose short = closePeriod(tight, hasGoals: true)!;
+      expect(short.spare, 0);
+      expect(short.action, isNot(CloseAction.moveToGoal));
+    });
+
     test('what is paid once a month goes apart, month against month', () async {
       await spend('100000', DateTime(2026, 7, 30, 12), 'groceries');
       await spend('900000', DateTime(2026, 8, 5, 12), 'housing');
