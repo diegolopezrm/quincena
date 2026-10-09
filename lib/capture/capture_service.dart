@@ -363,6 +363,70 @@ class CaptureService {
     return joined;
   }
 
+  /// Learns from [item], recorded on its own, as the person corrected its
+  /// movement: its category is the shop's from now on, and its account the
+  /// card's or the bank's, as confirming it that way would have taught.
+  /// The capture then says why it is filed as it is. What changed comes
+  /// back, for the person to see and undo.
+  Future<List<RuleChange>> corrected(InboxItem item) async {
+    final String? id = item.entryId;
+    if (id == null) return const <RuleChange>[];
+    final Entry? now = (await store.entries())
+        .where((Entry e) => e.id == id)
+        .firstOrNull;
+    if (now == null || now.transferId != null) return const <RuleChange>[];
+    final List<RuleChange> learned = await _learn(
+      item,
+      await store.accounts(),
+      accountId: now.accountId,
+      category: now.category,
+      payee: now.payee,
+    );
+    if (learned.isEmpty) return learned;
+    final Set<RuleKind> kinds = <RuleKind>{
+      for (final RuleChange c in learned) c.rule.kind,
+    };
+    const Set<String> place = <String>{
+      'card',
+      'account',
+      'institution',
+      'currency',
+      'only',
+    };
+    List<String> why = item.suggestion.why;
+    if (kinds.contains(RuleKind.merchant)) {
+      why = <String>[
+        for (final String w in why)
+          if (w != 'merchant' && w != 'words' && w != 'learned') w,
+        'learned',
+      ];
+    }
+    for (final RuleKind k in <RuleKind>[
+      RuleKind.card,
+      RuleKind.account,
+      RuleKind.institution,
+    ]) {
+      if (!kinds.contains(k)) continue;
+      why = <String>[
+        k.name,
+        for (final String w in why)
+          if (!place.contains(w)) w,
+      ];
+    }
+    await store.saveInboxItem(
+      item.copyWith(
+        suggestion: Suggestion(
+          accountId: now.accountId,
+          category: now.category,
+          payee: now.payee.isEmpty ? item.suggestion.payee : now.payee,
+          place: item.suggestion.place,
+          why: why,
+        ),
+      ),
+    );
+    return learned;
+  }
+
   /// Takes back what [accept], [acceptAll] or [acceptTransfer] did: each
   /// movement goes, its capture waits in the inbox again, and every rule
   /// they taught says what it said before, the last one first.

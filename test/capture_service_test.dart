@@ -1048,6 +1048,60 @@ Fecha
       expect(again.resolved, 0);
     });
 
+    test('a category corrected after recording on its own is learned, and '
+        'the capture says why', () async {
+      await store.saveCaptureSettings(
+        (await store.captureSettings()).copyWith(autoRecord: true),
+      );
+      await capture.ingest(<CaptureEvent>[
+        push(r'Nequi · Pagaste $32.000 en Rappi', app: 'com.nequi.MobileApp'),
+      ]);
+      final InboxItem recorded = (await store.inbox()).single;
+      expect(recorded.automatic, isTrue);
+      expect(recorded.suggestion.why, contains('merchant'));
+      final Entry made = (await store.entries()).single;
+      expect(made.category, 'restaurants');
+
+      await store.updateEntry(made.copyWith(category: 'leisure'));
+      final List<RuleChange> learned = await capture.corrected(recorded);
+      // The shop's category, and where Nequi's alerts go, as confirming it
+      // would have taught.
+      expect(
+        learned.map((RuleChange c) => c.rule),
+        containsAll(<CaptureRule>[
+          const CaptureRule(
+            kind: RuleKind.merchant,
+            key: 'rappi',
+            target: 'leisure',
+          ),
+          CaptureRule(
+            kind: RuleKind.institution,
+            key: 'Nequi',
+            target: nequi.id,
+          ),
+        ]),
+      );
+      final InboxItem now = (await store.inbox()).single;
+      expect(now.suggestion.category, 'leisure');
+      expect(now.suggestion.why, contains('learned'));
+      expect(now.suggestion.why, isNot(contains('merchant')));
+
+      // The next Rappi goes to Salidas.
+      await capture.ingest(<CaptureEvent>[
+        push(
+          r'Nequi · Pagaste $18.000 en Rappi',
+          app: 'com.nequi.MobileApp',
+          at: now.event.at.add(const Duration(hours: 2)),
+        ),
+      ]);
+      expect(
+        (await store.entries())
+            .firstWhere((Entry e) => e.amount == d('-18000'))
+            .category,
+        'leisure',
+      );
+    });
+
     test('confirming what a rule already says teaches nothing new', () async {
       await confirmFirst();
       await capture.ingest(<CaptureEvent>[bakery('9.500', day: 2)]);

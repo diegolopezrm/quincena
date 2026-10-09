@@ -187,6 +187,33 @@ void showRecorded(
   _offerUndo(messenger, own, <Accepted>[done], said);
 }
 
+/// Says what correcting a movement recorded on its own taught, with one
+/// way to take it back: the rules, and the card's why with them, go back
+/// to what they were in [before].
+void showLearned(
+  ScaffoldMessengerState messenger,
+  OwnController own,
+  List<RuleChange> learned,
+  InboxItem before,
+) {
+  final BuildContext context = messenger.context;
+  messenger
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        content: Text(learnedText(context, own, learned)),
+        duration: const Duration(seconds: 6),
+        action: SnackBarAction(
+          label: context.l10n.undo,
+          onPressed: () async {
+            await own.capture.forget(learned);
+            await own.store.saveInboxItem(before);
+          },
+        ),
+      ),
+    );
+}
+
 /// Says how many of [done] were recorded at once, with one way to take
 /// them all back.
 void showRecordedMany(

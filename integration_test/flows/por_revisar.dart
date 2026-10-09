@@ -1368,7 +1368,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.tap('Guardar');
       await f.step(
         'Guardado: la tarjeta sigue en «Registrado automáticamente», ahora '
-        'con Salidas.',
+        'con Salidas; el aviso dice «Desde ahora, «Rappi» va a Salidas…» y la '
+        'tarjeta ya no dice que reconoció Rappi, sino cómo lo registraste.',
       );
       await f.check('El movimiento quedó en Salidas, a la misma hora', () {
         final Entry e = own.snapshot!.entries.firstWhere(
@@ -1377,6 +1378,18 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         expect(e.category, 'leisure');
         expect(e.date, screensNow);
       });
+      await f.check('Corregir la categoría cambió lo aprendido de Rappi', () {
+        expect(own.captureSettings.merchantCategories['rappi'], 'leisure');
+        expect(f.screenText, contains('Desde ahora, «Rappi» va a Salidas'));
+        expect(
+          f.screenText,
+          contains(
+            'Sugerido porque llegó de tu cuenta de Nequi · así registraste '
+            'Rappi antes.',
+          ),
+        );
+      });
+      await _hideNotice(f);
       await _openMenu(f, 'Rappi');
       await f.step(
         'En lo que ya se registró, el menú «⋮» solo trae «Detalles de '

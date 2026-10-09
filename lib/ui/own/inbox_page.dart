@@ -697,11 +697,18 @@ class _InboxCardState extends State<InboxCard> {
     ),
   );
 
-  /// The movement an automatic record made, to correct it in place.
+  /// The movement an automatic record made, to correct it in place: what
+  /// the person changes there is what the app learns, and says so.
   Future<void> _fix() async {
     final Entry? entry = _made;
     if (entry == null) return;
-    await showEntrySheet(context, own: own, entry: entry);
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final InboxItem before = item;
+    final bool? saved = await showEntrySheet(context, own: own, entry: entry);
+    if (saved != true) return;
+    final List<RuleChange> learned = await own.capture.corrected(before);
+    if (learned.isEmpty) return;
+    showLearned(messenger, own, learned, before);
   }
 
   Future<void> _undo() async {
