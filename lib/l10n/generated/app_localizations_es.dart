@@ -801,6 +801,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get yourAccounts => 'Tus cuentas';
 
   @override
+  String get firstAccountTitle => 'Agrega dónde tienes tu plata';
+
+  @override
+  String get firstAccountBody =>
+      'Con tus cuentas y lo que tienen hoy, Quincena te dice cuánto puedes gastar hasta tu próximo pago.';
+
+  @override
+  String get firstAccountAction => 'Agregar mi primera cuenta';
+
+  @override
   String get balanceToday => 'Saldo hoy';
 
   @override
@@ -1087,6 +1097,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'Registra un gasto, un ingreso o una transferencia con «Movimiento».';
 
   @override
+  String get noMovementsNoAccount =>
+      'Con una cuenta, aquí registras lo que gastas y lo que te entra.';
+
+  @override
   String get noResults => 'Nada coincide con la búsqueda.';
 
   @override
@@ -1120,6 +1134,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get needAccountFirst => 'Primero agrega una cuenta.';
+
+  @override
+  String get entryNeedsAccountTitle => 'Primero, ¿dónde tienes tu plata?';
+
+  @override
+  String get entryNeedsAccountBody =>
+      'Para registrar un movimiento, Quincena necesita saber de qué cuenta sale la plata o a cuál llega.';
 
   @override
   String get recentMovements => 'Últimos movimientos';

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:decimal/decimal.dart';
@@ -19,6 +20,7 @@ import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import 'account_sheet.dart';
 import 'amount_input.dart';
 import 'capture_reasons.dart';
 import 'category_choices.dart';
@@ -53,7 +55,8 @@ class EntryDraft {
 /// it was saved.
 ///
 /// A new one opens as [kind] when given, with [draft] filled in; without
-/// either it starts by asking what happened.
+/// either it starts by asking what happened. With no account yet, it
+/// offers to add the first one, and opens in it once it is there.
 Future<bool?> showEntrySheet(
   BuildContext context, {
   required OwnController own,
@@ -63,12 +66,11 @@ Future<bool?> showEntrySheet(
   bool ownTransfer = false,
   EntryKind? kind,
   EntryDraft? draft,
-}) {
+}) async {
+  String? into = accountId;
   if (own.accounts.isEmpty) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(context.l10n.needAccountFirst)));
-    return Future<bool?>.value();
+    into = await _firstAccount(context, own);
+    if (into == null || !context.mounted) return null;
   }
   return showModalBottomSheet<bool>(
     context: context,
@@ -80,13 +82,62 @@ Future<bool?> showEntrySheet(
     builder: (BuildContext context) => _EntryForm(
       own: own,
       entry: entry,
-      accountId: accountId,
+      accountId: into,
       fromInbox: fromInbox,
       ownTransfer: ownTransfer,
       kind: kind,
       draft: draft,
     ),
   );
+}
+
+/// Before any account there is nowhere for a movement to go: an offer to
+/// add the first one instead of an error. The id of the account added, or
+/// null when the person let it be.
+Future<String?> _firstAccount(BuildContext context, OwnController own) async {
+  final AppLocalizations l = context.l10n;
+  final bool? add = await showDialog<bool>(
+    context: context,
+    builder: (BuildContext context) => AlertDialog(
+      scrollable: true,
+      icon: Icon(Glyph.wallet, color: context.colors.brand),
+      title: Text(l.entryNeedsAccountTitle),
+      content: Text(l.entryNeedsAccountBody),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(l.notNow),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          child: Text(l.firstAccountAction),
+        ),
+      ],
+    ),
+  );
+  if (add != true || !context.mounted) return null;
+  final Account? added = await showAccountSheet(context, own: own);
+  if (added == null) return null;
+  await _listed(own, added.id);
+  return own.accounts.any((Account a) => a.id == added.id) ? added.id : null;
+}
+
+/// Waits, a moment at most, until [own] lists the account [id]: the store
+/// tells it of the change a beat after saving.
+Future<void> _listed(OwnController own, String id) async {
+  bool there() => own.accounts.any((Account a) => a.id == id);
+  if (there()) return;
+  final Completer<void> listed = Completer<void>();
+  void check() {
+    if (there() && !listed.isCompleted) listed.complete();
+  }
+
+  own.addListener(check);
+  try {
+    await listed.future.timeout(const Duration(seconds: 3), onTimeout: () {});
+  } finally {
+    own.removeListener(check);
+  }
 }
 
 /// Records a movement, or edits [entry]. A transfer is edited as one move,

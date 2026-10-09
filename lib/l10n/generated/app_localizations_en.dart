@@ -802,6 +802,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get yourAccounts => 'Your accounts';
 
   @override
+  String get firstAccountTitle => 'Add where you keep your money';
+
+  @override
+  String get firstAccountBody =>
+      'With your accounts and what they hold today, Quincena tells you how much you can spend until your next payday.';
+
+  @override
+  String get firstAccountAction => 'Add my first account';
+
+  @override
   String get balanceToday => 'Balance today';
 
   @override
@@ -1088,6 +1098,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Record an expense, an income or a transfer with \"Transaction\".';
 
   @override
+  String get noMovementsNoAccount =>
+      'Once you have an account, record what you spend and what comes in here.';
+
+  @override
   String get noResults => 'Nothing matches the search.';
 
   @override
@@ -1120,6 +1134,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get needAccountFirst => 'Add an account first.';
+
+  @override
+  String get entryNeedsAccountTitle => 'First, where do you keep your money?';
+
+  @override
+  String get entryNeedsAccountBody =>
+      'To record a transaction, Quincena needs to know which account the money leaves or arrives in.';
 
   @override
   String get recentMovements => 'Recent transactions';

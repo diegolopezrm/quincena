@@ -1274,6 +1274,24 @@ abstract class AppLocalizations {
   /// **'Tus cuentas'**
   String get yourAccounts;
 
+  /// No description provided for @firstAccountTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Agrega dónde tienes tu plata'**
+  String get firstAccountTitle;
+
+  /// No description provided for @firstAccountBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Con tus cuentas y lo que tienen hoy, Quincena te dice cuánto puedes gastar hasta tu próximo pago.'**
+  String get firstAccountBody;
+
+  /// No description provided for @firstAccountAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar mi primera cuenta'**
+  String get firstAccountAction;
+
   /// No description provided for @balanceToday.
   ///
   /// In es, this message translates to:
@@ -1748,6 +1766,12 @@ abstract class AppLocalizations {
   /// **'Registra un gasto, un ingreso o una transferencia con «Movimiento».'**
   String get noMovementsBody;
 
+  /// No description provided for @noMovementsNoAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Con una cuenta, aquí registras lo que gastas y lo que te entra.'**
+  String get noMovementsNoAccount;
+
   /// No description provided for @noResults.
   ///
   /// In es, this message translates to:
@@ -1813,6 +1837,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Primero agrega una cuenta.'**
   String get needAccountFirst;
+
+  /// No description provided for @entryNeedsAccountTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Primero, ¿dónde tienes tu plata?'**
+  String get entryNeedsAccountTitle;
+
+  /// No description provided for @entryNeedsAccountBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Para registrar un movimiento, Quincena necesita saber de qué cuenta sale la plata o a cuál llega.'**
+  String get entryNeedsAccountBody;
 
   /// No description provided for @recentMovements.
   ///
