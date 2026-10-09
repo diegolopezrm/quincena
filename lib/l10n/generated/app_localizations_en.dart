@@ -1990,8 +1990,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get whatIfGoalNever => 'no date';
 
   @override
-  String get whatIfAssumes =>
-      'It counts your expected pay and what\'s scheduled; none of this changes your accounts.';
+  String get whatIfDaily => 'Count everyday spending';
+
+  @override
+  String whatIfDailyAbout(String amount) {
+    return 'What you usually spend: about $amount a day, leaving out your fixed payments.';
+  }
+
+  @override
+  String whatIfAssumesDaily(String amount) {
+    return 'It counts your expected pay, what is scheduled and about $amount a day of everyday spending. None of this changes your accounts.';
+  }
+
+  @override
+  String get whatIfAssumesNoDaily =>
+      'It counts your expected pay and what is scheduled, without everyday spending: your real balance will be lower. None of this changes your accounts.';
+
+  @override
+  String get whatIfNoDailyYet =>
+      'It counts your expected pay and what is scheduled. It leaves out everyday spending: there is no full pay period with spending on record to estimate it yet, so your real balance will be lower.';
 
   @override
   String get whatIfSave => 'Save the scenario';

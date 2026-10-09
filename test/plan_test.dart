@@ -489,6 +489,54 @@ void main() {
       },
     );
 
+    test('the day to day is what whole periods spent a day, without the '
+        'charges that come on their own', () async {
+      await profile(pay: '2400000');
+      // Nothing before the 10th: only the period from the 15th is whole,
+      // 570.000 in 15 days, the internet in it while nothing says it comes
+      // on its own.
+      await spend('50000', DateTime(2026, 9, 10), 'groceries');
+      await spend('300000', DateTime(2026, 9, 16), 'groceries');
+      await spend('150000', DateTime(2026, 9, 20), 'restaurants');
+      await store.addEntry(
+        accountId: bank.id,
+        amount: d('120000'),
+        kind: EntryKind.expense,
+        date: DateTime(2026, 9, 22),
+        category: 'utilities',
+        payee: 'Internet',
+      );
+      expect(usualDailySpending(await ledger()), 38000);
+      await store.addRecurring(
+        name: 'Internet',
+        amount: Money(d('120000'), Asset.cop),
+        cadence: Cadence.monthly,
+        nextDate: DateTime(2026, 10, 22),
+        accountId: bank.id,
+        category: 'utilities',
+      );
+      await spend('27000', DateTime(2026, 8, 30), 'transport');
+      // From the 30th of August to the 29th of September: 31 days, and
+      // 527.000 spent without the internet.
+      final Ledger l = await ledger();
+      expect(usualDailySpending(l), 17000);
+
+      // Counted in what if, every day from tomorrow, in both.
+      const Scenario save = Scenario(
+        id: 's',
+        kind: ScenarioKind.saveMore,
+        amount: 300000,
+      );
+      final ScenarioOutcome without = weighScenario(l, save);
+      final ScenarioOutcome counted = weighScenario(l, save, daily: 17000);
+      expect(without.endNow - counted.endNow, 17000 * 45);
+      expect(without.endTried - counted.endTried, 17000 * 45);
+      expect(
+        counted.endNow - counted.endTried,
+        without.endNow - without.endTried,
+      );
+    });
+
     test('a charge going up, and a pay arriving late', () async {
       await profile(pay: '2400000', cushion: '100000');
       // September's last pay arrived, and went to the card.

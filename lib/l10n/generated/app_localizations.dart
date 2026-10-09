@@ -3050,11 +3050,35 @@ abstract class AppLocalizations {
   /// **'sin fecha'**
   String get whatIfGoalNever;
 
-  /// No description provided for @whatIfAssumes.
+  /// No description provided for @whatIfDaily.
   ///
   /// In es, this message translates to:
-  /// **'Cuenta tu pago esperado y lo programado; nada de esto cambia tus cuentas.'**
-  String get whatIfAssumes;
+  /// **'Contar el gasto del día a día'**
+  String get whatIfDaily;
+
+  /// No description provided for @whatIfDailyAbout.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que sueles gastar: unos {amount} al día, sin tus pagos fijos.'**
+  String whatIfDailyAbout(String amount);
+
+  /// No description provided for @whatIfAssumesDaily.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta tu pago esperado, lo programado y unos {amount} al día de gasto del día a día. Nada de esto cambia tus cuentas.'**
+  String whatIfAssumesDaily(String amount);
+
+  /// No description provided for @whatIfAssumesNoDaily.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta tu pago esperado y lo programado, sin el gasto del día a día: tu saldo real será menor. Nada de esto cambia tus cuentas.'**
+  String get whatIfAssumesNoDaily;
+
+  /// No description provided for @whatIfNoDailyYet.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta tu pago esperado y lo programado. No incluye el gasto del día a día: todavía no hay quincenas completas con gastos para estimarlo, así que tu saldo real será menor.'**
+  String get whatIfNoDailyYet;
 
   /// No description provided for @whatIfSave.
   ///

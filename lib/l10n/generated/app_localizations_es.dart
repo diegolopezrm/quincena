@@ -1989,8 +1989,25 @@ class AppLocalizationsEs extends AppLocalizations {
   String get whatIfGoalNever => 'sin fecha';
 
   @override
-  String get whatIfAssumes =>
-      'Cuenta tu pago esperado y lo programado; nada de esto cambia tus cuentas.';
+  String get whatIfDaily => 'Contar el gasto del día a día';
+
+  @override
+  String whatIfDailyAbout(String amount) {
+    return 'Lo que sueles gastar: unos $amount al día, sin tus pagos fijos.';
+  }
+
+  @override
+  String whatIfAssumesDaily(String amount) {
+    return 'Cuenta tu pago esperado, lo programado y unos $amount al día de gasto del día a día. Nada de esto cambia tus cuentas.';
+  }
+
+  @override
+  String get whatIfAssumesNoDaily =>
+      'Cuenta tu pago esperado y lo programado, sin el gasto del día a día: tu saldo real será menor. Nada de esto cambia tus cuentas.';
+
+  @override
+  String get whatIfNoDailyYet =>
+      'Cuenta tu pago esperado y lo programado. No incluye el gasto del día a día: todavía no hay quincenas completas con gastos para estimarlo, así que tu saldo real será menor.';
 
   @override
   String get whatIfSave => 'Guardar el escenario';

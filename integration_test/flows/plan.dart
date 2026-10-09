@@ -3264,7 +3264,7 @@ final List<AppFlow> planFlows = <AppFlow>[
     goal:
         'Quiero ver qué pasa si ahorro más cada quincena, si Netflix sube o '
         'si el pago me llega tarde, sin cambiar nada todavía.',
-    data: _withPay,
+    data: _withPayAndHistory,
     (FlowRun f) async {
       final OwnController own = f.own;
       final Ledger l = own.ledger!;
@@ -3282,15 +3282,18 @@ final List<AppFlow> planFlows = <AppFlow>[
         kind: ScenarioKind.saveMore,
         amount: l.minor(100000),
       );
-      final ScenarioOutcome saving = weighScenario(l, saveMore);
+      // What the day to day usually takes counts too, as the page says.
+      final int daily = usualDailySpending(l) ?? 0;
+      final ScenarioOutcome saving = weighScenario(l, saveMore, daily: daily);
       final DateTime sooner = arrival(
         trip,
         from: own.today,
         monthly: trip.monthly + (l.minor(100000) * paydaysPerMonth(l)).round(),
       )!;
       await f.page(
-        'Con 100.000 más por pago el saldo mínimo antes del pago no cambia; '
-        'al 17 de noviembre tendrías 300.000 menos y el viaje llega en '
+        'Con 100.000 más por pago compara el saldo mínimo, el primer día bajo '
+        'el colchón y lo que tendrías al 17 de noviembre, contando lo que '
+        'sueles gastar en el día a día; el viaje llega en '
         '${monthYear(sooner)}.',
         most: 2,
       );
@@ -3318,6 +3321,18 @@ final List<AppFlow> planFlows = <AppFlow>[
         'La meta llega en ${monthYear(sooner)} en vez de '
         '${monthYear(arrival(trip, from: own.today)!)}',
         () => expect(_says(f, 'Con el cambio: ${monthYear(sooner)}'), isTrue),
+      );
+      await f.reveal(find.textContaining('gasto del día a día').last);
+      await f.check(
+        'Cuenta unos ${_pesos(l, daily)} al día de gasto del día a día, y lo '
+        'dice',
+        () {
+          expect(daily, l.minor(15000));
+          expect(
+            _says(f, 'unos ${_pesos(l, daily)} al día de gasto del día a día'),
+            isTrue,
+          );
+        },
       );
       await f.tap('Guardar el escenario');
       await f.check('El escenario quedó guardado y no cambió nada más', () {
@@ -4245,6 +4260,32 @@ Future<QuincenaStore> _withPay() async {
       cushion: Decimal.fromInt(200000),
     ),
   );
+  return store;
+}
+
+/// [_withPay], with the fortnight before this one spent day to day: what
+/// «¿Y si…?» counts as usual, 225.000 in 15 days.
+Future<QuincenaStore> _withPayAndHistory() async {
+  final QuincenaStore store = await _withPay();
+  final Account bank = (await store.accounts()).firstWhere(
+    (Account a) => a.name == 'Bancolombia',
+  );
+  for (final (String amount, int day, String category, String payee)
+      in <(String, int, String, String)>[
+        ('85000', 16, 'groceries', 'D1'),
+        ('42000', 19, 'restaurants', 'Crepes & Waffles'),
+        ('18000', 22, 'transport', 'Uber'),
+        ('80000', 26, 'groceries', 'Éxito Laureles'),
+      ]) {
+    await store.addEntry(
+      accountId: bank.id,
+      amount: Decimal.parse(amount),
+      kind: EntryKind.expense,
+      date: DateTime(2026, 9, day, 12),
+      category: category,
+      payee: payee,
+    );
+  }
   return store;
 }
 

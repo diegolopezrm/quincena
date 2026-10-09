@@ -394,6 +394,12 @@ void main() {
     await tester.enterText(find.byType(TextField), '50.000');
     await settle(tester);
     expect(find.text('Saldo mínimo en 45 días'), findsOneWidget);
+    // No whole fortnight recorded: the day to day is left out, and said.
+    expect(find.text('Contar el gasto del día a día'), findsNothing);
+    expect(
+      find.textContaining('No incluye el gasto del día a día'),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('Guardar el escenario'));
     await settle(tester);
@@ -404,6 +410,8 @@ void main() {
       d('100000'),
     );
 
+    await tester.ensureVisible(find.text('Aplicar'));
+    await settle(tester);
     await tester.tap(find.text('Aplicar'));
     await settle(tester);
     await tester.tap(find.text('Aplicar').last);
@@ -411,6 +419,75 @@ void main() {
     expect(
       (await tester.runAsync(own.store.recurring))!.single.amount.amount,
       d('150000'),
+    );
+  });
+
+  testWidgets('what if counts what the day to day usually takes, or says it '
+      'leaves it out', (tester) async {
+    final OwnController own = await open(
+      tester,
+      (OwnController own) => WhatIfPage(own: own),
+    );
+    await tester.runAsync(() async {
+      final String bank = own.accounts
+          .firstWhere((Account a) => a.name == 'Bancolombia')
+          .id;
+      // The fortnight from the 15th is whole: 450.000 in 15 days.
+      for (final (String amount, DateTime on) in <(String, DateTime)>[
+        ('20000', DateTime(2026, 9, 14, 12)),
+        ('450000', DateTime(2026, 9, 20, 12)),
+      ]) {
+        await own.store.addEntry(
+          accountId: bank,
+          amount: d(amount),
+          kind: EntryKind.expense,
+          date: on,
+          category: 'groceries',
+          payee: 'Éxito',
+        );
+      }
+    });
+    await settle(tester);
+    await tester.enterText(find.byType(TextField), '100.000');
+    await settle(tester);
+    expect(
+      find.text(
+        'Lo que sueles gastar: unos ${pesos(30000)} al día, sin tus pagos '
+        'fijos.',
+      ),
+      findsOneWidget,
+    );
+    final Finder counted = find.text(
+      'Cuenta tu pago esperado, lo programado y unos ${pesos(30000)} al día '
+      'de gasto del día a día. Nada de esto cambia tus cuentas.',
+    );
+    await tester.ensureVisible(counted);
+    await settle(tester);
+    expect(counted, findsOneWidget);
+    final String lowest = find
+        .textContaining(' · ')
+        .evaluate()
+        .map((Element e) => (e.widget as Text).data!)
+        .first;
+
+    await tester.ensureVisible(find.text('Contar el gasto del día a día'));
+    await tester.tap(find.text('Contar el gasto del día a día'));
+    await settle(tester);
+    expect(counted, findsNothing);
+    expect(
+      find.textContaining(
+        'sin el gasto del día a día: tu saldo real será menor',
+      ),
+      findsOneWidget,
+    );
+    // Without the day to day, the lowest balance comes out higher.
+    expect(
+      find
+          .textContaining(' · ')
+          .evaluate()
+          .map((Element e) => (e.widget as Text).data!)
+          .first,
+      isNot(lowest),
     );
   });
 

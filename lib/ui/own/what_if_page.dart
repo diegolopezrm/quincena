@@ -35,6 +35,9 @@ class _WhatIfPageState extends State<WhatIfPage> {
   int _days = 5;
   String? _charge;
 
+  /// Whether the day to day's usual spending counts, when it is known.
+  bool _daily = true;
+
   OwnController get own => widget.own;
 
   @override
@@ -144,9 +147,16 @@ class _WhatIfPageState extends State<WhatIfPage> {
         for (final Movement m in ledger.upcoming) m.merchant,
       }.toList()..sort();
       final Scenario? scenario = _scenario(ledger);
+      // Without the day to day, every figure would come out as if nothing
+      // were spent until then.
+      final int? usual = switch (usualDailySpending(ledger)) {
+        final int u when u > 0 => u,
+        _ => null,
+      };
+      final int daily = _daily ? usual ?? 0 : 0;
       final ScenarioOutcome? outcome = scenario == null
           ? null
-          : weighScenario(ledger, scenario);
+          : weighScenario(ledger, scenario, daily: daily);
       return Scaffold(
         appBar: AppBar(
           backgroundColor: context.colors.canvas,
@@ -244,6 +254,17 @@ class _WhatIfPageState extends State<WhatIfPage> {
                       ),
                     ],
                   ),
+                if (usual != null)
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: _daily,
+                    onChanged: (bool on) => setState(() => _daily = on),
+                    title: Text(l.whatIfDaily, style: context.type.bodyMedium),
+                    subtitle: Text(
+                      l.whatIfDailyAbout(amount(usual)),
+                      style: context.type.bodySmall,
+                    ),
+                  ),
                 const SizedBox(height: 16),
                 if (outcome != null && scenario != null) ...<Widget>[
                   Block(
@@ -295,7 +316,13 @@ class _WhatIfPageState extends State<WhatIfPage> {
                                 tried: monthYear(sooner),
                               ),
                         const SizedBox(height: 6),
-                        Text(l.whatIfAssumes, style: context.type.bodySmall),
+                        Text(switch (usual) {
+                          null => l.whatIfNoDailyYet,
+                          _ when daily > 0 => l.whatIfAssumesDaily(
+                            amount(daily),
+                          ),
+                          _ => l.whatIfAssumesNoDaily,
+                        }, style: context.type.bodySmall),
                       ],
                     ),
                   ),
@@ -335,7 +362,11 @@ class _WhatIfPageState extends State<WhatIfPage> {
                             _describe(l, ledger, x),
                             style: context.type.bodyMedium,
                           ),
-                          subtitle: Text(switch (weighScenario(ledger, x)) {
+                          subtitle: Text(switch (weighScenario(
+                            ledger,
+                            x,
+                            daily: daily,
+                          )) {
                             final ScenarioOutcome o => l.whatIfSavedOutcome(
                               amount(o.lowestTried.likely),
                               dayShortMonth(o.lowestTried.date),

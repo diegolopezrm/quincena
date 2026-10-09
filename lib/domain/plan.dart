@@ -363,6 +363,46 @@ int? usualPeriodSpending(Ledger ledger, {int periods = 3}) {
   return (totals.reduce((int a, int b) => a + b) / totals.length).round();
 }
 
+/// What the day to day usually takes in a day: what the last whole pay
+/// periods spent, less what went to the charges that come on their own,
+/// over their days. Null without a whole period recorded.
+int? usualDailySpending(Ledger ledger, {int periods = 3}) {
+  if (ledger.movements.isEmpty) return null;
+  // Those charges are in any projection already, on their days.
+  final Set<String> fixed = <String>{
+    for (final Movement m in ledger.upcoming) merchantKey(m.merchant),
+  }..remove('');
+  final DateTime first = ledger.movements
+      .map((Movement m) => _day(m.date))
+      .reduce((DateTime a, DateTime b) => a.isBefore(b) ? a : b);
+  final DateTime end = periodStart(ledger);
+  DateTime start = end;
+  for (var i = 0; i < periods; i++) {
+    final DateTime before = _day(
+      ledger.schedule.lastOnOrBefore(start.subtract(const Duration(days: 1))),
+    );
+    // The period has to have been recorded from its start.
+    if (first.isAfter(before)) break;
+    start = before;
+  }
+  final int days = DateTime.utc(
+    end.year,
+    end.month,
+    end.day,
+  ).difference(DateTime.utc(start.year, start.month, start.day)).inDays;
+  if (days <= 0) return null;
+  final int spent = ledger.movements
+      .where(
+        (Movement m) =>
+            m.flow == Flow.expense &&
+            !_day(m.date).isBefore(start) &&
+            _day(m.date).isBefore(end) &&
+            !fixed.contains(merchantKey(m.merchant)),
+      )
+      .fold(0, (int s, Movement m) => s + m.amount);
+  return (spent / days).round();
+}
+
 /// What was spent since the period started, all of it.
 int spentThisPeriod(Ledger ledger) {
   final DateTime start = periodStart(ledger);
@@ -729,17 +769,37 @@ class ScenarioOutcome {
 }
 
 /// Weighs [scenario] against things as they are over [horizon] days, on the
-/// likely balance: the pay counts as expected in both.
+/// likely balance: the pay counts as expected in both, and so does
+/// [daily], what the day to day takes each day from tomorrow, when given.
 ScenarioOutcome weighScenario(
   Ledger ledger,
   Scenario scenario, {
   int horizon = 45,
+  int daily = 0,
 }) {
-  final Projection now = Projection.of(ledger, horizon: horizon);
+  final DateTime today = _day(ledger.today);
+  final List<ProjectedEvent> dayToDay = <ProjectedEvent>[
+    if (daily > 0)
+      for (var i = 1; i <= horizon; i++)
+        ProjectedEvent(
+          date: DateTime(today.year, today.month, today.day + i),
+          amount: -daily,
+          certainty: Certainty.hypothetical,
+          kind: ProjectedKind.tryOut,
+        ),
+  ];
+  final Projection now = Projection.of(
+    ledger,
+    horizon: horizon,
+    tryOut: dayToDay,
+  );
   final Projection tried = Projection.of(
     ledger,
     horizon: horizon,
-    tryOut: scenario.events(ledger, horizon: horizon),
+    tryOut: <ProjectedEvent>[
+      ...dayToDay,
+      ...scenario.events(ledger, horizon: horizon),
+    ],
   );
   ProjectedDay lowest(Projection p) => p.days.reduce(
     (ProjectedDay a, ProjectedDay b) => b.likely < a.likely ? b : a,
