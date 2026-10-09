@@ -10,8 +10,13 @@ import '../../capture/inbox.dart';
 import '../../capture/native_channel.dart';
 import '../../capture/parser.dart';
 import '../../data/example_account.dart' show exampleMessage;
+import '../../data/ledger.dart';
+import '../../domain/freelance.dart';
+import '../../domain/payment_match.dart';
 import '../../domain/records.dart';
+import '../../domain/shared.dart';
 import '../../format/dates.dart';
+import '../../format/money.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
@@ -511,11 +516,34 @@ class _InboxCardState extends State<InboxCard> {
       CaptureService.ownMove(item, own.accounts, person: own.profile?.name);
 
   /// What recording it does, said on what records it.
-  String _recordLabel(AppLocalizations l, {OwnMove? move}) => move != null
+  String _recordLabel(
+    AppLocalizations l, {
+    OwnMove? move,
+    PaymentMatch? paid,
+  }) => move != null
       ? l.recordTransfer
+      : paid?.member != null
+      ? l.recordRepaid(paid!.member!.name)
+      : paid != null
+      ? l.recordCollected
       : item.parsed.kind == EntryKind.income
       ? l.recordIncome
       : l.recordExpense;
+
+  /// What [paid] is, said on the card before it is recorded.
+  String _paidDetail(AppLocalizations l, PaymentMatch paid) {
+    final Ledger? ledger = own.ledger;
+    String amount(int minor) =>
+        ledger == null ? '$minor' : pesos(ledger.major(minor));
+    if (paid.income case final ExpectedIncome income) {
+      return l.clientPaidDetail(income.client, amount(income.amount));
+    }
+    return l.friendPaidDetail(
+      paid.member!.name,
+      amount(paid.owed),
+      paid.group!.name,
+    );
+  }
 
   Future<void> _confirm() async {
     if (_move case final OwnMove move) return _recordMove(move);
@@ -582,15 +610,101 @@ class _InboxCardState extends State<InboxCard> {
 
   Future<void> _record(String accountId) async {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final AppLocalizations l = context.l10n;
+    final PaymentMatch? paid = _paid;
+    final String? category = item.suggestion.category;
     setState(() => _busy = true);
     unawaited(HapticFeedback.lightImpact());
     final Accepted done = await own.capture.accept(
       item,
       accountId: accountId,
-      category: item.suggestion.category,
+      // A client's payment is variable income, whatever it was taken for.
+      category:
+          paid?.income != null &&
+              (category == null || category == 'other_income')
+          ? 'freelance'
+          : category,
       payee: item.suggestion.payee,
     );
-    showRecorded(messenger, own, done);
+    if (paid == null) return showRecorded(messenger, own, done);
+    final (String, Future<void> Function()) settled = await _settle(
+      l,
+      paid,
+      done.entry,
+    );
+    showRecorded(messenger, own, done, also: settled.$1, undoAlso: settled.$2);
+  }
+
+  /// What the money that came in settles while it waits: the client's
+  /// payment the person was expecting, or what someone owed them.
+  PaymentMatch? get _paid {
+    final ParsedCapture p = item.parsed;
+    final Decimal? amount = p.amount;
+    final Ledger? ledger = own.ledger;
+    final Asset base = own.profile?.base ?? Asset.cop;
+    if (item.status != InboxStatus.pending ||
+        p.kind != EntryKind.income ||
+        amount == null ||
+        ledger == null ||
+        (p.asset != null && p.asset != base)) {
+      return null;
+    }
+    return matchPayment(
+      from: item.suggestion.payee ?? p.merchant ?? '',
+      amount: ledger.minor(amount.toDouble()),
+      freelance: own.freelance,
+      groups: own.groups,
+    );
+  }
+
+  /// Marks what [paid] settles with [entry], the income just recorded: the
+  /// client's payment as collected, or the payment of what someone owed.
+  /// Gives back what to say, and how to take it back.
+  Future<(String, Future<void> Function())> _settle(
+    AppLocalizations l,
+    PaymentMatch paid,
+    Entry entry,
+  ) async {
+    final Ledger? ledger = own.ledger;
+    final ExpectedIncome? income = paid.income;
+    if (income != null) {
+      await own.saveFreelance(
+        own.freelance.withIncome(
+          income.copyWith(
+            status: IncomeStatus.collected,
+            collectedOn: entry.date,
+            entryId: entry.id,
+          ),
+        ),
+      );
+      return (
+        l.collectedDone(income.client),
+        () => own.saveFreelance(own.freelance.withIncome(income)),
+      );
+    }
+    final Group group = paid.group!;
+    final Member member = paid.member!;
+    final int received = ledger?.minor(entry.amount.toDouble()) ?? paid.owed;
+    final int amount = received < paid.owed ? received : paid.owed;
+    final Settlement settlement = Settlement(
+      id: 'settle-${DateTime.now().microsecondsSinceEpoch}',
+      from: member.id,
+      to: meId,
+      amount: amount,
+      date: entry.date,
+      entryId: entry.id,
+    );
+    await own.settle(group, settlement);
+    final int left = paid.owed - amount;
+    return (
+      left > 0 && ledger != null
+          ? l.repaidLeft(member.name, pesos(ledger.major(left)))
+          : l.repaidAll(member.name),
+      () => own.unsettle(
+        own.groups.where((Group g) => g.id == group.id).firstOrNull ?? group,
+        settlement,
+      ),
+    );
   }
 
   /// Asks which account it was: those at the bank the alert names first,
@@ -743,6 +857,7 @@ class _InboxCardState extends State<InboxCard> {
   Widget? _stateOf(
     BuildContext context, {
     required OwnMove? move,
+    required PaymentMatch? paid,
     required Account? account,
     required String categoryName,
   }) {
@@ -784,7 +899,18 @@ class _InboxCardState extends State<InboxCard> {
         icon: Glyph.warningCircle,
         label: l.stateAccount,
         color: caution,
-        detail: missingAccountText(context, own, i),
+        detail: <String>[
+          missingAccountText(context, own, i),
+          if (paid != null) _paidDetail(l, paid),
+        ].join(' '),
+      );
+    }
+    if (paid != null) {
+      return _StateLine(
+        icon: Glyph.handCoins,
+        label: paid.income != null ? l.stateClientPaid : l.stateFriendPaid,
+        color: brand,
+        detail: _paidDetail(l, paid),
       );
     }
     if (i.suggestion.why.contains('only')) {
@@ -955,6 +1081,8 @@ class _InboxCardState extends State<InboxCard> {
     // Money that only changed accounts reads as the move it is: from one
     // to the other, neither spent nor earned.
     final OwnMove? move = waiting ? _move : null;
+    // Money that came in may be what a client or a friend owed.
+    final PaymentMatch? paid = waiting && move == null ? _paid : null;
     final (Account, Account)? moved = _moved;
     final (String, String)? between = move != null
         ? (
@@ -1048,7 +1176,7 @@ class _InboxCardState extends State<InboxCard> {
                 ),
                 if (!large) ...<Widget>[const SizedBox(width: 8), figures],
                 IconButton(
-                  tooltip: _recordLabel(l, move: move),
+                  tooltip: _recordLabel(l, move: move, paid: paid),
                   onPressed: _busy ? null : _confirm,
                   icon: Icon(Glyph.check, color: context.colors.brand),
                 ),
@@ -1169,6 +1297,7 @@ class _InboxCardState extends State<InboxCard> {
             ?_stateOf(
               context,
               move: move,
+              paid: paid,
               account: account,
               categoryName: categoryName,
             ),
@@ -1294,7 +1423,9 @@ class _InboxCardState extends State<InboxCard> {
                         FilledButton(
                           onPressed: _busy || amount == null ? null : _confirm,
                           child: Text(
-                            account == null ? l.chooseAccount : _recordLabel(l),
+                            account == null
+                                ? l.chooseAccount
+                                : _recordLabel(l, paid: paid),
                           ),
                         ),
                         TextButton(

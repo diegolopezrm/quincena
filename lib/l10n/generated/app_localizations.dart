@@ -7412,6 +7412,12 @@ abstract class AppLocalizations {
   /// **'¿Con qué movimiento llegó?'**
   String get freelanceArrivedAs;
 
+  /// No description provided for @freelanceNoEntry.
+  ///
+  /// In es, this message translates to:
+  /// **'Ninguno, o no está en Quincena'**
+  String get freelanceNoEntry;
+
   /// No description provided for @freelanceNote.
   ///
   /// In es, this message translates to:
@@ -10223,6 +10229,60 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Transferencia entre tus cuentas'**
   String get stateMove;
+
+  /// No description provided for @stateClientPaid.
+  ///
+  /// In es, this message translates to:
+  /// **'El pago que esperabas'**
+  String get stateClientPaid;
+
+  /// No description provided for @clientPaidDetail.
+  ///
+  /// In es, this message translates to:
+  /// **'De {client}, por {amount}: al registrarlo queda como cobrado.'**
+  String clientPaidDetail(String client, String amount);
+
+  /// No description provided for @stateFriendPaid.
+  ///
+  /// In es, this message translates to:
+  /// **'Pago de lo que te deben'**
+  String get stateFriendPaid;
+
+  /// No description provided for @friendPaidDetail.
+  ///
+  /// In es, this message translates to:
+  /// **'{name} te debe {owed} en «{group}»: al registrarlo queda anotado.'**
+  String friendPaidDetail(String name, String owed, String group);
+
+  /// No description provided for @recordCollected.
+  ///
+  /// In es, this message translates to:
+  /// **'Registrar y marcar cobrado'**
+  String get recordCollected;
+
+  /// No description provided for @recordRepaid.
+  ///
+  /// In es, this message translates to:
+  /// **'Registrar el pago de {name}'**
+  String recordRepaid(String name);
+
+  /// No description provided for @collectedDone.
+  ///
+  /// In es, this message translates to:
+  /// **'{client} quedó como cobrado.'**
+  String collectedDone(String client);
+
+  /// No description provided for @repaidAll.
+  ///
+  /// In es, this message translates to:
+  /// **'{name} ya no te debe nada.'**
+  String repaidAll(String name);
+
+  /// No description provided for @repaidLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'{name} todavía te debe {amount}.'**
+  String repaidLeft(String name, String amount);
 
   /// No description provided for @stateCheckCategory.
   ///

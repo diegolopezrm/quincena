@@ -168,8 +168,10 @@ String listSound(String words) =>
 void showRecorded(
   ScaffoldMessengerState messenger,
   OwnController own,
-  Accepted done,
-) {
+  Accepted done, {
+  String? also,
+  Future<void> Function()? undoAlso,
+}) {
   final BuildContext context = messenger.context;
   final AppLocalizations l = context.l10n;
   final Entry entry = done.entry;
@@ -184,7 +186,13 @@ void showRecorded(
     _ when entry.amount > Decimal.zero => l.recordedIncomeIn(account),
     _ => l.recordedExpenseIn(account),
   };
-  _offerUndo(messenger, own, <Accepted>[done], said);
+  _offerUndo(
+    messenger,
+    own,
+    <Accepted>[done],
+    also == null ? said : '$said $also',
+    undoAlso: undoAlso,
+  );
 }
 
 /// Says what correcting a movement recorded on its own taught, with one
@@ -236,8 +244,9 @@ void _offerUndo(
   ScaffoldMessengerState messenger,
   OwnController own,
   List<Accepted> done,
-  String said,
-) {
+  String said, {
+  Future<void> Function()? undoAlso,
+}) {
   final BuildContext context = messenger.context;
   final List<RuleChange> learned = <RuleChange>[
     for (final Accepted a in done) ...a.learned,
@@ -259,7 +268,10 @@ void _offerUndo(
         duration: const Duration(seconds: 6),
         action: SnackBarAction(
           label: context.l10n.undo,
-          onPressed: () => own.capture.takeBack(done),
+          onPressed: () async {
+            await own.capture.takeBack(done);
+            await undoAlso?.call();
+          },
         ),
       ),
     );

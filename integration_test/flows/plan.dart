@@ -690,10 +690,24 @@ final List<AppFlow> planFlows = <AppFlow>[
         },
       );
       await f.tap('Cobrado');
+      await f.check(
+        'Con «Cobrado», el ingreso de Agencia Uno ya viene elegido',
+        () {
+          final DropdownButtonFormField<String?> arrived = f.tester
+              .widget<DropdownButtonFormField<String?>>(
+                find.byType(DropdownButtonFormField<String?>),
+              );
+          final Entry e = own.snapshot!.entries.firstWhere(
+            (Entry e) => e.id == arrived.initialValue,
+          );
+          expect(e.payee, startsWith('Agencia Uno'));
+        },
+      );
       await f.tapFound(find.byType(DropdownButtonFormField<String?>));
       await f.step(
-        'Con «Cobrado» aparece «¿Con qué movimiento llegó?»: se elige entre '
-        'los ingresos de los últimos 90 días.',
+        'Con «Cobrado» aparece «¿Con qué movimiento llegó?», con el ingreso '
+        'de Agencia Uno ya elegido; la lista trae los ingresos de los últimos '
+        '90 días y «Ninguno, o no está en Quincena».',
       );
       await f.tapFound(find.textContaining('Agencia Uno ·').last);
       await f.tapFound(find.textContaining('Cobrado el').last);

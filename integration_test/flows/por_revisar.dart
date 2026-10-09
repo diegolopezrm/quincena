@@ -1,5 +1,6 @@
 // Flows of Por revisar y captura (07), Importar extracto (08).
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
@@ -9,8 +10,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quincena/capture/capture_service.dart';
 import 'package:quincena/capture/event.dart';
 import 'package:quincena/capture/inbox.dart';
+import 'package:quincena/domain/freelance.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
+import 'package:quincena/domain/shared.dart';
 import 'package:quincena/format/money.dart';
 import 'package:quincena/money/asset.dart';
 import 'package:quincena/money/money.dart';
@@ -2318,6 +2321,129 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
     },
   ),
   AppFlow(
+    '07-18-cobrar-lo-que-me-deben',
+    'Que la app reconozca el pago de un cliente o de un amigo',
+    area: 'Por revisar',
+    goal:
+        'Le facturé a Agencia Uno y le presté a Camilo: cuando me paguen, '
+        'quiero registrarlo y que quede cobrado sin buscarlo en el Plan.',
+    data: _owedByCamilo,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Account bank = _account(own, 'Bancolombia');
+      ExpectedIncome uno() =>
+          own.freelance.incomes.firstWhere((ExpectedIncome i) => i.id == 'uno');
+      Group loan() =>
+          own.groups.firstWhere((Group g) => g.id == 'group-camilo');
+      await f.tapTip('Por revisar');
+      await _paste(f, r'Bancolombia: Recibiste $700.000 de AGENCIA UNO SAS');
+      await _hideNotice(f);
+      await f.top();
+      await f.step(
+        'Llegan \$700.000 de Agencia Uno, el cobro que esperabas desde el 28 '
+        'de septiembre: la tarjeta dice «El pago que esperabas» y el botón '
+        '«Registrar y marcar cobrado».',
+      );
+      final String agency = _payee(
+        own.pendingInbox.firstWhere(
+          (InboxItem i) => i.event.text.contains('AGENCIA'),
+        ),
+      );
+      await f.check('Reconoce el cobro de Agencia Uno', () {
+        expect(uno().status, IncomeStatus.pending);
+        expect(f.shows('El pago que esperabas'), isTrue);
+        expect(
+          f.shows(
+            'De Agencia Uno, por \$700.000: al registrarlo queda como '
+            'cobrado.',
+          ),
+          isTrue,
+        );
+      });
+      await _tapOn(f, agency, 'Registrar y marcar cobrado');
+      await f.step(
+        'Un toque: el aviso dice «Ingreso registrado en Bancolombia. Agencia '
+        'Uno quedó como cobrado.», con «Deshacer».',
+      );
+      await f.check('El cobro quedó cobrado, con el ingreso que llegó', () {
+        final Entry e = own.snapshot!.entries.firstWhere(
+          (Entry e) => e.payee == agency,
+        );
+        expect(e.accountId, bank.id);
+        expect(e.amount, Decimal.parse('700000'));
+        expect(e.category, 'freelance');
+        expect(uno().status, IncomeStatus.collected);
+        expect(uno().entryId, e.id);
+        expect(
+          f.screenText,
+          contains(
+            'Ingreso registrado en Bancolombia. Agencia Uno quedó como '
+            'cobrado.',
+          ),
+        );
+      });
+      await _hideNotice(f);
+      await _paste(f, r'Nequi: Camilo Ruiz te envió $60.000');
+      await _hideNotice(f);
+      await f.top();
+      await f.step(
+        'Camilo Ruiz te envía \$60.000 por Nequi: la tarjeta dice «Pago de '
+        'lo que te deben», que Camilo te debe \$100.000 y el botón «Registrar '
+        'el pago de Camilo».',
+      );
+      await f.check('Reconoce lo que Camilo te debía', () {
+        expect(
+          f.shows(
+            'Camilo te debe \$100.000 en «Camilo»: al registrarlo queda '
+            'anotado.',
+          ),
+          isTrue,
+        );
+      });
+      await _tapOn(f, 'Camilo Ruiz', 'Registrar el pago de Camilo');
+      await f.step(
+        'Un toque: «Ingreso registrado en Nequi. Camilo todavía te debe '
+        '\$40.000.» El préstamo queda con el pago anotado.',
+      );
+      await f.check(
+        'El pago quedó anotado en el préstamo, ligado al ingreso',
+        () {
+          final Entry e = own.snapshot!.entries.firstWhere(
+            (Entry e) => e.payee == 'Camilo Ruiz',
+          );
+          final Settlement paid = loan().settlements.single;
+          expect(paid.from, 'p-camilo');
+          expect(paid.to, meId);
+          expect(paid.amount, own.ledger!.minor(60000));
+          expect(paid.entryId, e.id);
+          expect(loan().balances['p-camilo'], -own.ledger!.minor(40000));
+          expect(
+            f.screenText,
+            contains(
+              'Ingreso registrado en Nequi. Camilo todavía te debe \$40.000.',
+            ),
+          );
+        },
+      );
+      await _undoFromNotice(f);
+      await f.step(
+        '«Deshacer» quita el ingreso y el pago anotado: Camilo vuelve a deberte '
+        '\$100.000 y el aviso espera otra vez.',
+      );
+      await f.check('Deshacer quitó el ingreso y el pago del préstamo', () {
+        expect(loan().settlements, isEmpty);
+        expect(
+          own.snapshot!.entries.where((Entry e) => e.payee == 'Camilo Ruiz'),
+          isEmpty,
+        );
+        expect(
+          own.pendingInbox.where((InboxItem i) => _payee(i) == 'Camilo Ruiz'),
+          hasLength(1),
+        );
+      });
+    },
+  ),
+  AppFlow(
     '08-01-importar-el-extracto-del-banco',
     'Importar el extracto del banco',
     area: 'Importar extracto',
@@ -3264,6 +3390,38 @@ Future<QuincenaStore> _everyKind() async {
     _bancolombia(r'Pago por $89.900 a Claro', 9, 20),
     _davivienda(r'Compra por $120.000 en Falabella', 9, 30),
   ]);
+  return store;
+}
+
+/// Diego's account, where he lent Camilo \$100.000 from Bancolombia.
+Future<QuincenaStore> _owedByCamilo() async {
+  final QuincenaStore store = await fullAccount();
+  final List<Object?> groups =
+      (jsonDecode(await store.setting('shared.groups') ?? '[]')
+          as List<Object?>);
+  await store.setSetting(
+    'shared.groups',
+    jsonEncode(<Object?>[
+      ...groups,
+      Group(
+        id: 'group-camilo',
+        name: 'Camilo',
+        members: const <Member>[
+          Member(id: meId, name: ''),
+          Member(id: 'p-camilo', name: 'Camilo'),
+        ],
+        expenses: <SharedExpense>[
+          SharedExpense(
+            id: 'loan',
+            label: 'Préstamo',
+            date: DateTime(2026, 9, 20),
+            paidBy: meId,
+            shares: const <String, int>{'p-camilo': 100000},
+          ),
+        ],
+      ).toJson(),
+    ]),
+  );
   return store;
 }
 

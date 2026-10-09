@@ -4794,6 +4794,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get freelanceArrivedAs => 'Which transaction was it?';
 
   @override
+  String get freelanceNoEntry => 'None, or it isn\'t in Quincena';
+
+  @override
   String get freelanceNote => 'Note';
 
   @override
@@ -6743,6 +6746,45 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stateMove => 'Transfer between your accounts';
+
+  @override
+  String get stateClientPaid => 'The payment you were expecting';
+
+  @override
+  String clientPaidDetail(String client, String amount) {
+    return 'From $client, for $amount: recording it marks it as paid.';
+  }
+
+  @override
+  String get stateFriendPaid => 'A payment of what you\'re owed';
+
+  @override
+  String friendPaidDetail(String name, String owed, String group) {
+    return '$name owes you $owed in \"$group\": recording it notes the payment.';
+  }
+
+  @override
+  String get recordCollected => 'Record and mark as paid';
+
+  @override
+  String recordRepaid(String name) {
+    return 'Record $name\'s payment';
+  }
+
+  @override
+  String collectedDone(String client) {
+    return '$client is marked as paid.';
+  }
+
+  @override
+  String repaidAll(String name) {
+    return '$name no longer owes you anything.';
+  }
+
+  @override
+  String repaidLeft(String name, String amount) {
+    return '$name still owes you $amount.';
+  }
 
   @override
   String stateCheckCategory(String category) {

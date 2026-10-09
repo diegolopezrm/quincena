@@ -4790,6 +4790,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get freelanceArrivedAs => '¿Con qué movimiento llegó?';
 
   @override
+  String get freelanceNoEntry => 'Ninguno, o no está en Quincena';
+
+  @override
   String get freelanceNote => 'Nota';
 
   @override
@@ -6736,6 +6739,45 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get stateMove => 'Transferencia entre tus cuentas';
+
+  @override
+  String get stateClientPaid => 'El pago que esperabas';
+
+  @override
+  String clientPaidDetail(String client, String amount) {
+    return 'De $client, por $amount: al registrarlo queda como cobrado.';
+  }
+
+  @override
+  String get stateFriendPaid => 'Pago de lo que te deben';
+
+  @override
+  String friendPaidDetail(String name, String owed, String group) {
+    return '$name te debe $owed en «$group»: al registrarlo queda anotado.';
+  }
+
+  @override
+  String get recordCollected => 'Registrar y marcar cobrado';
+
+  @override
+  String recordRepaid(String name) {
+    return 'Registrar el pago de $name';
+  }
+
+  @override
+  String collectedDone(String client) {
+    return '$client quedó como cobrado.';
+  }
+
+  @override
+  String repaidAll(String name) {
+    return '$name ya no te debe nada.';
+  }
+
+  @override
+  String repaidLeft(String name, String amount) {
+    return '$name todavía te debe $amount.';
+  }
 
   @override
   String stateCheckCategory(String category) {
