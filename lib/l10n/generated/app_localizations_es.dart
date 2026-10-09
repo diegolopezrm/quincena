@@ -1932,6 +1932,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get envelopeAside => 'Apartar para algo';
 
   @override
+  String get envelopeAsideNoName => 'Ponle un nombre: para qué es.';
+
+  @override
   String get envelopeAsideHint => 'Regalo, matrícula, viaje…';
 
   @override
@@ -4064,7 +4067,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get detectiveBody =>
-      'Quincena mira tus movimientos de los últimos 60 días, aquí en el teléfono, y te muestra lo que vale la pena revisar, con la evidencia. Nunca borra un movimiento ni dice que algo sea fraude.';
+      'Quincena mira tus movimientos aquí en el teléfono: los cobros de los últimos 60 días y, para ver si algo subió de precio, los de los últimos seis meses. Te muestra lo que vale la pena revisar, con la evidencia, y nunca borra un movimiento ni dice que algo sea fraude.';
 
   @override
   String get detectiveEmpty => 'Nada para revisar por ahora.';
@@ -4297,6 +4300,19 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String planShared(String owed, String owing) {
     return 'Te deben $owed · debes $owing';
+  }
+
+  @override
+  String get planSharedEven => 'A paz y salvo';
+
+  @override
+  String planSharedOwed(String amount) {
+    return 'Te deben $amount';
+  }
+
+  @override
+  String planSharedOwing(String amount) {
+    return 'Debes $amount';
   }
 
   @override
@@ -4740,6 +4756,22 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get freelanceUse => 'Usé de la reserva';
+
+  @override
+  String get freelanceUseMissing => 'Escribe cuánto usaste.';
+
+  @override
+  String get freelanceUsePayee => 'Pago con la reserva';
+
+  @override
+  String freelanceUseFrom(String amount, String account) {
+    return 'Se anota un gasto de $amount en $account: la reserva baja y lo que puedes gastar no cambia.';
+  }
+
+  @override
+  String freelanceUseOnlyReserve(String amount) {
+    return 'Solo baja la reserva: lo que puedes gastar sube $amount hasta que anotes el gasto.';
+  }
 
   @override
   String get freelanceUseAmount => '¿Cuánto usaste?';

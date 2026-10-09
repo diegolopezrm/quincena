@@ -1931,6 +1931,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get envelopeAside => 'Set aside for something';
 
   @override
+  String get envelopeAsideNoName => 'Give it a name: what it is for.';
+
+  @override
   String get envelopeAsideHint => 'A gift, tuition, a trip…';
 
   @override
@@ -4067,7 +4070,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get detectiveBody =>
-      'Quincena looks at your last 60 days of transactions, here on the phone, and shows what\'s worth a look, with the evidence. It never deletes a transaction or calls anything fraud.';
+      'Quincena looks at your transactions here on the phone: the charges of the last 60 days and, to see whether something went up in price, those of the last six months. It shows what\'s worth a look, with the evidence, and never deletes a transaction or calls anything fraud.';
 
   @override
   String get detectiveEmpty => 'Nothing to check for now.';
@@ -4300,6 +4303,19 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String planShared(String owed, String owing) {
     return 'You\'re owed $owed · you owe $owing';
+  }
+
+  @override
+  String get planSharedEven => 'All square';
+
+  @override
+  String planSharedOwed(String amount) {
+    return 'You are owed $amount';
+  }
+
+  @override
+  String planSharedOwing(String amount) {
+    return 'You owe $amount';
   }
 
   @override
@@ -4744,6 +4760,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get freelanceUse => 'I used some of the reserve';
+
+  @override
+  String get freelanceUseMissing => 'Type how much you used.';
+
+  @override
+  String get freelanceUsePayee => 'Paid from the reserve';
+
+  @override
+  String freelanceUseFrom(String amount, String account) {
+    return 'An expense of $amount is recorded in $account: the reserve goes down and what you can spend stays the same.';
+  }
+
+  @override
+  String freelanceUseOnlyReserve(String amount) {
+    return 'Only the reserve goes down: what you can spend goes up $amount until you record the expense.';
+  }
 
   @override
   String get freelanceUseAmount => 'How much did you use?';

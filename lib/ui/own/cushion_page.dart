@@ -129,27 +129,34 @@ class CushionPage extends StatelessWidget {
                 Panel(
                   indent: 16,
                   children: <Widget>[
+                    // Where an emergency fund can be: money, not a card's
+                    // debt or coins whose price moves; one chosen before
+                    // stays, to take it out.
                     for (final Account a in own.accounts)
-                      CheckboxListTile(
-                        value: s.accounts.contains(a.id),
-                        onChanged: (bool? on) => save(
-                          s.copyWith(
-                            accounts: <String>{
-                              for (final String id in s.accounts)
-                                if (id != a.id) id,
-                              if (on ?? false) a.id,
-                            },
+                      if ((a.kind != AccountKind.card &&
+                              a.kind != AccountKind.exchange &&
+                              !a.asset.isCrypto) ||
+                          s.accounts.contains(a.id))
+                        CheckboxListTile(
+                          value: s.accounts.contains(a.id),
+                          onChanged: (bool? on) => save(
+                            s.copyWith(
+                              accounts: <String>{
+                                for (final String id in s.accounts)
+                                  if (id != a.id) id,
+                                if (on ?? false) a.id,
+                              },
+                            ),
+                          ),
+                          title: Text(a.name, style: context.type.titleSmall),
+                          subtitle: Text(
+                            moneyText(
+                              own.balances[a.id] ?? a.openingMoney,
+                              base: own.profile?.base,
+                            ),
+                            style: context.type.bodySmall,
                           ),
                         ),
-                        title: Text(a.name, style: context.type.titleSmall),
-                        subtitle: Text(
-                          moneyText(
-                            own.balances[a.id] ?? a.openingMoney,
-                            base: own.profile?.base,
-                          ),
-                          style: context.type.bodySmall,
-                        ),
-                      ),
                   ],
                 ),
                 const SizedBox(height: 24),

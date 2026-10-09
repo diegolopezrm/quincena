@@ -29,15 +29,34 @@ class FreelancePage extends StatelessWidget {
   static const List<int> _percents = <int>[0, 5, 10, 15, 20, 25, 30, 35, 40];
 
   Future<void> _use(BuildContext context, Ledger ledger) async {
-    final int? used = await showDialog<int>(
+    final String payee = context.l10n.freelanceUsePayee;
+    final (int, String?)? used = await showDialog<(int, String?)>(
       context: context,
-      builder: (BuildContext context) =>
-          _UseDialog(ledger: ledger, asset: own.profile?.base ?? Asset.cop),
+      builder: (BuildContext context) => _UseDialog(
+        ledger: ledger,
+        asset: own.profile?.base ?? Asset.cop,
+        accounts: own.paymentAccounts,
+        likely: own.likelyPaymentAccount?.id,
+      ),
     );
     if (used == null) return;
+    final (int amount, String? accountId) = used;
+    // The money went out of an account: written there, what can be spent
+    // does not go up by what left the reserve.
+    if (accountId != null) {
+      await own.store.addEntry(
+        accountId: accountId,
+        amount: Decimal.parse('${ledger.major(amount)}'),
+        kind: EntryKind.expense,
+        date: own.today,
+        category: 'other',
+        payee: payee,
+        source: OwnController.planSource,
+      );
+    }
     final FreelancePlan plan = own.freelance;
     await own.saveFreelance(
-      plan.copyWith(used: <(DateTime, int)>[...plan.used, (own.today, used)]),
+      plan.copyWith(used: <(DateTime, int)>[...plan.used, (own.today, amount)]),
     );
   }
 
@@ -265,10 +284,19 @@ class FreelancePage extends StatelessWidget {
 /// What was taken out of the reserve. The dialog keeps its own field, so
 /// the field lives until the dialog is gone.
 class _UseDialog extends StatefulWidget {
-  const _UseDialog({required this.ledger, required this.asset});
+  const _UseDialog({
+    required this.ledger,
+    required this.asset,
+    required this.accounts,
+    this.likely,
+  });
 
   final Ledger ledger;
   final Asset asset;
+
+  /// Where the money can have gone out from, the likeliest chosen.
+  final List<Account> accounts;
+  final String? likely;
 
   @override
   State<_UseDialog> createState() => _UseDialogState();
@@ -276,6 +304,27 @@ class _UseDialog extends StatefulWidget {
 
 class _UseDialogState extends State<_UseDialog> {
   final TextEditingController _amount = TextEditingController();
+
+  /// Saving with nothing typed says what is missing instead of closing.
+  bool _missing = false;
+
+  late String? _from = widget.accounts.any((Account a) => a.id == widget.likely)
+      ? widget.likely
+      : widget.accounts.firstOrNull?.id;
+
+  /// What saving does, once there is an amount.
+  String? _after(AppLocalizations l) {
+    final Decimal? value = parseAmount(_amount.text);
+    if (value == null || value <= Decimal.zero) return null;
+    final String amount = formatAmount(value, widget.asset, base: widget.asset);
+    final String? from = widget.accounts
+        .where((Account a) => a.id == _from)
+        .firstOrNull
+        ?.name;
+    return from == null
+        ? l.freelanceUseOnlyReserve(amount)
+        : l.freelanceUseFrom(amount, from);
+  }
 
   @override
   void dispose() {
@@ -300,10 +349,38 @@ class _UseDialogState extends State<_UseDialog> {
             inputFormatters: <TextInputFormatter>[
               AmountInputFormatter(maxDecimals: widget.asset.decimals),
             ],
-            decoration: InputDecoration(labelText: l.freelanceUseAmount),
+            onChanged: (_) => setState(() => _missing = false),
+            decoration: InputDecoration(
+              labelText: l.freelanceUseAmount,
+              errorText: _missing ? l.freelanceUseMissing : null,
+            ),
           ),
           const SizedBox(height: 8),
           Text(l.freelanceUseHelp, style: context.type.bodySmall),
+          if (widget.accounts.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String?>(
+              initialValue: _from,
+              isExpanded: true,
+              icon: const Icon(Glyph.caretDown, size: 18),
+              decoration: InputDecoration(labelText: l.instalPaymentFrom),
+              items: <DropdownMenuItem<String?>>[
+                for (final Account a in widget.accounts)
+                  DropdownMenuItem<String?>(
+                    value: a.id,
+                    child: Text(a.name, overflow: TextOverflow.ellipsis),
+                  ),
+                DropdownMenuItem<String?>(
+                  child: Text(l.instalPaymentNoAccount),
+                ),
+              ],
+              onChanged: (String? id) => setState(() => _from = id),
+            ),
+          ],
+          if (_after(l) case final String after) ...<Widget>[
+            const SizedBox(height: 12),
+            Text(after, style: context.type.bodySmall),
+          ],
         ],
       ),
       actions: <Widget>[
@@ -314,11 +391,13 @@ class _UseDialogState extends State<_UseDialog> {
         TextButton(
           onPressed: () {
             final Decimal? value = parseAmount(_amount.text);
-            Navigator.of(context).pop(
-              value == null || value <= Decimal.zero
-                  ? null
-                  : widget.ledger.minor(value.toDouble()),
-            );
+            if (value == null || value <= Decimal.zero) {
+              setState(() => _missing = true);
+              return;
+            }
+            Navigator.of(
+              context,
+            ).pop((widget.ledger.minor(value.toDouble()), _from));
           },
           child: Text(l.save),
         ),

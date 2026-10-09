@@ -2990,6 +2990,12 @@ abstract class AppLocalizations {
   /// **'Apartar para algo'**
   String get envelopeAside;
 
+  /// No description provided for @envelopeAsideNoName.
+  ///
+  /// In es, this message translates to:
+  /// **'Ponle un nombre: para qué es.'**
+  String get envelopeAsideNoName;
+
   /// No description provided for @envelopeAsideHint.
   ///
   /// In es, this message translates to:
@@ -6305,7 +6311,7 @@ abstract class AppLocalizations {
   /// No description provided for @detectiveBody.
   ///
   /// In es, this message translates to:
-  /// **'Quincena mira tus movimientos de los últimos 60 días, aquí en el teléfono, y te muestra lo que vale la pena revisar, con la evidencia. Nunca borra un movimiento ni dice que algo sea fraude.'**
+  /// **'Quincena mira tus movimientos aquí en el teléfono: los cobros de los últimos 60 días y, para ver si algo subió de precio, los de los últimos seis meses. Te muestra lo que vale la pena revisar, con la evidencia, y nunca borra un movimiento ni dice que algo sea fraude.'**
   String get detectiveBody;
 
   /// No description provided for @detectiveEmpty.
@@ -6661,6 +6667,24 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Te deben {owed} · debes {owing}'**
   String planShared(String owed, String owing);
+
+  /// No description provided for @planSharedEven.
+  ///
+  /// In es, this message translates to:
+  /// **'A paz y salvo'**
+  String get planSharedEven;
+
+  /// No description provided for @planSharedOwed.
+  ///
+  /// In es, this message translates to:
+  /// **'Te deben {amount}'**
+  String planSharedOwed(String amount);
+
+  /// No description provided for @planSharedOwing.
+  ///
+  /// In es, this message translates to:
+  /// **'Debes {amount}'**
+  String planSharedOwing(String amount);
 
   /// No description provided for @planFreelanceNone.
   ///
@@ -7345,6 +7369,30 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Usé de la reserva'**
   String get freelanceUse;
+
+  /// No description provided for @freelanceUseMissing.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe cuánto usaste.'**
+  String get freelanceUseMissing;
+
+  /// No description provided for @freelanceUsePayee.
+  ///
+  /// In es, this message translates to:
+  /// **'Pago con la reserva'**
+  String get freelanceUsePayee;
+
+  /// No description provided for @freelanceUseFrom.
+  ///
+  /// In es, this message translates to:
+  /// **'Se anota un gasto de {amount} en {account}: la reserva baja y lo que puedes gastar no cambia.'**
+  String freelanceUseFrom(String amount, String account);
+
+  /// No description provided for @freelanceUseOnlyReserve.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo baja la reserva: lo que puedes gastar sube {amount} hasta que anotes el gasto.'**
+  String freelanceUseOnlyReserve(String amount);
 
   /// No description provided for @freelanceUseAmount.
   ///

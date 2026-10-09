@@ -342,6 +342,38 @@ void main() {
     expect(note, findsOneWidget);
   });
 
+  testWidgets('the emergency fund is offered money, not a card or coins', (
+    tester,
+  ) async {
+    final OwnController own = await open(
+      tester,
+      (OwnController own) => CushionPage(own: own),
+    );
+    await tester.runAsync(() async {
+      await own.store.addAccount(
+        name: 'Visa',
+        kind: AccountKind.card,
+        asset: Asset.cop,
+        opening: d('-300000'),
+      );
+      await own.store.addAccount(
+        name: 'Binance',
+        kind: AccountKind.exchange,
+        asset: Asset.usdt,
+        opening: d('100'),
+        spendable: false,
+      );
+    });
+    await settle(tester);
+    expect(find.widgetWithText(CheckboxListTile, 'Ahorro'), findsOneWidget);
+    expect(
+      find.widgetWithText(CheckboxListTile, 'Bancolombia'),
+      findsOneWidget,
+    );
+    expect(find.widgetWithText(CheckboxListTile, 'Visa'), findsNothing);
+    expect(find.widgetWithText(CheckboxListTile, 'Binance'), findsNothing);
+  });
+
   testWidgets('a wish shows what it would do to a goal', (tester) async {
     final OwnController own = await open(
       tester,

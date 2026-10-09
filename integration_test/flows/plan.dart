@@ -190,16 +190,16 @@ final List<AppFlow> planFlows = <AppFlow>[
             expect(_says(f, 'Te falta pagar unos ${_pesos(l, owed)}'), isTrue),
       );
       final (int owedToYou, int youOwe) = own.sharedBalance;
+      // Only what is not zero is said.
+      final String shared = switch ((owedToYou, youOwe)) {
+        (0, 0) => 'A paz y salvo',
+        (final int owed, 0) => 'Te deben ${_pesos(l, owed)}',
+        (0, final int owing) => 'Debes ${_pesos(l, owing)}',
+        _ => 'Te deben ${_pesos(l, owedToYou)} · debes ${_pesos(l, youOwe)}',
+      };
       await f.check(
-        'Gastos compartidos: te deben ${_pesos(l, owedToYou)} y debes '
-        '${_pesos(l, youOwe)}',
-        () => expect(
-          _says(
-            f,
-            'Te deben ${_pesos(l, owedToYou)} · debes ${_pesos(l, youOwe)}',
-          ),
-          isTrue,
-        ),
+        'Gastos compartidos dice «$shared»',
+        () => expect(_says(f, shared), isTrue),
       );
       await f.check(
         'Cargos para revisar cuenta las ${own.alerts.length} alertas abiertas',
@@ -318,10 +318,15 @@ final List<AppFlow> planFlows = <AppFlow>[
       });
       await f.tap('Apartar para algo');
       await f.tap('Guardar');
-      await f.check('Sin nombre, «Guardar» tampoco crea un sobre', () {
-        expect(find.byType(AlertDialog), findsNothing);
+      await f.step(
+        'Sin nombre, «Guardar» no cierra el cuadro: dice «Ponle un nombre: '
+        'para qué es.»',
+      );
+      await f.check('Sin nombre no se crea un sobre, y dice qué falta', () {
+        expect(f.shows('Ponle un nombre: para qué es.'), isTrue);
         expect(find.byTooltip('Quitar sobre'), findsNothing);
       });
+      await f.tap('Cancelar');
       await f.tap('Apartar para algo');
       await _typeInDialog(f, 'Regalo de mamá');
       await f.tap('Guardar');
@@ -800,22 +805,33 @@ final List<AppFlow> planFlows = <AppFlow>[
       });
       await f.tap('Usé de la reserva');
       await _typeInDialog(f, '50000');
+      await f.step(
+        'Con 50.000, el cuadro pregunta de dónde salió, con la cuenta '
+        'probable escogida, y dice qué va a pasar: se anota el gasto ahí y lo '
+        'que puedes gastar no cambia.',
+      );
       await f.tap('Guardar');
       await f.step(
         'Usaste 50.000: la reserva baja a '
-        '${_pesos(l, reserve * 2 - l.minor(50000))}. No se anota ningún gasto: '
-        'el pago de los impuestos hay que registrarlo aparte.',
+        '${_pesos(l, reserve * 2 - l.minor(50000))} y el pago queda anotado '
+        'en la cuenta de donde salió.',
       );
-      await f.check('«Usé de la reserva» no crea ningún movimiento', () {
-        expect(own.snapshot!.entries.length, entries);
+      await f.check('«Usé de la reserva» anota el gasto en una cuenta', () {
+        expect(own.snapshot!.entries.length, entries + 1);
+        expect(
+          own.snapshot!.entries.where(
+            (Entry e) => e.payee == 'Pago con la reserva',
+          ),
+          hasLength(1),
+        );
         expect(own.freelance.used.single.$2, l.minor(50000));
       });
       await f.check(
         'La reserva quedó en ${_pesos(l, reserve * 2 - l.minor(50000))} y lo '
-        'que puedes gastar subió 50.000',
+        'que puedes gastar no cambió: la plata salió de la cuenta',
         () {
           expect(own.ledger!.reserved, reserve * 2 - l.minor(50000));
-          expect(own.ledger!.freeUntilPayday, free - reserve + l.minor(50000));
+          expect(own.ledger!.freeUntilPayday, free - reserve);
         },
       );
       await f.reveal(find.text('Lo cobrado'));
@@ -845,7 +861,7 @@ final List<AppFlow> planFlows = <AppFlow>[
         );
       });
       await f.check('Ningún cobro esperado cambia lo que puedes gastar', () {
-        expect(own.ledger!.freeUntilPayday, free - reserve + l.minor(50000));
+        expect(own.ledger!.freeUntilPayday, free - reserve);
       });
       await f.tap('Lo facturado');
       await f.check(
@@ -858,16 +874,18 @@ final List<AppFlow> planFlows = <AppFlow>[
           );
         },
       );
+      final int beforeNone = own.ledger!.freeUntilPayday;
+      final int held = own.ledger!.reserved;
       await f.tapFound(find.byType(DropdownButtonFormField<int>));
       await f.tapFound(find.text('Nada').last);
       await f.step(
         'Con «Nada» no hay reserva: «Sin reserva: todo lo que cobras cuenta '
         'en lo que puedes gastar.»',
       );
-      await f.check('Sin reserva, lo que puedes gastar sube en '
-          '${_pesos(l, reserve)}', () {
+      await f.check('Sin reserva, lo que puedes gastar sube en lo que tenía '
+          'la reserva, ${_pesos(l, held)}', () {
         expect(own.ledger!.reserved, 0);
-        expect(own.ledger!.freeUntilPayday, free + reserve);
+        expect(own.ledger!.freeUntilPayday, beforeNone + held);
       });
       await f.back();
       await f.tap('Inicio');

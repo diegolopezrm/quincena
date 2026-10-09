@@ -482,6 +482,15 @@ void main() {
       find.widgetWithText(TextField, '¿Cuánto usaste?'),
       '50.000',
     );
+    await tester.pump();
+    // It went out of an account: written there, it is not money to spend.
+    expect(
+      find.text(
+        'Se anota un gasto de ${pesos(50000)} en Bancolombia: la reserva baja '
+        'y lo que puedes gastar no cambia.',
+      ),
+      findsOneWidget,
+    );
     // The keyboard is up while typing, and goes down as the dialog closes:
     // the closing dialog is laid out again, its field still there.
     tester.view.viewInsets = const FakeViewPadding(bottom: 900);
@@ -493,7 +502,14 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.byType(AlertDialog), findsNothing);
     expect(own.ledger!.reserved, 100000);
-    expect(own.ledger!.freeUntilPayday, free + 50000);
+    expect(own.ledger!.freeUntilPayday, free);
+    expect(
+      own.snapshot!.entries
+          .where((Entry e) => e.payee == 'Pago con la reserva')
+          .single
+          .amount,
+      d('-50000'),
+    );
   });
 
   testWidgets('a client\'s payment into an account not for everyday use '

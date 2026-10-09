@@ -111,27 +111,39 @@ class _EnvelopesPageState extends State<EnvelopesPage> {
   Future<void> _addAside() async {
     final AppLocalizations l = context.l10n;
     final TextEditingController name = TextEditingController();
+    // Without a name nothing is made: it says so instead of closing.
+    var missing = false;
     final String? typed = await showDialog<String>(
       context: context,
-      builder: (BuildContext context) => AlertDialog(
-        scrollable: true,
-        title: Text(l.envelopeAside),
-        content: TextField(
-          controller: name,
-          autofocus: true,
-          textCapitalization: TextCapitalization.sentences,
-          decoration: InputDecoration(hintText: l.envelopeAsideHint),
+      builder: (BuildContext context) => StatefulBuilder(
+        builder: (BuildContext context, StateSetter setState) => AlertDialog(
+          scrollable: true,
+          title: Text(l.envelopeAside),
+          content: TextField(
+            controller: name,
+            autofocus: true,
+            textCapitalization: TextCapitalization.sentences,
+            onChanged: (_) {
+              if (missing) setState(() => missing = false);
+            },
+            decoration: InputDecoration(
+              hintText: l.envelopeAsideHint,
+              errorText: missing ? l.envelopeAsideNoName : null,
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(l.cancel),
+            ),
+            TextButton(
+              onPressed: () => name.text.trim().isEmpty
+                  ? setState(() => missing = true)
+                  : Navigator.of(context).pop(name.text),
+              child: Text(l.save),
+            ),
+          ],
         ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(l.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(name.text),
-            child: Text(l.save),
-          ),
-        ],
       ),
     );
     if (typed == null || typed.trim().isEmpty || !mounted) return;

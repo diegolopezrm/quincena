@@ -229,9 +229,14 @@ class _PaymentsPanel extends StatelessWidget {
         _ToolRow(
           icon: Glyph.usersThree,
           title: l.sharedTitle,
-          detail: own.groups.isEmpty
-              ? l.planSharedNone
-              : l.planShared(amount(owedToYou), amount(youOwe)),
+          // Only what is not zero: «Te deben $0» says nothing.
+          detail: switch ((own.groups.isEmpty, owedToYou, youOwe)) {
+            (true, _, _) => l.planSharedNone,
+            (_, 0, 0) => l.planSharedEven,
+            (_, final int owed, 0) => l.planSharedOwed(amount(owed)),
+            (_, 0, final int owing) => l.planSharedOwing(amount(owing)),
+            _ => l.planShared(amount(owedToYou), amount(youOwe)),
+          },
           onTap: () => open(context, SharedPage(own: own)),
         ),
       ],
