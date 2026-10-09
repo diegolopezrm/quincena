@@ -916,8 +916,8 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       'Las respuestas de Gemini en vivo: tocar cada pregunta sugerida y '
           '«Otra pregunta» con conexión, y revisar que lo que responde '
           'cuadre con Inicio.',
-      'El límite de preguntas del día: «Te quedan N preguntas hoy» baja al '
-          'preguntar y al llegar a cero no deja seguir.',
+      'El límite de preguntas del día: «Te quedan N de 30 preguntas hoy» '
+          'baja al preguntar y al llegar a cero no deja seguir.',
       'Con el teléfono en modo avión, tocar una pregunta lista: debe decir '
           '«Sin conexión a internet…» y no gastar una de las preguntas del '
           'día.',
@@ -936,7 +936,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.check('Abre «Pregúntale a tu plata» sin preguntar nada aún', () {
         expect(f.shows('Pregúntale a tu plata'), isTrue);
         expect(f.shows('Qué ve Gemini'), isTrue);
-        expect(f.shows('Te quedan 30 preguntas hoy'), isTrue);
+        expect(f.shows('Te quedan 30 de 30 preguntas hoy'), isTrue);
       });
       await f.tapTip('Qué ve Gemini');
       await f.page(
@@ -956,11 +956,16 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         final Finder question = find.text(asked);
         await f.reveal(question);
         await f.tester.tap(question.last);
-        await f.waitFor(find.textContaining('No pude responder'));
+        // The page opens on the conversation as it was, and asks on its
+        // first frame: from the next one, only the newest question that got
+        // no answer offers to ask it again, once it is done trying.
+        await f.tester.pump();
+        await f.tester.pump();
+        await f.waitFor(find.text('Volver a preguntar'));
         await f.step(
-          'Tocar «$asked» la hace de una vez. En esta prueba Gemini no '
-          'contesta, así que la conversación dice «No pude responder esta '
-          'vez».',
+          'Tocar «$asked» la hace de una vez, en la misma conversación. En '
+          'esta prueba Gemini no contesta, así que dice «No pude responder '
+          'esta vez» con «Volver a preguntar».',
         );
         await f.check('«$asked» queda preguntada, sin respuesta inventada', () {
           expect(f.shows(asked), isTrue);
@@ -972,15 +977,16 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         await f.back();
       }
       await f.tap('Otra pregunta');
+      await f.tap('Nueva');
       await f.step(
-        'Después de tres preguntas sin respuesta, «Otra pregunta» sigue '
-        'diciendo «Te quedan 30 preguntas hoy»: las que no se respondieron '
-        'no se cuentan.',
+        'Después de tres preguntas sin respuesta, «Otra pregunta» vuelve a '
+        'la misma conversación; «Nueva» la limpia y dice «Te quedan 30 de 30 '
+        'preguntas hoy»: las que no se respondieron no se cuentan.',
       );
       await f.check(
         'Las preguntas que no se respondieron no gastan las del día: siguen '
         '30',
-        () => expect(f.shows('Te quedan 30 preguntas hoy'), isTrue),
+        () => expect(f.shows('Te quedan 30 de 30 preguntas hoy'), isTrue),
       );
     },
   ),
