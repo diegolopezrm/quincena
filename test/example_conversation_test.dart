@@ -100,6 +100,24 @@ void main() {
       }
     });
 
+    test('a shop asked about is said to be in the month, not looked up', () {
+      String said(AgentTurn turn) => jsonEncode(turn.components);
+      final ScriptedAgent script = agent();
+      expect(
+        said(script.answer('¿Cuánto gasté en el Éxito?')),
+        contains('En el ejemplo no busco por comercio'),
+      );
+      // A month, or a category, is no shop.
+      expect(
+        said(script.answer(ScriptedAgent.starters[0])),
+        isNot(contains('no busco por comercio')),
+      );
+      expect(
+        said(script.answer('¿Cuánto gasté en Restaurantes?')),
+        isNot(contains('no busco por comercio')),
+      );
+    });
+
     test('the expense form says which account it comes from, with the one '
         'she last paid from by hand chosen, and the answer names it', () async {
       final ScriptedAgent script = agent();

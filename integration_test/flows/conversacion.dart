@@ -160,13 +160,17 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       await _read(
         f,
         'La demo reconoce «gasté» y responde con el resumen de septiembre, '
-        'sin decir que no sabe nada del Éxito.',
+        'y dice primero que en el ejemplo no busca por comercio: lo del Éxito '
+        'va incluido en esas cifras.',
         most: 1,
       );
       await f.check('La pregunta quedó en la conversación y la barra se '
           'vació', () {
         expect(s.turns.single.question, own);
         expect(_askText(f), isEmpty);
+      });
+      await f.check('Dice que no busca por comercio antes del resumen', () {
+        expect(_said(f), contains('En el ejemplo no busco por comercio'));
       });
       const String unknown = '¿Cuánto debo en la tarjeta?';
       await enterTextIn(f.tester, _askField, unknown);

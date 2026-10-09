@@ -139,7 +139,7 @@ class ScriptedAgent {
 
   /// Answers [prompt], or explains what the demo can answer.
   AgentTurn answer(String prompt) => switch (intentOf(prompt)) {
-    Intent.spending => _spending(),
+    Intent.spending => _spending(asked: prompt),
     Intent.goal => _goal(),
     Intent.record => _record(
       amountIn(prompt) ?? 0,
@@ -243,7 +243,36 @@ class ScriptedAgent {
       : '${items.take(items.length - 1).join(', ')} ${_t('y', 'and')} '
             '${items.last}';
 
-  AgentTurn _spending() {
+  /// A shop or place named in [question], as «en el Éxito» or «at Target»,
+  /// or one the account has paid: what the script cannot look up on its
+  /// own, so the answer says so. Months and categories are not shops.
+  String? _shopIn(String question) {
+    final String asked = plain(question);
+    for (final Movement x in ledger.movements) {
+      final String first = plain(x.merchant).split(' ').first;
+      if (first.length >= 4 &&
+          RegExp('\\b${RegExp.escape(first)}\\b').hasMatch(asked)) {
+        return x.merchant.split(' ').first;
+      }
+    }
+    final RegExpMatch? named = RegExp(
+      r"(?:\ben (?:el |la |los |las )?|\bat (?:the )?)([A-ZÁÉÍÓÚÑ][\wáéíóúñÁÉÍÓÚÑ&'-]+)",
+    ).firstMatch(question);
+    final String? word = named?.group(1);
+    if (word == null) return null;
+    final String p = plain(word);
+    const List<String> months = <String>[
+      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', //
+      'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+      'january', 'february', 'march', 'april', 'may', 'june', 'july',
+      'august', 'september', 'october', 'november', 'december',
+    ];
+    if (months.contains(p) || categoryIn(word) != null) return null;
+    return word;
+  }
+
+  AgentTurn _spending({String? asked}) {
+    final String? shop = asked == null ? null : _shopIn(asked);
     final (int y, int m) = _lastMonth;
     final (int py, int pm) = _monthBefore;
     final String name = _monthName(y, m);
@@ -307,6 +336,7 @@ class ScriptedAgent {
       _c('root', 'Answer', {
         'children': [
           'head',
+          if (shop != null) 'scope',
           'tiles',
           'donut',
           if (up != null) 'up',
@@ -333,6 +363,19 @@ class ScriptedAgent {
               '${savedForGoal > 0 ? ', and set aside ${pesos(savedForGoal)} for Cartagena' : ''}.',
         ),
       }),
+      // A shop asked about: the example answers the month, and says so.
+      if (shop != null)
+        _c('scope', 'Insight', {
+          'tone': 'neutral',
+          'title': _t(
+            'En el ejemplo no busco por comercio',
+            "The example doesn't look up a single shop",
+          ),
+          'body': _t(
+            'Esto es todo $name: lo de $shop va incluido en estas cifras.',
+            'This is all of $name: $shop is included in these figures.',
+          ),
+        }),
       _c('tiles', 'Tiles', {
         'children': ['tile_spent', 'tile_change'],
       }),
