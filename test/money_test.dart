@@ -29,6 +29,15 @@ void main() {
         plain(formatAmount(d('-4719400'), Asset.cop, base: Asset.cop)),
         '−$signJoiner\$4.719.400',
       );
+      // «$» alone is the peso: totals in dollars say which dollar.
+      expect(
+        plain(formatAmount(d('1250.5'), Asset.usd, base: Asset.usd)),
+        r'US$1.250,50',
+      );
+      expect(
+        plain(formatAmount(d('80'), Asset.mxn, base: Asset.mxn)),
+        r'MX$80,00',
+      );
       expect(
         plain(formatAmount(d('12'), Asset.eur, base: Asset.cop, signed: true)),
         '+$signJoiner€12,00',

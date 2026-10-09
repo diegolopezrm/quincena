@@ -1592,6 +1592,48 @@ abstract class AppLocalizations {
   /// **'Moneda de los totales'**
   String get settingsBase;
 
+  /// No description provided for @settingsBaseNoRateTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto vale 1 {asset} en {quote}?'**
+  String settingsBaseNoRateTitle(String asset, String quote);
+
+  /// No description provided for @settingsBaseNoRateBody.
+  ///
+  /// In es, this message translates to:
+  /// **'No tenemos la tasa entre {from} y {to}. Sin ella, tus totales quedarían con los mismos números en otra moneda. Escríbela, o mantén {from}.'**
+  String settingsBaseNoRateBody(String from, String to);
+
+  /// No description provided for @settingsBaseRate.
+  ///
+  /// In es, this message translates to:
+  /// **'1 {asset} en'**
+  String settingsBaseRate(String asset);
+
+  /// No description provided for @settingsBaseRateMissing.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe la tasa para cambiar de moneda.'**
+  String get settingsBaseRateMissing;
+
+  /// No description provided for @settingsBaseKeep.
+  ///
+  /// In es, this message translates to:
+  /// **'Mantener {code}'**
+  String settingsBaseKeep(String code);
+
+  /// No description provided for @settingsBaseChange.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar a {code}'**
+  String settingsBaseChange(String code);
+
+  /// No description provided for @settingsBaseConverted.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus totales ahora están en {code}: convertimos con 1 {asset} = {rate}.'**
+  String settingsBaseConverted(String code, String asset, String rate);
+
   /// No description provided for @settingsPay.
   ///
   /// In es, this message translates to:

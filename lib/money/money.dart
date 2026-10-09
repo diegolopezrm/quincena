@@ -67,6 +67,14 @@ const String _nbsp = ' ';
 /// end of one line and `$45.900` at the start of the next.
 const String signJoiner = '\u2060';
 
+/// The sign [asset] goes by when it is the totals' own: its local one,
+/// except that in Spanish «$» alone is the Colombian peso, so another
+/// dollar or peso says which it is, `US$` or `MX$`.
+String? homeSymbol(Asset asset) =>
+    asset.localSymbol == r'$' && asset != Asset.cop && !englishFormatting
+    ? asset.symbol
+    : asset.localSymbol;
+
 /// [amount] of [asset] as the interface language writes it.
 ///
 /// Spanish: `$45.900`, `US$1.250,00`, `0,0042 BTC`. English: `$45,900`,
@@ -91,7 +99,7 @@ String formatAmount(
   );
   if (asset.isCrypto) return '$sign$digits$_nbsp${asset.code}';
   final String symbol =
-      (asset == (base ?? asset) ? asset.localSymbol : asset.symbol) ??
+      (asset == (base ?? asset) ? homeSymbol(asset) : asset.symbol) ??
       asset.code;
   if (sign.isEmpty) return '$symbol$digits';
   return '$sign$signJoiner$symbol$digits';

@@ -150,21 +150,50 @@ class OwnSettingsPage extends StatelessWidget {
         ],
       ),
     );
-    if (picked == null || picked == p.base) return;
-    // The pay and the cushion were said in the old currency: the same money
-    // in the new one, with room for the cents a way back needs. With no rate
-    // between the two they stay as they were.
-    final Decimal? rate = p.pay == null && p.cushion == null
-        ? null
-        : await own.rateBetween(p.base, picked);
-    Decimal? same(Decimal? amount) => amount == null || rate == null
-        ? amount
-        : (amount * rate).round(scale: picked.decimals + 6);
+    if (picked == null || picked == p.base || !context.mounted) return;
+    final AppLocalizations l = context.l10n;
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    // Everything was said in the old currency: the same money in the new
+    // one takes a rate between the two. Without one the numbers would stay
+    // and mean another currency, so the person types it or keeps theirs.
+    final (Asset asset, Asset quote) = ratePair(p.base, picked);
+    Decimal? rate = await own.rateBetween(p.base, picked);
+    if (rate == null) {
+      if (!context.mounted) return;
+      final Decimal? typed = await showDialog<Decimal>(
+        context: context,
+        builder: (BuildContext context) =>
+            _NoRateDialog(from: p.base, to: picked, asset: asset, quote: quote),
+      );
+      if (typed == null || typed <= Decimal.zero) return;
+      await own.store.setManualRate(asset.code, quote.code, typed);
+      rate = asset == p.base ? typed : _inverse(typed);
+    }
+    // The pay and the cushion, with room for the cents a way back needs.
+    final Decimal by = rate;
+    Decimal? same(Decimal? amount) =>
+        amount == null ? null : (amount * by).round(scale: picked.decimals + 6);
     await own.store.saveProfile(
       p.copyWith(base: picked, pay: same(p.pay), cushion: same(p.cushion)),
     );
     await own.refreshRates(force: true);
+    final Decimal shown = asset == p.base ? by : _inverse(by);
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          l.settingsBaseConverted(
+            picked.code,
+            asset.code,
+            '${formatDecimal(shown, decimals: quote.decimals > 0 ? 4 : 2, trim: true)} '
+            '${quote.code}',
+          ),
+        ),
+      ),
+    );
   }
+
+  static Decimal _inverse(Decimal d) =>
+      (Decimal.one / d).toDecimal(scaleOnInfinitePrecision: 12);
 
   Future<void> _editSchedule(BuildContext context, Profile p) async {
     PaySchedule value = p.schedule;
@@ -923,6 +952,103 @@ class _DeleteAllDialog extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(_Delete.delete),
           style: TextButton.styleFrom(foregroundColor: context.colors.negative),
           child: Text(l.deleteAll),
+        ),
+      ],
+    );
+  }
+}
+
+/// The pair a person says a rate in: the dollar, the euro or the pound in
+/// the other currency; between two others, the new one in the old.
+(Asset, Asset) ratePair(Asset from, Asset to) {
+  const Set<String> anchors = <String>{'GBP', 'EUR', 'USD', 'CHF', 'CAD'};
+  if (anchors.contains(from.code) && !anchors.contains(to.code)) {
+    return (from, to);
+  }
+  return (to, from);
+}
+
+/// Asks what one [asset] is worth in [quote] when no source has the rate
+/// from [from] to [to], or lets the person keep [from].
+class _NoRateDialog extends StatefulWidget {
+  const _NoRateDialog({
+    required this.from,
+    required this.to,
+    required this.asset,
+    required this.quote,
+  });
+
+  final Asset from;
+  final Asset to;
+  final Asset asset;
+  final Asset quote;
+
+  @override
+  State<_NoRateDialog> createState() => _NoRateDialogState();
+}
+
+class _NoRateDialogState extends State<_NoRateDialog> {
+  final TextEditingController _value = TextEditingController();
+  bool _missing = false;
+
+  @override
+  void dispose() {
+    _value.dispose();
+    super.dispose();
+  }
+
+  void _change() {
+    final Decimal? typed = parseAmount(_value.text);
+    if (typed == null || typed <= Decimal.zero) {
+      setState(() => _missing = true);
+      return;
+    }
+    Navigator.of(context).pop(typed);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    return AlertDialog(
+      scrollable: true,
+      title: Text(
+        l.settingsBaseNoRateTitle(widget.asset.code, widget.quote.code),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            l.settingsBaseNoRateBody(widget.from.code, widget.to.code),
+            style: context.type.bodyMedium,
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _value,
+            autofocus: true,
+            inputFormatters: <TextInputFormatter>[
+              AmountInputFormatter(maxDecimals: 8),
+            ],
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onChanged: (_) {
+              if (_missing) setState(() => _missing = false);
+            },
+            decoration: InputDecoration(
+              labelText: l.settingsBaseRate(widget.asset.code),
+              suffixText: widget.quote.code,
+              errorText: _missing ? l.settingsBaseRateMissing : null,
+            ),
+          ),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l.settingsBaseKeep(widget.from.code)),
+        ),
+        TextButton(
+          onPressed: _change,
+          child: Text(l.settingsBaseChange(widget.to.code)),
         ),
       ],
     );

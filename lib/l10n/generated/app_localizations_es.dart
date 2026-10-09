@@ -972,6 +972,40 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsBase => 'Moneda de los totales';
 
   @override
+  String settingsBaseNoRateTitle(String asset, String quote) {
+    return '¿Cuánto vale 1 $asset en $quote?';
+  }
+
+  @override
+  String settingsBaseNoRateBody(String from, String to) {
+    return 'No tenemos la tasa entre $from y $to. Sin ella, tus totales quedarían con los mismos números en otra moneda. Escríbela, o mantén $from.';
+  }
+
+  @override
+  String settingsBaseRate(String asset) {
+    return '1 $asset en';
+  }
+
+  @override
+  String get settingsBaseRateMissing =>
+      'Escribe la tasa para cambiar de moneda.';
+
+  @override
+  String settingsBaseKeep(String code) {
+    return 'Mantener $code';
+  }
+
+  @override
+  String settingsBaseChange(String code) {
+    return 'Cambiar a $code';
+  }
+
+  @override
+  String settingsBaseConverted(String code, String asset, String rate) {
+    return 'Tus totales ahora están en $code: convertimos con 1 $asset = $rate.';
+  }
+
+  @override
   String get settingsPay => 'Cómo te pagan';
 
   @override

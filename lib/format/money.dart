@@ -53,7 +53,7 @@ String pesosShort(num amount) {
   final String sign = _sign(amount);
   final bool en = englishFormatting;
   if (baseCurrency != Asset.cop) {
-    final String symbol = baseCurrency.localSymbol ?? baseCurrency.code;
+    final String symbol = homeSymbol(baseCurrency) ?? baseCurrency.code;
     final String gap = en ? '' : '\u00a0';
     if (value >= 1000000) {
       final String n = _oneDecimal.format(value / 1000000);

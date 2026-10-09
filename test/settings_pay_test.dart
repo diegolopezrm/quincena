@@ -11,6 +11,7 @@ import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/format/money.dart' as format;
 import 'package:quincena/money/asset.dart';
+import 'package:quincena/money/rates.dart';
 import 'package:quincena/reminders/reminders.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
@@ -179,11 +180,102 @@ void main() {
     expect(usd.base, Asset.usd);
     expect(usd.pay!.round(scale: 2), Decimal.parse('600'));
     expect(usd.cushion!.round(scale: 2), Decimal.parse('50'));
+    // It says it converted, and with what.
+    expect(
+      find.text(
+        'Tus totales ahora están en USD: convertimos con 1 USD = 4.000 COP.',
+      ),
+      findsOneWidget,
+    );
 
     // And back, to the very peso.
     final Profile cop = await pick('COP · Peso colombiano');
     expect(cop.pay!.round(), Decimal.parse('2400000'));
     expect(cop.cushion!.round(), Decimal.parse('200000'));
+  });
+
+  testWidgets('without a rate the totals keep their currency, unless one '
+      'is typed', (tester) async {
+    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    tester.platformDispatcher.localesTestValue = const <Locale>[Locale('es')];
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+    final QuincenaStore store = (await tester.runAsync(() async {
+      final QuincenaStore store = QuincenaStore(
+        QuincenaDatabase(NativeDatabase.memory()),
+        now: () => now,
+      );
+      await store.ensureCategories();
+      await store.saveProfile(
+        Profile(
+          name: 'Ana',
+          base: Asset.cop,
+          schedule: const TwiceMonthly(),
+          pay: Decimal.parse('2400000'),
+        ),
+      );
+      await store.setSetting('app.mode', 'own');
+      await store.addAccount(
+        name: 'Bancolombia',
+        kind: AccountKind.bank,
+        asset: Asset.cop,
+        opening: Decimal.parse('900000'),
+      );
+      return store;
+    }))!;
+    addTearDown(() => tester.runAsync(store.close));
+    // The sources know the dollar, not the euro.
+    await tester.pumpWidget(
+      QuincenaApp(
+        store: store,
+        startInDemo: false,
+        fetcher: fakeRates(),
+        now: () => now,
+      ),
+    );
+    await settle(tester);
+    await tester.tap(find.byTooltip('Ajustes'));
+    await settle(tester);
+    Future<void> pickEuro() async {
+      await tester.tap(find.text('Moneda de los totales'));
+      await settle(tester);
+      await tester.tap(find.text('EUR · Euro'));
+      await settle(tester);
+    }
+
+    await pickEuro();
+    expect(find.text('¿Cuánto vale 1 EUR en COP?'), findsOneWidget);
+    await tester.tap(find.text('Mantener COP'));
+    await settle(tester);
+    expect((await tester.runAsync<Profile?>(store.profile))!.base, Asset.cop);
+
+    await pickEuro();
+    // Without a rate it does not change, and says what is missing.
+    await tester.tap(find.text('Cambiar a EUR'));
+    await settle(tester);
+    expect(
+      find.text('Escribe la tasa para cambiar de moneda.'),
+      findsOneWidget,
+    );
+    await tester.enterText(find.byType(TextField), '4.500');
+    await settle(tester);
+    await tester.tap(find.text('Cambiar a EUR'));
+    await settle(tester);
+    final Profile euro = (await tester.runAsync<Profile?>(store.profile))!;
+    expect(euro.base, Asset.eur);
+    expect(euro.pay!.round(scale: 2), Decimal.parse('533.33'));
+    expect(
+      find.text(
+        'Tus totales ahora están en EUR: convertimos con 1 EUR = 4.500 COP.',
+      ),
+      findsOneWidget,
+    );
+    final Rate typed = (await tester.runAsync(
+      store.rates,
+    ))!.singleWhere((Rate r) => r.asset == 'EUR' && r.quote == 'COP');
+    expect(typed.manual, isTrue);
+    expect(typed.value, Decimal.parse('4500'));
   });
 
   test('reminders fall on the next six paydays, at nine', () {
