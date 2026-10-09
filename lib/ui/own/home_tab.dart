@@ -30,6 +30,7 @@ import 'inbox_page.dart';
 import 'amount_input.dart';
 import 'look.dart';
 import 'movement_list.dart';
+import 'setup_checklist.dart';
 
 /// Where the money stands until payday, the accounts and the last
 /// movements.
@@ -75,7 +76,14 @@ class OwnHomeTab extends StatelessWidget {
     // Without an account there is no figure yet: Inicio leads to the first
     // one instead of showing nothing worth $0.
     final bool accounts = own.accounts.isNotEmpty;
-    final List<_Todo> todos = _todos(l, ledger);
+    final bool setup = showsSetup(l, own);
+    if (setupFinished(l, own)) {
+      // All of it done: the list goes for good.
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => own.keepSetupOpen(false),
+      );
+    }
+    final List<_Todo> todos = _todos(l, ledger, fixedInSetup: setup);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -89,6 +97,12 @@ class OwnHomeTab extends StatelessWidget {
           )
         else
           _FirstAccount(own: own),
+        // What setting up left for later, right under the figure it makes
+        // more precise.
+        if (setup) ...<Widget>[
+          const SizedBox(height: 24),
+          SetupChecklist(own: own),
+        ],
         // What needs attention, as rows under the figure and lighter than
         // it: the most pressing first, with a button; the rest after it.
         if (todos.isNotEmpty) ...<Widget>[
@@ -194,8 +208,13 @@ class OwnHomeTab extends StatelessWidget {
 
   /// What there is to do, the most pressing first: what the figure waits
   /// for, the pay to split, then what it still leaves out. The fixed
-  /// payments wait for an account to be paid from.
-  List<_Todo> _todos(AppLocalizations l, Ledger ledger) {
+  /// payments wait for an account to be paid from, and are left to
+  /// «Termina de preparar Quincena» while it shows them, [fixedInSetup].
+  List<_Todo> _todos(
+    AppLocalizations l,
+    Ledger ledger, {
+    bool fixedInSetup = false,
+  }) {
     final int pending = own.pendingInbox.length;
     final List<String> unpriced = <String>[
       for (final Asset a in own.unconverted) a.code,
@@ -220,7 +239,7 @@ class OwnHomeTab extends StatelessWidget {
               showEntrySheet(context, own: own, kind: EntryKind.income),
         ),
       if (own.paidWithoutPlan) _payArrived(l, own, ledger),
-      if (own.provisional && own.accounts.isNotEmpty)
+      if (own.provisional && own.accounts.isNotEmpty && !fixedInSetup)
         _Todo(
           icon: Glyph.repeat,
           title: l.todoFixedTitle,

@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 
 import '../../domain/pay_schedule.dart';
 import '../../domain/records.dart';
-import '../../format/dates.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
@@ -18,12 +17,13 @@ import '../kit.dart';
 import 'account_sheet.dart';
 import 'accounts_tab.dart';
 import 'amount_input.dart';
-import 'charge_sheet.dart';
 import 'look.dart';
 import 'pay_schedule_editor.dart';
 
-/// Four steps: who, how and how much they get paid, where their money is,
-/// and what they pay regularly.
+/// Three questions: what the person is called, when they get paid, and
+/// where their money is. With those Inicio has a figure to show; what
+/// makes it more precise waits there, in «Termina de preparar Quincena»,
+/// until the person has seen what the app is for.
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({
     super.key,
@@ -55,10 +55,9 @@ class OnboardingPage extends StatefulWidget {
 }
 
 class _OnboardingPageState extends State<OnboardingPage> {
-  static const int _steps = 4;
+  static const int _steps = 3;
 
-  /// The step that adds accounts: the fixed payments after it are paid
-  /// from one.
+  /// The last step, which adds accounts: with one, there is a figure.
   static const int _accountsStep = 2;
   int _step = 0;
   final TextEditingController _name = TextEditingController();
@@ -68,6 +67,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
   Asset _base = Asset.cop;
   PaySchedule _schedule = const TwiceMonthly();
   String? _nameError;
+
+  /// Whether the currency of the totals shows its list: most people keep
+  /// the one it starts in, so the list waits behind «Cambiar».
+  bool _pickBase = false;
+
+  /// Whether «Empezar» was tapped before any account was added: the step
+  /// says so above the button, where nothing covers it.
+  bool _needAccount = false;
 
   /// Created on the accounts step, once there is a profile to hang accounts
   /// on.
@@ -110,7 +117,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     final AppLocalizations l = context.l10n;
     if (_step == 0) {
       final bool missing = _name.text.trim().isEmpty;
-      setState(() => _nameError = missing ? l.onboardingNameHint : null);
+      setState(() => _nameError = missing ? l.onboardingNameMissing : null);
       if (missing) return;
     }
     if (_step == 1) {
@@ -132,25 +139,18 @@ class _OnboardingPageState extends State<OnboardingPage> {
       }
     }
     if (!mounted) return;
-    if (_step == _accountsStep &&
-        (_own?.accounts ?? const <Account>[]).isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l.onboardingNeedAccount)));
+    if (_step == _accountsStep) {
+      final OwnController? own = _own;
+      if (own == null || own.accounts.isEmpty) {
+        setState(() => _needAccount = true);
+        return;
+      }
+      // What is left to set up waits on Inicio, under the figure.
+      await own.keepSetupOpen(true);
+      if (mounted) widget.onDone();
       return;
     }
-    if (_step == _steps - 1) {
-      widget.onDone();
-      return;
-    }
-    if (mounted) setState(() => _step++);
-  }
-
-  /// Done, having said there is nothing paid regularly: the money to spend
-  /// is not waiting for anything.
-  Future<void> _noFixed() async {
-    await _own?.sayNoFixedPayments(true);
-    if (mounted) widget.onDone();
+    setState(() => _step++);
   }
 
   void _back() {
@@ -198,27 +198,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
     ];
   }
 
-  /// What most people pay each month, to start one from. The first of next
-  /// month is a guess the sheet lets them change.
-  List<ChargeDraft> _fixedSuggestions(AppLocalizations l, DateTime today) {
-    final DateTime next = DateTime(today.year, today.month + 1, 1);
-    ChargeDraft draft(String name, String category) => ChargeDraft(
-      name: name,
-      amount: Money(Decimal.zero, _base),
-      next: next,
-      category: category,
-    );
-    return <ChargeDraft>[
-      draft(l.fixedSuggestRent, 'housing'),
-      draft(l.fixedSuggestAdmin, 'housing'),
-      draft(l.fixedSuggestUtilities, 'utilities'),
-      draft(l.fixedSuggestInternet, 'utilities'),
-      draft(l.fixedSuggestPhone, 'utilities'),
-      // The name is the person's own: Netflix, Spotify.
-      draft('', 'subscriptions'),
-    ];
-  }
-
   Widget _stepBody(AppLocalizations l) {
     switch (_step) {
       case 0:
@@ -234,31 +213,42 @@ class _OnboardingPageState extends State<OnboardingPage> {
               textCapitalization: TextCapitalization.words,
               textInputAction: TextInputAction.next,
               onSubmitted: (_) => _next(),
+              // What «Siguiente» said goes as soon as a name is typed.
+              onChanged: (_) {
+                if (_nameError != null) setState(() => _nameError = null);
+              },
               decoration: InputDecoration(
                 hintText: l.onboardingNameHint,
                 errorText: _nameError,
               ),
             ),
-            const SizedBox(height: 36),
-            Text(l.onboardingBaseTitle, style: context.type.headlineSmall),
-            const SizedBox(height: 6),
-            Text(l.onboardingBaseBody, style: context.type.bodyMedium),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              icon: const Icon(Glyph.caretDown, size: 18),
-              initialValue: _base.code,
-              isExpanded: true,
-              items: <DropdownMenuItem<String>>[
-                for (final Asset a in Asset.fiat)
-                  DropdownMenuItem<String>(
-                    value: a.code,
-                    child: Text('${a.code} · ${a.name(lang)}'),
-                  ),
-              ],
-              onChanged: (String? code) {
-                if (code != null) setState(() => _base = Asset.of(code));
-              },
-            ),
+            const SizedBox(height: 28),
+            if (!_pickBase)
+              _BaseLine(
+                asset: _base,
+                onChange: () => setState(() => _pickBase = true),
+              )
+            else ...<Widget>[
+              Text(l.onboardingBaseTitle, style: context.type.headlineSmall),
+              const SizedBox(height: 6),
+              Text(l.onboardingBaseBody, style: context.type.bodyMedium),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                icon: const Icon(Glyph.caretDown, size: 18),
+                initialValue: _base.code,
+                isExpanded: true,
+                items: <DropdownMenuItem<String>>[
+                  for (final Asset a in Asset.fiat)
+                    DropdownMenuItem<String>(
+                      value: a.code,
+                      child: Text('${a.code} · ${a.name(lang)}'),
+                    ),
+                ],
+                onChanged: (String? code) {
+                  if (code != null) setState(() => _base = Asset.of(code));
+                },
+              ),
+            ],
           ],
         );
       case 1:
@@ -302,58 +292,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
               ),
             ),
           ],
-        );
-      case 3:
-        final OwnController? own = _own;
-        if (own == null) return const SizedBox.shrink();
-        final String suggestionSubscription = l.fixedSuggestSubscription;
-        return ListenableBuilder(
-          listenable: own,
-          builder: (BuildContext context, _) => Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Text(l.onboardingFixedTitle, style: context.type.displaySmall),
-              const SizedBox(height: 8),
-              Text(l.onboardingFixedBody, style: context.type.bodyMedium),
-              const SizedBox(height: 24),
-              if (own.recurring.isNotEmpty) ...<Widget>[
-                Panel(
-                  children: <Widget>[
-                    for (final RecurringCharge r in own.recurring)
-                      _FixedRow(
-                        charge: r,
-                        base: _base,
-                        onTap: () =>
-                            showChargeSheet(context, own: own, charge: r),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-              ],
-              OutlinedButton.icon(
-                onPressed: () => showChargeSheet(context, own: own),
-                icon: const Icon(Glyph.plus, size: 18),
-                label: Text(l.chargeAdd),
-              ),
-              const SizedBox(height: 24),
-              SectionLabel(l.onboardingSuggestions),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: <Widget>[
-                  for (final ChargeDraft d in _fixedSuggestions(l, own.today))
-                    ActionChip(
-                      avatar: Icon(categoryIconFor(d.category!), size: 18),
-                      label: Text(
-                        d.name.isEmpty ? suggestionSubscription : d.name,
-                      ),
-                      onPressed: () =>
-                          showChargeSheet(context, own: own, draft: d),
-                    ),
-                ],
-              ),
-            ],
-          ),
         );
       default:
         final OwnController? own = _own;
@@ -460,25 +398,21 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
+                      // Said where nothing covers it, and gone with the
+                      // first account.
+                      if (_own case final OwnController own
+                          when last && _needAccount)
+                        ListenableBuilder(
+                          listenable: own,
+                          builder: (BuildContext context, _) =>
+                              own.accounts.isNotEmpty
+                              ? const SizedBox.shrink()
+                              : _Missing(text: l.onboardingNeedAccount),
+                        ),
                       FilledButton(
                         onPressed: _next,
                         child: Text(last ? l.finish : l.next),
                       ),
-                      // Only before any is added: with one, there are some.
-                      if (_own case final OwnController own when last)
-                        ListenableBuilder(
-                          listenable: own,
-                          builder: (BuildContext context, _) =>
-                              own.recurring.isNotEmpty
-                              ? const SizedBox.shrink()
-                              : Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: TextButton(
-                                    onPressed: _noFixed,
-                                    child: Text(l.noFixedPayments),
-                                  ),
-                                ),
-                        ),
                     ],
                   ),
                 ),
@@ -491,41 +425,74 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 }
 
-/// A fixed payment told during onboarding: what, when it is next charged
-/// and how much. With large text the amount goes under the date: beside
-/// them, the name would have no room.
-class _FixedRow extends StatelessWidget {
-  const _FixedRow({
-    required this.charge,
-    required this.base,
-    required this.onTap,
-  });
+/// The currency of the totals, said in a line with the way to change it.
+class _BaseLine extends StatelessWidget {
+  const _BaseLine({required this.asset, required this.onChange});
 
-  final RecurringCharge charge;
-  final Asset base;
-  final VoidCallback onTap;
+  final Asset asset;
+  final VoidCallback onChange;
 
   @override
   Widget build(BuildContext context) {
-    final bool large = largeText(context);
-    final Widget amount = Figures(
-      moneyText(charge.amount, base: base),
-      style: context.type.titleSmall,
+    final AppLocalizations l = context.l10n;
+    final String lang = Localizations.localeOf(context).languageCode;
+    final Widget said = MergeSemantics(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(l.onboardingBaseLabel, style: context.type.labelMedium),
+          const SizedBox(height: 2),
+          Text(
+            '${asset.code} · ${asset.name(lang)}',
+            style: context.type.bodyLarge,
+          ),
+        ],
+      ),
     );
-    final Widget next = Text(
-      context.l10n.fixedNextOn(dayShortMonth(charge.nextDate)),
-      style: context.type.bodySmall,
+    final Widget change = TextButton(
+      onPressed: onChange,
+      child: Text(l.onboardingBaseChange),
     );
-    return ListTile(
-      onTap: onTap,
-      title: Text(charge.name, style: context.type.titleSmall),
-      subtitle: large
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[next, amount],
-            )
-          : next,
-      trailing: large ? null : amount,
+    // With large text the button goes under what it changes.
+    if (largeText(context)) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[said, change],
+      );
+    }
+    return Row(
+      children: <Widget>[
+        Icon(Glyph.coins, size: 22, color: context.colors.inkSoft),
+        const SizedBox(width: 12),
+        Expanded(child: said),
+        change,
+      ],
     );
   }
+}
+
+/// What keeps the setup from finishing, above its button.
+class _Missing extends StatelessWidget {
+  const _Missing({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 10),
+    child: Row(
+      children: <Widget>[
+        Icon(Glyph.warningCircle, size: 20, color: context.colors.negative),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: context.type.bodyMedium?.copyWith(
+              color: context.colors.negative,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }

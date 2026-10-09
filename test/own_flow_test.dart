@@ -102,20 +102,22 @@ void main() {
     await tester.tap(find.text('Con mis cuentas'));
     await settle(tester);
 
-    // Step 1: who, and in which currency the totals go.
-    expect(find.text('Paso 1 de 4'), findsOneWidget);
+    // Three questions. First, who: the totals stay in pesos unless
+    // changed.
+    expect(find.text('Paso 1 de 3'), findsOneWidget);
+    expect(find.text('COP · Peso colombiano'), findsOneWidget);
     await tester.enterText(find.byType(TextField).first, 'Diego');
     await tester.tap(find.text('Siguiente'));
     await settle(tester);
 
-    // Step 2: twice a month, on the 15th and the 30th, by default.
-    expect(find.text('¿Cómo te pagan?'), findsOneWidget);
+    // When: twice a month, on the 15th and the 30th, by default.
+    expect(find.text('¿Cuándo te pagan?'), findsOneWidget);
     expect(find.text('Los días 15 y 30 de cada mes'), findsOneWidget);
     await tester.tap(find.text('Siguiente'));
     await settle(tester);
 
-    // Step 3: a peso account and tether on Binance, from the suggestions.
-    expect(find.text('Agrega tus cuentas'), findsOneWidget);
+    // Where: a peso account and tether on Binance, from the suggestions.
+    expect(find.text('¿Dónde tienes tu plata?'), findsOneWidget);
     await tester.tap(find.text('Bancolombia · COP'));
     await settle(tester);
     await tester.enterText(
@@ -136,11 +138,7 @@ void main() {
     await settle(tester);
     expect(screen(tester), contains(r'$1.500.000'));
     expect(screen(tester), contains('100 USDT'));
-    await tester.tap(find.text('Siguiente'));
-    await settle(tester);
-
-    // Step 4: what is paid regularly; none told yet.
-    expect(find.text('¿Qué pagas fijo?'), findsOneWidget);
+    // The last question: with an account there is a figure to show.
     await tester.tap(find.text('Empezar'));
     await settle(tester);
 
@@ -148,10 +146,13 @@ void main() {
     expect(screen(tester), contains('Puedes gastar'));
     expect(screen(tester), contains('hasta el 15 de octubre'));
     expect(screen(tester), contains(r'$1.500.000'));
-    // Without fixed payments the figure is provisional, and says so; the
-    // greeting is the sample's, not the person's own home.
+    // Without fixed payments the figure is provisional, and says so; what
+    // is left to set up waits under it. The greeting is the sample's, not
+    // the person's own home.
     expect(screen(tester), contains('Provisional: faltan tus pagos fijos'));
-    expect(screen(tester), contains('Agrega tus pagos fijos'));
+    expect(screen(tester), contains('TERMINA DE PREPARAR QUINCENA'));
+    expect(screen(tester), contains('Tus pagos fijos'));
+    expect(screen(tester), isNot(contains('Agrega tus pagos fijos')));
     expect(screen(tester), isNot(contains('Hola, Diego')));
     expect(
       screen(tester),
@@ -354,7 +355,7 @@ void main() {
 
       await tester.tap(find.text('Usar mis cuentas'));
       await settle(tester);
-      expect(find.text('Paso 1 de 4'), findsOneWidget);
+      expect(find.text('Paso 1 de 3'), findsOneWidget);
       expect(find.text('Cuenta de ejemplo de Valentina'), findsNothing);
 
       // Backing out returns to the sample, not to a first screen the web
@@ -367,8 +368,8 @@ void main() {
   );
 
   testWidgets(
-    'onboarding asks the pay and the fixed payments, and the rent comes out '
-    'of the figure',
+    'setting up asks the pay; the fixed payments wait on Inicio, and the rent '
+    'comes out of the figure',
     (tester) async {
       final QuincenaStore store = await openApp(tester);
       await tester.tap(find.text('Con mis cuentas'));
@@ -387,14 +388,13 @@ void main() {
         Decimal.parse('2400000'),
       );
 
-      // Step 3: no fixed payments until there is an account to pay them.
-      await tester.tap(find.text('Siguiente'));
+      // Step 3: no figure without an account; said above the button, where
+      // nothing covers it, and gone with the first one.
+      await tester.tap(find.text('Empezar'));
       await settle(tester);
       expect(find.text('Agrega al menos una cuenta para empezar.'), findsOne);
-      expect(find.text('Paso 3 de 4'), findsOneWidget);
-      // The notice goes, and with it what it covered.
-      await tester.pump(const Duration(seconds: 5));
-      await settle(tester);
+      expect(find.byType(SnackBar), findsNothing);
+      expect(find.text('Paso 3 de 3'), findsOneWidget);
       await tester.tap(find.text('Bancolombia · COP'));
       await settle(tester);
       await tester.enterText(
@@ -404,11 +404,22 @@ void main() {
       await tester.ensureVisible(find.text('Guardar'));
       await tester.tap(find.text('Guardar'));
       await settle(tester);
-      await tester.tap(find.text('Siguiente'));
+      expect(
+        find.text('Agrega al menos una cuenta para empezar.'),
+        findsNothing,
+      );
+      await tester.tap(find.text('Empezar'));
       await settle(tester);
 
-      // Step 4: the rent, from the suggestions, due on the 10th.
-      expect(find.text('Paso 4 de 4'), findsOneWidget);
+      // Inicio: the figure, and under it what is left, the fixed payments
+      // first.
+      expect(screen(tester), contains(r'$1.500.000'));
+      expect(screen(tester), contains('TERMINA DE PREPARAR QUINCENA'));
+      await tester.tap(find.text('Agregar').first);
+      await settle(tester);
+
+      // The rent, from the suggestions, due on the 10th.
+      expect(find.text('¿Qué pagas fijo?'), findsOneWidget);
       expect(find.text('No tengo pagos fijos'), findsOneWidget);
       await tester.tap(find.widgetWithText(ActionChip, 'Arriendo'));
       await settle(tester);
@@ -434,10 +445,11 @@ void main() {
       expect(screen(tester), contains('próximo cobro el 10 oct'));
       // With one told, there are some.
       expect(find.text('No tengo pagos fijos'), findsNothing);
-      await tester.tap(find.text('Empezar'));
+      await tester.tap(find.text('Listo'));
       await settle(tester);
 
-      // Home: the rent comes out before payday, and nothing is provisional.
+      // Home: the rent comes out before payday, and nothing is provisional;
+      // what was done is ticked, the rest still offered.
       expect(screen(tester), contains(r'$700.000'));
       expect(
         screen(tester),
@@ -445,12 +457,12 @@ void main() {
       );
       expect(screen(tester), isNot(contains('Provisional')));
       expect(screen(tester), isNot(contains('Agrega tus pagos fijos')));
+      expect(screen(tester), contains('2 de 4 listos'));
     },
   );
 
-  testWidgets('saying there are no fixed payments ends onboarding as told', (
-    tester,
-  ) async {
+  testWidgets('saying there are no fixed payments, from Inicio, takes the '
+      'figure out of provisional', (tester) async {
     await openApp(tester);
     await tester.tap(find.text('Con mis cuentas'));
     await settle(tester);
@@ -468,9 +480,12 @@ void main() {
     await tester.ensureVisible(find.text('Guardar'));
     await tester.tap(find.text('Guardar'));
     await settle(tester);
-    await tester.tap(find.text('Siguiente'));
+    await tester.tap(find.text('Empezar'));
     await settle(tester);
+    expect(screen(tester), contains('Provisional'));
 
+    await tester.tap(find.text('Agregar').first);
+    await settle(tester);
     await tester.tap(find.text('No tengo pagos fijos'));
     await settle(tester);
     expect(screen(tester), contains(r'$300.000'));

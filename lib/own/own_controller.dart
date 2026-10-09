@@ -803,6 +803,17 @@ class OwnController extends ChangeNotifier {
 
   static const String _noFixedKey = 'setup.noFixed';
 
+  /// Whether Inicio offers to finish setting up: from the end of the three
+  /// questions until it is all done or the person hides it. It stays on
+  /// this device: someone who brings a backup in is not starting.
+  bool get setupOpen => _setupOpen;
+  bool _setupOpen = false;
+
+  Future<void> keepSetupOpen(bool open) =>
+      store.setSetting(_setupKey, open ? 'open' : '');
+
+  static const String _setupKey = 'setup.checklist';
+
   /// The pairs of movements the person said are two payments and not one
   /// recorded twice, by [repeatKey], with the day they said it. They go
   /// where the movements go, in backups and to the person's other devices,
@@ -1435,6 +1446,7 @@ class OwnController extends ChangeNotifier {
     };
     _widgetHides = await store.setting(_widgetHideKey) == 'yes';
     _noFixed = await store.setting(_noFixedKey) == 'yes';
+    _setupOpen = await store.setting(_setupKey) == 'open';
     if (_disposed) return;
     _configureListener();
     unawaited(_remind());

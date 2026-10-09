@@ -87,7 +87,7 @@ class OwnSettingsPage extends StatelessWidget {
   }
 
   /// Asks for an amount in [base]; an empty one, or "Quitar", forgets it.
-  Future<void> _editAmount(
+  static Future<void> _editAmount(
     BuildContext context, {
     required String title,
     required String body,
@@ -888,6 +888,40 @@ class OwnSettingsPage extends StatelessWidget {
       const SizedBox(height: 24),
     ];
   }
+}
+
+/// Asks what arrives each payday, as Ajustes does, from wherever else the
+/// person is offered to say it.
+Future<void> askPayAmount(BuildContext context, OwnController own) async {
+  final Profile? p = own.profile;
+  if (p == null) return;
+  final AppLocalizations l = context.l10n;
+  await OwnSettingsPage._editAmount(
+    context,
+    title: l.settingsPayAmount,
+    body: l.settingsPayAmountBody,
+    current: p.pay,
+    base: p.base,
+    save: (Decimal? v) =>
+        own.store.saveProfile(p.copyWith(pay: v, clearPay: v == null)),
+  );
+}
+
+/// Asks for the cushion, as Ajustes does, from wherever else the person is
+/// offered to set it.
+Future<void> askCushion(BuildContext context, OwnController own) async {
+  final Profile? p = own.profile;
+  if (p == null) return;
+  final AppLocalizations l = context.l10n;
+  await OwnSettingsPage._editAmount(
+    context,
+    title: l.settingsCushion,
+    body: l.settingsCushionBody,
+    current: p.cushion,
+    base: p.base,
+    save: (Decimal? v) =>
+        own.store.saveProfile(p.copyWith(cushion: v, clearCushion: v == null)),
+  );
 }
 
 enum _Delete { delete, backupFirst }

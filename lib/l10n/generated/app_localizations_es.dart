@@ -402,6 +402,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get onboardingNameHint => 'Tu nombre';
 
   @override
+  String get onboardingNameMissing => 'Escribe tu nombre para seguir.';
+
+  @override
   String get onboardingBaseTitle => '¿En qué moneda quieres ver tus totales?';
 
   @override
@@ -409,18 +412,24 @@ class AppLocalizationsEs extends AppLocalizations {
       'Cada cuenta conserva su propia moneda; los totales se convierten a esta.';
 
   @override
-  String get onboardingPayTitle => '¿Cómo te pagan?';
+  String get onboardingBaseLabel => 'Moneda de tus totales';
+
+  @override
+  String get onboardingBaseChange => 'Cambiar';
+
+  @override
+  String get onboardingPayTitle => '¿Cuándo te pagan?';
 
   @override
   String get onboardingPayBody =>
       'Con esto Quincena calcula cuánto puedes gastar hasta el próximo pago.';
 
   @override
-  String get onboardingAccountsTitle => 'Agrega tus cuentas';
+  String get onboardingAccountsTitle => '¿Dónde tienes tu plata?';
 
   @override
   String get onboardingAccountsBody =>
-      'Bancos, billeteras, efectivo, tarjetas o cripto. Puedes agregar más después.';
+      'Empieza por la cuenta que más usas, con lo que tiene hoy. Las demás las agregas cuando quieras.';
 
   @override
   String get onboardingSuggestions => 'Para empezar rápido';
@@ -6637,6 +6646,62 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get fixedSuggestSubscription => 'Una suscripción';
+
+  @override
+  String get setupTitle => 'Termina de preparar Quincena';
+
+  @override
+  String get setupBody => 'Con esto, la cifra de arriba queda más precisa.';
+
+  @override
+  String setupProgress(int done, int total) {
+    return '$done de $total listos';
+  }
+
+  @override
+  String get setupHide => 'Ocultar';
+
+  @override
+  String get setupHidden => 'Listo. Todo esto sigue en Ajustes y en Plan.';
+
+  @override
+  String get setupDone => 'Listo';
+
+  @override
+  String get setupFixedTitle => 'Tus pagos fijos';
+
+  @override
+  String get setupFixedBody =>
+      'Arriendo, servicios, suscripciones: se restan antes de que lleguen.';
+
+  @override
+  String get setupPayTitle => 'Cuánto te pagan';
+
+  @override
+  String get setupPayBody => 'Para ver cómo quedas después de tu próximo pago.';
+
+  @override
+  String get setupPayAction => 'Escribir';
+
+  @override
+  String get setupCushionTitle => 'Tu colchón';
+
+  @override
+  String get setupCushionBody =>
+      'Plata que no quieres tocar; no cuenta en lo que puedes gastar.';
+
+  @override
+  String get setupCushionAction => 'Definir';
+
+  @override
+  String get setupCaptureTitle => 'Pagos que llegan solos';
+
+  @override
+  String get setupCaptureBody =>
+      'Quincena lee los avisos de tu banco y te propone cada movimiento.';
+
+  @override
+  String get setupCaptureAction => 'Activar';
 
   @override
   String get inboxReadySection => 'Listos para registrar';

@@ -728,6 +728,12 @@ abstract class AppLocalizations {
   /// **'Tu nombre'**
   String get onboardingNameHint;
 
+  /// No description provided for @onboardingNameMissing.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe tu nombre para seguir.'**
+  String get onboardingNameMissing;
+
   /// No description provided for @onboardingBaseTitle.
   ///
   /// In es, this message translates to:
@@ -740,10 +746,22 @@ abstract class AppLocalizations {
   /// **'Cada cuenta conserva su propia moneda; los totales se convierten a esta.'**
   String get onboardingBaseBody;
 
+  /// No description provided for @onboardingBaseLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Moneda de tus totales'**
+  String get onboardingBaseLabel;
+
+  /// No description provided for @onboardingBaseChange.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar'**
+  String get onboardingBaseChange;
+
   /// No description provided for @onboardingPayTitle.
   ///
   /// In es, this message translates to:
-  /// **'¿Cómo te pagan?'**
+  /// **'¿Cuándo te pagan?'**
   String get onboardingPayTitle;
 
   /// No description provided for @onboardingPayBody.
@@ -755,13 +773,13 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingAccountsTitle.
   ///
   /// In es, this message translates to:
-  /// **'Agrega tus cuentas'**
+  /// **'¿Dónde tienes tu plata?'**
   String get onboardingAccountsTitle;
 
   /// No description provided for @onboardingAccountsBody.
   ///
   /// In es, this message translates to:
-  /// **'Bancos, billeteras, efectivo, tarjetas o cripto. Puedes agregar más después.'**
+  /// **'Empieza por la cuenta que más usas, con lo que tiene hoy. Las demás las agregas cuando quieras.'**
   String get onboardingAccountsBody;
 
   /// No description provided for @onboardingSuggestions.
@@ -10127,6 +10145,108 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Una suscripción'**
   String get fixedSuggestSubscription;
+
+  /// No description provided for @setupTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Termina de preparar Quincena'**
+  String get setupTitle;
+
+  /// No description provided for @setupBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Con esto, la cifra de arriba queda más precisa.'**
+  String get setupBody;
+
+  /// No description provided for @setupProgress.
+  ///
+  /// In es, this message translates to:
+  /// **'{done} de {total} listos'**
+  String setupProgress(int done, int total);
+
+  /// No description provided for @setupHide.
+  ///
+  /// In es, this message translates to:
+  /// **'Ocultar'**
+  String get setupHide;
+
+  /// No description provided for @setupHidden.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo. Todo esto sigue en Ajustes y en Plan.'**
+  String get setupHidden;
+
+  /// No description provided for @setupDone.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo'**
+  String get setupDone;
+
+  /// No description provided for @setupFixedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus pagos fijos'**
+  String get setupFixedTitle;
+
+  /// No description provided for @setupFixedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Arriendo, servicios, suscripciones: se restan antes de que lleguen.'**
+  String get setupFixedBody;
+
+  /// No description provided for @setupPayTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuánto te pagan'**
+  String get setupPayTitle;
+
+  /// No description provided for @setupPayBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Para ver cómo quedas después de tu próximo pago.'**
+  String get setupPayBody;
+
+  /// No description provided for @setupPayAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribir'**
+  String get setupPayAction;
+
+  /// No description provided for @setupCushionTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu colchón'**
+  String get setupCushionTitle;
+
+  /// No description provided for @setupCushionBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Plata que no quieres tocar; no cuenta en lo que puedes gastar.'**
+  String get setupCushionBody;
+
+  /// No description provided for @setupCushionAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Definir'**
+  String get setupCushionAction;
+
+  /// No description provided for @setupCaptureTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagos que llegan solos'**
+  String get setupCaptureTitle;
+
+  /// No description provided for @setupCaptureBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Quincena lee los avisos de tu banco y te propone cada movimiento.'**
+  String get setupCaptureBody;
+
+  /// No description provided for @setupCaptureAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Activar'**
+  String get setupCaptureAction;
 
   /// No description provided for @inboxReadySection.
   ///

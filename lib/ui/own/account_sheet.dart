@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -377,6 +379,21 @@ class _AccountFormState extends State<_AccountForm> {
             ],
             TextField(
               controller: _balance,
+              // A suggested account comes named: what it holds is all that
+              // is missing, and the button that saves comes up with it, as
+              // far as half of what the keyboard leaves.
+              autofocus: !editing && widget.draft != null,
+              scrollPadding: EdgeInsets.fromLTRB(
+                20,
+                20,
+                20,
+                math.min(
+                  60 + MediaQuery.textScalerOf(context).scale(160),
+                  (MediaQuery.sizeOf(context).height -
+                          MediaQuery.viewInsetsOf(context).bottom) /
+                      2,
+                ),
+              ),
               inputFormatters: <TextInputFormatter>[
                 AmountInputFormatter(maxDecimals: asset.decimals),
               ],

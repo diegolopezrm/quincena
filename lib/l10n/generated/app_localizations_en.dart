@@ -378,7 +378,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get startOwnBody =>
-      'Add your accounts in pesos, dollars or crypto and record what comes in and what goes out.';
+      'Add your accounts in your currency, dollars or crypto and record what comes in and what goes out.';
 
   @override
   String get startDemoTitle => 'With sample data';
@@ -403,6 +403,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingNameHint => 'Your name';
 
   @override
+  String get onboardingNameMissing => 'Type your name to continue.';
+
+  @override
   String get onboardingBaseTitle => 'Which currency should your totals be in?';
 
   @override
@@ -410,18 +413,24 @@ class AppLocalizationsEn extends AppLocalizations {
       'Each account keeps its own currency; totals are converted to this one.';
 
   @override
-  String get onboardingPayTitle => 'How do you get paid?';
+  String get onboardingBaseLabel => 'Currency of your totals';
+
+  @override
+  String get onboardingBaseChange => 'Change';
+
+  @override
+  String get onboardingPayTitle => 'When do you get paid?';
 
   @override
   String get onboardingPayBody =>
       'Quincena uses this to calculate how much you can spend until your next payday.';
 
   @override
-  String get onboardingAccountsTitle => 'Add your accounts';
+  String get onboardingAccountsTitle => 'Where do you keep your money?';
 
   @override
   String get onboardingAccountsBody =>
-      'Banks, wallets, cash, cards or crypto. You can add more later.';
+      'Start with the account you use most, with what it holds today. Add the rest whenever you like.';
 
   @override
   String get onboardingSuggestions => 'To start quickly';
@@ -6643,6 +6652,62 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fixedSuggestSubscription => 'A subscription';
+
+  @override
+  String get setupTitle => 'Finish setting up Quincena';
+
+  @override
+  String get setupBody => 'With these, the figure above gets more precise.';
+
+  @override
+  String setupProgress(int done, int total) {
+    return '$done of $total done';
+  }
+
+  @override
+  String get setupHide => 'Hide';
+
+  @override
+  String get setupHidden => 'Done. All of this is still in Settings and Plan.';
+
+  @override
+  String get setupDone => 'Done';
+
+  @override
+  String get setupFixedTitle => 'Your recurring payments';
+
+  @override
+  String get setupFixedBody =>
+      'Rent, bills, subscriptions: taken out before they\'re due.';
+
+  @override
+  String get setupPayTitle => 'How much you get paid';
+
+  @override
+  String get setupPayBody => 'To see where you stand after your next payday.';
+
+  @override
+  String get setupPayAction => 'Enter';
+
+  @override
+  String get setupCushionTitle => 'Your safety buffer';
+
+  @override
+  String get setupCushionBody =>
+      'Money you\'d rather not touch; it stays out of what you can spend.';
+
+  @override
+  String get setupCushionAction => 'Set';
+
+  @override
+  String get setupCaptureTitle => 'Payments that come in by themselves';
+
+  @override
+  String get setupCaptureBody =>
+      'Quincena reads your bank\'s alerts and suggests each transaction.';
+
+  @override
+  String get setupCaptureAction => 'Turn on';
 
   @override
   String get inboxReadySection => 'Ready to record';
