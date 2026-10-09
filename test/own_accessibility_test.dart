@@ -578,7 +578,13 @@ void main() {
         await settle(tester);
         await tap(find.byType(FilledButton));
         // What narrows the list, in sight under the search.
-        expect(find.byType(ActionChip), findsNWidgets(4));
+        expect(
+          find.descendant(
+            of: find.byType(ActiveFilters),
+            matching: find.byType(ActionChip),
+          ),
+          findsNWidgets(4),
+        );
       },
     ),
     'a possible repeat, both side by side': (
