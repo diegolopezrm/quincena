@@ -4670,6 +4670,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get netWorthDetail => 'What you have minus what you owe';
 
   @override
+  String get netWorthSavedLine => 'In savings and investments';
+
+  @override
+  String get netWorthCryptoLine => 'In crypto';
+
+  @override
   String get groupCards => 'Credit cards';
 
   @override

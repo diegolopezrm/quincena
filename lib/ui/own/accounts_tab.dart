@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../domain/net_worth.dart';
 import '../../domain/records.dart';
 import '../../exchanges/binance_link.dart';
 import '../../format/dates.dart';
@@ -158,8 +159,9 @@ class AccountRow extends StatelessWidget {
   }
 }
 
-/// One line under the net worth: what the everyday accounts hold, or what
-/// everyday cards owe.
+/// One line of what the net worth adds up from: what the everyday
+/// accounts hold, what cards owe, savings, crypto, what others owe and
+/// what is owed to them.
 class _SpendLine extends StatelessWidget {
   const _SpendLine({
     required this.label,
@@ -240,18 +242,27 @@ class AccountsTab extends StatelessWidget {
       if (own.partOfTotal(a) case final Money part) coinsTotal += part;
     }
     final bool crypto = own.portfolio.hasHoldings;
-    // What the money to spend starts from, as on the home card: what the
-    // everyday accounts hold, and apart what everyday cards owe.
+    // What the net worth adds up from, line by line, so what is in view
+    // sums to it: what the everyday accounts hold and what cards owe, as on
+    // the home card, then savings, crypto, what others owe, what is owed to
+    // them and what is left of purchases in instalments.
+    final NetWorth worth = own.netWorth();
     var everyday = Money.zero(base);
     var cardDebt = Money.zero(base);
+    var saved = Money.zero(base);
     for (final Account a in own.accounts) {
-      if (!a.spendable) continue;
-      if (own.partOfTotal(a) case final Money part) {
-        if (card(a) && part.isNegative) {
+      final Money? part = own.partOfTotal(a);
+      if (part == null) continue;
+      if (card(a)) {
+        if (part.isNegative) {
           cardDebt += part;
         } else {
           everyday += part;
         }
+      } else if (a.spendable) {
+        everyday += part;
+      } else if (!a.asset.isCrypto) {
+        saved += part;
       }
     }
     return Column(
@@ -260,7 +271,7 @@ class AccountsTab extends StatelessWidget {
         Headline(
           caption: l.netWorth,
           onExplain: () => showTotalExplained(context, own),
-          value: moneyText(own.netWorth().total, base: base),
+          value: moneyText(worth.total, base: base),
           // The code only where other currencies show beside it.
           unit: own.accounts.any((Account a) => a.asset != base) ? base : null,
           detail: l.netWorthDetail,
@@ -271,6 +282,32 @@ class AccountsTab extends StatelessWidget {
           _SpendLine(
             label: l.standingCardDebtLine,
             value: cardDebt,
+            base: base,
+          ),
+        if (!saved.isZero)
+          _SpendLine(label: l.netWorthSavedLine, value: saved, base: base),
+        if (!coinsTotal.isZero)
+          _SpendLine(
+            label: l.netWorthCryptoLine,
+            value: coinsTotal,
+            base: base,
+          ),
+        if (!worth.owed.isZero)
+          _SpendLine(
+            label: l.totalExplainOwedToYou,
+            value: worth.owed,
+            base: base,
+          ),
+        if (!worth.owing.isZero)
+          _SpendLine(
+            label: l.totalExplainYouOwe,
+            value: -worth.owing,
+            base: base,
+          ),
+        if (!worth.instalments.isZero)
+          _SpendLine(
+            label: l.totalExplainInstallments,
+            value: -worth.instalments,
             base: base,
           ),
         const SizedBox(height: 24),

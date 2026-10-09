@@ -4665,6 +4665,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get netWorthDetail => 'Lo que tienes menos lo que debes';
 
   @override
+  String get netWorthSavedLine => 'En ahorros e inversiones';
+
+  @override
+  String get netWorthCryptoLine => 'En cripto';
+
+  @override
   String get groupCards => 'Tarjetas de crédito';
 
   @override

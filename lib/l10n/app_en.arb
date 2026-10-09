@@ -1203,6 +1203,8 @@
   "todoSplit": "Split it",
   "paydayArrivedPay": "Your pay arrived",
   "netWorthDetail": "What you have minus what you owe",
+  "netWorthSavedLine": "In savings and investments",
+  "netWorthCryptoLine": "In crypto",
   "groupCards": "Credit cards",
   "cardOwed": "You owe {amount}",
   "cardInFavor": "{amount} in your favor",

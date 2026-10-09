@@ -46,10 +46,37 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       final OwnController own = f.own;
       await f.tap('Cuentas');
       await f.page(
-        'Cuentas: arriba el «Patrimonio», lo que tienes menos lo que debes; '
-        'debajo, las cuentas agrupadas por para qué son.',
+        'Cuentas: arriba el «Patrimonio», lo que tienes menos lo que debes, '
+        'y bajo él cada parte con su monto: uso diario, tarjetas, ahorros, '
+        'cripto, lo que te deben, lo que les debes y las cuotas, que juntas '
+        'dan la cifra. Después, las cuentas agrupadas por para qué son.',
       );
       final NetWorth worth = own.netWorth();
+      await f.check(
+        'Las partes que se ven bajo el patrimonio suman ${_cop(worth.total)}',
+        () {
+          const List<String> parts = <String>[
+            'En tus cuentas de uso diario',
+            'Lo que debes en tarjetas',
+            'En ahorros e inversiones',
+            'En cripto',
+            'Te deben',
+            'Les debes a otras personas',
+            'Compras a cuotas',
+          ];
+          var sum = Decimal.zero;
+          for (final String part in parts) {
+            if (_rowOf(f, part) case final String value) {
+              sum += _parsePesos(value);
+            }
+          }
+          // Each part is shown rounded to the peso: a peso each at most.
+          expect(
+            (sum - worth.total.amount.round()).abs().toDouble(),
+            lessThanOrEqualTo(parts.length),
+          );
+        },
+      );
       await f.check(
         'El patrimonio en pantalla, ${_cop(worth.total)}, es la suma de las '
         'cuentas más lo que te deben menos lo que debes',
@@ -870,12 +897,20 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.back();
       await f.top();
       await f.step(
-        'En Cuentas ya no está la línea «Lo que debes en tarjetas».',
+        'En Cuentas, lo que debes en la Visa sigue restando del patrimonio, '
+        'porque la deuda sigue ahí; lo que cambia es que ya no sale de lo '
+        'que puedes gastar.',
       );
-      await f.check('Lo que debes en tarjetas ya no resta', () {
-        expect(own.spendableCardDebt, 0);
-        expect(f.shows('Lo que debes en tarjetas'), isFalse);
-      });
+      await f.check(
+        'Ya no resta de lo que puedes gastar, pero sigue en el patrimonio',
+        () {
+          expect(own.spendableCardDebt, 0);
+          expect(
+            _rowOf(f, 'Lo que debes en tarjetas'),
+            _cop(_balance(own, _account(own, visa.id))),
+          );
+        },
+      );
       // What is charged to the card before payday stops coming out of the
       // money to spend too: Netflix, on the 12th.
       final DateTime payday = own.ledger!.nextPayday;
@@ -1592,8 +1627,17 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       final NetWorth worth = own.netWorth();
       await f.tap('Cuentas');
       await f.step(
-        'En Cuentas, el «Patrimonio» ya cuenta el préstamo a Laura y la '
-        'nevera, aunque ninguno de los dos es una cuenta.',
+        'En Cuentas, bajo el «Patrimonio», están «Te deben» y «Compras a '
+        'cuotas» con sus montos: el préstamo a Laura y la nevera cuentan '
+        'aunque ninguno de los dos es una cuenta, y se ven sin abrir nada.',
+      );
+      await f.check(
+        'Bajo el patrimonio se ven «Te deben» (${_cop(worth.owed)}) y '
+        '«Compras a cuotas» (${_cop(-worth.instalments)})',
+        () {
+          expect(_rowOf(f, 'Te deben'), _cop(worth.owed));
+          expect(_rowOf(f, 'Compras a cuotas'), _cop(-worth.instalments));
+        },
       );
       await f.check(
         'El patrimonio, ${_cop(worth.total)}, suma lo que te deben y resta '
@@ -3901,6 +3945,14 @@ String? _rowOf(FlowRun f, String label, {Finder? within}) {
 }
 
 Money _pesos(String amount) => Money(Decimal.parse(amount), Asset.cop);
+
+/// [text] as a figure writes pesos, «−$844.800», back to a number.
+Decimal _parsePesos(String text) {
+  final bool negative = text.contains('−') || text.contains('-');
+  final String digits = text.replaceAll(RegExp(r'[^0-9]'), '');
+  final Decimal value = Decimal.parse(digits.isEmpty ? '0' : digits);
+  return negative ? -value : value;
+}
 
 /// Pesos signed, as a gain is written.
 String _signed(Money m) => moneyText(m, base: Asset.cop, signed: true);

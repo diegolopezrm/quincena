@@ -509,6 +509,84 @@ void main() {
       },
     );
 
+    testWidgets(
+      'what is under the net worth adds up to it: savings, what others owe '
+      'and what is left of instalments are in view',
+      (tester) async {
+        final OwnController own = await openPage(
+          tester,
+          (OwnController own) => Scaffold(
+            body: SingleChildScrollView(child: AccountsTab(own: own)),
+          ),
+          data: (QuincenaStore store, Account bank, Account card) async {
+            await store.addEntry(
+              accountId: card.id,
+              amount: d('300000'),
+              kind: EntryKind.expense,
+              date: DateTime(2026, 10, 1, 12),
+              category: 'shopping',
+              payee: 'Falabella',
+            );
+            await store.addAccount(
+              name: 'Ahorros',
+              kind: AccountKind.bank,
+              asset: Asset.cop,
+              opening: d('1000000'),
+              spendable: false,
+            );
+            // Laura owes half of a rent paid for both.
+            await store.setSetting(
+              'shared.groups',
+              jsonEncode(<Object?>[
+                Group(
+                  id: 'finca',
+                  name: 'Finca',
+                  members: const <Member>[
+                    Member(id: meId, name: ''),
+                    Member(id: 'laura', name: 'Laura'),
+                  ],
+                  expenses: <SharedExpense>[
+                    SharedExpense(
+                      id: 'arriendo',
+                      label: 'Arriendo',
+                      date: DateTime(2026, 10, 1),
+                      paidBy: meId,
+                      shares: const <String, int>{
+                        meId: 150000,
+                        'laura': 150000,
+                      },
+                    ),
+                  ],
+                ).toJson(),
+              ]),
+            );
+            // A fridge in instalments, paid outside the card.
+            await store.setSetting(
+              'commitments.instalments',
+              jsonEncode(<Object?>[
+                Instalments(
+                  id: 'nevera',
+                  name: 'Nevera',
+                  principal: 1200000,
+                  count: 12,
+                  firstDue: DateTime(2026, 10, 25),
+                ).toJson(),
+              ]),
+            );
+          },
+        );
+        final String text = screen(tester);
+        expect(text, contains('En tus cuentas de uso diario\n\$2.000.000'));
+        expect(text, contains('Lo que debes en tarjetas\n−\$300.000'));
+        expect(text, contains('En ahorros e inversiones\n\$1.000.000'));
+        expect(text, contains('Te deben\n\$150.000'));
+        expect(text, contains('Compras a cuotas\n−\$1.200.000'));
+        // 2.000.000 − 300.000 + 1.000.000 + 150.000 − 1.200.000.
+        expect(own.netWorth().total.amount, d('1650000'));
+        expect(text, contains(r'$1.650.000'));
+      },
+    );
+
     testWidgets('a card with a limit says how much of it is left, and its '
         'sheet ends on what it owes, as its page starts', (tester) async {
       await openPage(

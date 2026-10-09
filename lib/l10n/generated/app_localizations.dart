@@ -7261,6 +7261,18 @@ abstract class AppLocalizations {
   /// **'Lo que tienes menos lo que debes'**
   String get netWorthDetail;
 
+  /// No description provided for @netWorthSavedLine.
+  ///
+  /// In es, this message translates to:
+  /// **'En ahorros e inversiones'**
+  String get netWorthSavedLine;
+
+  /// No description provided for @netWorthCryptoLine.
+  ///
+  /// In es, this message translates to:
+  /// **'En cripto'**
+  String get netWorthCryptoLine;
+
   /// No description provided for @groupCards.
   ///
   /// In es, this message translates to:

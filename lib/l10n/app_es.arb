@@ -1466,6 +1466,8 @@
   "todoSplit": "Repartir",
   "paydayArrivedPay": "Te llegó el pago",
   "netWorthDetail": "Lo que tienes menos lo que debes",
+  "netWorthSavedLine": "En ahorros e inversiones",
+  "netWorthCryptoLine": "En cripto",
   "groupCards": "Tarjetas de crédito",
   "cardOwed": "Debes {amount}",
   "@cardOwed": {"placeholders": {"amount": {"type": "String"}}},
