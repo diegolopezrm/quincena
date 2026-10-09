@@ -801,6 +801,8 @@
   "portfolioUnpriced": "Binance has no price for {assets}: they are left out of the total.",
   "portfolioDisclaimer": "Market prices from Binance, which change by the moment. Quincena does not give investment advice.",
   "portfolioEmpty": "No crypto yet. Add a wallet or connect Binance.",
+  "portfolioEmptyAccounts": "{count, plural, =1{Your crypto account is at 0} other{Your crypto accounts are at 0}}: record a purchase and you'll see here what it's worth and what you gain.",
+  "portfolioFirstPurchase": "Record your first purchase",
   "holdingPrice": "Price",
   "holdingWorth": "Worth",
   "holdingCost": "It cost you",

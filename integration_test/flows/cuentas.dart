@@ -3295,34 +3295,23 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         'La cuenta nueva, en 0 BTC, abre la sección «Cripto» con su fila '
         '«Rendimiento y ganancia».',
       );
-      await f.tap('Rendimiento y ganancia');
-      await f.step(
-        'Sin nada comprado todavía, la página de cripto dice que aún no '
-        'tienes cripto y, debajo, ofrece «Binance» y «Billeteras propias» '
-        'para traerla.',
-      );
-      await f.check('La página de cripto está vacía', () {
-        expect(own.portfolio.portfolio!.isEmpty, isTrue);
-        expect(
-          f.shows(
-            'Aún no tienes cripto. Agrega una billetera o conecta '
-            'Binance.',
-          ),
-          isTrue,
-        );
-      });
-      await f.check(
-        'La página vacía ofrece cómo traerla: Binance y Billeteras propias',
-        () {
-          expect(f.shows('Billeteras propias'), isTrue);
-          expect(f.shows('Binance'), isTrue);
-        },
-      );
-      await f.back();
       await f.tap('Bitcoin en Binance');
       await f.step(
-        'La cuenta en 0 BTC: «Compra» está lista y «Venta» apagada, porque '
-        'no hay qué vender.',
+        'La cuenta en 0 BTC ya dice el precio del bitcoin y que vale \$0; '
+        '«Compra» está lista y «Venta» apagada, porque no hay qué vender.',
+      );
+      await f.check(
+        'Con 0 BTC se ve el precio del bitcoin, no «Precio —», y vale \$0',
+        () {
+          final Pair price = own.portfolio.portfolio!.priceOf(Asset.btc)!;
+          final String said = _said(f);
+          expect(
+            said,
+            contains(_plainText(_cop(_pesos('${price.base.round()}')))),
+          );
+          expect(said, contains('Vale | \$0'));
+          expect(f.shows('—'), isFalse);
+        },
       );
       await f.check('Venta está apagada con 0 BTC', () {
         expect(
@@ -3339,20 +3328,54 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
           isNull,
         );
       });
-      await f.tap('Compra');
+      await f.back();
+      await f.tap('Rendimiento y ganancia');
+      await f.step(
+        'La página de cripto dice que tu cuenta está en 0, con el precio del '
+        'bitcoin, y ofrece «Registrar tu primera compra» en ella; debajo, '
+        '«Binance» y «Billeteras propias» para traerla de allá.',
+      );
+      await f.check(
+        'La página vacía ofrece la primera compra en la cuenta en 0',
+        () {
+          expect(own.portfolio.portfolio!.isEmpty, isTrue);
+          expect(
+            f.shows(
+              'Tu cuenta de cripto está en 0: registra una compra y aquí '
+              'verás lo que vale y cuánto ganas.',
+            ),
+            isTrue,
+          );
+          expect(f.shows('Bitcoin en Binance'), isTrue);
+          expect(f.shows('Registrar tu primera compra'), isTrue);
+        },
+      );
+      await f.check(
+        'Debajo sigue cómo traerla: Binance y Billeteras propias',
+        () {
+          expect(f.shows('Billeteras propias'), isTrue);
+          expect(f.shows('Binance'), isTrue);
+        },
+      );
+      await f.tap('Registrar tu primera compra');
       await f.type('Cantidad de BTC', '0,002');
       await f.tapFound(find.byType(DropdownButtonFormField<String?>));
       await f.tap('Bancolombia · COP');
       await f.type('Total pagado', '700000');
       await f.step(
-        'Compra de 0,002 BTC pagada desde Bancolombia, \$700.000: a '
-        '\$350.000.000 cada bitcoin.',
+        '«Registrar tu primera compra» abre la compra de esa cuenta: 0,002 '
+        'BTC pagados desde Bancolombia, \$700.000, a \$350.000.000 cada '
+        'bitcoin.',
       );
       await f.tap('Guardar');
       await f.step(
-        'Al guardar, la cuenta tiene 0,002 BTC, te costó \$700.000 y ya '
-        'muestra lo que vale y la ganancia.',
+        'Al guardar, la página de cripto ya muestra lo que vale tu bitcoin y '
+        'lo que ganas o pierdes frente a los \$700.000.',
       );
+      await f.check('La página ya no está vacía', () {
+        expect(own.portfolio.portfolio!.isEmpty, isFalse);
+        expect(f.shows('Tu cripto vale'), isTrue);
+      });
       final Account coin = _named(own, 'Bitcoin en Binance');
       await f.check('La cuenta tiene 0,002 BTC que costaron \$700.000', () {
         expect(_balance(own, coin).amount, Decimal.parse('0.002'));
@@ -3366,16 +3389,6 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         'Bancolombia pasó de ${_cop(bankBefore)} a ${_cop(bankNow)}',
         () => expect(_balance(own, bank), bankNow),
       );
-      await f.back();
-      await f.tap('Rendimiento y ganancia');
-      await f.step(
-        'Ahora la página de cripto muestra lo que vale tu bitcoin y lo que '
-        'ganas o pierdes frente a los \$700.000.',
-      );
-      await f.check('La página ya no está vacía', () {
-        expect(own.portfolio.portfolio!.isEmpty, isFalse);
-        expect(f.shows('Tu cripto vale'), isTrue);
-      });
       await f.back();
       await f.reveal(find.text('Rendimiento y ganancia'));
       final double ratio = own.portfolio.portfolio!.gainRatio!;

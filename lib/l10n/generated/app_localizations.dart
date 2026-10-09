@@ -4838,6 +4838,18 @@ abstract class AppLocalizations {
   /// **'Aún no tienes cripto. Agrega una billetera o conecta Binance.'**
   String get portfolioEmpty;
 
+  /// No description provided for @portfolioEmptyAccounts.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Tu cuenta de cripto está en 0} other{Tus cuentas de cripto están en 0}}: registra una compra y aquí verás lo que vale y cuánto ganas.'**
+  String portfolioEmptyAccounts(int count);
+
+  /// No description provided for @portfolioFirstPurchase.
+  ///
+  /// In es, this message translates to:
+  /// **'Registrar tu primera compra'**
+  String get portfolioFirstPurchase;
+
   /// No description provided for @holdingPrice.
   ///
   /// In es, this message translates to:

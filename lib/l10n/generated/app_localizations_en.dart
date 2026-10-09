@@ -3154,6 +3154,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'No crypto yet. Add a wallet or connect Binance.';
 
   @override
+  String portfolioEmptyAccounts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Your crypto accounts are at 0',
+      one: 'Your crypto account is at 0',
+    );
+    return '$_temp0: record a purchase and you\'ll see here what it\'s worth and what you gain.';
+  }
+
+  @override
+  String get portfolioFirstPurchase => 'Record your first purchase';
+
+  @override
   String get holdingPrice => 'Price';
 
   @override

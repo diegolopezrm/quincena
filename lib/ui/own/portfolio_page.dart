@@ -25,6 +25,7 @@ import 'account_page.dart';
 import 'binance_page.dart';
 import 'look.dart';
 import 'portfolio_chart.dart';
+import 'trade_sheet.dart';
 import 'wallets_page.dart';
 
 /// [fraction] as a percentage: `+1,2 %` in Spanish, `+1.2%` in English.
@@ -288,6 +289,13 @@ class _PortfolioPageState extends State<PortfolioPage> {
             ],
           );
           if (p.isEmpty) {
+            // Crypto accounts at zero are where a purchase goes: each with
+            // what its coin is worth and the way to record one, before the
+            // sources that would bring it in.
+            final List<Account> empty = <Account>[
+              for (final Account a in widget.own.accounts)
+                if (a.asset.isCrypto) a,
+            ];
             return Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 760),
@@ -297,10 +305,26 @@ class _PortfolioPageState extends State<PortfolioPage> {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(4, 0, 4, 24),
                       child: Text(
-                        l.portfolioEmpty,
+                        empty.isEmpty
+                            ? l.portfolioEmpty
+                            : l.portfolioEmptyAccounts(empty.length),
                         style: context.type.bodyMedium,
                       ),
                     ),
+                    if (empty.isNotEmpty) ...<Widget>[
+                      Panel(
+                        children: <Widget>[
+                          for (final Account a in empty)
+                            _EmptyAccount(
+                              own: widget.own,
+                              account: a,
+                              price: p.priceOf(a.asset),
+                              base: p.base,
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                    ],
                     sources,
                   ],
                 ),
@@ -353,6 +377,69 @@ class _PortfolioPageState extends State<PortfolioPage> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// A crypto account at zero: its coin, what one is worth now, and the way
+/// to record its first purchase, or the next one once it was sold out.
+class _EmptyAccount extends StatelessWidget {
+  const _EmptyAccount({
+    required this.own,
+    required this.account,
+    required this.price,
+    required this.base,
+  });
+
+  final OwnController own;
+  final Account account;
+  final Pair? price;
+  final Asset base;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    final Pair? one = price;
+    final bool first = !(own.snapshot?.entries ?? const <Entry>[]).any(
+      (Entry e) => e.accountId == account.id,
+    );
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              CoinMark(account.asset),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(account.name, style: context.type.titleSmall),
+                    Figures(
+                      one == null
+                          ? '${moneyText(Money.zero(account.asset))} · '
+                                '${l.portfolioNoPrice}'
+                          : '${moneyText(Money.zero(account.asset))} · 1 '
+                                '${account.asset.code} = '
+                                '${moneyText(Money(one.base, base), base: base)}',
+                      style: context.type.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          FilledButton.tonalIcon(
+            onPressed: () =>
+                showTradeSheet(context, own: own, account: account),
+            icon: const Icon(Glyph.plus, size: 18),
+            label: Text(first ? l.portfolioFirstPurchase : l.tradeBuy),
+          ),
+        ],
       ),
     );
   }

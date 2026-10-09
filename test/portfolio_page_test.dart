@@ -341,17 +341,110 @@ void main() {
     );
     expect(
       find.text(
-        'Aún no tienes cripto. Agrega una billetera o conecta Binance.',
+        'Tus cuentas de cripto están en 0: registra una compra y aquí verás '
+        'lo que vale y cuánto ganas.',
       ),
       findsOneWidget,
     );
     expect(find.text('Tu cripto vale'), findsNothing);
+    // Each account sold out, with the way to record the next purchase.
+    expect(find.text('Registrar compra'), findsNWidgets(3));
+    expect(find.text('Registrar tu primera compra'), findsNothing);
     // What the words name is there to tap.
+    await reveal(tester, find.text('Billeteras propias'));
     expect(find.text('Billeteras propias'), findsOneWidget);
-    expect(find.text('Binance'), findsOneWidget);
+    expect(find.text('Binance'), findsWidgets);
     await tester.tap(find.text('Billeteras propias'));
     await settle(tester);
     expect(find.text('Aún no sigues ninguna billetera.'), findsOneWidget);
+  });
+
+  testWidgets('an account at zero says what its coin is worth, and its first '
+      'purchase is a tap away', (tester) async {
+    final OwnController own = await openCrypto(
+      tester,
+      FakeMarket(),
+      data: (QuincenaStore store) async {
+        for (final Account a in await store.accounts()) {
+          await store.addEntry(
+            accountId: a.id,
+            amount: -a.opening,
+            kind: EntryKind.expense,
+            date: DateTime(2026, 10, 2),
+            cost: Money(Decimal.fromInt(1000), Asset.cop),
+          );
+        }
+        await store.addAccount(
+          name: 'Ahorro en bitcoin',
+          kind: AccountKind.exchange,
+          asset: Asset.btc,
+          opening: Decimal.zero,
+          institution: 'Binance',
+          spendable: false,
+        );
+      },
+    );
+    // 100.000 dollars a bitcoin, at 4.000 pesos: known, though none is held.
+    expect(
+      '0 BTC · 1 BTC = \$400.000.000'.allMatches(screen(tester)),
+      hasLength(2),
+    );
+    expect(find.text('Registrar tu primera compra'), findsOneWidget);
+
+    await tester.tap(find.text('Registrar tu primera compra'));
+    await settle(tester);
+    expect(find.text('Ahorro en bitcoin'), findsNWidgets(2));
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Cantidad de BTC'),
+      '0,001',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Total pagado'),
+      '400000',
+    );
+    await tester.tap(find.text('Guardar'));
+    await settle(tester);
+
+    final Account saved = own.accounts.firstWhere(
+      (Account a) => a.name == 'Ahorro en bitcoin',
+    );
+    expect(own.balances[saved.id]!.amount, Decimal.parse('0.001'));
+    expect(find.text('Tu cripto vale'), findsOneWidget);
+  });
+
+  testWidgets('an account at zero tells its coin\'s price, worth nothing at '
+      'it', (tester) async {
+    final OwnController own = await openCrypto(
+      tester,
+      FakeMarket(),
+      data: (QuincenaStore store) => store.addAccount(
+        name: 'Ahorro en bitcoin',
+        kind: AccountKind.exchange,
+        asset: Asset.btc,
+        opening: Decimal.zero,
+        institution: 'Binance',
+        spendable: false,
+      ),
+    );
+    final Account empty = own.accounts.firstWhere(
+      (Account a) => a.name == 'Ahorro en bitcoin',
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: quincenaTheme(Brightness.light),
+        locale: const Locale('es'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: appLocales,
+        home: Scaffold(
+          body: PositionPanel(own: own, account: empty),
+        ),
+      ),
+    );
+    await settle(tester);
+
+    expect(screen(tester), contains('Precio\n\$400.000.000'));
+    expect(screen(tester), contains('Vale\n\$0'));
+    expect(find.text('—'), findsNothing);
   });
 
   testWidgets('the total is its coins added up, each as its row shows it', (
