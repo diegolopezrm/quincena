@@ -93,7 +93,7 @@ void main() {
     final Session session = await open(tester);
     await ask(tester, session, ScriptedAgent.startersEn[2]);
 
-    await tester.tap(find.text('New'));
+    await tester.tap(find.byTooltip('New conversation'));
     await tester.pumpAndSettle();
     expect(find.text('You started a new conversation.'), findsOneWidget);
     await tester.tap(find.text('Undo'));

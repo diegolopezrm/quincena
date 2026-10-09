@@ -94,7 +94,8 @@ class _AskBarState extends State<AskBar> {
             style: context.type.bodyLarge,
             decoration: InputDecoration(
               hintText: _hintText(context),
-              hintMaxLines: 1,
+              // Two lines, so the example is read whole on a phone.
+              hintMaxLines: 2,
               filled: true,
               fillColor: context.colors.surface,
               contentPadding: const EdgeInsets.symmetric(

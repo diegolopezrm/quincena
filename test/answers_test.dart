@@ -647,7 +647,7 @@ void main() {
     await settle(tester);
     expect(session.ledger.freeUntilPayday, 1369300 - 45000);
 
-    await tester.tap(find.text('Nueva'));
+    await tester.tap(find.byTooltip('Nueva conversación'));
     await settle(tester);
     // The welcome again, over the untouched account.
     expect(session.turns, isEmpty);
@@ -663,14 +663,14 @@ void main() {
     expect(session.ledger.freeUntilPayday, 1369300 - 45000);
 
     // A question in the new one ends the way back.
-    await tester.tap(find.text('Nueva'));
+    await tester.tap(find.byTooltip('Nueva conversación'));
     await settle(tester);
     await ask(tester, session, ScriptedAgent.starters[2]);
     expect(find.text('Deshacer'), findsNothing);
     expect(session.canRestore, isFalse);
 
     // And it lasts only a few seconds.
-    await tester.tap(find.text('Nueva'));
+    await tester.tap(find.byTooltip('Nueva conversación'));
     await settle(tester);
     await tester.pump(const Duration(seconds: 7));
     await settle(tester);

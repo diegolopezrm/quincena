@@ -484,11 +484,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Gasto guardado · '), findsOneWidget);
-      expect(find.text('Nueva'), findsOneWidget);
+      expect(find.byTooltip('Nueva conversación'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       // And so does the way back to it, once a new one starts.
-      await tester.tap(find.text('Nueva'));
+      await tester.tap(find.byTooltip('Nueva conversación'));
       await tester.pumpAndSettle();
       expect(find.text('Empezaste una conversación nueva.'), findsOneWidget);
       expect(find.text('Deshacer'), findsOneWidget);
@@ -601,8 +601,8 @@ void main() {
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       final (Session session, QuincenaStore _) = await openAsk(tester);
       final Finder button = find.ancestor(
-        of: find.text('Nueva'),
-        matching: find.byType(TextButton),
+        of: find.byTooltip('Nueva conversación'),
+        matching: find.byType(IconButton),
       );
       expect(tester.getSize(button).height, greaterThanOrEqualTo(48));
       expect(tester.takeException(), isNull);

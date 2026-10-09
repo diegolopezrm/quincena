@@ -62,8 +62,11 @@ Future<void> showComputed(
     final List<String> labels = <String>{
       for (final Computed c in computed) computedLabel(context, c),
     }.toList();
+    // Any answer that says what can be spent: the overview, and a saved
+    // expense, whose answer says what can be spent now.
     final bool free = computed.any(
-      (Computed c) => c.tool == 'account_overview',
+      (Computed c) =>
+          c.tool == 'account_overview' || c.tool == 'record_expense',
     );
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),

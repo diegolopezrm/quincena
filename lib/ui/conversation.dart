@@ -225,14 +225,13 @@ class NewConversationButton extends StatelessWidget {
 
   final VoidCallback onPressed;
 
+  // An icon, named by its tooltip: with a word beside it the page's title
+  // had no room left.
   @override
-  Widget build(BuildContext context) => Tooltip(
-    message: context.l10n.newConversation,
-    child: TextButton.icon(
-      onPressed: onPressed,
-      icon: const Icon(Glyph.notePencil, size: 20),
-      label: Text(context.l10n.newConversationShort),
-    ),
+  Widget build(BuildContext context) => IconButton(
+    tooltip: context.l10n.newConversation,
+    onPressed: onPressed,
+    icon: const Icon(Glyph.notePencil),
   );
 }
 

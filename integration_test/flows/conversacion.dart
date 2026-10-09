@@ -903,7 +903,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(s.ledger.freeUntilPayday, free - 45000);
         expect(find.textContaining('Gasto guardado · '), findsOneWidget);
       });
-      await f.tap('Nueva');
+      await f.tapTip('Nueva conversación');
       await f.step(
         'Toca «Nueva»: vuelven las preguntas de inicio y abajo «Empezaste '
         'una conversación nueva.» con «Deshacer». El gasto guardado sigue en '
@@ -927,7 +927,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
           expect(s.ledger.freeUntilPayday, free - 45000);
         },
       );
-      await f.tap('Nueva');
+      await f.tapTip('Nueva conversación');
       await f.tap(ScriptedAgent.starters[3]);
       await f.step(
         '«Nueva» otra vez y una pregunta en la conversación nueva: el '
@@ -937,7 +937,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(s.canRestore, isFalse);
         expect(find.text('Deshacer'), findsNothing);
       });
-      await f.tap('Nueva');
+      await f.tapTip('Nueva conversación');
       // Six seconds untouched, the time the offer to undo lasts.
       await f.tester.pump(const Duration(seconds: 7));
       await settle(f.tester);
@@ -953,7 +953,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       await f.tap(ScriptedAgent.starters[4]);
       await f.tap('Guardar gasto');
       final int spent = s.ledger.freeUntilPayday;
-      await f.tap('Nueva');
+      await f.tapTip('Nueva conversación');
       await f.step(
         'Con otro gasto guardado, «Nueva» limpia la conversación y ofrece '
         '«Deshacer». Arriba no hay engranaje: en el teléfono, «Nueva» es la '
@@ -1588,7 +1588,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(find.text('Volver a preguntar'), findsOneWidget);
         expect(allowance.left, left);
       });
-      await f.tap('Nueva');
+      await f.tapTip('Nueva conversación');
       await f.step(
         'Toca «Nueva»: como ninguna pregunta tuvo respuesta, empieza de cero '
         'sin ofrecer «Deshacer»: vuelven las cinco preguntas con el cupo del '
@@ -1845,20 +1845,26 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(find.text('Reportar'), findsOneWidget);
       });
       await f.tap('Reportar');
-      await f.check('Al abrirla otra vez, el motivo y el comentario se '
-          'perdieron', () {
-        expect(_reason(f), isNull);
-        expect(
-          f.tester
-              .widget<TextField>(
-                find.widgetWithText(TextField, 'Cuéntanos más (opcional)'),
-              )
-              .controller!
-              .text,
-          isEmpty,
-        );
-        expect(_sendReport(f).onPressed, isNull);
-      });
+      await f.step(
+        'Al abrirla otra vez, el motivo y el comentario siguen ahí: cerrarla '
+        'sin querer no pierde lo escrito.',
+      );
+      await f.check(
+        'Al abrirla otra vez, el motivo y el comentario siguen',
+        () {
+          expect(_reason(f), ReportReason.wrong);
+          expect(
+            f.tester
+                .widget<TextField>(
+                  find.widgetWithText(TextField, 'Cuéntanos más (opcional)'),
+                )
+                .controller!
+                .text,
+            'La cifra no cuadra.',
+          );
+          expect(_sendReport(f).onPressed, isNotNull);
+        },
+      );
       await f.back();
     },
   ),
@@ -1990,6 +1996,12 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
           expect(s.turns.last.computed.single.tool, 'record_expense');
           expect(find.text('El gasto que se registró'), findsOneWidget);
         },
+      );
+      await f.check(
+        'Como la respuesta dice lo que puedes gastar, ofrece ver cómo se '
+        'calcula',
+        () =>
+            expect(f.shows('Ver cómo se calcula lo que puedes gastar'), isTrue),
       );
       await f.back();
       await f.tapTip('Atrás');
@@ -2135,7 +2147,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
             expect(allowance.left, left - 2);
           },
         );
-        await f.tap('Nueva');
+        await f.tapTip('Nueva conversación');
         await f.step(
           'Toca «Nueva»: empieza una conversación vacía y abajo ofrece '
           '«Deshacer» por unos segundos.',

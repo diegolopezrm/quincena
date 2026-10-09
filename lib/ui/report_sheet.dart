@@ -31,6 +31,11 @@ Future<void> showReportSheet(
   messenger?.showSnackBar(SnackBar(content: Text(thanks)));
 }
 
+/// What was chosen and written in a report not sent yet, kept with its
+/// answer: a sheet closed by a slip of the finger loses nothing.
+final Expando<(ReportReason?, String)> _drafts =
+    Expando<(ReportReason?, String)>('report drafts');
+
 class _ReportSheet extends StatefulWidget {
   const _ReportSheet({
     required this.session,
@@ -47,10 +52,14 @@ class _ReportSheet extends StatefulWidget {
 }
 
 class _ReportSheetState extends State<_ReportSheet> {
-  final TextEditingController _comment = TextEditingController();
-  ReportReason? _reason;
+  late final TextEditingController _comment = TextEditingController(
+    text: _drafts[widget.turn]?.$2 ?? '',
+  )..addListener(_keep);
+  late ReportReason? _reason = _drafts[widget.turn]?.$1;
   bool _sending = false;
   bool _failed = false;
+
+  void _keep() => _drafts[widget.turn] = (_reason, _comment.text);
 
   @override
   void dispose() {
@@ -77,6 +86,8 @@ class _ReportSheetState extends State<_ReportSheet> {
           mode: session.mode.name,
         ),
       );
+      // Sent, there is no draft left to keep.
+      _drafts[widget.turn] = null;
       if (mounted) Navigator.of(context).pop(true);
     } on Object catch (error) {
       if (kDebugMode) debugPrint('The report did not arrive: $error');
@@ -106,7 +117,9 @@ class _ReportSheetState extends State<_ReportSheet> {
             RadioGroup<ReportReason>(
               groupValue: _reason,
               onChanged: (ReportReason? reason) {
-                if (!_sending) setState(() => _reason = reason);
+                if (_sending) return;
+                setState(() => _reason = reason);
+                _keep();
               },
               child: Column(
                 children: <Widget>[

@@ -317,7 +317,7 @@ void main() {
     model.offline = true;
     await _ask(tester, session, ScriptedAgent.starters[0]);
     await _ask(tester, session, ScriptedAgent.starters[3]);
-    await tester.tap(find.text('Nueva'));
+    await tester.tap(find.byTooltip('Nueva conversación'));
     await settle(tester);
     expect(session.turns, isEmpty);
     expect(session.canRestore, isFalse);

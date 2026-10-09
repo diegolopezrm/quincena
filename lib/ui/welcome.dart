@@ -69,13 +69,16 @@ class Welcome extends StatelessWidget {
           ),
           const SizedBox(height: 28),
         ],
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 12),
-          child: Text(
-            context.l10n.askYourMoney,
-            style: context.type.labelSmall,
+        // Under the figure it names the questions; on their own page the
+        // title above already does.
+        if (standing)
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 12),
+            child: Text(
+              context.l10n.askYourMoney,
+              style: context.type.labelSmall,
+            ),
           ),
-        ),
         LayoutBuilder(
           builder: (BuildContext context, BoxConstraints box) {
             final bool two = box.maxWidth >= 560;

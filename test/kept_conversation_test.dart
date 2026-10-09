@@ -90,7 +90,7 @@ void main() {
     );
     expect(session.turns, hasLength(2));
 
-    await tester.tap(find.text('Nueva'));
+    await tester.tap(find.byTooltip('Nueva conversación'));
     await settle(tester);
     expect(session.turns, isEmpty);
   });
