@@ -1040,7 +1040,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         },
       );
       await f.tapContaining('1 USD =');
-      await f.tester.enterText(find.byType(TextField).last, '0');
+      await enterTextIn(f.tester, find.byType(TextField).last, '0');
       await f.tap('Guardar');
       await f.check('Guardar una tasa de 0 no cambia nada', () {
         expect(own.rates.rate(Asset.usd, Asset.cop), trm);
@@ -1057,7 +1057,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         expect(_typedRate(own, Asset.usd), isFalse);
       });
       await f.tapContaining('1 USD =');
-      await f.tester.enterText(find.byType(TextField).last, '4100');
+      await enterTextIn(f.tester, find.byType(TextField).last, '4100');
       await f.tap('Guardar');
       await f.step(
         'Con 4.100 guardado, la línea dice «Manual», cuándo se escribió y '
@@ -1153,7 +1153,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         'En las tasas, tocar la línea del euro abre «Escribir una tasa» con '
         'el campo vacío.',
       );
-      await f.tester.enterText(find.byType(TextField).last, '4350');
+      await enterTextIn(f.tester, find.byType(TextField).last, '4350');
       await f.tap('Guardar');
       await f.step('Con 4.350 guardado, el euro tiene tasa, marcada «Manual».');
       final Money euros = _pesos('1305000');
@@ -1420,7 +1420,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         'Tocar la línea del bitcoin abre «Escribir una tasa» en dólares: '
         'cuánto vale 1 BTC en USD, con el precio de hoy.',
       );
-      await f.tester.enterText(find.byType(TextField).last, '90000');
+      await enterTextIn(f.tester, find.byType(TextField).last, '90000');
       await f.tap('Guardar');
       await f.step(
         'Con US\$90.000 guardado, la línea del bitcoin dice «Manual» y se '

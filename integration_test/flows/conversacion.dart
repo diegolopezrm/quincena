@@ -149,7 +149,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(find.byType(Welcome), findsOneWidget);
       });
       const String own = '¿Cuánto gasté en el Éxito?';
-      await f.tester.enterText(_askField, own);
+      await enterTextIn(f.tester, _askField, own);
       await settle(f.tester);
       await f.step(
         'Escribe una pregunta propia en la barra: «$own». La flecha verde '
@@ -168,7 +168,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(_askText(f), isEmpty);
       });
       const String unknown = '¿Cuánto debo en la tarjeta?';
-      await f.tester.enterText(_askField, unknown);
+      await enterTextIn(f.tester, _askField, unknown);
       await f.tester.testTextInput.receiveAction(TextInputAction.send);
       await settle(f.tester);
       await _read(
@@ -348,7 +348,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(_planner(f).monthly, goal.monthly);
       });
       await f.tapFound(find.byTooltip('Escribir monto'));
-      await f.tester.enterText(_dialogField, '');
+      await enterTextIn(f.tester, _dialogField, '');
       await f.tap('Usar este monto');
       await f.step(
         'Toca el lápiz junto al monto: pide uno exacto. Vacío, «Usar este '
@@ -360,7 +360,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(_planner(f).monthly, goal.monthly);
       });
       await f.tapFound(find.byTooltip('Escribir monto'));
-      await f.tester.enterText(_dialogField, '455000');
+      await enterTextIn(f.tester, _dialogField, '455000');
       await settle(f.tester);
       await f.step(
         'Otra vez el lápiz: escribe 455.000, un monto que el control no '
@@ -415,7 +415,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         'se va hasta guardar de nuevo.',
       );
       await f.tapFound(find.byTooltip('Escribir monto'));
-      await f.tester.enterText(_dialogField, '700000');
+      await enterTextIn(f.tester, _dialogField, '700000');
       await f.tap('Usar este monto');
       await f.tap('Guardar este plan');
       await _read(
@@ -2038,7 +2038,7 @@ String _askText(FlowRun f) =>
 
 /// Types [question] in the ask bar and sends it.
 Future<void> _ask(FlowRun f, String question) async {
-  await f.tester.enterText(_askField, question);
+  await enterTextIn(f.tester, _askField, question);
   await settle(f.tester);
   await f.tapTip('Preguntar');
 }
@@ -2478,7 +2478,7 @@ Future<void> _answered(FlowRun f) async {
 /// Types [question] in the ask bar and sends it to Gemini, waiting as
 /// [_tapWaiting] does.
 Future<void> _askWaiting(FlowRun f, String question) async {
-  await f.tester.enterText(_askField, question);
+  await enterTextIn(f.tester, _askField, question);
   await settle(f.tester);
   await f.tester.tap(find.byTooltip('Preguntar'));
   await _answered(f);

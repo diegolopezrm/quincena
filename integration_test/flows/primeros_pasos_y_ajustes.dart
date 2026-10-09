@@ -640,7 +640,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         'sugerencias: quiero escribirlo, corregirlo y quitarlo si me equivoco.',
     (FlowRun f) async {
       await f.tap('Con mis cuentas');
-      await f.tester.enterText(find.byType(TextField).first, 'Sofía');
+      await enterTextIn(f.tester, find.byType(TextField).first, 'Sofía');
       // «Siguiente» on the keyboard moves on, as the button does.
       await f.tester.testTextInput.receiveAction(TextInputAction.next);
       await settle(f.tester);
@@ -932,7 +932,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       final int free = _own(f).ledger!.freeUntilPayday;
       await f.tapTip('Ajustes');
       await f.tap('Nombre');
-      await f.tester.enterText(find.byType(TextField), 'Diego Alejandro');
+      await enterTextIn(f.tester, find.byType(TextField), 'Diego Alejandro');
       await f.step(
         '«Nombre» abre un cuadro con el nombre actual. Se escribe «Diego '
         'Alejandro».',
@@ -942,13 +942,13 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         expect(_own(f).profile!.name, 'Diego');
       });
       await f.tap('Nombre');
-      await f.tester.enterText(find.byType(TextField), '   ');
+      await enterTextIn(f.tester, find.byType(TextField), '   ');
       await f.tap('Guardar');
       await f.check('Un nombre en blanco no se guarda', () {
         expect(_own(f).profile!.name, 'Diego');
       });
       await f.tap('Nombre');
-      await f.tester.enterText(find.byType(TextField), 'Diego Alejandro');
+      await enterTextIn(f.tester, find.byType(TextField), 'Diego Alejandro');
       await f.tap('Guardar');
       await f.step('Con «Guardar» la fila «Nombre» dice «Diego Alejandro».');
       await f.check('El perfil quedó con el nombre nuevo', () {
@@ -1021,7 +1021,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         expect(_own(f).ledger!.nextPayday, DateTime(2026, 10, 30));
       });
       await f.tap('Lo que te pagan');
-      await f.tester.enterText(find.byType(TextField), '0');
+      await enterTextIn(f.tester, find.byType(TextField), '0');
       await f.step(
         '«Lo que te pagan» explica para qué sirve. Se escribe 0, que no es '
         'un monto válido.',
@@ -1036,13 +1036,13 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         expect(f.shows('Escribe un monto mayor que cero.'), isTrue);
         expect(find.byType(AlertDialog), findsOneWidget);
       });
-      await f.tester.enterText(find.byType(TextField), '4800000');
+      await enterTextIn(f.tester, find.byType(TextField), '4800000');
       await f.tap('Cancelar');
       await f.check('Con «Cancelar» no cambia nada', () {
         expect(_own(f).profile!.pay, isNull);
       });
       await f.tap('Lo que te pagan');
-      await f.tester.enterText(find.byType(TextField), '4800000');
+      await enterTextIn(f.tester, find.byType(TextField), '4800000');
       await f.tap('Guardar');
       await f.step('Con 4.800.000 y «Guardar», la fila lo muestra.');
       await f.check('Quedó guardado el pago de 4.800.000', () {
@@ -1083,7 +1083,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       );
       await f.tapTip('Ajustes');
       await f.tap('Colchón');
-      await f.tester.enterText(find.byType(TextField), '0');
+      await enterTextIn(f.tester, find.byType(TextField), '0');
       await f.tap('Guardar');
       await f.step(
         '«Colchón» explica que no cuenta en lo que puedes gastar. Con 0 y '
@@ -1098,7 +1098,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           expect(find.byType(AlertDialog), findsOneWidget);
         },
       );
-      await f.tester.enterText(find.byType(TextField), '200000');
+      await enterTextIn(f.tester, find.byType(TextField), '200000');
       await f.step('Se corrige a 200.000.');
       await f.tap('Guardar');
       await f.back();

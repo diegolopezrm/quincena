@@ -486,7 +486,8 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.back();
       // The keyboard's own key does what «Ver» does.
       await f.reveal(find.widgetWithText(TextField, 'Precio'));
-      await f.tester.enterText(
+      await enterTextIn(
+        f.tester,
         find.widgetWithText(TextField, 'Precio'),
         '50000',
       );
@@ -814,7 +815,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         'Toca la línea del EUR: «Escribir una tasa» pide cuánto vale 1 EUR '
         'en pesos.',
       );
-      await f.tester.enterText(find.byType(TextField).last, '4500');
+      await enterTextIn(f.tester, find.byType(TextField).last, '4500');
       await settle(f.tester);
       await f.tap('Guardar');
       await f.step(
@@ -2120,7 +2121,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         expect(own.categories.length, categories);
       });
       await f.tap('Nueva categoría');
-      await f.tester.enterText(find.byType(TextField).last, 'Mascotas');
+      await enterTextIn(f.tester, find.byType(TextField).last, 'Mascotas');
       await settle(f.tester);
       await f.step('Escribe «Mascotas» y toca «Guardar».');
       await f.tap('Guardar');
@@ -3008,7 +3009,7 @@ bool _fabShown(FlowRun f) =>
 /// Types [text] in the search of Movimientos, replacing what was there.
 Future<void> _search(FlowRun f, String text) async {
   await f.top();
-  await f.tester.enterText(find.byType(TextField).first, text);
+  await enterTextIn(f.tester, find.byType(TextField).first, text);
   await settle(f.tester);
 }
 
@@ -3074,7 +3075,7 @@ Future<void> _typeKeys(FlowRun f, String label, String text) async {
         .widget<TextField>(field.first)
         .controller!
         .text;
-    await f.tester.enterText(field.first, typed + text[i - 1]);
+    await enterTextIn(f.tester, field.first, typed + text[i - 1]);
     await f.tester.pump();
   }
   await settle(f.tester);

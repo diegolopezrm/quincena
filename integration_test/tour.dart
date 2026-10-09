@@ -35,6 +35,39 @@ import '../test_screens/accounts.dart';
 /// Takes the picture of what is on screen now, under [name].
 typedef Shot = Future<void> Function(String name);
 
+/// Types [text] in the field [finder] finds, replacing what was there, as
+/// [WidgetTester.enterText] does. On a simulator the text can reach the
+/// field's previous input connection and be dropped, which leaves the field
+/// as it was: then the field gets it the way the keyboard sends it, through
+/// the same formatters.
+Future<void> enterTextIn(
+  WidgetTester tester,
+  Finder finder,
+  String text,
+) async {
+  final Finder editable = find.descendant(
+    of: finder,
+    matching: find.byType(EditableText, skipOffstage: finder.skipOffstage),
+    matchRoot: true,
+  );
+  final String before = tester
+      .state<EditableTextState>(editable)
+      .textEditingValue
+      .text;
+  await tester.enterText(finder, text);
+  await tester.pump();
+  final EditableTextState field = tester.state<EditableTextState>(editable);
+  if (before != text && field.textEditingValue.text == before) {
+    field.updateEditingValue(
+      TextEditingValue(
+        text: text,
+        selection: TextSelection.collapsed(offset: text.length),
+      ),
+    );
+    await tester.pump();
+  }
+}
+
 /// Somewhere to go in the app, from a fresh start on an account.
 class Scene {
   const Scene(
@@ -245,7 +278,7 @@ class Tour {
   Future<void> type(String label, String text) async {
     final Finder f = find.widgetWithText(TextField, label);
     await reveal(f);
-    await tester.enterText(f.first, text);
+    await enterTextIn(tester, f.first, text);
     await settle(tester);
     FocusManager.instance.primaryFocus?.unfocus();
     await settle(tester);
@@ -295,7 +328,7 @@ final List<Scene> scenes = <Scene>[
   Scene('01-primeros-pasos', (Tour t) async {
     await t.shot('empezar');
     await t.tap('Con mis cuentas');
-    await t.tester.enterText(find.byType(TextField).first, 'Diego');
+    await enterTextIn(t.tester, find.byType(TextField).first, 'Diego');
     await t.shot('nombre-y-moneda');
     await t.tap('Siguiente');
     // How much is paid sits under when.

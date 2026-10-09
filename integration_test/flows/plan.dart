@@ -3767,7 +3767,8 @@ String _fieldText(FlowRun f, String label) => f.tester
 
 /// Types [text] in the only field of the dialog on top.
 Future<void> _typeInDialog(FlowRun f, String text) async {
-  await f.tester.enterText(
+  await enterTextIn(
+    f.tester,
     find.descendant(
       of: find.byType(AlertDialog),
       matching: find.byType(TextField),

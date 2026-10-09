@@ -1552,8 +1552,10 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         'selector del sistema se prueba a mano.',
       );
       await f.back();
+      _clipboard(f, r'Compraste $27.500 en Farmatodo');
       await f.tap('Pegar un mensaje');
-      await f.tester.enterText(
+      await enterTextIn(
+        f.tester,
         find.byType(TextField).last,
         r'Compraste $27.500 en Farmatodo',
       );
@@ -3381,10 +3383,13 @@ Future<void> _tapOn(FlowRun f, String payee, String label) =>
 
 /// Reads [text] as a message the person copied, through «Leer un pago».
 Future<void> _paste(FlowRun f, String text) async {
+  // The message is what the person copied: on a simulator the clipboard is
+  // the Mac's, and iOS would stop to ask before pasting it.
+  _clipboard(f, text);
   await f.top();
   await f.tap('Leer un pago');
   await f.tap('Un mensaje que copiaste');
-  await f.tester.enterText(find.byType(TextField).last, text);
+  await enterTextIn(f.tester, find.byType(TextField).last, text);
   await settle(f.tester);
   await f.tap('Leer');
 }
