@@ -5624,9 +5624,6 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get homeTodoThen => 'Después';
-
-  @override
   String todoLatePay(String date) {
     return 'Registra tu pago del $date';
   }

@@ -1428,7 +1428,6 @@
   "demoBannerTitle": "You're looking at {name}'s sample account",
   "demoBannerBody": "With your own accounts, Quincena tells you what you can spend. They stay on this device only.",
   "standingNextCharge": "Next: {name}, {amount} on {date}",
-  "homeTodoThen": "After that",
   "todoLatePay": "Record your pay from {date}",
   "todoLatePayBody": "It hasn't shown up yet. If it arrived, record it so it counts.",
   "todoRecord": "Record",

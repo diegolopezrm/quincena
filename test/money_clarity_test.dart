@@ -387,12 +387,16 @@ void main() {
         const String split = r'Te llegó la quincena: $2.000.000';
         expect(find.text(review), findsOneWidget);
         expect(find.text(split), findsOneWidget);
-        // The first has the button; the pay to split waits under "Después".
+        // Rows in one panel: the first has the button, the pay to split
+        // comes after it with its action in words.
         expect(find.widgetWithText(FilledButton, 'Revisar'), findsOneWidget);
         expect(find.widgetWithText(FilledButton, 'Repartir'), findsNothing);
-        final double then = tester.getTopLeft(find.text('Después')).dy;
-        expect(tester.getTopLeft(find.text(review)).dy, lessThan(then));
-        expect(then, lessThan(tester.getTopLeft(find.text(split)).dy));
+        expect(find.text('Repartir'), findsOneWidget);
+        expect(find.text('Después'), findsNothing);
+        expect(
+          tester.getTopLeft(find.text(review)).dy,
+          lessThan(tester.getTopLeft(find.text(split)).dy),
+        );
       },
     );
 
@@ -422,9 +426,9 @@ void main() {
             'Lo que pagues hasta el 15 oct sale de lo que puedes gastar.',
           ),
         );
-        expect(text, contains('Después'));
+        // After the pay that arrived, in the same panel.
         expect(
-          tester.getTopLeft(find.text('Después')).dy,
+          tester.getTopLeft(find.textContaining('Te llegó la quincena')).dy,
           lessThan(tester.getTopLeft(find.text('Agrega tus pagos fijos')).dy),
         );
 

@@ -72,25 +72,17 @@ class OwnHomeTab extends StatelessWidget {
           greet: false,
           caveat: own.provisional ? l.standingProvisional : null,
         ),
-        // One thing first, given room and a button; the rest after it.
+        // What needs attention, as rows under the figure and lighter than
+        // it: the most pressing first, with a button; the rest after it.
         if (todos.isNotEmpty) ...<Widget>[
           const SizedBox(height: 24),
           SectionLabel(l.homeTodo),
-          _MainTodo(todo: todos.first),
-          if (todos.length > 1) ...<Widget>[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
-              child: Semantics(
-                header: true,
-                child: Text(l.homeTodoThen, style: context.type.labelMedium),
-              ),
-            ),
-            Panel(
-              children: <Widget>[
-                for (final _Todo todo in todos.skip(1)) _TodoRow(todo: todo),
-              ],
-            ),
-          ],
+          Panel(
+            children: <Widget>[
+              _TodoRow(todo: todos.first, first: true),
+              for (final _Todo todo in todos.skip(1)) _TodoRow(todo: todo),
+            ],
+          ),
         ],
         const SizedBox(height: 24),
         _ComingDays(own: own, ledger: ledger),
@@ -273,69 +265,36 @@ class _AskRow extends StatelessWidget {
   );
 }
 
-/// The thing to do first: what and why, with room, and a button that says
-/// what doing it is called.
-class _MainTodo extends StatelessWidget {
-  const _MainTodo({required this.todo});
-
-  final _Todo todo;
-
-  @override
-  Widget build(BuildContext context) {
-    final Widget icon = Icon(todo.icon, size: 24, color: context.colors.brand);
-    final Widget words = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(todo.title, style: context.type.titleMedium),
-        const SizedBox(height: 2),
-        Text(todo.body, style: context.type.bodySmall),
-        const SizedBox(height: 10),
-        FilledButton.tonal(
-          onPressed: () => todo.open(context),
-          child: Text(todo.action),
-        ),
-      ],
-    );
-    return Block(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      // With large text the icon goes above, as iOS lays out its own at
-      // those sizes, and the words have the whole width.
-      child: largeText(context)
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[icon, const SizedBox(height: 8), words],
-            )
-          : Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                icon,
-                const SizedBox(width: 14),
-                Expanded(child: words),
-              ],
-            ),
-    );
-  }
-}
-
-/// Something to do after the first, with what doing it is called: the
-/// whole row opens it, and the word at its end says what that is.
+/// Something to do, with what doing it is called: the whole row opens it,
+/// and the word at its end says what that is. The [first] says it on a
+/// button, small enough that the figure above stays what weighs most.
 class _TodoRow extends StatelessWidget {
-  const _TodoRow({required this.todo});
+  const _TodoRow({required this.todo, this.first = false});
 
   final _Todo todo;
+  final bool first;
 
   @override
   Widget build(BuildContext context) {
     final bool large = largeText(context);
-    final Widget action = Text(
-      todo.action,
-      style: context.type.labelLarge?.copyWith(color: context.colors.brand),
-    );
-    final Widget caret = Icon(
-      Glyph.caretRight,
-      size: 16,
-      color: context.colors.brand,
-    );
+    final Widget action = first
+        ? FilledButton.tonal(
+            onPressed: () => todo.open(context),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              visualDensity: VisualDensity.compact,
+            ),
+            child: Text(todo.action),
+          )
+        : Text(
+            todo.action,
+            style: context.type.labelLarge?.copyWith(
+              color: context.colors.brand,
+            ),
+          );
+    final Widget caret = first
+        ? const SizedBox.shrink()
+        : Icon(Glyph.caretRight, size: 16, color: context.colors.brand);
     return InkWell(
       onTap: () => todo.open(context),
       child: Padding(

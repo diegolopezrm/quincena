@@ -1767,7 +1767,6 @@
   "demoBannerBody": "Con tus cuentas, Quincena te dice cuánto puedes gastar tú. Se guardan solo en este dispositivo.",
   "standingNextCharge": "El próximo: {name}, {amount} el {date}",
   "@standingNextCharge": {"placeholders": {"name": {"type": "String"}, "amount": {"type": "String"}, "date": {"type": "String"}}},
-  "homeTodoThen": "Después",
   "todoLatePay": "Registra tu pago del {date}",
   "@todoLatePay": {"placeholders": {"date": {"type": "String"}}},
   "todoLatePayBody": "Todavía no aparece. Si ya llegó, regístralo para que cuente.",

@@ -8616,12 +8616,6 @@ abstract class AppLocalizations {
   /// **'El próximo: {name}, {amount} el {date}'**
   String standingNextCharge(String name, String amount, String date);
 
-  /// No description provided for @homeTodoThen.
-  ///
-  /// In es, this message translates to:
-  /// **'Después'**
-  String get homeTodoThen;
-
   /// No description provided for @todoLatePay.
   ///
   /// In es, this message translates to:
