@@ -75,7 +75,12 @@ void main() {
       for (final Check c in failed) {
         print('  FAILED ${c.what}: ${c.detail}');
       }
-      if (run.error != null) print('  BROKE: ${run.error}');
+      if (run.error != null) {
+        print(
+          '  BROKE: ${run.error}'
+          '${run.brokeAt == null ? '' : ' at ${run.brokeAt}'}',
+        );
+      }
       if (out != null) {
         Directory(out).createSync(recursive: true);
         File(

@@ -6,11 +6,16 @@
 //   flutter test test_screens/flows_keyboard_test.dart
 //   flutter test test_screens/flows_keyboard_test.dart --dart-define=PHONE=se
 //
+// With FLOWS_SHOTS=1 and --update-goldens it also draws every step to
+// test_screens/flows_out_<phone>/<step>.png, to see where a flow stops.
+//
 // Not part of `flutter test`, like the rest of this folder. The checks are
 // printed but do not fail a flow: on a short screen some read rows that
 // are not drawn. The keyboard does not slide in: what only goes wrong
 // while it moves needs a phone.
 // ignore_for_file: avoid_print
+
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -24,8 +29,9 @@ import '../integration_test/flows/flows.dart';
 import '../test/fonts.dart';
 
 void main() {
-  final _Phone phone =
-      _phones[const String.fromEnvironment('PHONE', defaultValue: 'pro')]!;
+  const String name = String.fromEnvironment('PHONE', defaultValue: 'pro');
+  final _Phone phone = _phones[name]!;
+  final bool shots = Platform.environment['FLOWS_SHOTS'] == '1';
 
   setUpAll(() async {
     await loadAppFonts();
@@ -41,19 +47,21 @@ void main() {
       _keyboardFollowsFocus(tester, phone);
       late FlowRun run;
       try {
-        run = await playFlow(
-          tester,
-          flow,
-          (String name, String caption) async {},
-          size: phone.size,
-        );
+        run = await playFlow(tester, flow, (String step, String caption) async {
+          if (!shots) return;
+          await expectLater(
+            find.byType(MaterialApp).first,
+            matchesGoldenFile('flows_out_$name/$step.png'),
+          );
+        }, size: phone.size);
       } finally {
         debugDefaultTargetPlatformOverride = null;
       }
       final int held = run.checks.where((Check c) => c.ok).length;
       print(
         '${flow.id}: $held/${run.checks.length} checks'
-        '${run.error == null ? '' : ', BROKE: ${run.error}'}',
+        '${run.error == null ? '' : ', BROKE: ${run.error}'}'
+        '${run.brokeAt == null ? '' : ' at ${run.brokeAt}'}',
       );
     });
   }

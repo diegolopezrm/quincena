@@ -454,6 +454,33 @@ void main() {
       (await tester.runAsync(own.store.recurring))!.single.amount.amount,
       d('150000'),
     );
+    // Applied, it is not kept to be weighed again over the new price.
+    expect(own.scenarios, isEmpty);
+  });
+
+  testWidgets('saving more each payday is applied to a goal, said first', (
+    tester,
+  ) async {
+    final OwnController own = await open(
+      tester,
+      (OwnController own) => WhatIfPage(own: own),
+    );
+    await tester.enterText(find.byType(TextField), '100.000');
+    await settle(tester);
+    await centered(tester, find.text('Aplicar'));
+    await tester.tap(find.text('Aplicar'));
+    await settle(tester);
+    // Two paydays a month: 200.000 more a month.
+    expect(
+      find.text(
+        'Lo que apartas al mes para Cartagena pasará de ${pesos(300000)} a '
+        '${pesos(500000)}.',
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Aplicar').last);
+    await settle(tester);
+    expect(own.snapshot!.goals.single.monthly.amount, d('500000'));
   });
 
   testWidgets('what if counts what the day to day usually takes, or says it '
@@ -504,7 +531,7 @@ void main() {
         .map((Element e) => (e.widget as Text).data!)
         .first;
 
-    await tester.ensureVisible(find.text('Contar el gasto del día a día'));
+    await centered(tester, find.text('Contar el gasto del día a día'));
     await tester.tap(find.text('Contar el gasto del día a día'));
     await settle(tester);
     expect(counted, findsNothing);
@@ -723,4 +750,16 @@ void main() {
     await tapText(tester, 'Guardar');
     expect(own.snapshot!.goals.single.deadline, DateTime(2026, 12, 20));
   });
+}
+
+/// Scrolls the page's list until [finder] is built, then puts it in the
+/// middle of the screen, clear of the bar at the top.
+Future<void> centered(WidgetTester tester, Finder finder) async {
+  await tester.scrollUntilVisible(
+    finder,
+    200,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await Scrollable.ensureVisible(tester.element(finder), alignment: 0.5);
+  await settle(tester);
 }

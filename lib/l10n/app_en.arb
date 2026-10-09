@@ -554,6 +554,8 @@
   "whatIfApplyTitle": "Apply the change?",
   "whatIfApplyCharge": "{charge} will be {amount} from its next charge. What's recorded doesn't change.",
   "whatIfApplySave": "This changes your plan from now on.",
+  "whatIfApplyGoal": "Which goal?",
+  "whatIfApplyGoalSays": "What you set aside each month for {goal} will go from {before} to {after}.",
   "whatIfApply": "Apply",
   "whatIfNoCharges": "You have no charges scheduled in the coming weeks.",
   "whatIfSaveMoreAmount": "How much more each payday?",

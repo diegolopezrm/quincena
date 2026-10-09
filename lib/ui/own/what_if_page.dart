@@ -84,6 +84,12 @@ class _WhatIfPageState extends State<WhatIfPage> {
         ScenarioKind.payLate => l.whatIfPayLateSaid(x.days),
       };
 
+  /// Goals still short of what they are for: where saving more can go.
+  List<SavingsGoal> get _openGoals => <SavingsGoal>[
+    for (final SavingsGoal g in own.snapshot?.goals ?? const <SavingsGoal>[])
+      if (g.saved.amount < g.target.amount) g,
+  ];
+
   Future<void> _apply(Ledger ledger, Scenario x) async {
     final AppLocalizations l = context.l10n;
     final List<RecurringCharge> charges =
@@ -91,35 +97,77 @@ class _WhatIfPageState extends State<WhatIfPage> {
     final RecurringCharge? charge = charges
         .where((RecurringCharge r) => r.name == x.chargeName && r.active)
         .firstOrNull;
+    // Saving more each payday is a goal's monthly part going up by what
+    // the paydays of a month add.
+    final Decimal more = Decimal.parse(
+      '${ledger.major((x.amount * paydaysPerMonth(ledger)).round())}',
+    );
+    final List<SavingsGoal> goals = _openGoals;
+    SavingsGoal? goal = goals.firstOrNull;
+    String money(Money m) => moneyText(m, base: own.profile?.base);
     final bool? sure = await showDialog<bool>(
       context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text(l.whatIfApplyTitle),
-        content: Text(
-          x.kind == ScenarioKind.chargeUp && charge != null
-              ? l.whatIfApplyCharge(
-                  charge.name,
-                  moneyText(
-                    Money(
-                      charge.amount.amount +
-                          Decimal.parse(ledger.major(x.amount).toString()),
-                      charge.amount.asset,
-                    ),
-                    base: own.profile?.base,
+      builder: (BuildContext context) => StatefulBuilder(
+        builder: (BuildContext context, StateSetter setState) => AlertDialog(
+          scrollable: true,
+          title: Text(l.whatIfApplyTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              if (x.kind == ScenarioKind.saveMore && goals.length > 1) ...[
+                DropdownButtonFormField<String>(
+                  icon: const Icon(Glyph.caretDown, size: 18),
+                  initialValue: goal?.id,
+                  isExpanded: true,
+                  decoration: InputDecoration(labelText: l.whatIfApplyGoal),
+                  items: <DropdownMenuItem<String>>[
+                    for (final SavingsGoal g in goals)
+                      DropdownMenuItem<String>(
+                        value: g.id,
+                        child: Text(g.name, overflow: TextOverflow.ellipsis),
+                      ),
+                  ],
+                  onChanged: (String? id) => setState(
+                    () =>
+                        goal = goals.firstWhere((SavingsGoal g) => g.id == id),
                   ),
-                )
-              : l.whatIfApplySave,
+                ),
+                const SizedBox(height: 12),
+              ],
+              Text(switch ((x.kind, charge, goal)) {
+                (ScenarioKind.chargeUp, final RecurringCharge c, _) =>
+                  l.whatIfApplyCharge(
+                    c.name,
+                    money(
+                      Money(
+                        c.amount.amount +
+                            Decimal.parse(ledger.major(x.amount).toString()),
+                        c.amount.asset,
+                      ),
+                    ),
+                  ),
+                (ScenarioKind.saveMore, _, final SavingsGoal g) =>
+                  l.whatIfApplyGoalSays(
+                    g.name,
+                    money(g.monthly),
+                    money(Money(g.monthly.amount + more, g.monthly.asset)),
+                  ),
+                _ => l.whatIfApplySave,
+              }),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(l.cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(l.whatIfApply),
+            ),
+          ],
         ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l.whatIfApply),
-          ),
-        ],
       ),
     );
     if (sure != true) return;
@@ -132,6 +180,21 @@ class _WhatIfPageState extends State<WhatIfPage> {
           charge.amount.asset,
         ),
       );
+    }
+    if (x.kind == ScenarioKind.saveMore && goal != null) {
+      final SavingsGoal g = goal!;
+      await own.saveGoalMonthly(
+        g,
+        Money(g.monthly.amount + more, g.monthly.asset),
+      );
+    }
+    // Applied, it is no longer something to try: kept, it would be weighed
+    // again on top of what it changed.
+    if (own.scenarios.any((Scenario s) => s.id == x.id)) {
+      await own.saveScenarios(<Scenario>[
+        for (final Scenario s in own.scenarios)
+          if (s.id != x.id) s,
+      ]);
     }
   }
 
@@ -243,14 +306,14 @@ class _WhatIfPageState extends State<WhatIfPage> {
                         onPressed: _days > 1
                             ? () => setState(() => _days--)
                             : null,
-                        icon: const Icon(Glyph.arrowDown),
+                        icon: const Icon(Glyph.minusCircle),
                       ),
                       IconButton(
                         tooltip: l.whatIfMoreDays,
                         onPressed: _days < 30
                             ? () => setState(() => _days++)
                             : null,
-                        icon: const Icon(Glyph.arrowUp),
+                        icon: const Icon(Glyph.plusCircle),
                       ),
                     ],
                   ),
@@ -342,7 +405,9 @@ class _WhatIfPageState extends State<WhatIfPage> {
                               ]),
                         child: Text(l.whatIfSave),
                       ),
-                      if (scenario.kind == ScenarioKind.chargeUp)
+                      if (scenario.kind == ScenarioKind.chargeUp ||
+                          (scenario.kind == ScenarioKind.saveMore &&
+                              _openGoals.isNotEmpty))
                         TextButton(
                           onPressed: () => _apply(ledger, scenario),
                           child: Text(l.whatIfApply),

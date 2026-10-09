@@ -253,25 +253,46 @@ class Tour {
 
   /// Scrolls the top list until [finder] shows.
   Future<void> reveal(Finder finder) async {
+    // A `.first` or `.last` of a row the list has not built yet would
+    // throw instead of saying it is not there, before any scrolling.
+    final Finder found = _Lenient(finder);
     try {
-      if (finder.evaluate().isEmpty) {
+      if (found.evaluate().isEmpty) {
         final ScrollableState? list = _list();
         if (list != null) {
           list.position.jumpTo(0);
           await settle(tester);
           await tester.scrollUntilVisible(
-            finder,
+            found,
             240,
             scrollable: find.byWidget(list.widget),
             maxScrolls: 60,
           );
         }
       }
-      await tester.ensureVisible(finder.last);
+      // In the middle of the list, never at its top edge, where a pinned
+      // title bar may cover it and the tap would go back instead.
+      await Scrollable.ensureVisible(
+        found.last.evaluate().single,
+        alignment: 0.5,
+      );
     } on StateError {
       // What is there instead, to find the way again.
+      final List<String> open = <String>[
+        for (final Element e in find.byType(AppBar).evaluate())
+          if ((e.widget as AppBar).title case final Text t) 'page «${t.data}»',
+        if (find.byType(BottomSheet).evaluate().isNotEmpty) 'a sheet',
+        if (find.byType(Dialog).evaluate().isNotEmpty) 'a dialog',
+        if (find.byType(PopupMenuItem<Object?>).evaluate().isNotEmpty ||
+            find
+                .byWidgetPredicate((Widget w) => w is DropdownMenuItem)
+                .evaluate()
+                .isNotEmpty)
+          'a menu',
+      ];
       debugPrint(
-        'Not found: $finder. On screen: ${<String?>[for (final Element e in find.byType(Text).evaluate()) (e.widget as Text).data].whereType<String>().take(40).join(' | ')}',
+        'Not found: $finder.${open.isEmpty ? '' : ' Open: ${open.join(', ')}.'} '
+        'On screen: ${<String>[for (final Element e in find.byType(RichText).evaluate()) (e.widget as RichText).text.toPlainText()].where((String t) => t.trim().isNotEmpty).take(40).join(' | ')}',
       );
       rethrow;
     }
@@ -293,8 +314,12 @@ class Tour {
     await settle(tester);
   }
 
+  /// Taps the last button with [tooltip], after scrolling it into view:
+  /// on a small phone it may sit below what the screen shows.
   Future<void> tapTip(String tooltip) async {
-    await tester.tap(find.byTooltip(tooltip).last);
+    final Finder f = find.byTooltip(tooltip);
+    await reveal(f);
+    await tester.tap(f.last);
     await settle(tester);
   }
 
@@ -671,3 +696,23 @@ const List<String> _startersEn = <String>[
   'Where did my money go in September?',
   'Can I afford Cartagena in December?',
 ];
+
+/// [inner], found nowhere instead of throwing while what its `first` or
+/// `last` stands on is not built, as a row a small phone has not drawn yet.
+class _Lenient extends Finder {
+  _Lenient(this.inner) : super(skipOffstage: inner.skipOffstage);
+
+  final Finder inner;
+
+  @override
+  String get description => inner.describeMatch(Plurality.many);
+
+  @override
+  Iterable<Element> findInCandidates(Iterable<Element> candidates) {
+    try {
+      return inner.findInCandidates(candidates).toList();
+    } on StateError {
+      return const <Element>[];
+    }
+  }
+}

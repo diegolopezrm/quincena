@@ -3362,6 +3362,18 @@ abstract class AppLocalizations {
   /// **'Esto cambia tu plan desde ahora.'**
   String get whatIfApplySave;
 
+  /// No description provided for @whatIfApplyGoal.
+  ///
+  /// In es, this message translates to:
+  /// **'¿A qué meta?'**
+  String get whatIfApplyGoal;
+
+  /// No description provided for @whatIfApplyGoalSays.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que apartas al mes para {goal} pasará de {before} a {after}.'**
+  String whatIfApplyGoalSays(String goal, String before, String after);
+
   /// No description provided for @whatIfApply.
   ///
   /// In es, this message translates to:

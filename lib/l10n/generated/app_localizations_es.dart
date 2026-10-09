@@ -2181,6 +2181,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get whatIfApplySave => 'Esto cambia tu plan desde ahora.';
 
   @override
+  String get whatIfApplyGoal => '¿A qué meta?';
+
+  @override
+  String whatIfApplyGoalSays(String goal, String before, String after) {
+    return 'Lo que apartas al mes para $goal pasará de $before a $after.';
+  }
+
+  @override
   String get whatIfApply => 'Aplicar';
 
   @override

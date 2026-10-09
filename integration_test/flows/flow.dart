@@ -90,6 +90,10 @@ class FlowRun {
   final List<Check> checks = <Check>[];
   final List<String> captions = <String>[];
   Object? error;
+
+  /// Where in the flows it broke: the first line of a flow file in the
+  /// stack, as `plan.dart:3058`.
+  String? brokeAt;
   int _taken = 0;
 
   WidgetTester get tester => tour.tester;
@@ -228,15 +232,26 @@ Future<FlowRun> playFlow(
   );
   try {
     await playScene(tester, scene, (String _) async {}, size: size);
-  } catch (e) {
+  } catch (e, stack) {
     // It may break before the flow starts, as while opening its account.
-    (run ??= FlowRun(
-      Tour(tester, (String _) async {}, flow.id),
-      shot,
-      flow,
-    )).error = e;
+    (run ??= FlowRun(Tour(tester, (String _) async {}, flow.id), shot, flow))
+      ..error = e
+      ..brokeAt = _flowLine(stack);
   }
   return run!;
+}
+
+/// The first line of a flow in [stack], past this file's own helpers, as
+/// `plan.dart:3058`.
+String? _flowLine(StackTrace stack) {
+  final List<String> lines = <String>[
+    for (final RegExpMatch m in RegExp(
+      r'integration_test/flows/([a-z_]+\.dart:\d+)',
+    ).allMatches('$stack'))
+      m.group(1)!,
+  ];
+  return lines.where((String l) => !l.startsWith('flow.dart')).firstOrNull ??
+      lines.firstOrNull;
 }
 
 /// Gives the flow a keychain of its own, kept in a map: the phone's would

@@ -3377,6 +3377,13 @@ final List<AppFlow> planFlows = <AppFlow>[
           expect(own.ledger!.freeUntilPayday, free - l.minor(5000));
         },
       );
+      await f.check(
+        'Aplicado, el escenario de Netflix ya no queda guardado: no se vuelve '
+        'a sumar sobre el precio nuevo',
+        () => expect(own.scenarios.map((Scenario s) => s.kind), <ScenarioKind>[
+          ScenarioKind.saveMore,
+        ]),
+      );
       await f.tap('Pago tarde');
       await f.tapTip('Más días');
       await f.tapTip('Más días');
@@ -3391,13 +3398,12 @@ final List<AppFlow> planFlows = <AppFlow>[
       await f.tap('Guardar el escenario');
       await f.reveal(find.text('ESCENARIOS GUARDADOS'));
       await f.step(
-        '«Escenarios guardados» lista los tres, cada uno con su saldo mínimo '
-        'y una caneca para quitarlo.',
+        '«Escenarios guardados» lista los dos que no se aplicaron, cada uno '
+        'con su saldo mínimo y una caneca para quitarlo.',
       );
-      await f.check('Hay tres escenarios guardados', () {
+      await f.check('Hay dos escenarios guardados', () {
         expect(own.scenarios.map((Scenario s) => s.kind), <ScenarioKind>[
           ScenarioKind.saveMore,
-          ScenarioKind.chargeUp,
           ScenarioKind.payLate,
         ]);
         expect(own.scenarios.last.days, 6);
@@ -3407,10 +3413,9 @@ final List<AppFlow> planFlows = <AppFlow>[
         'Apartar ${pesos(100000)} más en cada pago',
         'Quitar escenario',
       );
-      await f.step('Quitado el de ahorrar más, quedan dos escenarios.');
-      await f.check('Quedan los escenarios de Netflix y del pago tarde', () {
+      await f.step('Quitado el de ahorrar más, queda el del pago tarde.');
+      await f.check('Queda el escenario del pago tarde', () {
         expect(own.scenarios.map((Scenario s) => s.kind), <ScenarioKind>[
-          ScenarioKind.chargeUp,
           ScenarioKind.payLate,
         ]);
       });

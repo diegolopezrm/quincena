@@ -2180,6 +2180,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get whatIfApplySave => 'This changes your plan from now on.';
 
   @override
+  String get whatIfApplyGoal => 'Which goal?';
+
+  @override
+  String whatIfApplyGoalSays(String goal, String before, String after) {
+    return 'What you set aside each month for $goal will go from $before to $after.';
+  }
+
+  @override
   String get whatIfApply => 'Apply';
 
   @override
