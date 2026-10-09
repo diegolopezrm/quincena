@@ -10,9 +10,12 @@ Valentina's made-up account, kept in memory, the one in the store's
 pictures. "Pregúntale a tu plata" on its home asks a scripted agent about
 that same account, offline, so its answers say the figures the screens say,
 and what you save there shows on every screen until you leave the example.
-"Lo que respondió Gemini" replays five sessions Gemini answered for real.
-On a phone, "Con datos de ejemplo" on the first screen opens the same
-example.
+The web demo is also the showcase for developers: there "Lo que respondió
+Gemini" replays five sessions Gemini answered for real, and the
+conversation's settings let Gemini or a key of your own answer instead of
+the script. On a phone, "Con datos de ejemplo" on the first screen opens the
+same example, without those developer options: the phone apps are the
+product.
 
 <p align="center">
   <img src="docs/screens/inicio.png" width="24%" alt="Home screen: what you can spend until payday, and the questions to ask">
@@ -59,8 +62,9 @@ and a function over the whole list totals the savings. A form validates with
 rules the agent wrote, and the message of the first failing rule shows under
 the field.
 
-**The tooling around it.** Turn on developer mode in settings and the
-genui_gen inspector sits over the conversation: the component tree the agent
+**The tooling around it.** In the web demo, turn on developer mode in the
+conversation's settings and the genui_gen inspector sits over the
+conversation: the component tree the agent
 built, every data path with what reads it, what a screen reader announces,
 and the messages that got the screen there. "Copiar la sesión" puts the
 whole session on the clipboard as a genui_gen trace, with what the person
@@ -160,8 +164,9 @@ What is set up for production, which limits stop spending and which only
 warn, and what Google may do with what is sent on each plan is in
 [docs/PRODUCTION.md](docs/PRODUCTION.md).
 
-The example account never asks Gemini: its conversation is the script, so
-trying it spends none of the day's questions and sends nothing anywhere.
+On a phone, the example account never asks Gemini: its conversation is the
+script, so trying it spends none of the day's questions and sends nothing
+anywhere. Only the web demo lets Gemini, or a key of your own, answer it.
 
 Gemini gets the catalog through genui's prompt builder, with two of its
 defaults switched off: the chat preset forbids `updateDataModel`, which every

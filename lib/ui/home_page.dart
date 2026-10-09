@@ -14,6 +14,7 @@ import 'recorded_page.dart';
 import 'settings_sheet.dart';
 import 'welcome.dart';
 import 'icons.dart';
+import '../showcase.dart';
 
 /// The one screen: where the money stands, the conversation, the question.
 class HomePage extends StatefulWidget {
@@ -48,6 +49,8 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    // Recorded Gemini sessions are for developers: the web demo plays them.
+    if (!showcase) return;
     loadRecordings().then((List<Recording> found) {
       if (mounted && found.isNotEmpty) setState(() => _recordings = found);
     }, onError: (Object _) {});
@@ -150,7 +153,7 @@ class _HomePageState extends State<HomePage> {
                   child: GenUiInspector(
                     controller: _session.controller,
                     recorder: _session.recorder,
-                    enabled: widget.settings.developer,
+                    enabled: showcase && widget.settings.developer,
                     child: content,
                   ),
                 ),
@@ -305,7 +308,9 @@ class _TopBar extends StatelessWidget {
                         child: Text(
                           live
                               ? context.l10n.badgeLive
-                              : context.l10n.badgeDemo,
+                              : showcase
+                              ? context.l10n.badgeDemo
+                              : context.l10n.badgeExample,
                           style: context.type.labelSmall?.copyWith(
                             color: live ? context.colors.brand : null,
                           ),

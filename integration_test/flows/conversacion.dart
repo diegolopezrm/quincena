@@ -176,12 +176,14 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       await _read(
         f,
         'Envía «$unknown» con la tecla de enviar del teclado: no lo reconoce, '
-        'dice «En la demo respondo estas preguntas» y ofrece las cinco.',
+        'dice «En el ejemplo respondo estas preguntas», que con tus cuentas '
+        'Gemini responde lo que preguntes, y ofrece las cinco.',
         most: 2,
       );
       await f.check('Ofrece las cinco preguntas que sí sabe responder', () {
         expect(s.turns.last.question, unknown);
-        expect(_said(f), contains('En la demo respondo estas preguntas'));
+        expect(_said(f), contains('En el ejemplo respondo estas preguntas'));
+        expect(_said(f), contains('Con tus propias cuentas, Gemini responde'));
         for (final String q in ScriptedAgent.starters) {
           expect(find.text(q), findsWidgets);
         }
@@ -288,8 +290,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       // The conversation opens from the example's Inicio.
       await f.toConversation();
       final Session s = _demo(f);
-      final Ledger ledger = s.ledger;
-      final Goal goal = ledger.goal('cartagena');
+      final Goal goal = _trip(s);
       final int needed = monthlyNeeded(
         goal.target.toDouble(),
         goal.saved.toDouble(),
@@ -322,7 +323,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
           '${pesos(goal.monthly)}: simular no guarda', () {
         expect(_planner(f).monthly, 800000);
         expect(_planner(f).onTime, isTrue);
-        expect(ledger.goal('cartagena').monthly, goal.monthly);
+        expect(_trip(s).monthly, goal.monthly);
       });
       await f.tester.drag(slider.last, const Offset(-600, 0));
       await settle(f.tester);
@@ -393,7 +394,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         'respuesta recuerda que Quincena no mueve la plata.',
       );
       await f.check('La meta quedó en ${pesos(needed)} al mes', () {
-        expect(ledger.goal('cartagena').monthly, needed);
+        expect(_trip(s).monthly, needed);
       });
       // A finger on the saved planner, which takes nothing more.
       final Finder kept = find.byType(Slider).first;
@@ -407,7 +408,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
           f.tester.widget<GoalPlanner>(find.byType(GoalPlanner).first).monthly,
           needed,
         );
-        expect(ledger.goal('cartagena').monthly, needed);
+        expect(_trip(s).monthly, needed);
         expect(_said(f), contains('Plan guardado · '));
       });
       await f.tap('Editar');
@@ -426,7 +427,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         most: 1,
       );
       await f.check('La meta quedó en ${pesos(700000)}, no en las dos', () {
-        expect(ledger.goal('cartagena').monthly, 700000);
+        expect(_trip(s).monthly, 700000);
         expect(find.textContaining('Plan guardado · '), findsOneWidget);
       });
       await _ask(f, ScriptedAgent.starters[1]);
@@ -630,13 +631,16 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       // The conversation opens from the example's Inicio.
       await f.toConversation();
       final Session s = _demo(f);
-      final Ledger ledger = s.ledger;
-      final int free = ledger.freeUntilPayday;
-      final Set<Movement> before = Set<Movement>.identity()
-        ..addAll(ledger.movements);
+      // The example's account, read again at every check: what the
+      // conversation saves goes to its database, and the screens read it.
+      Ledger ledger() => s.ledger;
+      final int free = ledger().freeUntilPayday;
+      final Set<String> before = <String>{
+        for (final Movement m in ledger().movements) m.id,
+      };
       List<Movement> added() => <Movement>[
-        for (final Movement m in ledger.movements)
-          if (!before.contains(m)) m,
+        for (final Movement m in ledger().movements)
+          if (!before.contains(m.id)) m,
       ];
       await f.tap(ScriptedAgent.starters[4]);
       await _read(
@@ -667,9 +671,9 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         'hay en la cuenta.» y tampoco lo guarda.',
       );
       await f.check('Un monto mayor que lo que hay no se guarda: puede gastar '
-          '${pesos(ledger.major(free))}, como antes', () {
+          '${pesos(ledger().major(free))}, como antes', () {
         expect(added(), isEmpty);
-        expect(ledger.freeUntilPayday, free);
+        expect(ledger().freeUntilPayday, free);
         expect(s.turns, hasLength(1));
         expect(find.text('Es más de lo que hay en la cuenta.'), findsOne);
       });
@@ -694,14 +698,14 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(m.merchant, 'Tienda Don Pacho');
       });
       await f.check(
-        'Lo que puede gastar pasó de ${pesos(ledger.major(free))} a '
-        '${pesos(ledger.major(free - 52000))}, como dice la respuesta',
+        'Lo que puede gastar pasó de ${pesos(ledger().major(free))} a '
+        '${pesos(ledger().major(free - 52000))}, como dice la respuesta',
         () {
-          expect(ledger.freeUntilPayday, free - 52000);
+          expect(ledger().freeUntilPayday, free - 52000);
           expect(
             _said(f),
             contains(
-              'Ahora puedes gastar ${pesos(ledger.major(free - 52000))}',
+              'Ahora puedes gastar ${pesos(ledger().major(free - 52000))}',
             ),
           );
         },
@@ -722,7 +726,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       await f.check('Sigue habiendo un solo gasto nuevo, ahora de '
           '${pesos(60000)}', () {
         expect(added().single.amount, 60000);
-        expect(ledger.freeUntilPayday, free - 60000);
+        expect(ledger().freeUntilPayday, free - 60000);
       });
       await f.check('Hay un solo recibo «Gasto guardado»', () {
         expect(find.textContaining('Gasto guardado · '), findsOneWidget);
@@ -735,6 +739,22 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       await f.check('La respuesta al gasto corregido quedó a la vista', () {
         expect(_inView(f, _surfaceOf(s, s.turns.last)), isTrue);
       });
+      // Back to the example: the conversation and the screens are one
+      // account.
+      await f.back();
+      await f.tap('Movimientos');
+      await f.step(
+        'Vuelve al ejemplo y abre Movimientos: el gasto de \$60.000 en '
+        '«Tienda Don Pacho» está ahí, hoy: la conversación y las pantallas '
+        'son la misma cuenta.',
+      );
+      await f.check(
+        'El gasto está en la cuenta de ejemplo y Movimientos lo muestra',
+        () {
+          expect(f.shows('Tienda Don Pacho'), isTrue);
+          expect(f.own.ledger!.freeUntilPayday, free - 60000);
+        },
+      );
     },
   ),
   AppFlow(
@@ -844,12 +864,13 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       await f.tap('Nueva');
       await f.step(
         'Toca «Nueva»: vuelven las preguntas de inicio y abajo «Empezaste '
-        'una conversación nueva.» con «Deshacer».',
+        'una conversación nueva.» con «Deshacer». El gasto guardado sigue en '
+        'la cuenta de ejemplo.',
       );
-      await f.check('La conversación quedó vacía y la cuenta como al '
-          'principio', () {
+      await f.check('La conversación quedó vacía y el gasto sigue en la '
+          'cuenta', () {
         expect(s.turns, isEmpty);
-        expect(s.ledger.freeUntilPayday, free);
+        expect(s.ledger.freeUntilPayday, free - 45000);
       });
       await f.tap('Deshacer');
       await f.step(
@@ -857,7 +878,8 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         '«Gasto guardado».',
       );
       await f.check(
-        'Volvió el gasto: puede gastar ${pesos(s.ledger.major(free - 45000))}',
+        'Volvió la conversación, y la cuenta no cambió: puede gastar '
+        '${pesos(s.ledger.major(free - 45000))}',
         () {
           expect(s.turns, hasLength(2));
           expect(s.ledger.freeUntilPayday, free - 45000);
@@ -893,14 +915,15 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       await f.tap('Empezar de nuevo');
       await f.step(
         'Con otro gasto guardado, «Empezar de nuevo» en «Ajustes» limpia la '
-        'conversación y la cuenta vuelve a ${pesos(s.ledger.major(free))}, '
-        'sin «Deshacer».',
+        'conversación, sin «Deshacer». Los dos gastos siguen en la cuenta de '
+        'ejemplo hasta salir de ella.',
       );
-      await f.check('«Empezar de nuevo» quita el gasto: puede gastar otra vez '
-          '${pesos(s.ledger.major(free))}', () {
-        expect(spent, free - 45000);
+      await f.check('«Empezar de nuevo» limpia la conversación y deja los '
+          'gastos en la cuenta: puede gastar '
+          '${pesos(s.ledger.major(free - 90000))}', () {
+        expect(spent, free - 90000);
         expect(s.turns, isEmpty);
-        expect(s.ledger.freeUntilPayday, free);
+        expect(s.ledger.freeUntilPayday, free - 90000);
         expect(s.canRestore, isFalse);
         expect(find.text('Deshacer'), findsNothing);
       });
@@ -1038,110 +1061,50 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
   ),
   AppFlow(
     '11-10-quien-responde',
-    'Escoger quién responde en la demo',
+    'Saber quién responde en el ejemplo',
     area: _demoArea,
     goal:
-        'Quiero saber quién contesta en la demo y probar con Gemini, con mi '
-        'key o sin ella, en vez del guion.',
+        'Quiero saber quién contesta en el ejemplo y si gasto preguntas del '
+        'día.',
     demo: true,
     manual: <String>[
-      'Preguntar con «Gemini» elegido: necesita red y que App Check '
-          'reconozca la app.',
-      'Pegar una key real de Gemini en «Tu key», tocar «Conectar» y '
-          'preguntar algo que no está en las cinco preguntas.',
-      'Con una key equivocada, preguntar y ver «La key no funcionó. Revísala '
-          'en Ajustes.»',
+      'Con tus cuentas, «Pregúntale a tu plata» lo responde Gemini a través '
+          'de Quincena: necesita red.',
     ],
     (FlowRun f) async {
       // The conversation opens from the example's Inicio.
       await f.toConversation();
       final Session s = _demo(f);
       await f.tap(ScriptedAgent.starters[3]);
-      await f.tapTip('Ajustes');
-      await f.page(
-        'Con una respuesta en pantalla, toca el engranaje: «Ajustes» de la '
-        'demo, con quién responde, idioma, apariencia, modo desarrollador y '
-        'cómo salir.',
+      await _read(
+        f,
+        'Toca «¿Cómo voy contra agosto?»: arriba dice «EJEMPLO», no «EN '
+        'VIVO»: lo responde el guion del ejemplo, sin red.',
+        most: 1,
       );
-      await f.check('Responde el guion de la demo', () {
-        expect(s.mode, AgentMode.demo);
-      });
-      await f.tap('Tu key');
-      await f.step(
-        'Toca «Tu key»: explica que la key no se guarda y pide «Key de '
-        'Gemini» con el botón «Conectar».',
-      );
-      await f.tap('Conectar');
-      await f.check('«Conectar» sin key no cambia quién responde', () {
-        expect(s.mode, AgentMode.demo);
-        expect(find.text('Key de Gemini'), findsOneWidget);
-      });
-      // Never a real key: nothing is asked with it, so nothing goes out.
-      await f.type('Key de Gemini', 'clave-de-prueba');
-      await f.tap('Conectar');
-      await f.step(
-        'Pega una key y toca «Conectar»: Ajustes se cierra, arriba dice «EN '
-        'VIVO» y la respuesta que había desapareció sin aviso.',
-      );
-      await f.check('Con la key responde Gemini en vivo', () {
-        expect(s.mode, AgentMode.live);
-        expect(find.text('EN VIVO'), findsOneWidget);
-      });
       await f.check(
-        'Cambiar quién responde borró la respuesta que había, sin aviso',
+        'Responde el guion, sin red y sin gastar preguntas del día',
         () {
-          expect(s.turns, isEmpty);
-          expect(s.canRestore, isFalse);
+          expect(s.mode, AgentMode.demo);
+          expect(s.choosable, isFalse);
+          expect(s.allowance, isNull);
+          expect(f.shows('EJEMPLO'), isTrue);
+          expect(f.shows('EN VIVO'), isFalse);
         },
       );
-      await f.check('La key no quedó guardada en el teléfono', () async {
-        expect(await _savedSettings(f), isNot(contains('clave-de-prueba')));
-      });
       await f.tapTip('Ajustes');
       await f.step(
-        'En Ajustes queda marcado «Tu key», dice qué modelo responde y deja '
-        'poner otra key; la que puso no se muestra.',
+        'En «Ajustes» de la conversación no hay a quién escoger: en el '
+        'teléfono, el ejemplo siempre lo responde el guion.',
       );
-      await f.check('Dice qué modelo responde y deja cambiar la key', () {
-        final Finder key = find.widgetWithText(TextField, 'Key de Gemini');
-        expect(key, findsOneWidget);
-        expect(f.tester.widget<TextField>(key).controller!.text, isEmpty);
-        expect(
-          _said(f),
-          contains(
-            'Responde ${GeminiClient.defaultModel}. Pregunta lo que quieras '
-            'sobre la cuenta.',
-          ),
-        );
-      });
-      await f.tap('Gemini');
-      await f.step(
-        'Toca «Gemini»: responde el modelo a través de Quincena, sin key, y '
-        'se puede preguntar cualquier cosa sobre la cuenta.',
+      await f.check(
+        'No ofrece Gemini, ni una key propia, ni el modo desarrollador',
+        () {
+          expect(f.shows('Tu key'), isFalse);
+          expect(f.shows('Gemini'), isFalse);
+          expect(f.shows('Modo desarrollador'), isFalse);
+        },
       );
-      await f.check('Ahora responde Gemini a través de Quincena', () {
-        expect(s.mode, AgentMode.gemini);
-      });
-      await f.back();
-      await f.step(
-        'Cierra Ajustes: la etiqueta de arriba sigue en «EN VIVO», porque ya '
-        'no responde el guion.',
-      );
-      await f.check('Con Gemini respondiendo, arriba dice «EN VIVO»', () {
-        expect(find.text('EN VIVO'), findsOneWidget);
-        expect(find.text('DEMO'), findsNothing);
-      });
-      await f.tapTip('Ajustes');
-      await f.tap('Demo');
-      await f.back();
-      await f.step(
-        'De vuelta en «Demo»: la etiqueta dice «DEMO» y responden otra vez '
-        'las cinco preguntas, sin red.',
-      );
-      await f.check('Volvió a responder el guion', () {
-        expect(s.mode, AgentMode.demo);
-        expect(find.text('DEMO'), findsOneWidget);
-      });
     },
   ),
   AppFlow(
@@ -2237,6 +2200,12 @@ const List<String> _ownStarters = <String>[
 const String _seeRecorded = 'Mira lo que respondió Gemini de verdad';
 
 /// The demo's conversation.
+/// The trip to Cartagena in the account the conversation is about, as it is
+/// now: the example keeps its goals in its own database, by name.
+Goal _trip(Session s) => s.ledger.goals.firstWhere(
+  (Goal g) => g.name.toLowerCase().contains('cartagena'),
+);
+
 Session _demo(FlowRun f) =>
     f.tester.widget<HomePage>(find.byType(HomePage)).session;
 
@@ -2371,16 +2340,6 @@ Future<void> _seek(FlowRun f, int position) async {
 /// How much [c] moved between August and September in [ledger].
 int _moved(Ledger ledger, Category c) =>
     (ledger.spentOn(c, 2026, 9) - ledger.spentOn(c, 2026, 8)).abs();
-
-/// Every value kept in the store's settings, joined.
-Future<String> _savedSettings(FlowRun f) async =>
-    (await f.tester.runAsync<String>(() async {
-      final QuincenaStore store = _store(f);
-      return <String>[
-        for (final row in await store.db.select(store.db.settings).get())
-          row.value,
-      ].join(' | ');
-    }))!;
 
 /// The day's questions, as the app counts them.
 Allowance _allowance(FlowRun f) =>

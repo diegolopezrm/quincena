@@ -260,6 +260,26 @@ only about the person's money, through tools, inside the app.
 > Sync between devices (Ajustes, Varios dispositivos) is optional: devices
 > exchange end-to-end encrypted files that the person moves, with no
 > account or server.
+>
+> Nothing in the app is switched on or off from outside it: there is no
+> remote configuration, no feature flag and nothing that depends on the
+> region, the date or an account. Two things live outside the app's own
+> screens, and this is how to try them, with one's own accounts ("Con mis
+> cuentas" takes a minute: a name, the pay day and one account):
+> - Automatic capture: in the Shortcuts app, add Quincena's action
+>   "Registrar movimiento" (Record a transaction) with the text
+>   "Bancolombia: Compraste $45.900 en EXITO LAURELES con tu T.Deb *1234"
+>   and run it. The payment appears in Por revisar (the tray icon on
+>   Inicio). Ajustes, Captura automática explains how to make it run on
+>   its own when a bank notification arrives.
+> - Reading a receipt: share a screenshot or a PDF of a payment from
+>   Photos or Files to Quincena, or use the action "Leer comprobante" (Read
+>   a receipt). It also lands in Por revisar.
+>
+> The phone apps have no developer options: no key of one's own, no
+> inspector and no recorded sessions. Those belong to the web demo for
+> developers (diegolopezrm.github.io/quincena), which is not part of this
+> app.
 
 Version 1.0 went to App Review on 2 October 2026 with build 12. The
 review contact is Diego López, +57 316 605 0934, admin@dlsoft.dev. Release

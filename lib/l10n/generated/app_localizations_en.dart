@@ -6032,4 +6032,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get rulesEmptyWithMovements =>
       'You don\'t have any rules right now. When you record something in Needs review, one is created for its shop, card or bank. Your transactions stay as they are.';
+
+  @override
+  String get badgeExample => 'SAMPLE';
+
+  @override
+  String get aboutExample =>
+      'The account, the person and the shops in the sample are made up.';
 }

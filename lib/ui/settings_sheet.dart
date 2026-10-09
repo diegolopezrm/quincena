@@ -8,6 +8,7 @@ import '../app.dart';
 import '../l10n/l10n.dart';
 import '../session/session.dart';
 import '../theme/tokens.dart';
+import '../showcase.dart';
 
 /// Who answers, language, appearance, the developer panel, starting over.
 Future<void> showSettings(
@@ -230,52 +231,55 @@ class _SettingsState extends State<_Settings> {
                     widget.settings.themeMode = value.first,
               ),
               const SizedBox(height: 22),
-              // A Material rather than a decorated box, so the switch's ink
-              // shows on the tinted background instead of under it.
-              Material(
-                color: context.colors.sunken,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: Column(
-                  children: <Widget>[
-                    SwitchListTile(
-                      value: widget.settings.developer,
-                      onChanged: (bool value) =>
-                          widget.settings.developer = value,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      title: Text(
-                        t.developerMode,
-                        style: context.type.titleSmall,
-                      ),
-                      subtitle: Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          t.developerExplain,
-                          style: context.type.bodySmall,
+              // The inspector is for developers: only the web demo has it.
+              if (showcase) ...<Widget>[
+                // A Material rather than a decorated box, so the switch's ink
+                // shows on the tinted background instead of under it.
+                Material(
+                  color: context.colors.sunken,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    children: <Widget>[
+                      SwitchListTile(
+                        value: widget.settings.developer,
+                        onChanged: (bool value) =>
+                            widget.settings.developer = value,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                      ),
-                    ),
-                    if (widget.settings.developer)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton(
-                            onPressed: widget.session.turns.isEmpty
-                                ? null
-                                : _copySession,
-                            child: Text(t.copySession),
+                        title: Text(
+                          t.developerMode,
+                          style: context.type.titleSmall,
+                        ),
+                        subtitle: Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            t.developerExplain,
+                            style: context.type.bodySmall,
                           ),
                         ),
                       ),
-                  ],
+                      if (widget.settings.developer)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton(
+                              onPressed: widget.session.turns.isEmpty
+                                  ? null
+                                  : _copySession,
+                              child: Text(t.copySession),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 22),
+                const SizedBox(height: 22),
+              ],
               if (widget.onUseOwn case final VoidCallback useOwn) ...<Widget>[
                 FilledButton(
                   onPressed: () {
@@ -295,7 +299,7 @@ class _SettingsState extends State<_Settings> {
               ),
               const SizedBox(height: 18),
               Text(
-                t.about,
+                showcase ? t.about : t.aboutExample,
                 style: context.type.bodySmall,
                 textAlign: TextAlign.center,
               ),

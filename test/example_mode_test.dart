@@ -20,6 +20,7 @@ import 'package:quincena/money/money.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/portfolio/portfolio.dart';
 import 'package:quincena/portfolio/portfolio_controller.dart';
+import 'package:quincena/showcase.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
 import 'package:quincena/ui/home_page.dart';
@@ -332,4 +333,57 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await settle(tester);
   });
+
+  // The web demo is the showcase for developers; the phone apps are the
+  // product, and show none of its options.
+  for (final bool web in <bool>[false, true]) {
+    testWidgets(
+      web
+          ? 'in the web demo, the conversation offers who answers, the '
+                'inspector and the recorded sessions'
+          : 'on a phone, the conversation is the script, with no key of '
+                'one\'s own, no inspector and no recorded sessions',
+      (WidgetTester tester) async {
+        debugShowcaseOverride = web;
+        addTearDown(() => debugShowcaseOverride = null);
+        await openExample(tester, <MethodCall>[]);
+        await tapText(tester, 'Otra pregunta');
+        // The recorded sessions load from the app's own files.
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 200)),
+        );
+        await settle(tester);
+        expect(find.text(web ? 'DEMO' : 'EJEMPLO'), findsOneWidget);
+        expect(
+          find.text(
+            'Mira lo que respondió Gemini de verdad',
+            skipOffstage: false,
+          ),
+          web ? findsOneWidget : findsNothing,
+        );
+        await tester.tap(find.byTooltip('Ajustes').last);
+        await settle(tester);
+        for (final String option in <String>[
+          'Quién responde',
+          'Gemini',
+          'Modo desarrollador',
+        ]) {
+          expect(
+            find.text(option),
+            web ? findsWidgets : findsNothing,
+            reason: option,
+          );
+        }
+        expect(
+          find.text(
+            'La cuenta, la persona y los comercios del ejemplo son '
+            'inventados.',
+          ),
+          web ? findsNothing : findsOneWidget,
+        );
+        await tester.pumpWidget(const SizedBox());
+        await settle(tester);
+      },
+    );
+  }
 }

@@ -12,7 +12,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quincena/agent/model_client.dart';
 import 'package:quincena/app.dart';
 import 'package:quincena/backup/backup.dart';
 import 'package:quincena/capture/event.dart';
@@ -1867,110 +1866,52 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
     },
   ),
   AppFlow(
-    '09-13-quien-responde-en-el-ejemplo',
-    'Elegir quién responde en la conversación del ejemplo y ver el modo '
-        'desarrollador',
+    '09-13-ajustes-de-la-conversacion-del-ejemplo',
+    'Ver los ajustes de la conversación del ejemplo',
     area: 'Ajustes',
     goal:
-        'En la cuenta de ejemplo quiero saber quién contesta mis preguntas y, '
-        'como desarrollador, ver cómo arma cada respuesta.',
+        'En la cuenta de ejemplo quiero saber quién contesta mis preguntas y '
+        'qué puedo ajustar.',
     demo: true,
-    manual: <String>[
-      'Con «Gemini», una pregunta de verdad responde Gemini a través de '
-          'Quincena (necesita red y el proyecto de Firebase).',
-      'Pegar la sesión copiada en un issue y reproducirla.',
-      'Tocar la pastilla «genui» y recorrer las pestañas tree, data, semantics '
-          'y messages del inspector (en las pruebas su letra no carga y el '
-          'encabezado se desborda).',
-    ],
     (FlowRun f) async {
       // The conversation opens from the example's Inicio.
       await f.toConversation();
-      final _Phone phone = await _Phone.install(f);
+      await f.tapContaining('¿Qué suscripciones tengo?');
       await f.tapTip('Ajustes');
       await f.page(
-        'En la conversación del ejemplo, «Ajustes» es una hoja: quién '
-        'responde, idioma, apariencia, modo desarrollador y «Empezar de '
-        'nuevo».',
+        'En la conversación del ejemplo, «Ajustes» trae idioma, apariencia y '
+        '«Empezar de nuevo». Responde el guion del ejemplo, sin red: no hay '
+        'a quién escoger.',
       );
-      await f.check('Responde la demo, sin red', () {
+      await f.check('Responde el guion del ejemplo, sin red', () {
         expect(_session(f).mode, AgentMode.demo);
-        expect(f.shows('Demo'), isTrue);
+        expect(_session(f).choosable, isFalse);
       });
-      await f.tap('Gemini');
-      await f.step(
-        '«Gemini» cambia la explicación: responde Gemini a través de '
-        'Quincena, sin key.',
+      await f.check(
+        'En el teléfono no hay key propia, ni Gemini a escoger, ni modo '
+        'desarrollador',
+        () {
+          expect(f.shows('Tu key'), isFalse);
+          expect(f.shows('Gemini'), isFalse);
+          expect(f.shows('Modo desarrollador'), isFalse);
+        },
       );
-      await f.check('Ahora responde Gemini', () {
-        expect(_session(f).mode, AgentMode.gemini);
-      });
-      await f.tap('Tu key');
-      await f.tap('Conectar');
-      await f.step(
-        '«Tu key» pide la «Key de Gemini» y «Conectar». Sin key, «Conectar» '
-        'no hace nada.',
-      );
-      await f.check('Sin key sigue respondiendo Gemini de Quincena', () {
-        expect(_session(f).mode, AgentMode.gemini);
-        expect(_session(f).canGoLive, isFalse);
-      });
-      await f.tap('Demo');
-      await f.check('De vuelta en «Demo»', () {
-        expect(_session(f).mode, AgentMode.demo);
-      });
-      await f.tap('Modo desarrollador');
-      await f.reveal(find.text('Copiar la sesión'));
-      await f.step(
-        'Con «Modo desarrollador» encendido aparece «Copiar la sesión», '
-        'apagado mientras no haya conversación.',
-      );
-      await f.check('«Copiar la sesión» está apagado sin conversación', () {
+      await f.check('Dice que la cuenta del ejemplo es inventada', () {
         expect(
-          f.tester
-              .widget<OutlinedButton>(
-                find.widgetWithText(OutlinedButton, 'Copiar la sesión'),
-              )
-              .onPressed,
-          isNull,
+          f.shows(
+            'La cuenta, la persona y los comercios del ejemplo son '
+            'inventados.',
+          ),
+          isTrue,
         );
       });
-      await f.back();
-      await f.tapContaining('¿Qué suscripciones tengo?');
-      await f.step(
-        'Con el modo desarrollador, la respuesta a «¿Qué suscripciones '
-        'tengo?» lleva abajo a la izquierda la pastilla del inspector.',
-      );
-      await f.check('El inspector está encendido sobre la conversación', () {
-        expect(_settings(f).developer, isTrue);
-        expect(_session(f).turns, hasLength(1));
-        expect(find.textContaining('genui '), findsOneWidget);
-      });
-      await f.tapTip('Ajustes');
-      await f.tap('Copiar la sesión');
-      await f.step(
-        '«Copiar la sesión» copia la conversación, cierra la hoja y abajo '
-        'avisa «Sesión copiada, sin lo que escribiste».',
-      );
-      await f.check('La sesión quedó en el portapapeles, y se ve el aviso', () {
-        expect(phone.clipboard, isNotNull);
-        expect(phone.clipboard, contains('subscriptions'));
-        expect(find.byType(BottomSheet), findsNothing);
-        expect(
-          find.textContaining('Sesión copiada').hitTestable(),
-          findsOneWidget,
-        );
-      });
-      await f.tapTip('Ajustes');
-      await f.tap('Modo desarrollador');
       await f.tap('Empezar de nuevo');
       await f.step(
-        '«Empezar de nuevo» cierra la hoja y deja el ejemplo sin '
-        'conversación, con las preguntas del comienzo.',
+        '«Empezar de nuevo» cierra la hoja y deja la conversación vacía, con '
+        'las preguntas del comienzo.',
       );
-      await f.check('No queda conversación y el inspector se apagó', () {
+      await f.check('No queda conversación', () {
         expect(_session(f).turns, isEmpty);
-        expect(_settings(f).developer, isFalse);
       });
     },
   ),
@@ -2106,83 +2047,6 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           expect(_own(f).ledger!.freeUntilPayday, free);
         },
       );
-    },
-  ),
-  AppFlow(
-    '09-16-preguntar-con-mi-key',
-    'Conectar mi propia key de Gemini en el ejemplo',
-    area: 'Ajustes',
-    goal:
-        'Tengo una key de Gemini y quiero que el ejemplo me responda con ella, '
-        'sin que la key quede guardada en ningún lado.',
-    demo: true,
-    manual: <String>[
-      'Con una key real de aistudio.google.com, hacer una pregunta y ver que '
-          'responde Gemini en vivo (necesita red).',
-      'Con una key equivocada, ver qué dice la app al preguntar.',
-    ],
-    (FlowRun f) async {
-      // The conversation opens from the example's Inicio.
-      await f.toConversation();
-      await f.tapTip('Ajustes');
-      await f.tap('Tu key');
-      await f.type('Key de Gemini', 'clave-de-prueba');
-      await f.step(
-        '«Tu key» explica que la key no se guarda y solo viaja a Google; '
-        'escrita en «Key de Gemini», queda lista para «Conectar».',
-      );
-      await f.check('Escribirla todavía no cambia quién responde', () {
-        expect(_session(f).mode, AgentMode.demo);
-        expect(_session(f).canGoLive, isFalse);
-      });
-      await f.tap('Conectar');
-      await f.step(
-        '«Conectar» cierra la hoja y arriba la marca pasa de «DEMO» a «EN '
-        'VIVO»: ahora responde Gemini con tu key.',
-      );
-      await f.check('Responde Gemini con tu key, y arriba dice EN VIVO', () {
-        expect(_session(f).mode, AgentMode.live);
-        expect(_session(f).canGoLive, isTrue);
-        expect(f.shows('EN VIVO'), isTrue);
-        expect(f.shows('DEMO'), isFalse);
-      });
-      await f.check(
-        'La key no queda guardada en los datos de la app',
-        () async {
-          final Map<String, Object?> saved = await _read(
-            f,
-            () => _store(f).exportJson(),
-          );
-          expect(jsonEncode(saved), isNot(contains('clave-de-prueba')));
-        },
-      );
-      await f.tapTip('Ajustes');
-      await f.step(
-        'Al abrir otra vez la hoja, «Tu key» está marcada y dice que responde '
-        '${GeminiClient.defaultModel}; el campo queda vacío, por si una key '
-        'que no funcionó hay que cambiarla, y no muestra la de antes.',
-      );
-      await f.check('Dice quién responde, y la key de antes no se ve', () {
-        expect(
-          f.screenText,
-          contains('Responde ${GeminiClient.defaultModel}.'),
-        );
-        expect(_keyField(f).controller!.text, isEmpty);
-      });
-      await f.tap('Demo');
-      await f.check('«Demo» vuelve a las respuestas sin red', () {
-        expect(_session(f).mode, AgentMode.demo);
-      });
-      await f.tap('Tu key');
-      await f.check('«Tu key» vuelve a la key de antes sin escribirla', () {
-        expect(_session(f).mode, AgentMode.live);
-        expect(_session(f).canGoLive, isTrue);
-        expect(_keyField(f).controller!.text, isEmpty);
-      });
-      await f.back();
-      await f.check('Cerrada la hoja, arriba sigue EN VIVO', () {
-        expect(f.shows('EN VIVO'), isTrue);
-      });
     },
   ),
   AppFlow(
@@ -3479,10 +3343,6 @@ Future<List<Object?>?> _openBackup(FlowRun f, Uint8List file, String? code) =>
       }
     });
 
-/// The field for a Gemini key in the demo's settings.
-TextField _keyField(FlowRun f) =>
-    f.tester.widget<TextField>(find.widgetWithText(TextField, 'Key de Gemini'));
-
 /// Lets the messages at the bottom go, as when the person reads them,
 /// before something that says one of its own.
 Future<void> _waitMessages(FlowRun f) async {
@@ -3560,10 +3420,6 @@ Brightness _brightness(FlowRun f) =>
 /// The sample's conversation.
 Session _session(FlowRun f) =>
     f.tester.widget<HomePage>(find.byType(HomePage)).session;
-
-/// What the person chose in the sample's settings.
-AppSettings _settings(FlowRun f) =>
-    f.tester.widget<HomePage>(find.byType(HomePage)).settings;
 
 /// Scrolls [finder] near the top of the screen, for a picture that starts
 /// with it.

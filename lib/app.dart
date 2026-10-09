@@ -22,6 +22,7 @@ import 'ui/own/example_bar.dart';
 import 'ui/own/onboarding_page.dart';
 import 'ui/own/own_shell.dart';
 import 'ui/own/start_page.dart';
+import 'showcase.dart';
 
 /// What the person chose in settings.
 class AppSettings extends ChangeNotifier {
@@ -138,7 +139,8 @@ class _QuincenaAppState extends State<QuincenaApp> {
       _conversed = example;
       _conversation = Session(
         language: language,
-        scripted: true,
+        // In the web demo Gemini or a key of one's own can answer it too.
+        scripted: !showcase,
         ledgerOf: () => example.ledger!,
         keeper: scriptedKeeper(example),
       );

@@ -6022,4 +6022,11 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get rulesEmptyWithMovements =>
       'No tienes reglas ahora. Cuando registres algo en Por revisar, se crea la de su comercio, su tarjeta o su banco. Tus movimientos no cambian.';
+
+  @override
+  String get badgeExample => 'EJEMPLO';
+
+  @override
+  String get aboutExample =>
+      'La cuenta, la persona y los comercios del ejemplo son inventados.';
 }

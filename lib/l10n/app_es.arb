@@ -1880,5 +1880,7 @@
   "@statementPaymentNoSource": {"placeholders": {"count": {"type": "int"}, "currency": {"type": "String"}}},
   "replacedBySelection": "Reemplazada por tu nueva selección",
   "seeNewSelection": "Ver la nueva",
-  "rulesEmptyWithMovements": "No tienes reglas ahora. Cuando registres algo en Por revisar, se crea la de su comercio, su tarjeta o su banco. Tus movimientos no cambian."
+  "rulesEmptyWithMovements": "No tienes reglas ahora. Cuando registres algo en Por revisar, se crea la de su comercio, su tarjeta o su banco. Tus movimientos no cambian.",
+  "badgeExample": "EJEMPLO",
+  "aboutExample": "La cuenta, la persona y los comercios del ejemplo son inventados."
 }

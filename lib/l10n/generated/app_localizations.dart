@@ -9131,6 +9131,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'No tienes reglas ahora. Cuando registres algo en Por revisar, se crea la de su comercio, su tarjeta o su banco. Tus movimientos no cambian.'**
   String get rulesEmptyWithMovements;
+
+  /// No description provided for @badgeExample.
+  ///
+  /// In es, this message translates to:
+  /// **'EJEMPLO'**
+  String get badgeExample;
+
+  /// No description provided for @aboutExample.
+  ///
+  /// In es, this message translates to:
+  /// **'La cuenta, la persona y los comercios del ejemplo son inventados.'**
+  String get aboutExample;
 }
 
 class _AppLocalizationsDelegate
