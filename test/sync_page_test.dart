@@ -270,6 +270,20 @@ void main() {
     expect(theirs.note, 'Con factura');
   });
 
+  testWidgets('with large text the two versions go one under the other', (
+    tester,
+  ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await lunchChangedOnBoth(tester, MemoryKeyStore());
+    await reveal(tester, find.text('Lo que espera: Almuerzo con Juan'));
+    expect(find.byType(Table), findsNothing);
+    expect(find.text('Lo que quedó: Almuerzo'), findsOneWidget);
+    expect(find.text('Lo que quedó: Con factura'), findsOneWidget);
+    expect(find.text('Lo que espera: \u2014'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('what is dismissed can come back right after', (tester) async {
     final (OwnController own, _, _) = await lunchChangedOnBoth(
       tester,

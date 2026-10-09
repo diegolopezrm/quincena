@@ -9,6 +9,7 @@ import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
 import '../../own/own_controller.dart';
+import '../../store/store.dart' show QuincenaStore;
 import '../../domain/categories.dart';
 import '../../domain/records.dart';
 import '../../sync/compare.dart';
@@ -223,7 +224,7 @@ class _SyncPageState extends State<SyncPage> {
     if (take == null) return;
     await _sync.combine(w.conflict, kept, take);
     await _refresh();
-    _say(l.syncCombined);
+    if (mounted) _say(l.syncCombined);
   }
 
   Future<bool> _confirm(String title, String body, String action) async =>
@@ -528,23 +529,31 @@ class _WaitingCard extends StatelessWidget {
       ].join(' · '),
       'accounts' || 'recurring' || 'goals' => text('name'),
       'categories' => text('name').isEmpty ? r.id : text('name'),
-      'settings' => switch (r.id) {
-        'profile' => l.syncWhatProfile,
-        'plan.envelopes' => l.envelopesTitle,
-        'plan.wishes' => l.wishesTitle,
-        'plan.cushion' => l.cushionDaysTitle,
-        'plan.scenarios' => l.whatIfTitle,
-        'shared.groups' => l.sharedTitle,
-        'freelance' => l.freelanceTitle,
-        'trips' => l.tripsTitle,
-        'commitments.instalments' => l.instalTitle,
-        'commitments.memories' => l.fixedTitle,
-        'commitments.detective' => l.detectiveTitle,
-        _ => l.syncWhatSetting,
-      },
+      'settings' => _setting(l, r.id),
+      // A wish, a trip or a group by its own name, else by where it is.
+      'list' || 'item' || 'map' =>
+        text('name').isNotEmpty
+            ? text('name')
+            : _setting(l, QuincenaStore.settingOfItem(r.id) ?? ''),
       _ => r.id,
     };
   }
+
+  /// What the person calls the setting [key].
+  static String _setting(AppLocalizations l, String key) => switch (key) {
+    'profile' => l.syncWhatProfile,
+    'plan.envelopes' => l.envelopesTitle,
+    'plan.wishes' => l.wishesTitle,
+    'plan.cushion' => l.cushionDaysTitle,
+    'plan.scenarios' => l.whatIfTitle,
+    'shared.groups' => l.sharedTitle,
+    'freelance' => l.freelanceTitle,
+    'trips' => l.tripsTitle,
+    'commitments.instalments' => l.instalTitle,
+    'commitments.memories' => l.fixedTitle,
+    'commitments.detective' => l.detectiveTitle,
+    _ => l.syncWhatSetting,
+  };
 
   /// A movement's amount in its account's currency, when it reads.
   String? _amount(Map<String, Object?> d) {
