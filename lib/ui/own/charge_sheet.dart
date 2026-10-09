@@ -394,8 +394,12 @@ class _ChargeSheetState extends State<_ChargeSheet> {
               isExpanded: true,
               decoration: InputDecoration(labelText: l.chargeAccount),
               items: <DropdownMenuItem<String?>>[
+                // Accounts a charge can come out of: not an exchange or a
+                // coin, unless it was chosen before.
                 for (final Account a in own.accounts)
-                  DropdownMenuItem<String?>(value: a.id, child: Text(a.name)),
+                  if ((a.kind != AccountKind.exchange && !a.asset.isCrypto) ||
+                      a.id == _accountId)
+                    DropdownMenuItem<String?>(value: a.id, child: Text(a.name)),
                 DropdownMenuItem<String?>(child: Text(l.chargeNoAccount)),
               ],
               onChanged: (String? id) => setState(() => _accountId = id),

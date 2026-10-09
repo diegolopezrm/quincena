@@ -3853,9 +3853,20 @@ final List<AppFlow> planFlows = <AppFlow>[
       await f.top();
       await f.tap('Pagos fijos');
       await f.step(
-        'En la lista, Max ya no muestra la prueba que terminó el 28 de '
-        'septiembre, y su próximo cobro sigue en el 3 de noviembre.',
+        'En la lista, Max dice «La prueba gratis terminó el 28 de septiembre: '
+        'desde ahí cobra.» y ofrece poner el próximo cobro el 28 de octubre, '
+        'un mes después del fin de la prueba.',
       );
+      await f.check('La fila dice que la prueba terminó y ofrece seguirla', () {
+        expect(
+          f.shows(
+            'La prueba gratis terminó el 28 de septiembre: desde ahí '
+            'cobra.',
+          ),
+          isTrue,
+        );
+        expect(f.shows('Poner el próximo cobro el 28 de octubre'), isTrue);
+      });
       await f.tap('Max');
       await f.tap('Prueba gratis hasta el 28 de septiembre');
       await f.tapTip('Mes siguiente');

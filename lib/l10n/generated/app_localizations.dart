@@ -5732,6 +5732,18 @@ abstract class AppLocalizations {
   /// **'Prueba gratis hasta el {date}'**
   String fixedTrial(String date);
 
+  /// No description provided for @fixedTrialEnded.
+  ///
+  /// In es, this message translates to:
+  /// **'La prueba gratis terminó el {date}: desde ahí cobra.'**
+  String fixedTrialEnded(String date);
+
+  /// No description provided for @fixedTrialFollow.
+  ///
+  /// In es, this message translates to:
+  /// **'Poner el próximo cobro el {date}'**
+  String fixedTrialFollow(String date);
+
   /// No description provided for @fixedNotUsed.
   ///
   /// In es, this message translates to:

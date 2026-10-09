@@ -265,6 +265,19 @@ class RecurringCharge {
       yield d;
     }
   }
+
+  /// The same charge, charged next on [date].
+  RecurringCharge withNextDate(DateTime date) => RecurringCharge(
+    id: id,
+    name: name,
+    amount: amount,
+    cadence: cadence,
+    nextDate: date,
+    accountId: accountId,
+    category: category,
+    active: active,
+    since: since,
+  );
 }
 
 /// Money being put aside for one thing.

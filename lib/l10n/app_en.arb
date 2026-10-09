@@ -950,6 +950,8 @@
   "fixedNextOn": "next on {date}",
   "fixedPaused": "paused",
   "fixedTrial": "Free trial until {date}",
+  "fixedTrialEnded": "The free trial ended on {date}: it charges from then.",
+  "fixedTrialFollow": "Set the next charge to {date}",
   "fixedNotUsed": "You said you no longer use it: pausing it saves {amount} a year",
   "fixedPriceUp": "Went up from {from} to {to} on {date}",
   "fixedPriceDown": "Went down from {from} to {to} on {date}",

@@ -11,6 +11,7 @@ import 'package:quincena/money/asset.dart';
 import 'package:quincena/money/money.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/store/store.dart';
+import 'package:quincena/ui/icons.dart';
 import 'package:quincena/ui/own/commitments_page.dart';
 import 'package:quincena/ui/own/detective_page.dart';
 import 'package:quincena/ui/own/instalments_page.dart';
@@ -91,10 +92,13 @@ void main() {
         Money(d('33900'), Asset.cop),
       );
 
+      expect(find.byIcon(Glyph.bell), findsOneWidget);
       await tapText(tester, 'Netflix');
       await tapText(tester, 'Pausar');
       expect(find.text('EN PAUSA'), findsOneWidget);
       expect(own.ledger!.upcoming, isEmpty);
+      // Paused, nothing reminds: no bell.
+      expect(find.byIcon(Glyph.bell), findsNothing);
 
       await tapText(tester, 'Netflix');
       await tapText(tester, 'Borrar pago fijo');
@@ -103,6 +107,28 @@ void main() {
       expect(own.memoryOf(netflix.id).remindDays, isNull);
       // Nothing left to remind: what was set is taken back.
       expect(calls.last.method, 'cancel');
+    });
+
+    testWidgets('a charge is paid from an account, never from crypto', (
+      tester,
+    ) async {
+      await openPage(
+        tester,
+        (OwnController own) => CommitmentsPage(own: own),
+        data: (QuincenaStore store, Account bank, Account card) =>
+            store.addAccount(
+              name: 'Binance',
+              kind: AccountKind.exchange,
+              asset: Asset.usdt,
+              opening: d('120'),
+              spendable: false,
+            ),
+      );
+      await tapText(tester, 'Agregar pago fijo');
+      await tester.tap(find.byType(DropdownButtonFormField<String?>).first);
+      await settle(tester);
+      expect(find.text('Visa').hitTestable(), findsWidgets);
+      expect(find.text('Binance'), findsNothing);
     });
 
     testWidgets('a free trial moves the first charge to its end, and one '

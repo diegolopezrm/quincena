@@ -3697,6 +3697,16 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String fixedTrialEnded(String date) {
+    return 'La prueba gratis terminó el $date: desde ahí cobra.';
+  }
+
+  @override
+  String fixedTrialFollow(String date) {
+    return 'Poner el próximo cobro el $date';
+  }
+
+  @override
   String fixedNotUsed(String amount) {
     return 'Dijiste que ya no la usas: pausarla te ahorra $amount al año';
   }

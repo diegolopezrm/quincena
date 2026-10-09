@@ -237,7 +237,30 @@ class _ChargeRow extends StatelessWidget {
                       icon: Glyph.hourglass,
                       text: l.fixedTrial(dayMonth(trial)),
                       color: context.colors.brand,
+                    )
+                  // A trial that ended lately: it charges from its end, not
+                  // from the date first saved.
+                  else if (charge.active &&
+                      trial != null &&
+                      today.difference(trial).inDays <= 60) ...<Widget>[
+                    _Note(
+                      icon: Glyph.hourglass,
+                      text: l.fixedTrialEnded(dayMonth(trial)),
+                      color: context.colors.caution,
                     ),
+                    if (afterTrial(charge, trial, today)
+                        case final DateTime next
+                        when next != nextCharge(charge, today))
+                      TextButton(
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        onPressed: () =>
+                            own.store.saveRecurring(charge.withNextDate(next)),
+                        child: Text(l.fixedTrialFollow(dayMonth(next))),
+                      ),
+                  ],
                   if (charge.active && memory.inUse == false)
                     _Note(
                       icon: Glyph.piggyBank,
@@ -293,7 +316,10 @@ class _ChargeRow extends StatelessWidget {
                 ],
               ),
             ),
-            if (memory.remindDays != null || trial != null)
+            // Only what will remind: a paused one, or a trial gone, does not.
+            if (charge.active &&
+                (memory.remindDays != null ||
+                    (trial != null && !trial.isBefore(today))))
               Padding(
                 padding: const EdgeInsets.only(left: 8, top: 2),
                 child: Icon(

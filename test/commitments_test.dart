@@ -77,6 +77,26 @@ void main() {
       expect(perYear(Cadence.biweekly), 26);
     });
 
+    test('after a trial it charges from the day the trial ended', () {
+      // Saved a month after it was added, with a trial to the 28th.
+      final RecurringCharge max = RecurringCharge(
+        id: 'm',
+        name: 'Max',
+        amount: Money(d('19900'), Asset.cop),
+        cadence: Cadence.monthly,
+        nextDate: DateTime(2026, 11, 3),
+      );
+      expect(nextCharge(max, today), DateTime(2026, 11, 3));
+      expect(
+        afterTrial(max, DateTime(2026, 9, 28), today),
+        DateTime(2026, 10, 28),
+      );
+      expect(
+        nextCharge(max.withNextDate(DateTime(2026, 10, 28)), today),
+        DateTime(2026, 10, 28),
+      );
+    });
+
     test('a price that moved is told, with when', () async {
       await spend('26900', DateTime(2026, 7, 12), 'Netflix');
       await spend('26900', DateTime(2026, 8, 12), 'NETFLIX.COM');

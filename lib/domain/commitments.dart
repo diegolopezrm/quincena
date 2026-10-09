@@ -65,6 +65,11 @@ class ChargeMemory {
 
 /// The next day [charge] is charged after [today], counting from its
 /// recorded next day by its cadence.
+/// When [charge] is charged next if it began charging the day its trial
+/// ended, [trial]: its cadence on from that day, after [today].
+DateTime afterTrial(RecurringCharge charge, DateTime trial, DateTime today) =>
+    nextCharge(charge.withNextDate(trial), today);
+
 DateTime nextCharge(RecurringCharge charge, DateTime today) {
   final DateTime day = _day(today);
   DateTime d = _day(charge.nextDate);
