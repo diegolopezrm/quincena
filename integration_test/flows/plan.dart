@@ -389,7 +389,9 @@ final List<AppFlow> planFlows = <AppFlow>[
       );
       // A lunch out of the day to day, after the split.
       await f.tapTip('Agregar movimiento');
+      await f.tap('Gasté plata');
       await f.type('Monto', '50000');
+      await f.tap('Cambiar');
       await f.tap('Restaurantes');
       await f.type('¿Dónde o a quién?', 'Almuerzo');
       await f.tap('Guardar');
@@ -1631,12 +1633,16 @@ final List<AppFlow> planFlows = <AppFlow>[
       final int beforeBuying = own.ledger!.freeUntilPayday;
       await _tapTextBy(f, 'Chaqueta', 'Lo compré');
       await f.step(
-        '«Lo compré» abre el gasto ya escrito: «Chaqueta», \$180.000 y la '
-        'fecha de hoy. Solo falta ver de dónde salió y guardar.',
+        '«Lo compré» abre el gasto ya escrito, sin preguntar qué pasó: '
+        '«Chaqueta» por \$180.000 y, abajo, «Sin categoría · Nequi · Hoy»: '
+        'la cuenta del último gasto y la fecha de hoy. Solo falta guardar.',
       );
       await f.check('El gasto viene lleno con el deseo', () {
+        expect(f.shows('Gasté plata'), isTrue);
+        expect(f.shows('¿Qué pasó?'), isFalse);
         expect(_fieldText(f, 'Monto'), '180.000');
         expect(_fieldText(f, '¿Dónde o a quién?'), 'Chaqueta');
+        expect(f.shows('Sin categoría · Nequi · Hoy'), isTrue);
       });
       await f.tap('Guardar');
       await f.step(
@@ -3999,7 +4005,8 @@ final List<AppFlow> planFlows = <AppFlow>[
         'pagó a Bancolombia.',
       );
       await f.tapTip('Agregar movimiento');
-      await f.tap('Ingreso');
+      await f.tap('Me entró plata');
+      await f.tap('Cambiar');
       await f.tapFound(find.byType(DropdownButtonFormField<String>));
       await f.tapFound(find.text('Cuenta en dólares').last);
       await f.type('Monto', '500');

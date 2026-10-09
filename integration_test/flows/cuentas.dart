@@ -189,13 +189,17 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       );
       await f.back();
       await f.tapTip('Agregar movimiento');
-      await f.step(
-        'El «+» de la cuenta abre un movimiento nuevo con Bancolombia ya '
-        'elegida como la cuenta de donde sale.',
-      );
+      await f.tap('Gasté plata');
       await f.type('Monto', '45000');
-      await f.tap('Mercado');
       await f.type('¿Dónde o a quién?', 'D1 Laureles');
+      await f.step(
+        'El «+» de la cuenta pregunta qué pasó. Con «Gasté plata», 45.000 y '
+        '«D1 Laureles», la línea dice «Mercado · Bancolombia · Hoy»: la '
+        'cuenta es la de esta página.',
+      );
+      await f.check('El gasto sale de la cuenta de la página', () {
+        expect(f.shows('Mercado · Bancolombia · Hoy'), isTrue);
+      });
       await f.tap('Guardar');
       await f.top();
       await f.step(
@@ -1239,13 +1243,24 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Cuentas');
       await f.tap('Visa');
       await f.tapTip('Agregar movimiento');
-      await f.tap('Transferencia');
+      await f.tap('Moví plata entre mis cuentas');
       await f.step(
-        'En la Visa, «+» y «Transferencia»: «Desde» y «Hacia» son tus '
-        'cuentas; hay que decir de cuál salió la plata y a cuál llegó.',
+        'En la Visa, «+» y «Moví plata entre mis cuentas»: «Hacia» ya es la '
+        'Visa, y «Desde» la cuenta del último gasto, Nequi.',
+      );
+      await f.check(
+        'Desde la página de la tarjeta, mover plata es pagarla',
+        () {
+          expect(
+            find.descendant(
+              of: find.byType(DropdownButtonFormField<String>).last,
+              matching: find.text('Visa'),
+            ),
+            findsOneWidget,
+          );
+        },
       );
       await _pickAccount(f, 0, 'Bancolombia');
-      await _pickAccount(f, 1, 'Visa');
       await f.type('Monto', _plain(owed));
       await f.step(
         'Desde Bancolombia hacia la Visa, por ${_cop(owed)}: todo lo que '
@@ -1325,7 +1340,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Cuentas');
       await f.tap('Visa');
       await f.tapTip('Agregar movimiento');
-      await f.tap('Transferencia');
+      await f.tap('Moví plata entre mis cuentas');
       await _pickAccount(f, 0, 'Bancolombia');
       await _pickAccount(f, 1, 'Visa');
       await f.type('Monto', '900000');
@@ -1399,7 +1414,9 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Cuentas');
       await f.tap('Banco · Bancolombia');
       await f.tapTip('Agregar movimiento');
+      await f.tap('Gasté plata');
       await f.type('Monto', '280000');
+      await f.tap('Cambiar');
       await f.tap('Servicios');
       await f.type('¿Dónde o a quién?', 'Administración');
       await f.tapFound(find.text('Hoy').last);
@@ -1731,7 +1748,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Cuentas');
       await f.tap('Visa');
       await f.tapTip('Agregar movimiento');
-      await f.tap('Transferencia');
+      await f.tap('Moví plata entre mis cuentas');
       await _pickAccount(f, 0, 'Bancolombia');
       await _pickAccount(f, 1, 'Visa');
       await f.type('Monto', _plain(owed));
@@ -2024,9 +2041,11 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       });
       await f.top();
       await f.tapTip('Agregar movimiento');
+      await f.tap('Gasté plata');
+      await f.tap('Cambiar');
       await f.tapFound(find.byType(DropdownButtonFormField<String>).first);
       await f.step(
-        'Al anotar un movimiento, la lista de cuentas ya no ofrece Nequi.',
+        'Al anotar un gasto, la lista de cuentas ya no ofrece Nequi.',
       );
       await f.check('Nequi no está entre las cuentas para elegir', () {
         expect(f.shows('Bancolombia'), isTrue);
