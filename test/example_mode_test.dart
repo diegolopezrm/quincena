@@ -141,6 +141,7 @@ void main() {
       'Binance',
       'Varios dispositivos',
       'Exportar mis datos',
+      'Exportar movimientos en CSV',
       'Restaurar un respaldo',
       'Borrar todo',
     ]) {

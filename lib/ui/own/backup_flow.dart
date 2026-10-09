@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../../backup/backup.dart';
+import '../../backup/movements_csv.dart';
 import '../../format/dates.dart';
 import '../../l10n/l10n.dart';
 import '../../store/store.dart';
@@ -94,6 +95,37 @@ Future<void> exportData(
       extensions: <String>['json'],
     );
   }
+  if (saved) messenger.showSnackBar(SnackBar(content: Text(l.exportDone)));
+}
+
+/// The movements as a CSV a spreadsheet opens, saved where the person
+/// chooses, the same way as a backup on each platform. Read fresh from
+/// [store], in the interface's language.
+Future<void> exportMovements(
+  BuildContext context, {
+  required QuincenaStore store,
+  required DateTime today,
+  SaveFile save = _saveWithPicker,
+}) async {
+  final AppLocalizations l = context.l10n;
+  final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+  final StoreSnapshot? snapshot = await store.snapshot();
+  if (snapshot == null || snapshot.entries.isEmpty) {
+    messenger.showSnackBar(SnackBar(content: Text(l.exportCsvEmpty)));
+    return;
+  }
+  final String day = today.toIso8601String().substring(0, 10);
+  final bool saved = await save(
+    'quincena-movimientos-$day.csv',
+    movementsCsv(
+      entries: snapshot.entries,
+      accounts: snapshot.accounts,
+      categories: snapshot.categories,
+      l: l,
+    ),
+    mimeType: 'text/csv',
+    extensions: <String>['csv'],
+  );
   if (saved) messenger.showSnackBar(SnackBar(content: Text(l.exportDone)));
 }
 

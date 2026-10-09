@@ -1310,6 +1310,12 @@ abstract class AppLocalizations {
   /// **'Transferencia'**
   String get kindTransfer;
 
+  /// No description provided for @kindAdjustment.
+  ///
+  /// In es, this message translates to:
+  /// **'Ajuste'**
+  String get kindAdjustment;
+
   /// No description provided for @amount.
   ///
   /// In es, this message translates to:
@@ -1531,6 +1537,72 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Guarda un respaldo de todo en un archivo'**
   String get exportDataSubtitle;
+
+  /// No description provided for @exportCsv.
+  ///
+  /// In es, this message translates to:
+  /// **'Exportar movimientos en CSV'**
+  String get exportCsv;
+
+  /// No description provided for @exportCsvSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Para abrirlos en Excel o en otra hoja de cálculo'**
+  String get exportCsvSubtitle;
+
+  /// No description provided for @exportCsvEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no hay movimientos para exportar.'**
+  String get exportCsvEmpty;
+
+  /// No description provided for @csvDate.
+  ///
+  /// In es, this message translates to:
+  /// **'Fecha'**
+  String get csvDate;
+
+  /// No description provided for @csvAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta'**
+  String get csvAccount;
+
+  /// No description provided for @csvKind.
+  ///
+  /// In es, this message translates to:
+  /// **'Tipo'**
+  String get csvKind;
+
+  /// No description provided for @csvCategory.
+  ///
+  /// In es, this message translates to:
+  /// **'Categoría'**
+  String get csvCategory;
+
+  /// No description provided for @csvPayee.
+  ///
+  /// In es, this message translates to:
+  /// **'Comercio'**
+  String get csvPayee;
+
+  /// No description provided for @csvNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Nota'**
+  String get csvNote;
+
+  /// No description provided for @csvAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'Monto'**
+  String get csvAmount;
+
+  /// No description provided for @csvCurrency.
+  ///
+  /// In es, this message translates to:
+  /// **'Moneda'**
+  String get csvCurrency;
 
   /// No description provided for @exportDone.
   ///

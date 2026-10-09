@@ -823,6 +823,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get kindTransfer => 'Transfer';
 
   @override
+  String get kindAdjustment => 'Adjustment';
+
+  @override
   String get amount => 'Amount';
 
   @override
@@ -936,6 +939,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get exportDataSubtitle => 'Saves a backup of everything to a file';
+
+  @override
+  String get exportCsv => 'Export transactions as CSV';
+
+  @override
+  String get exportCsvSubtitle =>
+      'To open them in Excel or another spreadsheet';
+
+  @override
+  String get exportCsvEmpty => 'There are no transactions to export yet.';
+
+  @override
+  String get csvDate => 'Date';
+
+  @override
+  String get csvAccount => 'Account';
+
+  @override
+  String get csvKind => 'Type';
+
+  @override
+  String get csvCategory => 'Category';
+
+  @override
+  String get csvPayee => 'Merchant';
+
+  @override
+  String get csvNote => 'Note';
+
+  @override
+  String get csvAmount => 'Amount';
+
+  @override
+  String get csvCurrency => 'Currency';
 
   @override
   String get exportDone => 'File saved.';

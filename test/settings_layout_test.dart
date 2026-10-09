@@ -60,6 +60,7 @@ void main() {
       'Importar extracto',
       'Varios dispositivos',
       'Exportar mis datos',
+      'Exportar movimientos en CSV',
       'Restaurar un respaldo',
       'Ver los datos de ejemplo',
       'AYUDA Y PRIVACIDAD',

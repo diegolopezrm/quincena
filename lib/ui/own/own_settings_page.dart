@@ -212,6 +212,12 @@ class OwnSettingsPage extends StatelessWidget {
     await exportData(context, backups: Backups(own.store), today: own.today);
   }
 
+  Future<void> _exportCsv(BuildContext context) async {
+    if (await explainExample(context, own, context.l10n.exportCsv)) return;
+    if (!context.mounted) return;
+    await exportMovements(context, store: own.store, today: own.today);
+  }
+
   Future<void> _restore(BuildContext context) async {
     if (await explainExample(context, own, context.l10n.importData)) return;
     if (!context.mounted) return;
@@ -766,6 +772,13 @@ class OwnSettingsPage extends StatelessWidget {
             title: l.exportData,
             value: l.exportDataSubtitle,
             onTap: () => _export(context),
+          ),
+          _row(
+            context,
+            icon: Glyph.squaresFour,
+            title: l.exportCsv,
+            value: l.exportCsvSubtitle,
+            onTap: () => _exportCsv(context),
           ),
           _row(
             context,

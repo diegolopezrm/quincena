@@ -749,6 +749,59 @@ void main() {
       expect(find.text('¿Restaurar este respaldo?'), findsOneWidget);
     });
 
+    testWidgets('the movements go out as a CSV, saved like a backup, and '
+        'with none it says so', (tester) async {
+      final List<(String, Uint8List, String)> saved =
+          <(String, Uint8List, String)>[];
+      final OwnController own = await openPage(
+        tester,
+        (OwnController own) => Scaffold(
+          body: Builder(
+            builder: (BuildContext context) => TextButton(
+              onPressed: () => exportMovements(
+                context,
+                store: own.store,
+                today: own.today,
+                save:
+                    (
+                      String name,
+                      Uint8List bytes, {
+                      required String mimeType,
+                      List<String>? extensions,
+                    }) async {
+                      saved.add((name, bytes, mimeType));
+                      return true;
+                    },
+              ),
+              child: const Text('CSV'),
+            ),
+          ),
+        ),
+      );
+      await tapText(tester, 'CSV');
+      expect(saved.single.$1, 'quincena-movimientos-2026-10-03.csv');
+      expect(saved.single.$3, 'text/csv');
+      final String text = utf8.decode(saved.single.$2.sublist(3));
+      expect(
+        text,
+        'Fecha;Cuenta;Tipo;Categoría;Comercio;Nota;Monto;Moneda\r\n'
+        '2026-09-30;Bancolombia;Ingreso;Salario;Nómina;;2000000;COP\r\n',
+      );
+      expect(find.text('Archivo guardado.'), findsOneWidget);
+
+      await tester.runAsync(() async {
+        for (final Entry e in await own.store.entries()) {
+          await own.store.deleteEntry(e);
+        }
+      });
+      await tapText(tester, 'CSV');
+      expect(saved, hasLength(1));
+      expect(
+        find.text('Todavía no hay movimientos para exportar.'),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('a sync file is sent where it opens, with nothing asked', (
       tester,
     ) async {

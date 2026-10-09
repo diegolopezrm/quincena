@@ -824,6 +824,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get kindTransfer => 'Transferencia';
 
   @override
+  String get kindAdjustment => 'Ajuste';
+
+  @override
   String get amount => 'Monto';
 
   @override
@@ -936,6 +939,40 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get exportDataSubtitle => 'Guarda un respaldo de todo en un archivo';
+
+  @override
+  String get exportCsv => 'Exportar movimientos en CSV';
+
+  @override
+  String get exportCsvSubtitle =>
+      'Para abrirlos en Excel o en otra hoja de cálculo';
+
+  @override
+  String get exportCsvEmpty => 'Todavía no hay movimientos para exportar.';
+
+  @override
+  String get csvDate => 'Fecha';
+
+  @override
+  String get csvAccount => 'Cuenta';
+
+  @override
+  String get csvKind => 'Tipo';
+
+  @override
+  String get csvCategory => 'Categoría';
+
+  @override
+  String get csvPayee => 'Comercio';
+
+  @override
+  String get csvNote => 'Nota';
+
+  @override
+  String get csvAmount => 'Monto';
+
+  @override
+  String get csvCurrency => 'Moneda';
 
   @override
   String get exportDone => 'Archivo guardado.';

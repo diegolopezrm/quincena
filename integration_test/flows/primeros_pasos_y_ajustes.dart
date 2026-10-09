@@ -2462,6 +2462,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         'Binance',
         'Varios dispositivos',
         'Exportar mis datos',
+        'Exportar movimientos en CSV',
         'Restaurar un respaldo',
         'Reglas aprendidas',
       ]) {
@@ -2472,9 +2473,9 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tap('Borrar todo');
       await f.step(
         'Lo mismo dicen «Captura automática», «Reglas aprendidas», '
-        '«Billeteras propias», «Binance», «Varios dispositivos», exportar, '
-        '«Restaurar un respaldo» y hasta «Borrar todo»: en el ejemplo no '
-        'hacen nada.',
+        '«Billeteras propias», «Binance», «Varios dispositivos», los dos '
+        'exportar, «Restaurar un respaldo» y hasta «Borrar todo»: en el '
+        'ejemplo no hacen nada.',
       );
       await f.check('Cada una lo dijo y no abrió nada', () {
         expect(refused, isEmpty);
@@ -2514,6 +2515,90 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         expect(_own(f).accounts, hasLength(accounts));
         expect(await _read(f, () => _store(f).entries()), hasLength(entries));
         expect(f.screenText, contains(pesos(free)));
+      });
+    },
+  ),
+  AppFlow(
+    '09-20-exportar-movimientos-en-csv',
+    'Exportar mis movimientos en CSV',
+    area: 'Ajustes',
+    goal:
+        'Quiero llevar mis movimientos a Excel para hacer mis propias cuentas, '
+        'con las tildes bien y cada dato en su columna.',
+    data: fullAccount,
+    manual: <String>[
+      'Abrir el archivo .csv en Excel, Numbers y Google Sheets, con las tildes '
+          'bien y cada dato en su columna.',
+      'El selector del sistema para guardar el archivo en Archivos, iCloud o '
+          'Drive.',
+    ],
+    (FlowRun f) async {
+      final _Phone phone = await _Phone.install(f);
+      final List<Entry> entries = _own(f).snapshot!.entries;
+      await f.tapTip('Ajustes');
+      await _near(f, find.text('Exportar movimientos en CSV'));
+      await f.step(
+        'En «Tus datos», «Exportar movimientos en CSV» va después de «Exportar '
+        'mis datos»: es para abrirlos en Excel o en otra hoja de cálculo.',
+      );
+      await f.check('Dice para qué sirve', () {
+        expect(
+          f.shows('Para abrirlos en Excel o en otra hoja de cálculo'),
+          isTrue,
+        );
+      });
+      // The person closes the system's save dialog without saving.
+      phone.cancelSave = true;
+      await f.tap('Exportar movimientos en CSV');
+      await f.check('Si no se guarda, no dice que se guardó', () {
+        expect(phone.saved, isEmpty);
+        expect(f.shows('Archivo guardado.'), isFalse);
+      });
+      phone.cancelSave = false;
+      await f.tap('Exportar movimientos en CSV');
+      await f.step(
+        'Guarda quincena-movimientos-2026-10-03.csv con el selector del sistema '
+        'y dice «Archivo guardado.»',
+      );
+      final Uint8List? file =
+          phone.saved['quincena-movimientos-2026-10-03.csv'];
+      List<String> lines() =>
+          utf8.decode(file!.sublist(3)).split('\r\n')..removeLast();
+      await f.check('Es UTF-8 con su marca, para que Excel lea las tildes, y '
+          'trae una línea por movimiento', () {
+        expect(file!.take(3), <int>[0xEF, 0xBB, 0xBF]);
+        expect(
+          lines().first,
+          'Fecha;Cuenta;Tipo;Categoría;Comercio;Nota;Monto;Moneda',
+        );
+        expect(lines(), hasLength(entries.length + 1));
+        expect(f.shows('Archivo guardado.'), isTrue);
+      });
+      final Entry sample = entries.firstWhere(
+        (Entry e) =>
+            e.kind == EntryKind.expense &&
+            e.payee.isNotEmpty &&
+            !e.payee.contains(';'),
+      );
+      final Account account = _own(f).snapshot!.account(sample.accountId)!;
+      String two(int n) => n.toString().padLeft(2, '0');
+      final String day =
+          '${sample.date.year}-${two(sample.date.month)}-'
+          '${two(sample.date.day)}';
+      await f.check('«${sample.payee}» sale con su fecha, cuenta, tipo y monto '
+          'con signo', () {
+        expect(
+          lines().where(
+            (String line) =>
+                line.startsWith('$day;${account.name};Gasto;') &&
+                line.contains(';${sample.payee};') &&
+                line.endsWith(
+                  ';${sample.amount.toString().replaceAll('.', ',')};'
+                  '${account.asset.code}',
+                ),
+          ),
+          isNotEmpty,
+        );
       });
     },
   ),
