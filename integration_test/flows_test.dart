@@ -47,7 +47,11 @@ void main() {
       File(
         '${asks.path}/${flow.id}.result.json',
       ).writeAsStringSync(jsonEncode(run.toJson()));
-      expect(run.error, isNull, reason: 'the flow broke on the way');
+      expect(
+        run.error,
+        isNull,
+        reason: 'the flow broke on the way, at ${run.brokeAt ?? '?'}',
+      );
     });
   }
 }

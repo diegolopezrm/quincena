@@ -207,6 +207,7 @@ class FlowRun {
     'steps': captions,
     'checks': <Map<String, Object?>>[for (final Check c in checks) c.toJson()],
     if (error != null) 'error': '$error'.split('\n').take(8).join(' '),
+    if (brokeAt != null) 'brokeAt': brokeAt,
   };
 }
 
