@@ -2435,7 +2435,7 @@ abstract class AppLocalizations {
   /// No description provided for @cushionDaysTitle.
   ///
   /// In es, this message translates to:
-  /// **'Colchón en días'**
+  /// **'Fondo de emergencia en días'**
   String get cushionDaysTitle;
 
   /// No description provided for @cushionDaysCovers.
@@ -2489,7 +2489,7 @@ abstract class AppLocalizations {
   /// No description provided for @cushionDaysAccounts.
   ///
   /// In es, this message translates to:
-  /// **'Dónde está tu colchón'**
+  /// **'Dónde está tu fondo de emergencia'**
   String get cushionDaysAccounts;
 
   /// No description provided for @cushionDaysEssentials.

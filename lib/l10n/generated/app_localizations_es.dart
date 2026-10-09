@@ -1569,7 +1569,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get envelopesSave => 'Guardar el reparto';
 
   @override
-  String get cushionDaysTitle => 'Colchón en días';
+  String get cushionDaysTitle => 'Fondo de emergencia en días';
 
   @override
   String cushionDaysCovers(int days) {
@@ -1620,7 +1620,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Es un promedio: un mes con gastos distintos cambia la cuenta.';
 
   @override
-  String get cushionDaysAccounts => 'Dónde está tu colchón';
+  String get cushionDaysAccounts => 'Dónde está tu fondo de emergencia';
 
   @override
   String get cushionDaysEssentials => 'Qué es esencial para ti';

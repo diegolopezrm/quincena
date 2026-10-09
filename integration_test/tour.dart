@@ -509,7 +509,7 @@ final List<Scene> scenes = <Scene>[
   }),
   Scene('09-herramientas', data: fullAccount, (Tour t) async {
     await t.tap('Plan');
-    await t.visit('Colchón en días', 'colchon-en-dias');
+    await t.visit('Fondo de emergencia en días', 'colchon-en-dias');
     await t.tap('¿Y si…?');
     await t.page('y-si');
     await t.back();
