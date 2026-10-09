@@ -1102,14 +1102,19 @@ class _EntryFormState extends State<_EntryForm> {
         const SizedBox(height: 20),
         Text(l.category, style: context.type.labelMedium),
         const SizedBox(height: 8),
-        CategoryChoices(
-          own: own,
-          income: income,
-          selected: _category,
-          onChanged: (String? key) => setState(() {
-            _category = key;
-            _categoryChosen = true;
-          }),
+        // A category made from here shows once the store says it is there,
+        // which may be after the form chose it.
+        ListenableBuilder(
+          listenable: own,
+          builder: (BuildContext context, _) => CategoryChoices(
+            own: own,
+            income: income,
+            selected: _category,
+            onChanged: (String? key) => setState(() {
+              _category = key;
+              _categoryChosen = true;
+            }),
+          ),
         ),
       ];
 
