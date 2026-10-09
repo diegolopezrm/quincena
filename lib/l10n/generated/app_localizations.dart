@@ -1394,6 +1394,180 @@ abstract class AppLocalizations {
   /// **'Buscar movimientos'**
   String get searchMovements;
 
+  /// No description provided for @searchClear.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrar la búsqueda'**
+  String get searchClear;
+
+  /// No description provided for @filterOpen.
+  ///
+  /// In es, this message translates to:
+  /// **'Filtrar'**
+  String get filterOpen;
+
+  /// No description provided for @filterTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Filtrar movimientos'**
+  String get filterTitle;
+
+  /// No description provided for @filterType.
+  ///
+  /// In es, this message translates to:
+  /// **'Tipo'**
+  String get filterType;
+
+  /// No description provided for @filterAnyType.
+  ///
+  /// In es, this message translates to:
+  /// **'Todos'**
+  String get filterAnyType;
+
+  /// No description provided for @filterExpenses.
+  ///
+  /// In es, this message translates to:
+  /// **'Gastos'**
+  String get filterExpenses;
+
+  /// No description provided for @filterIncomes.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresos'**
+  String get filterIncomes;
+
+  /// No description provided for @filterTransfers.
+  ///
+  /// In es, this message translates to:
+  /// **'Transferencias'**
+  String get filterTransfers;
+
+  /// No description provided for @filterDates.
+  ///
+  /// In es, this message translates to:
+  /// **'Fechas'**
+  String get filterDates;
+
+  /// No description provided for @filterAnyDate.
+  ///
+  /// In es, this message translates to:
+  /// **'Cualquier fecha'**
+  String get filterAnyDate;
+
+  /// No description provided for @filterThisPeriod.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta quincena'**
+  String get filterThisPeriod;
+
+  /// No description provided for @filterSincePayday.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde el último pago'**
+  String get filterSincePayday;
+
+  /// No description provided for @filterThisMonth.
+  ///
+  /// In es, this message translates to:
+  /// **'Este mes'**
+  String get filterThisMonth;
+
+  /// No description provided for @filterLastMonth.
+  ///
+  /// In es, this message translates to:
+  /// **'Mes pasado'**
+  String get filterLastMonth;
+
+  /// No description provided for @filterPickDays.
+  ///
+  /// In es, this message translates to:
+  /// **'Elegir fechas'**
+  String get filterPickDays;
+
+  /// No description provided for @filterAccounts.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuentas'**
+  String get filterAccounts;
+
+  /// No description provided for @filterCategories.
+  ///
+  /// In es, this message translates to:
+  /// **'Categorías'**
+  String get filterCategories;
+
+  /// No description provided for @filterAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'Monto'**
+  String get filterAmount;
+
+  /// No description provided for @filterAmountHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que salió o entró, en {currency}.'**
+  String filterAmountHelp(String currency);
+
+  /// No description provided for @filterAmountMin.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde'**
+  String get filterAmountMin;
+
+  /// No description provided for @filterAmountMax.
+  ///
+  /// In es, this message translates to:
+  /// **'Hasta'**
+  String get filterAmountMax;
+
+  /// No description provided for @filterAmountBetween.
+  ///
+  /// In es, this message translates to:
+  /// **'{min} a {max}'**
+  String filterAmountBetween(String min, String max);
+
+  /// No description provided for @filterAmountAtLeast.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde {amount}'**
+  String filterAmountAtLeast(String amount);
+
+  /// No description provided for @filterAmountAtMost.
+  ///
+  /// In es, this message translates to:
+  /// **'Hasta {amount}'**
+  String filterAmountAtMost(String amount);
+
+  /// No description provided for @filterShow.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Ver 1 movimiento} other{Ver {count} movimientos}}'**
+  String filterShow(int count);
+
+  /// No description provided for @filterRemove.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar el filtro {name}'**
+  String filterRemove(String name);
+
+  /// No description provided for @filterClear.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar filtros'**
+  String get filterClear;
+
+  /// No description provided for @foundCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{1 movimiento} other{{count} movimientos}}'**
+  String foundCount(int count);
+
+  /// No description provided for @foundLeavesTransfers.
+  ///
+  /// In es, this message translates to:
+  /// **'El total deja fuera las transferencias entre tus cuentas.'**
+  String get foundLeavesTransfers;
+
   /// No description provided for @noMovements.
   ///
   /// In es, this message translates to:
@@ -1411,6 +1585,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Nada coincide con la búsqueda.'**
   String get noResults;
+
+  /// No description provided for @noResultsFilters.
+  ///
+  /// In es, this message translates to:
+  /// **'Nada coincide con los filtros.'**
+  String get noResultsFilters;
+
+  /// No description provided for @noResultsBoth.
+  ///
+  /// In es, this message translates to:
+  /// **'Nada coincide con la búsqueda y los filtros.'**
+  String get noResultsBoth;
 
   /// No description provided for @deleteMovementTitle.
   ///

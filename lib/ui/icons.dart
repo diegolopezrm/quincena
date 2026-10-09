@@ -61,6 +61,7 @@ abstract final class Glyph {
   static const IconData plus = IconData(0xe3d4, fontFamily: _family);
   static const IconData list = IconData(0xe2f0, fontFamily: _family);
   static const IconData magnifyingGlass = IconData(0xe30c, fontFamily: _family);
+  static const IconData funnel = IconData(0xe266, fontFamily: _family);
   static const IconData calendar = IconData(0xe108, fontFamily: _family);
   static const IconData user = IconData(0xe4c2, fontFamily: _family);
   static const IconData x = IconData(0xe4f6, fontFamily: _family);

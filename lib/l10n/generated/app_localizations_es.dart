@@ -866,6 +866,120 @@ class AppLocalizationsEs extends AppLocalizations {
   String get searchMovements => 'Buscar movimientos';
 
   @override
+  String get searchClear => 'Borrar la búsqueda';
+
+  @override
+  String get filterOpen => 'Filtrar';
+
+  @override
+  String get filterTitle => 'Filtrar movimientos';
+
+  @override
+  String get filterType => 'Tipo';
+
+  @override
+  String get filterAnyType => 'Todos';
+
+  @override
+  String get filterExpenses => 'Gastos';
+
+  @override
+  String get filterIncomes => 'Ingresos';
+
+  @override
+  String get filterTransfers => 'Transferencias';
+
+  @override
+  String get filterDates => 'Fechas';
+
+  @override
+  String get filterAnyDate => 'Cualquier fecha';
+
+  @override
+  String get filterThisPeriod => 'Esta quincena';
+
+  @override
+  String get filterSincePayday => 'Desde el último pago';
+
+  @override
+  String get filterThisMonth => 'Este mes';
+
+  @override
+  String get filterLastMonth => 'Mes pasado';
+
+  @override
+  String get filterPickDays => 'Elegir fechas';
+
+  @override
+  String get filterAccounts => 'Cuentas';
+
+  @override
+  String get filterCategories => 'Categorías';
+
+  @override
+  String get filterAmount => 'Monto';
+
+  @override
+  String filterAmountHelp(String currency) {
+    return 'Lo que salió o entró, en $currency.';
+  }
+
+  @override
+  String get filterAmountMin => 'Desde';
+
+  @override
+  String get filterAmountMax => 'Hasta';
+
+  @override
+  String filterAmountBetween(String min, String max) {
+    return '$min a $max';
+  }
+
+  @override
+  String filterAmountAtLeast(String amount) {
+    return 'Desde $amount';
+  }
+
+  @override
+  String filterAmountAtMost(String amount) {
+    return 'Hasta $amount';
+  }
+
+  @override
+  String filterShow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ver $count movimientos',
+      one: 'Ver 1 movimiento',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String filterRemove(String name) {
+    return 'Quitar el filtro $name';
+  }
+
+  @override
+  String get filterClear => 'Quitar filtros';
+
+  @override
+  String foundCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count movimientos',
+      one: '1 movimiento',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foundLeavesTransfers =>
+      'El total deja fuera las transferencias entre tus cuentas.';
+
+  @override
   String get noMovements => 'Aquí aparecerá tu plata entrando y saliendo.';
 
   @override
@@ -874,6 +988,12 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get noResults => 'Nada coincide con la búsqueda.';
+
+  @override
+  String get noResultsFilters => 'Nada coincide con los filtros.';
+
+  @override
+  String get noResultsBoth => 'Nada coincide con la búsqueda y los filtros.';
 
   @override
   String get deleteMovementTitle => '¿Eliminar este movimiento?';

@@ -866,6 +866,120 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchMovements => 'Search transactions';
 
   @override
+  String get searchClear => 'Clear the search';
+
+  @override
+  String get filterOpen => 'Filter';
+
+  @override
+  String get filterTitle => 'Filter transactions';
+
+  @override
+  String get filterType => 'Type';
+
+  @override
+  String get filterAnyType => 'All';
+
+  @override
+  String get filterExpenses => 'Expenses';
+
+  @override
+  String get filterIncomes => 'Income';
+
+  @override
+  String get filterTransfers => 'Transfers';
+
+  @override
+  String get filterDates => 'Dates';
+
+  @override
+  String get filterAnyDate => 'Any date';
+
+  @override
+  String get filterThisPeriod => 'This pay period';
+
+  @override
+  String get filterSincePayday => 'Since last payday';
+
+  @override
+  String get filterThisMonth => 'This month';
+
+  @override
+  String get filterLastMonth => 'Last month';
+
+  @override
+  String get filterPickDays => 'Pick dates';
+
+  @override
+  String get filterAccounts => 'Accounts';
+
+  @override
+  String get filterCategories => 'Categories';
+
+  @override
+  String get filterAmount => 'Amount';
+
+  @override
+  String filterAmountHelp(String currency) {
+    return 'What went out or came in, in $currency.';
+  }
+
+  @override
+  String get filterAmountMin => 'From';
+
+  @override
+  String get filterAmountMax => 'Up to';
+
+  @override
+  String filterAmountBetween(String min, String max) {
+    return '$min to $max';
+  }
+
+  @override
+  String filterAmountAtLeast(String amount) {
+    return 'From $amount';
+  }
+
+  @override
+  String filterAmountAtMost(String amount) {
+    return 'Up to $amount';
+  }
+
+  @override
+  String filterShow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Show $count transactions',
+      one: 'Show 1 transaction',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String filterRemove(String name) {
+    return 'Remove the $name filter';
+  }
+
+  @override
+  String get filterClear => 'Clear filters';
+
+  @override
+  String foundCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count transactions',
+      one: '1 transaction',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foundLeavesTransfers =>
+      'The total leaves out transfers between your accounts.';
+
+  @override
   String get noMovements =>
       'Your money coming in and going out will show up here.';
 
@@ -875,6 +989,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noResults => 'Nothing matches the search.';
+
+  @override
+  String get noResultsFilters => 'Nothing matches the filters.';
+
+  @override
+  String get noResultsBoth => 'Nothing matches the search and the filters.';
 
   @override
   String get deleteMovementTitle => 'Delete this transaction?';
