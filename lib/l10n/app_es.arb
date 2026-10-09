@@ -1039,6 +1039,8 @@
   "binanceSecretKey": "Secret Key",
   "binanceNeedKey": "Escribe tu API Key",
   "binanceNeedSecret": "Escribe tu Secret Key",
+  "binanceShowSecret": "Mostrar la Secret Key",
+  "binanceHideSecret": "Ocultar la Secret Key",
   "binanceConnect": "Conectar",
   "binanceConnecting": "Revisando la llave con Binance…",
   "binanceNotReadOnly": "Esta llave puede hacer más que leer ({what}). Crea una que solo tenga «Habilitar lectura»; esta no se guardó.",

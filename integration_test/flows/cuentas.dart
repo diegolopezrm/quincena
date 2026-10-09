@@ -2828,25 +2828,29 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       });
       await f.type('Secret Key', 'secreto');
       await f.step(
-        'La Secret Key se escribe oculta, con un candado al lado, y su aviso '
-        'se va.',
+        'La Secret Key se escribe oculta, con un ojo al lado, y su aviso se '
+        'va.',
       );
       await f.check('Con las dos llaves escritas no queda ningún aviso', () {
         expect(f.shows('Escribe tu API Key'), isFalse);
         expect(f.shows('Escribe tu Secret Key'), isFalse);
       });
-      await f.tapFound(
-        find.descendant(
-          of: find.widgetWithText(TextField, 'Secret Key'),
-          matching: find.byType(IconButton),
-        ),
+      await f.check(
+        'El ojo dice lo que hace, «Mostrar la Secret Key», también al lector '
+        'de pantalla',
+        () => expect(find.byTooltip('Mostrar la Secret Key'), findsOneWidget),
       );
-      await f.step('Tocar el candado muestra la Secret Key para revisarla.');
-      await f.check('El candado muestra el secreto', () {
+      await f.tapTip('Mostrar la Secret Key');
+      await f.step(
+        'Tocar el ojo muestra la Secret Key para revisarla; ahora está '
+        'tachado y dice «Ocultar la Secret Key».',
+      );
+      await f.check('El ojo muestra el secreto y ofrece ocultarlo', () {
         final TextField secret = f.tester.widget<TextField>(
           find.widgetWithText(TextField, 'Secret Key'),
         );
         expect(secret.obscureText, isFalse);
+        expect(find.byTooltip('Ocultar la Secret Key'), findsOneWidget);
       });
       await f.tap('Conectar');
       await f.waitFor(find.text('Conectar'));

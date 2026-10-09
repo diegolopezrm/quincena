@@ -837,6 +837,8 @@
   "binanceSecretKey": "Secret Key",
   "binanceNeedKey": "Type your API Key",
   "binanceNeedSecret": "Type your Secret Key",
+  "binanceShowSecret": "Show the Secret Key",
+  "binanceHideSecret": "Hide the Secret Key",
   "binanceConnect": "Connect",
   "binanceConnecting": "Checking the key with Binance…",
   "binanceNotReadOnly": "This key can do more than read ({what}). Create one with only \"Enable Reading\"; this one was not kept.",

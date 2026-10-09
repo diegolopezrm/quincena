@@ -529,9 +529,12 @@ class _BinancePageState extends State<BinancePage> {
         decoration: InputDecoration(
           labelText: l.binanceSecretKey,
           errorText: _secretMissing,
+          // An eye that says what it does: open to show the key, crossed
+          // out to hide it again.
           suffixIcon: IconButton(
+            tooltip: _hidden ? l.binanceShowSecret : l.binanceHideSecret,
             onPressed: () => setState(() => _hidden = !_hidden),
-            icon: Icon(_hidden ? Glyph.lock : Glyph.check, size: 18),
+            icon: Icon(_hidden ? Glyph.eye : Glyph.eyeSlash, size: 20),
           ),
         ),
       ),

@@ -3276,6 +3276,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get binanceNeedSecret => 'Type your Secret Key';
 
   @override
+  String get binanceShowSecret => 'Show the Secret Key';
+
+  @override
+  String get binanceHideSecret => 'Hide the Secret Key';
+
+  @override
   String get binanceConnect => 'Connect';
 
   @override

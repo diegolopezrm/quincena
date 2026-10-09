@@ -91,6 +91,8 @@ abstract final class Glyph {
     fontFamily: _family,
   );
   static const IconData lock = IconData(0xe2fa, fontFamily: _family);
+  static const IconData eye = IconData(0xe220, fontFamily: _family);
+  static const IconData eyeSlash = IconData(0xe224, fontFamily: _family);
   static const IconData globe = IconData(0xe288, fontFamily: _family);
   static const IconData deviceMobile = IconData(0xe1e0, fontFamily: _family);
   static const IconData mapPin = IconData(0xe316, fontFamily: _family);

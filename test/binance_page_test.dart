@@ -163,6 +163,31 @@ void main() {
     expect(vault.keys, isNull);
   });
 
+  testWidgets('the Secret Key shows and hides with an eye that says which '
+      'it does', (tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    await open(tester);
+    await reach(tester, find.text('Conectar'));
+    bool hidden() => tester
+        .widget<TextField>(find.widgetWithText(TextField, 'Secret Key'))
+        .obscureText;
+
+    expect(hidden(), isTrue);
+    // A screen reader says it too, as the eye's own button.
+    expect(
+      tester.getSemantics(find.byTooltip('Mostrar la Secret Key')),
+      containsSemantics(tooltip: 'Mostrar la Secret Key', isButton: true),
+    );
+    await tester.tap(find.byTooltip('Mostrar la Secret Key'));
+    await tester.pump();
+    expect(hidden(), isFalse);
+    expect(find.byTooltip('Ocultar la Secret Key'), findsOneWidget);
+    await tester.tap(find.byTooltip('Ocultar la Secret Key'));
+    await tester.pump();
+    expect(hidden(), isTrue);
+    semantics.dispose();
+  });
+
   testWidgets('a key that can trade is turned away, and said why', (
     tester,
   ) async {

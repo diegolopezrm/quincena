@@ -5054,6 +5054,18 @@ abstract class AppLocalizations {
   /// **'Escribe tu Secret Key'**
   String get binanceNeedSecret;
 
+  /// No description provided for @binanceShowSecret.
+  ///
+  /// In es, this message translates to:
+  /// **'Mostrar la Secret Key'**
+  String get binanceShowSecret;
+
+  /// No description provided for @binanceHideSecret.
+  ///
+  /// In es, this message translates to:
+  /// **'Ocultar la Secret Key'**
+  String get binanceHideSecret;
+
   /// No description provided for @binanceConnect.
   ///
   /// In es, this message translates to:
