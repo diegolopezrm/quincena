@@ -819,7 +819,15 @@ plan completo, con el porqué de cada fase, está en
     a una meta.
   - El cierre ofrece a una meta solo lo que el día a día no va a necesitar.
 - **30. Que la app haga el trabajo.** En curso.
-- **31. Empezar sin aprender Quincena.** En curso.
+- **31. Empezar sin aprender Quincena.** Hecha.
+  - Configurar son tres preguntas y llevan a Inicio con la cifra en 7
+    toques.
+  - «Termina de preparar Quincena» lista lo que falta y se va al
+    completarse.
+  - Sin cuentas, Inicio y «Movimiento» llevan a agregar la primera.
+  - El formulario empieza por lo que pasó, y un gasto normal toma 4
+    toques: la cuenta y la categoría salen del comercio o de la última
+    vez.
 - **32. Encontrar lo registrado.** Hecha en parte.
   - Búsqueda por monto, filtros con total y etiquetas enteras.
   - Los repetidos se quitan desde la lista, y se ve de dónde vino cada
@@ -834,6 +842,8 @@ plan completo, con el porqué de cada fase, está en
   - Solo preguntar gasta del día, y la conversación se queda.
   - El gasto dice de qué cuenta sale.
   - «Volver a preguntar».
+  - Una respuesta corregida dice que sus cifras son de antes.
+  - Un reporte cerrado sin enviar guarda lo escrito.
 - **35. Todo se puede deshacer.** En curso.
 - **36. Que se sienta liviana.** Pendiente.
 - **37. Prueba en teléfonos de verdad.** En parte.
