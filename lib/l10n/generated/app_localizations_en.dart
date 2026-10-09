@@ -1025,6 +1025,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scheduled => 'Scheduled';
 
   @override
+  String transferArrived(String amount) {
+    return '$amount arrived';
+  }
+
+  @override
+  String transferSent(String amount) {
+    return '$amount sent';
+  }
+
+  @override
   String get settingsProfile => 'Profile';
 
   @override
@@ -3882,7 +3892,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String splitYours(String amount) {
-    return 'Split: your part $amount';
+    return 'Your part $amount';
   }
 
   @override

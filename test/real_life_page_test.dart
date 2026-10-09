@@ -78,10 +78,7 @@ void main() {
     expect(group.balances[meId], 80000);
     expect(own.ledger!.spentIn(2026, 10), 40000);
     expect(own.sharedBalance, (80000, 0));
-    expect(
-      find.textContaining('Dividido: tu parte ${pesos(40000)}'),
-      findsOneWidget,
-    );
+    expect(find.text('Tu parte ${pesos(40000)}'), findsOneWidget);
   });
 
   testWidgets('a split by amounts opens again with its amounts, and what '
@@ -268,10 +265,7 @@ void main() {
       'p-ana': 35000,
     });
     expect(owed(), -35000);
-    expect(
-      find.textContaining('Dividido: tu parte ${pesos(35000)}'),
-      findsOneWidget,
-    );
+    expect(find.text('Tu parte ${pesos(35000)}'), findsOneWidget);
 
     // Told it was money in, it is no longer something to split, and the
     // form stops offering to split it as soon as it says so.

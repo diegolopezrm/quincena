@@ -1679,11 +1679,11 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       );
       await f.tap('Guardar');
       await f.step(
-        'Al guardar vuelves a Movimientos y la fila de las crepes agrega '
-        '«Dividido: tu parte…».',
+        'Al guardar vuelves a Movimientos y la fila de las crepes lleva, '
+        'aparte y entera, la etiqueta «Tu parte \$8.000».',
       );
-      await f.check('La fila dice «Dividido: tu parte ${pesos(8000)}»', () {
-        expect(f.screenText, contains('Dividido: tu parte ${pesos(8000)}'));
+      await f.check('La fila lleva la etiqueta «Tu parte ${pesos(8000)}»', () {
+        expect(_rowSays(crepes, 'Tu parte ${pesos(8000)}'), isTrue);
       });
       await f.check('Ana te debe 15.500 y tu parte es 8.000', () {
         final SharedExpense split = own.splitOf(crepes.id)!.$2;
@@ -2083,8 +2083,12 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.tap('Movimientos');
       await f.step(
         'En Movimientos: «Bancolombia → Cuenta en dólares», por los pesos que '
-        'salieron.',
+        'salieron, y aparte la etiqueta «Llegaron US\$98,50».',
       );
+      await f.check('La fila dice lo que llegó: «Llegaron US\$98,50»', () {
+        expect(f.shows('Bancolombia → Cuenta en dólares'), isTrue);
+        expect(f.shows('Llegaron US\$98,50'), isTrue);
+      });
       await f.check('Salieron 331.300 pesos y llegaron 98,50 dólares', () {
         expect(_held(own, 'Bancolombia'), bank - Decimal.parse('331300'));
         expect(
@@ -2214,12 +2218,17 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       });
       await f.tap('Movimientos');
       await f.step(
-        'En Movimientos va arriba de todo, en el sábado 10, marcado '
-        '«Programado», aunque la línea lo corta en «Progra…».',
+        'En Movimientos va arriba de todo, en el sábado 10: «Servicios · '
+        'Bancolombia» y, aparte y entera, la etiqueta «Programado».',
       );
-      await f.check('La fila dice «Programado»', () {
-        expect(f.screenText, contains('Servicios · Bancolombia · Programado'));
-      });
+      await f.check(
+        'La fila dice «Servicios · Bancolombia» y lleva «Programado» aparte',
+        () {
+          final Entry epm = _entry(own, 'EPM');
+          expect(_rowSays(epm, 'Servicios · Bancolombia'), isTrue);
+          expect(_rowSays(epm, 'Programado'), isTrue);
+        },
+      );
     },
   ),
   AppFlow(
@@ -2400,8 +2409,8 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       });
       await f.tap('Guardar');
       await f.step(
-        'Guardado, la fila del Éxito agrega «Dividid…», cortado por la cuenta, '
-        'y el grupo del paseo suma el mercado.',
+        'Guardado, la fila del Éxito lleva aparte la etiqueta «Tu parte '
+        '\$62.468», entera, y el grupo del paseo suma el mercado.',
       );
       await f.check('El grupo del paseo tiene el mercado, en tres partes', () {
         final Group now = own.groups.firstWhere((Group g) => g.id == trip.id);
@@ -2416,8 +2425,8 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         );
         expect(added.shares[meId], 62468);
       });
-      await f.check('La fila dice «Dividido: tu parte ${pesos(62468)}»', () {
-        expect(f.screenText, contains('Dividido: tu parte ${pesos(62468)}'));
+      await f.check('La fila lleva «Tu parte ${pesos(62468)}»', () {
+        expect(_rowSays(market, 'Tu parte ${pesos(62468)}'), isTrue);
       });
     },
   ),
@@ -2632,8 +2641,8 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.tap('Movimientos');
       await _splitWithAna(f, crepes);
       await f.step(
-        'Las crepes quedan divididas con Ana en partes iguales: la fila dice '
-        '«Dividido: tu parte…».',
+        'Las crepes quedan divididas con Ana en partes iguales: la fila lleva '
+        'la etiqueta «Tu parte \$11.750».',
       );
       await f.check('Ana te debe 11.750 por las crepes', () {
         final (Group group, SharedExpense split) = own.splitOf(crepes.id)!;
@@ -2698,7 +2707,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await _splitWithAna(f, crepes);
       await f.step(
         'Las crepes divididas con Ana: 11.750 cada uno de los 23.500; la '
-        'fila dice «Dividido: tu parte…».',
+        'fila lleva la etiqueta «Tu parte \$11.750».',
       );
       await _open(f, crepes);
       await f.type('Monto', '30000');
@@ -2717,10 +2726,10 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         },
       );
       await f.check(
-        'La fila dice «Dividido: tu parte ${pesos(15000)}», lo que la app '
-        'cuenta como tu gasto',
+        'La fila lleva «Tu parte ${pesos(15000)}», lo que la app cuenta como '
+        'tu gasto',
         () {
-          expect(f.screenText, contains('Dividido: tu parte ${pesos(15000)}'));
+          expect(_rowSays(crepes, 'Tu parte ${pesos(15000)}'), isTrue);
           // The crepes count 15.000 of yours instead of 11.750.
           expect(_spentIn(own, 2026, 10), spent - 11750 + 3250);
         },
@@ -2734,7 +2743,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.reveal(_row(crepes));
       await f.step(
         'Por montos, Ana pidió más: 20.000 para ella y 10.000 para ti. La '
-        'fila sigue marcada «Dividido: tu…», cortada por la cuenta.',
+        'etiqueta de la fila pasa a «Tu parte \$10.000».',
       );
       await _open(f, crepes);
       await f.type('Monto', '36000');
@@ -2742,14 +2751,14 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.reveal(_row(crepes));
       await f.step(
         'Con la propina, la fila pasa a −\$36.000: Ana sigue debiendo sus '
-        '20.000 y tu parte, que la línea corta, sube a 16.000.',
+        '20.000 y la etiqueta dice que tu parte sube a \$16.000.',
       );
       await f.check(
         'Por montos, lo de Ana no cambia y tu parte toma la diferencia',
         () {
           final SharedExpense split = own.splitOf(crepes.id)!.$2;
           expect(split.shares, <String, int>{meId: 16000, 'p-ana': 20000});
-          expect(f.screenText, contains('Dividido: tu parte ${pesos(16000)}'));
+          expect(_rowSays(crepes, 'Tu parte ${pesos(16000)}'), isTrue);
         },
       );
       await f.check('Lo que te deben en el grupo es 20.000', () {
@@ -2986,6 +2995,13 @@ Finder _row(Entry entry) => find.byWidgetPredicate(
 
 /// Opens [entry] from the list on screen.
 Future<void> _open(FlowRun f, Entry entry) => f.tapFound(_row(entry));
+
+/// Whether the row of [entry] on screen says [text], whole, in a line or a
+/// label of its own.
+bool _rowSays(Entry entry, String text) => find
+    .descendant(of: _row(entry), matching: find.text(text))
+    .evaluate()
+    .isNotEmpty;
 
 /// The field labelled [label] when it holds [text].
 Finder _fieldShows(String label, String text) => find.descendant(

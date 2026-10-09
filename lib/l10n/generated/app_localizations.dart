@@ -1652,6 +1652,18 @@ abstract class AppLocalizations {
   /// **'Programado'**
   String get scheduled;
 
+  /// No description provided for @transferArrived.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegaron {amount}'**
+  String transferArrived(String amount);
+
+  /// No description provided for @transferSent.
+  ///
+  /// In es, this message translates to:
+  /// **'Salieron {amount}'**
+  String transferSent(String amount);
+
   /// No description provided for @settingsProfile.
   ///
   /// In es, this message translates to:
@@ -6053,7 +6065,7 @@ abstract class AppLocalizations {
   /// No description provided for @splitYours.
   ///
   /// In es, this message translates to:
-  /// **'Dividido: tu parte {amount}'**
+  /// **'Tu parte {amount}'**
   String splitYours(String amount);
 
   /// No description provided for @sharedTitle.

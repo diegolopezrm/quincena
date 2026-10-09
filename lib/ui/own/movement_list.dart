@@ -98,6 +98,7 @@ class MovementRow extends StatelessWidget {
           ? entry.payee
           : (categoryName.isNotEmpty ? categoryName : l.kindExpense);
     }
+    // What it was and where: the line a narrow row may cut short.
     final List<String> detail = <String>[
       if (transfer)
         _transferKind(l, account, otherLeg)
@@ -106,13 +107,34 @@ class MovementRow extends StatelessWidget {
       else if (entry.payee.isNotEmpty)
         categoryName,
       if (!inAccount && !transfer) account.name,
-      if (entry.date.isAfter(endOfToday(own.today))) l.scheduled,
+    ]..removeWhere((String s) => s.isEmpty);
+    // What sets it apart, each in a label of its own under that line:
+    // cut with it, the mark is what went.
+    final Account? there = otherLeg == null
+        ? null
+        : _account(otherLeg.accountId);
+    final List<Widget> marks = <Widget>[
+      if (entry.date.isAfter(endOfToday(own.today))) _Tag(l.scheduled),
       if (own.splitOf(entry.id) case (
         _,
         final SharedExpense split,
       ) when own.ledger != null)
-        l.splitYours(pesos(own.ledger!.major(split.shares[meId] ?? 0))),
-    ]..removeWhere((String s) => s.isEmpty);
+        _Tag(
+          l.splitYours(pesos(own.ledger!.major(split.shares[meId] ?? 0))),
+          brand: true,
+        ),
+      // Between currencies the other side is another amount: what arrived
+      // for the money that left, what left for the money that arrived.
+      if (otherLeg != null && there != null && there.asset != account.asset)
+        _Tag(
+          (entry.amount < Decimal.zero ? l.transferArrived : l.transferSent)(
+            moneyText(
+              Money(otherLeg.amount.abs(), there.asset),
+              base: own.profile?.base,
+            ),
+          ),
+        ),
+    ];
 
     final Money money = Money(entry.amount, account.asset);
     final Money? base = account.asset == own.profile?.base
@@ -136,7 +158,8 @@ class MovementRow extends StatelessWidget {
         Text(
           title,
           style: context.type.titleSmall,
-          maxLines: large ? null : 1,
+          // A transfer's title is both accounts: two lines keep both.
+          maxLines: large ? null : (transfer ? 2 : 1),
           overflow: large ? null : TextOverflow.ellipsis,
         ),
         if (detail.isNotEmpty)
@@ -145,6 +168,11 @@ class MovementRow extends StatelessWidget {
             style: context.type.bodySmall,
             maxLines: large ? null : 1,
             overflow: large ? null : TextOverflow.ellipsis,
+          ),
+        if (marks.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Wrap(spacing: 6, runSpacing: 4, children: marks),
           ),
       ],
     );
@@ -196,6 +224,32 @@ class MovementRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A mark on a row, such as «Programado», in a soft pill of its own: never
+/// cut, and with large text it wraps like the rest.
+class _Tag extends StatelessWidget {
+  const _Tag(this.text, {this.brand = false});
+
+  final String text;
+
+  /// In the brand's green, for the person's own part of a shared expense.
+  final bool brand;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+    decoration: BoxDecoration(
+      color: brand ? context.colors.brandSoft : context.colors.sunken,
+      borderRadius: BorderRadius.circular(99),
+    ),
+    child: Text(
+      text,
+      style: context.type.labelMedium?.copyWith(
+        color: brand ? context.colors.brand : context.colors.inkSoft,
+      ),
+    ),
+  );
 }
 
 DateTime endOfToday(DateTime today) =>
