@@ -4349,13 +4349,23 @@ class AppLocalizationsEs extends AppLocalizations {
   String get splitGroupName => 'Nombre del grupo';
 
   @override
+  String splitGroupWith(String names) {
+    return 'Con $names';
+  }
+
+  @override
+  String splitGroupNameEmpty(String name) {
+    return 'Si lo dejas vacío: «$name»';
+  }
+
+  @override
   String get splitWhat => '¿Qué fue?';
 
   @override
   String get splitAmount => 'Valor total';
 
   @override
-  String get splitFromEntry => 'El del movimiento: no se cambia.';
+  String get splitFromEntry => 'Es lo que dice el movimiento.';
 
   @override
   String get splitPaidBy => '¿Quién pagó?';
@@ -4533,6 +4543,11 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String sharedReminderMessage(String name, String amount, String group) {
     return 'Hola, $name. Te escribo por los $amount de $group. Cuando puedas me los pasas. ¡Gracias!';
+  }
+
+  @override
+  String sharedLoanReminderMessage(String name, String amount) {
+    return 'Hola, $name. Te escribo por los $amount que te presté. Cuando puedas me los pasas. ¡Gracias!';
   }
 
   @override

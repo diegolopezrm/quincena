@@ -6734,6 +6734,18 @@ abstract class AppLocalizations {
   /// **'Nombre del grupo'**
   String get splitGroupName;
 
+  /// No description provided for @splitGroupWith.
+  ///
+  /// In es, this message translates to:
+  /// **'Con {names}'**
+  String splitGroupWith(String names);
+
+  /// No description provided for @splitGroupNameEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Si lo dejas vacío: «{name}»'**
+  String splitGroupNameEmpty(String name);
+
   /// No description provided for @splitWhat.
   ///
   /// In es, this message translates to:
@@ -6749,7 +6761,7 @@ abstract class AppLocalizations {
   /// No description provided for @splitFromEntry.
   ///
   /// In es, this message translates to:
-  /// **'El del movimiento: no se cambia.'**
+  /// **'Es lo que dice el movimiento.'**
   String get splitFromEntry;
 
   /// No description provided for @splitPaidBy.
@@ -7033,6 +7045,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Hola, {name}. Te escribo por los {amount} de {group}. Cuando puedas me los pasas. ¡Gracias!'**
   String sharedReminderMessage(String name, String amount, String group);
+
+  /// No description provided for @sharedLoanReminderMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'Hola, {name}. Te escribo por los {amount} que te presté. Cuando puedas me los pasas. ¡Gracias!'**
+  String sharedLoanReminderMessage(String name, String amount);
 
   /// No description provided for @sharedRecordPayment.
   ///

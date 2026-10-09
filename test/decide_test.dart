@@ -592,4 +592,26 @@ void main() {
     expect(screen(tester), contains('Juan'));
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('the reminder of a loan says the money was lent, not the name '
+      'twice', (tester) async {
+    final List<MethodCall> calls = <MethodCall>[];
+    await openPage(
+      tester,
+      (OwnController own) => SharedPage(own: own),
+      calls: calls,
+    );
+    await tapText(tester, 'Le presté');
+    await tester.enterText(find.widgetWithText(TextField, '¿A quién?'), 'Juan');
+    await tester.enterText(find.widgetWithText(TextField, 'Monto'), '100000');
+    await tapText(tester, 'Guardar');
+    await tapText(tester, 'Juan');
+    await tapText(tester, 'Recordar');
+    final String said = calls
+        .lastWhere((MethodCall c) => c.method == 'text')
+        .arguments
+        .toString();
+    expect(said, contains('por los ${pesos(100000)} que te presté'));
+    expect(said, isNot(contains('de Juan')));
+  });
 }

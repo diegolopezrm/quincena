@@ -319,13 +319,20 @@ class GroupPage extends StatelessWidget {
                                 children: <Widget>[
                                   if (t.to == meId)
                                     TextButton.icon(
+                                      // A loan's group has the person's
+                                      // name: said again it would repeat.
                                       onPressed: () => shareMessage(
                                         context,
-                                        l.sharedReminderMessage(
-                                          name(t.from),
-                                          amount(t.amount),
-                                          group.name,
-                                        ),
+                                        group.onlyLoans
+                                            ? l.sharedLoanReminderMessage(
+                                                name(t.from),
+                                                amount(t.amount),
+                                              )
+                                            : l.sharedReminderMessage(
+                                                name(t.from),
+                                                amount(t.amount),
+                                                group.name,
+                                              ),
                                       ),
                                       icon: const Icon(
                                         Glyph.shareNetwork,

@@ -1728,15 +1728,21 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.tap('Movimientos');
       await f.tap('Crepes & Waffles');
       await f.tap('Dividir este gasto');
+      final String last = own.groups.last.name;
       await f.page(
-        '«Dividir este gasto» abre «Dividir un gasto»: un grupo nuevo, con '
-        'el valor del movimiento fijo y «En partes iguales» elegido.',
+        '«Dividir este gasto» abre «Dividir un gasto» con el grupo de la '
+        'última división ya escogido, el valor del movimiento fijo y «En '
+        'partes iguales» elegido.',
         most: 2,
       );
+      await f.check('Abre con el grupo de la última vez', () {
+        expect(f.shows(last), isTrue);
+      });
+      await _newGroup(f);
       await f.tap('Guardar');
       await f.step(
-        'Sin nadie con quien dividir, «Guardar» avisa: «Agrega al menos a '
-        'una persona más.»',
+        'Con «Un grupo nuevo» y sin nadie con quien dividir, «Guardar» '
+        'avisa: «Agrega al menos a una persona más.»',
       );
       await f.check('No guarda una división solo contigo', () {
         expect(f.shows('Agrega al menos a una persona más.'), isTrue);
@@ -1813,15 +1819,12 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         expect(split.shares[meId], 8000);
         expect(split.othersPart, 15500);
       });
-      await f.check('El grupo y el gasto llevan los nombres escritos', () {
+      await f.check('El grupo y el gasto llevan los nombres escritos, y Juan, '
+          'sin parte, no queda en el grupo', () {
         final (Group group, SharedExpense split) = own.splitOf(crepes.id)!;
         expect(group.name, 'Ana y yo');
         expect(split.label, 'Crepes del viernes');
-        expect(group.members.map((Member m) => m.name), <String>[
-          '',
-          'Ana',
-          'Juan',
-        ]);
+        expect(group.members.map((Member m) => m.name), <String>['', 'Ana']);
       });
       await f.check(
         'Lo que puedes gastar no cambia: lo de Ana aún no llega',
@@ -2806,8 +2809,9 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         expect(split.othersPart, 11750);
         expect(group.balances['p-ana'], -11750);
       });
-      await f.check('Sin nombre escrito, el grupo toma el del comercio', () {
-        expect(own.splitOf(crepes.id)!.$1.name, 'Crepes & Waffles');
+      await f.check('Sin nombre escrito, el grupo se llama por sus personas, '
+          'no por el comercio: «Con Ana»', () {
+        expect(own.splitOf(crepes.id)!.$1.name, 'Con Ana');
       });
       await _open(f, crepes);
       await f.tap('Eliminar');
@@ -3240,11 +3244,19 @@ const String _deleteSplitBody =
     'También se quita su división: lo que te deben por este gasto deja de '
     'contar.';
 
+/// Chooses «Un grupo nuevo» in the split sheet, which opens on the group
+/// of the last split.
+Future<void> _newGroup(FlowRun f) async {
+  await f.tapFound(find.byType(DropdownButtonFormField<String?>).first);
+  await f.tapFound(find.text('Un grupo nuevo').last);
+}
+
 /// Splits [entry] in equal parts with Ana, in a group made for it, from
 /// the list of movements on screen.
 Future<void> _splitWithAna(FlowRun f, Entry entry) async {
   await _open(f, entry);
   await f.tap('Dividir este gasto');
+  if (f.own.groups.isNotEmpty) await _newGroup(f);
   await f.type('¿Con quién lo divides?', 'Ana');
   await f.tap('Guardar');
   await f.reveal(_row(entry));

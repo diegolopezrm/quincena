@@ -14,6 +14,7 @@ import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import 'amount_input.dart';
+import 'coming_days_page.dart' show listOf;
 
 /// A member's name for the screen: "Tú" for the person.
 String memberName(AppLocalizations l, Member? m) =>
@@ -86,7 +87,7 @@ class _SplitSheetState extends State<_SplitSheet> {
   /// The group it goes to; null makes a new one from [_names].
   late Group? _group = widget.group;
   late final TextEditingController _groupName = TextEditingController(
-    text: widget.groupName ?? widget.entry?.payee ?? '',
+    text: widget.groupName ?? '',
   );
   final TextEditingController _names = TextEditingController();
   late final TextEditingController _label = TextEditingController(
@@ -159,6 +160,14 @@ class _SplitSheetState extends State<_SplitSheet> {
     ]) {
       c.addListener(_changed);
     }
+    // A new split goes where the last one went, as with the same people
+    // most of the time; a name to suggest means a group of its own.
+    if (_group == null &&
+        existing == null &&
+        widget.group == null &&
+        widget.groupName == null) {
+      _group = _lastGroup();
+    }
     if (_in.isEmpty) _in.addAll(_members.map((Member m) => m.id));
     // Each part as it was, so a split by amounts opens with its amounts.
     if (existing case final SharedExpense x) {
@@ -186,6 +195,30 @@ class _SplitSheetState extends State<_SplitSheet> {
   TextEditingController _controller(String id) => _custom.putIfAbsent(
     id,
     () => TextEditingController()..addListener(_changed),
+  );
+
+  /// The group of the last split, loans aside.
+  Group? _lastGroup() {
+    Group? last;
+    DateTime? when;
+    for (final Group g in own.groups) {
+      if (g.onlyLoans) continue;
+      for (final SharedExpense x in g.expenses) {
+        if (when == null || x.date.isAfter(when)) {
+          when = x.date;
+          last = g;
+        }
+      }
+    }
+    return last;
+  }
+
+  /// The name of a new group left unnamed: its people, never the shop.
+  String _defaultName(AppLocalizations l) => l.splitGroupWith(
+    listOf(l, <String>[
+      for (final Member m in _members)
+        if (!m.isMe) m.name,
+    ]),
   );
 
   /// The people it is split among: the group's, or the person and the names
@@ -272,9 +305,13 @@ class _SplitSheetState extends State<_SplitSheet> {
         Group(
           id: 'group-${now.microsecondsSinceEpoch}',
           name: _groupName.text.trim().isEmpty
-              ? (_label.text.trim().isEmpty ? l.splitTitle : _label.text.trim())
+              ? _defaultName(l)
               : _groupName.text.trim(),
-          members: _members,
+          // Only who has a part: someone unticked was never in it.
+          members: <Member>[
+            for (final Member m in _members)
+              if (m.isMe || (shares[m.id] ?? 0) > 0) m,
+          ],
         );
     final SharedExpense? old =
         widget.expense ??
@@ -414,7 +451,13 @@ class _SplitSheetState extends State<_SplitSheet> {
                 TextField(
                   controller: _groupName,
                   textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(labelText: l.splitGroupName),
+                  decoration: InputDecoration(
+                    labelText: l.splitGroupName,
+                    // What it will be called if left empty.
+                    helperText: _members.length < 2
+                        ? null
+                        : l.splitGroupNameEmpty(_defaultName(l)),
+                  ),
                 ),
                 const SizedBox(height: 12),
               ],
