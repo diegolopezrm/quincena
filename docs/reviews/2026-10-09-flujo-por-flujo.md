@@ -1074,45 +1074,178 @@ Entre paréntesis, los flujos donde se ve.
   «Deshacer», o quitarlo de la hoja: hoy repite «Nueva» sin forma de
   volver. Si se queda, decir que los gastos siguen en el ejemplo.
 
+## Lo que dijo el primer experto
+
+El mismo 9 de octubre llegó la revisión de un experto que recorrió los 181
+flujos ([texto completo](2026-10-09-experto.md)). Sus afirmaciones sobre
+cómo funciona hoy la app se revisaron contra el código y las capturas: de
+34, 21 son ciertas, 12 lo son en parte y 1 no. Lo demás son propuestas, y
+el plan de abajo las recoge. Entre paréntesis, la sección de su texto.
+
+- **Cierto.** *Dos verdades sobre la misma plata (2 y 3).* Inicio dice
+  «Puedes gastar $7.961» y más abajo «Tu saldo mínimo estimado será
+  $157.961 el 12 de octubre». La diferencia es la reserva de ingresos
+  variables, $150.000, y la pantalla no lo dice. «¿Me alcanza?» ya lo
+  explica.
+- **Cierto.** *Inicio sin cuentas (5).* Sin cuentas, Inicio da $0, «Tus
+  cuentas» queda vacío y «+ Movimiento» muestra «Primero agrega una
+  cuenta.» sin botón. Una persona nueva no llega ahí, porque configurar
+  exige una cuenta: pasa al archivar o borrar todas.
+- **En parte.** *Configurar pide demasiado (6).* Lo obligatorio es un
+  nombre y una cuenta, unos 7 toques; la moneda y la forma de pago ya
+  vienen marcadas y lo demás es opcional. Pero todo lo opcional se muestra
+  en el camino, y el flujo 01-02 lo recorre completo a propósito.
+- **Cierto.** *El pago de la quincena no viene lleno (7).* «Registrar»
+  abre el ingreso con la primera cuenta, el monto vacío, sin categoría y
+  con la fecha de hoy, aunque el perfil sabe que son $2.400.000. El perfil
+  no guarda a qué cuenta llega el pago.
+- **No es así.** *Una captura clara pide varias acciones (9).* Una captura
+  clara ya tiene un solo botón principal, «Registrar gasto», más «Editar»
+  y el menú. Con más de 5 esperando, las que están listas son filas con un
+  solo chulo.
+- **En parte.** *Lo aprendido no resuelve lo que espera (10).* Sí lo
+  resuelve: las capturas de la misma tarjeta quedan listas para registrar
+  con un toque. Lo que falta es decirlo; el aviso solo habla de la regla.
+- **Cierto.** *Las transferencias propias quedan como gasto (11).*
+  «Transferiste $150.000 a tu Nequi» llega como un gasto sin cuenta.
+  Volverlo transferencia pide Editar, Transferencia y Desde. «¿Viene de
+  otra cuenta tuya?» solo aparece en lo que llega.
+- **Cierto.** *Nada ataja el pago de la tarjeta como gasto (12).* «Pago
+  Visa» se guarda como gasto sin mirar el nombre, la categoría ni el
+  monto. Solo el importador de extractos reconoce algunos pagos de tarjeta
+  por palabras, y no «Pago Visa».
+- **Cierto.** *La cuenta predeterminada es siempre la primera (15).* «+
+  Movimiento» toma la primera cuenta creada y no hay forma de
+  reordenarlas. No usa la última cuenta ni la del comercio.
+- **Cierto.** *Movimientos no tiene filtros (16).* Hay un solo campo que
+  busca en el nombre, la nota, la cuenta y la categoría, sin filtros. No
+  busca en el monto, así que «187400» no encuentra $187.400.
+- **Cierto.** *Las filas cortan lo importante (17).* La segunda línea
+  junta categoría, cuenta, «Programado» y «Tu parte» en un solo renglón y
+  corta justo la marca, como en «Servicios · Bancolombia · Progra…».
+- **Cierto.** *El patrimonio no suma lo que se ve (18 y 19).* «Les debes a
+  otras personas» y «Compras a cuotas» entran en la cifra pero solo
+  aparecen dentro de «¿De dónde sale?».
+- **En parte.** *Deuda negativa (20).* La fila y la página de la tarjeta
+  dicen «A favor $55.200». El signo menos solo sale en «Editar cuenta», y
+  ahí pasa algo peor: tocar el campo borra el signo y guardar vuelve deuda
+  el saldo a favor.
+- **En parte.** *Cambiar la moneda reinterpreta los números (21).* Solo
+  sin conexión y sin una tasa guardada entre las dos monedas: el pago y el
+  colchón conservan el número y cambian de moneda. Con tasa, convierte
+  bien, pero no lo dice.
+- **En parte.** *Binance no dice qué falta (24).* Sin una de las dos
+  llaves, «Conectar» no hace ni dice nada. «Solo lectura» sí está a la
+  vista sobre el formulario.
+- **En parte.** *Plan no está ordenado (25 y 26).* Plan ya va en cinco
+  grupos: el presupuesto, uno sin título con ingresos variables y viajes,
+  metas, pagos y herramientas. Las suscripciones van dentro de «Pagos
+  fijos» y los préstamos dentro de «Gastos compartidos».
+- **Cierto.** *Las metas no miran su fecha (27).* La fila dice «llega en
+  julio de 2027» aunque la fecha sea el 30 de abril, y no dice cuánto hace
+  falta al mes; solo el planificador de la conversación lo hace. La fecha
+  no dice el año.
+- **Cierto.** *Las metas no tienen «Abonar» (28).* Para abonar se
+  reescribe «¿Cuánto llevas?» con la suma hecha de cabeza, y lo ahorrado
+  no toca ninguna cuenta.
+- **En parte.** *Plata que sale sin cuenta (29).* Pagar una cuota, «Le
+  pagaste a Camilo», «Me prestaron» y el gasto de grupo que pagaste no
+  tocan ninguna cuenta, y «Puedes gastar» sube. «Le presté» sí pregunta de
+  qué cuenta salió, y un pago recibido se puede ligar a un movimiento.
+- **En parte.** *Repartir deja el día a día en cero (31).* Solo con muy
+  poca plata: con $7.961 para repartir, todo va a la meta y el día a día
+  queda vacío, porque el cálculo pone las metas primero.
+- **En parte.** *«¿Y si…?» infla las cifras (32).* No resta el gasto del
+  día a día. La pantalla dice qué cuenta, «tu pago esperado y lo
+  programado», pero no lo que deja fuera.
+- **Cierto.** *«Ya registrado» no dice con qué (35).* Solo dice «Ya
+  registrado». El cruce guarda un sí o un no, así que ninguna pantalla
+  puede mostrar con qué movimiento coincidió.
+- **Cierto.** *En los repetidos, el botón principal es el menos probable
+  (36).* El único botón a la vista es «No es repetido»; quitar el repetido
+  está en el menú, y no dice con qué movimiento choca.
+- **Cierto.** *Acciones que borran sin preguntar (37).* Borrar una regla,
+  descartar una captura, «No es del viaje», borrar un deseo o un cobro no
+  preguntan ni dejan deshacer. Borrar un movimiento pregunta, pero después
+  no se puede deshacer. «Descartar aprendizaje» no existe.
+- **Cierto.** *Ajustes mezcla demasiado (38).* Tiene siete secciones:
+  perfil, avisos, widget, captura automática con billeteras y Binance,
+  apariencia, tus datos con el ejemplo y «Borrar todo», y privacidad.
+- **Cierto.** *Tema e idioma sin título (39).* Son dos filas sin título
+  que empiezan con «Sistema».
+- **Cierto.** *«Importar un archivo» reemplaza todo sin decir qué trae
+  (40).* Está junto a «Importar extracto» y solo pregunta «¿Reemplazar
+  todo con este archivo?», aunque ya leyó el archivo.
+- **En parte.** *El código de 54 caracteres (41).* Se puede copiar con
+  «Copiar el código» y pegar en el otro teléfono, pero no hay QR ni hoja
+  de compartir.
+- **Cierto.** *Los choques entre dispositivos no se comparan (42).* Solo
+  se ve la versión que no quedó, con «Descartar» y «Traer de vuelta».
+  Elegir pierde una de las dos ediciones.
+- **Cierto.** *El engranaje de la conversación repite Ajustes (44).* En el
+  ejemplo abre «Idioma», «Apariencia» y «Empezar de nuevo», que ya están
+  en Ajustes, y cambiar el idioma ahí borra la conversación sin avisar.
+- **En parte.** *Las 30 preguntas se acaban con un error (46).* Al tocar
+  una sugerencia sin preguntas sale un aviso rojo. La página vacía sí
+  avisa antes, pero las sugerencias y la barra siguen activas.
+- **En parte.** *Las acciones sobre una respuesta gastan preguntas (47).*
+  Con tus cuentas, sí: «Guardar gasto», «Guardar este plan» o «Ya las
+  cancelé» descuentan una, y con la última pregunta el formulario llega
+  pero no se puede guardar. En el ejemplo no hay cupo.
+- **Cierto.** *Salir pierde la conversación (48).* Con tus cuentas, cada
+  visita crea una conversación nueva y las preguntas quedan gastadas. La
+  del ejemplo sí se conserva.
+- **Cierto.** *La conversación no dice en qué cuenta guarda (49).* El
+  gasto queda en la primera cuenta de la moneda de los totales y la
+  respuesta no la nombra.
+
 ## Plan para que Quincena sea completa, sencilla y automática
 
-El plan agrupa lo que sigue pendiente en siete frentes. Cada uno se puede
-construir y probar por separado, con sus flujos y comprobaciones, como las
-fases anteriores. Los números siguen los de la hoja de ruta de la app.
+El 9 de octubre llegó la primera revisión de un experto sobre los 181
+flujos. Su conclusión: Quincena ya hace casi todo, y el siguiente salto es
+que una persona nueva la pueda usar sin aprender cómo piensa por dentro.
+De sus 34 afirmaciones sobre cómo funciona hoy la app, al revisarlas
+contra el código, 21 resultaron ciertas, 12 lo son en parte y 1 no.
 
-El orden propuesto empieza por la confianza: en las cifras y en que cada
-peso quede en una cuenta. Una app de plata que no cuadra deja de usarse.
-Luego viene lo que ahorra trabajo todos los días.
+El plan sigue su orden: primero la confianza en las cifras y en que cada
+peso quede en una cuenta, después que la app haga el trabajo y sea fácil
+empezar, y al final el pulido. Cada fase se construye y se prueba con sus
+flujos, como las anteriores, con cinco reglas: si Quincena ya lo sabe, no
+lo pregunta; si lo supone, lo propone; si no lo sabe, pregunta solo eso;
+si mueve plata, muestra de dónde salió o adónde llegó; y si cambia una
+cifra, explica por qué.
 
-Antes de empezar conviene recoger las opiniones de esta revisión y mover
-el plan según lo que digan los expertos.
+Lo que digan los demás expertos en la página de la revisión puede mover el
+orden.
 
-### 27. Una cifra que cuadra
+### 27. Una sola verdad sobre la plata
 
-Tamaño: mediana. Hay pares de cifras que parecen contradecirse: «Puedes
-gastar $7.961» junto a un saldo mínimo de $157.961 que incluye la reserva
-y los sobres sin decirlo, un patrimonio que no suma lo que se ve en
-Cuentas, una deuda con signo menos arriba y en positivo en su fila, y
-dólares escritos con «$». Si una cifra no cuadra con lo que se ve, la
-persona deja de creerles a todas.
+Tamaño: grande. «Puedes gastar $7.961» y «Tu saldo mínimo estimado será
+$157.961» salen en la misma pantalla y las dos son ciertas: la diferencia
+es la reserva, y no se dice. El patrimonio no suma lo que se ve en
+Cuentas, editar una tarjeta con saldo a favor la vuelve deuda, y sin
+conexión ni tasa guardada, cambiar la moneda vuelve pesos en dólares. Si
+una cifra no cuadra con lo que se ve, la persona deja de creerles a todas.
 
-- En «Próximos días», decir cuánto del saldo mínimo es reserva o sobres, o
-  mostrar el mínimo de lo que se puede gastar, para que no parezca
-  contradecir a «Puedes gastar».
-- Que ningún cambio le dé otro sentido a una cifra sin avisar: cambiar la
-  moneda de los totales sin una tasa no puede volver pesos en dólares;
-  editar una tarjeta con saldo a favor no puede volverlo deuda; cambiar el
-  tipo de un gasto dividido avisa que se quita la división; lo de Binance
-  no se cuenta dos veces si quedan cuentas llevadas a mano.
-- En Cuentas, poner bajo las cuentas las filas «Te deben», «Les debes» y
-  «Compras a cuotas», para que lo que se ve sume el patrimonio.
-- Un solo criterio de signos: lo que se debe se escribe igual arriba y en
-  la fila de la tarjeta («Debes $844.800»), y un saldo a favor se dice «A
-  favor $55.200», nunca como deuda negativa.
-- Escribir «US$» o el código de la moneda cuando los totales no son en
-  pesos.
-- Comparar lo gastado en el mes con el mismo punto del mes anterior.
-- Después de importar un extracto, decir cómo cambió lo que se puede
+- Los mismos cuatro conceptos en toda la app, a la vista bajo la cifra de
+  Inicio y sin abrir «¿De dónde sale?»: «En tus cuentas», «Ya
+  comprometido», «Apartado por ti» y «Puedes gastar».
+- Inicio como un resumen de cuatro preguntas: cuánto puedo gastar, qué
+  necesita mi atención, qué viene y ¿me alcanza? Lo que pide atención pesa
+  menos que la cifra, y «¿Me alcanza?» queda a mano.
+- En «Próximos días» y «Próximos 30 días», «Lo mínimo que tendrás libre»
+  en vez del saldo mínimo, con lo apartado dicho aparte.
+- Patrimonio con lo que tienes y lo que debes a la vista, incluidas las
+  filas «Te deben», «Les debes» y «Compras a cuotas», para que lo que se
+  ve sume la cifra.
+- Un solo criterio de signos: «Debes $844.800» o «A favor $55.200»,
+  también en «Editar cuenta», donde hoy tocar el campo borra el signo y
+  guardar vuelve deuda el saldo a favor.
+- Sin tasa, cambiar la moneda de los totales no cambia los números: ofrece
+  mantener la moneda o escribir la tasa. Con tasa, dice que convirtió. Y
+  «US$» o el código de la moneda cuando los totales no son en pesos.
+- Comparar lo gastado en el mes con el mismo punto del mes anterior, y
+  después de importar un extracto, decir cómo cambió lo que se puede
   gastar.
 
 Sabremos que funcionó cuando cada cifra de Inicio, Cuentas y Plan se pueda
@@ -1120,82 +1253,116 @@ reconstruir con lo que está en pantalla, y los flujos lo comprueben.
 
 ### 28. La plata siempre queda en una cuenta
 
-Tamaño: mediana. Varias acciones de Plan mueven plata sin tocar ninguna
-cuenta: pagar en un gasto compartido, pagar una cuota, usar la reserva de
-impuestos, abonar a una meta, comprar un deseo. «Puedes gastar» no cambia
-hasta que la persona anota el gasto aparte, y si lo anota dos veces,
-cuenta doble.
+Tamaño: mediana. Pagar una cuota, saldar un gasto compartido o recibir un
+préstamo no toca ninguna cuenta: la deuda baja y «Puedes gastar» sube como
+si la plata no hubiera salido. Las metas no tienen «Abonar»: se reescribe
+lo que llevas. Y anotar «Pago Visa» como gasto lo cuenta dos veces, sin
+que nada lo ataje.
 
 - Toda acción que mueve plata pregunta de qué cuenta salió o a cuál llegó,
   con la más probable ya escogida, y crea el movimiento ligado o deja
-  escoger uno ya anotado.
-- «Abonar» en las metas, y al cerrar la quincena ofrecer pasar lo del
-  sobre de la meta a lo ahorrado.
+  escoger uno ya anotado, como ya hace «Le presté».
+- Antes de confirmar, decir qué va a pasar: «Visa deberá $3.721.599,
+  Bancolombia baja $338.327 y tu patrimonio no cambia».
+- Si un gasto parece el pago de una tarjeta tuya, por el nombre, la
+  categoría o el monto, preguntar «¿Estás pagando tu Visa?» y registrarlo
+  como pago.
+- «Abonar» en las metas, desde una cuenta, y al cerrar la quincena ofrecer
+  pasar lo del sobre de la meta a lo ahorrado.
 - «Lo compré» en los deseos, que abre el gasto ya lleno.
 - En una compra a cuotas con tarjeta, ofrecer anotar la compra si no está
-  en la tarjeta.
-- En un viaje, dividir con alguien desde los gastos del viaje, sin pasar
-  por Movimientos.
+  en la tarjeta; en un viaje, dividir con alguien desde los gastos del
+  viaje.
 
 Sabremos que funcionó cuando en los flujos de Plan cada acción cambie el
 saldo de una sola cuenta una sola vez, y «Puedes gastar» lo muestre
 enseguida.
 
-### 29. Todo se puede deshacer
+### 29. Metas y simulaciones en las que se puede confiar
 
-Tamaño: pequeña. Borrar un movimiento, borrar una regla, descartar una
-captura, dejar de leer un banco, sacar un gasto de un viaje, borrar un
-cobro o quitar un pago de una compra a cuotas pasan con un toque y sin
-vuelta atrás, mientras otras acciones parecidas sí ofrecen «Deshacer». La
-persona no sabe qué esperar.
+Tamaño: pequeña. Una meta para el 30 de abril dice «llega en julio de
+2027» y no avisa que no se llega ni cuánto hace falta; eso solo lo hace la
+conversación. «¿Y si…?» no resta el gasto del día a día ni dice que lo
+deja fuera, así que sus cifras salen infladas. Y repartir una quincena muy
+corta deja vacío el día a día para darle todo a una meta.
 
-- El mismo aviso con «Deshacer» durante unos segundos para todo lo que
-  borra, descarta o archiva, como el que ya tiene «Registrar».
-- Confirmar antes de lo que tiene mucho efecto, como dejar de leer una
-  app.
-- Un lugar para ver y recuperar lo archivado y lo descartado.
-- Cambiar el idioma o empezar de nuevo no borra la conversación sin
-  avisar.
+- En cada meta con fecha, decir si se llega a tiempo y, si no, cuánto hace
+  falta al mes, con «Usar $750.000 al mes», como ya hace el planificador
+  de la conversación. La fecha dice el año.
+- «¿Y si…?» cuenta el gasto habitual del día a día, o dice a la vista que
+  no lo incluye.
+- Al repartir, primero los pagos antes del próximo ingreso y un mínimo
+  para el día a día, después las metas; si no alcanza, decirlo y proponer
+  retomar la meta en la próxima quincena. Al copiar el reparto anterior,
+  ajustarlo a lo que hay y decir qué cambió.
 
-Sabremos que funcionó cuando ninguna acción que quita datos quede sin
-«Deshacer» o sin confirmación, y un flujo lo compruebe en cada pantalla.
+Sabremos que funcionó cuando ninguna meta con fecha quede sin decir si se
+llega, y los flujos del reparto comprueben que el día a día nunca queda en
+cero sin aviso.
 
 ### 30. Que la app haga el trabajo
 
-Tamaño: grande. La app ya sabe muchas cosas que todavía pregunta: cuánto
-te pagan y cuándo, la categoría de un comercio que ya vio, la cuenta que
-más usas, que «a tu Nequi» es una cuenta tuya, que un retiro en cajero es
-efectivo. Cada toque que se ahorra en Por revisar se ahorra todos los
-días.
+Tamaño: grande. La app ya sabe mucho de lo que todavía pregunta: cuánto te
+pagan y cuándo, la categoría de un comercio que ya vio, que «a tu Nequi»
+es una cuenta tuya. Lo que aprende ya deja listas las capturas que
+esperan, pero no lo dice. Cada toque que se ahorra en Por revisar se
+ahorra todos los días.
 
-- Aprender una vez y usarlo en todas partes, con cuidado: una regla nueva
-  ordena lo que ya espera y lo dice («y 2 más quedaron listas»); corregir
-  una categoría actualiza la regla; y una regla del banco no se aplica a
-  una tarjeta que la app no conoce.
-- Reconocer las transferencias propias: el nombre de la persona, «a tu
-  Nequi», el segundo aviso de una misma transferencia, el retiro en cajero
-  y el pago de la tarjeta.
-- Llenar de entrada lo que ya se sabe: el pago del día de pago, la
-  categoría del comercio, la última cuenta usada, la red de una billetera
-  por su dirección, la tasa de una compra a cuotas.
-- Al repartir una quincena nueva, ajustar el día a día a lo que hay y
-  decir qué cambió frente a la anterior.
+- Decir lo que se aprendió y lo que resolvió: «Aprendido. También quedaron
+  listos otros 2 movimientos». Corregir una categoría actualiza la regla,
+  y una regla del banco no se aplica a una tarjeta que la app no conoce.
+- Reconocer las transferencias propias con una sola confirmación: «a tu
+  Nequi», el nombre de la persona, el segundo aviso de una misma
+  transferencia, el retiro en cajero y el pago de la tarjeta.
+- Llenar de entrada lo que ya se sabe: «Registrar el pago del 30» abre con
+  el monto, la fecha y la categoría; la cuenta de un gasto sale del
+  comercio, si no de la última usada y si no de la más usada.
+- En Por revisar, cada tarjeta dice qué falta («Lista para registrar»,
+  «Falta elegir la cuenta», «Posible repetido») y espera una sola
+  respuesta. En los repetidos, «Quitar repetido» va primero y se dice con
+  qué movimiento choca.
+- Después de leer un extracto, un resumen como «4 nuevos, 2 ya estaban, 1
+  necesita revisión», con «Importar 4 nuevos»; y en cada «Ya registrado»,
+  con qué movimiento coincide.
 - Proponer los pagos fijos a partir del historial, empezando por arriendo,
-  servicios y créditos.
-- Reconocer el pago de un cliente o de un amigo cuando llega, y marcarlo
-  como cobrado.
-- Unir dos cambios del mismo movimiento hechos en dos dispositivos, campo
-  por campo, y preguntar solo cuando chocan.
+  servicios y créditos, y reconocer el pago de un cliente o de un amigo
+  cuando llega, para marcarlo como cobrado.
 
-Sabremos que funcionó cuando registrar lo que llega en un día normal tome
-un toque por pago, y los flujos de Por revisar lo midan.
+Sabremos que funcionó cuando en los flujos de Por revisar, confirmar una
+captura clara o una transferencia propia tome un toque, registrar la
+quincena un toque y corregir una cuenta desconocida dos, como pide el
+experto.
 
-### 31. Encontrar lo registrado
+### 31. Empezar sin aprender Quincena
 
-Tamaño: mediana. Movimientos solo busca por texto: no filtra por cuenta,
-categoría, tipo, fechas ni monto, y buscar «187400» no encuentra el gasto
-de $187.400. Las filas cortan justo lo que importa, como «Programado» o
-«Tu parte».
+Tamaño: mediana. Configurar exige poco, un nombre y una cuenta, pero
+muestra en el camino todo lo opcional cuando la persona aún no ha visto
+para qué sirve la app. Quien se queda sin cuentas ve $0 y secciones
+vacías, y «+ Movimiento» le responde «Primero agrega una cuenta.» como un
+error. Y un gasto normal pasa por tipo, monto, cuenta, categoría,
+comercio, fecha y nota.
+
+- Configurar en tres preguntas, cómo te llamas, cuándo te pagan y dónde
+  tienes tu plata, y llegar a Inicio con la cifra.
+- En Inicio, «Termina de preparar Quincena» con lo que falta, como los
+  pagos fijos o el colchón, que se va cuando está completo.
+- Sin cuentas, Inicio lleva a agregar la primera, y «+ Movimiento» la
+  ofrece en vez de mostrar un error.
+- Un gasto normal en tres pasos: monto, dónde y guardar. La categoría y la
+  cuenta vienen del comercio o de la última vez, y la fecha es hoy.
+- Empezar el formulario por lo que pasó: «Gasté plata», «Me entró plata» o
+  «Moví plata entre mis cuentas».
+
+Sabremos que funcionó cuando una persona nueva llegue a su cifra en Inicio
+con menos de 10 toques, y anotar un gasto normal tome 3 o 4, medidos en
+los flujos.
+
+### 32. Encontrar lo registrado
+
+Tamaño: mediana. Movimientos tiene un solo campo de búsqueda, sin filtros
+por cuenta, categoría, tipo, fechas ni monto, y buscar «187400» no
+encuentra el gasto de $187.400. Las filas cortan justo lo que importa,
+como «Programado» o «Tu parte».
 
 - Filtros por cuenta, categoría, tipo y fechas, búsqueda por monto, un
   botón para borrar la búsqueda y el total de lo encontrado.
@@ -1210,30 +1377,103 @@ de $187.400. Las filas cortan justo lo que importa, como «Programado» o
 Sabremos que funcionó cuando cualquier movimiento se encuentre con dos
 acciones, y los flujos de Movimientos lo comprueben.
 
-### 32. Palabras claras y ajustes en orden
+### 33. Plan, Ajustes y respaldos en orden
 
-Tamaño: pequeña. Algunas palabras confunden: dos cosas distintas se llaman
-«Colchón», «Importar un archivo» reemplaza todo y está junto a «Importar
-extracto», y hay errores que solo repiten la etiqueta del campo. Los
-respaldos piden códigos de 54 caracteres y no dicen qué traen.
+Tamaño: mediana. Plan junta doce bloques en cinco grupos, uno sin título;
+Ajustes mezcla perfil, avisos, widget, captura, apariencia y datos, y
+«Importar un archivo» reemplaza todo sin decir qué trae. Unir otro
+teléfono pide pegar o escribir un código de 54 caracteres, y un choque
+entre dos dispositivos se resuelve sin ver las dos versiones.
 
-- Nombres que dicen lo que hacen: «Fondo de emergencia en días»,
-  «Restaurar un respaldo» junto a «Exportar mis datos», títulos «Tema» e
-  «Idioma».
-- Errores que dicen qué falta y se van al corregir; ningún «Guardar» se
-  cierra sin guardar y sin decir por qué.
-- Antes de restaurar, mostrar qué trae el archivo y ofrecer guardar lo de
-  ahora; al borrar todo, recordar el código de respaldo.
-- Pasar los códigos con un QR o con la hoja de compartir, y exportar los
-  movimientos en CSV.
-- En Pregúntale a tu plata: botón «Volver a preguntar», un aviso claro
-  cuando se acaban las preguntas del día, que guardar un gasto no gaste
-  otra pregunta, y que la conversación no se pierda al volver a Inicio.
+- Plan por intención: «Organizar mi plata» (reparto, ingresos variables,
+  pagos fijos), «Lo que quiero lograr» (metas, viajes, lo quiero pero
+  después), «Lo que estoy pagando» (compras a cuotas, gastos compartidos,
+  préstamos) y «Herramientas» (próximos 30 días, ¿Y si…?, colchón en días,
+  cargos para revisar).
+- Ajustes en secciones: tu perfil, automatización, cuentas conectadas,
+  apariencia con «Tema» e «Idioma» por título, tus datos, ayuda y
+  privacidad, y al final borrar todo.
+- «Restaurar un respaldo» en vez de «Importar un archivo»: antes de
+  reemplazar dice qué trae y ofrece guardar lo de ahora. Al borrar todo,
+  recordar el código del respaldo.
+- Unir otro teléfono con un QR o con la hoja de compartir; escribir el
+  código queda de último recurso. Y exportar los movimientos en CSV.
+- Un cambio hecho en dos dispositivos se une campo por campo; si chocan,
+  se ven las dos versiones lado a lado y se ofrece combinarlas.
+- Nombres que dicen lo que hacen, como «Fondo de emergencia en días»;
+  errores que dicen qué falta y se van al corregir, como las dos llaves de
+  Binance; y ningún «Guardar» se cierra sin guardar y sin decir por qué.
+  En la conversación del ejemplo, quitar el engranaje que repite idioma y
+  apariencia.
 
 Sabremos que funcionó cuando los expertos marquen «Se entiende» en al
-menos 8 de cada 10 flujos de «Empieza aquí».
+menos 8 de cada 10 flujos de Plan y Ajustes.
 
-### 33. Prueba en teléfonos de verdad, también pequeños
+### 34. Pregúntale a tu plata sin castigo
+
+Tamaño: pequeña. Con tus cuentas, cada acción sobre una respuesta gasta
+otra pregunta, y con la última el formulario llega pero no se puede
+guardar. Salir de la conversación la pierde aunque las preguntas ya se
+gastaron, lo que se acaba se descubre por un aviso en rojo, y un gasto
+anotado así queda en la primera cuenta sin decirlo.
+
+- Guardar, confirmar o cambiar algo en una respuesta no gasta preguntas;
+  solo preguntar.
+- La conversación sigue ahí al volver, por lo menos hasta cerrar la app.
+- Decir desde antes cuántas preguntas quedan hoy y, si no quedan, apagar
+  las sugerencias con un estado, no con un error.
+- Antes de guardar un gasto, decir en qué cuenta queda y dejar cambiarla.
+- Un botón «Volver a preguntar».
+
+Sabremos que funcionó cuando los flujos de la conversación comprueben que
+solo preguntar descuenta y que nada se pierde al ir y volver.
+
+### 35. Todo se puede deshacer
+
+Tamaño: pequeña. Borrar una regla, descartar una captura, «No es del
+viaje», borrar un deseo o un cobro pasan con un toque y sin vuelta atrás,
+y borrar un movimiento pregunta pero después no se puede deshacer.
+«Deshacer» solo existe al registrar en Por revisar y en la conversación.
+La persona no sabe qué esperar.
+
+- El mismo aviso con «Deshacer» durante unos segundos para todo lo que
+  borra, descarta o archiva, como el que ya tiene «Registrar».
+- Confirmar antes de lo que tiene mucho efecto, como dejar de leer una
+  app.
+- Un lugar para ver y recuperar lo archivado y lo descartado.
+- Cambiar el idioma o empezar de nuevo no borra la conversación sin
+  avisar.
+
+Sabremos que funcionó cuando ninguna acción que quita datos quede sin
+«Deshacer» o sin confirmación, y un flujo lo compruebe en cada pantalla.
+
+### 36. Que se sienta liviana
+
+Tamaño: mediana. El verde hace de marca, de botón, de selección, de
+ingreso y de éxito a la vez; casi todo va en tarjetas con borde, y algunas
+pantallas piden desplazarse para una acción sencilla. Los formularios
+grandes, como una compra a cuotas o una meta, viven en hojas pequeñas.
+
+- Colores con un solo sentido: verde fuerte para la acción principal y lo
+  positivo, verde claro para lo seleccionado, ámbar para lo que pide
+  atención, rojo para el riesgo y la deuda vencida, y neutro para lo
+  secundario.
+- Tarjetas solo para decisiones, resúmenes, alertas e ideas; las listas y
+  los ajustes van sin caja.
+- Entre 15 y 20 % menos de espacio vertical en Por revisar, Plan, Ajustes,
+  Cuentas y Movimientos.
+- Hojas para decisiones rápidas y páginas completas para crear o editar
+  algo grande.
+- Vibración suave al confirmar, números que se animan al cambiar,
+  esqueletos mientras carga y el resultado en pantalla sin esperar a que
+  termine de guardar.
+- Revisar con VoiceOver y TalkBack los flujos de «Empieza aquí».
+
+Sabremos que funcionó cuando cada pantalla de «Empieza aquí» tenga una
+sola acción principal, y los expertos la califiquen al menos igual que
+hoy.
+
+### 37. Prueba en teléfonos de verdad, también pequeños
 
 Tamaño: pequeña. Los flujos corren en un simulador. Hay cosas que solo se
 prueban en un teléfono: avisos del banco con la app cerrada, el widget,

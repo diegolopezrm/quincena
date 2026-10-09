@@ -736,6 +736,13 @@ entiende. Lo que dejó esa corrida y el plan que se propone después están en
 - En el SE encontró cuatro cuadros que no cabían y no se podían desplazar.
   Los diez cuadros que piden un dato ahora se desplazan cuando no caben.
 
+El mismo día llegó la primera revisión de un experto sobre los 181 flujos
+([texto completo](reviews/2026-10-09-experto.md)). De sus 34 afirmaciones
+sobre cómo funciona hoy la app, 21 resultaron ciertas, 12 lo son en parte y
+1 no. El plan propuesto, de la fase 27 a la 37, sigue su orden: primero la
+confianza en las cifras, después que la app haga el trabajo y al final el
+pulido.
+
 ### 26. Lo que pidieron las tiendas
 
 **Estado:** construida, build 20 (1.1.0), enviada a las dos tiendas el 8
