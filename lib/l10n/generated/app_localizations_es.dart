@@ -3592,6 +3592,22 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String instalOnCardTitle(String card) {
+    return '¿La compra ya está en $card?';
+  }
+
+  @override
+  String instalOnCardBody(String amount, String card) {
+    return 'No encontramos una compra de $amount en $card. Lo que debes en la tarjeta la incluye solo si está anotada, y sus cuotas no se cuentan aparte.';
+  }
+
+  @override
+  String get instalOnCardAlready => 'Ya está anotada';
+
+  @override
+  String get instalOnCardWrite => 'Anotarla';
+
+  @override
   String instalPaymentAfter(String left) {
     return 'Después quedarán $left por pagar.';
   }

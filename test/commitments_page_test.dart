@@ -334,6 +334,26 @@ void main() {
         cash: '2.200.000',
         account: 'Visa',
       );
+      // Not on the card yet: nothing would count it, so it is offered.
+      expect(find.text('¿La compra ya está en Visa?'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'No encontramos una compra de ${pesos(2400000)} en Visa.',
+        ),
+        findsOneWidget,
+      );
+      await tapText(tester, 'Anotarla');
+      expect(find.widgetWithText(TextField, '2.400.000'), findsOneWidget);
+      expect(find.widgetWithText(TextField, 'Nevera'), findsOneWidget);
+      await tester.ensureVisible(find.widgetWithText(FilledButton, 'Guardar'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Guardar'));
+      await settle(tester);
+      final Entry bought = own.snapshot!.entries.singleWhere(
+        (Entry e) => e.payee == 'Nevera',
+      );
+      expect(bought.kind, EntryKind.expense);
+      expect(bought.amount.abs(), Decimal.parse('2400000'));
+      expect(own.snapshot!.account(bought.accountId)!.name, 'Visa');
       final Instalments fridge = own.instalments.single;
       expect(fridge.totalKnown, isFalse);
       expect(find.text('estimado'), findsOneWidget);
@@ -359,6 +379,27 @@ void main() {
       await settle(tester);
       await tapText(tester, 'Borrar compra');
       expect(own.instalments, isEmpty);
+    });
+
+    testWidgets('a purchase already on the card is not asked for', (
+      tester,
+    ) async {
+      final OwnController own = await openPage(
+        tester,
+        (OwnController own) => InstalmentsPage(own: own),
+        data: (QuincenaStore store, Account bank, Account card) =>
+            store.addEntry(
+              accountId: card.id,
+              amount: Decimal.parse('2400000'),
+              kind: EntryKind.expense,
+              date: DateTime(2026, 10, 1, 18),
+              category: 'shopping',
+              payee: 'Alkosto',
+            ),
+      );
+      await fill(tester, name: 'Nevera', rate: '1,8', account: 'Visa');
+      expect(own.instalments, hasLength(1));
+      expect(find.text('¿La compra ya está en Visa?'), findsNothing);
     });
 
     testWidgets('without rate or instalment there is no total to invent', (

@@ -4,6 +4,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../capture/merchants.dart';
 import '../../data/ledger.dart';
 import '../../domain/commitments.dart';
 import '../../domain/records.dart';
@@ -17,6 +18,7 @@ import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
 import 'amount_input.dart';
+import 'entry_sheet.dart';
 import 'look.dart';
 
 String rateKindLabel(AppLocalizations l, RateKind kind) => switch (kind) {
@@ -819,6 +821,58 @@ class _PaymentDialogState extends State<_PaymentDialog> {
 }
 
 /// Adds a purchase in instalments, or changes [plan]. Its payments stay.
+/// Asks whether [plan]'s purchase is written on [card], and opens it
+/// written when it is not: the card owes it whole from the day of the
+/// purchase, and its instalments are how the card bills it.
+Future<void> offerCardPurchase(
+  BuildContext context, {
+  required OwnController own,
+  required Instalments plan,
+  required Account card,
+}) async {
+  final AppLocalizations l = context.l10n;
+  final Ledger? ledger = own.ledger;
+  if (ledger == null) return;
+  final String price = pesos(ledger.major(plan.principal));
+  final bool? write = await showDialog<bool>(
+    context: context,
+    builder: (BuildContext context) => AlertDialog(
+      scrollable: true,
+      title: Text(l.instalOnCardTitle(card.name)),
+      content: Text(l.instalOnCardBody(price, card.name)),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(l.instalOnCardAlready),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          child: Text(l.instalOnCardWrite),
+        ),
+      ],
+    ),
+  );
+  if (write != true || !context.mounted) return;
+  // Bought about a month before the first instalment, and not ahead.
+  final DateTime bought = DateTime(
+    plan.firstDue.year,
+    plan.firstDue.month - 1,
+    plan.firstDue.day,
+  );
+  await showEntrySheet(
+    context,
+    own: own,
+    kind: EntryKind.expense,
+    draft: EntryDraft(
+      amount: Decimal.parse('${ledger.major(plan.principal)}'),
+      payee: plan.name,
+      category: knownCategory(plan.name),
+      date: bought.isAfter(own.today) ? own.today : bought,
+      accountId: card.id,
+    ),
+  );
+}
+
 Future<void> showInstalmentSheet(
   BuildContext context, {
   required OwnController own,
@@ -932,26 +986,57 @@ class _InstalmentSheetState extends State<_InstalmentSheet> {
     final NavigatorState navigator = Navigator.of(context);
     final Instalments? old = widget.plan;
     final int? instalment = _minor(_instalment);
-    await own.saveInstalments(
-      Instalments(
-        id: old?.id ?? 'instalments-${DateTime.now().microsecondsSinceEpoch}',
-        name: _name.text.trim(),
-        principal: principal,
-        count: count,
-        firstDue: _firstDue,
-        rate: parseAmount(_rate.text)?.toDouble(),
-        rateKind: _rateKind,
-        instalment: instalment == null || instalment <= 0 ? null : instalment,
-        fee: _minor(_fee),
-        cashPrice: switch (_minor(_cash)) {
-          final int c when c > 0 => c,
-          _ => null,
-        },
-        accountId: _accountId,
-        payments: old?.payments ?? const <(DateTime, int)>[],
-      ),
+    final Instalments plan = Instalments(
+      id: old?.id ?? 'instalments-${DateTime.now().microsecondsSinceEpoch}',
+      name: _name.text.trim(),
+      principal: principal,
+      count: count,
+      firstDue: _firstDue,
+      rate: parseAmount(_rate.text)?.toDouble(),
+      rateKind: _rateKind,
+      instalment: instalment == null || instalment <= 0 ? null : instalment,
+      fee: _minor(_fee),
+      cashPrice: switch (_minor(_cash)) {
+        final int c when c > 0 => c,
+        _ => null,
+      },
+      accountId: _accountId,
+      payments: old?.payments ?? const <(DateTime, int)>[],
+      paymentEntries: old?.paymentEntries ?? const <String?>[],
     );
+    await own.saveInstalments(plan);
     navigator.pop();
+    // On a card the purchase is what the card owes: if it is not written
+    // on the card, nothing counts it, so offer to write it.
+    final Account? card = own.snapshot?.account(_accountId ?? '');
+    final Ledger? ledger = _ledger;
+    final BuildContext page = navigator.context;
+    if (ledger != null &&
+        page.mounted &&
+        heldByCard(card) &&
+        old?.accountId != _accountId &&
+        !_onCard(plan, card!, ledger)) {
+      await offerCardPurchase(page, own: own, plan: plan, card: card);
+    }
+  }
+
+  /// Whether [card] has an expense of about [plan]'s price since a little
+  /// before its first instalment: the purchase, already written.
+  bool _onCard(Instalments plan, Account card, Ledger ledger) {
+    final DateTime since = DateTime(
+      plan.firstDue.year,
+      plan.firstDue.month - 3,
+      plan.firstDue.day,
+    );
+    return (own.snapshot?.entries ?? const <Entry>[]).any(
+      (Entry e) =>
+          e.accountId == card.id &&
+          e.kind == EntryKind.expense &&
+          !e.date.isBefore(since) &&
+          (ledger.minor(e.amount.abs().toDouble()) - plan.principal).abs() *
+                  50 <=
+              plan.principal,
+    );
   }
 
   Widget _amountField(

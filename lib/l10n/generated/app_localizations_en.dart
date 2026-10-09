@@ -3597,6 +3597,22 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String instalOnCardTitle(String card) {
+    return 'Is the purchase on $card yet?';
+  }
+
+  @override
+  String instalOnCardBody(String amount, String card) {
+    return 'We didn\'t find a purchase of $amount on $card. What you owe on the card includes it only once it is written down, and its instalments are not counted apart.';
+  }
+
+  @override
+  String get instalOnCardAlready => 'It\'s there';
+
+  @override
+  String get instalOnCardWrite => 'Write it down';
+
+  @override
   String instalPaymentAfter(String left) {
     return 'After it, $left will be left to pay.';
   }

@@ -5600,6 +5600,30 @@ abstract class AppLocalizations {
   /// **'Esta compra está en {card}: la cuota sale cuando pagas la tarjeta.'**
   String instalPaidWithCard(String card);
 
+  /// No description provided for @instalOnCardTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿La compra ya está en {card}?'**
+  String instalOnCardTitle(String card);
+
+  /// No description provided for @instalOnCardBody.
+  ///
+  /// In es, this message translates to:
+  /// **'No encontramos una compra de {amount} en {card}. Lo que debes en la tarjeta la incluye solo si está anotada, y sus cuotas no se cuentan aparte.'**
+  String instalOnCardBody(String amount, String card);
+
+  /// No description provided for @instalOnCardAlready.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya está anotada'**
+  String get instalOnCardAlready;
+
+  /// No description provided for @instalOnCardWrite.
+  ///
+  /// In es, this message translates to:
+  /// **'Anotarla'**
+  String get instalOnCardWrite;
+
   /// No description provided for @instalPaymentAfter.
   ///
   /// In es, this message translates to:
