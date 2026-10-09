@@ -1728,6 +1728,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get closeSeeDays => 'Ver los próximos 30 días';
 
   @override
+  String get closeTryMove => 'Probar mover un cobro';
+
+  @override
   String closeActionRunsOut(String date) {
     return 'El $date te quedarías sin plata. Mira qué cobro podrías mover de fecha.';
   }

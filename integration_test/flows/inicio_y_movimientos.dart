@@ -313,22 +313,13 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.check('Aparece el aviso de que solo es una prueba', () {
         expect(f.shows('Quitar lo que pruebas'), isTrue);
       });
-      // The 5th, the Televisor's day: what is sure stays, and what is tried
-      // gets its instalment back.
-      final ProjectedDay day5 = projection.days.firstWhere(
-        (ProjectedDay d) => d.date == DateTime(2026, 10, 5),
-      );
-      final int tv = -day5.events
-          .firstWhere((ProjectedEvent e) => e.label == 'Televisor')
-          .amount;
-      final String tried =
-          'Quedan ${_money(own, day5.sure)} · '
-          '${_money(own, projection.free(day5))} libres · con lo que pruebas, '
-          '${_money(own, day5.likely + tv)}';
-      // The 5th is further down the list: it is built once in view.
-      await f.reveal(find.text(weekdayDayMonth(DateTime(2026, 10, 5))));
-      await f.check('El 5 oct dice «$tried»: la cuota vuelve al saldo', () {
-        expect(f.screenText, contains(tried));
+      // The Televisor on its new day, said as moved; on the 5th, its old
+      // day, it is listed no more.
+      const String tried = 'Televisor, movido del 5 oct';
+      await f.reveal(find.text(tried));
+      await f.check('El 14 dice «$tried» y el 5 ya no lista el Televisor', () {
+        expect(f.shows(tried), isTrue);
+        expect(f.shows('Televisor'), isFalse);
       });
       await f.check('Probar otra fecha no cambia los pagos ni la cifra', () {
         expect(_fixed(own), fixed);
@@ -348,15 +339,6 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         'es lo que esperas recibir',
         () => expect(f.screenText, isNot(contains('con lo que pruebas'))),
       );
-      await f.tap('¿Me alcanza?');
-      await f.step(
-        'El botón «¿Me alcanza?» de arriba convierte la página en la prueba '
-        'de una compra: pide el precio, qué es y cuándo.',
-      );
-      await f.check('La página pasa a probar una compra', () {
-        expect(f.shows('¿Cuánto cuesta?'), isTrue);
-        expect(f.shows('Después del pago'), isTrue);
-      });
       await f.tapTip('Cierre de la quincena');
       await f.step(
         'El ícono de recibo, arriba a la derecha, abre «Cierre de la '
@@ -364,6 +346,18 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       );
       await f.check('Abre «Cierre de la quincena»', () {
         expect(f.shows('Qué cambió'), isTrue);
+      });
+      await f.back();
+      await f.tap('¿Me alcanza?');
+      await f.step(
+        'El botón «¿Me alcanza?» de arriba convierte la página en la prueba '
+        'de una compra: pide el precio, qué es y cuándo.',
+      );
+      await f.check('La página pasa a probar una compra, sin el ícono del '
+          'cierre, que nada tiene que ver con ella', () {
+        expect(f.shows('¿Cuánto cuesta?'), isTrue);
+        expect(f.shows('Después del pago'), isTrue);
+        expect(find.byTooltip('Cierre de la quincena'), findsNothing);
       });
     },
   ),
@@ -1292,12 +1286,13 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
           expect(f.screenText, isNot(contains('Puedes gastar hasta el pago')));
         },
       );
-      // The second «Ver los próximos 30 días», under the action.
-      await f.tap('Ver los próximos 30 días');
+      // Under the action, its own button: to try moving a charge.
+      await f.tap('Probar mover un cobro');
       await f.top();
       await f.step(
-        '«Ver los próximos 30 días» de la acción abre la gráfica: el jueves 8 '
-        'lleva la marca «Sin plata» y la matrícula, su ícono de calendario.',
+        '«Probar mover un cobro», bajo la acción, abre la gráfica: el jueves '
+        '8 lleva la marca «Sin plata» y la matrícula, su ícono de calendario '
+        'para moverla en la simulación.',
       );
       await f.check('El 8 oct está marcado «Sin plata»', () {
         expect(f.shows('Próximos 30 días'), isTrue);
@@ -1307,19 +1302,20 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.tapFound(find.byTooltip('Mover en la simulación').first);
       await _pickDay(f, 16);
       await f.top();
-      final ProjectedDay on8 = own.projection!.days.firstWhere(
-        (ProjectedDay d) => d.date == day8,
-      );
-      final String tried =
-          'Quedan ${_money(own, on8.sure)} · con lo que pruebas, '
-          '${_money(own, on8.sure + 2000000)}';
       await f.step(
-        'Con la matrícula movida al 16, después del pago, el 8 dice «con lo '
-        'que pruebas, \$1.740.000», pero arriba sigue «te quedarías sin '
-        'plata».',
+        'Con la matrícula movida al 16, después del pago, arriba ya no dice '
+        'que te quedas sin plata: lo mínimo libre antes del pago cuenta la '
+        'prueba.',
       );
-      await f.check('El 8 oct dice «$tried»', () {
-        expect(f.screenText, contains(tried));
+      await f.check('Con la prueba, el 8 ya no es un día sin plata', () {
+        expect(f.shows('El 8 oct te quedarías sin plata.'), isFalse);
+        expect(f.shows('No te quedas sin plata en estos 30 días.'), isTrue);
+      });
+      const String moved = 'Matrícula, movido del 8 oct';
+      await f.reveal(find.text(moved));
+      await f.step('El 16 la lista una sola vez: «$moved».');
+      await f.check('El 16 dice «$moved»', () {
+        expect(f.shows(moved), isTrue);
       });
       await f.check('La prueba no cambia la fecha de la matrícula', () {
         expect(_entry(own, 'Matrícula').date, fee.date);

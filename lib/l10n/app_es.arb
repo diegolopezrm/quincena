@@ -551,6 +551,7 @@
   "closeShort": "Te faltan {amount} para llegar al pago",
   "@closeShort": {"placeholders": {"amount": {"type": "String"}}},
   "closeSeeDays": "Ver los próximos 30 días",
+  "closeTryMove": "Probar mover un cobro",
   "closeActionRunsOut": "El {date} te quedarías sin plata. Mira qué cobro podrías mover de fecha.",
   "@closeActionRunsOut": {"placeholders": {"date": {"type": "String"}}},
   "closeActionTight": "El {date} quedarías bajo tu colchón. Mira qué cobro podrías mover de fecha.",

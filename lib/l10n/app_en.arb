@@ -436,6 +436,7 @@
   "closeFree": "You can spend until payday: {amount}",
   "closeShort": "You're {amount} short of payday",
   "closeSeeDays": "See the next 30 days",
+  "closeTryMove": "Try moving a charge",
   "closeActionRunsOut": "On {date} you'd run out of money. See whether a charge could move to another day.",
   "@closeActionRunsOut": {"placeholders": {"date": {"type": "String"}}},
   "closeActionTight": "On {date} you'd dip below your buffer. See whether a charge could move to another day.",

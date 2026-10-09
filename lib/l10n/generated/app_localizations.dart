@@ -2666,6 +2666,12 @@ abstract class AppLocalizations {
   /// **'Ver los próximos 30 días'**
   String get closeSeeDays;
 
+  /// No description provided for @closeTryMove.
+  ///
+  /// In es, this message translates to:
+  /// **'Probar mover un cobro'**
+  String get closeTryMove;
+
   /// No description provided for @closeActionRunsOut.
   ///
   /// In es, this message translates to:

@@ -213,16 +213,18 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
             _trying ? l.buyTitle : l.comingTitle,
             style: context.type.titleLarge,
           ),
+          // Trying a purchase has nothing to do with the period's close.
           actions: <Widget>[
-            IconButton(
-              tooltip: l.comingClose,
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (BuildContext context) => ClosePage(own: own),
+            if (!_trying)
+              IconButton(
+                tooltip: l.comingClose,
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (BuildContext context) => ClosePage(own: own),
+                  ),
                 ),
+                icon: const Icon(Glyph.receipt),
               ),
-              icon: const Icon(Glyph.receipt),
-            ),
           ],
         ),
         body: Center(

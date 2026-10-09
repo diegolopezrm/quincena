@@ -300,10 +300,12 @@ class ClosePage extends StatelessWidget {
             ),
             null => l.closeActionNone,
           }, style: context.type.bodyMedium),
+          // Not the same button as the card above: it is about moving a
+          // charge, which those days let try.
           if (close.action == CloseAction.tightDay)
             Align(
               alignment: Alignment.centerLeft,
-              child: TextButton(onPressed: days, child: Text(l.closeSeeDays)),
+              child: TextButton(onPressed: days, child: Text(l.closeTryMove)),
             ),
           if (close.actionCategory case final Category category)
             Align(

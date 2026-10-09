@@ -1726,6 +1726,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get closeSeeDays => 'See the next 30 days';
 
   @override
+  String get closeTryMove => 'Try moving a charge';
+
+  @override
   String closeActionRunsOut(String date) {
     return 'On $date you\'d run out of money. See whether a charge could move to another day.';
   }
