@@ -23,8 +23,15 @@ void registerLicenses() {
 
 /// What the Open Database License asks of anyone who shows data from
 /// OpenStreetMap: credit, and where the license and the data can be found.
+/// In Spanish first, as the app speaks, and in English: the page is not
+/// the app's own and has no language to follow.
 const String _osm =
     '© OpenStreetMap contributors (colaboradores de OpenStreetMap).\n\n'
+    'Cuando un aviso de pago no dice el comercio, Quincena sugiere los '
+    'comercios cercanos a donde estaba el teléfono, con datos de '
+    'OpenStreetMap a través de Photon, un servicio de búsqueda de Komoot. '
+    'Los datos están disponibles bajo la Open Database License (ODbL) '
+    '1.0.\n\n'
     'When a payment notification does not name the shop, Quincena suggests '
     'the shops near where the phone was, found in OpenStreetMap data '
     'through Photon, a search service run by Komoot. The data is available '
