@@ -2,6 +2,8 @@
 // says it before saving, with the account the person most likely paid from
 // already chosen, and the answer names it. Nothing goes silently into the
 // first account.
+import 'dart:convert';
+
 import 'package:dartantic_ai/dartantic_ai.dart' as dartantic;
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
@@ -10,7 +12,10 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/agent/catalog.dart';
 import 'package:quincena/agent/prompt.dart';
+import 'package:quincena/agent/receipts.dart';
+import 'package:quincena/agent/scripted_agent.dart';
 import 'package:quincena/agent/tools.dart';
+import 'package:quincena/data/category.dart';
 import 'package:quincena/data/seed.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
@@ -188,6 +193,37 @@ void main() {
     expect(bank.id, isNot(kept.id));
   });
 
+  test('the answer to a saved expense names its account, in both '
+      'languages', () {
+    final Map<Object?, Object?> saved = <String, Object?>{
+      'recorded': true,
+      'account': 'Cuenta de nómina',
+      'freeUntilPayday': 1000000,
+      'nextPayday': '2026-10-15',
+    };
+    String said(String language) => jsonEncode(
+      Receipts(
+        language: language,
+      ).expense(52000, Category.restaurants, saved).components,
+    );
+    expect(
+      said('es'),
+      contains('Listo: \$52.000 en restaurantes, desde Cuenta de nómina'),
+    );
+    expect(
+      said('es'),
+      contains('Ahora puedes gastar \$1.000.000 hasta el 15 de octubre.'),
+    );
+    Intl.defaultLocale = 'en_US';
+    expect(said('en'), contains(r'Done: $52,000 under'));
+    expect(said('en'), contains('from Cuenta de nómina'));
+    // The script says it the same way.
+    expect(
+      expenseTitle(r'$52.000', 'restaurantes', from: 'Nequi'),
+      r'Listo: $52.000 en restaurantes, desde Nequi',
+    );
+  });
+
   test('the model is told to put the account in the form', () {
     final String told = quincenaPrompt(
       quincenaCatalog,
@@ -196,5 +232,6 @@ void main() {
     ).replaceAll(RegExp(r'\s+'), ' ');
     expect(told, contains('an AccountChoice when you have expense_accounts'));
     expect(told, contains('call expense_accounts for the form'));
+    expect(told, contains('The app saves the form itself'));
   });
 }

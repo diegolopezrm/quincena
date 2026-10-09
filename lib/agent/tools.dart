@@ -563,11 +563,12 @@ List<Tool> accountTools(
   Tool<Map<String, dynamic>>(
     name: 'record_expense',
     description:
-        'Records an expense the person confirmed, dated today. Call it only '
-        'after a save_expense event arrives, never on the first request. '
-        'Pass the id the event carries: the person can edit the form and '
-        'save again, and the same id corrects that expense instead of '
-        'adding another. Returns the account it was taken from, to name '
+        'Records an expense the person confirmed, dated today. The app '
+        'saves an expense form itself when the person taps it; call this '
+        'only if a save_expense event reaches you, never on the first '
+        'request. Pass the id the event carries: the person can edit the '
+        'form and save again, and the same id corrects that expense instead '
+        'of adding another. Returns the account it was taken from, to name '
         'when you confirm, what can be spent until payday afterwards and '
         'the month so far in that category.',
     inputSchema: S.object(

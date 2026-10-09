@@ -26,16 +26,10 @@ class ModelSource implements AnswerSource {
     required this.sink,
     String language = 'es',
     bool own = false,
-  }) : _history = <ChatMessage>[
-         ChatMessage.system(
-           quincenaPrompt(
-             quincenaCatalog,
-             ledger,
-             language: language,
-             own: own,
-           ),
-         ),
-       ] {
+  }) : _ledger = ledger,
+       _own = own,
+       _language = language,
+       _history = <ChatMessage>[_told(ledger, language, own)] {
     _events = _chunks.stream
         .transform(const A2uiParserTransformer())
         .listen(
@@ -49,9 +43,21 @@ class ModelSource implements AnswerSource {
 
   final ModelClient client;
   final AnswerSink sink;
+  final Ledger _ledger;
+  final bool _own;
+  String _language;
+
+  /// What the model has read: what it is told first, then each message and
+  /// its reply.
   final List<ChatMessage> _history;
   final StreamController<String> _chunks = StreamController<String>();
   late final StreamSubscription<GenerationEvent> _events;
+
+  /// What the model is told before the first message, in [language].
+  static ChatMessage _told(Ledger ledger, String language, bool own) =>
+      ChatMessage.system(
+        quincenaPrompt(quincenaCatalog, ledger, language: language, own: own),
+      );
 
   /// Every reply the model wrote, exactly as it wrote it, for debugging and
   /// for the recording tool.
@@ -79,6 +85,25 @@ class ModelSource implements AnswerSource {
     _history
       ..add(ChatMessage.user(text))
       ..add(ChatMessage.model(reply.toString()));
+  }
+
+  /// Told from the next message on to write in the new language: what it
+  /// already said stays as it was said.
+  @override
+  set language(String value) {
+    if (value == _language) return;
+    _language = value;
+    _history[0] = _told(_ledger, value, _own);
+  }
+
+  /// Adds to what the model has read an exchange the phone answered without
+  /// it: [said], what the person did on one of its surfaces, as genui
+  /// encoded it, and [answered], the answer the phone gave, written as the
+  /// model writes one. A question after it then starts from there.
+  void remember(String said, String answered) {
+    _history
+      ..add(ChatMessage.user(said))
+      ..add(ChatMessage.model(answered));
   }
 
   @override

@@ -226,10 +226,10 @@ How to answer the questions this app is for:
   starts as monthly), arrival bound to arrivalMonth, onTime to arrivesBy
   and needed to monthlyNeeded over those paths, spendable to
   freeUntilPayday and payday to nextPayday. Right after it, an ActionButton
-  whose event save_goal_plan carries /goal/monthly: the GoalPlanner alone
-  saves nothing. When that event arrives, call the save_goal_plan tool if
-  you have it, or else say the sample account keeps nothing; a plan moves
-  no money.
+  whose event save_goal_plan carries /goal/monthly as monthly and the
+  goal's name as goal: the GoalPlanner alone saves nothing. When that event
+  reaches you, call the save_goal_plan tool if you have it, or else say the
+  sample account keeps nothing; a plan moves no money.
 - Subscriptions: call subscriptions. Show a SubscriptionList whose rows are
   the template {"componentId": "row", "path": "/subscriptions"}, with a
   SubscriptionRow "row" bound to the relative paths name, price, lastUsed and
@@ -273,8 +273,9 @@ How to answer the questions this app is for:
   understood, a check on the amount ({"call": "numeric", "args": {"value":
   {"path": ...}, "min": 1}}), and an ActionButton whose event is
   save_expense with amount, category, account and note bound to the form's
-  paths. When save_expense arrives, call record_expense with what it
-  carries and confirm, naming the account it returns.''',
+  paths. The app saves the form itself when the person taps it, and says in
+  which account it went. If save_expense reaches you, call record_expense
+  with what it carries and confirm, naming the account it returns.''',
   '''
 When an event named "ask" arrives, answer its question as if it had been
 typed.

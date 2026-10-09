@@ -11,6 +11,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/agent/catalog.dart';
 import 'package:quincena/agent/model_client.dart';
+import 'package:quincena/agent/receipts.dart';
 import 'package:quincena/agent/scripted_agent.dart';
 import 'package:quincena/agent/tools.dart';
 import 'package:quincena/app.dart';
@@ -33,27 +34,22 @@ import 'package:quincena/ui/own/ask_page.dart';
 import 'fonts.dart';
 import 'own_flow_test.dart' show settle;
 
-/// A model that writes the expense form, and on its save event records the
-/// expense with the id the event carries, as the tool asks.
+/// A model that writes the expense form, and would record the expense on
+/// its save event, with the id the event carries, as the tool asks. The
+/// phone saves the form itself, so no save event should reach it.
 class ExpenseModel implements ModelClient {
-  ExpenseModel(this.tools, {this.formId, this.passesId = true});
+  ExpenseModel(this.tools, {this.formId});
 
   final List<dartantic.Tool> tools;
 
   /// An id the model writes into every form's save event, the same each
   /// time, as a model might.
   final String? formId;
-
-  /// Whether the model passes the event's id on to record_expense.
-  final bool passesId;
   final List<String> prompts = <String>[];
   final ScriptedAgent _script = ScriptedAgent(demoLedger());
   int _serial = 0;
 
-  /// Makes the next save fail, as a model that cannot be reached would.
-  bool failNext = false;
-
-  /// The context of every save event, in order.
+  /// The context of every save event that reached it, in order.
   List<Map<Object?, Object?>> get saves => <Map<Object?, Object?>>[
     for (final String p in prompts)
       if (p.startsWith('{'))
@@ -69,17 +65,13 @@ class ExpenseModel implements ModelClient {
     prompts.add(prompt);
     final AgentTurn turn;
     if (prompt.startsWith('{')) {
-      if (failNext) {
-        failNext = false;
-        throw StateError('Gemini returned 500');
-      }
       final Map<Object?, Object?> context = saves.last;
       await tools
           .firstWhere((dartantic.Tool t) => t.name == 'record_expense')
           .call(<String, dynamic>{
             'amount': context['amount'],
             'category': context['category'],
-            if (passesId) 'id': context['id'],
+            'id': context['id'],
           });
       turn = const AgentTurn(
         components: <JsonMap>[
@@ -258,7 +250,27 @@ void main() {
   });
 
   group('a form that commits something', () {
-    testWidgets('sends the model an id, and the same one when corrected', (
+    test('a cancellation a model\'s list sent is confirmed on the phone, '
+        'whatever the model named the list', () {
+      final String said = jsonEncode(
+        const Receipts().cancelled(<String, Object?>{
+          'subscriptions': <Object?>[
+            <String, Object?>{
+              'name': 'Fit24 gimnasio',
+              'price': 119000,
+              'keep': false,
+            },
+            <String, Object?>{'name': 'Cineplus', 'price': 32900, 'keep': true},
+          ],
+        }).components,
+      );
+      expect(said, contains('Cancelada: Fit24 gimnasio'));
+      expect(said, contains('te ahorras \$119.000 al mes'));
+      expect(said, isNot(contains('Cineplus')));
+    });
+
+    testWidgets('a model\'s form is saved on the phone, with an id that '
+        'stays with the form, and the model hears nothing of it', (
       tester,
     ) async {
       late ExpenseModel model;
@@ -268,19 +280,28 @@ void main() {
         errorWindow: Duration.zero,
       );
       await open(tester, session);
-      final int before = session.ledger.movements.length;
+      final Set<String> before = <String>{
+        for (final Movement m in session.ledger.movements) m.id,
+      };
+      List<Movement> added() => <Movement>[
+        for (final Movement m in session.ledger.movements)
+          if (!before.contains(m.id)) m,
+      ];
       unawaited(session.ask(ScriptedAgent.starters[4]));
       await answer(tester);
 
       await tap(tester, 'Guardar gasto');
       await answer(tester);
-      final Object? id = model.saves.single['id'];
-      expect(id, isA<String>());
-      expect(
-        session.ledger.movements.singleWhere((Movement m) => m.id == id).amount,
-        45000,
-      );
+      final String id = added().single.id;
+      expect(added().single.amount, 45000);
       expect(find.textContaining('Gasto guardado · '), findsOneWidget);
+      // Saved through the tool the model would have called, on the phone.
+      expect(session.turns.last.here, isTrue);
+      expect(
+        <String>[for (final Computed c in session.turns.last.computed) c.tool],
+        <String>['record_expense'],
+      );
+      expect(model.saves, isEmpty);
 
       await tap(tester, 'Editar');
       await tester.pumpAndSettle();
@@ -289,28 +310,46 @@ void main() {
       await tap(tester, 'Guardar gasto');
       await answer(tester);
 
-      expect(model.saves.last['id'], id);
-      expect(session.ledger.movements, hasLength(before + 1));
-      expect(
-        session.ledger.movements.singleWhere((Movement m) => m.id == id).amount,
-        60000,
-      );
+      expect(added().single.id, id);
+      expect(added().single.amount, 60000);
       expect(session.ledger.freeUntilPayday, 1369300 - 60000);
+      expect(model.saves, isEmpty);
     });
 
-    testWidgets('opens again when the answer does not arrive', (tester) async {
-      late ExpenseModel model;
+    testWidgets('opens again when the save does not go through', (
+      tester,
+    ) async {
+      var failNext = false;
       final Session session = Session(
         mode: AgentMode.live,
-        clientFor: (List<dartantic.Tool> tools) => model = ExpenseModel(tools),
+        clientFor: ExpenseModel.new,
         errorWindow: Duration.zero,
+        // A record that fails once, as a database that cannot write would.
+        toolsFor: (Ledger ledger) => <dartantic.Tool>[
+          for (final dartantic.Tool t in ledgerTools(ledger))
+            if (t.name != 'record_expense')
+              t
+            else
+              dartantic.Tool<Map<String, dynamic>>(
+                name: t.name,
+                description: t.description,
+                inputSchema: t.inputSchema,
+                onCall: (Map<String, dynamic> args) async {
+                  if (failNext) {
+                    failNext = false;
+                    throw StateError('The database could not write');
+                  }
+                  return t.call(args);
+                },
+              ),
+        ],
       );
       await open(tester, session);
       unawaited(session.ask(ScriptedAgent.starters[4]));
       await answer(tester);
       final String form = session.turns.single.surfaceIds.single;
 
-      model.failNext = true;
+      failNext = true;
       await tap(tester, 'Guardar gasto');
       await answer(tester);
       expect(session.settledOf(form), isNull);
@@ -328,7 +367,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField).first, '60000');
       await tester.pumpAndSettle();
-      model.failNext = true;
+      failNext = true;
       await tap(tester, 'Guardar gasto');
       await answer(tester);
       expect(session.settledOf(form), isNull);
@@ -403,15 +442,16 @@ void main() {
     testWidgets('keeps its own id, whatever id the model wrote into it', (
       tester,
     ) async {
-      late ExpenseModel model;
       final Session session = Session(
         mode: AgentMode.live,
         clientFor: (List<dartantic.Tool> tools) =>
-            model = ExpenseModel(tools, formId: 'expense-1'),
+            ExpenseModel(tools, formId: 'expense-1'),
         errorWindow: Duration.zero,
       );
       await open(tester, session);
-      final int before = session.ledger.movements.length;
+      final Set<String> before = <String>{
+        for (final Movement m in session.ledger.movements) m.id,
+      };
       for (var i = 0; i < 2; i++) {
         unawaited(session.ask(ScriptedAgent.starters[4]));
         await answer(tester);
@@ -422,13 +462,13 @@ void main() {
       }
 
       // Two forms, two expenses: the second does not overwrite the first.
-      expect(session.ledger.movements, hasLength(before + 2));
-      expect(session.ledger.freeUntilPayday, 1369300 - 2 * 45000);
-      final List<Object?> ids = <Object?>[
-        for (final Map<Object?, Object?> save in model.saves) save['id'],
+      final List<String> ids = <String>[
+        for (final Movement m in session.ledger.movements)
+          if (!before.contains(m.id)) m.id,
       ];
       expect(ids.toSet(), hasLength(2));
       expect(ids, isNot(contains('expense-1')));
+      expect(session.ledger.freeUntilPayday, 1369300 - 2 * 45000);
     });
 
     testWidgets('its receipt holds at twice the text size', (tester) async {
@@ -461,10 +501,7 @@ void main() {
 
     /// A bank with a million pesos, and the page that asks about it, opened
     /// from another on Google Play's smallest screenshot phone.
-    Future<(Session, QuincenaStore)> openAsk(
-      WidgetTester tester, {
-      bool passesId = true,
-    }) async {
+    Future<(Session, QuincenaStore)> openAsk(WidgetTester tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 3;
       addTearDown(tester.view.reset);
@@ -500,8 +537,7 @@ void main() {
       await tester.runAsync(own.start);
       final Session session = Session(
         mode: AgentMode.gemini,
-        clientFor: (List<dartantic.Tool> tools) =>
-            ExpenseModel(tools, passesId: passesId),
+        clientFor: ExpenseModel.new,
         errorWindow: Duration.zero,
         ledgerOf: () => own.ledger!,
         toolsFor: (_) => ownTools(own),
@@ -538,15 +574,16 @@ void main() {
       return (session, store);
     }
 
-    testWidgets('Editar corrects the entry, even with a model that '
-        'leaves the id out', (tester) async {
-      final (Session _, QuincenaStore store) = await openAsk(
-        tester,
-        passesId: false,
-      );
+    testWidgets('the form is saved in the person\'s account, said by name, '
+        'and Editar corrects the entry', (tester) async {
+      final (Session _, QuincenaStore store) = await openAsk(tester);
       await tap(tester, 'Guardar gasto');
       await settle(tester);
       expect((await tester.runAsync(store.entries))!.single.amount, d(-45000));
+      expect(
+        find.text('Listo: \$45.000 en mercado, desde Bancolombia'),
+        findsOneWidget,
+      );
 
       await tap(tester, 'Editar');
       await settle(tester);
