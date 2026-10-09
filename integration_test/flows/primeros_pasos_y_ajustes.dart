@@ -1849,7 +1849,45 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tap('Borrar todo');
       await f.step(
         'Con el aviso del día de pago encendido y «Oscuro», «Borrar todo» '
-        'pregunta antes: «¿Borrar todos tus datos?», y dice que no se deshace.',
+        'pregunta antes: «¿Borrar todos tus datos?». Dice que no se deshace, '
+        'que para recuperarlos hace falta un respaldo guardado fuera del '
+        'teléfono y su código, y que el teléfono olvida el código al borrar.',
+      );
+      await f.check('Recuerda qué hace falta para recuperar los datos', () {
+        expect(
+          f.screenText,
+          contains('un respaldo guardado fuera de este teléfono'),
+        );
+        expect(f.shows('Ver mi código de respaldo'), isTrue);
+        expect(f.shows('Guardar un respaldo primero'), isTrue);
+      });
+      final String backupCode = (await _read(
+        f,
+        () => Backups(_store(f)).code(),
+      ))!;
+      await f.tap('Ver mi código de respaldo');
+      await f.check('«Ver mi código de respaldo» muestra el código que el '
+          'teléfono va a olvidar', () {
+        expect(find.text(backupCode.split('-').first), findsWidgets);
+      });
+      await f.tap('Listo');
+      await f.tap('Guardar un respaldo primero');
+      await f.tap('Exportar');
+      await f.step(
+        '«Guardar un respaldo primero» abre la hoja de exportar; al guardar el '
+        'respaldo cifrado vuelve la misma pregunta.',
+      );
+      await f.check(
+        'Se guardó un respaldo de todo y la pregunta sigue',
+        () async {
+          final Uint8List? kept = phone.saved['quincena-2026-10-03.qbackup'];
+          expect(kept, isNotNull);
+          expect(
+            await _openBackup(f, kept!, backupCode),
+            hasLength(_own(f).snapshot!.entries.length),
+          );
+          expect(f.shows('¿Borrar todos tus datos?'), isTrue);
+        },
       );
       await f.tap('Cancelar');
       await f.check('Con «Cancelar» no se borra nada', () async {

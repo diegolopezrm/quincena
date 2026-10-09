@@ -27,6 +27,7 @@ import 'backup_flow.dart';
 import 'binance_page.dart';
 import 'capture_rules_page.dart';
 import 'capture_settings_page.dart';
+import 'code_dialogs.dart';
 import 'example_bar.dart';
 import 'look.dart';
 import 'pay_schedule_editor.dart';
@@ -228,14 +229,23 @@ class OwnSettingsPage extends StatelessWidget {
     if (!context.mounted) return;
     final NavigatorState navigator = Navigator.of(context);
     final ModalRoute<Object?>? page = ModalRoute.of(context);
-    final bool? sure = await _confirm(
-      context,
-      title: l.deleteAllTitle,
-      body: l.deleteAllBody,
-      action: l.deleteAll,
-      destructive: true,
-    );
-    if (sure != true) return;
+    final Backups backups = Backups(own.store);
+    // What brings the data back afterwards, and a way to keep it first:
+    // saving comes back to the same question.
+    while (true) {
+      final String? code = await backups.code();
+      if (!context.mounted) return;
+      final _Delete? choice = await showDialog<_Delete>(
+        context: context,
+        builder: (BuildContext context) => _DeleteAllDialog(code: code),
+      );
+      if (choice != _Delete.backupFirst) {
+        if (choice != _Delete.delete) return;
+        break;
+      }
+      if (!context.mounted) return;
+      await exportData(context, backups: backups, today: own.today);
+    }
     // A Binance key lives in the keychain, apart from the data: it goes
     // first, through the link that kept it.
     if (BinanceLink.available) {
@@ -255,7 +265,7 @@ class OwnSettingsPage extends StatelessWidget {
     } on Object {
       // No keychain here, so no key either.
     }
-    await Backups(own.store).forget();
+    await backups.forget();
     navigator.popUntil((Route<void> r) => r.isFirst);
     await modes.wiped();
     // The theme and the language went with the rest: once this page is gone,
@@ -264,33 +274,6 @@ class OwnSettingsPage extends StatelessWidget {
     if (page != null) await page.completed;
     settings.forget();
   }
-
-  Future<bool?> _confirm(
-    BuildContext context, {
-    required String title,
-    required String body,
-    required String action,
-    bool destructive = false,
-  }) => showDialog<bool>(
-    context: context,
-    builder: (BuildContext context) => AlertDialog(
-      title: Text(title),
-      content: Text(body),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: Text(context.l10n.cancel),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(true),
-          style: destructive
-              ? TextButton.styleFrom(foregroundColor: context.colors.negative)
-              : null,
-          child: Text(action),
-        ),
-      ],
-    ),
-  );
 
   /// Opens [page], or in the example says why [title] is not there.
   Future<void> _open(
@@ -862,6 +845,73 @@ class OwnSettingsPage extends StatelessWidget {
       ),
       const SizedBox(height: 24),
     ];
+  }
+}
+
+enum _Delete { delete, backupFirst }
+
+/// Before everything goes: what it takes to get it back, the backup code
+/// the phone is about to forget, and a way to save a backup first.
+class _DeleteAllDialog extends StatelessWidget {
+  const _DeleteAllDialog({required this.code});
+
+  /// This phone's backup code, when it has one.
+  final String? code;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    final String? code = this.code;
+    return AlertDialog(
+      scrollable: true,
+      title: Text(l.deleteAllTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(l.deleteAllBody, style: context.type.bodyMedium),
+          const SizedBox(height: 12),
+          Text(l.deleteAllRecover, style: context.type.bodyMedium),
+          if (code != null) ...<Widget>[
+            const SizedBox(height: 12),
+            Text(l.deleteAllForgetsCode, style: context.type.bodyMedium),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => showCode(
+                  context,
+                  code: code,
+                  title: l.backupYourCode,
+                  keep: l.backupCodeKeep,
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                ),
+                icon: const Icon(Glyph.lock, size: 18),
+                label: Text(l.backupShowCode),
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () => Navigator.of(context).pop(_Delete.backupFirst),
+            icon: const Icon(Glyph.downloadSimple, size: 18),
+            label: Text(l.deleteAllBackupFirst),
+          ),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l.cancel),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_Delete.delete),
+          style: TextButton.styleFrom(foregroundColor: context.colors.negative),
+          child: Text(l.deleteAll),
+        ),
+      ],
+    );
   }
 }
 

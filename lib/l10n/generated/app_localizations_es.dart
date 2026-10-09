@@ -2038,7 +2038,18 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get deleteAllBody =>
-      'Cuentas, movimientos y ajustes se borran de este dispositivo. No se puede deshacer; exporta primero si quieres conservarlos.';
+      'Cuentas, movimientos y ajustes se borran de este dispositivo. No se puede deshacer.';
+
+  @override
+  String get deleteAllRecover =>
+      'Para recuperarlos después vas a necesitar un respaldo guardado fuera de este teléfono y, si es cifrado, su código de respaldo.';
+
+  @override
+  String get deleteAllForgetsCode =>
+      'Al borrar, este teléfono olvida tu código de respaldo: guárdalo antes.';
+
+  @override
+  String get deleteAllBackupFirst => 'Guardar un respaldo primero';
 
   @override
   String get useDemo => 'Ver los datos de ejemplo';

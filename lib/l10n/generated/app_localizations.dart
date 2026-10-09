@@ -3101,8 +3101,26 @@ abstract class AppLocalizations {
   /// No description provided for @deleteAllBody.
   ///
   /// In es, this message translates to:
-  /// **'Cuentas, movimientos y ajustes se borran de este dispositivo. No se puede deshacer; exporta primero si quieres conservarlos.'**
+  /// **'Cuentas, movimientos y ajustes se borran de este dispositivo. No se puede deshacer.'**
   String get deleteAllBody;
+
+  /// No description provided for @deleteAllRecover.
+  ///
+  /// In es, this message translates to:
+  /// **'Para recuperarlos después vas a necesitar un respaldo guardado fuera de este teléfono y, si es cifrado, su código de respaldo.'**
+  String get deleteAllRecover;
+
+  /// No description provided for @deleteAllForgetsCode.
+  ///
+  /// In es, this message translates to:
+  /// **'Al borrar, este teléfono olvida tu código de respaldo: guárdalo antes.'**
+  String get deleteAllForgetsCode;
+
+  /// No description provided for @deleteAllBackupFirst.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar un respaldo primero'**
+  String get deleteAllBackupFirst;
 
   /// No description provided for @useDemo.
   ///

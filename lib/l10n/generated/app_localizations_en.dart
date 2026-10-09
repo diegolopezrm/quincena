@@ -2039,7 +2039,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteAllBody =>
-      'Accounts, transactions and settings are deleted from this device. This can\'t be undone; export first if you want to keep them.';
+      'Accounts, transactions and settings are deleted from this device. This can\'t be undone.';
+
+  @override
+  String get deleteAllRecover =>
+      'To get them back later you\'ll need a backup kept off this phone and, if it\'s encrypted, its backup code.';
+
+  @override
+  String get deleteAllForgetsCode =>
+      'Deleting makes this phone forget your backup code: keep it first.';
+
+  @override
+  String get deleteAllBackupFirst => 'Save a backup first';
 
   @override
   String get useDemo => 'See the sample data';
