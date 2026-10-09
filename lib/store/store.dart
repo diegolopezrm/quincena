@@ -65,6 +65,23 @@ class StoreSnapshot {
   }
 }
 
+/// What a deletion takes from the database, as it was stored, to put back
+/// exactly: the same ids, dates and links, so whatever pointed at it
+/// points at it again.
+class Removal {
+  const Removal({
+    this.accounts = const <AccountRow>[],
+    this.entries = const <EntryRow>[],
+    this.recurring = const <RecurringRow>[],
+    this.goals = const <GoalRow>[],
+  });
+
+  final List<AccountRow> accounts;
+  final List<EntryRow> entries;
+  final List<RecurringRow> recurring;
+  final List<GoalRow> goals;
+}
+
 /// The end of [day]: a movement dated any time that day is in its balance.
 DateTime endOfDay(DateTime day) => DateTime(
   day.year,
@@ -740,8 +757,16 @@ class QuincenaStore {
   Future<void> deleteRecurring(String id) =>
       (db.delete(db.recurrings)..where((r) => r.id.equals(id))).go();
 
+  /// The goals in the order they were made, so one put back after being
+  /// deleted goes back to its place.
   Future<List<SavingsGoal>> goals() async =>
-      (await db.select(db.goals).get()).map(_goal).toList();
+      (await (db.select(db.goals)..orderBy(<OrderClauseGenerator<$GoalsTable>>[
+                (g) => OrderingTerm(expression: g.createdAt),
+                (g) => OrderingTerm(expression: g.rowId),
+              ]))
+              .get())
+          .map(_goal)
+          .toList();
 
   SavingsGoal _goal(GoalRow r) {
     final Asset asset = Asset.of(r.asset);
@@ -803,6 +828,85 @@ class QuincenaStore {
 
   Future<void> deleteGoal(String id) =>
       (db.delete(db.goals)..where((g) => g.id.equals(id))).go();
+
+  // Putting back what was deleted ----------------------------------------------
+
+  /// [entry] as stored, with the other leg of a transfer: what
+  /// [deleteEntry] takes.
+  Future<Removal> keepEntry(Entry entry) async {
+    final String? transfer = entry.transferId;
+    return Removal(
+      entries:
+          await (db.select(db.entries)..where(
+                (e) => transfer == null
+                    ? e.id.equals(entry.id)
+                    : e.transferId.equals(transfer),
+              ))
+              .get(),
+    );
+  }
+
+  /// The accounts [ids] as stored, and the recurring charges paid from
+  /// them; with [movements], also every movement in them and the other leg
+  /// of each of their transfers, as it is before its leg in them goes.
+  Future<Removal> keepAccounts(
+    Set<String> ids, {
+    bool movements = false,
+  }) async {
+    final List<EntryRow> inThem = movements
+        ? await (db.select(
+            db.entries,
+          )..where((e) => e.accountId.isIn(ids))).get()
+        : const <EntryRow>[];
+    final Set<String> transfers = <String>{
+      for (final EntryRow r in inThem) ?r.transferId,
+    };
+    return Removal(
+      accounts: await (db.select(
+        db.accounts,
+      )..where((a) => a.id.isIn(ids))).get(),
+      entries: <EntryRow>[
+        ...inThem,
+        if (transfers.isNotEmpty)
+          ...await (db.select(db.entries)..where(
+                (e) => e.transferId.isIn(transfers) & e.accountId.isNotIn(ids),
+              ))
+              .get(),
+      ],
+      recurring: await (db.select(
+        db.recurrings,
+      )..where((r) => r.accountId.isIn(ids))).get(),
+    );
+  }
+
+  /// The recurring charge [id] as stored.
+  Future<Removal> keepRecurring(String id) async => Removal(
+    recurring: await (db.select(
+      db.recurrings,
+    )..where((r) => r.id.equals(id))).get(),
+  );
+
+  /// The savings goal [id] as stored.
+  Future<Removal> keepGoal(String id) async => Removal(
+    goals: await (db.select(db.goals)..where((g) => g.id.equals(id))).get(),
+  );
+
+  /// Puts back what [removal] kept, over whatever has those ids now:
+  /// accounts first, then what is in them. All of it or nothing.
+  Future<void> putBack(Removal removal) => db.transaction(() async {
+    for (final AccountRow r in removal.accounts) {
+      await db.into(db.accounts).insertOnConflictUpdate(r);
+    }
+    for (final EntryRow r in removal.entries) {
+      await db.into(db.entries).insertOnConflictUpdate(r);
+    }
+    for (final RecurringRow r in removal.recurring) {
+      await db.into(db.recurrings).insertOnConflictUpdate(r);
+    }
+    for (final GoalRow r in removal.goals) {
+      await db.into(db.goals).insertOnConflictUpdate(r);
+    }
+  });
 
   // Rates ---------------------------------------------------------------------
 
