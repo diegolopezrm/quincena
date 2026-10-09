@@ -3689,6 +3689,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sourceOther => 'Another source';
 
   @override
+  String get originManual => 'Entered by hand';
+
+  @override
+  String get originApplePay => 'From Apple Pay';
+
+  @override
+  String get originNotification => 'From a notification';
+
+  @override
+  String originNotificationOf(String name) {
+    return 'From a $name notification';
+  }
+
+  @override
+  String get originSms => 'From a text message';
+
+  @override
+  String originSmsOf(String name) {
+    return 'From a $name text message';
+  }
+
+  @override
+  String get originEmail => 'From an email';
+
+  @override
+  String originEmailOf(String name) {
+    return 'From a $name email';
+  }
+
+  @override
+  String get originScreenshot => 'From a screenshot';
+
+  @override
+  String get originPaste => 'From a message you pasted';
+
+  @override
+  String get originStatement => 'From a statement';
+
+  @override
+  String get originBinance => 'From Binance';
+
+  @override
+  String get originWallet => 'From a wallet you follow';
+
+  @override
+  String get originGemini => 'From a conversation with Gemini';
+
+  @override
+  String get originExample => 'From the example\'s conversation';
+
+  @override
   String get planCommitments => 'Payments';
 
   @override

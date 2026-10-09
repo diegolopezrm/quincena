@@ -3685,6 +3685,57 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sourceOther => 'Otra fuente';
 
   @override
+  String get originManual => 'Anotado a mano';
+
+  @override
+  String get originApplePay => 'De Apple Pay';
+
+  @override
+  String get originNotification => 'De una notificación';
+
+  @override
+  String originNotificationOf(String name) {
+    return 'De una notificación de $name';
+  }
+
+  @override
+  String get originSms => 'De un SMS';
+
+  @override
+  String originSmsOf(String name) {
+    return 'De un SMS de $name';
+  }
+
+  @override
+  String get originEmail => 'De un correo';
+
+  @override
+  String originEmailOf(String name) {
+    return 'De un correo de $name';
+  }
+
+  @override
+  String get originScreenshot => 'De una captura de pantalla';
+
+  @override
+  String get originPaste => 'De un mensaje que pegaste';
+
+  @override
+  String get originStatement => 'De un extracto';
+
+  @override
+  String get originBinance => 'De Binance';
+
+  @override
+  String get originWallet => 'De una billetera que sigues';
+
+  @override
+  String get originGemini => 'De una conversación con Gemini';
+
+  @override
+  String get originExample => 'De la conversación del ejemplo';
+
+  @override
   String get planCommitments => 'Pagos';
 
   @override

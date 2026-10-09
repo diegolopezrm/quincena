@@ -5768,6 +5768,96 @@ abstract class AppLocalizations {
   /// **'Otra fuente'**
   String get sourceOther;
 
+  /// No description provided for @originManual.
+  ///
+  /// In es, this message translates to:
+  /// **'Anotado a mano'**
+  String get originManual;
+
+  /// No description provided for @originApplePay.
+  ///
+  /// In es, this message translates to:
+  /// **'De Apple Pay'**
+  String get originApplePay;
+
+  /// No description provided for @originNotification.
+  ///
+  /// In es, this message translates to:
+  /// **'De una notificación'**
+  String get originNotification;
+
+  /// No description provided for @originNotificationOf.
+  ///
+  /// In es, this message translates to:
+  /// **'De una notificación de {name}'**
+  String originNotificationOf(String name);
+
+  /// No description provided for @originSms.
+  ///
+  /// In es, this message translates to:
+  /// **'De un SMS'**
+  String get originSms;
+
+  /// No description provided for @originSmsOf.
+  ///
+  /// In es, this message translates to:
+  /// **'De un SMS de {name}'**
+  String originSmsOf(String name);
+
+  /// No description provided for @originEmail.
+  ///
+  /// In es, this message translates to:
+  /// **'De un correo'**
+  String get originEmail;
+
+  /// No description provided for @originEmailOf.
+  ///
+  /// In es, this message translates to:
+  /// **'De un correo de {name}'**
+  String originEmailOf(String name);
+
+  /// No description provided for @originScreenshot.
+  ///
+  /// In es, this message translates to:
+  /// **'De una captura de pantalla'**
+  String get originScreenshot;
+
+  /// No description provided for @originPaste.
+  ///
+  /// In es, this message translates to:
+  /// **'De un mensaje que pegaste'**
+  String get originPaste;
+
+  /// No description provided for @originStatement.
+  ///
+  /// In es, this message translates to:
+  /// **'De un extracto'**
+  String get originStatement;
+
+  /// No description provided for @originBinance.
+  ///
+  /// In es, this message translates to:
+  /// **'De Binance'**
+  String get originBinance;
+
+  /// No description provided for @originWallet.
+  ///
+  /// In es, this message translates to:
+  /// **'De una billetera que sigues'**
+  String get originWallet;
+
+  /// No description provided for @originGemini.
+  ///
+  /// In es, this message translates to:
+  /// **'De una conversación con Gemini'**
+  String get originGemini;
+
+  /// No description provided for @originExample.
+  ///
+  /// In es, this message translates to:
+  /// **'De la conversación del ejemplo'**
+  String get originExample;
+
   /// No description provided for @planCommitments.
   ///
   /// In es, this message translates to:
