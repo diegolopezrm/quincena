@@ -1340,6 +1340,18 @@ abstract class AppLocalizations {
   /// **'Escribir una tasa'**
   String get rateEdit;
 
+  /// No description provided for @rateField.
+  ///
+  /// In es, this message translates to:
+  /// **'1 {asset} en'**
+  String rateField(String asset);
+
+  /// No description provided for @rateMissing.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe una tasa mayor que cero.'**
+  String get rateMissing;
+
   /// No description provided for @rateEditBody.
   ///
   /// In es, this message translates to:

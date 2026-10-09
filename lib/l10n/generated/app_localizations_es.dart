@@ -839,6 +839,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get rateEdit => 'Escribir una tasa';
 
   @override
+  String rateField(String asset) {
+    return '1 $asset en';
+  }
+
+  @override
+  String get rateMissing => 'Escribe una tasa mayor que cero.';
+
+  @override
   String rateEditBody(String asset, String quote) {
     return 'Cuánto vale 1 $asset en $quote. Una tasa escrita a mano no se reemplaza al actualizar.';
   }

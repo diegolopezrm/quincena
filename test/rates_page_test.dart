@@ -195,9 +195,13 @@ void main() {
     expect(find.text('Escribir una tasa'), findsOneWidget);
     expect(find.text('Volver a la tasa automática'), findsNothing);
 
-    // Saving an empty field keeps the rate rather than dropping it.
+    // Saving an empty field keeps the rate: it says what is missing, and
+    // «Cancelar» leaves it as it was.
     await tester.enterText(find.byType(TextField), '');
     await tester.tap(find.text('Guardar'));
+    await settle(tester);
+    expect(find.text('Escribe una tasa mayor que cero.'), findsOneWidget);
+    await tester.tap(find.text('Cancelar'));
     await settle(tester);
     expect(find.text(r'1 USD = $4.000'), findsOneWidget);
     expect((await storedDollar(tester)).source, 'trm');

@@ -784,6 +784,9 @@ class _RateDialog extends StatefulWidget {
 }
 
 class _RateDialogState extends State<_RateDialog> {
+  /// Saving with nothing, or zero, says so instead of closing.
+  bool _missing = false;
+
   late final TextEditingController _value = TextEditingController(
     text: switch (widget.current) {
       null => '',
@@ -823,7 +826,14 @@ class _RateDialogState extends State<_RateDialog> {
               AmountInputFormatter(maxDecimals: 8),
             ],
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(suffixText: widget.quote.code),
+            onChanged: (_) {
+              if (_missing) setState(() => _missing = false);
+            },
+            decoration: InputDecoration(
+              labelText: l.rateField(widget.asset.code),
+              suffixText: widget.quote.code,
+              errorText: _missing ? l.rateMissing : null,
+            ),
           ),
         ],
       ),
@@ -836,9 +846,20 @@ class _RateDialogState extends State<_RateDialog> {
             child: Text(l.rateUseFetched),
           ),
         TextButton(
-          onPressed: () => Navigator.of(
-            context,
-          ).pop<_RateChoice>((typed: parseAmount(_value.text), restore: false)),
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l.cancel),
+        ),
+        TextButton(
+          onPressed: () {
+            final Decimal? typed = parseAmount(_value.text);
+            if (typed == null || typed <= Decimal.zero) {
+              setState(() => _missing = true);
+              return;
+            }
+            Navigator.of(
+              context,
+            ).pop<_RateChoice>((typed: typed, restore: false));
+          },
           child: Text(l.save),
         ),
       ],

@@ -839,6 +839,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rateEdit => 'Type a rate';
 
   @override
+  String rateField(String asset) {
+    return '1 $asset in';
+  }
+
+  @override
+  String get rateMissing => 'Type a rate above zero.';
+
+  @override
   String rateEditBody(String asset, String quote) {
     return 'What 1 $asset is worth in $quote. A rate typed by hand is not replaced when refreshing.';
   }

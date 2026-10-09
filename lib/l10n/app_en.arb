@@ -214,6 +214,8 @@
   "rateSourceBinance": "Binance",
   "rateSourceEcb": "European Central Bank",
   "rateEdit": "Type a rate",
+  "rateField": "1 {asset} in",
+  "rateMissing": "Type a rate above zero.",
   "rateEditBody": "What 1 {asset} is worth in {quote}. A rate typed by hand is not replaced when refreshing.",
   "rateUseFetched": "Back to the automatic rate",
   "stablecoinPeg": "{asset} counts as US$1",
