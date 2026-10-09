@@ -2111,10 +2111,19 @@ final List<AppFlow> planFlows = <AppFlow>[
           isTrue,
         );
       });
+      final Account from = own.likelyPaymentAccount!;
       await f.tap('Registrar un pago');
       await f.step(
-        '«Registrar un pago» propone la cuota, 320.000, con la fecha de hoy. '
-        'Puede ser menos: lo que falte queda pendiente.',
+        '«Registrar un pago» propone la cuota, 320.000, con la fecha de hoy, '
+        'y pregunta de dónde salió: viene elegida ${from.name}, la última '
+        'cuenta que usaste. Abajo dice qué va a pasar antes de guardar.',
+      );
+      await f.check(
+        'Antes de guardar dice cuánto quedará por pagar y qué cuenta baja',
+        () => expect(
+          f.screenText,
+          contains('${from.name} baja ${pesos(320000)}.'),
+        ),
       );
       await f.tap('Cancelar');
       await f.check('Con «Cancelar» no se anota ningún pago', () {
@@ -2127,8 +2136,8 @@ final List<AppFlow> planFlows = <AppFlow>[
       await _typeInDialog(f, '200000');
       await f.tap('Guardar');
       await f.page(
-        'Un abono de 200.000: «A la cuota 1 le faltan \$120.000» y el pago '
-        'queda en «Pagos» con su caneca.',
+        'Un abono de 200.000 desde ${from.name}: «A la cuota 1 le faltan '
+        '\$120.000» y el pago queda en «Pagos» con su caneca.',
         most: 3,
       );
       await f.check('Quedó un pago de 200.000 y a la cuota 1 le faltan '
@@ -2136,16 +2145,42 @@ final List<AppFlow> planFlows = <AppFlow>[
         expect(fridge().payments.single.$2, l.minor(200000));
         expect(fridge().progress, (0, l.minor(120000)));
       });
+      final String paidWith = fridge().entryOf(0)!;
       await f.check(
-        'Lo comprometido baja con el abono: lo que puedes gastar sube 200.000',
-        () => expect(
-          own.ledger!.freeUntilPayday,
-          free - l.minor(320000) + l.minor(200000),
-        ),
+        'El abono sale de ${from.name}: un movimiento de −200.000 en '
+        'Créditos, ligado al pago',
+        () {
+          final Entry e = own.entryById(paidWith)!;
+          expect(e.accountId, from.id);
+          expect(e.amount, Decimal.parse('-200000'));
+          expect(e.category, 'debt');
+          expect(e.source, OwnController.planSource);
+        },
+      );
+      await f.check(
+        'Lo que puedes gastar no sube: la plata sale de ${from.name}, y esa '
+        'cuota ya estaba comprometida',
+        () => expect(own.ledger!.freeUntilPayday, free - l.minor(320000)),
       );
       await _tapTipBy(f, pesos(200000), 'Quitar este pago');
-      await f.check('La caneca quita el abono', () {
+      await f.step(
+        'La caneca pregunta antes: «¿Quitar este pago?», y avisa que también '
+        'se borra su movimiento de \$200.000 en ${from.name}.',
+      );
+      await f.check('Dice que el movimiento se va con el pago', () {
+        expect(
+          f.screenText,
+          contains(
+            'También se borra su movimiento de ${pesos(200000)} en '
+            '${from.name}.',
+          ),
+        );
+      });
+      await f.tap('Quitar pago');
+      await f.check('Quitar el abono también quita su movimiento', () {
         expect(fridge().payments, isEmpty);
+        expect(own.entryById(paidWith), isNull);
+        expect(own.ledger!.freeUntilPayday, free - l.minor(320000));
       });
       await f.top();
       await f.tap('Registrar un pago');
@@ -2153,8 +2188,9 @@ final List<AppFlow> planFlows = <AppFlow>[
       await _pickDay(f, '1');
       await f.tap('Guardar');
       await f.page(
-        'Con la cuota completa, pagada el 1 de octubre: «Llevas 1 de 6 '
-        'cuotas» y la primera queda marcada como pagada en el calendario.',
+        'Con la cuota completa, pagada el 1 de octubre desde ${from.name}: '
+        '«Llevas 1 de 6 cuotas» y la primera queda marcada como pagada en el '
+        'calendario.',
         most: 4,
       );
       await f.check('Una cuota cubierta el 1 de octubre, quedan 1.600.000', () {
@@ -2164,9 +2200,12 @@ final List<AppFlow> planFlows = <AppFlow>[
         expect(f.shows('Llevas 1 de 6 cuotas'), isTrue);
       });
       await f.check(
-        'Pagada la del 10 de octubre, lo que puedes gastar vuelve a '
-        '${_pesos(l, free)}',
-        () => expect(own.ledger!.freeUntilPayday, free),
+        'Pagada la del 10 de octubre, lo que puedes gastar no cambia: esa '
+        'plata ya estaba comprometida, y ahora salió de ${from.name}',
+        () {
+          expect(own.ledger!.freeUntilPayday, free - l.minor(320000));
+          expect(own.entryById(fridge().entryOf(0)!)!.accountId, from.id);
+        },
       );
     },
   ),
@@ -2214,9 +2253,11 @@ final List<AppFlow> planFlows = <AppFlow>[
       await f.tap('Agregar gasto');
       await f.type('¿Qué fue?', 'Mercado');
       await f.type('Valor total', '100000');
+      final Account from = own.likelyPaymentAccount!;
       await f.step(
         '«Agregar gasto» en partes iguales: 33.334 para ti y 33.333 para Ana y '
-        'Juan; el peso del redondeo queda en tu parte.',
+        'Juan; el peso del redondeo queda en tu parte. Como pagaste tú, '
+        'pregunta de dónde salió: viene elegida ${from.name}.',
       );
       await f.check('Las tres partes suman los 100.000', () {
         expect(
@@ -2257,9 +2298,28 @@ final List<AppFlow> planFlows = <AppFlow>[
         expect(flat().balances[idOf('Juan')], -20000);
         expect(own.sharedBalance, (50000, 0));
       });
-      await f.check('Lo que te deben no cambia lo que puedes gastar', () {
-        expect(own.ledger!.freeUntilPayday, free);
-      });
+      await f.check(
+        'El mercado sale de ${from.name}: lo que puedes gastar baja los '
+        '100.000 que pagaste, y de gasto solo cuentan tus 50.000',
+        () {
+          final String paid = flat().expenses.single.entryId!;
+          final Entry e = own.entryById(paid)!;
+          expect(e.accountId, from.id);
+          expect(e.amount, Decimal.parse('-100000'));
+          expect(own.ledger!.freeUntilPayday, free - 100000);
+          // What Ana and Juan owe of it is set aside, not spent.
+          final Iterable<Movement> mine = own.ledger!.movements.where(
+            (Movement m) => m.id == paid || m.id == '$paid#shared',
+          );
+          expect(
+            mine.map((Movement m) => (m.amount, m.flow)),
+            unorderedEquals(<(int, Flow)>[
+              (50000, Flow.expense),
+              (50000, Flow.saving),
+            ]),
+          );
+        },
+      );
       await f.tap('Agregar gasto');
       await f.type('¿Qué fue?', 'Internet');
       await f.tap('Guardar');
@@ -2411,12 +2471,13 @@ final List<AppFlow> planFlows = <AppFlow>[
           expect(spentThisPeriod(own.ledger!), spent);
         },
       );
+      final Account into = own.likelyPaymentAccount!;
       await f.tap('Me prestaron');
       await f.type('¿Quién te prestó?', 'Mamá');
       await f.type('Monto', '300000');
       await f.step(
-        '«Alguien me prestó plata» no pregunta a qué cuenta llegó la plata; '
-        'abajo dice que queda como plata que debes.',
+        '«Alguien me prestó plata» pregunta a qué cuenta llegó: viene elegida '
+        '${into.name}. Abajo dice que queda como plata que debes.',
       );
       await f.tap('Guardar');
       await f.step(
@@ -2426,10 +2487,28 @@ final List<AppFlow> planFlows = <AppFlow>[
       await f.check('Te deben 80.000 y debes 300.000', () {
         expect(own.sharedBalance, (80000, 300000));
       });
-      await f.check('Lo que te prestaron no entra a ninguna cuenta', () {
-        expect(own.snapshot!.entries.length, entries + 1);
-        expect(own.ledger!.freeUntilPayday, free - l.minor(80000));
-      });
+      await f.check(
+        'Lo que te prestaron llega a ${into.name} y no cuenta como ingreso',
+        () {
+          expect(own.snapshot!.entries.length, entries + 2);
+          final Entry e = own.snapshot!.entries.firstWhere(
+            (Entry e) => e.payee == 'Mamá',
+          );
+          expect(e.accountId, into.id);
+          expect(e.amount, Decimal.fromInt(300000));
+          expect(
+            own.ledger!.movements
+                .firstWhere((Movement m) => m.id == '${e.id}#shared')
+                .flow,
+            Flow.transferIn,
+          );
+          // The money is there to spend, and owed: Plan says so.
+          expect(
+            own.ledger!.freeUntilPayday,
+            free - l.minor(80000) + l.minor(300000),
+          );
+        },
+      );
       await f.tap('Le presté');
       await f.type('¿A quién?', 'pedro');
       await f.type('Monto', '20000');
@@ -2443,7 +2522,7 @@ final List<AppFlow> planFlows = <AppFlow>[
       await f.check('Siguen dos grupos y Pedro debe 100.000', () {
         expect(own.groups, hasLength(2));
         expect(own.sharedBalance, (100000, 300000));
-        expect(own.snapshot!.entries.length, entries + 1);
+        expect(own.snapshot!.entries.length, entries + 2);
       });
       await f.back();
       await f.reveal(find.text('Gastos compartidos'));
@@ -2504,16 +2583,19 @@ final List<AppFlow> planFlows = <AppFlow>[
         expect(own.group('group-pedro')!.settlements, isEmpty);
       });
       await f.tap('Registrar pago');
-      await f.tapFound(find.byType(DropdownButtonFormField<String?>));
-      await f.tapFound(find.textContaining('Pedro te envió').last);
       await f.step(
         '«Pedro te pagó» con 50.000 y hoy; en «¿Llegó a una de tus cuentas?» '
-        'se elige lo que llegó a Nequi.',
+        'ya viene elegido lo que llegó a Nequi, «Pedro te envió», porque '
+        'coinciden el nombre y el valor. Abajo: «Pedro queda a paz y salvo '
+        'contigo.»',
       );
+      await f.check('Antes de guardar dice que Pedro queda a paz y salvo', () {
+        expect(f.screenText, contains('Pedro queda a paz y salvo contigo.'));
+      });
       await f.tap('Guardar');
       await f.page(
         '«Todos están a paz y salvo»: el pago queda en «Pagos» con «llegó a '
-        'tu cuenta».',
+        'Nequi».',
         most: 2,
       );
       await f.check('El grupo de Pedro quedó en cero y el pago ligado', () {
@@ -2576,19 +2658,50 @@ final List<AppFlow> planFlows = <AppFlow>[
           expect(own.ledger!.freeUntilPayday, free);
         },
       );
+      final Account from = own.likelyPaymentAccount!;
       await f.tapFound(find.text('Registrar pago').last);
       await _typeInDialog(f, '100000');
       await f.step(
         '«Le pagaste a Camilo» propone los 170.000; se cambia a un abono de '
-        '100.000. No pregunta de qué cuenta salió la plata.',
+        '100.000 que sale de ${from.name}, la cuenta que viene elegida. Abajo '
+        'dice que le seguirás debiendo \$70.000 a Camilo y que ${from.name} '
+        'baja \$100.000.',
       );
+      await f.check('Antes de guardar dice lo que queda y qué cuenta baja', () {
+        expect(
+          f.screenText,
+          contains(
+            'Le seguirás debiendo ${pesos(70000)} a Camilo. ${from.name} baja '
+            '${pesos(100000)}.',
+          ),
+        );
+      });
       await f.tap('Guardar');
       await f.top();
-      await f.step('Con el abono, «En este grupo debes \$70.000».');
+      await f.step(
+        'Con el abono, «En este grupo debes \$70.000», y el pago dice «salió '
+        'de ${from.name}».',
+      );
       await f.check('Ahora le debes 70.000 a Camilo', () {
         expect(own.group(guatape)!.balances[meId], -70000);
         expect(own.sharedBalance, (50000, 70000));
       });
+      await f.check(
+        'Los 100.000 salen de ${from.name} y cuentan como gasto: son tu parte '
+        'del paseo',
+        () {
+          final Entry e = own.entryById(
+            own.group(guatape)!.settlements.last.entryId!,
+          )!;
+          expect(e.accountId, from.id);
+          expect(e.amount, Decimal.fromInt(-100000));
+          expect(
+            own.ledger!.movements.firstWhere((Movement m) => m.id == e.id).flow,
+            Flow.expense,
+          );
+          expect(own.ledger!.freeUntilPayday, free - 100000);
+        },
+      );
       await f.back();
       await f.back();
       await f.reveal(find.text('Gastos compartidos'));

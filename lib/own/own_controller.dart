@@ -510,6 +510,171 @@ class OwnController extends ChangeNotifier {
     ]..sort((Entry a, Entry b) => b.date.compareTo(a.date));
   }
 
+  /// Where a movement made from the Plan says it came from: one the Plan
+  /// made is undone with what made it; one the person wrote down and then
+  /// linked stays theirs.
+  static const String planSource = 'plan';
+
+  /// The accounts a payment in the base currency can come out of or go
+  /// into: everyday accounts first, then the rest; no cards.
+  List<Account> get paymentAccounts {
+    final Asset base = profile?.base ?? Asset.cop;
+    bool can(Account a) => a.asset == base && a.kind != AccountKind.card;
+    return <Account>[
+      for (final Account a in accounts)
+        if (can(a) && a.spendable) a,
+      for (final Account a in accounts)
+        if (can(a) && !a.spendable) a,
+    ];
+  }
+
+  /// The account a payment most likely came out of: the one of the last
+  /// expense the person wrote down by hand, when it can pay, or the first
+  /// that can.
+  Account? get likelyPaymentAccount {
+    final List<Account> can = paymentAccounts;
+    if (can.isEmpty) return null;
+    Entry? last;
+    for (final Entry e in _snapshot?.entries ?? const <Entry>[]) {
+      if (e.kind != EntryKind.expense || e.source != 'manual') continue;
+      if (last == null || e.date.isAfter(last.date)) last = e;
+    }
+    return can.where((Account a) => a.id == last?.accountId).firstOrNull ??
+        can.first;
+  }
+
+  /// [minor], in the base currency's smallest unit, as an amount to write.
+  Decimal _major(int minor) =>
+      Decimal.fromInt(minor).shift(-(profile?.base ?? Asset.cop).decimals);
+
+  /// The movement with [id], when there is one.
+  Entry? entryById(String id) =>
+      _snapshot?.entries.where((Entry e) => e.id == id).firstOrNull;
+
+  /// Takes back a movement the Plan made, leaving one the person made.
+  Future<void> dropPlanEntry(String? id) async {
+    if (id == null) return;
+    if (entryById(id) case final Entry e when e.source == planSource) {
+      await store.deleteEntry(e);
+    }
+  }
+
+  /// Keeps a movement the Plan made as what made it now says: its amount,
+  /// in the base currency's smallest unit, its day and its name. One the
+  /// person made stays as they wrote it.
+  Future<void> updatePlanEntry(
+    String? id, {
+    required int amount,
+    required DateTime date,
+    required String payee,
+  }) async {
+    if (id == null) return;
+    final Entry? e = entryById(id);
+    if (e == null || e.source != planSource) return;
+    final Decimal major = _major(amount);
+    await store.updateEntry(
+      e.copyWith(
+        amount: e.amount < Decimal.zero ? -major : major,
+        date: date,
+        payee: payee,
+      ),
+    );
+  }
+
+  /// Writes down what the person paid for a group's expense, from
+  /// [accountId]: the whole of it leaves the account, and what the others
+  /// owe of it is kept apart from what was spent.
+  Future<String> payGroupExpense({
+    required String accountId,
+    required int amount,
+    required DateTime date,
+    required String label,
+    required String group,
+  }) async {
+    final Entry e = await store.addEntry(
+      accountId: accountId,
+      amount: _major(amount),
+      kind: EntryKind.expense,
+      date: date,
+      category: knownCategory(label) ?? 'other',
+      payee: label,
+      note: group,
+      source: planSource,
+    );
+    return e.id;
+  }
+
+  /// Records a payment of [plan]; from [accountId], also the movement it
+  /// went out with, so the money leaves an account the day it was paid.
+  Future<void> payInstalment(
+    Instalments plan,
+    DateTime on,
+    int amount, {
+    String? accountId,
+  }) async {
+    String? entryId;
+    if (accountId != null) {
+      final Entry e = await store.addEntry(
+        accountId: accountId,
+        amount: _major(amount),
+        kind: EntryKind.expense,
+        date: on,
+        category: 'debt',
+        payee: plan.name,
+        source: planSource,
+      );
+      entryId = e.id;
+    }
+    await saveInstalments(plan.withPayment(on, amount, entryId: entryId));
+  }
+
+  /// Takes the [index]th payment of [plan] back, with the movement the
+  /// Plan made for it.
+  Future<void> removeInstalmentPayment(Instalments plan, int index) async {
+    await dropPlanEntry(plan.entryOf(index));
+    await saveInstalments(plan.withoutPayment(index));
+  }
+
+  /// Records [settlement] in [group]; with [accountId], also the movement
+  /// the money went out of or came into the person's account with.
+  Future<void> settle(
+    Group group,
+    Settlement settlement, {
+    String? accountId,
+  }) async {
+    var settled = settlement;
+    if (accountId != null && settlement.entryId == null) {
+      final bool out = settlement.from == meId;
+      final Member? other = group.member(out ? settlement.to : settlement.from);
+      final Entry e = await store.addEntry(
+        accountId: accountId,
+        amount: _major(settlement.amount),
+        kind: out ? EntryKind.expense : EntryKind.income,
+        date: settlement.date,
+        category: 'other',
+        payee: other?.name ?? '',
+        note: group.name,
+        source: planSource,
+      );
+      settled = Settlement(
+        id: settlement.id,
+        from: settlement.from,
+        to: settlement.to,
+        amount: settlement.amount,
+        date: settlement.date,
+        entryId: e.id,
+      );
+    }
+    await saveGroup(group.withSettlement(settled));
+  }
+
+  /// Takes [settlement] out of [group], with the movement the Plan made
+  /// for it; one the person wrote down and linked stays theirs.
+  Future<void> unsettle(Group group, Settlement settlement) async {
+    await dropPlanEntry(settlement.entryId);
+    await saveGroup(group.withoutSettlement(settlement.id));
+  }
+
   /// The person's trips, the newest first.
   List<Trip> get trips =>
       <Trip>[..._trips]..sort((Trip a, Trip b) => b.from.compareTo(a.from));

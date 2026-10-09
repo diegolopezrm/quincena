@@ -260,6 +260,7 @@ class Instalments {
     this.cashPrice,
     this.accountId,
     this.payments = const <(DateTime, int)>[],
+    this.paymentEntries = const <String?>[],
   });
 
   final String id;
@@ -287,6 +288,15 @@ class Instalments {
 
   /// What the person paid towards it: partial payments included.
   final List<(DateTime, int)> payments;
+
+  /// The movement each of [payments] went out with, in the same order:
+  /// null for one paid from no account in Quincena, or recorded before
+  /// payments had movements.
+  final List<String?> paymentEntries;
+
+  /// The movement the [index]th payment went out with, if any.
+  String? entryOf(int index) =>
+      index < paymentEntries.length ? paymentEntries[index] : null;
 
   /// The rate per month, or null when unknown.
   double? get monthlyRate {
@@ -426,12 +436,37 @@ class Instalments {
     cashPrice: cashPrice,
     accountId: account,
     payments: payments,
+    paymentEntries: paymentEntries,
   );
 
-  Instalments withPayment(DateTime on, int amount) =>
-      withPayments(<(DateTime, int)>[...payments, (on, amount)]);
+  /// One more payment, with the movement it went out with when it did.
+  Instalments withPayment(DateTime on, int amount, {String? entryId}) =>
+      withPayments(
+        <(DateTime, int)>[...payments, (on, amount)],
+        entries: <String?>[
+          for (var i = 0; i < payments.length; i++) entryOf(i),
+          entryId,
+        ],
+      );
 
-  Instalments withPayments(List<(DateTime, int)> payments) => Instalments(
+  /// Without the [index]th payment and its movement.
+  Instalments withoutPayment(int index) => withPayments(
+    <(DateTime, int)>[
+      for (final (int i, (DateTime, int) p) in payments.indexed)
+        if (i != index) p,
+    ],
+    entries: <String?>[
+      for (var i = 0; i < payments.length; i++)
+        if (i != index) entryOf(i),
+    ],
+  );
+
+  /// The same purchase with [payments]; [entries] are their movements, in
+  /// the same order, kept as they were when not given.
+  Instalments withPayments(
+    List<(DateTime, int)> payments, {
+    List<String?>? entries,
+  }) => Instalments(
     id: id,
     name: name,
     principal: principal,
@@ -444,6 +479,7 @@ class Instalments {
     cashPrice: cashPrice,
     accountId: accountId,
     payments: payments,
+    paymentEntries: entries ?? paymentEntries,
   );
 
   Map<String, Object?> toJson() => <String, Object?>{
@@ -459,8 +495,12 @@ class Instalments {
     if (cashPrice != null) 'cashPrice': cashPrice,
     if (accountId != null) 'accountId': accountId,
     'payments': <Object?>[
-      for (final (DateTime on, int amount) in payments)
-        <String, Object?>{'on': _iso(on), 'amount': amount},
+      for (final (int i, (DateTime on, int amount)) in payments.indexed)
+        <String, Object?>{
+          'on': _iso(on),
+          'amount': amount,
+          if (entryOf(i) case final String entry) 'entryId': entry,
+        },
     ],
   };
 
@@ -471,6 +511,17 @@ class Instalments {
     final DateTime? first = DateTime.tryParse('${json['firstDue']}');
     if (principal is! num || count is! num || first == null || count < 1) {
       return null;
+    }
+    // Each payment, and the movement it went out with when it says.
+    final List<(DateTime, int)> payments = <(DateTime, int)>[];
+    final List<String?> entries = <String?>[];
+    for (final Object? p
+        in json['payments'] as List<Object?>? ?? const <Object?>[]) {
+      if (p is! Map || p['amount'] is! num) continue;
+      final DateTime? on = DateTime.tryParse('${p['on']}');
+      if (on == null) continue;
+      payments.add((on, (p['amount']! as num).round()));
+      entries.add(p['entryId'] as String?);
     }
     return Instalments(
       id: '${json['id']}',
@@ -488,14 +539,8 @@ class Instalments {
       fee: (json['fee'] as num?)?.round(),
       cashPrice: (json['cashPrice'] as num?)?.round(),
       accountId: json['accountId'] as String?,
-      payments: <(DateTime, int)>[
-        for (final Object? p
-            in json['payments'] as List<Object?>? ?? const <Object?>[])
-          if (p is Map &&
-              DateTime.tryParse('${p['on']}') != null &&
-              p['amount'] is num)
-            (DateTime.parse('${p['on']}'), (p['amount']! as num).round()),
-      ],
+      payments: payments,
+      paymentEntries: entries,
     );
   }
 }

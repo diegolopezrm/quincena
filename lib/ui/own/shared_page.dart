@@ -411,7 +411,7 @@ class GroupPage extends StatelessWidget {
                           subtitle: Text(
                             <String>[
                               dayShortMonth(s.date),
-                              if (s.entryId != null) l.sharedLinked,
+                              ?_movedIn(l, own, s),
                             ].join(' · '),
                             style: context.type.bodySmall,
                           ),
@@ -424,9 +424,8 @@ class GroupPage extends StatelessWidget {
                               ),
                               IconButton(
                                 tooltip: l.sharedRemovePayment,
-                                onPressed: () => own.saveGroup(
-                                  group.withoutSettlement(s.id),
-                                ),
+                                onPressed: () =>
+                                    _removeSettlement(context, own, group, s),
                                 icon: Icon(
                                   Glyph.trash,
                                   size: 18,
@@ -597,6 +596,65 @@ class _GroupSheetState extends State<_GroupSheet> {
   }
 }
 
+/// Where a payment went out of or came into the person's accounts, by
+/// name: «salió de Nequi», «llegó a Bancolombia».
+String? _movedIn(AppLocalizations l, OwnController own, Settlement s) {
+  final String? id = s.entryId;
+  if (id == null) return null;
+  final String? account = switch (own.entryById(id)) {
+    final Entry e => own.snapshot?.account(e.accountId)?.name,
+    null => null,
+  };
+  if (account == null) return l.sharedLinked;
+  return s.from == meId
+      ? l.sharedLeftFrom(account)
+      : l.sharedArrivedIn(account);
+}
+
+/// Takes a payment back. When the Plan wrote down its movement, it says
+/// that goes too and waits for a yes.
+Future<void> _removeSettlement(
+  BuildContext context,
+  OwnController own,
+  Group group,
+  Settlement s,
+) async {
+  final AppLocalizations l = context.l10n;
+  final Entry? entry = switch (s.entryId) {
+    final String id => own.entryById(id),
+    null => null,
+  };
+  if (entry != null && entry.source == OwnController.planSource) {
+    final String amount = moneyText(
+      Money(
+        entry.amount.abs(),
+        own.snapshot?.account(entry.accountId)?.asset ?? Asset.cop,
+      ),
+      base: own.profile?.base ?? Asset.cop,
+    );
+    final String account = own.snapshot?.account(entry.accountId)?.name ?? '';
+    final bool? sure = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: Text(l.instalPaymentRemoveTitle),
+        content: Text(l.instalPaymentRemoveEntry(amount, account)),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l.instalPaymentRemoveGo),
+          ),
+        ],
+      ),
+    );
+    if (sure != true) return;
+  }
+  await own.unsettle(group, s);
+}
+
 /// Records that [from] paid [to]. When the money came to the person, it can
 /// be tied to the income it arrived as, which then counts as money back.
 Future<void> showSettleDialog(
@@ -641,8 +699,42 @@ class _SettleDialogState extends State<_SettleDialog> {
     ),
   );
   late DateTime _on = widget.own.today;
-  String? _entryId;
   String? _error;
+
+  /// Where the money went out of or came into, as the person chose:
+  /// `entry:` a movement already written down, `account:` one to write now
+  /// in that account, null for none. The most likely comes chosen.
+  late String? _where = _likelyWhere();
+
+  bool get _out => widget.from == meId;
+  bool get _in => widget.to == meId;
+
+  /// The movement that matches, when money came to the person: the same
+  /// amount from someone of the same name. Otherwise the account money
+  /// most likely moved in.
+  String? _likelyWhere() {
+    final OwnController own = widget.own;
+    if (!_out && !_in) return null;
+    if (_in) {
+      final String name = (widget.group.member(widget.from)?.name ?? '')
+          .toLowerCase();
+      final Decimal? amount = own.ledger == null
+          ? null
+          : Decimal.parse('${own.ledger!.major(widget.amount)}');
+      for (final Entry e in own.recentIncomes()) {
+        if (amount != null &&
+            e.amount == amount &&
+            name.isNotEmpty &&
+            e.payee.toLowerCase().contains(name)) {
+          return 'entry:${e.id}';
+        }
+      }
+    }
+    return switch (own.likelyPaymentAccount) {
+      final Account a => 'account:${a.id}',
+      null => null,
+    };
+  }
 
   @override
   void dispose() {
@@ -658,28 +750,64 @@ class _SettleDialogState extends State<_SettleDialog> {
       return;
     }
     final NavigatorState navigator = Navigator.of(context);
-    await widget.own.saveGroup(
-      widget.group.withSettlement(
-        Settlement(
-          id: 'settle-${DateTime.now().microsecondsSinceEpoch}',
-          from: widget.from,
-          to: widget.to,
-          amount: ledger.minor(value.toDouble()),
-          date: _on,
-          entryId: _entryId,
-        ),
+    final String? where = _where;
+    await widget.own.settle(
+      widget.group,
+      Settlement(
+        id: 'settle-${DateTime.now().microsecondsSinceEpoch}',
+        from: widget.from,
+        to: widget.to,
+        amount: ledger.minor(value.toDouble()),
+        date: _on,
+        entryId: where != null && where.startsWith('entry:')
+            ? where.substring('entry:'.length)
+            : null,
       ),
+      accountId: where != null && where.startsWith('account:')
+          ? where.substring('account:'.length)
+          : null,
     );
     navigator.pop();
+  }
+
+  /// What the payment does, said before it is saved: what stays owed
+  /// between the two, and the account that goes down or up.
+  String? _after(AppLocalizations l) {
+    final Ledger? ledger = widget.own.ledger;
+    final Decimal? value = parseAmount(_amount.text);
+    if (ledger == null || value == null || value <= Decimal.zero) return null;
+    String amount(int minor) => pesos(ledger.major(minor));
+    final int paid = ledger.minor(value.toDouble());
+    final int left = widget.amount - paid;
+    final String other =
+        widget.group.member(_out ? widget.to : widget.from)?.name ?? '';
+    final String? account = switch (_where) {
+      final String w when w.startsWith('account:') =>
+        widget.own.snapshot?.account(w.substring('account:'.length))?.name,
+      _ => null,
+    };
+    return <String>[
+      if (_out)
+        left > 0
+            ? l.sharedOweLeft(amount(left), other)
+            : l.sharedEvenWith(other)
+      else if (_in)
+        left > 0
+            ? l.sharedOwesYouLeft(other, amount(left))
+            : l.sharedEvenFrom(other),
+      if (account != null)
+        _out
+            ? l.instalPaymentAccountDown(account, amount(paid))
+            : l.sharedAccountUp(account, amount(paid)),
+    ].join(' ');
   }
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
     final OwnController own = widget.own;
-    final List<Entry> incomes = widget.to == meId
-        ? own.recentIncomes()
-        : const <Entry>[];
+    final List<Entry> incomes = _in ? own.recentIncomes() : const <Entry>[];
+    final List<Account> accounts = own.paymentAccounts;
     return AlertDialog(
       title: Text(paidLine(l, widget.group, widget.from, widget.to)),
       content: SingleChildScrollView(
@@ -695,6 +823,7 @@ class _SettleDialogState extends State<_SettleDialog> {
               inputFormatters: <TextInputFormatter>[
                 AmountInputFormatter(maxDecimals: _base.decimals),
               ],
+              onChanged: (_) => setState(() => _error = null),
               decoration: InputDecoration(
                 labelText: l.instalPaymentAmount,
                 errorText: _error,
@@ -718,18 +847,20 @@ class _SettleDialogState extends State<_SettleDialog> {
               icon: const Icon(Glyph.calendarBlank, size: 18),
               label: Text(dayMonth(_on)),
             ),
-            if (widget.to == meId) ...<Widget>[
+            if (_out || _in) ...<Widget>[
               const SizedBox(height: 12),
               DropdownButtonFormField<String?>(
                 icon: const Icon(Glyph.caretDown, size: 18),
-                initialValue: _entryId,
+                initialValue: _where,
                 isExpanded: true,
-                decoration: InputDecoration(labelText: l.sharedArrivedAs),
+                decoration: InputDecoration(
+                  labelText: _out ? l.instalPaymentFrom : l.sharedArrivedAs,
+                ),
                 items: <DropdownMenuItem<String?>>[
-                  DropdownMenuItem<String?>(child: Text(l.sharedNotRecorded)),
+                  // Money that came in may already be written down.
                   for (final Entry e in incomes)
                     DropdownMenuItem<String?>(
-                      value: e.id,
+                      value: 'entry:${e.id}',
                       child: Text(
                         '${e.payee.isEmpty ? l.kindIncome : e.payee} · '
                         '${moneyText(Money(e.amount, own.snapshot?.account(e.accountId)?.asset ?? _base), base: _base)} · '
@@ -737,11 +868,31 @@ class _SettleDialogState extends State<_SettleDialog> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                  for (final Account a in accounts)
+                    DropdownMenuItem<String?>(
+                      value: 'account:${a.id}',
+                      child: Text(
+                        _out ? a.name : l.sharedRecordIn(a.name),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  DropdownMenuItem<String?>(
+                    child: Text(
+                      _out ? l.instalPaymentNoAccount : l.sharedNotRecorded,
+                    ),
+                  ),
                 ],
-                onChanged: (String? id) => setState(() => _entryId = id),
+                onChanged: (String? w) => setState(() => _where = w),
               ),
-              const SizedBox(height: 4),
-              Text(l.sharedArrivedAsHelp, style: context.type.bodySmall),
+              if (_in) ...<Widget>[
+                const SizedBox(height: 4),
+                Text(l.sharedArrivedAsHelp, style: context.type.bodySmall),
+              ],
+            ],
+            if (_after(l) case final String after
+                when after.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 12),
+              Text(after, style: context.type.bodySmall),
             ],
           ],
         ),

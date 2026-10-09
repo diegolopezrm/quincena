@@ -53,13 +53,9 @@ class _LoanSheetState extends State<_LoanSheet> {
   final TextEditingController _what = TextEditingController();
   late DateTime _date = widget.own.today;
 
-  /// The account the money left, when it left one; only for money lent.
-  late String? _accountId = widget.lent
-      ? widget.own.accounts
-            .where((Account a) => a.spendable && a.asset == _base)
-            .firstOrNull
-            ?.id
-      : null;
+  /// The account the money left or came into, when it did: the one it
+  /// most likely moved in comes chosen.
+  late String? _accountId = widget.own.likelyPaymentAccount?.id;
   String? _error;
   bool _saving = false;
 
@@ -116,17 +112,20 @@ class _LoanSheetState extends State<_LoanSheet> {
         Member(id: personId, name: name),
       ],
     );
+    // Lent, the money leaves an account; borrowed, it comes into one.
+    // Neither is spent nor earned: the loan's own part keeps it apart.
     String? entryId;
-    final String? account = widget.lent ? _accountId : null;
+    final String? account = _accountId;
     if (account != null) {
       final Entry entry = await own.store.addEntry(
         accountId: account,
         amount: amount,
-        kind: EntryKind.expense,
+        kind: widget.lent ? EntryKind.expense : EntryKind.income,
         date: _date,
         category: 'other',
         payee: name,
         note: label,
+        source: OwnController.planSource,
       );
       entryId = entry.id;
     }
@@ -150,10 +149,7 @@ class _LoanSheetState extends State<_LoanSheet> {
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
     final bool lent = widget.lent;
-    final List<Account> accounts = <Account>[
-      for (final Account a in own.accounts)
-        if (a.asset == _base && !a.archived) a,
-    ];
+    final List<Account> accounts = own.paymentAccounts;
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SingleChildScrollView(
@@ -194,24 +190,26 @@ class _LoanSheetState extends State<_LoanSheet> {
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(labelText: l.loanWhat),
             ),
-            if (lent) ...<Widget>[
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String?>(
-                initialValue: _accountId,
-                isExpanded: true,
-                icon: const Icon(Glyph.caretDown, size: 18),
-                decoration: InputDecoration(labelText: l.loanFromAccount),
-                items: <DropdownMenuItem<String?>>[
-                  for (final Account a in accounts)
-                    DropdownMenuItem<String?>(
-                      value: a.id,
-                      child: Text(a.name, overflow: TextOverflow.ellipsis),
-                    ),
-                  DropdownMenuItem<String?>(child: Text(l.loanNoAccount)),
-                ],
-                onChanged: (String? id) => setState(() => _accountId = id),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String?>(
+              initialValue: _accountId,
+              isExpanded: true,
+              icon: const Icon(Glyph.caretDown, size: 18),
+              decoration: InputDecoration(
+                labelText: lent ? l.loanFromAccount : l.loanToAccount,
               ),
-            ],
+              items: <DropdownMenuItem<String?>>[
+                for (final Account a in accounts)
+                  DropdownMenuItem<String?>(
+                    value: a.id,
+                    child: Text(a.name, overflow: TextOverflow.ellipsis),
+                  ),
+                DropdownMenuItem<String?>(
+                  child: Text(lent ? l.loanNoAccount : l.loanNoAccountIn),
+                ),
+              ],
+              onChanged: (String? id) => setState(() => _accountId = id),
+            ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: () async {

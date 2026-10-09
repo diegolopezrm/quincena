@@ -62,6 +62,9 @@ class SharedExpense {
   /// What the others' parts add up to.
   int get othersPart => amount - (shares[paidBy] ?? 0);
 
+  /// Whether it is a loan: the one who paid has no part of it.
+  bool get isLoan => (shares[paidBy] ?? 0) == 0 && amount > 0;
+
   /// The same split of [total], for the movement it came from when its
   /// amount was put right: parts that were even stay even, the payer
   /// carrying what rounding leaves; uneven ones keep what each other
@@ -216,6 +219,11 @@ class Group {
   Member? member(String id) =>
       members.where((Member m) => m.id == id).firstOrNull;
 
+  /// Whether everything in it is a loan: what is settled in it pays a
+  /// debt back, and is neither spent nor earned.
+  bool get onlyLoans =>
+      expenses.isNotEmpty && expenses.every((SharedExpense e) => e.isLoan);
+
   /// What each member is owed, positive, or owes, negative. They add up
   /// to nothing.
   Map<String, int> get balances {
@@ -352,10 +360,12 @@ class SharedLinks {
     this.repaid = const <String, int>{},
   });
 
-  /// What others owe of each movement the person paid, by its id.
+  /// What of each movement out is not spent, by its id: what others owe
+  /// of what the person paid, a loan the person made, or a loan paid back.
   final Map<String, int> lent;
 
-  /// What came back in each movement, by its id.
+  /// What of each movement in is not earned, by its id: money paid back to
+  /// the person, or lent to them.
   final Map<String, int> repaid;
 
   bool get isEmpty => lent.isEmpty && repaid.isEmpty;
@@ -366,13 +376,24 @@ class SharedLinks {
     for (final Group g in groups) {
       for (final SharedExpense e in g.expenses) {
         final String? entry = e.entryId;
-        if (entry == null || e.paidBy != meId) continue;
-        lent[entry] = (lent[entry] ?? 0) + e.othersPart;
+        if (entry == null) continue;
+        if (e.paidBy == meId) {
+          lent[entry] = (lent[entry] ?? 0) + e.othersPart;
+        } else if (e.isLoan) {
+          // Lent to the person: it came in, and it is owed, not earned.
+          repaid[entry] = (repaid[entry] ?? 0) + (e.shares[meId] ?? 0);
+        }
       }
       for (final Settlement s in g.settlements) {
         final String? entry = s.entryId;
-        if (entry == null || s.to != meId) continue;
-        repaid[entry] = (repaid[entry] ?? 0) + s.amount;
+        if (entry == null) continue;
+        if (s.to == meId) {
+          repaid[entry] = (repaid[entry] ?? 0) + s.amount;
+        } else if (s.from == meId && g.onlyLoans) {
+          // A loan paid back is not spent: the money was spent, or not,
+          // when it came. The person's part of a shared bill is.
+          lent[entry] = (lent[entry] ?? 0) + s.amount;
+        }
       }
     }
     return SharedLinks(lent: lent, repaid: repaid);

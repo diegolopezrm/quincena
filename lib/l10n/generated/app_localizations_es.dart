@@ -3379,6 +3379,22 @@ class AppLocalizationsEs extends AppLocalizations {
   String get instalPaymentRemove => 'Quitar este pago';
 
   @override
+  String get instalPaymentRemoveTitle => '¿Quitar este pago?';
+
+  @override
+  String instalPaymentRemoveBody(String amount) {
+    return 'Lo que falta pagar vuelve a subir $amount.';
+  }
+
+  @override
+  String instalPaymentRemoveEntry(String amount, String account) {
+    return 'También se borra su movimiento de $amount en $account.';
+  }
+
+  @override
+  String get instalPaymentRemoveGo => 'Quitar pago';
+
+  @override
   String get instalSchedule => 'Calendario de cuotas';
 
   @override
@@ -3412,6 +3428,27 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get instalPaymentPartial =>
       'Puede ser menos que la cuota: lo que falte queda pendiente.';
+
+  @override
+  String get instalPaymentFrom => '¿De dónde salió?';
+
+  @override
+  String get instalPaymentNoAccount => 'No lo anoto en una cuenta';
+
+  @override
+  String instalPaidWithCard(String card) {
+    return 'Esta compra está en $card: la cuota sale cuando pagas la tarjeta.';
+  }
+
+  @override
+  String instalPaymentAfter(String left) {
+    return 'Después quedarán $left por pagar.';
+  }
+
+  @override
+  String instalPaymentAccountDown(String account, String amount) {
+    return '$account baja $amount.';
+  }
 
   @override
   String get instalDelete => 'Borrar compra';
@@ -3958,6 +3995,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sharedLinked => 'llegó a tu cuenta';
 
   @override
+  String sharedLeftFrom(String account) {
+    return 'salió de $account';
+  }
+
+  @override
+  String sharedArrivedIn(String account) {
+    return 'llegó a $account';
+  }
+
+  @override
   String get sharedRemovePayment => 'Quitar este pago';
 
   @override
@@ -3969,6 +4016,36 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get sharedNotRecorded => 'No, o no está en Quincena';
+
+  @override
+  String sharedRecordIn(String account) {
+    return 'Anotarla en $account';
+  }
+
+  @override
+  String sharedOweLeft(String amount, String name) {
+    return 'Le seguirás debiendo $amount a $name.';
+  }
+
+  @override
+  String sharedEvenWith(String name) {
+    return 'Quedas a paz y salvo con $name.';
+  }
+
+  @override
+  String sharedOwesYouLeft(String name, String amount) {
+    return '$name te seguirá debiendo $amount.';
+  }
+
+  @override
+  String sharedEvenFrom(String name) {
+    return '$name queda a paz y salvo contigo.';
+  }
+
+  @override
+  String sharedAccountUp(String account, String amount) {
+    return '$account sube $amount.';
+  }
 
   @override
   String get sharedArrivedAsHelp =>
@@ -4988,6 +5065,12 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get loanNoAccount => 'No salió de mis cuentas';
+
+  @override
+  String get loanToAccount => '¿A qué cuenta llegó?';
+
+  @override
+  String get loanNoAccountIn => 'No llegó a mis cuentas';
 
   @override
   String get loanLentNote =>

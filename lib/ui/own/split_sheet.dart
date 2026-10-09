@@ -82,6 +82,13 @@ class _SplitSheetState extends State<_SplitSheet> {
   );
   late DateTime _date = widget.expense?.date ?? widget.entry?.date ?? own.today;
   late String _paidBy = widget.expense?.paidBy ?? meId;
+
+  /// The account a new expense the person paid went out of: the one it
+  /// most likely did comes chosen; null for none in Quincena.
+  late String? _accountId = widget.own.likelyPaymentAccount?.id;
+
+  /// Whether this is an expense not written down anywhere yet.
+  bool get _new => widget.entry == null && widget.expense == null;
   late bool _even = widget.expense == null || _isEven(widget.expense!);
   late final Set<String> _in = <String>{...?widget.expense?.shares.keys};
   final Map<String, TextEditingController> _custom =
@@ -260,17 +267,37 @@ class _SplitSheetState extends State<_SplitSheet> {
           final Entry e => own.splitOf(e.id)?.$2,
           null => null,
         };
+    // Paid by the person, a new expense leaves the account they say; one
+    // the Plan wrote down before follows what it says now.
+    String? entryId = widget.entry?.id ?? old?.entryId;
+    final String label = _label.text.trim();
+    if (_new && _paidBy == meId && _accountId != null) {
+      entryId = await own.payGroupExpense(
+        accountId: _accountId!,
+        amount: total,
+        date: _date,
+        label: label.isEmpty ? group.name : label,
+        group: group.name,
+      );
+    } else if (old != null && widget.entry == null) {
+      await own.updatePlanEntry(
+        old.entryId,
+        amount: total,
+        date: _date,
+        payee: label.isEmpty ? group.name : label,
+      );
+    }
     group = group.withExpense(
       SharedExpense(
         id: old?.id ?? 'expense-${now.microsecondsSinceEpoch}',
-        label: _label.text.trim(),
+        label: label,
         date: _date,
         paidBy: widget.entry != null ? meId : _paidBy,
         shares: <String, int>{
           for (final MapEntry<String, int> s in shares.entries)
             if (s.value > 0) s.key: s.value,
         },
-        entryId: widget.entry?.id ?? old?.entryId,
+        entryId: entryId,
       ),
     );
     await own.saveGroup(group);
@@ -287,6 +314,9 @@ class _SplitSheetState extends State<_SplitSheet> {
         };
     final Group? group = _group;
     if (old == null || group == null) return;
+    // The movement the Plan wrote down for it goes with it; one the person
+    // wrote down and split stays theirs.
+    if (widget.entry == null) await own.dropPlanEntry(old.entryId);
     await own.saveGroup(group.withoutExpense(old.id));
     navigator.pop();
   }
@@ -417,6 +447,26 @@ class _SplitSheetState extends State<_SplitSheet> {
                 onChanged: (String? id) =>
                     setState(() => _paidBy = id ?? _paidBy),
               ),
+              if (_new && _paidBy == meId) ...<Widget>[
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String?>(
+                  icon: const Icon(Glyph.caretDown, size: 18),
+                  initialValue: _accountId,
+                  isExpanded: true,
+                  decoration: InputDecoration(labelText: l.instalPaymentFrom),
+                  items: <DropdownMenuItem<String?>>[
+                    for (final Account a in own.paymentAccounts)
+                      DropdownMenuItem<String?>(
+                        value: a.id,
+                        child: Text(a.name, overflow: TextOverflow.ellipsis),
+                      ),
+                    DropdownMenuItem<String?>(
+                      child: Text(l.instalPaymentNoAccount),
+                    ),
+                  ],
+                  onChanged: (String? id) => setState(() => _accountId = id),
+                ),
+              ],
               const SizedBox(height: 12),
               OutlinedButton.icon(
                 onPressed: () async {

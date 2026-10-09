@@ -5276,6 +5276,30 @@ abstract class AppLocalizations {
   /// **'Quitar este pago'**
   String get instalPaymentRemove;
 
+  /// No description provided for @instalPaymentRemoveTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Quitar este pago?'**
+  String get instalPaymentRemoveTitle;
+
+  /// No description provided for @instalPaymentRemoveBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que falta pagar vuelve a subir {amount}.'**
+  String instalPaymentRemoveBody(String amount);
+
+  /// No description provided for @instalPaymentRemoveEntry.
+  ///
+  /// In es, this message translates to:
+  /// **'También se borra su movimiento de {amount} en {account}.'**
+  String instalPaymentRemoveEntry(String amount, String account);
+
+  /// No description provided for @instalPaymentRemoveGo.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar pago'**
+  String get instalPaymentRemoveGo;
+
   /// No description provided for @instalSchedule.
   ///
   /// In es, this message translates to:
@@ -5329,6 +5353,36 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Puede ser menos que la cuota: lo que falte queda pendiente.'**
   String get instalPaymentPartial;
+
+  /// No description provided for @instalPaymentFrom.
+  ///
+  /// In es, this message translates to:
+  /// **'¿De dónde salió?'**
+  String get instalPaymentFrom;
+
+  /// No description provided for @instalPaymentNoAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'No lo anoto en una cuenta'**
+  String get instalPaymentNoAccount;
+
+  /// No description provided for @instalPaidWithCard.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta compra está en {card}: la cuota sale cuando pagas la tarjeta.'**
+  String instalPaidWithCard(String card);
+
+  /// No description provided for @instalPaymentAfter.
+  ///
+  /// In es, this message translates to:
+  /// **'Después quedarán {left} por pagar.'**
+  String instalPaymentAfter(String left);
+
+  /// No description provided for @instalPaymentAccountDown.
+  ///
+  /// In es, this message translates to:
+  /// **'{account} baja {amount}.'**
+  String instalPaymentAccountDown(String account, String amount);
 
   /// No description provided for @instalDelete.
   ///
@@ -6176,6 +6230,18 @@ abstract class AppLocalizations {
   /// **'llegó a tu cuenta'**
   String get sharedLinked;
 
+  /// No description provided for @sharedLeftFrom.
+  ///
+  /// In es, this message translates to:
+  /// **'salió de {account}'**
+  String sharedLeftFrom(String account);
+
+  /// No description provided for @sharedArrivedIn.
+  ///
+  /// In es, this message translates to:
+  /// **'llegó a {account}'**
+  String sharedArrivedIn(String account);
+
   /// No description provided for @sharedRemovePayment.
   ///
   /// In es, this message translates to:
@@ -6199,6 +6265,42 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'No, o no está en Quincena'**
   String get sharedNotRecorded;
+
+  /// No description provided for @sharedRecordIn.
+  ///
+  /// In es, this message translates to:
+  /// **'Anotarla en {account}'**
+  String sharedRecordIn(String account);
+
+  /// No description provided for @sharedOweLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'Le seguirás debiendo {amount} a {name}.'**
+  String sharedOweLeft(String amount, String name);
+
+  /// No description provided for @sharedEvenWith.
+  ///
+  /// In es, this message translates to:
+  /// **'Quedas a paz y salvo con {name}.'**
+  String sharedEvenWith(String name);
+
+  /// No description provided for @sharedOwesYouLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'{name} te seguirá debiendo {amount}.'**
+  String sharedOwesYouLeft(String name, String amount);
+
+  /// No description provided for @sharedEvenFrom.
+  ///
+  /// In es, this message translates to:
+  /// **'{name} queda a paz y salvo contigo.'**
+  String sharedEvenFrom(String name);
+
+  /// No description provided for @sharedAccountUp.
+  ///
+  /// In es, this message translates to:
+  /// **'{account} sube {amount}.'**
+  String sharedAccountUp(String account, String amount);
 
   /// No description provided for @sharedArrivedAsHelp.
   ///
@@ -7740,6 +7842,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'No salió de mis cuentas'**
   String get loanNoAccount;
+
+  /// No description provided for @loanToAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'¿A qué cuenta llegó?'**
+  String get loanToAccount;
+
+  /// No description provided for @loanNoAccountIn.
+  ///
+  /// In es, this message translates to:
+  /// **'No llegó a mis cuentas'**
+  String get loanNoAccountIn;
 
   /// No description provided for @loanLentNote.
   ///

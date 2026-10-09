@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -259,17 +261,82 @@ class InstalmentDetailPage extends StatelessWidget {
         : covered < rows.length
         ? rows[covered].payment
         : 0;
-    final (DateTime, int)? payment = await showDialog<(DateTime, int)>(
+    final Account? account = plan.accountId == null
+        ? null
+        : own.snapshot?.account(plan.accountId!);
+    // On a card, the instalment goes out when the card is paid; from any
+    // other account it goes out now, from the one the person says.
+    final bool card = heldByCard(account);
+    final List<Account> from = card ? const <Account>[] : own.paymentAccounts;
+    final (DateTime, int, String?)? payment =
+        await showDialog<(DateTime, int, String?)>(
+          context: context,
+          builder: (BuildContext context) => _PaymentDialog(
+            ledger: ledger,
+            asset: own.profile?.base ?? Asset.cop,
+            today: own.today,
+            suggested: suggested,
+            left: plan.remaining,
+            accounts: from,
+            account: from.any((Account a) => a.id == account?.id)
+                ? account!.id
+                : own.likelyPaymentAccount?.id,
+            card: card ? account!.name : null,
+          ),
+        );
+    if (payment == null) return;
+    await own.payInstalment(
+      plan,
+      payment.$1,
+      payment.$2,
+      accountId: payment.$3,
+    );
+  }
+
+  /// Takes a payment back once the person saw what goes with it: what is
+  /// left to pay goes up again, and the movement the Plan made goes too.
+  Future<void> _removePayment(
+    BuildContext context,
+    Ledger ledger,
+    Instalments plan,
+    int index,
+  ) async {
+    final AppLocalizations l = context.l10n;
+    String amount(int minor) => pesos(ledger.major(minor));
+    final (DateTime, int) payment = plan.payments[index];
+    final Entry? entry = switch (plan.entryOf(index)) {
+      final String id => own.entryById(id),
+      null => null,
+    };
+    final String? where =
+        entry == null || entry.source != OwnController.planSource
+        ? null
+        : own.snapshot?.account(entry.accountId)?.name;
+    final bool? sure = await showDialog<bool>(
       context: context,
-      builder: (BuildContext context) => _PaymentDialog(
-        ledger: ledger,
-        asset: own.profile?.base ?? Asset.cop,
-        today: own.today,
-        suggested: suggested,
+      builder: (BuildContext context) => AlertDialog(
+        title: Text(l.instalPaymentRemoveTitle),
+        content: Text(
+          <String>[
+            l.instalPaymentRemoveBody(amount(payment.$2)),
+            if (where != null)
+              l.instalPaymentRemoveEntry(amount(payment.$2), where),
+          ].join(' '),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l.instalPaymentRemoveGo),
+          ),
+        ],
       ),
     );
-    if (payment == null) return;
-    await own.saveInstalments(plan.withPayment(payment.$1, payment.$2));
+    if (sure != true) return;
+    await own.removeInstalmentPayment(plan, index);
   }
 
   @override
@@ -456,13 +523,8 @@ class InstalmentDetailPage extends StatelessWidget {
                           ),
                           trailing: IconButton(
                             tooltip: l.instalPaymentRemove,
-                            onPressed: () => own.saveInstalments(
-                              plan.withPayments(<(DateTime, int)>[
-                                for (final (int j, (DateTime, int) q)
-                                    in plan.payments.indexed)
-                                  if (j != i) q,
-                              ]),
-                            ),
+                            onPressed: () =>
+                                _removePayment(context, ledger, plan, i),
                             icon: Icon(
                               Glyph.trash,
                               size: 18,
@@ -595,12 +657,28 @@ class _PaymentDialog extends StatefulWidget {
     required this.asset,
     required this.today,
     required this.suggested,
+    required this.left,
+    required this.accounts,
+    required this.account,
+    required this.card,
   });
 
   final Ledger ledger;
   final Asset asset;
   final DateTime today;
   final int suggested;
+
+  /// What is left to pay before this payment, when it is known.
+  final int? left;
+
+  /// Where the money can come out of; none when a card holds the purchase.
+  final List<Account> accounts;
+
+  /// The one it most likely came out of.
+  final String? account;
+
+  /// The card that holds the purchase, by name, when one does.
+  final String? card;
 
   @override
   State<_PaymentDialog> createState() => _PaymentDialogState();
@@ -617,6 +695,7 @@ class _PaymentDialogState extends State<_PaymentDialog> {
           ),
   );
   late DateTime _on = widget.today;
+  late String? _account = widget.account;
   String? _error;
 
   @override
@@ -631,7 +710,28 @@ class _PaymentDialogState extends State<_PaymentDialog> {
       setState(() => _error = context.l10n.instalPaymentInvalid);
       return;
     }
-    Navigator.of(context).pop((_on, widget.ledger.minor(value.toDouble())));
+    Navigator.of(
+      context,
+    ).pop((_on, widget.ledger.minor(value.toDouble()), _account));
+  }
+
+  /// What the payment does, said before it is saved: what is left to pay
+  /// after it, and the account it comes out of.
+  String? _after(AppLocalizations l) {
+    final Decimal? value = parseAmount(_amount.text);
+    if (value == null || value <= Decimal.zero) return null;
+    final int paid = widget.ledger.minor(value.toDouble());
+    String amount(int minor) => pesos(widget.ledger.major(minor));
+    final String? from = widget.accounts
+        .where((Account a) => a.id == _account)
+        .firstOrNull
+        ?.name;
+    final List<String> said = <String>[
+      if (widget.left case final int left)
+        l.instalPaymentAfter(amount(math.max(0, left - paid))),
+      if (from != null) l.instalPaymentAccountDown(from, amount(paid)),
+    ];
+    return said.isEmpty ? null : said.join(' ');
   }
 
   @override
@@ -651,6 +751,7 @@ class _PaymentDialogState extends State<_PaymentDialog> {
             inputFormatters: <TextInputFormatter>[
               AmountInputFormatter(maxDecimals: widget.asset.decimals),
             ],
+            onChanged: (_) => setState(() => _error = null),
             decoration: InputDecoration(
               labelText: l.instalPaymentAmount,
               errorText: _error,
@@ -663,6 +764,29 @@ class _PaymentDialogState extends State<_PaymentDialog> {
           ),
           const SizedBox(height: 8),
           Text(l.instalPaymentPartial, style: context.type.bodySmall),
+          if (widget.card case final String card) ...<Widget>[
+            const SizedBox(height: 8),
+            Text(l.instalPaidWithCard(card), style: context.type.bodySmall),
+          ] else if (widget.accounts.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String?>(
+              initialValue: _account,
+              isExpanded: true,
+              icon: const Icon(Glyph.caretDown, size: 18),
+              decoration: InputDecoration(labelText: l.instalPaymentFrom),
+              items: <DropdownMenuItem<String?>>[
+                for (final Account a in widget.accounts)
+                  DropdownMenuItem<String?>(
+                    value: a.id,
+                    child: Text(a.name, overflow: TextOverflow.ellipsis),
+                  ),
+                DropdownMenuItem<String?>(
+                  child: Text(l.instalPaymentNoAccount),
+                ),
+              ],
+              onChanged: (String? id) => setState(() => _account = id),
+            ),
+          ],
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: () async {
@@ -677,6 +801,10 @@ class _PaymentDialogState extends State<_PaymentDialog> {
             icon: const Icon(Glyph.calendarBlank, size: 18),
             label: Text(dayMonth(_on)),
           ),
+          if (_after(l) case final String after) ...<Widget>[
+            const SizedBox(height: 12),
+            Text(after, style: context.type.bodySmall),
+          ],
         ],
       ),
       actions: <Widget>[
