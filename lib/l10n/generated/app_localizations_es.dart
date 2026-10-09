@@ -2804,6 +2804,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get binanceSecretKey => 'Secret Key';
 
   @override
+  String get binanceNeedKey => 'Escribe tu API Key';
+
+  @override
+  String get binanceNeedSecret => 'Escribe tu Secret Key';
+
+  @override
   String get binanceConnect => 'Conectar';
 
   @override

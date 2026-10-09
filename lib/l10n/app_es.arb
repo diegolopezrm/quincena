@@ -873,6 +873,8 @@
   "binanceSteps": "1. En la app de Binance, abre tu perfil y entra a Gestión de API.\n2. Crea una API generada por el sistema y llámala Quincena.\n3. Deja marcado solo «Habilitar lectura». Como el teléfono no tiene una IP fija, elige sin restricción de IP: con solo lectura no hay riesgo de que muevan tu plata.\n4. Copia la API Key y la Secret Key y pégalas aquí.",
   "binanceApiKey": "API Key",
   "binanceSecretKey": "Secret Key",
+  "binanceNeedKey": "Escribe tu API Key",
+  "binanceNeedSecret": "Escribe tu Secret Key",
   "binanceConnect": "Conectar",
   "binanceConnecting": "Revisando la llave con Binance…",
   "binanceNotReadOnly": "Esta llave puede hacer más que leer ({what}). Crea una que solo tenga «Habilitar lectura»; esta no se guardó.",

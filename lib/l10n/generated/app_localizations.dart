@@ -4346,6 +4346,18 @@ abstract class AppLocalizations {
   /// **'Secret Key'**
   String get binanceSecretKey;
 
+  /// No description provided for @binanceNeedKey.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe tu API Key'**
+  String get binanceNeedKey;
+
+  /// No description provided for @binanceNeedSecret.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe tu Secret Key'**
+  String get binanceNeedSecret;
+
   /// No description provided for @binanceConnect.
   ///
   /// In es, this message translates to:

@@ -241,6 +241,11 @@ class _BinancePageState extends State<BinancePage> {
   bool _hidden = true;
   ConnectOutcome? _outcome;
 
+  /// What is missing, said under the field that misses it until it is
+  /// written.
+  String? _keyMissing;
+  String? _secretMissing;
+
   BinanceLink get link => widget.own.binance;
 
   @override
@@ -263,7 +268,16 @@ class _BinancePageState extends State<BinancePage> {
   }
 
   Future<void> _connect() async {
-    if (_key.text.trim().isEmpty || _secret.text.trim().isEmpty) return;
+    final AppLocalizations l = context.l10n;
+    final bool noKey = _key.text.trim().isEmpty;
+    final bool noSecret = _secret.text.trim().isEmpty;
+    if (noKey || noSecret) {
+      setState(() {
+        _keyMissing = noKey ? l.binanceNeedKey : null;
+        _secretMissing = noSecret ? l.binanceNeedSecret : null;
+      });
+      return;
+    }
     setState(() {
       _connecting = true;
       _outcome = null;
@@ -495,7 +509,13 @@ class _BinancePageState extends State<BinancePage> {
         controller: _key,
         autocorrect: false,
         enableSuggestions: false,
-        decoration: InputDecoration(labelText: l.binanceApiKey),
+        decoration: InputDecoration(
+          labelText: l.binanceApiKey,
+          errorText: _keyMissing,
+        ),
+        onChanged: (_) {
+          if (_keyMissing != null) setState(() => _keyMissing = null);
+        },
       ),
       const SizedBox(height: 12),
       TextField(
@@ -503,8 +523,12 @@ class _BinancePageState extends State<BinancePage> {
         autocorrect: false,
         enableSuggestions: false,
         obscureText: _hidden,
+        onChanged: (_) {
+          if (_secretMissing != null) setState(() => _secretMissing = null);
+        },
         decoration: InputDecoration(
           labelText: l.binanceSecretKey,
+          errorText: _secretMissing,
           suffixIcon: IconButton(
             onPressed: () => setState(() => _hidden = !_hidden),
             icon: Icon(_hidden ? Glyph.lock : Glyph.check, size: 18),

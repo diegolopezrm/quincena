@@ -2808,6 +2808,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get binanceSecretKey => 'Secret Key';
 
   @override
+  String get binanceNeedKey => 'Type your API Key';
+
+  @override
+  String get binanceNeedSecret => 'Type your Secret Key';
+
+  @override
   String get binanceConnect => 'Connect';
 
   @override
