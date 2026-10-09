@@ -363,7 +363,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get startDemoBody =>
-      'See how it works with Valentina\'s account, a designer in Medellín. You can switch to your own accounts any time.';
+      'Explore the whole app with Valentina\'s account, a designer in Medellín. She is made up and your data stays untouched; switch to your own accounts any time.';
 
   @override
   String get privacyNote =>
@@ -2296,6 +2296,71 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get continueLabel => 'Continue';
+
+  @override
+  String get acceptLabel => 'Accept';
+
+  @override
+  String get disclosureUses => 'What it uses';
+
+  @override
+  String get disclosureReads => 'What it reads';
+
+  @override
+  String get disclosureWhen => 'When';
+
+  @override
+  String get disclosureWhere => 'Where it stays';
+
+  @override
+  String get captureLocationAskTitle => 'Location of your payments';
+
+  @override
+  String get captureLocationAskLead =>
+      'Quincena collects location data to suggest the shop of a payment, even when the app is closed or not in use.';
+
+  @override
+  String get captureLocationAskWhat => 'Your phone\'s precise location.';
+
+  @override
+  String get captureLocationAskWhen =>
+      'Only when a payment notification arrives, also while the app is closed or not in use.';
+
+  @override
+  String get captureLocationAskWhere =>
+      'On this phone. To find the shop, only the coordinates go to OpenStreetMap, through Photon: nothing else, and to no one else.';
+
+  @override
+  String get captureLocationAskNextAndroid =>
+      'If you accept, Android will ask you for permission to use your location.';
+
+  @override
+  String get captureLocationAskNextIos =>
+      'If you accept, Quincena will use the location your shortcut hands over with each payment.';
+
+  @override
+  String get captureNotificationsAskTitle =>
+      'Reading your payment notifications';
+
+  @override
+  String get captureNotificationsAskLead =>
+      'Quincena reads this phone\'s notifications to note your payments without you having to type them.';
+
+  @override
+  String get captureNotificationsAskWhat =>
+      'The text of incoming notifications, such as those from your bank and wallet apps and your texts. It keeps only the ones with an amount and its currency, along with the app that showed it and the time; the rest pass by without being kept, and verification codes are never kept.';
+
+  @override
+  String get captureNotificationsAskWhen =>
+      'Every time a notification arrives, also while the app is closed or not in use.';
+
+  @override
+  String get captureNotificationsAskWhere =>
+      'On this phone. Quincena doesn\'t send their text to any server or anyone.';
+
+  @override
+  String get captureNotificationsAskNext =>
+      'If you accept, Android will open notification access so you can turn Quincena on.';
 
   @override
   String get captureImagesTitle => 'Screenshots and receipts';
@@ -5784,6 +5849,63 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String exampleBarTitle(String name) {
+    return '$name\'s example account';
+  }
+
+  @override
+  String get exampleUseOwn => 'Use my accounts';
+
+  @override
+  String exampleAboutBody(String name) {
+    return '$name is made up, and so is every figure. Nothing you do here touches your own accounts or your data, and it is all erased when you leave the example.';
+  }
+
+  @override
+  String get exampleBackToStart => 'Back to the first screen';
+
+  @override
+  String get exampleStay => 'Keep exploring';
+
+  @override
+  String exampleOnlyBody(String name) {
+    return 'This is $name\'s example account, and it is made up. Here this does nothing: it connects to nothing, asks your phone for no permissions and leaves your data alone. To use it, switch to your own accounts.';
+  }
+
+  @override
+  String get exampleNoReminders => 'The example account sets no reminders.';
+
+  @override
+  String get exampleSection => 'Example account';
+
+  @override
+  String examplePricedAt(String when) {
+    return 'The example\'s fixed prices, from $when';
+  }
+
+  @override
+  String get sourceScript => 'Example conversation';
+
+  @override
+  String get exampleNotConnected => 'Connects to nothing in the example';
+
+  @override
+  String get examplePricesNote =>
+      'In the example, prices are fixed and asked of no one, Binance included. Quincena doesn\'t give investment advice.';
+
+  @override
+  String exampleStatementBody(String name) {
+    return 'Try a made-up statement of $name\'s payroll account: it has a payment that\'s already recorded, a card payment, and a purchase from before she wrote down her balance.';
+  }
+
+  @override
+  String get exampleStatementUse => 'Use the example statement';
+
+  @override
+  String get examplePasteNote =>
+      'A sample message, like the ones banks send. You can change it before reading it.';
+
+  @override
   String dayWhen(String date) {
     return 'on $date';
   }
@@ -5910,4 +6032,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get rulesEmptyWithMovements =>
       'You don\'t have any rules right now. When you record something in Needs review, one is created for its shop, card or bank. Your transactions stay as they are.';
+
+  @override
+  String get badgeExample => 'SAMPLE';
+
+  @override
+  String get aboutExample =>
+      'The account, the person and the shops in the sample are made up.';
 }

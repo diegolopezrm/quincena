@@ -15,6 +15,7 @@ import '../functions/money_functions.dart'
         contributionOn,
         monthlyNeeded;
 import '../l10n/l10n.dart';
+import 'tools.dart' show ExpenseToRecord, RecordExpense;
 import 'understand.dart';
 
 /// One answer: the components of a surface and the data they bind to.
@@ -43,6 +44,25 @@ class AgentTurn {
   ];
 }
 
+/// Where the scripted agent keeps what the person saves, when the account
+/// it answers about lives outside the conversation: the example account's
+/// database, which every screen reads. Each one finishes once the account
+/// counts what it saved.
+class ScriptedKeeper {
+  const ScriptedKeeper({required this.expense, required this.goalMonthly});
+
+  /// Saves an expense the person confirmed; one with the same id again
+  /// corrects it.
+  final RecordExpense expense;
+
+  /// Saves [monthly], in the account's smallest unit, as what goes into
+  /// [goal] each month. Only the plan changes: no money moves.
+  final Future<void> Function(Goal goal, int monthly) goalMonthly;
+}
+
+/// An expense a form sent, in the account's smallest unit.
+typedef _Draft = ({int amount, Category category, String note});
+
 /// The agent the demo runs with when there is no model behind it.
 ///
 /// It recognizes the questions the demo is built around and answers each with
@@ -51,9 +71,27 @@ class AgentTurn {
 /// Every one comes from the [Ledger], so the answers agree with the statement
 /// and with each other, and recording a saved expense changes the next answer.
 class ScriptedAgent {
-  ScriptedAgent(this.ledger, {this.language = 'es'});
+  ScriptedAgent(Ledger ledger, {this.language = 'es'})
+    : _ledger = (() => ledger),
+      keeper = null;
 
-  final Ledger ledger;
+  /// Answers from the account [ledger] gives at each answer, as it is then,
+  /// and keeps what the person saves through [keeper]: the example
+  /// account, whose database every screen reads.
+  ScriptedAgent.over(
+    Ledger Function() ledger, {
+    this.language = 'es',
+    this.keeper,
+  }) : _ledger = ledger;
+
+  final Ledger Function() _ledger;
+
+  /// The account the answers are about, as it is now.
+  Ledger get ledger => _ledger();
+
+  /// Where what the person saves is kept, when the account lives outside
+  /// the conversation; null keeps it in the account in memory.
+  final ScriptedKeeper? keeper;
 
   /// The language the answers are written in: `es` or `en`.
   final String language;
@@ -100,6 +138,36 @@ class ScriptedAgent {
     Intent.compare => _compare(),
     null => _unknown(),
   };
+
+  /// Answers something the person did on a surface, as [react] does, once
+  /// what it saves is kept where [keeper] keeps it: the answer then reads
+  /// the account with it in.
+  Future<AgentTurn?> respond(String name, Map<String, Object?> context) async {
+    final ScriptedKeeper? keeper = this.keeper;
+    if (keeper == null) return react(name, context);
+    switch (name) {
+      case 'save_expense':
+        final _Draft? draft = _draftOf(context);
+        if (draft == null) return null;
+        final Object? id = context['id'];
+        await keeper.expense(
+          ExpenseToRecord(
+            amount: draft.amount,
+            category: draft.category,
+            note: draft.note,
+            id: id is String && id.isNotEmpty ? id : null,
+          ),
+        );
+        return _receipt(draft);
+      case 'save_goal_plan':
+        final Goal? goal = _trip;
+        final int monthly = _monthlyIn(context);
+        if (goal == null || monthly <= 0) return _goal();
+        await keeper.goalMonthly(goal, monthly);
+        return _planReceipt(_trip ?? goal, monthly);
+    }
+    return react(name, context);
+  }
 
   /// Answers something the person did on a surface.
   AgentTurn? react(String name, Map<String, Object?> context) {
@@ -337,8 +405,17 @@ class ScriptedAgent {
     );
   }
 
+  /// The goal the questions are about: the trip to Cartagena, or the first
+  /// goal there is when it has another name. Null with none.
+  Goal? get _trip =>
+      ledger.goals
+          .where((Goal g) => plain(g.name).contains('cartagena'))
+          .firstOrNull ??
+      ledger.goals.firstOrNull;
+
   AgentTurn _goal() {
-    final Goal goal = ledger.goal('cartagena');
+    final Goal? goal = _trip;
+    if (goal == null) return _noGoal();
     const int cut = 0;
     final int stale = ledger.subscriptions
         .where((s) => s.unusedAsOf(appToday))
@@ -582,6 +659,23 @@ class ScriptedAgent {
   /// own checks turn down: then nothing is saved and nothing said, and the
   /// form stays open with its message under the amount.
   AgentTurn? _saved(Map<String, Object?> context) {
+    final _Draft? draft = _draftOf(context);
+    if (draft == null) return null;
+    ledger.record(
+      Movement(
+        id: 'manual-${ledger.movements.length}',
+        date: appToday,
+        merchant: draft.note.isEmpty ? _label(draft.category) : draft.note,
+        amount: draft.amount,
+        category: draft.category,
+      ),
+    );
+    return _receipt(draft);
+  }
+
+  /// The expense the form sent, or null when its amount is one the form's
+  /// own checks turn down.
+  _Draft? _draftOf(Map<String, Object?> context) {
     final num amount = context['amount'] is num ? context['amount']! as num : 0;
     final Category category =
         Category.values
@@ -590,17 +684,12 @@ class ScriptedAgent {
         Category.other;
     final String note = (context['note'] as String?)?.trim() ?? '';
     if (amount <= 0 || amount > ledger.balance) return null;
+    return (amount: amount.round(), category: category, note: note);
+  }
 
-    ledger.record(
-      Movement(
-        id: 'manual-${ledger.movements.length}',
-        date: appToday,
-        merchant: note.isEmpty ? _label(category) : note,
-        amount: amount.round(),
-        category: category,
-      ),
-    );
-
+  /// What the account says once [draft] is in it.
+  AgentTurn _receipt(_Draft draft) {
+    final (:int amount, :Category category, note: _) = draft;
     final (int y, int m) = _lastMonth;
     return AgentTurn(
       components: <JsonMap>[
@@ -632,11 +721,9 @@ class ScriptedAgent {
   }
 
   AgentTurn _planSaved(Map<String, Object?> context) {
-    final num monthly = context['monthly'] is num
-        ? context['monthly']! as num
-        : 0;
-    final Goal before = ledger.goal('cartagena');
-    if (monthly <= 0) return _goal();
+    final int monthly = _monthlyIn(context);
+    final Goal? before = _trip;
+    if (before == null || monthly <= 0) return _goal();
     // The plan is what the person chose, kept in the account's memory like
     // an expense, so the next answer starts from it. The money stays where
     // it is: the person moves it.
@@ -645,10 +732,21 @@ class ScriptedAgent {
       name: before.name,
       target: before.target,
       saved: before.saved,
-      monthly: monthly.round(),
+      monthly: monthly,
       deadline: before.deadline,
     );
     ledger.goals[ledger.goals.indexOf(before)] = goal;
+    return _planReceipt(goal, monthly);
+  }
+
+  /// What a plan form sent to set aside each month, or 0.
+  static int _monthlyIn(Map<String, Object?> context) {
+    final Object? monthly = context['monthly'];
+    return monthly is num ? monthly.round() : 0;
+  }
+
+  /// What saving [monthly] a month for [goal] means.
+  AgentTurn _planReceipt(Goal goal, int monthly) {
     final String arrival = arrivalMonth(
       goal.target.toDouble(),
       goal.saved.toDouble(),
@@ -1094,20 +1192,60 @@ class ScriptedAgent {
       _c('root', 'Answer', {
         'children': ['head', 'next'],
       }),
+      // The example has no model to connect: with their own accounts,
+      // Gemini answers the person whatever they ask.
+      if (keeper != null)
+        _c('head', 'Headline', {
+          'kicker': _t('Cuenta de ejemplo', 'Example account'),
+          'title': _t(
+            'En el ejemplo respondo estas preguntas',
+            'In the example, I can answer these questions',
+          ),
+          'body': _t(
+            'Con tus propias cuentas, Gemini responde lo que le preguntes. '
+                'Aquí, prueba una de estas.',
+            'With your own accounts, Gemini answers whatever you ask. Here, '
+                'try one of these.',
+          ),
+        })
+      else
+        _c('head', 'Headline', {
+          'kicker': _t('Modo demo', 'Demo mode'),
+          'title': _t(
+            'En la demo respondo estas preguntas',
+            'In the demo, I can answer these questions',
+          ),
+          'body': _t(
+            'Con un modelo conectado puedes preguntar lo que quieras. Sin él, '
+                'prueba una de estas.',
+            'With a model connected, you can ask anything. Without one, try '
+                'one of these.',
+          ),
+        }),
+      ..._suggestions(_questions),
+    ],
+  );
+
+  /// The answer to the trip when the account has no goal to plan.
+  AgentTurn _noGoal() => AgentTurn(
+    components: <JsonMap>[
+      _c('root', 'Answer', {
+        'children': ['head', 'next'],
+      }),
       _c('head', 'Headline', {
-        'kicker': _t('Modo demo', 'Demo mode'),
+        'kicker': _t('Tu meta', 'Your goal'),
         'title': _t(
-          'En la demo respondo estas preguntas',
-          'In the demo, I can answer these questions',
+          'Todavía no tienes una meta de ahorro',
+          "You don't have a savings goal yet",
         ),
         'body': _t(
-          'Con un modelo conectado puedes preguntar lo que quieras. Sin él, '
-              'prueba una de estas.',
-          'With a model connected, you can ask anything. Without one, try '
-              'one of these.',
+          'Créala en Plan, con lo que cuesta y para cuándo, y te digo cuánto '
+              'apartar al mes.',
+          'Add one in Plan, with what it costs and when, and I will tell you '
+              'how much to set aside each month.',
         ),
       }),
-      ..._suggestions(_questions),
+      ..._suggestions(<String>[_questions[2]]),
     ],
   );
 

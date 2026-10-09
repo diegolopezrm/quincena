@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import 'data/clock.dart';
+import 'data/example_account.dart';
 import 'format/money.dart' as format;
 import 'money/asset.dart';
 import 'money/rate_sources.dart';
@@ -23,7 +24,8 @@ enum AppMode {
   /// Setting up their own accounts.
   onboarding,
 
-  /// The sample account.
+  /// Valentina's example account: the whole app on made-up money, kept in
+  /// memory apart from the person's own.
   demo,
 
   /// Their own accounts.
@@ -62,7 +64,8 @@ class AppModeController extends ChangeNotifier {
     market: market,
   );
 
-  /// Null where the build cannot keep a database: the demo is all there is.
+  /// Null where the build cannot keep a database: the example is all there
+  /// is.
   final QuincenaStore? store;
 
   /// The day's questions to Gemini through Quincena, shared by the sample
@@ -71,8 +74,8 @@ class AppModeController extends ChangeNotifier {
       ? null
       : (Allowance(store!, now: now)..load());
 
-  /// Open on the demo unless the person already chose their own accounts,
-  /// as the published web demo does.
+  /// Open on the example unless the person already chose their own
+  /// accounts, as the published web demo does.
   final bool startInDemo;
 
   static const String _modeKey = 'app.mode';
@@ -83,6 +86,17 @@ class AppModeController extends ChangeNotifier {
   OwnController? _own;
   OwnController? get own => _own;
 
+  /// Valentina's example account while the app shows it, in a database in
+  /// memory: built afresh each time it opens, closed and gone when it is
+  /// left, so nothing done in it stays.
+  OwnController? _example;
+  OwnController? get example => _example;
+  QuincenaStore? _exampleStore;
+
+  /// Whether the example can go back to the first screen: not where the
+  /// app opens on it, as the web does, which never shows that screen.
+  bool get hasStart => store != null && !startInDemo;
+
   /// Whether the person can use their own accounts in this build.
   bool get canUseOwn => store != null;
 
@@ -92,23 +106,31 @@ class AppModeController extends ChangeNotifier {
 
   Future<void> start() async {
     final QuincenaStore? s = store;
-    if (s == null) return _set(AppMode.demo);
+    if (s == null) return _enterExample();
     final String? saved = await s.setting(_modeKey);
     _hasOwn = await s.profile() != null;
     if (saved == 'own' && _hasOwn) return _enterOwn();
-    if (saved == 'demo' || startInDemo) return _set(AppMode.demo);
+    if (saved == 'demo' || startInDemo) return _enterExample();
     _set(AppMode.choosing);
   }
 
-  /// The sample account. The person's own data stays where it is.
+  /// Valentina's example account, the whole app on it. The person's own
+  /// accounts stay where they are, untouched: only the choice is kept, so
+  /// the app opens on the example again, as fresh as the first time.
   Future<void> useDemo() async {
     await store?.setSetting(_modeKey, 'demo');
     _leaveOwn();
-    // The sample's figures are not the person's: the widget waits.
-    unawaited(HomeWidget.show(null));
-    appToday = DateTime(2026, 10, 1);
-    format.baseCurrency = Asset.cop;
-    _set(AppMode.demo);
+    await _enterExample();
+  }
+
+  /// Back to the first screen from the example, which forgets it was
+  /// chosen.
+  Future<void> backToStart() async {
+    if (!hasStart) return;
+    await store?.setSetting(_modeKey, '');
+    _leaveExample();
+    _noAccount();
+    _set(AppMode.choosing);
   }
 
   /// The person's own accounts, through onboarding the first time, and
@@ -119,6 +141,8 @@ class AppModeController extends ChangeNotifier {
     if (s == null) return;
     if (await s.profile() == null ||
         (await s.accounts(archived: true)).isEmpty) {
+      _leaveExample();
+      _noAccount();
       return _set(AppMode.onboarding);
     }
     await s.setSetting(_modeKey, 'own');
@@ -143,9 +167,50 @@ class AppModeController extends ChangeNotifier {
     _leaveOwn();
     unawaited(HomeWidget.show(null));
     _hasOwn = false;
+    _noAccount();
+    if (startInDemo) return _enterExample();
+    _set(AppMode.choosing);
+  }
+
+  /// Counts the times the example was opened or left, so one that was
+  /// left while it opened is closed instead of shown.
+  int _visit = 0;
+
+  Future<void> _enterExample() async {
+    _leaveExample();
+    final int visit = _visit;
+    // Nothing to show while it is written: a moment, in memory.
+    _set(AppMode.loading);
+    final QuincenaStore s = await openExample();
+    if (visit != _visit) return s.close();
+    final OwnController example = OwnController(
+      s,
+      example: true,
+      now: () => exampleNow,
+      readNative: false,
+    );
+    _exampleStore = s;
+    _example = example;
+    await example.start();
+    // Left before it finished opening.
+    if (!identical(_example, example)) return;
+    _set(AppMode.demo);
+  }
+
+  void _leaveExample() {
+    _visit++;
+    final QuincenaStore? s = _exampleStore;
+    _example?.dispose();
+    _example = null;
+    _exampleStore = null;
+    if (s != null) unawaited(s.close());
+  }
+
+  /// Back to the day and the currency the app starts with, when no account
+  /// is open to set its own.
+  void _noAccount() {
     appToday = DateTime(2026, 10, 1);
     format.baseCurrency = Asset.cop;
-    _set(startInDemo ? AppMode.demo : AppMode.choosing);
   }
 
   Future<void> _enterOwn() async {
@@ -153,6 +218,9 @@ class AppModeController extends ChangeNotifier {
     final OwnController own = newOwn();
     _own = own;
     await own.start();
+    // The example stays on screen until the person's own accounts are
+    // ready to take its place.
+    _leaveExample();
     _hasOwn = true;
     _set(AppMode.own);
   }
@@ -170,6 +238,7 @@ class AppModeController extends ChangeNotifier {
   @override
   void dispose() {
     _leaveOwn();
+    _leaveExample();
     super.dispose();
   }
 }

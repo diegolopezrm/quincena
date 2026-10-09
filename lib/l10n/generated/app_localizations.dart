@@ -659,7 +659,7 @@ abstract class AppLocalizations {
   /// No description provided for @startDemoBody.
   ///
   /// In es, this message translates to:
-  /// **'Mira cómo funciona con la cuenta de Valentina, una diseñadora en Medellín. Puedes pasar a tus cuentas cuando quieras.'**
+  /// **'Recorre toda la app con la cuenta de Valentina, una diseñadora en Medellín. Es inventada y no toca tus datos; puedes pasar a tus cuentas cuando quieras.'**
   String get startDemoBody;
 
   /// No description provided for @privacyNote.
@@ -3529,6 +3529,114 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Continuar'**
   String get continueLabel;
+
+  /// No description provided for @acceptLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Aceptar'**
+  String get acceptLabel;
+
+  /// No description provided for @disclosureUses.
+  ///
+  /// In es, this message translates to:
+  /// **'Qué usa'**
+  String get disclosureUses;
+
+  /// No description provided for @disclosureReads.
+  ///
+  /// In es, this message translates to:
+  /// **'Qué lee'**
+  String get disclosureReads;
+
+  /// No description provided for @disclosureWhen.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuándo'**
+  String get disclosureWhen;
+
+  /// No description provided for @disclosureWhere.
+  ///
+  /// In es, this message translates to:
+  /// **'Dónde queda'**
+  String get disclosureWhere;
+
+  /// No description provided for @captureLocationAskTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Ubicación de tus pagos'**
+  String get captureLocationAskTitle;
+
+  /// No description provided for @captureLocationAskLead.
+  ///
+  /// In es, this message translates to:
+  /// **'Quincena recoge datos de ubicación para sugerir el comercio de un pago, incluso cuando la app está cerrada o no se usa.'**
+  String get captureLocationAskLead;
+
+  /// No description provided for @captureLocationAskWhat.
+  ///
+  /// In es, this message translates to:
+  /// **'La ubicación precisa del teléfono.'**
+  String get captureLocationAskWhat;
+
+  /// No description provided for @captureLocationAskWhen.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo cuando llega una notificación de pago, también con la app cerrada o sin usarla.'**
+  String get captureLocationAskWhen;
+
+  /// No description provided for @captureLocationAskWhere.
+  ///
+  /// In es, this message translates to:
+  /// **'En este teléfono. Para encontrar el comercio, solo las coordenadas van a OpenStreetMap a través de Photon: nada más, y a nadie más.'**
+  String get captureLocationAskWhere;
+
+  /// No description provided for @captureLocationAskNextAndroid.
+  ///
+  /// In es, this message translates to:
+  /// **'Si aceptas, Android te pedirá permiso para usar la ubicación.'**
+  String get captureLocationAskNextAndroid;
+
+  /// No description provided for @captureLocationAskNextIos.
+  ///
+  /// In es, this message translates to:
+  /// **'Si aceptas, Quincena usará la ubicación que tu atajo le pase con cada pago.'**
+  String get captureLocationAskNextIos;
+
+  /// No description provided for @captureNotificationsAskTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Leer tus notificaciones de pagos'**
+  String get captureNotificationsAskTitle;
+
+  /// No description provided for @captureNotificationsAskLead.
+  ///
+  /// In es, this message translates to:
+  /// **'Quincena lee las notificaciones de este teléfono para anotar tus pagos sin que tengas que escribirlos.'**
+  String get captureNotificationsAskLead;
+
+  /// No description provided for @captureNotificationsAskWhat.
+  ///
+  /// In es, this message translates to:
+  /// **'El texto de las notificaciones que llegan, como las de las apps de tus bancos y billeteras y los SMS. Solo guarda las que traen un monto con su moneda, con la app que la mostró y la hora; las demás pasan sin guardarse y los códigos de verificación nunca se guardan.'**
+  String get captureNotificationsAskWhat;
+
+  /// No description provided for @captureNotificationsAskWhen.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada vez que llega una notificación, también con la app cerrada o sin usarla.'**
+  String get captureNotificationsAskWhen;
+
+  /// No description provided for @captureNotificationsAskWhere.
+  ///
+  /// In es, this message translates to:
+  /// **'En este teléfono. Quincena no envía su texto a ningún servidor ni a nadie.'**
+  String get captureNotificationsAskWhere;
+
+  /// No description provided for @captureNotificationsAskNext.
+  ///
+  /// In es, this message translates to:
+  /// **'Si aceptas, Android abrirá el acceso a notificaciones para que actives Quincena.'**
+  String get captureNotificationsAskNext;
 
   /// No description provided for @captureImagesTitle.
   ///
@@ -8784,6 +8892,96 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{Registrar 1 de los {total} listos} other{Registrar {count} de los {total} listos}}'**
   String inboxRecordSome(int count, int total);
 
+  /// No description provided for @exampleBarTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta de ejemplo de {name}'**
+  String exampleBarTitle(String name);
+
+  /// No description provided for @exampleUseOwn.
+  ///
+  /// In es, this message translates to:
+  /// **'Usar mis cuentas'**
+  String get exampleUseOwn;
+
+  /// No description provided for @exampleAboutBody.
+  ///
+  /// In es, this message translates to:
+  /// **'{name} es inventada, como todas sus cifras. Lo que hagas aquí no toca tus cuentas ni tus datos, y se borra al salir del ejemplo.'**
+  String exampleAboutBody(String name);
+
+  /// No description provided for @exampleBackToStart.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver a la primera pantalla'**
+  String get exampleBackToStart;
+
+  /// No description provided for @exampleStay.
+  ///
+  /// In es, this message translates to:
+  /// **'Seguir en el ejemplo'**
+  String get exampleStay;
+
+  /// No description provided for @exampleOnlyBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta es la cuenta de ejemplo de {name}, y es inventada. Aquí esto no hace nada: no se conecta con nada, no le pide permisos a tu teléfono y no toca tus datos. Para usarlo, pasa a tus cuentas.'**
+  String exampleOnlyBody(String name);
+
+  /// No description provided for @exampleNoReminders.
+  ///
+  /// In es, this message translates to:
+  /// **'En la cuenta de ejemplo no se programan avisos.'**
+  String get exampleNoReminders;
+
+  /// No description provided for @exampleSection.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta de ejemplo'**
+  String get exampleSection;
+
+  /// No description provided for @examplePricedAt.
+  ///
+  /// In es, this message translates to:
+  /// **'Precios fijos del ejemplo, del {when}'**
+  String examplePricedAt(String when);
+
+  /// No description provided for @sourceScript.
+  ///
+  /// In es, this message translates to:
+  /// **'Conversación del ejemplo'**
+  String get sourceScript;
+
+  /// No description provided for @exampleNotConnected.
+  ///
+  /// In es, this message translates to:
+  /// **'En el ejemplo no se conecta con nada'**
+  String get exampleNotConnected;
+
+  /// No description provided for @examplePricesNote.
+  ///
+  /// In es, this message translates to:
+  /// **'En el ejemplo los precios son fijos: no se le piden a Binance ni a nadie. Quincena no da asesoría de inversión.'**
+  String get examplePricesNote;
+
+  /// No description provided for @exampleStatementBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Prueba con un extracto inventado de la cuenta de nómina de {name}: trae un pago que ya está anotado, el pago de la tarjeta y una compra de antes de que escribiera su saldo.'**
+  String exampleStatementBody(String name);
+
+  /// No description provided for @exampleStatementUse.
+  ///
+  /// In es, this message translates to:
+  /// **'Usar el extracto de ejemplo'**
+  String get exampleStatementUse;
+
+  /// No description provided for @examplePasteNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Un mensaje de ejemplo, como los que manda el banco. Puedes cambiarlo antes de leerlo.'**
+  String get examplePasteNote;
+
   /// No description provided for @dayWhen.
   ///
   /// In es, this message translates to:
@@ -8933,6 +9131,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'No tienes reglas ahora. Cuando registres algo en Por revisar, se crea la de su comercio, su tarjeta o su banco. Tus movimientos no cambian.'**
   String get rulesEmptyWithMovements;
+
+  /// No description provided for @badgeExample.
+  ///
+  /// In es, this message translates to:
+  /// **'EJEMPLO'**
+  String get badgeExample;
+
+  /// No description provided for @aboutExample.
+  ///
+  /// In es, this message translates to:
+  /// **'La cuenta, la persona y los comercios del ejemplo son inventados.'**
+  String get aboutExample;
 }
 
 class _AppLocalizationsDelegate

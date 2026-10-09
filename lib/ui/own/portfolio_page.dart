@@ -346,7 +346,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                     const SizedBox(height: 24),
                     sources,
                     const SizedBox(height: 24),
-                    _Notes(portfolio: p),
+                    _Notes(portfolio: p, example: widget.own.example),
                   ],
                 ),
               ),
@@ -500,6 +500,9 @@ class _PriceStatus extends StatelessWidget {
               : l.portfolioPricingFailedAt(dayAndTime(at)))
         : at == null
         ? l.portfolioNeverPriced
+        // The example's are made up, and say so.
+        : controller.own.example
+        ? l.examplePricedAt(dayAndTime(at))
         : l.portfolioPricedAt(dayAndTime(at));
     DateTime? trm;
     for (final Rate r in controller.own.rates.used(Asset.usd, base)) {
@@ -1224,9 +1227,12 @@ class HoldingRow extends StatelessWidget {
 
 /// What the figures leave out or assume, said plainly.
 class _Notes extends StatelessWidget {
-  const _Notes({required this.portfolio});
+  const _Notes({required this.portfolio, this.example = false});
 
   final Portfolio portfolio;
+
+  /// Whether these are the example's coins, priced with its fixed prices.
+  final bool example;
 
   @override
   Widget build(BuildContext context) {
@@ -1252,7 +1258,8 @@ class _Notes extends StatelessWidget {
         l.portfolioUnpriced(
           p.unpriced.map((Asset a) => a.code).toSet().join(', '),
         ),
-      l.portfolioDisclaimer,
+      // The example's prices are fixed, and asked of no one.
+      example ? l.examplePricesNote : l.portfolioDisclaimer,
     ];
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),

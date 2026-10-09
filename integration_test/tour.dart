@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quincena/app.dart';
 import 'package:quincena/data/clock.dart';
+import 'package:quincena/data/example_prices.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/format/money.dart' as format;
 import 'package:quincena/money/asset.dart';
@@ -30,7 +31,6 @@ import '../test/commitments_data.dart';
 import '../test/own_flow_test.dart' show fakeRates, settle;
 import '../test/real_life_data.dart';
 import '../test_screens/accounts.dart';
-import '../test_screens/store_screens_test.dart' show ExampleMarket;
 
 /// Takes the picture of what is on screen now, under [name].
 typedef Shot = Future<void> Function(String name);
@@ -113,7 +113,7 @@ Future<void> playScene(
       fetcher: fakeRates(),
       now: () => screensNow,
       // Fixed prices: a live one would make each picture show another total.
-      market: ExampleMarket(),
+      market: ExampleMarket(now: () => screensNow),
     ),
   );
   await settle(tester);
@@ -272,6 +272,12 @@ class Tour {
     await settle(tester);
   }
 
+  /// From the example's Inicio to its conversation over the same story:
+  /// «Otra pregunta», «Something else» in English, under «Pregúntale a tu
+  /// plata».
+  Future<void> conversation({bool english = false}) =>
+      tap(english ? 'Something else' : 'Otra pregunta');
+
   /// Opens [text] and photographs it all, then comes back.
   Future<void> visit(String text, String name) async {
     await tap(text);
@@ -279,7 +285,9 @@ class Tour {
     await back();
   }
 
-  OwnController get own => tester.widget<OwnShell>(find.byType(OwnShell)).own;
+  /// The accounts on screen, under whatever page is open over them.
+  OwnController get own =>
+      tester.widget<OwnShell>(find.byType(OwnShell, skipOffstage: false)).own;
 }
 
 /// Every scene, in the order the folder shows them.
@@ -529,12 +537,25 @@ final List<Scene> scenes = <Scene>[
     await t.shot('codigo-de-respaldo');
   }),
   Scene('14-demo', demo: true, (Tour t) async {
-    await t.page('demo-inicio');
-    // The recordings load after the home shows.
-    await t.waitFor(find.text(_seeRecorded));
-    await t.tap(_seeRecorded);
-    await t.page('lo-que-respondio-gemini');
+    await t.page('ejemplo-inicio');
+    await t.tap('Movimientos');
+    await t.page('ejemplo-movimientos', most: 3);
+    await t.tap('Cuentas');
+    await t.page('ejemplo-cuentas');
+    await t.tap('Plan');
+    await t.page('ejemplo-plan');
+    await t.tapTip('Por revisar');
+    await t.page('ejemplo-por-revisar');
     await t.back();
+    await t.tapTip('Ajustes');
+    await t.page('ejemplo-ajustes');
+    await t.back();
+    await t.tap('Inicio');
+    await t.tap('Cuenta de ejemplo de Valentina');
+    await t.shot('ejemplo-que-es');
+    await t.back();
+    await t.conversation();
+    await t.page('demo-inicio');
     await t.tapTip('Ajustes');
     await t.page('demo-ajustes');
     await t.back();
@@ -542,6 +563,9 @@ final List<Scene> scenes = <Scene>[
       await t.tapContaining(_starters[i]);
       await t.page('respuesta-${i + 1}', most: 10);
       await t.tapTip('Nueva conversación');
+      // The offer to undo covers the last question until it goes.
+      await t.tester.pump(const Duration(seconds: 7));
+      await settle(t.tester);
     }
   }),
   Scene('15-modo-oscuro', data: fullAccount, dark: true, (Tour t) async {
@@ -573,6 +597,8 @@ final List<Scene> scenes = <Scene>[
     await t.page('settings', most: 4);
   }),
   Scene('17-demo-ingles', demo: true, english: true, (Tour t) async {
+    await t.page('example-home', most: 3);
+    await t.conversation(english: true);
     await t.page('demo-home');
     await t.tapContaining(_startersEn[1]);
     await t.page('answer', most: 6);
@@ -591,5 +617,3 @@ const List<String> _startersEn = <String>[
   'Where did my money go in September?',
   'Can I afford Cartagena in December?',
 ];
-
-const String _seeRecorded = 'Mira lo que respondió Gemini de verdad';

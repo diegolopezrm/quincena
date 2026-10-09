@@ -12,7 +12,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quincena/agent/model_client.dart';
 import 'package:quincena/app.dart';
 import 'package:quincena/backup/backup.dart';
 import 'package:quincena/capture/event.dart';
@@ -36,6 +35,8 @@ import 'package:quincena/sync/vault.dart';
 import 'package:quincena/version.dart';
 import 'package:quincena/ui/home_page.dart';
 import 'package:quincena/ui/own/own_shell.dart';
+import 'package:quincena/ui/own/statement_page.dart';
+import 'package:quincena/data/example_prices.dart';
 // Links open through it; the fake keeps the app on screen.
 // ignore: depend_on_referenced_packages
 import 'package:url_launcher_platform_interface/link.dart' show LinkDelegate;
@@ -44,7 +45,6 @@ import 'package:url_launcher_platform_interface/url_launcher_platform_interface.
 
 import '../../test/own_flow_test.dart' show fakeRates, settle;
 import '../../test_screens/accounts.dart' show screensNow, seeded;
-import '../../test_screens/store_screens_test.dart' show ExampleMarket;
 import '../tour.dart';
 import 'flow.dart';
 
@@ -63,16 +63,18 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       );
       await f.tap('Con datos de ejemplo');
       await f.step(
-        'Toca «Con datos de ejemplo»: abre la cuenta de Valentina, con un '
-        'aviso arriba de que no es la tuya y el botón «Usar con mis cuentas».',
+        'Toca «Con datos de ejemplo»: abre toda la app con la cuenta de '
+        'Valentina, con la franja «Cuenta de ejemplo de Valentina» arriba y '
+        'el botón «Usar mis cuentas».',
       );
       await f.check('La app recuerda que se eligió el ejemplo', () async {
         expect(await _read(f, () => _store(f).setting('app.mode')), 'demo');
+        expect(_own(f).example, isTrue);
       });
-      await f.tap('Usar con mis cuentas');
+      await f.tap('Usar mis cuentas');
       await f.step(
-        'Toca «Usar con mis cuentas»: empieza la configuración, «Paso 1 de '
-        '4», con la pregunta por tu nombre.',
+        'Toca «Usar mis cuentas»: empieza la configuración, «Paso 1 de 4», '
+        'con la pregunta por tu nombre.',
       );
       await f.check('Todavía no hay un perfil guardado', () async {
         expect(await _read(f, () => _store(f).profile()), isNull);
@@ -1698,36 +1700,38 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       );
       await f.tap('Ver los datos de ejemplo');
       await f.step(
-        '«Ver los datos de ejemplo» abre la cuenta de Valentina, con el aviso '
-        'de que no es la tuya y «Volver a mis cuentas».',
+        '«Ver los datos de ejemplo» abre toda la app con la cuenta de '
+        'Valentina, y arriba la franja «Cuenta de ejemplo de Valentina» con '
+        '«Usar mis cuentas».',
       );
       await f.check('La app recuerda que está en el ejemplo', () async {
         expect(await _read(f, () => _store(f).setting('app.mode')), 'demo');
-        expect(f.shows('Volver a mis cuentas'), isTrue);
+        expect(_own(f).example, isTrue);
+        expect(f.shows('Usar mis cuentas'), isTrue);
       });
-      await f.check('El widget deja de mostrar la cifra del ejemplo', () {
-        expect(phone.widget, isNull);
+      await f.check('Al widget no le llega nada del ejemplo', () {
+        expect(phone.widgetCalls, isEmpty);
       });
       await f.check('Tus movimientos siguen guardados', () async {
         expect(await _read(f, () => _store(f).entries()), hasLength(entries));
       });
       await f.tapTip('Ajustes');
-      await f.reveal(find.text('Volver a mis cuentas'));
       await f.step(
-        'La hoja de «Ajustes» del ejemplo también lleva «Volver a mis cuentas», '
-        'en vez de «Usar con mis cuentas».',
+        'Los Ajustes del ejemplo empiezan con «Cuenta de ejemplo»: «Usar mis '
+        'cuentas» y «Volver a la primera pantalla».',
       );
-      await f.tap('Volver a mis cuentas');
-      await f.check('Desde la hoja también vuelve a tus cuentas', () async {
+      await f.tapFound(find.text('Usar mis cuentas'));
+      await f.check('Desde Ajustes también vuelve a tus cuentas', () async {
         expect(find.byType(OwnShell), findsOneWidget);
+        expect(_own(f).example, isFalse);
         expect(_own(f).ledger!.freeUntilPayday, free);
         expect(await _read(f, () => _store(f).setting('app.mode')), 'own');
       });
       await f.tapTip('Ajustes');
       await f.tap('Ver los datos de ejemplo');
-      await f.tap('Volver a mis cuentas');
+      await f.tap('Usar mis cuentas');
       await f.step(
-        'Otra vez en el ejemplo, «Volver a mis cuentas» del aviso de arriba '
+        'Otra vez en el ejemplo, «Usar mis cuentas» de la franja de arriba '
         'regresa a tu Inicio, con la misma cifra que antes.',
       );
       await f.check('Puedes gastar sigue en ${pesos(free)}', () {
@@ -1737,7 +1741,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.check('La app abre de nuevo en tus cuentas', () async {
         expect(await _read(f, () => _store(f).setting('app.mode')), 'own');
       });
-      await f.check('El widget vuelve a mostrar ${pesos(free)}', () {
+      await f.check('El widget muestra tu cifra, ${pesos(free)}', () {
         expect(phone.widget?['amount'], pesos(free));
       });
     },
@@ -1862,107 +1866,52 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
     },
   ),
   AppFlow(
-    '09-13-quien-responde-en-el-ejemplo',
-    'Elegir quién responde en el ejemplo y ver el modo desarrollador',
+    '09-13-ajustes-de-la-conversacion-del-ejemplo',
+    'Ver los ajustes de la conversación del ejemplo',
     area: 'Ajustes',
     goal:
-        'En la cuenta de ejemplo quiero saber quién contesta mis preguntas y, '
-        'como desarrollador, ver cómo arma cada respuesta.',
+        'En la cuenta de ejemplo quiero saber quién contesta mis preguntas y '
+        'qué puedo ajustar.',
     demo: true,
-    manual: <String>[
-      'Con «Gemini», una pregunta de verdad responde Gemini a través de '
-          'Quincena (necesita red y el proyecto de Firebase).',
-      'Pegar la sesión copiada en un issue y reproducirla.',
-      'Tocar la pastilla «genui» y recorrer las pestañas tree, data, semantics '
-          'y messages del inspector (en las pruebas su letra no carga y el '
-          'encabezado se desborda).',
-    ],
     (FlowRun f) async {
-      final _Phone phone = await _Phone.install(f);
+      // The conversation opens from the example's Inicio.
+      await f.toConversation();
+      await f.tapContaining('¿Qué suscripciones tengo?');
       await f.tapTip('Ajustes');
       await f.page(
-        'En el ejemplo, «Ajustes» es una hoja: quién responde, idioma, '
-        'apariencia, modo desarrollador, «Usar con mis cuentas» y «Empezar de '
-        'nuevo».',
+        'En la conversación del ejemplo, «Ajustes» trae idioma, apariencia y '
+        '«Empezar de nuevo». Responde el guion del ejemplo, sin red: no hay '
+        'a quién escoger.',
       );
-      await f.check('Responde la demo, sin red', () {
+      await f.check('Responde el guion del ejemplo, sin red', () {
         expect(_session(f).mode, AgentMode.demo);
-        expect(f.shows('Demo'), isTrue);
+        expect(_session(f).choosable, isFalse);
       });
-      await f.tap('Gemini');
-      await f.step(
-        '«Gemini» cambia la explicación: responde Gemini a través de '
-        'Quincena, sin key.',
+      await f.check(
+        'En el teléfono no hay key propia, ni Gemini a escoger, ni modo '
+        'desarrollador',
+        () {
+          expect(f.shows('Tu key'), isFalse);
+          expect(f.shows('Gemini'), isFalse);
+          expect(f.shows('Modo desarrollador'), isFalse);
+        },
       );
-      await f.check('Ahora responde Gemini', () {
-        expect(_session(f).mode, AgentMode.gemini);
-      });
-      await f.tap('Tu key');
-      await f.tap('Conectar');
-      await f.step(
-        '«Tu key» pide la «Key de Gemini» y «Conectar». Sin key, «Conectar» '
-        'no hace nada.',
-      );
-      await f.check('Sin key sigue respondiendo Gemini de Quincena', () {
-        expect(_session(f).mode, AgentMode.gemini);
-        expect(_session(f).canGoLive, isFalse);
-      });
-      await f.tap('Demo');
-      await f.check('De vuelta en «Demo»', () {
-        expect(_session(f).mode, AgentMode.demo);
-      });
-      await f.tap('Modo desarrollador');
-      await f.reveal(find.text('Copiar la sesión'));
-      await f.step(
-        'Con «Modo desarrollador» encendido aparece «Copiar la sesión», '
-        'apagado mientras no haya conversación.',
-      );
-      await f.check('«Copiar la sesión» está apagado sin conversación', () {
+      await f.check('Dice que la cuenta del ejemplo es inventada', () {
         expect(
-          f.tester
-              .widget<OutlinedButton>(
-                find.widgetWithText(OutlinedButton, 'Copiar la sesión'),
-              )
-              .onPressed,
-          isNull,
+          f.shows(
+            'La cuenta, la persona y los comercios del ejemplo son '
+            'inventados.',
+          ),
+          isTrue,
         );
       });
-      await f.back();
-      await f.tapContaining('¿Qué suscripciones tengo?');
-      await f.step(
-        'Con el modo desarrollador, la respuesta a «¿Qué suscripciones '
-        'tengo?» lleva abajo a la izquierda la pastilla del inspector.',
-      );
-      await f.check('El inspector está encendido sobre la conversación', () {
-        expect(_settings(f).developer, isTrue);
-        expect(_session(f).turns, hasLength(1));
-        expect(find.textContaining('genui '), findsOneWidget);
-      });
-      await f.tapTip('Ajustes');
-      await f.tap('Copiar la sesión');
-      await f.step(
-        '«Copiar la sesión» copia la conversación, cierra la hoja y abajo '
-        'avisa «Sesión copiada, sin lo que escribiste».',
-      );
-      await f.check('La sesión quedó en el portapapeles, y se ve el aviso', () {
-        expect(phone.clipboard, isNotNull);
-        expect(phone.clipboard, contains('subscriptions'));
-        expect(find.byType(BottomSheet), findsNothing);
-        expect(
-          find.textContaining('Sesión copiada').hitTestable(),
-          findsOneWidget,
-        );
-      });
-      await f.tapTip('Ajustes');
-      await f.tap('Modo desarrollador');
       await f.tap('Empezar de nuevo');
       await f.step(
-        '«Empezar de nuevo» cierra la hoja y deja el ejemplo sin '
-        'conversación, con las preguntas del comienzo.',
+        '«Empezar de nuevo» cierra la hoja y deja la conversación vacía, con '
+        'las preguntas del comienzo.',
       );
-      await f.check('No queda conversación y el inspector se apagó', () {
+      await f.check('No queda conversación', () {
         expect(_session(f).turns, isEmpty);
-        expect(_settings(f).developer, isFalse);
       });
     },
   ),
@@ -1976,56 +1925,45 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
     demo: true,
     (FlowRun f) async {
       await f.tapTip('Ajustes');
+      await f.tap('Oscuro');
       await f.tap('English');
-      await f.tap('Dark');
       await f.page(
-        'En la hoja, «English» la pasa a inglés y «Dark» la oscurece: ahora '
-        'dice «Settings», «Language» y «Appearance».',
+        'En los Ajustes del ejemplo, «Oscuro» lo oscurece y «English» lo pasa '
+        'a inglés: ahora dicen «Settings», «Example account» y «Use my '
+        'accounts».',
       );
-      await f.check('El ejemplo quedó en inglés y oscuro, la hoja también', () {
+      await f.check('El ejemplo quedó en inglés y oscuro, Ajustes también', () {
         expect(_app(f).locale, const Locale('en'));
         expect(_app(f).themeMode, ThemeMode.dark);
-        expect(f.shows('Language'), isTrue);
-        expect(
-          f.tester
-              .widget<Material>(
-                find
-                    .descendant(
-                      of: find.byType(BottomSheet),
-                      matching: find.byType(Material),
-                    )
-                    .first,
-              )
-              .color,
-          Theme.of(f.tester.element(find.text('Language'))).colorScheme.surface,
-        );
+        expect(f.shows('Settings'), isTrue);
+        expect(f.shows("Valentina's example account"), isTrue);
         expect(_brightness(f), Brightness.dark);
       });
       await f.tap('Español');
       await f.tap('Claro');
       await f.step(
-        '«Español» y «Claro» la pasan otra vez a español y a colores claros; '
-        'abajo sigue «Usar con mis cuentas».',
+        '«Español» y «Claro» lo pasan otra vez a español y a colores claros; '
+        'arriba sigue «Usar mis cuentas».',
       );
       await f.check('Quedó en español y claro, escogidos a mano', () {
         expect(_app(f).locale, const Locale('es'));
         expect(_app(f).themeMode, ThemeMode.light);
       });
-      // In the sheet the language comes first, then the theme.
+      // In Ajustes the theme comes first, then the language.
       await f.tapFound(find.text('Sistema').first);
       await f.tapFound(find.text('Sistema').last);
-      await f.check('Los dos «Sistema» de la hoja siguen al teléfono', () {
+      await f.check('Los dos «Sistema» de Ajustes siguen al teléfono', () {
         expect(_app(f).locale, isNull);
         expect(_app(f).themeMode, ThemeMode.system);
       });
-      await f.tap('Usar con mis cuentas');
+      await f.tapFound(find.text('Usar mis cuentas'));
       await f.step(
-        'Siguiendo al teléfono, en español y claro, «Usar con mis cuentas» '
-        'cierra la hoja y abre el paso 1 de la configuración.',
+        'Siguiendo al teléfono, en español y claro, «Usar mis cuentas» cierra '
+        'Ajustes y abre el paso 1 de la configuración.',
       );
       await f.check('Empieza la configuración', () {
         expect(f.shows('Paso 1 de 4'), isTrue);
-        expect(find.byType(BottomSheet), findsNothing);
+        expect(f.shows('Cuenta de ejemplo de Valentina'), isFalse);
       });
     },
   ),
@@ -2112,81 +2050,6 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
     },
   ),
   AppFlow(
-    '09-16-preguntar-con-mi-key',
-    'Conectar mi propia key de Gemini en el ejemplo',
-    area: 'Ajustes',
-    goal:
-        'Tengo una key de Gemini y quiero que el ejemplo me responda con ella, '
-        'sin que la key quede guardada en ningún lado.',
-    demo: true,
-    manual: <String>[
-      'Con una key real de aistudio.google.com, hacer una pregunta y ver que '
-          'responde Gemini en vivo (necesita red).',
-      'Con una key equivocada, ver qué dice la app al preguntar.',
-    ],
-    (FlowRun f) async {
-      await f.tapTip('Ajustes');
-      await f.tap('Tu key');
-      await f.type('Key de Gemini', 'clave-de-prueba');
-      await f.step(
-        '«Tu key» explica que la key no se guarda y solo viaja a Google; '
-        'escrita en «Key de Gemini», queda lista para «Conectar».',
-      );
-      await f.check('Escribirla todavía no cambia quién responde', () {
-        expect(_session(f).mode, AgentMode.demo);
-        expect(_session(f).canGoLive, isFalse);
-      });
-      await f.tap('Conectar');
-      await f.step(
-        '«Conectar» cierra la hoja y arriba la marca pasa de «DEMO» a «EN '
-        'VIVO»: ahora responde Gemini con tu key.',
-      );
-      await f.check('Responde Gemini con tu key, y arriba dice EN VIVO', () {
-        expect(_session(f).mode, AgentMode.live);
-        expect(_session(f).canGoLive, isTrue);
-        expect(f.shows('EN VIVO'), isTrue);
-        expect(f.shows('DEMO'), isFalse);
-      });
-      await f.check(
-        'La key no queda guardada en los datos de la app',
-        () async {
-          final Map<String, Object?> saved = await _read(
-            f,
-            () => _store(f).exportJson(),
-          );
-          expect(jsonEncode(saved), isNot(contains('clave-de-prueba')));
-        },
-      );
-      await f.tapTip('Ajustes');
-      await f.step(
-        'Al abrir otra vez la hoja, «Tu key» está marcada y dice que responde '
-        '${GeminiClient.defaultModel}; el campo queda vacío, por si una key '
-        'que no funcionó hay que cambiarla, y no muestra la de antes.',
-      );
-      await f.check('Dice quién responde, y la key de antes no se ve', () {
-        expect(
-          f.screenText,
-          contains('Responde ${GeminiClient.defaultModel}.'),
-        );
-        expect(_keyField(f).controller!.text, isEmpty);
-      });
-      await f.tap('Demo');
-      await f.check('«Demo» vuelve a las respuestas sin red', () {
-        expect(_session(f).mode, AgentMode.demo);
-      });
-      await f.tap('Tu key');
-      await f.check('«Tu key» vuelve a la key de antes sin escribirla', () {
-        expect(_session(f).mode, AgentMode.live);
-        expect(_session(f).canGoLive, isTrue);
-        expect(_keyField(f).controller!.text, isEmpty);
-      });
-      await f.back();
-      await f.check('Cerrada la hoja, arriba sigue EN VIVO', () {
-        expect(f.shows('EN VIVO'), isTrue);
-      });
-    },
-  ),
-  AppFlow(
     '09-17-en-android',
     'Dar los permisos en Android y poner el widget',
     area: 'Ajustes',
@@ -2196,7 +2059,9 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
     data: fullAccount,
     manual: <String>[
       'Los diálogos de permisos de Android (notificaciones, ubicación al usar '
-          'la app y «Permitir todo el tiempo»), que esta prueba responde sola.',
+          'la app y «Permitir todo el tiempo»), que esta prueba responde sola, '
+          'y que cada uno aparezca justo después de «Aceptar» en el aviso de '
+          'Quincena, nunca antes.',
       'Que «Agregar a la pantalla de inicio» muestre el diálogo del lanzador y '
           'el widget quede puesto.',
     ],
@@ -2232,7 +2097,22 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           'bancos: arriba está «Permitir acceso a notificaciones».',
         );
         await f.tap('Permitir acceso a notificaciones');
-        await f.check('El botón lleva a dar el acceso en el teléfono', () {
+        await f.step(
+          'Antes de ir a Android, Quincena dice qué lee (las notificaciones de '
+          'bancos, billeteras y SMS; guarda solo las que traen un monto), '
+          'cuándo y que se queda en el teléfono, con «Ahora no» y «Aceptar».',
+        );
+        await f.check('Con el aviso abierto todavía no se abrió nada', () {
+          expect(phone.asks, isNot(contains('openNotificationAccess')));
+        });
+        await f.tap('Ahora no');
+        await f.check('«Ahora no» no lleva a los ajustes del teléfono', () {
+          expect(phone.asks, isNot(contains('openNotificationAccess')));
+          expect(f.shows('Permitir acceso a notificaciones'), isTrue);
+        });
+        await f.tap('Permitir acceso a notificaciones');
+        await f.tap('Aceptar');
+        await f.check('Con «Aceptar» lleva a dar el acceso en el teléfono', () {
           expect(phone.asks.last, 'openNotificationAccess');
         });
         // The person gives it there and comes back to the app.
@@ -2247,13 +2127,51 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           expect(f.shows('Permitir acceso a notificaciones'), isFalse);
         });
         // The location was on: off, and on again from nothing.
+        bool locationAsked() =>
+            phone.asks.any((String a) => a == 'location' || a == 'always');
         await f.tap('Usar la ubicación del pago');
         phone.location = 'none';
         await f.tap('Usar la ubicación del pago');
         await f.step(
-          'Al encender la ubicación, Android la da con la app abierta y '
-          'Quincena explica por qué la pide también con la app cerrada.',
+          'Al encender la ubicación, antes de que Android pida nada, Quincena '
+          'dice qué usa (la ubicación precisa), para qué, cuándo (solo al '
+          'llegar una notificación de pago, también con la app cerrada) y que '
+          'solo las coordenadas van a OpenStreetMap. Abajo, «Ahora no» y '
+          '«Aceptar».',
         );
+        await f.check('Con el aviso abierto Android no ha pedido nada', () {
+          expect(locationAsked(), isFalse);
+          expect(_switchOf(f, 'Usar la ubicación del pago'), isFalse);
+        });
+        await f.back();
+        await f.check('Volver atrás es un no: no pide nada y sigue '
+            'apagada', () async {
+          expect(locationAsked(), isFalse);
+          expect(_switchOf(f, 'Usar la ubicación del pago'), isFalse);
+          final CaptureSettings saved = await _read(
+            f,
+            () => _store(f).captureSettings(),
+          );
+          expect(saved.useLocation, isFalse);
+        });
+        await f.tap('Usar la ubicación del pago');
+        await f.tap('Ahora no');
+        await f.check('«Ahora no» tampoco pide nada', () {
+          expect(locationAsked(), isFalse);
+          expect(_switchOf(f, 'Usar la ubicación del pago'), isFalse);
+        });
+        await f.tap('Usar la ubicación del pago');
+        await f.tap('Aceptar');
+        await f.step(
+          'Con «Aceptar», Android la pide con la app abierta y, dada, Quincena '
+          'explica por qué la usa también con la app cerrada y que Android '
+          'pedirá elegir «Permitir todo el tiempo».',
+        );
+        await f.check('Android la pidió justo después de «Aceptar», y todo el '
+            'tiempo todavía no', () {
+          expect(phone.asks.last, 'location');
+          expect(phone.asks.where((String a) => a == 'always'), isEmpty);
+        });
         await f.tap('Ahora no');
         await f.reveal(find.text('Permitir todo el tiempo'));
         await f.step(
@@ -2269,17 +2187,32 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           expect(saved.useLocation, isTrue);
         });
         await f.tap('Permitir todo el tiempo');
-        await f.check('«Permitir todo el tiempo» lo pide y el aviso se va', () {
+        await f.step(
+          '«Permitir todo el tiempo» vuelve a explicar, antes de que Android '
+          'lo pida, por qué usa la ubicación con la app cerrada.',
+        );
+        await f.check('Con la explicación abierta todavía no lo pidió', () {
+          expect(phone.asks.where((String a) => a == 'always'), isEmpty);
+        });
+        await f.tap('Aceptar');
+        await f.check('Con «Aceptar» lo pide y el aviso naranja se va', () {
           expect(phone.asks.last, 'always');
           expect(f.shows('Permitir todo el tiempo'), isFalse);
         });
-        // Again, this time saying yes to all the time.
+        // Again, with Android already letting it in use.
         await f.tap('Usar la ubicación del pago');
         phone.location = 'foreground';
+        final int asked = phone.asks.length;
         await f.tap('Usar la ubicación del pago');
-        await f.tap('Continuar');
-        await f.check('Con «Continuar» la pide todo el tiempo de una vez', () {
-          expect(phone.asks.last, 'always');
+        await f.check('Aunque Android ya la dé, primero viene el aviso', () {
+          expect(f.shows('Ubicación de tus pagos'), isTrue);
+          expect(phone.asks, hasLength(asked));
+        });
+        await f.tap('Aceptar');
+        await f.tap('Aceptar');
+        await f.check('Con «Aceptar» en los dos avisos la pide todo el tiempo '
+            'de una vez', () {
+          expect(phone.asks.sublist(asked), <String>['always']);
           expect(phone.location, 'always');
           expect(_own(f).captureSettings.useLocation, isTrue);
           expect(f.shows('Permitir todo el tiempo'), isFalse);
@@ -2289,6 +2222,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         phone.location = 'none';
         phone.locationAnswer = 'none';
         await f.tap('Usar la ubicación del pago');
+        await f.tap('Aceptar');
         await f.step(
           'Si Android la niega, el interruptor queda apagado y abajo ofrece '
           '«Abrir ajustes» para darla en el teléfono.',
@@ -2377,6 +2311,95 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       } finally {
         debugDefaultTargetPlatformOverride = before;
       }
+    },
+  ),
+  AppFlow(
+    '09-19-lo-que-el-ejemplo-no-toca',
+    'Probar en el ejemplo lo que solo sirve con mis cuentas',
+    area: 'Ajustes',
+    goal:
+        'Quiero tocar todo en el ejemplo sin miedo: que no pida permisos, no '
+        'guarde nada en mi teléfono y no cambie mis cuentas.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final _Phone phone = await _Phone.install(f);
+      final int free = _own(f).ledger!.freeUntilPayday;
+      final int entries = _own(f).snapshot!.entries.length;
+      final int accounts = _own(f).accounts.length;
+      await f.tapTip('Ajustes');
+      await f.tap('Ver los datos de ejemplo');
+      await f.tapTip('Ajustes');
+      await f.tap('Avisarme el día de pago');
+      await f.step(
+        'En los Ajustes del ejemplo, «Avisarme el día de pago» no pide '
+        'permiso ni programa nada: dice que en la cuenta de ejemplo esto no '
+        'hace nada y ofrece «Usar mis cuentas».',
+      );
+      await f.check('No se programó ni se pidió nada al teléfono', () {
+        expect(f.shows('Avisos'), isTrue);
+        expect(f.screenText, contains('no le pide permisos a tu teléfono'));
+        expect(phone.reminders, isEmpty);
+        expect(_own(f).remindsClose, isFalse);
+      });
+      await f.tap('Seguir en el ejemplo');
+      final List<String> refused = <String>[];
+      for (final String row in <String>[
+        'Captura automática',
+        'Billeteras propias',
+        'Binance',
+        'Varios dispositivos',
+        'Exportar mis datos',
+        'Importar un archivo',
+      ]) {
+        await f.tap(row);
+        if (!f.shows('Seguir en el ejemplo')) refused.add(row);
+        await f.tap('Seguir en el ejemplo');
+      }
+      await f.tap('Borrar todo');
+      await f.step(
+        'Lo mismo dicen «Captura automática», «Billeteras propias», '
+        '«Binance», «Varios dispositivos», exportar, importar y hasta «Borrar '
+        'todo»: en el ejemplo no hacen nada.',
+      );
+      await f.check('Cada una lo dijo y no abrió nada', () {
+        expect(refused, isEmpty);
+        expect(phone.asks, isEmpty);
+        expect(phone.saved, isEmpty);
+        expect(phone.asked, isEmpty);
+      });
+      await f.check('Ninguna llave quedó en el llavero', () async {
+        expect(await _read(f, () => SecureKeyStore().read()), isNull);
+        expect(await _read(f, () => SecureKeyVault().read()), isNull);
+      });
+      await f.tap('Seguir en el ejemplo');
+      await f.tap('Ocultar montos en el widget');
+      await f.tap('Seguir en el ejemplo');
+      await f.check('El widget tampoco se tocó', () {
+        expect(phone.widgetCalls, isEmpty);
+      });
+      await f.tap('Importar extracto');
+      await f.page(
+        '«Importar extracto» no abre tus archivos: revisa un extracto de '
+        'ejemplo de la cuenta de nómina, para ver cómo funciona.',
+      );
+      await f.check('No se pidió ningún archivo', () {
+        expect(phone.asked, isEmpty);
+        expect(find.byType(StatementPage), findsOneWidget);
+      });
+      await f.back();
+      await f.tap('Borrar todo');
+      await f.tap('Usar mis cuentas');
+      await f.step(
+        'Desde ese aviso, «Usar mis cuentas» vuelve a su Inicio, con la '
+        'misma cifra de antes.',
+      );
+      await f.check('Sus cuentas siguen como estaban', () async {
+        expect(_own(f).example, isFalse);
+        expect(_own(f).ledger!.freeUntilPayday, free);
+        expect(_own(f).accounts, hasLength(accounts));
+        expect(await _read(f, () => _store(f).entries()), hasLength(entries));
+        expect(f.screenText, contains(pesos(free)));
+      });
     },
   ),
   AppFlow(
@@ -3320,10 +3343,6 @@ Future<List<Object?>?> _openBackup(FlowRun f, Uint8List file, String? code) =>
       }
     });
 
-/// The field for a Gemini key in the demo's settings.
-TextField _keyField(FlowRun f) =>
-    f.tester.widget<TextField>(find.widgetWithText(TextField, 'Key de Gemini'));
-
 /// Lets the messages at the bottom go, as when the person reads them,
 /// before something that says one of its own.
 Future<void> _waitMessages(FlowRun f) async {
@@ -3402,10 +3421,6 @@ Brightness _brightness(FlowRun f) =>
 Session _session(FlowRun f) =>
     f.tester.widget<HomePage>(find.byType(HomePage)).session;
 
-/// What the person chose in the sample's settings.
-AppSettings _settings(FlowRun f) =>
-    f.tester.widget<HomePage>(find.byType(HomePage)).settings;
-
 /// Scrolls [finder] near the top of the screen, for a picture that starts
 /// with it.
 Future<void> _near(FlowRun f, Finder finder) async {
@@ -3452,7 +3467,7 @@ Future<void> _reopen(FlowRun f) async {
       startInDemo: f.flow.demo,
       fetcher: fakeRates(),
       now: () => screensNow,
-      market: ExampleMarket(),
+      market: ExampleMarket(now: () => screensNow),
     ),
   );
   await settle(f.tester);
@@ -3520,6 +3535,9 @@ class _Phone {
 
   /// The last figure sent to the widget.
   Map<Object?, Object?>? widget;
+
+  /// Every time the app wrote to the widget: 'show' or 'clear'.
+  final List<String> widgetCalls = <String>[];
 
   String? clipboard;
 
@@ -3590,6 +3608,9 @@ class _Phone {
       return null;
     });
     answer(_widget, (MethodCall call) {
+      if (call.method == 'show' || call.method == 'clear') {
+        phone.widgetCalls.add(call.method);
+      }
       if (call.method == 'show') {
         phone.widget = call.arguments as Map<Object?, Object?>?;
       }

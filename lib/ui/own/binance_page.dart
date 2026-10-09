@@ -10,6 +10,7 @@ import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
 import 'account_leaving.dart';
+import 'example_bar.dart';
 import 'look.dart';
 
 /// The words a sync writes, in the person's language.
@@ -58,7 +59,9 @@ class BinanceCard extends StatelessWidget {
         // balances beside it are as old as the last good read.
         final bool failed =
             link.connected && !link.syncing && link.problem != null;
-        final String body = !link.connected
+        final String body = own.example
+            ? l.exampleNotConnected
+            : !link.connected
             ? (manual
                   ? l.binanceCardManualBody
                   : compact
@@ -76,11 +79,16 @@ class BinanceCard extends StatelessWidget {
         final TextStyle? bodyStyle = failed
             ? context.type.bodySmall?.copyWith(color: context.colors.negative)
             : context.type.bodySmall;
-        void open() => Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (BuildContext context) => BinancePage(own: own),
-          ),
-        );
+        Future<void> open() async {
+          if (await explainExample(context, own, l.binanceTitle)) return;
+          if (!context.mounted) return;
+          await Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (BuildContext context) => BinancePage(own: own),
+            ),
+          );
+        }
+
         if (compact) {
           return InkWell(
             onTap: open,

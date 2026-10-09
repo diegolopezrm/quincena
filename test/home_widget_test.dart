@@ -161,9 +161,13 @@ void main() {
     expect(own.widgetHidesAmounts, isTrue);
     expect(shown(calls.last)['amount'], '••••••');
 
-    // The sample's figures are not the person's: the widget waits.
+    // The example leaves it alone: it keeps saying the person's own
+    // figure, and none of Valentina's reaches it.
+    final int sent = calls.length;
     await tester.runAsync(modes.useDemo);
-    expect(calls.last.method, 'clear');
+    await settle(tester);
+    expect(modes.example, isNotNull);
+    expect(calls, hasLength(sent));
     modes.dispose();
   });
 

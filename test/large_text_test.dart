@@ -71,11 +71,8 @@ void main() {
         QuincenaApp(store: store, startInDemo: true, fetcher: fakeRates()),
       );
       await settle(tester);
-      expect(
-        find.text('Estás viendo la cuenta de ejemplo de Valentina'),
-        findsOneWidget,
-      );
-      expect(find.text('Usar con mis cuentas'), findsOneWidget);
+      expect(find.text('Cuenta de ejemplo de Valentina'), findsOneWidget);
+      expect(find.text('Usar mis cuentas'), findsOneWidget);
       expect(find.text('¿De dónde sale?'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());

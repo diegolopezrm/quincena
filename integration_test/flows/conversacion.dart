@@ -3,9 +3,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:dartantic_ai/dartantic_ai.dart' as dartantic;
-import 'package:flutter/foundation.dart' show FlutterExceptionHandler;
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart' show ChatMessage, Surface;
 import 'package:quincena/agent/catalog.dart';
@@ -18,10 +17,13 @@ import 'package:quincena/app.dart';
 import 'package:quincena/catalog/budget_meter.dart';
 import 'package:quincena/catalog/goal_planner.dart';
 import 'package:quincena/data/category.dart';
+import 'package:quincena/data/example_prices.dart';
 import 'package:quincena/data/ledger.dart' show Goal, Ledger, Movement;
-import 'package:quincena/domain/records.dart' show Entry;
+import 'package:quincena/data/seed.dart';
+import 'package:quincena/domain/records.dart' show Account, Entry;
 import 'package:quincena/format/dates.dart';
 import 'package:quincena/format/money.dart';
+import 'package:quincena/money/asset.dart';
 import 'package:quincena/functions/money_functions.dart'
     show arrivalMonth, monthlyNeeded;
 import 'package:quincena/own/own_controller.dart';
@@ -43,13 +45,13 @@ import '../../test_screens/accounts.dart' show screensNow;
 import '../tour.dart';
 import 'flow.dart';
 
-const String _demoArea = 'La demo';
+const String _demoArea = 'La cuenta de ejemplo';
 const String _askArea = 'Preguntar con tus cuentas';
 
 final List<AppFlow> conversacionFlows = <AppFlow>[
   AppFlow(
     '11-01-entrar-a-la-demo',
-    'Entrar a la demo desde la primera pantalla',
+    'Entrar al ejemplo desde la primera pantalla',
     area: _demoArea,
     goal:
         'Antes de poner mis cuentas quiero ver cómo funciona la app con '
@@ -64,22 +66,45 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         'abajo la nota de que todo se guarda solo en este dispositivo.',
       );
       await f.tap('Con datos de ejemplo');
-      final Session s = _demo(f);
-      final Ledger ledger = s.ledger;
-      final String free = pesos(ledger.major(ledger.freeUntilPayday));
+      final Ledger mine = f.own.ledger!;
+      final String free = pesos(mine.major(mine.freeUntilPayday));
       await f.page(
-        'Toca «Con datos de ejemplo»: arriba dice «DEMO», el aviso ofrece '
-        '«Usar con mis cuentas» y debajo están lo que puede gastar y cinco '
-        'preguntas.',
+        'Toca «Con datos de ejemplo»: abre toda la app con la cuenta de '
+        'Valentina. Arriba, «Cuenta de ejemplo de Valentina» y «Usar mis '
+        'cuentas»; en Inicio, lo que puede gastar, lo que hay por hacer y '
+        'sus cuentas.',
       );
       await f.check(
-        'La app recuerda la demo y abre en ella la próxima vez',
+        'La app recuerda el ejemplo y abre en él la próxima vez',
         () async => expect(await _setting(f, 'app.mode'), 'demo'),
       );
+      await f.check('Inicio dice que Valentina puede gastar $free', () {
+        expect(f.own.example, isTrue);
+        expect(_said(f), contains(free));
+      });
       await f.check(
-        'La tarjeta dice que Valentina puede gastar $free, lo que calcula su '
-        'cuenta',
-        () => expect(_said(f), contains(free)),
+        'Nada del ejemplo queda en la base de datos de la persona',
+        () async {
+          expect(await f.tester.runAsync(_store(f).profile), isNull);
+          expect(await f.tester.runAsync(_store(f).entries), isEmpty);
+        },
+      );
+      await f.toConversation();
+      final Session s = _demo(f);
+      final Ledger ledger = s.ledger;
+      await f.page(
+        'Más abajo en Inicio, «Otra pregunta» abre la conversación del '
+        'ejemplo: arriba dice «DEMO» y la tarjeta dice lo mismo que Inicio, '
+        'con cinco preguntas debajo.',
+      );
+      await f.check(
+        'La conversación dice la misma cifra que Inicio, $free, de la misma '
+        'historia',
+        () {
+          expect(ledger.freeUntilPayday, mine.freeUntilPayday);
+          expect(ledger.balance, mine.balance);
+          expect(_said(f), contains(free));
+        },
       );
       await f.tap('¿De dónde sale?');
       await f.page(
@@ -149,12 +174,14 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       await _read(
         f,
         'Envía «$unknown» con la tecla de enviar del teclado: no lo reconoce, '
-        'dice «En la demo respondo estas preguntas» y ofrece las cinco.',
+        'dice «En el ejemplo respondo estas preguntas», que con tus cuentas '
+        'Gemini responde lo que preguntes, y ofrece las cinco.',
         most: 2,
       );
       await f.check('Ofrece las cinco preguntas que sí sabe responder', () {
         expect(s.turns.last.question, unknown);
-        expect(_said(f), contains('En la demo respondo estas preguntas'));
+        expect(_said(f), contains('En el ejemplo respondo estas preguntas'));
+        expect(_said(f), contains('Con tus propias cuentas, Gemini responde'));
         for (final String q in ScriptedAgent.starters) {
           expect(find.text(q), findsWidgets);
         }
@@ -181,6 +208,8 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         'pagos de lo que más subió.',
     demo: true,
     (FlowRun f) async {
+      // The conversation opens from the example's Inicio.
+      await f.toConversation();
       final Session s = _demo(f);
       final Ledger ledger = s.ledger;
       await f.tap(ScriptedAgent.starters[0]);
@@ -256,9 +285,10 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
           'control con el dedo en un teléfono.',
     ],
     (FlowRun f) async {
+      // The conversation opens from the example's Inicio.
+      await f.toConversation();
       final Session s = _demo(f);
-      final Ledger ledger = s.ledger;
-      final Goal goal = ledger.goal('cartagena');
+      final Goal goal = _trip(s);
       final int needed = monthlyNeeded(
         goal.target.toDouble(),
         goal.saved.toDouble(),
@@ -291,7 +321,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
           '${pesos(goal.monthly)}: simular no guarda', () {
         expect(_planner(f).monthly, 800000);
         expect(_planner(f).onTime, isTrue);
-        expect(ledger.goal('cartagena').monthly, goal.monthly);
+        expect(_trip(s).monthly, goal.monthly);
       });
       await f.tester.drag(slider.last, const Offset(-600, 0));
       await settle(f.tester);
@@ -362,7 +392,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         'respuesta recuerda que Quincena no mueve la plata.',
       );
       await f.check('La meta quedó en ${pesos(needed)} al mes', () {
-        expect(ledger.goal('cartagena').monthly, needed);
+        expect(_trip(s).monthly, needed);
       });
       // A finger on the saved planner, which takes nothing more.
       final Finder kept = find.byType(Slider).first;
@@ -376,7 +406,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
           f.tester.widget<GoalPlanner>(find.byType(GoalPlanner).first).monthly,
           needed,
         );
-        expect(ledger.goal('cartagena').monthly, needed);
+        expect(_trip(s).monthly, needed);
         expect(_said(f), contains('Plan guardado · '));
       });
       await f.tap('Editar');
@@ -395,7 +425,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         most: 1,
       );
       await f.check('La meta quedó en ${pesos(700000)}, no en las dos', () {
-        expect(ledger.goal('cartagena').monthly, 700000);
+        expect(_trip(s).monthly, 700000);
         expect(find.textContaining('Plan guardado · '), findsOneWidget);
       });
       await _ask(f, ScriptedAgent.starters[1]);
@@ -432,6 +462,8 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         'saber cuánto me ahorro.',
     demo: true,
     (FlowRun f) async {
+      // The conversation opens from the example's Inicio.
+      await f.toConversation();
       final Session s = _demo(f);
       final Ledger ledger = s.ledger;
       final int monthly = ledger.subscriptionsMonthly;
@@ -594,14 +626,19 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         'si me equivoqué y ver cuánto me queda.',
     demo: true,
     (FlowRun f) async {
+      // The conversation opens from the example's Inicio.
+      await f.toConversation();
       final Session s = _demo(f);
-      final Ledger ledger = s.ledger;
-      final int free = ledger.freeUntilPayday;
-      final Set<Movement> before = Set<Movement>.identity()
-        ..addAll(ledger.movements);
+      // The example's account, read again at every check: what the
+      // conversation saves goes to its database, and the screens read it.
+      Ledger ledger() => s.ledger;
+      final int free = ledger().freeUntilPayday;
+      final Set<String> before = <String>{
+        for (final Movement m in ledger().movements) m.id,
+      };
       List<Movement> added() => <Movement>[
-        for (final Movement m in ledger.movements)
-          if (!before.contains(m)) m,
+        for (final Movement m in ledger().movements)
+          if (!before.contains(m.id)) m,
       ];
       await f.tap(ScriptedAgent.starters[4]);
       await _read(
@@ -632,9 +669,9 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         'hay en la cuenta.» y tampoco lo guarda.',
       );
       await f.check('Un monto mayor que lo que hay no se guarda: puede gastar '
-          '${pesos(ledger.major(free))}, como antes', () {
+          '${pesos(ledger().major(free))}, como antes', () {
         expect(added(), isEmpty);
-        expect(ledger.freeUntilPayday, free);
+        expect(ledger().freeUntilPayday, free);
         expect(s.turns, hasLength(1));
         expect(find.text('Es más de lo que hay en la cuenta.'), findsOne);
       });
@@ -659,14 +696,14 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(m.merchant, 'Tienda Don Pacho');
       });
       await f.check(
-        'Lo que puede gastar pasó de ${pesos(ledger.major(free))} a '
-        '${pesos(ledger.major(free - 52000))}, como dice la respuesta',
+        'Lo que puede gastar pasó de ${pesos(ledger().major(free))} a '
+        '${pesos(ledger().major(free - 52000))}, como dice la respuesta',
         () {
-          expect(ledger.freeUntilPayday, free - 52000);
+          expect(ledger().freeUntilPayday, free - 52000);
           expect(
             _said(f),
             contains(
-              'Ahora puedes gastar ${pesos(ledger.major(free - 52000))}',
+              'Ahora puedes gastar ${pesos(ledger().major(free - 52000))}',
             ),
           );
         },
@@ -687,7 +724,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       await f.check('Sigue habiendo un solo gasto nuevo, ahora de '
           '${pesos(60000)}', () {
         expect(added().single.amount, 60000);
-        expect(ledger.freeUntilPayday, free - 60000);
+        expect(ledger().freeUntilPayday, free - 60000);
       });
       await f.check('Hay un solo recibo «Gasto guardado»', () {
         expect(find.textContaining('Gasto guardado · '), findsOneWidget);
@@ -700,6 +737,22 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       await f.check('La respuesta al gasto corregido quedó a la vista', () {
         expect(_inView(f, _surfaceOf(s, s.turns.last)), isTrue);
       });
+      // Back to the example: the conversation and the screens are one
+      // account.
+      await f.back();
+      await f.tap('Movimientos');
+      await f.step(
+        'Vuelve al ejemplo y abre Movimientos: el gasto de \$60.000 en '
+        '«Tienda Don Pacho» está ahí, hoy: la conversación y las pantallas '
+        'son la misma cuenta.',
+      );
+      await f.check(
+        'El gasto está en la cuenta de ejemplo y Movimientos lo muestra',
+        () {
+          expect(f.shows('Tienda Don Pacho'), isTrue);
+          expect(f.own.ledger!.freeUntilPayday, free - 60000);
+        },
+      );
     },
   ),
   AppFlow(
@@ -710,6 +763,8 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         'Quiero saber si gasté más o menos que el mes pasado y en qué cambió.',
     demo: true,
     (FlowRun f) async {
+      // The conversation opens from the example's Inicio.
+      await f.toConversation();
       final Session s = _demo(f);
       final Ledger ledger = s.ledger;
       final int now = ledger.spentIn(2026, 9);
@@ -784,6 +839,8 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         'atrás si la borré sin querer.',
     demo: true,
     (FlowRun f) async {
+      // The conversation opens from the example's Inicio.
+      await f.toConversation();
       final Session s = _demo(f);
       final int free = s.ledger.freeUntilPayday;
       await f.tap(ScriptedAgent.starters[4]);
@@ -805,12 +862,13 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       await f.tap('Nueva');
       await f.step(
         'Toca «Nueva»: vuelven las preguntas de inicio y abajo «Empezaste '
-        'una conversación nueva.» con «Deshacer».',
+        'una conversación nueva.» con «Deshacer». El gasto guardado sigue en '
+        'la cuenta de ejemplo.',
       );
-      await f.check('La conversación quedó vacía y la cuenta como al '
-          'principio', () {
+      await f.check('La conversación quedó vacía y el gasto sigue en la '
+          'cuenta', () {
         expect(s.turns, isEmpty);
-        expect(s.ledger.freeUntilPayday, free);
+        expect(s.ledger.freeUntilPayday, free - 45000);
       });
       await f.tap('Deshacer');
       await f.step(
@@ -818,7 +876,8 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         '«Gasto guardado».',
       );
       await f.check(
-        'Volvió el gasto: puede gastar ${pesos(s.ledger.major(free - 45000))}',
+        'Volvió la conversación, y la cuenta no cambió: puede gastar '
+        '${pesos(s.ledger.major(free - 45000))}',
         () {
           expect(s.turns, hasLength(2));
           expect(s.ledger.freeUntilPayday, free - 45000);
@@ -854,14 +913,15 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       await f.tap('Empezar de nuevo');
       await f.step(
         'Con otro gasto guardado, «Empezar de nuevo» en «Ajustes» limpia la '
-        'conversación y la cuenta vuelve a ${pesos(s.ledger.major(free))}, '
-        'sin «Deshacer».',
+        'conversación, sin «Deshacer». Los dos gastos siguen en la cuenta de '
+        'ejemplo hasta salir de ella.',
       );
-      await f.check('«Empezar de nuevo» quita el gasto: puede gastar otra vez '
-          '${pesos(s.ledger.major(free))}', () {
-        expect(spent, free - 45000);
+      await f.check('«Empezar de nuevo» limpia la conversación y deja los '
+          'gastos en la cuenta: puede gastar '
+          '${pesos(s.ledger.major(free - 90000))}', () {
+        expect(spent, free - 90000);
         expect(s.turns, isEmpty);
-        expect(s.ledger.freeUntilPayday, free);
+        expect(s.ledger.freeUntilPayday, free - 90000);
         expect(s.canRestore, isFalse);
         expect(find.text('Deshacer'), findsNothing);
       });
@@ -876,6 +936,8 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         'sin que la pantalla me saque de donde estoy.',
     demo: true,
     (FlowRun f) async {
+      // The conversation opens from the example's Inicio.
+      await f.toConversation();
       final Session s = _demo(f);
       await f.tap(ScriptedAgent.starters[0]);
       await f.step(
@@ -917,187 +979,51 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
     },
   ),
   AppFlow(
-    '11-09-lo-que-respondio-gemini',
-    'Ver lo que respondió Gemini de verdad',
-    area: _demoArea,
-    goal:
-        'Quiero ver si un modelo de verdad responde igual de bien que la '
-        'demo, sin poner una key.',
-    (FlowRun f) async {
-      // A flow that ended while the home was still reading its recordings
-      // leaves them cached half read: this home reads them afresh.
-      rootBundle.clear();
-      await f.tap('Con datos de ejemplo');
-      await f.waitFor(find.text(_seeRecorded));
-      await f.reveal(find.text(_seeRecorded));
-      await f.step(
-        'Al final del inicio de la demo está «Mira lo que respondió Gemini '
-        'de verdad».',
-      );
-      await f.tap(_seeRecorded);
-      await f.page(
-        'Lo abre: cinco sesiones grabadas, una por pregunta, con el modelo, '
-        'los pasos y cuántos segundos tardó.',
-      );
-      await f.check('Hay una sesión grabada por cada pregunta de la demo', () {
-        for (final String q in ScriptedAgent.starters) {
-          expect(find.text(q), findsOneWidget);
-        }
-      });
-      await f.tap(ScriptedAgent.starters[0]);
-      await f.page(
-        'Toca la primera: la pregunta, la respuesta como la armó Gemini y un '
-        'control con los pasos que mandó.',
-      );
-      final RecordedSlider at = RecordedSlider(f);
-      await f.check('La reproducción empieza en el último paso', () {
-        expect(at.value, at.max);
-        expect(find.text('${at.max.round()} de ${at.max.round()}'), findsOne);
-      });
-      await f.tester.drag(_replaySlider, const Offset(-800, 0));
-      await settle(f.tester);
-      await f.step(
-        'Arrastra el control al principio: «Antes de la respuesta», 0 de 5, '
-        'y la respuesta desaparece.',
-      );
-      await f.check('Al principio no hay nada dibujado', () {
-        expect(RecordedSlider(f).value, 0);
-        expect(find.text('Antes de la respuesta'), findsOneWidget);
-      });
-      await _seek(f, 3);
-      await f.step(
-        'En el paso 3, «Manda los componentes»: la pantalla aparece armada '
-        'pero sin cifras, que llegan en el paso siguiente.',
-      );
-      await f.check('El paso 3 es el que manda los componentes', () {
-        expect(RecordedSlider(f).value, 3);
-        expect(find.text('Manda los componentes'), findsOneWidget);
-      });
-      await f.back();
-      // Each of the five, opened from the list: every one plays to its end.
-      final List<String> short = <String>[];
-      for (final String q in ScriptedAgent.starters) {
-        await f.tap(q);
-        final RecordedSlider played = RecordedSlider(f);
-        if (played.max < 1 || played.value != played.max) short.add(q);
-        if (find.byType(Surface).evaluate().isEmpty) short.add(q);
-        await f.back();
-      }
-      await f.check(
-        'Las cinco grabaciones abren con su respuesta armada, en el último '
-        'paso',
-        () => expect(short, isEmpty),
-      );
-      await f.back();
-      await f.check('Ver las grabaciones no toca la conversación', () {
-        expect(_demo(f).turns, isEmpty);
-      });
-    },
-  ),
-  AppFlow(
     '11-10-quien-responde',
-    'Escoger quién responde en la demo',
+    'Saber quién responde en el ejemplo',
     area: _demoArea,
     goal:
-        'Quiero saber quién contesta en la demo y probar con Gemini, con mi '
-        'key o sin ella, en vez del guion.',
+        'Quiero saber quién contesta en el ejemplo y si gasto preguntas del '
+        'día.',
     demo: true,
     manual: <String>[
-      'Preguntar con «Gemini» elegido: necesita red y que App Check '
-          'reconozca la app.',
-      'Pegar una key real de Gemini en «Tu key», tocar «Conectar» y '
-          'preguntar algo que no está en las cinco preguntas.',
-      'Con una key equivocada, preguntar y ver «La key no funcionó. Revísala '
-          'en Ajustes.»',
+      'Con tus cuentas, «Pregúntale a tu plata» lo responde Gemini a través '
+          'de Quincena: necesita red.',
     ],
     (FlowRun f) async {
+      // The conversation opens from the example's Inicio.
+      await f.toConversation();
       final Session s = _demo(f);
       await f.tap(ScriptedAgent.starters[3]);
-      await f.tapTip('Ajustes');
-      await f.page(
-        'Con una respuesta en pantalla, toca el engranaje: «Ajustes» de la '
-        'demo, con quién responde, idioma, apariencia, modo desarrollador y '
-        'cómo salir.',
+      await _read(
+        f,
+        'Toca «¿Cómo voy contra agosto?»: arriba dice «EJEMPLO», no «EN '
+        'VIVO»: lo responde el guion del ejemplo, sin red.',
+        most: 1,
       );
-      await f.check('Responde el guion de la demo', () {
-        expect(s.mode, AgentMode.demo);
-      });
-      await f.tap('Tu key');
-      await f.step(
-        'Toca «Tu key»: explica que la key no se guarda y pide «Key de '
-        'Gemini» con el botón «Conectar».',
-      );
-      await f.tap('Conectar');
-      await f.check('«Conectar» sin key no cambia quién responde', () {
-        expect(s.mode, AgentMode.demo);
-        expect(find.text('Key de Gemini'), findsOneWidget);
-      });
-      // Never a real key: nothing is asked with it, so nothing goes out.
-      await f.type('Key de Gemini', 'clave-de-prueba');
-      await f.tap('Conectar');
-      await f.step(
-        'Pega una key y toca «Conectar»: Ajustes se cierra, arriba dice «EN '
-        'VIVO» y la respuesta que había desapareció sin aviso.',
-      );
-      await f.check('Con la key responde Gemini en vivo', () {
-        expect(s.mode, AgentMode.live);
-        expect(find.text('EN VIVO'), findsOneWidget);
-      });
       await f.check(
-        'Cambiar quién responde borró la respuesta que había, sin aviso',
+        'Responde el guion, sin red y sin gastar preguntas del día',
         () {
-          expect(s.turns, isEmpty);
-          expect(s.canRestore, isFalse);
+          expect(s.mode, AgentMode.demo);
+          expect(s.choosable, isFalse);
+          expect(s.allowance, isNull);
+          expect(f.shows('EJEMPLO'), isTrue);
+          expect(f.shows('EN VIVO'), isFalse);
         },
       );
-      await f.check('La key no quedó guardada en el teléfono', () async {
-        expect(await _savedSettings(f), isNot(contains('clave-de-prueba')));
-      });
       await f.tapTip('Ajustes');
       await f.step(
-        'En Ajustes queda marcado «Tu key», dice qué modelo responde y deja '
-        'poner otra key; la que puso no se muestra.',
+        'En «Ajustes» de la conversación no hay a quién escoger: en el '
+        'teléfono, el ejemplo siempre lo responde el guion.',
       );
-      await f.check('Dice qué modelo responde y deja cambiar la key', () {
-        final Finder key = find.widgetWithText(TextField, 'Key de Gemini');
-        expect(key, findsOneWidget);
-        expect(f.tester.widget<TextField>(key).controller!.text, isEmpty);
-        expect(
-          _said(f),
-          contains(
-            'Responde ${GeminiClient.defaultModel}. Pregunta lo que quieras '
-            'sobre la cuenta.',
-          ),
-        );
-      });
-      await f.tap('Gemini');
-      await f.step(
-        'Toca «Gemini»: responde el modelo a través de Quincena, sin key, y '
-        'se puede preguntar cualquier cosa sobre la cuenta.',
+      await f.check(
+        'No ofrece Gemini, ni una key propia, ni el modo desarrollador',
+        () {
+          expect(f.shows('Tu key'), isFalse);
+          expect(f.shows('Gemini'), isFalse);
+          expect(f.shows('Modo desarrollador'), isFalse);
+        },
       );
-      await f.check('Ahora responde Gemini a través de Quincena', () {
-        expect(s.mode, AgentMode.gemini);
-      });
-      await f.back();
-      await f.step(
-        'Cierra Ajustes: la etiqueta de arriba sigue en «EN VIVO», porque ya '
-        'no responde el guion.',
-      );
-      await f.check('Con Gemini respondiendo, arriba dice «EN VIVO»', () {
-        expect(find.text('EN VIVO'), findsOneWidget);
-        expect(find.text('DEMO'), findsNothing);
-      });
-      await f.tapTip('Ajustes');
-      await f.tap('Demo');
-      await f.back();
-      await f.step(
-        'De vuelta en «Demo»: la etiqueta dice «DEMO» y responden otra vez '
-        'las cinco preguntas, sin red.',
-      );
-      await f.check('Volvió a responder el guion', () {
-        expect(s.mode, AgentMode.demo);
-        expect(find.text('DEMO'), findsOneWidget);
-      });
     },
   ),
   AppFlow(
@@ -1113,6 +1039,8 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
           'volver en inglés y oscura.',
     ],
     (FlowRun f) async {
+      // The conversation opens from the example's Inicio.
+      await f.toConversation();
       final Session s = _demo(f);
       final AppSettings settings = _settings(f);
       await f.tap(ScriptedAgent.starters[0]);
@@ -1202,224 +1130,264 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
     },
   ),
   AppFlow(
-    '11-12-modo-desarrollador',
-    'Mirar por dentro una respuesta',
-    area: _demoArea,
-    goal:
-        'Soy desarrollador y quiero ver cómo arma la pantalla el agente y '
-        'copiar la sesión para reportar un error.',
-    demo: true,
-    manual: <String>[
-      'Pegar en otra app lo que dejó «Copiar la sesión» y ver que llega '
-          'entero.',
-      'El inspector con su letra de verdad (Menlo): en una prueba sin '
-          'teléfono se dibuja con cuadros.',
-    ],
-    (FlowRun f) async {
-      final Session s = _demo(f);
-      final AppSettings settings = _settings(f);
-      await f.tapTip('Ajustes');
-      await f.tap('Modo desarrollador');
-      await f.step(
-        'En Ajustes, enciende «Modo desarrollador»: aparece «Copiar la '
-        'sesión», apagado porque todavía no hay conversación.',
-      );
-      await f.check('El modo quedó encendido y no hay nada que copiar', () {
-        expect(settings.developer, isTrue);
-        final OutlinedButton copy = f.tester.widget<OutlinedButton>(
-          find.widgetWithText(OutlinedButton, 'Copiar la sesión'),
-        );
-        expect(copy.onPressed, isNull);
-      });
-      await f.back();
-      await f.tap(ScriptedAgent.starters[4]);
-      await f.type('Dónde', 'Regalo para mamá');
-      await f.step(
-        'Pide anotar un gasto y escribe «Regalo para mamá» en «Dónde»; '
-        'abajo a la izquierda está la pestaña «genui 1».',
-      );
-      // The inspector writes in a monospace font that a run without a phone
-      // draws as squares a whole letter wide, too wide for its tab bar;
-      // with the phone's Menlo it fits. Only that overflow is let through.
-      final FlutterExceptionHandler? report = FlutterError.onError;
-      FlutterError.onError = (FlutterErrorDetails e) {
-        if (!e.exceptionAsString().startsWith('A RenderFlex overflowed')) {
-          report?.call(e);
-        }
-      };
-      try {
-        await f.tap('genui 1');
-        await f.step(
-          'Toca «genui 1»: el inspector muestra el árbol de componentes que '
-          'mandó el agente.',
-        );
-        await f.tap('data');
-        await f.step(
-          '«data» muestra los datos del formulario tal como están ahora.',
-        );
-        await f.tap('messages');
-        await f.step('«messages» lista cada mensaje que llegó del agente.');
-        await f.tap('semantics');
-        await f.step(
-          '«semantics» muestra lo que leería un lector de pantalla, con '
-          '«reload» para leerlo otra vez.',
-        );
-        await f.tap('reload');
-        await f.tap('close');
-      } finally {
-        FlutterError.onError = report;
-      }
-      await f.tapTip('Ajustes');
-      String? copied;
-      f.tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-        SystemChannels.platform,
-        (MethodCall call) async {
-          if (call.method == 'Clipboard.setData') {
-            copied =
-                (call.arguments as Map<Object?, Object?>)['text'] as String?;
-          }
-          return null;
-        },
-      );
-      try {
-        await f.tap('Copiar la sesión');
-      } finally {
-        f.tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-          SystemChannels.platform,
-          null,
-        );
-      }
-      await f.step(
-        'Cierra el inspector y toca «Copiar la sesión» en Ajustes: la hoja se '
-        'cierra sola y abajo avisa que la sesión se copió sin lo que '
-        'escribió.',
-      );
-      await f.check('Lo copiado trae la sesión sin «Regalo para mamá»', () {
-        expect(copied, isNotNull);
-        expect(copied, contains('"draft"'));
-        expect(copied, isNot(contains('Regalo para mamá')));
-      });
-      await f.check('La hoja se cerró y el aviso se ve, sin nada encima', () {
-        expect(find.byType(BottomSheet), findsNothing);
-        expect(
-          find
-              .text(
-                'Sesión copiada, sin lo que escribiste. Pégala en un issue y '
-                'se puede reproducir.',
-              )
-              .hitTestable(),
-          findsOneWidget,
-        );
-      });
-      await f.tapTip('Ajustes');
-      await f.tap('Modo desarrollador');
-      await f.back();
-      await f.check('Apagado, el inspector desaparece', () {
-        expect(settings.developer, isFalse);
-        expect(find.text('genui 1'), findsNothing);
-        expect(s.turns, hasLength(1));
-      });
-    },
-  ),
-  AppFlow(
     '11-13-salir-de-la-demo',
-    'Pasar de la demo a mis cuentas',
+    'Pasar del ejemplo a mis cuentas',
     area: _demoArea,
     goal: 'Ya entendí cómo funciona y quiero empezar con mis propias cuentas.',
     demo: true,
     (FlowRun f) async {
-      await f.tap('Usar con mis cuentas');
+      final int waiting = f.own.pendingInbox.length;
+      await f.tapTip('Por revisar');
+      await f.tap('Registrar gasto');
       await f.step(
-        'Toca «Usar con mis cuentas» en el aviso: empieza a crear la cuenta, '
-        'paso 1, con tu nombre.',
+        'En el ejemplo, en «Por revisar», toca «Registrar gasto» en la compra '
+        'del Supermercado Andino: queda en la cuenta de Valentina.',
       );
-      await f.check('Se abrió la configuración de la cuenta', () {
-        expect(find.byType(OnboardingPage), findsOneWidget);
+      await f.check('Queda uno menos por revisar en el ejemplo', () {
+        expect(f.own.pendingInbox, hasLength(waiting - 1));
       });
+      await f.back();
+      await f.tap('Usar mis cuentas');
+      await f.step(
+        'Toca «Usar mis cuentas» en la franja de arriba: empieza la '
+        'configuración de sus cuentas, paso 1, con su nombre, y la franja '
+        'del ejemplo ya no está.',
+      );
+      await f.check(
+        'Se abrió la configuración, sin nada del ejemplo',
+        () async {
+          expect(find.byType(OnboardingPage), findsOneWidget);
+          expect(find.text('Cuenta de ejemplo de Valentina'), findsNothing);
+          expect(await f.tester.runAsync(_store(f).profile), isNull);
+          expect(await f.tester.runAsync(_store(f).entries), isEmpty);
+        },
+      );
       await f.tapTip('Atrás');
       await f.step(
-        'Toca la flecha «Atrás» en el primer paso: vuelve a la demo, donde '
-        'estaba.',
+        'Toca «Atrás» en el primer paso: vuelve al ejemplo, abierto desde el '
+        'comienzo: lo que registró ya no está.',
       );
-      await f.check('Volvió a la demo y la recuerda', () async {
-        expect(find.byType(HomePage), findsOneWidget);
+      await f.check('El ejemplo volvió como nuevo, con $waiting por revisar, '
+          'y la app lo recuerda', () async {
+        expect(find.byType(OwnShell), findsOneWidget);
+        expect(f.own.example, isTrue);
+        expect(f.own.pendingInbox, hasLength(waiting));
         expect(await _setting(f, 'app.mode'), 'demo');
       });
-      // With a conversation the notice goes; Ajustes keeps the way out.
-      await f.tap(ScriptedAgent.starters[3]);
       await f.tapTip('Ajustes');
-      await f.reveal(find.text('Usar con mis cuentas'));
       await f.step(
-        'Con una pregunta hecha el aviso ya no está, pero en Ajustes, al '
-        'final, sigue el mismo botón «Usar con mis cuentas».',
+        'En sus Ajustes, arriba, «Cuenta de ejemplo» dice que Valentina es '
+        'inventada y que lo que se haga se borra al salir, con «Usar mis '
+        'cuentas».',
       );
-      await f.tap('Usar con mis cuentas');
+      await f.check('Ajustes ofrece el mismo «Usar mis cuentas»; no hay '
+          'primera pantalla a la que volver', () {
+        expect(f.shows('CUENTA DE EJEMPLO'), isTrue);
+        expect(f.shows('Usar mis cuentas'), isTrue);
+        expect(f.shows('Volver a la primera pantalla'), isFalse);
+        expect(f.shows('Ver los datos de ejemplo'), isFalse);
+      });
+      await f.tapFound(find.text('Usar mis cuentas'));
       await f.check('Desde Ajustes también abre la configuración', () {
         expect(find.byType(OnboardingPage), findsOneWidget);
-      });
-      await f.tapTip('Atrás');
-      await f.step(
-        'Otra vez «Atrás» en el primer paso: la conversación de la demo sigue '
-        'ahí, con su respuesta.',
-      );
-      await f.check('Volver de la configuración no borra la conversación', () {
-        final Session s = _demo(f);
-        expect(s.turns.single.question, ScriptedAgent.starters[3]);
-        expect(find.byType(Conversation), findsOneWidget);
       });
     },
   ),
   AppFlow(
     '11-14-ver-el-ejemplo-y-volver',
-    'Mirar la demo y volver a mis cuentas',
+    'Mirar el ejemplo y volver a mis cuentas',
     area: _demoArea,
     goal:
-        'Ya tengo mis cuentas, pero quiero mostrarle la demo a alguien y '
+        'Ya tengo mis cuentas, pero quiero mostrarle el ejemplo a alguien y '
         'volver a lo mío.',
     data: fullAccount,
     (FlowRun f) async {
       final int entries = f.own.snapshot!.entries.length;
+      final int free = f.own.ledger!.freeUntilPayday;
       await f.tapTip('Ajustes');
       await f.reveal(find.text('Ver los datos de ejemplo'));
       await f.step(
-        'En Ajustes de mis cuentas está «Ver los datos de ejemplo».',
+        'En Ajustes de sus cuentas está «Ver los datos de ejemplo».',
       );
       await f.tap('Ver los datos de ejemplo');
       await f.step(
-        'Lo toca: abre la demo de Valentina, y el aviso ahora ofrece '
-        '«Volver a mis cuentas».',
+        'Lo toca: abre toda la app con la cuenta de Valentina, con la franja '
+        '«Cuenta de ejemplo de Valentina» y «Usar mis cuentas» arriba.',
       );
       await f.check(
-        'La demo sabe que hay cuentas propias a las que volver',
+        'Es el ejemplo, la app lo recuerda y sus movimientos siguen ahí',
         () async {
-          expect(find.text('Volver a mis cuentas'), findsOneWidget);
-          expect(find.text('Usar con mis cuentas'), findsNothing);
+          expect(f.own.example, isTrue);
+          expect(f.own.profile!.name, 'Valentina');
           expect(await _setting(f, 'app.mode'), 'demo');
+          expect(
+            await f.tester.runAsync(_store(f).entries),
+            hasLength(entries),
+          );
         },
       );
-      await f.tap('Volver a mis cuentas');
+      await f.tap('Usar mis cuentas');
       await f.step(
-        'Toca «Volver a mis cuentas»: vuelve a Inicio con todo como estaba.',
+        'Toca «Usar mis cuentas»: vuelve a su Inicio con todo como estaba.',
       );
       await f.check('Volvió a las cuentas propias, sin perder nada', () async {
         expect(find.byType(OwnShell), findsOneWidget);
+        expect(f.own.example, isFalse);
         expect(await _setting(f, 'app.mode'), 'own');
         expect(f.own.snapshot!.entries, hasLength(entries));
+        expect(f.own.ledger!.freeUntilPayday, free);
       });
       await f.tapTip('Ajustes');
       await f.tap('Ver los datos de ejemplo');
       await f.tapTip('Ajustes');
-      await f.reveal(find.text('Volver a mis cuentas').last);
       await f.step(
-        'Otra vez en la demo, Ajustes también ofrece «Volver a mis cuentas», '
-        'debajo del modo desarrollador.',
+        'Otra vez en el ejemplo, sus Ajustes empiezan con «Cuenta de '
+        'ejemplo»: «Usar mis cuentas» y «Volver a la primera pantalla».',
       );
-      await f.tapFound(find.text('Volver a mis cuentas'));
+      await f.tapFound(find.text('Usar mis cuentas'));
       await f.check('Desde Ajustes también vuelve a sus cuentas', () async {
         expect(find.byType(OwnShell), findsOneWidget);
-        expect(find.byType(HomePage), findsNothing);
+        expect(f.own.example, isFalse);
+        expect(f.own.ledger!.freeUntilPayday, free);
         expect(await _setting(f, 'app.mode'), 'own');
       });
+    },
+  ),
+  AppFlow(
+    '11-15-recorrer-la-cuenta-de-ejemplo',
+    'Recorrer toda la app con la cuenta de ejemplo',
+    area: _demoArea,
+    goal:
+        'Antes de poner mis cuentas quiero ver todo lo que hace la app: '
+        'Inicio, lo que hay por hacer, los movimientos, las cuentas, la '
+        'cripto y el plan.',
+    demo: true,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Ledger story = demoLedger();
+      final String free = pesos(story.major(story.freeUntilPayday));
+      await f.page(
+        'Al abrir, Inicio de la cuenta de ejemplo de Valentina: «Puedes '
+        'gastar $free hasta el 15 de octubre», lo que hay por hacer, los '
+        'próximos días y sus cuentas.',
+      );
+      await f.check(
+        'Inicio dice $free, la misma cifra que la conversación del ejemplo',
+        () {
+          expect(own.ledger!.freeUntilPayday, story.freeUntilPayday);
+          expect(_said(f), contains(free));
+        },
+      );
+      await f.check('Por hacer: revisar 2 movimientos y repartir la '
+          'quincena que llegó', () {
+        expect(_said(f), contains('Revisa 2 movimientos'));
+        expect(_said(f), contains('Te llegó la quincena'));
+      });
+      await f.tapTip('Por revisar');
+      await f.step(
+        'En «Por revisar», lo que el teléfono captó esta mañana: una compra '
+        'lista para registrar, un pago al que le falta la cuenta y el '
+        'gimnasio, que ya estaba anotado, como posible repetido.',
+      );
+      await f.check('Dos esperan y uno es un posible repetido', () {
+        expect(own.pendingInbox, hasLength(2));
+        expect(f.shows('LISTOS PARA REGISTRAR'), isTrue);
+        expect(f.shows('NECESITAN INFORMACIÓN'), isTrue);
+        expect(f.shows('POSIBLES REPETIDOS'), isTrue);
+      });
+      await f.back();
+      await f.tap('Movimientos');
+      await f.step(
+        'En «Movimientos», seis meses de la historia de Valentina, lo más '
+        'reciente arriba: hoy el gimnasio y ayer la nómina.',
+      );
+      await f.check('Son los movimientos de la historia, desde abril', () {
+        final List<Entry> entries = own.snapshot!.entries;
+        expect(entries.length, greaterThan(300));
+        expect(
+          entries
+              .map((Entry e) => e.date)
+              .reduce((DateTime a, DateTime b) => a.isBefore(b) ? a : b),
+          DateTime(2026, 4, 1),
+        );
+        expect(f.shows('Nómina Estudio Lumen'), isTrue);
+      });
+      await f.tap('Cuentas');
+      await f.page(
+        'En «Cuentas», su patrimonio y cada cuenta: la de nómina, la '
+        'billetera, el efectivo, la tarjeta con su cupo libre, el bolsillo de '
+        'Cartagena, los dólares y la cripto.',
+      );
+      await f.check('Hay tarjeta con cupo, dólares y cripto con su costo', () {
+        final List<String> names = <String>[
+          for (final Account a in own.accounts) a.name,
+        ];
+        expect(
+          names,
+          containsAll(<String>[
+            'Tarjeta de crédito',
+            'Cuenta en dólares',
+            'Bitcoin',
+          ]),
+        );
+        expect(
+          own.accounts
+              .where((Account a) => a.asset.isCrypto)
+              .every((Account a) => a.openingCost != null),
+          isTrue,
+        );
+      });
+      await f.tap('Rendimiento y ganancia');
+      await f.page(
+        '«Rendimiento y ganancia» abre la cripto: lo que costó, lo que vale '
+        'con los precios fijos del ejemplo y la ganancia.',
+      );
+      await f.check('Los precios son los fijos del ejemplo', () {
+        expect(
+          own.rates.rate(Asset.btc, Asset.usdt),
+          Decimal.parse(examplePrices['BTC']!.$1),
+        );
+      });
+      await f.back();
+      await f.tap('Plan');
+      await f.page(
+        'En «Plan», repartir la quincena en sobres, los ingresos variables, '
+        'el viaje, la meta de Cartagena, los deseos, los pagos fijos, las '
+        'compras a cuotas, los gastos compartidos y los cargos para revisar.',
+      );
+      await f.check('Cada parte del plan tiene algo que mostrar', () {
+        expect(own.trips, hasLength(1));
+        expect(own.wishes, isNotEmpty);
+        expect(own.freelance.incomes, isNotEmpty);
+        expect(own.instalments, hasLength(1));
+        expect(own.groups, hasLength(1));
+        expect(own.recurring, isNotEmpty);
+      });
+      await f.tap('Compras a cuotas');
+      await f.step(
+        '«Compras a cuotas»: los audífonos de septiembre, en tres cuotas sin '
+        'interés en la tarjeta.',
+      );
+      await f.back();
+      await f.tap('Gastos compartidos');
+      await f.step(
+        '«Gastos compartidos»: el paseo a Santa Elena con Laura y Mateo, que '
+        'pagaron la cabaña y el mercado; Valentina les debe su parte.',
+      );
+      await f.check('Valentina debe su parte del paseo', () {
+        expect(own.sharedBalance.$2, 222000);
+      });
+      await f.back();
+      await f.tap('Cuenta de ejemplo de Valentina');
+      await f.step(
+        'La franja de arriba explica qué es: Valentina es inventada, lo que '
+        'se haga aquí no toca los datos de nadie y se borra al salir.',
+      );
+      await f.check('La explicación ofrece «Usar mis cuentas» y seguir', () {
+        expect(f.shows('Usar mis cuentas'), isTrue);
+        expect(f.shows('Seguir en el ejemplo'), isTrue);
+      });
+      await f.tap('Seguir en el ejemplo');
     },
   ),
   AppFlow(
@@ -2026,9 +1994,13 @@ const List<String> _ownStarters = <String>[
   'Quiero anotar un gasto',
 ];
 
-const String _seeRecorded = 'Mira lo que respondió Gemini de verdad';
-
 /// The demo's conversation.
+/// The trip to Cartagena in the account the conversation is about, as it is
+/// now: the example keeps its goals in its own database, by name.
+Goal _trip(Session s) => s.ledger.goals.firstWhere(
+  (Goal g) => g.name.toLowerCase().contains('cartagena'),
+);
+
 Session _demo(FlowRun f) =>
     f.tester.widget<HomePage>(find.byType(HomePage)).session;
 
@@ -2149,30 +2121,9 @@ class RecordedSlider {
 /// which may have sliders of its own.
 final Finder _replaySlider = find.byType(Slider).first;
 
-/// Taps the replay's slider where step [position] is.
-Future<void> _seek(FlowRun f, int position) async {
-  final Finder found = _replaySlider;
-  final Slider slider = f.tester.widget<Slider>(found);
-  final Rect track = f.tester.getRect(found);
-  await f.tester.tapAt(
-    Offset(track.left + track.width * position / slider.max, track.center.dy),
-  );
-  await settle(f.tester);
-}
-
 /// How much [c] moved between August and September in [ledger].
 int _moved(Ledger ledger, Category c) =>
     (ledger.spentOn(c, 2026, 9) - ledger.spentOn(c, 2026, 8)).abs();
-
-/// Every value kept in the store's settings, joined.
-Future<String> _savedSettings(FlowRun f) async =>
-    (await f.tester.runAsync<String>(() async {
-      final QuincenaStore store = _store(f);
-      return <String>[
-        for (final row in await store.db.select(store.db.settings).get())
-          row.value,
-      ].join(' | ');
-    }))!;
 
 /// The day's questions, as the app counts them.
 Allowance _allowance(FlowRun f) =>

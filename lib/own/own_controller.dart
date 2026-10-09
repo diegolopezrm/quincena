@@ -13,6 +13,8 @@ import '../capture/merchants.dart';
 import '../capture/places.dart';
 import '../agent/tools.dart';
 import '../data/clock.dart';
+import '../data/example_account.dart' show exampleLastUsed;
+import '../data/example_prices.dart';
 import '../data/ledger.dart';
 import '../domain/commitments.dart';
 import '../domain/freelance.dart';
@@ -48,12 +50,23 @@ class OwnController extends ChangeNotifier {
     this.ratesMaxAge = const Duration(hours: 6),
     PlaceFinder? places,
     this.readNative = true,
+    this.example = false,
     this._market,
     this._binance,
-  }) : _fetcher = fetcher ?? RateFetcher(),
+  }) : _fetcher = fetcher ?? (example ? ExampleRates(now: now) : RateFetcher()),
        _now = now ?? DateTime.now {
-    capture = CaptureService(store, places: places ?? PlaceFinder(), now: _now);
+    capture = CaptureService(
+      store,
+      places: places ?? PlaceFinder(client: example ? offline() : null),
+      now: _now,
+    );
   }
+
+  /// Whether these are Valentina's made-up accounts, kept in memory, and
+  /// not the person's own. Nothing about them reaches the phone: no
+  /// reminder, no capture, no key in the keychain, no request to the
+  /// network. Rates and prices are the example's fixed ones.
+  final bool example;
 
   /// Turns captured events into movements through the inbox.
   late final CaptureService capture;
@@ -70,12 +83,19 @@ class OwnController extends ChangeNotifier {
   DateTime now() => _now();
 
   /// The person's crypto, priced as it moves.
-  PortfolioController get portfolio =>
-      _portfolio ??= PortfolioController(this, market: _market);
+  PortfolioController get portfolio => _portfolio ??= PortfolioController(
+    this,
+    market: _market ?? (example ? ExampleMarket(now: _now) : null),
+  );
   PortfolioController? _portfolio;
 
   /// Their Binance account, when they link it, read on the app's clock.
-  BinanceLink get binance => _binance ??= BinanceLink(store, now: _now);
+  BinanceLink get binance => _binance ??= BinanceLink(
+    store,
+    now: _now,
+    // The example has no key to read, and keeps none.
+    vault: example ? _NoKeys() : null,
+  );
   BinanceLink? _binance;
 
   /// The wallets they follow by public address.
@@ -375,8 +395,9 @@ class OwnController extends ChangeNotifier {
       store.setSetting(_detectiveKey, jsonEncode(state.toJson()));
 
   /// Asks the system to let the app notify, for a renewal or trial
-  /// reminder. False when the person said no.
-  Future<bool> allowReminders() => Reminders.ask();
+  /// reminder. False when the person said no, and in the example, which
+  /// asks nothing and sets no reminder.
+  Future<bool> allowReminders() async => !example && await Reminders.ask();
 
   static const String _memoriesKey = 'commitments.memories';
   static const String _instalmentsKey = 'commitments.instalments';
@@ -537,6 +558,7 @@ class OwnController extends ChangeNotifier {
     required String title,
     required String body,
   }) async {
+    if (example) return false;
     if (!on) {
       // The renewals stay: the next reload sets them without the close.
       await store.setSetting(_reminderKey, '');
@@ -602,7 +624,7 @@ class OwnController extends ChangeNotifier {
   /// the person asked about.
   Future<void> _remind() async {
     final Profile? p = profile;
-    if (p == null) return;
+    if (p == null || example) return;
     final DateTime now = _now();
     final List<Reminder> all = <Reminder>[
       if (_reminder case final Map<String, String> words)
@@ -829,7 +851,7 @@ class OwnController extends ChangeNotifier {
     await _reload();
     _changes = store.watchChanges().listen((_) => _schedule());
     unawaited(refreshRates());
-    if (readNative) CaptureChannel.listen(this, pullCaptures);
+    if (readNative && !example) CaptureChannel.listen(this, pullCaptures);
     unawaited(pullCaptures());
   }
 
@@ -919,7 +941,7 @@ class OwnController extends ChangeNotifier {
   /// A call during a pull makes that pull look again when it ends, so an
   /// event that lands meanwhile is not left waiting for the next return.
   Future<IngestReport> pullCaptures() async {
-    if (!readNative) return const IngestReport();
+    if (!readNative || example) return const IngestReport();
     if (_pulling) {
       _pullAgain = true;
       return const IngestReport();
@@ -959,8 +981,12 @@ class OwnController extends ChangeNotifier {
   /// It goes to the account the person named, or else the first one to
   /// spend from in the base currency. An account in another currency gets
   /// the amount converted, when there is a rate for it. One saved before
-  /// with the same id is corrected instead of added again.
-  Future<void> recordExpense(ExpenseToRecord expense) async {
+  /// with the same id is corrected instead of added again. [source] says
+  /// who wrote it down: Gemini, or the example's script.
+  Future<void> recordExpense(
+    ExpenseToRecord expense, {
+    String source = 'gemini',
+  }) async {
     final Profile? p = profile;
     final Ledger? l = ledger;
     if (p == null || l == null) return;
@@ -984,7 +1010,7 @@ class OwnController extends ChangeNotifier {
         ? null
         : _snapshot?.entries
               .where(
-                (Entry e) => e.source == 'gemini' && e.sourceRef == expense.id,
+                (Entry e) => e.source == source && e.sourceRef == expense.id,
               )
               .firstOrNull;
     if (earlier != null) {
@@ -1006,7 +1032,7 @@ class OwnController extends ChangeNotifier {
       date: _now(),
       category: expense.category.name,
       payee: expense.note,
-      source: 'gemini',
+      source: source,
       sourceRef: expense.id,
     );
     _pending?.cancel();
@@ -1138,6 +1164,9 @@ class OwnController extends ChangeNotifier {
         reserved: _freelance.reservePercent > 0
             ? _freelance.reserve(_collected(s, day))
             : 0,
+        // What the example's story tells of each subscription's use, for
+        // its conversation; nothing tells it of the person's own.
+        lastUsed: example ? exampleLastUsed : const <String, DateTime>{},
       );
       _balances = balancesOf(s.accounts, s.entries, day);
     } else {
@@ -1150,7 +1179,7 @@ class OwnController extends ChangeNotifier {
   /// Hands the notification listener what it needs to know, when it
   /// changed.
   void _configureListener() {
-    if (!readNative) return;
+    if (!readNative || example) return;
     final CaptureSettings s = _captureSettings;
     final String now = '${s.useLocation} ${(s.mutedApps.toList()..sort())}';
     if (now == _configured) return;
@@ -1173,4 +1202,17 @@ class OwnController extends ChangeNotifier {
     unawaited(_changes?.cancel());
     super.dispose();
   }
+}
+
+/// Where the example's Binance key would be: nowhere. Nothing is read
+/// from the keychain, and nothing is written to it.
+class _NoKeys implements KeyVault {
+  @override
+  Future<(String, String)?> read() async => null;
+
+  @override
+  Future<void> write(String key, String secret) async {}
+
+  @override
+  Future<void> delete() async {}
 }

@@ -1,6 +1,7 @@
 import 'package:dartantic_ai/dartantic_ai.dart';
 import 'package:decimal/decimal.dart';
 
+import '../agent/scripted_agent.dart' show ScriptedKeeper;
 import '../agent/tools.dart';
 import '../capture/merchants.dart';
 import '../data/ledger.dart';
@@ -136,20 +137,12 @@ Future<Map<String, Object?>> saveGoalPlanAnswer(
           '${goals.map((SavingsGoal g) => g.name).join(', ')}',
     };
   }
-  final Asset asset = goal.target.asset;
-  final Money? amount = own.rates.convert(
-    Money(Decimal.parse('$monthly'), base),
-    asset,
-  );
-  if (amount == null) {
+  if (!await _saveMonthly(own, goal, monthly, base)) {
     return <String, Object?>{
-      'error': 'there is no rate from ${base.code} to ${asset.code}',
+      'error':
+          'there is no rate from ${base.code} to ${goal.target.asset.code}',
     };
   }
-  await own.saveGoalMonthly(
-    goal,
-    Money(amount.amount.round(scale: asset.decimals), asset),
-  );
   final Ledger? ledger = own.ledger;
   final Goal? now = ledger?.goals
       .where((Goal g) => g.id == goal.id)
@@ -170,6 +163,44 @@ Future<Map<String, Object?>> saveGoalPlanAnswer(
     'note': 'Only the plan changed: no money moved.',
   };
 }
+
+/// Saves [monthly], in whole units of [base], as what goes into [goal] each
+/// month, in the goal's own currency. False without a rate between them.
+Future<bool> _saveMonthly(
+  OwnController own,
+  SavingsGoal goal,
+  num monthly,
+  Asset base,
+) async {
+  final Asset asset = goal.target.asset;
+  final Money? amount = own.rates.convert(
+    Money(Decimal.parse('$monthly'), base),
+    asset,
+  );
+  if (amount == null) return false;
+  await own.saveGoalMonthly(
+    goal,
+    Money(amount.amount.round(scale: asset.decimals), asset),
+  );
+  return true;
+}
+
+/// What the example's scripted conversation saves, kept in [own]'s
+/// database, which every screen of the example reads: an expense, from
+/// the example's script, and a goal's monthly amount.
+ScriptedKeeper scriptedKeeper(OwnController own) => ScriptedKeeper(
+  expense: (ExpenseToRecord expense) =>
+      own.recordExpense(expense, source: 'script'),
+  goalMonthly: (Goal goal, int monthly) async {
+    final Ledger? ledger = own.ledger;
+    final Asset? base = own.profile?.base;
+    final SavingsGoal? saved = own.snapshot?.goals
+        .where((SavingsGoal g) => g.id == goal.id)
+        .firstOrNull;
+    if (ledger == null || base == null || saved == null) return;
+    await _saveMonthly(own, saved, ledger.major(monthly), base);
+  },
+);
 
 /// The `owed_and_variable` tool's answer, apart so a test can read it.
 Map<String, Object?> owedAndVariableAnswer(OwnController own) {

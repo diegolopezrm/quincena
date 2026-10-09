@@ -8,6 +8,7 @@ import '../../capture/merchants.dart';
 import '../../capture/native_channel.dart';
 import '../../domain/records.dart';
 import '../../format/dates.dart';
+import '../../data/example_account.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
@@ -22,6 +23,7 @@ import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
 import 'category_choices.dart';
+import 'example_bar.dart';
 import 'look.dart';
 import 'movement_list.dart';
 
@@ -123,6 +125,13 @@ class _StatementPageState extends State<StatementPage> {
     return null;
   }
 
+  /// The example's own statement, to try the import without a file. It is
+  /// in the app already: there is nothing to wait for.
+  Future<void> _tryExample() async {
+    final StatementRead read = await exampleStatement();
+    if (mounted) await _show(read);
+  }
+
   Future<void> _pick() async {
     final List<PlatformFile> files = await FilePicker.pickFiles(
       type: FileType.custom,
@@ -171,6 +180,8 @@ class _StatementPageState extends State<StatementPage> {
   /// the web, the PDF itself.
   Future<void> _gemini() async {
     final AppLocalizations l = context.l10n;
+    // The example sends nothing anywhere.
+    if (await explainExample(context, own, l.statementGemini)) return;
     if (!await _allowance.take()) {
       setState(() => _problem = l.problemLimit);
       return;
@@ -476,6 +487,27 @@ class _StatementPageState extends State<StatementPage> {
     children: <Widget>[
       Text(l.statementIntro, style: context.type.bodyMedium),
       const SizedBox(height: 20),
+      // The example has a statement of its own to try, before any file.
+      if (own.example) ...<Widget>[
+        Block(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Text(
+                l.exampleStatementBody(own.profile?.name ?? ''),
+                style: context.type.bodyMedium,
+              ),
+              const SizedBox(height: 12),
+              FilledButton.tonalIcon(
+                onPressed: _tryExample,
+                icon: const Icon(Glyph.fileText, size: 18),
+                label: Text(l.exampleStatementUse),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
       if (_problem != null) ...<Widget>[
         Text(
           _problem!,

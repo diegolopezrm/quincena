@@ -363,7 +363,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get startDemoBody =>
-      'Mira cómo funciona con la cuenta de Valentina, una diseñadora en Medellín. Puedes pasar a tus cuentas cuando quieras.';
+      'Recorre toda la app con la cuenta de Valentina, una diseñadora en Medellín. Es inventada y no toca tus datos; puedes pasar a tus cuentas cuando quieras.';
 
   @override
   String get privacyNote =>
@@ -2294,6 +2294,70 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get continueLabel => 'Continuar';
+
+  @override
+  String get acceptLabel => 'Aceptar';
+
+  @override
+  String get disclosureUses => 'Qué usa';
+
+  @override
+  String get disclosureReads => 'Qué lee';
+
+  @override
+  String get disclosureWhen => 'Cuándo';
+
+  @override
+  String get disclosureWhere => 'Dónde queda';
+
+  @override
+  String get captureLocationAskTitle => 'Ubicación de tus pagos';
+
+  @override
+  String get captureLocationAskLead =>
+      'Quincena recoge datos de ubicación para sugerir el comercio de un pago, incluso cuando la app está cerrada o no se usa.';
+
+  @override
+  String get captureLocationAskWhat => 'La ubicación precisa del teléfono.';
+
+  @override
+  String get captureLocationAskWhen =>
+      'Solo cuando llega una notificación de pago, también con la app cerrada o sin usarla.';
+
+  @override
+  String get captureLocationAskWhere =>
+      'En este teléfono. Para encontrar el comercio, solo las coordenadas van a OpenStreetMap a través de Photon: nada más, y a nadie más.';
+
+  @override
+  String get captureLocationAskNextAndroid =>
+      'Si aceptas, Android te pedirá permiso para usar la ubicación.';
+
+  @override
+  String get captureLocationAskNextIos =>
+      'Si aceptas, Quincena usará la ubicación que tu atajo le pase con cada pago.';
+
+  @override
+  String get captureNotificationsAskTitle => 'Leer tus notificaciones de pagos';
+
+  @override
+  String get captureNotificationsAskLead =>
+      'Quincena lee las notificaciones de este teléfono para anotar tus pagos sin que tengas que escribirlos.';
+
+  @override
+  String get captureNotificationsAskWhat =>
+      'El texto de las notificaciones que llegan, como las de las apps de tus bancos y billeteras y los SMS. Solo guarda las que traen un monto con su moneda, con la app que la mostró y la hora; las demás pasan sin guardarse y los códigos de verificación nunca se guardan.';
+
+  @override
+  String get captureNotificationsAskWhen =>
+      'Cada vez que llega una notificación, también con la app cerrada o sin usarla.';
+
+  @override
+  String get captureNotificationsAskWhere =>
+      'En este teléfono. Quincena no envía su texto a ningún servidor ni a nadie.';
+
+  @override
+  String get captureNotificationsAskNext =>
+      'Si aceptas, Android abrirá el acceso a notificaciones para que actives Quincena.';
 
   @override
   String get captureImagesTitle => 'Capturas y comprobantes';
@@ -5774,6 +5838,64 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String exampleBarTitle(String name) {
+    return 'Cuenta de ejemplo de $name';
+  }
+
+  @override
+  String get exampleUseOwn => 'Usar mis cuentas';
+
+  @override
+  String exampleAboutBody(String name) {
+    return '$name es inventada, como todas sus cifras. Lo que hagas aquí no toca tus cuentas ni tus datos, y se borra al salir del ejemplo.';
+  }
+
+  @override
+  String get exampleBackToStart => 'Volver a la primera pantalla';
+
+  @override
+  String get exampleStay => 'Seguir en el ejemplo';
+
+  @override
+  String exampleOnlyBody(String name) {
+    return 'Esta es la cuenta de ejemplo de $name, y es inventada. Aquí esto no hace nada: no se conecta con nada, no le pide permisos a tu teléfono y no toca tus datos. Para usarlo, pasa a tus cuentas.';
+  }
+
+  @override
+  String get exampleNoReminders =>
+      'En la cuenta de ejemplo no se programan avisos.';
+
+  @override
+  String get exampleSection => 'Cuenta de ejemplo';
+
+  @override
+  String examplePricedAt(String when) {
+    return 'Precios fijos del ejemplo, del $when';
+  }
+
+  @override
+  String get sourceScript => 'Conversación del ejemplo';
+
+  @override
+  String get exampleNotConnected => 'En el ejemplo no se conecta con nada';
+
+  @override
+  String get examplePricesNote =>
+      'En el ejemplo los precios son fijos: no se le piden a Binance ni a nadie. Quincena no da asesoría de inversión.';
+
+  @override
+  String exampleStatementBody(String name) {
+    return 'Prueba con un extracto inventado de la cuenta de nómina de $name: trae un pago que ya está anotado, el pago de la tarjeta y una compra de antes de que escribiera su saldo.';
+  }
+
+  @override
+  String get exampleStatementUse => 'Usar el extracto de ejemplo';
+
+  @override
+  String get examplePasteNote =>
+      'Un mensaje de ejemplo, como los que manda el banco. Puedes cambiarlo antes de leerlo.';
+
+  @override
   String dayWhen(String date) {
     return 'el $date';
   }
@@ -5900,4 +6022,11 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get rulesEmptyWithMovements =>
       'No tienes reglas ahora. Cuando registres algo en Por revisar, se crea la de su comercio, su tarjeta o su banco. Tus movimientos no cambian.';
+
+  @override
+  String get badgeExample => 'EJEMPLO';
+
+  @override
+  String get aboutExample =>
+      'La cuenta, la persona y los comercios del ejemplo son inventados.';
 }

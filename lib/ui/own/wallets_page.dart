@@ -9,6 +9,7 @@ import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import 'example_bar.dart';
 import 'look.dart';
 import 'portfolio_page.dart';
 
@@ -27,11 +28,15 @@ class WalletsRow extends StatelessWidget {
       final WalletLink link = own.wallets;
       final DateTime? at = link.syncedAt;
       return InkWell(
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (BuildContext context) => WalletsPage(own: own),
-          ),
-        ),
+        onTap: () async {
+          if (await explainExample(context, own, l.walletsTitle)) return;
+          if (!context.mounted) return;
+          await Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (BuildContext context) => WalletsPage(own: own),
+            ),
+          );
+        },
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
@@ -52,7 +57,9 @@ class WalletsRow extends StatelessWidget {
                   children: <Widget>[
                     Text(l.walletsTitle, style: context.type.titleSmall),
                     Text(
-                      link.wallets.isEmpty || at == null
+                      own.example
+                          ? l.exampleNotConnected
+                          : link.wallets.isEmpty || at == null
                           ? l.walletsCardBody
                           : l.walletsSyncedAt(dayAndTime(at)),
                       style: context.type.bodySmall,

@@ -27,7 +27,8 @@ import 'shared.dart';
 /// expense paid for others, only the person's part is spending and the
 /// rest is money lent; a repayment is money back, not income. [expected]
 /// are payments from clients still to come, and [reserved] what the person
-/// keeps apart of those that came.
+/// keeps apart of those that came. [lastUsed] says when each subscription
+/// was last used, by its name, where that is known.
 LedgerBuild buildLedger(
   StoreSnapshot s, {
   required DateTime today,
@@ -36,6 +37,7 @@ LedgerBuild buildLedger(
   SharedLinks shared = const SharedLinks(),
   List<Movement> expected = const <Movement>[],
   int reserved = 0,
+  Map<String, DateTime> lastUsed = const <String, DateTime>{},
 }) {
   final Asset base = s.profile.base;
   final RateTable rates = RateTable(s.rates);
@@ -199,6 +201,7 @@ LedgerBuild buildLedger(
             chargeDay: r.nextDate.day,
             next: nextCharge(r, today),
             since: r.since ?? today,
+            lastUsed: lastUsed[r.name],
           ),
     ],
     goals: <Goal>[

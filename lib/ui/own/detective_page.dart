@@ -25,6 +25,7 @@ String entrySourceLabel(AppLocalizations l, String source) {
     'manual' => l.sourceManual,
     'statement' => l.sourceStatement,
     'gemini' => l.sourceGemini,
+    'script' => l.sourceScript,
     'binance' => 'Binance',
     _ when CaptureSource.values.any((CaptureSource c) => c.name == kind) =>
       sourceLabel(l, CaptureSource.parse(kind)),

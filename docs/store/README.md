@@ -2,8 +2,10 @@
 
 What Quincena says about itself in the App Store and Google Play, the
 answers to their privacy forms, and the screenshots. The screenshots come
-from `test_screens/store_screens_test.dart`, with an example person,
-Valentina, and never anyone's real data:
+from `test_screens/store_screens_test.dart`, which opens the app's own
+example account, Valentina's (`lib/data/example_account.dart`), the one
+"Con datos de ejemplo" opens, so every screen in them is a tap away in the
+app. Never anyone's real data:
 
 ```bash
 flutter test test_screens/store_screens_test.dart --update-goldens
@@ -240,14 +242,44 @@ only about the person's money, through tools, inside the app.
 
 > Quincena keeps every account and transaction on the device. To try it
 > without entering anything, tap "Con datos de ejemplo" on the first
-> screen. "Pregúntale a tu plata" uses Gemini through Firebase AI Logic,
-> protected by App Check; questions are limited to 30 a day per person.
+> screen: it opens the whole app (Inicio, Movimientos, Cuentas, Plan, Por
+> revisar and Cripto) on a made-up account, the one in the screenshots,
+> kept in memory apart from the person's own and erased on leaving it.
+> There, what only makes sense with one's own accounts (Binance, sync,
+> backups, reminders, automatic capture, the widget, deleting everything)
+> says so instead of running, and "Pregúntale a tu plata" answers its five
+> questions offline with a script, over the same made-up account.
+> "Importar extracto" (Ajustes) offers a made-up statement and "Leer un
+> pago" (Por revisar) a sample bank message, so neither needs a file. With
+> one's own accounts, "Pregúntale a tu plata" uses Gemini through Firebase
+> AI Logic, protected by App Check; questions are limited to 30 a day per
+> person.
 > Connecting Binance needs a read-only API key of the reviewer's own and is
 > optional; every other feature works without it.
 >
 > Sync between devices (Ajustes, Varios dispositivos) is optional: devices
 > exchange end-to-end encrypted files that the person moves, with no
 > account or server.
+>
+> Nothing in the app is switched on or off from outside it: there is no
+> remote configuration, no feature flag and nothing that depends on the
+> region, the date or an account. Two things live outside the app's own
+> screens, and this is how to try them, with one's own accounts ("Con mis
+> cuentas" takes a minute: a name, the pay day and one account):
+> - Automatic capture: in the Shortcuts app, add Quincena's action
+>   "Registrar movimiento" (Record a transaction) with the text
+>   "Bancolombia: Compraste $45.900 en EXITO LAURELES con tu T.Deb *1234"
+>   and run it. The payment appears in Por revisar (the tray icon on
+>   Inicio). Ajustes, Captura automática explains how to make it run on
+>   its own when a bank notification arrives.
+> - Reading a receipt: share a screenshot or a PDF of a payment from
+>   Photos or Files to Quincena, or use the action "Leer comprobante" (Read
+>   a receipt). It also lands in Por revisar.
+>
+> The phone apps have no developer options: no key of one's own, no
+> inspector and no recorded sessions. Those belong to the web demo for
+> developers (diegolopezrm.github.io/quincena), which is not part of this
+> app.
 
 Version 1.0 went to App Review on 2 October 2026 with build 12. The
 review contact is Diego López, +57 316 605 0934, admin@dlsoft.dev. Release
@@ -277,6 +309,32 @@ which on Android reads:
 > If you allow it, Quincena reads your banks' and wallets' notifications,
 > only those with an amount, never security codes. What is unclear waits
 > in "Needs review".
+
+### App access
+
+For App access in Play Console's App content, and wherever Play asks how
+to reach the app: nothing needs an account, and this says where every
+screen of the pictures is.
+
+> **Español.** No hace falta cuenta ni contraseña. En la primera pantalla,
+> toca «Con datos de ejemplo»: abre toda la app con la cuenta inventada de
+> Valentina, la de las capturas, y cada pantalla de las capturas queda a un
+> toque: Inicio (con «Pregúntale a tu plata», que responde sin conexión),
+> Movimientos, Cuentas y su cripto, Plan, Por revisar (el ícono de la
+> bandeja) e Importar extracto (en Ajustes, con un extracto de ejemplo).
+> Nada de lo que se haga ahí toca datos de nadie, y se borra al salir con
+> «Usar mis cuentas».
+>
+> **English.** No account or password is needed. On the first screen, tap
+> "Con datos de ejemplo" (With sample data): it opens the whole app on
+> Valentina's made-up account, the one in the screenshots, and every
+> screen in the screenshots is one tap away: Inicio (home, with
+> "Pregúntale a tu plata", which answers offline), Movimientos
+> (transactions), Cuentas (accounts) and its crypto, Plan, Por revisar
+> (needs review, the tray icon) and Importar extracto (import a
+> statement, in Ajustes, with a sample statement). Nothing done there
+> touches anyone's data, and it is erased on leaving with "Usar mis
+> cuentas".
 
 ### Data safety
 
@@ -365,10 +423,69 @@ $18.500 POS 7731") and the payment waiting in To review with the shop
 found nearby. It is shared from DL SOFT's Google Drive to anyone with the
 link: https://drive.google.com/file/d/1xdb85_mDkdhPHvFe85GKVF-SWqFoob4N/view
 
+On 6 October 2026 Play rejected the app for an inadequate prominent
+disclosure: the disclosure did not say how the location is used, and the
+permission requests were not immediately preceded by one. The reviewer's
+video showed Android's location prompt right after turning the switch on,
+and Quincena's explanation only afterwards, before the background request.
+Since then the order in the app is:
+
+1. Settings, Automatic capture, turning on "Usar la ubicación del pago"
+   ("Use where the payment happened") shows "Ubicación de tus pagos"
+   ("Location of your payments"): Google's sentence ("Quincena collects
+   location data to suggest the shop of a payment, even when the app is
+   closed or not in use"), what it uses (the phone's precise location),
+   when (only when a payment notification arrives, also with the app
+   closed), where it stays (on the phone; only the coordinates go to
+   OpenStreetMap through Photon, nothing else and to no one else) and that
+   Android asks next, with "Ahora no" and "Aceptar". "Ahora no", back and
+   a tap outside ask for nothing and leave the switch off.
+2. Only after "Aceptar", Android's prompt for the location while the app
+   is in use.
+3. Once given, "Ubicación con la app cerrada" ("Location while Quincena is
+   closed") says it again and that Android will ask to choose "Permitir
+   todo el tiempo", with "Ahora no" and "Aceptar".
+4. Only after "Aceptar", Android's "Allow all the time" screen.
+
+"Permitir todo el tiempo" under the switch, for someone who said no at
+step 3, goes through step 3 as well. The feature for the next submission:
+
+> **Feature:** Finding the shop of a payment. Payment notifications arrive
+> while Quincena is closed, and many do not name the shop ("Compra POS
+> 4512"). With "Use where the payment happened" turned on (off by
+> default), Quincena reads the location once when a payment notification
+> arrives and suggests the shop nearby. Before any location permission
+> request, the in-app disclosure "Location of your payments" says what is
+> collected, what for, when and where it goes, and asks for consent with
+> "Accept"; Android's prompt comes only after it. The disclosure "Location
+> while Quincena is closed" comes right before Android's "Allow all the
+> time". The location stays on the phone; only coordinates go to Photon
+> (OpenStreetMap search).
+
+**Owner's task:** `background-location.mp4` shows the old order, so the
+declaration video must be recorded again with the new one: the switch,
+"Ubicación de tus pagos", "Aceptar", Android's prompt, "Ubicación con la
+app cerrada", "Aceptar", "Permitir todo el tiempo", then the app closed,
+a bank notification with no shop name and the payment in Por revisar with
+the shop found nearby. Then update the link and the feature text in Play
+Console (App content, Sensitive app permissions) and send the new build
+for review.
+
 **Notification access** (`BIND_NOTIFICATION_LISTENER_SERVICE`). Not a
-Play declaration, but the listing and the in-app explanation say what it
-reads: notifications with an amount next to a currency, from apps the
-person does not mute; never security codes.
+Play declaration, but the listing and the app say what it reads. Before
+Android's notification access screen, "Permitir acceso a notificaciones"
+shows "Leer tus notificaciones de pagos" ("Reading your payment
+notifications"): what it reads (the text of incoming notifications, such
+as those of the bank and wallet apps and texts; it keeps only those with
+an amount next to a currency, from apps the person does not mute, never
+security codes), when (each time one arrives, also with the app closed),
+where it stays (on the phone; the text goes to no server and no one) and
+that Android opens notification access next, with "Ahora no" and
+"Aceptar". Only "Aceptar" opens Android's screen.
+
+**Notifications** (`POST_NOTIFICATIONS`), from Android 13. Asked for only
+when the person turns on a reminder (payday close, a renewal or the end
+of a trial); it reads no data.
 
 ## Version 1.1.0
 
@@ -406,4 +523,7 @@ can touch.
 
 The 1.1.0 screenshots in `screenshots/` were rendered on 4 October 2026
 from `test_screens/store_screens_test.dart`, with fixed prices so Spanish
-and English show the same figures.
+and English show the same figures. On 6 October 2026 Google Play turned
+the app down because the screenshots showed screens "Con datos de ejemplo"
+did not open; they were rendered again from the app's own example account,
+which now opens the whole app, with its bar on every screen.

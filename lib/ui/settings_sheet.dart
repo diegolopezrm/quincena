@@ -8,6 +8,7 @@ import '../app.dart';
 import '../l10n/l10n.dart';
 import '../session/session.dart';
 import '../theme/tokens.dart';
+import '../showcase.dart';
 
 /// Who answers, language, appearance, the developer panel, starting over.
 Future<void> showSettings(
@@ -119,61 +120,65 @@ class _SettingsState extends State<_Settings> {
             children: <Widget>[
               Text(t.settings, style: context.type.headlineSmall),
               const SizedBox(height: 22),
-              Text(t.whoAnswers, style: context.type.labelMedium),
-              const SizedBox(height: 10),
-              SegmentedButton<AgentMode>(
-                segments: <ButtonSegment<AgentMode>>[
-                  ButtonSegment<AgentMode>(
-                    value: AgentMode.demo,
-                    label: Text(t.modeDemo),
-                  ),
-                  // Gemini with no key where Quincena's project serves the
-                  // app; a key of the person's own then stays an option.
-                  if (Cloud.supported)
+              // Where only the script answers, as in the example account,
+              // there is no one else to choose.
+              if (widget.session.choosable) ...<Widget>[
+                Text(t.whoAnswers, style: context.type.labelMedium),
+                const SizedBox(height: 10),
+                SegmentedButton<AgentMode>(
+                  segments: <ButtonSegment<AgentMode>>[
                     ButtonSegment<AgentMode>(
-                      value: AgentMode.gemini,
-                      label: Text(t.modeGemini),
+                      value: AgentMode.demo,
+                      label: Text(t.modeDemo),
                     ),
-                  ButtonSegment<AgentMode>(
-                    value: AgentMode.live,
-                    label: Text(Cloud.supported ? t.modeOwnKey : t.modeLive),
-                  ),
-                ],
-                selected: <AgentMode>{_mode},
-                showSelectedIcon: false,
-                onSelectionChanged: (Set<AgentMode> value) =>
-                    _choose(value.first),
-              ),
-              const SizedBox(height: 10),
-              Text(switch ((_mode, live)) {
-                (AgentMode.demo, _) => t.demoExplain,
-                (AgentMode.live, true) => t.liveActive(
-                  GeminiClient.defaultModel,
-                ),
-                (AgentMode.live, false) => t.liveNeedsKey,
-                (AgentMode.gemini, _) => t.geminiExplain(
-                  FirebaseGeminiClient.defaultModel,
-                ),
-              }, style: context.type.bodySmall),
-              // Connected, it stays, so a key that did not work can be
-              // replaced where the notice about it sends the person.
-              if (_mode == AgentMode.live) ...<Widget>[
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _key,
-                  obscureText: true,
-                  autocorrect: false,
-                  enableSuggestions: false,
-                  onSubmitted: (_) => _connect(),
-                  decoration: InputDecoration(
-                    labelText: t.keyLabel,
-                    hintText: t.keyHint,
-                  ),
+                    // Gemini with no key where Quincena's project serves the
+                    // app; a key of the person's own then stays an option.
+                    if (Cloud.supported)
+                      ButtonSegment<AgentMode>(
+                        value: AgentMode.gemini,
+                        label: Text(t.modeGemini),
+                      ),
+                    ButtonSegment<AgentMode>(
+                      value: AgentMode.live,
+                      label: Text(Cloud.supported ? t.modeOwnKey : t.modeLive),
+                    ),
+                  ],
+                  selected: <AgentMode>{_mode},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (Set<AgentMode> value) =>
+                      _choose(value.first),
                 ),
                 const SizedBox(height: 10),
-                FilledButton(onPressed: _connect, child: Text(t.connect)),
+                Text(switch ((_mode, live)) {
+                  (AgentMode.demo, _) => t.demoExplain,
+                  (AgentMode.live, true) => t.liveActive(
+                    GeminiClient.defaultModel,
+                  ),
+                  (AgentMode.live, false) => t.liveNeedsKey,
+                  (AgentMode.gemini, _) => t.geminiExplain(
+                    FirebaseGeminiClient.defaultModel,
+                  ),
+                }, style: context.type.bodySmall),
+                // Connected, it stays, so a key that did not work can be
+                // replaced where the notice about it sends the person.
+                if (_mode == AgentMode.live) ...<Widget>[
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _key,
+                    obscureText: true,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    onSubmitted: (_) => _connect(),
+                    decoration: InputDecoration(
+                      labelText: t.keyLabel,
+                      hintText: t.keyHint,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  FilledButton(onPressed: _connect, child: Text(t.connect)),
+                ],
+                const SizedBox(height: 26),
               ],
-              const SizedBox(height: 26),
               Text(t.language, style: context.type.labelMedium),
               const SizedBox(height: 10),
               SegmentedButton<String>(
@@ -226,52 +231,55 @@ class _SettingsState extends State<_Settings> {
                     widget.settings.themeMode = value.first,
               ),
               const SizedBox(height: 22),
-              // A Material rather than a decorated box, so the switch's ink
-              // shows on the tinted background instead of under it.
-              Material(
-                color: context.colors.sunken,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: Column(
-                  children: <Widget>[
-                    SwitchListTile(
-                      value: widget.settings.developer,
-                      onChanged: (bool value) =>
-                          widget.settings.developer = value,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      title: Text(
-                        t.developerMode,
-                        style: context.type.titleSmall,
-                      ),
-                      subtitle: Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          t.developerExplain,
-                          style: context.type.bodySmall,
+              // The inspector is for developers: only the web demo has it.
+              if (showcase) ...<Widget>[
+                // A Material rather than a decorated box, so the switch's ink
+                // shows on the tinted background instead of under it.
+                Material(
+                  color: context.colors.sunken,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    children: <Widget>[
+                      SwitchListTile(
+                        value: widget.settings.developer,
+                        onChanged: (bool value) =>
+                            widget.settings.developer = value,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                      ),
-                    ),
-                    if (widget.settings.developer)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton(
-                            onPressed: widget.session.turns.isEmpty
-                                ? null
-                                : _copySession,
-                            child: Text(t.copySession),
+                        title: Text(
+                          t.developerMode,
+                          style: context.type.titleSmall,
+                        ),
+                        subtitle: Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            t.developerExplain,
+                            style: context.type.bodySmall,
                           ),
                         ),
                       ),
-                  ],
+                      if (widget.settings.developer)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton(
+                              onPressed: widget.session.turns.isEmpty
+                                  ? null
+                                  : _copySession,
+                              child: Text(t.copySession),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 22),
+                const SizedBox(height: 22),
+              ],
               if (widget.onUseOwn case final VoidCallback useOwn) ...<Widget>[
                 FilledButton(
                   onPressed: () {
@@ -291,7 +299,7 @@ class _SettingsState extends State<_Settings> {
               ),
               const SizedBox(height: 18),
               Text(
-                t.about,
+                showcase ? t.about : t.aboutExample,
                 style: context.type.bodySmall,
                 textAlign: TextAlign.center,
               ),

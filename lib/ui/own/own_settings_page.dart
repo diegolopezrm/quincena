@@ -25,6 +25,7 @@ import 'amount_input.dart';
 import 'backup_flow.dart';
 import 'binance_page.dart';
 import 'capture_settings_page.dart';
+import 'example_bar.dart';
 import 'look.dart';
 import 'pay_schedule_editor.dart';
 import 'statement_page.dart';
@@ -196,11 +197,16 @@ class OwnSettingsPage extends StatelessWidget {
     await own.store.saveProfile(p.copyWith(schedule: picked));
   }
 
-  Future<void> _export(BuildContext context) =>
-      exportData(context, backups: Backups(own.store), today: own.today);
+  Future<void> _export(BuildContext context) async {
+    if (await explainExample(context, own, context.l10n.exportData)) return;
+    if (!context.mounted) return;
+    await exportData(context, backups: Backups(own.store), today: own.today);
+  }
 
-  Future<void> _import(BuildContext context) {
+  Future<void> _import(BuildContext context) async {
     final AppLocalizations l = context.l10n;
+    if (await explainExample(context, own, l.importData)) return;
+    if (!context.mounted) return;
     return importData(
       context,
       backups: Backups(own.store),
@@ -216,6 +222,8 @@ class OwnSettingsPage extends StatelessWidget {
 
   Future<void> _deleteAll(BuildContext context) async {
     final AppLocalizations l = context.l10n;
+    if (await explainExample(context, own, l.deleteAll)) return;
+    if (!context.mounted) return;
     final NavigatorState navigator = Navigator.of(context);
     final ModalRoute<Object?>? page = ModalRoute.of(context);
     final bool? sure = await _confirm(
@@ -282,6 +290,17 @@ class OwnSettingsPage extends StatelessWidget {
     ),
   );
 
+  /// Opens [page], or in the example says why [title] is not there.
+  Future<void> _open(
+    BuildContext context,
+    String title,
+    WidgetBuilder page,
+  ) async {
+    if (await explainExample(context, own, title)) return;
+    if (!context.mounted) return;
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: page));
+  }
+
   Widget _row(
     BuildContext context, {
     required IconData icon,
@@ -339,6 +358,45 @@ class OwnSettingsPage extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                 children: <Widget>[
+                  if (own.example) ...<Widget>[
+                    SectionLabel(l.exampleSection),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Text(
+                        l.exampleAboutBody(p?.name ?? ''),
+                        style: context.type.bodySmall,
+                      ),
+                    ),
+                    // Where the build keeps no accounts of the person's,
+                    // there is nowhere else to go.
+                    if (modes.canUseOwn) ...<Widget>[
+                      const SizedBox(height: 8),
+                      Panel(
+                        children: <Widget>[
+                          _row(
+                            context,
+                            icon: Glyph.wallet,
+                            title: l.exampleUseOwn,
+                            onTap: () =>
+                                ExampleScope.of(context)?.onUseOwn?.call(),
+                          ),
+                          if (modes.hasStart)
+                            _row(
+                              context,
+                              icon: Glyph.arrowLeft,
+                              title: l.exampleBackToStart,
+                              onTap: () {
+                                Navigator.of(
+                                  context,
+                                ).popUntil((Route<void> r) => r.isFirst);
+                                modes.backToStart();
+                              },
+                            ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                  ],
                   if (p != null) ...<Widget>[
                     SectionLabel(l.settingsProfile),
                     Panel(
@@ -416,6 +474,13 @@ class OwnSettingsPage extends StatelessWidget {
                           onChanged: (bool on) async {
                             final ScaffoldMessengerState messenger =
                                 ScaffoldMessenger.of(context);
+                            if (await explainExample(
+                              context,
+                              own,
+                              l.remindersTitle,
+                            )) {
+                              return;
+                            }
                             final bool done = await own.remindClose(
                               on,
                               title: l.reminderTitle,
@@ -451,7 +516,16 @@ class OwnSettingsPage extends StatelessWidget {
                       children: <Widget>[
                         SwitchListTile(
                           value: own.widgetHidesAmounts,
-                          onChanged: own.hideWidgetAmounts,
+                          onChanged: (bool hide) async {
+                            if (await explainExample(
+                              context,
+                              own,
+                              l.widgetSection,
+                            )) {
+                              return;
+                            }
+                            await own.hideWidgetAmounts(hide);
+                          },
                           title: Text(
                             l.widgetHide,
                             style: context.type.titleSmall,
@@ -469,6 +543,13 @@ class OwnSettingsPage extends StatelessWidget {
                             onTap: () async {
                               final ScaffoldMessengerState messenger =
                                   ScaffoldMessenger.of(context);
+                              if (await explainExample(
+                                context,
+                                own,
+                                l.widgetSection,
+                              )) {
+                                return;
+                              }
                               if (!await pinWidget()) {
                                 messenger.showSnackBar(
                                   SnackBar(content: Text(l.widgetAddFailed)),
@@ -488,23 +569,24 @@ class OwnSettingsPage extends StatelessWidget {
                         icon: Glyph.bell,
                         title: l.captureTitle,
                         value: l.captureSubtitle,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (BuildContext context) =>
-                                CaptureSettingsPage(own: own),
-                          ),
+                        onTap: () => _open(
+                          context,
+                          l.captureTitle,
+                          (BuildContext context) =>
+                              CaptureSettingsPage(own: own),
                         ),
                       ),
                       _row(
                         context,
                         icon: Glyph.vault,
                         title: l.walletsTitle,
-                        value: l.walletsCardBody,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (BuildContext context) =>
-                                WalletsPage(own: own),
-                          ),
+                        value: own.example
+                            ? l.exampleNotConnected
+                            : l.walletsCardBody,
+                        onTap: () => _open(
+                          context,
+                          l.walletsTitle,
+                          (BuildContext context) => WalletsPage(own: own),
                         ),
                       ),
                       if (BinanceLink.available)
@@ -512,14 +594,15 @@ class OwnSettingsPage extends StatelessWidget {
                           context,
                           icon: Glyph.currencyBtc,
                           title: l.binanceTitle,
-                          value: own.binance.connected
+                          value: own.example
+                              ? l.exampleNotConnected
+                              : own.binance.connected
                               ? l.binanceConnected
                               : l.binanceCardBody,
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (BuildContext context) =>
-                                  BinancePage(own: own),
-                            ),
+                          onTap: () => _open(
+                            context,
+                            l.binanceTitle,
+                            (BuildContext context) => BinancePage(own: own),
                           ),
                         ),
                     ],
@@ -603,7 +686,9 @@ class OwnSettingsPage extends StatelessWidget {
                           MaterialPageRoute<void>(
                             builder: (BuildContext context) => StatementPage(
                               own: own,
-                              allowance: modes.allowance,
+                              // The example counts nothing in the person's
+                              // own day of questions.
+                              allowance: own.example ? null : modes.allowance,
                             ),
                           ),
                         ),
@@ -613,11 +698,10 @@ class OwnSettingsPage extends StatelessWidget {
                         icon: Glyph.deviceMobile,
                         title: l.syncTitle,
                         value: l.syncRow,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (BuildContext context) =>
-                                SyncPage(own: own),
-                          ),
+                        onTap: () => _open(
+                          context,
+                          l.syncTitle,
+                          (BuildContext context) => SyncPage(own: own),
                         ),
                       ),
                       _row(
@@ -632,17 +716,18 @@ class OwnSettingsPage extends StatelessWidget {
                         title: l.importData,
                         onTap: () => _import(context),
                       ),
-                      _row(
-                        context,
-                        icon: Glyph.sparkle,
-                        title: l.useDemo,
-                        onTap: () {
-                          Navigator.of(
-                            context,
-                          ).popUntil((Route<void> r) => r.isFirst);
-                          modes.useDemo();
-                        },
-                      ),
+                      if (!own.example)
+                        _row(
+                          context,
+                          icon: Glyph.sparkle,
+                          title: l.useDemo,
+                          onTap: () {
+                            Navigator.of(
+                              context,
+                            ).popUntil((Route<void> r) => r.isFirst);
+                            modes.useDemo();
+                          },
+                        ),
                       _row(
                         context,
                         icon: Glyph.trash,
