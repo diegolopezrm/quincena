@@ -7,7 +7,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -31,32 +30,8 @@ void main() {
 
   for (final AppFlow flow in flows) {
     testWidgets('flow ${flow.id}', (tester) async {
-      // A keychain of its own for every flow, as without a phone: the
-      // phone's would keep the sync and backup keys one flow left behind.
-      final Map<String, String> keychain = <String, String>{};
-      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-        _keychain,
-        (MethodCall call) async {
-          final Map<Object?, Object?> args =
-              (call.arguments as Map<Object?, Object?>?) ?? const {};
-          final String? key = args['key'] as String?;
-          return switch (call.method) {
-            'read' => keychain[key],
-            'write' => keychain[key!] = args['value']! as String,
-            'delete' => keychain.remove(key),
-            'containsKey' => keychain.containsKey(key),
-            'readAll' => keychain,
-            'deleteAll' => keychain.clear(),
-            _ => null,
-          };
-        },
-      );
-      addTearDown(
-        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-          _keychain,
-          null,
-        ),
-      );
+      // A keychain of its own for every flow, as without a phone.
+      useOwnKeychain(tester);
       final FlowRun run = await playFlow(tester, flow, (
         String name,
         String caption,
@@ -76,7 +51,3 @@ void main() {
     });
   }
 }
-
-const MethodChannel _keychain = MethodChannel(
-  'plugins.it_nomads.com/flutter_secure_storage',
-);

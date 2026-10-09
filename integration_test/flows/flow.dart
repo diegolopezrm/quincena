@@ -10,6 +10,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/store/store.dart';
@@ -237,3 +238,35 @@ Future<FlowRun> playFlow(
   }
   return run!;
 }
+
+/// Gives the flow a keychain of its own, kept in a map: the phone's would
+/// keep the sync and backup keys that the flow before left behind.
+void useOwnKeychain(WidgetTester tester) {
+  final Map<String, String> keychain = <String, String>{};
+  tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(_keychain, (
+    MethodCall call,
+  ) async {
+    final Map<Object?, Object?> args =
+        (call.arguments as Map<Object?, Object?>?) ?? const {};
+    final String? key = args['key'] as String?;
+    return switch (call.method) {
+      'read' => keychain[key],
+      'write' => keychain[key!] = args['value']! as String,
+      'delete' => keychain.remove(key),
+      'containsKey' => keychain.containsKey(key),
+      'readAll' => keychain,
+      'deleteAll' => keychain.clear(),
+      _ => null,
+    };
+  });
+  addTearDown(
+    () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      _keychain,
+      null,
+    ),
+  );
+}
+
+const MethodChannel _keychain = MethodChannel(
+  'plugins.it_nomads.com/flutter_secure_storage',
+);

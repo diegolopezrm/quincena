@@ -19,7 +19,6 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
@@ -43,30 +42,7 @@ void main() {
     testWidgets('flow ${flow.id}', (tester) async {
       debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
       // The keychain, as a map: sync and backups keep their keys there.
-      final Map<String, String> keychain = <String, String>{};
-      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-        _keychain,
-        (MethodCall call) async {
-          final Map<Object?, Object?> args =
-              (call.arguments as Map<Object?, Object?>?) ?? const {};
-          final String? key = args['key'] as String?;
-          return switch (call.method) {
-            'read' => keychain[key],
-            'write' => keychain[key!] = args['value']! as String,
-            'delete' => keychain.remove(key),
-            'containsKey' => keychain.containsKey(key),
-            'readAll' => keychain,
-            'deleteAll' => keychain.clear(),
-            _ => null,
-          };
-        },
-      );
-      addTearDown(
-        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-          _keychain,
-          null,
-        ),
-      );
+      useOwnKeychain(tester);
       late FlowRun run;
       try {
         run = await playFlow(
@@ -115,7 +91,3 @@ void main() {
     });
   }
 }
-
-const MethodChannel _keychain = MethodChannel(
-  'plugins.it_nomads.com/flutter_secure_storage',
-);
