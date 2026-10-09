@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:a2ui_core/a2ui_core.dart' as core;
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' hide Category;
 import 'package:genui/genui.dart';
 import 'package:genui_gen/tracing.dart';
 import 'package:intl/intl.dart';
@@ -14,11 +14,13 @@ import '../agent/catalog.dart';
 import '../agent/firebase_client.dart';
 import '../agent/model_client.dart';
 import '../agent/model_source.dart';
-import '../agent/scripted_agent.dart' show ScriptedKeeper;
+import '../agent/receipts.dart';
+import '../agent/scripted_agent.dart' show AgentTurn, ScriptedKeeper;
 import '../agent/scripted_source.dart';
 import '../agent/source.dart';
 import '../agent/tools.dart';
 import '../ai/allowance.dart';
+import '../data/category.dart';
 import '../data/ledger.dart';
 import '../data/seed.dart';
 import '../l10n/l10n.dart';
@@ -51,6 +53,11 @@ class Turn {
   /// something they did on a surface, which [note] describes instead.
   final String? question;
   final TurnNote? note;
+
+  /// Whether the phone answered it itself, as it does what a person
+  /// commits on a model's form: no model wrote that answer.
+  bool get here => _here;
+  bool _here = false;
 
   /// The surfaces the answer created, in order. A model may create more than
   /// one, and the first arrives before the answer is finished.
@@ -106,6 +113,7 @@ class Previous {
     this._controller,
     this._recorder,
     this._source,
+    this._tools,
     this._turns,
     this._settled,
     this._offers,
@@ -116,6 +124,7 @@ class Previous {
   final SurfaceController _controller;
   final GenUiTraceRecorder _recorder;
   final AnswerSource _source;
+  final List<dartantic.Tool> _tools;
   final List<Turn> _turns;
   final Map<String, Settled> _settled;
   final Map<String, Set<String>> _offers;
@@ -151,7 +160,17 @@ class Session extends ChangeNotifier {
     this.keeper,
     this.scripted = false,
   }) : _ledgerOf = ledgerOf ?? demoLedger,
-       _toolsFor = toolsFor ?? ledgerTools {
+       // With a keeper, what a model saves goes where the script's does,
+       // into the account every screen reads, not into a copy of it.
+       _toolsFor =
+           toolsFor ??
+           (keeper == null
+               ? ledgerTools
+               : (Ledger _) => accountTools(
+                   ledgerOf ?? demoLedger,
+                   record: keeper.expense,
+                   accounts: keeper.accounts,
+                 )) {
     _mode = scripted ? AgentMode.demo : mode;
     _apiKey = apiKey;
     _language = language;
@@ -165,13 +184,16 @@ class Session extends ChangeNotifier {
   String get language => _language;
 
   /// Switches the language of the answers and of every amount and date
-  /// formatted after it, and starts over, since a conversation half in one
-  /// language and half in the other helps no one.
+  /// formatted after it. The conversation stays: what was said stays as it
+  /// was said, and the next answer comes in the new language. Losing it
+  /// because the app now speaks another language would cost the person
+  /// what they asked.
   set language(String value) {
     if (value == _language) return;
     _language = value;
     Intl.defaultLocale = intlLocaleFor(value);
-    restart();
+    _source.language = value;
+    notifyListeners();
   }
 
   /// How long the scripted agent takes to answer. A pause the length of a
@@ -230,12 +252,24 @@ class Session extends ChangeNotifier {
   bool get canGoLive => client != null || (_apiKey?.isNotEmpty ?? false);
 
   /// The account this conversation is about: as it was when it started,
-  /// with what it saved, or, with a [keeper], as it is now.
-  Ledger get ledger => keeper == null ? _ledger : _ledgerOf();
+  /// with what it saved, or, with a [keeper] or the person's [own]
+  /// accounts, as it is now: those live outside the conversation, and a
+  /// conversation kept for a while must not read them as they were.
+  Ledger get ledger => keeper == null && !own ? _ledger : _ledgerOf();
   late Ledger _ledger;
   late SurfaceController controller;
   late GenUiTraceRecorder recorder;
   late AnswerSource _source;
+
+  /// The tools a model answers with, as this conversation notes their
+  /// calls: also what the phone calls itself to save what a person commits
+  /// on a model's form. None while the script answers.
+  List<dartantic.Tool> _tools = const <dartantic.Tool>[];
+
+  /// The answers the phone gave itself, to give each surface its own id:
+  /// never one a model's or an earlier one took, whichever conversation
+  /// comes back.
+  int _answeredHere = 0;
 
   /// The model's raw replies in this conversation, when a model is answering.
   List<String> get replies => switch (_source) {
@@ -352,6 +386,9 @@ class Session extends ChangeNotifier {
       error: (Object error, StackTrace stack) =>
           controller.reportError(error, stack),
     );
+    final List<dartantic.Tool> tools = _tools = _mode == AgentMode.demo
+        ? const <dartantic.Tool>[]
+        : _traced(_toolsFor(ledger));
     _source = switch (_mode) {
       AgentMode.demo => ScriptedSource(
         keeper == null ? () => ledger : _ledgerOf,
@@ -364,10 +401,8 @@ class Session extends ChangeNotifier {
         client:
             client ??
             (clientFor ??
-                (List<dartantic.Tool> tools) => GeminiClient(
-                  apiKey: _apiKey!,
-                  tools: tools,
-                ))(_traced(_toolsFor(ledger))),
+                (List<dartantic.Tool> tools) =>
+                    GeminiClient(apiKey: _apiKey!, tools: tools))(tools),
         ledger: ledger,
         sink: sink,
         language: _language,
@@ -377,9 +412,8 @@ class Session extends ChangeNotifier {
         client:
             client ??
             (clientFor ??
-                (List<dartantic.Tool> tools) => FirebaseGeminiClient(
-                  tools: tools,
-                ))(_traced(_toolsFor(ledger))),
+                (List<dartantic.Tool> tools) =>
+                    FirebaseGeminiClient(tools: tools))(tools),
         ledger: ledger,
         sink: sink,
         language: _language,
@@ -542,29 +576,75 @@ class Session extends ChangeNotifier {
       : ScriptedKeeper(
           expense: (ExpenseToRecord expense) async {
             final Settled? saving = _savingIn(turns.lastOrNull);
-            await keeper.expense(expense);
+            final String? from = await keeper.expense(expense);
             saving?._saved = true;
+            return from;
           },
           goalMonthly: keeper.goalMonthly,
+          accounts: keeper.accounts,
         );
 
-  /// Asks the agent [question].
+  /// Asks the agent [question]. Through Quincena's project, it is one of
+  /// the day's questions: the only thing that is. What the person does on
+  /// an answer, saving it or changing it, belongs to that answer.
   Future<void> ask(String question) async {
     final String text = question.trim();
     if (text.isEmpty || _busy) return;
-    await _run(Turn(question: text), () => _source.ask(text));
+    await _run(Turn(question: text), () => _source.ask(text), asked: true);
   }
 
-  Future<void> _run(Turn turn, Future<void> Function() answer) async {
+  /// Whether [turn] can be asked again in its place: the latest one, a
+  /// question nothing of whose answer arrived, for a reason trying again
+  /// can fix.
+  bool canAskAgain(Turn turn) =>
+      !_busy &&
+      identical(turn, turns.lastOrNull) &&
+      turn.question != null &&
+      turn.surfaceIds.isEmpty &&
+      turn.text.toString().trim().isEmpty &&
+      switch (turn.error) {
+        AnswerProblem.offline ||
+        AnswerProblem.busy ||
+        AnswerProblem.other => true,
+        _ => false,
+      };
+
+  /// Asks [turn]'s question again, in its place, when its answer did not
+  /// arrive. The try that failed was given back to the day, so the
+  /// question counts once, when it is answered.
+  Future<void> askAgain(Turn turn) async {
+    if (!canAskAgain(turn)) return;
+    final String question = turn.question!;
+    turn
+      ..error = null
+      ..computed.clear()
+      ..text.clear();
+    await _run(turn, () => _source.ask(question), asked: true, again: true);
+  }
+
+  /// Answers [turn] with [answer]. Only a question the person [asked] is
+  /// one of the day's; [again] asks one whose answer did not arrive in its
+  /// own place; [here] is an answer the phone gives itself, which no model
+  /// is asked to fix.
+  Future<void> _run(
+    Turn turn,
+    Future<void> Function() answer, {
+    bool asked = false,
+    bool again = false,
+    bool here = false,
+  }) async {
     // Once the new conversation has a question, the old one stays gone.
     _forgetPrevious();
-    turns.add(turn);
+    if (!again) turns.add(turn);
+    turn._here = here;
     _busy = true;
     _corrections = 0;
     _errors.clear();
     notifyListeners();
     // Through Quincena's project, each question counts against the day's.
-    final Allowance? day = _mode == AgentMode.gemini ? allowance : null;
+    final Allowance? day = asked && _mode == AgentMode.gemini
+        ? allowance
+        : null;
     if (day != null && !await day.take()) {
       turn.error = AnswerProblem.limit;
       _busy = false;
@@ -579,7 +659,7 @@ class Session extends ChangeNotifier {
       // genui validates each surface against the catalog as it arrives, and
       // reports what fails back through onSubmit for the agent to fix. The
       // model hears about it once it has finished, within the same turn.
-      if (_mode != AgentMode.demo) {
+      if (_mode != AgentMode.demo && !here) {
         await Future<void>.delayed(errorWindow);
         while (_errors.isNotEmpty && _corrections < _maxCorrections) {
           _corrections++;
@@ -738,8 +818,13 @@ class Session extends ChangeNotifier {
       context: context,
       interaction: jsonEncode(interaction),
     );
+    final bool here = _settlesHere(name);
     unawaited(() async {
-      await _run(turn, () => _source.react(action));
+      await _run(
+        turn,
+        here ? () => _settle(action) : () => _source.react(action),
+        here: here,
+      );
       final List<Movement> added = <Movement>[
         for (final Movement m in account.movements)
           if (!before.contains(m)) m,
@@ -762,6 +847,101 @@ class Session extends ChangeNotifier {
     }());
   }
 
+  /// Whether the phone answers the commit [name] itself while a model is
+  /// answering: an expense and a cancellation always, a goal's plan where
+  /// there is a tool to save it. Saving what is already on screen needs no
+  /// model: it then takes no question of the day and no connection. The
+  /// script answers every commit on the phone anyway.
+  bool _settlesHere(String name) =>
+      _mode != AgentMode.demo &&
+      switch (name) {
+        'save_expense' || 'cancel_subscriptions' => true,
+        'save_goal_plan' => _tool('save_goal_plan') != null,
+        _ => false,
+      };
+
+  dartantic.Tool? _tool(String name) =>
+      _tools.where((dartantic.Tool t) => t.name == name).firstOrNull;
+
+  /// Answers [action], committed on a model's surface, on the phone: calls
+  /// the tool the model would have called and says what came of it. The
+  /// model then reads the exchange as if it had answered it, so a question
+  /// after it starts from there.
+  Future<void> _settle(UserAction action) async {
+    final Receipts receipts = Receipts(language: _language);
+    final AgentTurn? answer = switch (action.name) {
+      'save_expense' => await _saveExpense(action.context, receipts),
+      'save_goal_plan' => await _savePlan(action.context, receipts),
+      'cancel_subscriptions' => receipts.cancelled(action.context),
+      _ => null,
+    };
+    if (answer == null) return;
+    final List<core.A2uiMessage> messages = answer.messages(
+      'phone-${++_answeredHere}',
+      quincenaCatalog.catalogId!,
+    );
+    messages.forEach(_onMessage);
+    if (_source case final ModelSource model) {
+      model.remember(
+        action.interaction,
+        <String>[
+          for (final core.A2uiMessage m in messages)
+            '```json\n${jsonEncode(m.toJson())}\n```',
+        ].join('\n'),
+      );
+    }
+  }
+
+  /// Saves the expense a model's [form] sent, through record_expense, and
+  /// says where it went. An amount the form's own check turns down saves
+  /// nothing and says nothing: the message under the amount says why.
+  Future<AgentTurn?> _saveExpense(
+    Map<String, Object?> form,
+    Receipts receipts,
+  ) async {
+    final Object? amount = form['amount'];
+    final dartantic.Tool? record = _tool('record_expense');
+    if (amount is! num || amount <= 0 || record == null) return null;
+    final Category category =
+        Category.values
+            .where((Category c) => c.name == form['category'])
+            .firstOrNull ??
+        Category.other;
+    final String account = (form['account'] as String?)?.trim() ?? '';
+    final Object? saved = await record.call(<String, dynamic>{
+      'amount': amount,
+      'category': category.name,
+      'note': (form['note'] as String?)?.trim() ?? '',
+      if (account.isNotEmpty) 'account': account,
+      'id': form['id'],
+    });
+    if (saved is! Map<Object?, Object?> || saved['recorded'] != true) {
+      throw StateError('record_expense saved nothing');
+    }
+    return receipts.expense(amount, category, saved);
+  }
+
+  /// Saves the monthly amount a model's goal [plan] sent, through
+  /// save_goal_plan, and says what the plan means.
+  Future<AgentTurn?> _savePlan(
+    Map<String, Object?> plan,
+    Receipts receipts,
+  ) async {
+    final Object? monthly = plan['monthly'];
+    final dartantic.Tool? save = _tool('save_goal_plan');
+    if (monthly is! num || monthly <= 0 || save == null) return null;
+    final Object? goal = plan['goal'];
+    final Object? saved = await save.call(<String, dynamic>{
+      'monthly': monthly,
+      if (goal is String && goal.isNotEmpty) 'goal': goal,
+    });
+    final AgentTurn? answer = saved is Map<Object?, Object?>
+        ? receipts.plan(saved)
+        : null;
+    if (answer == null) throw StateError('save_goal_plan saved nothing');
+    return answer;
+  }
+
   /// A surface the model sent failed validation or a function failed.
   ///
   /// The broken surface is taken out of the turn, so the person sees the
@@ -782,6 +962,7 @@ class Session extends ChangeNotifier {
   /// with something to show.
   bool canReport(Turn turn) =>
       _mode != AgentMode.demo &&
+      !turn.here &&
       turn.error == null &&
       !(_busy && identical(turn, turns.lastOrNull)) &&
       (turn.surfaceIds.isNotEmpty || turn.text.isNotEmpty);
@@ -901,9 +1082,15 @@ class Session extends ChangeNotifier {
 
   /// Starts an empty conversation over the untouched account, and puts this
   /// one aside for [restore] to bring back. Null when there was nothing to
-  /// keep, or an answer was still on its way, which goes with the rest.
+  /// keep, as when no question got an answer and bringing it back would
+  /// bring back only the notices, or an answer was still on its way, which
+  /// goes with the rest.
   Previous? startOver() {
-    if (turns.isEmpty || _busy) {
+    final bool answered = turns.any(
+      (Turn t) =>
+          t.surfaceIds.isNotEmpty || t.text.toString().trim().isNotEmpty,
+    );
+    if (!answered || _busy) {
       restart();
       return null;
     }
@@ -914,6 +1101,7 @@ class Session extends ChangeNotifier {
       controller,
       recorder,
       _source,
+      _tools,
       List<Turn>.of(turns),
       _settled,
       _offers,
@@ -937,7 +1125,9 @@ class Session extends ChangeNotifier {
     _ledger = previous._ledger;
     controller = previous._controller;
     recorder = previous._recorder;
-    _source = previous._source;
+    // In the language the app speaks now, which may have changed since.
+    _source = previous._source..language = _language;
+    _tools = previous._tools;
     turns
       ..clear()
       ..addAll(previous._turns);

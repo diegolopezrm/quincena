@@ -22,7 +22,11 @@ import 'own_controller.dart';
 /// ask the sample account, read from the database as it is now, an expense
 /// saved for real, and every account in its own currency.
 List<Tool> ownTools(OwnController own) => <Tool>[
-  ...accountTools(() => own.ledger!, record: own.recordExpense),
+  ...accountTools(
+    () => own.ledger!,
+    record: own.recordExpense,
+    accounts: () => own.expenseAccounts,
+  ),
   Tool<Map<String, dynamic>>(
     name: 'accounts',
     description:
@@ -187,10 +191,12 @@ Future<bool> _saveMonthly(
 
 /// What the example's scripted conversation saves, kept in [own]'s
 /// database, which every screen of the example reads: an expense, from
-/// the example's script, and a goal's monthly amount.
+/// the example's script, in the account the person chose, and a goal's
+/// monthly amount.
 ScriptedKeeper scriptedKeeper(OwnController own) => ScriptedKeeper(
   expense: (ExpenseToRecord expense) =>
       own.recordExpense(expense, source: 'script'),
+  accounts: () => own.expenseAccounts,
   goalMonthly: (Goal goal, int monthly) async {
     final Ledger? ledger = own.ledger;
     final Asset? base = own.profile?.base;

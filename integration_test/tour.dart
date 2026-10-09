@@ -613,9 +613,6 @@ final List<Scene> scenes = <Scene>[
     await t.back();
     await t.conversation();
     await t.page('demo-inicio');
-    await t.tapTip('Ajustes');
-    await t.page('demo-ajustes');
-    await t.back();
     for (var i = 0; i < _starters.length; i++) {
       await t.tapContaining(_starters[i]);
       await t.page('respuesta-${i + 1}', most: 10);

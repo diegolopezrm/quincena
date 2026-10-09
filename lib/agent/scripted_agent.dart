@@ -15,7 +15,7 @@ import '../functions/money_functions.dart'
         contributionOn,
         monthlyNeeded;
 import '../l10n/l10n.dart';
-import 'tools.dart' show ExpenseToRecord, RecordExpense;
+import 'tools.dart' show ExpenseAccounts, ExpenseToRecord, RecordExpense;
 import 'understand.dart';
 
 /// One answer: the components of a surface and the data they bind to.
@@ -49,19 +49,28 @@ class AgentTurn {
 /// database, which every screen reads. Each one finishes once the account
 /// counts what it saved.
 class ScriptedKeeper {
-  const ScriptedKeeper({required this.expense, required this.goalMonthly});
+  const ScriptedKeeper({
+    required this.expense,
+    required this.goalMonthly,
+    this.accounts,
+  });
 
   /// Saves an expense the person confirmed; one with the same id again
-  /// corrects it.
+  /// corrects it. Answers with the account it was taken from.
   final RecordExpense expense;
 
   /// Saves [monthly], in the account's smallest unit, as what goes into
   /// [goal] each month. Only the plan changes: no money moves.
   final Future<void> Function(Goal goal, int monthly) goalMonthly;
+
+  /// The accounts an expense can come from, and the likely one: what the
+  /// expense form offers. Null where there is only the one account.
+  final ExpenseAccounts Function()? accounts;
 }
 
-/// An expense a form sent, in the account's smallest unit.
-typedef _Draft = ({int amount, Category category, String note});
+/// An expense a form sent, in the account's smallest unit, with the
+/// account the person chose, if the form offered one.
+typedef _Draft = ({int amount, Category category, String note, String? from});
 
 /// The agent the demo runs with when there is no model behind it.
 ///
@@ -150,15 +159,16 @@ class ScriptedAgent {
         final _Draft? draft = _draftOf(context);
         if (draft == null) return null;
         final Object? id = context['id'];
-        await keeper.expense(
+        final String? from = await keeper.expense(
           ExpenseToRecord(
             amount: draft.amount,
             category: draft.category,
             note: draft.note,
+            account: draft.from,
             id: id is String && id.isNotEmpty ? id : null,
           ),
         );
-        return _receipt(draft);
+        return _receipt(draft, from: from);
       case 'save_goal_plan':
         final Goal? goal = _trip;
         final int monthly = _monthlyIn(context);
@@ -573,6 +583,10 @@ class ScriptedAgent {
 
   AgentTurn _record(int amount, Category category) {
     final String label = _inline(category);
+    // Where the money comes from, said before saving and easy to change:
+    // the account the person most likely paid from comes chosen.
+    final ExpenseAccounts? accounts = keeper?.accounts?.call();
+    final bool from = accounts != null && accounts.names.isNotEmpty;
     return AgentTurn(
       components: <JsonMap>[
         _c('root', 'Answer', {
@@ -599,7 +613,7 @@ class ScriptedAgent {
             'Hoy, ${dayMonth(appToday)}',
             'Today, ${dayMonth(appToday)}',
           ),
-          'children': ['amount', 'category', 'note', 'save'],
+          'children': ['amount', 'category', if (from) 'from', 'note', 'save'],
         }),
         _c('amount', 'MoneyField', {
           'label': _t('Monto', 'Amount'),
@@ -631,6 +645,12 @@ class ScriptedAgent {
           'label': _t('Categoría', 'Category'),
           'value': _path('/draft/category'),
         }),
+        if (from)
+          _c('from', 'AccountChoice', {
+            'label': _t('Desde', 'From'),
+            'options': accounts.names,
+            'value': _path('/draft/account'),
+          }),
         _c('note', 'TextEntry', {
           'label': _t('Dónde', 'Where'),
           'value': _path('/draft/note'),
@@ -645,12 +665,18 @@ class ScriptedAgent {
           'onPressed': _event('save_expense', {
             'amount': _path('/draft/amount'),
             'category': _path('/draft/category'),
+            if (from) 'account': _path('/draft/account'),
             'note': _path('/draft/note'),
           }),
         }),
       ],
       data: {
-        'draft': {'amount': amount, 'category': category.name, 'note': ''},
+        'draft': {
+          'amount': amount,
+          'category': category.name,
+          if (from) 'account': accounts.likely ?? accounts.names.first,
+          'note': '',
+        },
       },
     );
   }
@@ -683,13 +709,20 @@ class ScriptedAgent {
             .firstOrNull ??
         Category.other;
     final String note = (context['note'] as String?)?.trim() ?? '';
+    final String from = (context['account'] as String?)?.trim() ?? '';
     if (amount <= 0 || amount > ledger.balance) return null;
-    return (amount: amount.round(), category: category, note: note);
+    return (
+      amount: amount.round(),
+      category: category,
+      note: note,
+      from: from.isEmpty ? null : from,
+    );
   }
 
-  /// What the account says once [draft] is in it.
-  AgentTurn _receipt(_Draft draft) {
-    final (:int amount, :Category category, note: _) = draft;
+  /// What the account says once [draft] is in it, taken [from] the account
+  /// named, when there is one to name.
+  AgentTurn _receipt(_Draft draft, {String? from}) {
+    final (:int amount, :Category category, note: _, from: _) = draft;
     final (int y, int m) = _lastMonth;
     return AgentTurn(
       components: <JsonMap>[
@@ -698,9 +731,11 @@ class ScriptedAgent {
         }),
         _c('head', 'Headline', {
           'kicker': _t('Guardado', 'Saved'),
-          'title': _t(
-            'Listo: ${pesos(amount)} en ${_inline(category)}',
-            'Done: ${pesos(amount)} under ${_inline(category)}',
+          'title': expenseTitle(
+            pesos(amount),
+            _inline(category),
+            from: from,
+            language: language,
           ),
           'body': _t(
             'Ahora puedes gastar ${pesos(ledger.freeUntilPayday)} hasta el '
@@ -1266,6 +1301,25 @@ class ScriptedAgent {
     'amount': x.amount,
     'date': _iso(x.date),
   };
+}
+
+/// The title of the answer to a saved expense, the same whoever saved it,
+/// the script or the phone for a model: how much, in what, and from which
+/// account, when there is one to name. [amount] and [category] come
+/// written as the sentence shows them.
+String expenseTitle(
+  String amount,
+  String category, {
+  String? from,
+  String language = 'es',
+}) {
+  final bool en = language == 'en';
+  if (from == null) {
+    return en ? 'Done: $amount under $category' : 'Listo: $amount en $category';
+  }
+  return en
+      ? 'Done: $amount under $category, from $from'
+      : 'Listo: $amount en $category, desde $from';
 }
 
 JsonMap _c(String id, String component, Map<String, Object?> properties) => {

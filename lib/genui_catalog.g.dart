@@ -4,6 +4,7 @@
 
 import 'package:genui/genui.dart';
 
+import 'catalog/account_choice.dart';
 import 'catalog/action_button.dart';
 import 'catalog/answer.dart';
 import 'catalog/big_amount.dart';
@@ -31,6 +32,7 @@ import 'functions/money_functions.dart';
 /// removed, so a catalog composed from it cannot fall behind
 /// the widgets it is meant to describe.
 final List<CatalogItem> genUiCatalogItems = <CatalogItem>[
+  accountChoiceCatalogItem,
   actionButtonCatalogItem,
   answerCatalogItem,
   bigAmountCatalogItem,

@@ -66,6 +66,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noteTappedAction => 'You tapped an action';
 
   @override
+  String get noteExpenseNotSaved => 'The expense wasn\'t saved';
+
+  @override
+  String get notePlanNotSaved => 'The plan wasn\'t saved';
+
+  @override
+  String get noteCancelNotMarked => 'They weren\'t marked as canceled';
+
+  @override
   String get problemKey => 'The key didn\'t work. Check it in Settings.';
 
   @override
@@ -81,7 +90,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get problemLimit =>
-      'That was all of today\'s questions. You can keep asking tomorrow.';
+      'You\'ve used today\'s questions. They\'re back tomorrow.';
+
+  @override
+  String get askAgain => 'Ask again';
 
   @override
   String get askTitle => 'Ask your money';
@@ -108,16 +120,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get askOther => 'Something else';
 
   @override
-  String askLeft(int count) {
+  String askLeftOf(int left, int total) {
     String _temp0 = intl.Intl.pluralLogic(
-      count,
+      left,
       locale: localeName,
-      other: '$count questions left today',
-      one: 'One question left today',
-      zero: 'No questions left today',
+      other: '$left of $total questions left today',
+      one: '1 of $total questions left today',
     );
     return '$_temp0';
   }
+
+  @override
+  String askNoneLeft(int total) {
+    return 'You\'ve used today\'s $total questions. They\'re back tomorrow.';
+  }
+
+  @override
+  String get askBackTomorrow => 'Questions are back tomorrow';
+
+  @override
+  String get askSeeConversation => 'See the conversation';
 
   @override
   String get askWhatSees => 'What Gemini sees';
@@ -222,9 +244,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get sessionCopied =>
       'Session copied, without what you typed. Paste it into an issue and it can be replayed.';
-
-  @override
-  String get startOver => 'Start over';
 
   @override
   String get about =>
@@ -1149,6 +1168,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get computedRecord => 'The expense that was recorded';
+
+  @override
+  String get computedExpenseAccounts => 'The accounts an expense can come from';
+
+  @override
+  String get computedPlan => 'The plan that was saved';
 
   @override
   String get computedAccounts => 'Your accounts, each in its currency';

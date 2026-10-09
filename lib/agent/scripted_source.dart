@@ -15,12 +15,24 @@ class ScriptedSource implements AnswerSource {
     this.thinking = const Duration(milliseconds: 700),
     String language = 'es',
     ScriptedKeeper? keeper,
-  }) : _agent = ScriptedAgent.over(ledger, language: language, keeper: keeper);
+  }) : _ledger = ledger,
+       _keeper = keeper,
+       _agent = ScriptedAgent.over(ledger, language: language, keeper: keeper);
 
-  final ScriptedAgent _agent;
+  final Ledger Function() _ledger;
+  final ScriptedKeeper? _keeper;
+  ScriptedAgent _agent;
   final AnswerSink sink;
   final Duration thinking;
   int _serial = 0;
+
+  /// A script in the new language from the next answer on. The count of
+  /// surfaces goes on, so a new answer never takes an old one's id.
+  @override
+  set language(String value) {
+    if (value == _agent.language) return;
+    _agent = ScriptedAgent.over(_ledger, language: value, keeper: _keeper);
+  }
 
   @override
   Future<void> ask(String question) => _deliver(() => _agent.answer(question));

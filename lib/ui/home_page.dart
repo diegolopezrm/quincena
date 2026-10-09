@@ -49,6 +49,8 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    // Back to a conversation kept from an earlier visit: where it was left.
+    if (_session.turns.isNotEmpty) _follower.openAtLatest();
     // Recorded Gemini sessions are for developers: the web demo plays them.
     if (!showcase) return;
     loadRecordings().then((List<Recording> found) {
@@ -57,7 +59,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   /// Keeps the answers in the language the interface resolved to, whether
-  /// the person chose it or the device did.
+  /// the person chose it or the device did. What was already said stays.
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -134,13 +136,18 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               children: <Widget>[
                 _TopBar(
-                  onSettings: () => showSettings(
-                    context,
-                    settings: widget.settings,
-                    session: _session,
-                    onUseOwn: widget.onUseOwn,
-                    hasOwn: widget.hasOwn,
-                  ),
+                  // The developer's settings, in the web demo. On a phone
+                  // the conversation needs none of its own: the language
+                  // and the look are the app's, in its Ajustes.
+                  onSettings: showcase
+                      ? () => showSettings(
+                          context,
+                          settings: widget.settings,
+                          session: _session,
+                          onUseOwn: widget.onUseOwn,
+                          hasOwn: widget.hasOwn,
+                        )
+                      : null,
                   onRestart: _session.turns.isEmpty
                       ? null
                       : () => startNewConversation(context, _session),
@@ -270,7 +277,7 @@ class _TopBar extends StatelessWidget {
     required this.live,
   });
 
-  final VoidCallback onSettings;
+  final VoidCallback? onSettings;
   final VoidCallback? onRestart;
 
   /// Whether a model is answering rather than the script.
@@ -323,11 +330,12 @@ class _TopBar extends StatelessWidget {
             ),
             if (onRestart case final VoidCallback restart)
               NewConversationButton(onPressed: restart),
-            IconButton(
-              onPressed: onSettings,
-              tooltip: context.l10n.settings,
-              icon: const Icon(Glyph.gear),
-            ),
+            if (onSettings case final VoidCallback settings)
+              IconButton(
+                onPressed: settings,
+                tooltip: context.l10n.settings,
+                icon: const Icon(Glyph.gear),
+              ),
           ],
         ),
       ),

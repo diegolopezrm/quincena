@@ -1871,52 +1871,49 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
   ),
   AppFlow(
     '09-13-ajustes-de-la-conversacion-del-ejemplo',
-    'Ver los ajustes de la conversación del ejemplo',
+    'Buscar los ajustes de la conversación del ejemplo',
     area: 'Ajustes',
     goal:
         'En la cuenta de ejemplo quiero saber quién contesta mis preguntas y '
-        'qué puedo ajustar.',
+        'dónde se cambian el idioma y la apariencia.',
     demo: true,
     (FlowRun f) async {
       // The conversation opens from the example's Inicio.
       await f.toConversation();
       await f.tapContaining('¿Qué suscripciones tengo?');
-      await f.tapTip('Ajustes');
-      await f.page(
-        'En la conversación del ejemplo, «Ajustes» trae idioma, apariencia y '
-        '«Empezar de nuevo». Responde el guion del ejemplo, sin red: no hay '
-        'a quién escoger.',
+      await f.step(
+        'En la conversación del ejemplo, arriba solo están «EJEMPLO» y '
+        '«Nueva»: no tiene «Ajustes» propios. Responde el guion del ejemplo, '
+        'sin red: no hay a quién escoger.',
       );
       await f.check('Responde el guion del ejemplo, sin red', () {
         expect(_session(f).mode, AgentMode.demo);
         expect(_session(f).choosable, isFalse);
       });
       await f.check(
-        'En el teléfono no hay key propia, ni Gemini a escoger, ni modo '
-        'desarrollador',
+        'En el teléfono la conversación no tiene engranaje, ni key propia, '
+        'ni Gemini a escoger, ni modo desarrollador',
         () {
+          expect(find.byTooltip('Ajustes'), findsNothing);
           expect(f.shows('Tu key'), isFalse);
           expect(f.shows('Gemini'), isFalse);
           expect(f.shows('Modo desarrollador'), isFalse);
         },
       );
-      await f.check('Dice que la cuenta del ejemplo es inventada', () {
-        expect(
-          f.shows(
-            'La cuenta, la persona y los comercios del ejemplo son '
-            'inventados.',
-          ),
-          isTrue,
-        );
-      });
-      await f.tap('Empezar de nuevo');
+      await f.back();
+      await f.tapTip('Ajustes');
+      await f.reveal(find.text('English'));
       await f.step(
-        '«Empezar de nuevo» cierra la hoja y deja la conversación vacía, con '
-        'las preguntas del comienzo.',
+        'El idioma y la apariencia están en los Ajustes de la app, los '
+        'mismos para todo el ejemplo y para la conversación.',
       );
-      await f.check('No queda conversación', () {
-        expect(_session(f).turns, isEmpty);
-      });
+      await f.check(
+        'Los Ajustes de la app traen el idioma y la apariencia',
+        () {
+          expect(f.shows('English'), isTrue);
+          expect(f.shows('Oscuro'), isTrue);
+        },
+      );
     },
   ),
   AppFlow(

@@ -85,7 +85,9 @@ void main() {
         final ScriptedAgent example = agent(language: language);
         for (final String q in ScriptedAgent.startersFor(language)) {
           final AgentTurn told = story.answer(q);
-          final AgentTurn shown = example.answer(q);
+          // The example's form also says which account the expense comes
+          // from: the story, in memory, has only the one.
+          final AgentTurn shown = _withoutAccount(example.answer(q));
           expect(
             jsonEncode(shown.components),
             jsonEncode(told.components),
@@ -94,6 +96,48 @@ void main() {
           expect(jsonEncode(shown.data), jsonEncode(told.data), reason: q);
         }
       }
+    });
+
+    test('the expense form says which account it comes from, with the one '
+        'she last paid from by hand chosen, and the answer names it', () async {
+      final ScriptedAgent script = agent();
+      final AgentTurn form = script.answer(ScriptedAgent.starters[4]);
+      final Map<String, Object?> from = form.components.firstWhere(
+        (Map<String, Object?> c) => c['component'] == 'AccountChoice',
+      );
+      expect(from['label'], 'Desde');
+      // Those to spend from: not the pocket, the dollars or the crypto.
+      expect(from['options'], <String>[
+        'Cuenta de nómina',
+        'Billetera',
+        'Efectivo',
+        'Tarjeta de crédito',
+      ]);
+      // The gym this morning went out of the bank.
+      expect(
+        (form.data['draft']! as Map<Object?, Object?>)['account'],
+        'Cuenta de nómina',
+      );
+      expect(jsonEncode(form.components), contains('"account":{"path"'));
+
+      final AgentTurn receipt = (await script
+          .respond('save_expense', <String, Object?>{
+            'amount': 12000,
+            'category': 'restaurants',
+            'account': 'Efectivo',
+            'note': 'Arepas La Esquina',
+            'id': 'form-cash',
+          }))!;
+      expect(
+        jsonEncode(receipt.components),
+        contains('Listo: ${_pesos(12000)} en restaurantes, desde Efectivo'),
+      );
+      final Entry saved = own.snapshot!.entries.firstWhere(
+        (Entry e) => e.sourceRef == 'form-cash',
+      );
+      expect(own.snapshot!.account(saved.accountId)!.name, 'Efectivo');
+      // What she paid from by hand last is what comes chosen next time.
+      expect(own.expenseAccounts.likely, 'Efectivo');
     });
 
     test('every figure in the answers is the one OwnController gives the '
@@ -184,6 +228,10 @@ void main() {
       expect(saved.category, 'groceries');
       expect(saved.sourceRef, 'form-1');
       expect(own.snapshot!.account(saved.accountId)!.name, 'Cuenta de nómina');
+      expect(
+        jsonEncode(receipt.components),
+        contains('Listo: ${_pesos(45000)} en mercado, desde Cuenta de nómina'),
+      );
 
       await script.respond('save_expense', <String, Object?>{
         'amount': 50000,
@@ -311,13 +359,10 @@ void main() {
     expect(screen(tester), contains('Ahora puedes gastar $after'));
     expect(own().ledger!.freeUntilPayday, free - 45000);
 
-    // Who answers is not a choice here.
-    await tester.tap(find.byTooltip('Ajustes'));
-    await settle(tester);
+    // Who answers is not a choice here, and the conversation has no
+    // settings of its own: language and looks are the app's.
+    expect(find.byTooltip('Ajustes'), findsNothing);
     expect(find.text('Quién responde'), findsNothing);
-    expect(find.text('Gemini'), findsNothing);
-    Navigator.of(tester.element(find.text('Empezar de nuevo'))).pop();
-    await settle(tester);
 
     await tester.tap(find.byType(BackButton));
     await settle(tester);
@@ -342,3 +387,29 @@ void main() {
 
 /// [amount] of the example's pesos, as the answers write it.
 String _pesos(int amount) => format.pesos(amount);
+
+/// [turn] without the account its expense form offers, the one thing the
+/// example's form has that the story's in memory has not.
+AgentTurn _withoutAccount(AgentTurn turn) {
+  // The account wherever the form keeps or sends it, and the component
+  // among the group's children.
+  Object? strip(Object? value) => switch (value) {
+    final Map<Object?, Object?> map => <String, Object?>{
+      for (final MapEntry<Object?, Object?> e in map.entries)
+        if (e.key != 'account') '${e.key}': strip(e.value),
+    },
+    final List<Object?> list => <Object?>[
+      for (final Object? e in list)
+        if (e != 'from') strip(e),
+    ],
+    _ => value,
+  };
+  return AgentTurn(
+    components: <Map<String, Object?>>[
+      for (final Map<String, Object?> c in turn.components)
+        if (c['component'] != 'AccountChoice')
+          strip(c)! as Map<String, Object?>,
+    ],
+    data: strip(turn.data)! as Map<String, Object?>,
+  );
+}

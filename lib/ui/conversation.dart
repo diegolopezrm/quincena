@@ -87,6 +87,17 @@ class ConversationFollower extends ChangeNotifier {
     if (session.turns.lastOrNull case final Turn latest) show(latest);
   }
 
+  /// Opens a conversation already under way where the person left it: at
+  /// its newest turn, at once, once the page is laid out.
+  void openAtLatest() => _afterLayout(() {
+    final Turn? latest = session.turns.lastOrNull;
+    final BuildContext? target = latest == null
+        ? null
+        : _keys[latest]?.currentContext;
+    if (target == null || !target.mounted) return;
+    unawaited(Scrollable.ensureVisible(target, alignment: 0));
+  });
+
   /// What the person does with the page: scrolling while an answer is on
   /// its way keeps the page where they put it, and reaching the newest turn
   /// puts the bubble away. For a [NotificationListener] over the view.
@@ -353,14 +364,23 @@ class _TurnView extends StatelessWidget {
             _Question(question)
           else if (turn.note case final TurnNote note)
             // A save whose answer did not arrive saved nothing: the note
-            // says what was tapped, not that it was saved.
-            _Note(switch (turn.error == null ? note : TurnNote.other) {
-              TurnNote.savedExpense => context.l10n.noteSavedExpense,
-              TurnNote.choseMonthly => context.l10n.noteChoseMonthly,
-              TurnNote.askedCancel => context.l10n.noteAskedCancel,
-              TurnNote.askedPayments => context.l10n.noteAskedPayments,
-              TurnNote.other => context.l10n.noteTappedAction,
-            }),
+            // says so, not that it was saved.
+            _Note(
+              turn.error == null
+                  ? switch (note) {
+                      TurnNote.savedExpense => context.l10n.noteSavedExpense,
+                      TurnNote.choseMonthly => context.l10n.noteChoseMonthly,
+                      TurnNote.askedCancel => context.l10n.noteAskedCancel,
+                      TurnNote.askedPayments => context.l10n.noteAskedPayments,
+                      TurnNote.other => context.l10n.noteTappedAction,
+                    }
+                  : switch (note) {
+                      TurnNote.savedExpense => context.l10n.noteExpenseNotSaved,
+                      TurnNote.choseMonthly => context.l10n.notePlanNotSaved,
+                      TurnNote.askedCancel => context.l10n.noteCancelNotMarked,
+                      _ => context.l10n.noteTappedAction,
+                    },
+            ),
           const SizedBox(height: 14),
           // A surface opens with its own headline; the name above it would
           // only take a line.
@@ -442,13 +462,23 @@ class _TurnView extends StatelessWidget {
               ],
             ),
           if (turn.error case final AnswerProblem problem)
-            _Problem(switch (problem) {
-              AnswerProblem.key => context.l10n.problemKey,
-              AnswerProblem.busy => context.l10n.problemBusy,
-              AnswerProblem.limit => context.l10n.problemLimit,
-              AnswerProblem.offline => context.l10n.problemOffline,
-              AnswerProblem.other => context.l10n.problemOther,
-            })
+            _Problem(
+              switch (problem) {
+                AnswerProblem.key => context.l10n.problemKey,
+                AnswerProblem.busy => context.l10n.problemBusy,
+                AnswerProblem.limit => context.l10n.problemLimit,
+                AnswerProblem.offline => context.l10n.problemOffline,
+                AnswerProblem.other => context.l10n.problemOther,
+              },
+              // The day's questions running out is how the day goes, not
+              // something that broke.
+              calm: problem == AnswerProblem.limit,
+              // Asked again in its place, while there are questions left.
+              onAskAgain:
+                  session.canAskAgain(turn) && session.allowance?.left != 0
+                  ? () => unawaited(session.askAgain(turn))
+                  : null,
+            )
           else if (waiting)
             const _Thinking(),
         ],
@@ -800,11 +830,15 @@ class _ArriveState extends State<_Arrive> with SingleTickerProviderStateMixin {
   }
 }
 
-/// Shown when the agent could not answer.
+/// Shown when the agent could not answer, with a way to ask the same
+/// question again when that can help. [calm] is for what is no failure,
+/// such as the day's questions running out: it is said in a quiet tone.
 class _Problem extends StatelessWidget {
-  const _Problem(this.message);
+  const _Problem(this.message, {this.calm = false, this.onAskAgain});
 
   final String message;
+  final bool calm;
+  final VoidCallback? onAskAgain;
 
   @override
   Widget build(BuildContext context) => Semantics(
@@ -812,21 +846,44 @@ class _Problem extends StatelessWidget {
     child: Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: context.colors.negativeSoft,
+        color: calm ? context.colors.sunken : context.colors.negativeSoft,
         borderRadius: BorderRadius.circular(14),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Icon(Glyph.warningCircle, color: context.colors.negative, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              message,
-              style: context.type.bodyMedium?.copyWith(
-                color: context.colors.ink,
+          Row(
+            children: <Widget>[
+              Icon(
+                calm ? Glyph.info : Glyph.warningCircle,
+                color: calm ? context.colors.inkSoft : context.colors.negative,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  message,
+                  style: context.type.bodyMedium?.copyWith(
+                    color: context.colors.ink,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (onAskAgain case final VoidCallback again) ...<Widget>[
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.only(left: 24),
+              child: TextButton.icon(
+                onPressed: again,
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                ),
+                icon: const Icon(Glyph.arrowsClockwise, size: 18),
+                label: Text(context.l10n.askAgain),
               ),
             ),
-          ),
+          ],
         ],
       ),
     ),

@@ -1173,20 +1173,22 @@ class OwnController extends ChangeNotifier {
       ]);
 
   /// Saves an expense the person confirmed in a conversation, and waits
-  /// until every screen and the next answer count it.
+  /// until every screen and the next answer count it. Answers with the
+  /// name of the account it was taken from, for the answer to say it.
   ///
-  /// It goes to the account the person named, or else the first one to
-  /// spend from in the base currency. An account in another currency gets
-  /// the amount converted, when there is a rate for it. One saved before
-  /// with the same id is corrected instead of added again. [source] says
-  /// who wrote it down: Gemini, or the example's script.
-  Future<void> recordExpense(
+  /// It goes to the account the person chose or named, or else the one an
+  /// expense most likely comes from, as [expenseAccounts] says. An account
+  /// in another currency gets the amount converted, when there is a rate
+  /// for it. One saved before with the same id is corrected instead of
+  /// added again. [source] says who wrote it down: Gemini, or the
+  /// example's script.
+  Future<String?> recordExpense(
     ExpenseToRecord expense, {
     String source = 'gemini',
   }) async {
     final Profile? p = profile;
     final Ledger? l = ledger;
-    if (p == null || l == null) return;
+    if (p == null || l == null) return null;
     final Money inBase = Money(
       Decimal.parse('${l.major(expense.amount)}'),
       p.base,
@@ -1201,8 +1203,8 @@ class OwnController extends ChangeNotifier {
         amount = converted;
       }
     }
-    account ??= _mainAccount(p.base);
-    if (account == null) return;
+    account ??= _likelyAccount(p.base);
+    if (account == null) return null;
     final Entry? earlier = expense.id == null
         ? null
         : _snapshot?.entries
@@ -1220,7 +1222,8 @@ class OwnController extends ChangeNotifier {
         ),
       );
       _pending?.cancel();
-      return _reload();
+      await _reload();
+      return account.name;
     }
     await store.addEntry(
       accountId: account.id,
@@ -1234,14 +1237,63 @@ class OwnController extends ChangeNotifier {
     );
     _pending?.cancel();
     await _reload();
+    return account.name;
   }
 
+  /// The accounts an expense written down in a conversation can come from,
+  /// those to spend from, and the one it most likely comes from: what the
+  /// expense form offers, with that one already chosen.
+  ExpenseAccounts get expenseAccounts => ExpenseAccounts(
+    <String>[
+      for (final Account a in accounts)
+        if (a.spendable) a.name,
+    ],
+    switch (profile) {
+      final Profile p => _likelyAccount(p.base)?.name,
+      null => null,
+    },
+  );
+
+  /// Who writes an expense down by hand: the person on the form, or in a
+  /// conversation, where Gemini or the example's script saves it.
+  static const Set<String> _byHand = <String>{'manual', 'gemini', 'script'};
+
+  /// Where the person last paid for something they wrote down by hand,
+  /// while it is still an account to spend from; otherwise the first to
+  /// spend from in [base]. A bank's alerts and a statement say nothing of
+  /// habit: what someone types in does.
+  Account? _likelyAccount(Asset base) {
+    final DateTime today = this.today;
+    final DateTime tomorrow = DateTime(today.year, today.month, today.day + 1);
+    // Newest first, as the store gives them; one dated ahead is a plan,
+    // not a habit.
+    final Entry? last = _snapshot?.entries
+        .where(
+          (Entry e) =>
+              e.kind == EntryKind.expense &&
+              _byHand.contains(e.source) &&
+              e.date.isBefore(tomorrow),
+        )
+        .firstOrNull;
+    final Account? used = last == null
+        ? null
+        : accounts
+              .where((Account a) => a.id == last.accountId && a.spendable)
+              .firstOrNull;
+    return used ?? _mainAccount(base);
+  }
+
+  /// The account called [name], the very one before one whose name only
+  /// contains it or is contained in it.
   Account? _accountNamed(String? name) {
     if (name == null || name.trim().isEmpty) return null;
     final String wanted = normalize(name);
     for (final Account a in accounts) {
+      if (normalize(a.name) == wanted) return a;
+    }
+    for (final Account a in accounts) {
       final String n = normalize(a.name);
-      if (n == wanted || n.contains(wanted) || wanted.contains(n)) return a;
+      if (n.contains(wanted) || wanted.contains(n)) return a;
     }
     return null;
   }

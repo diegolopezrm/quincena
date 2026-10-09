@@ -31,6 +31,10 @@ abstract interface class AnswerSource {
   /// Answers something the person did on a surface.
   Future<void> react(UserAction action);
 
+  /// The language the next answers are written in, `es` or `en`. What was
+  /// already said stays as it was said.
+  set language(String value);
+
   void dispose();
 }
 

@@ -17,11 +17,16 @@ class AskBar extends StatefulWidget {
     required this.onAsk,
     required this.enabled,
     this.examples = const <String>[],
+    this.closed,
   });
 
   final ValueChanged<String> onAsk;
   final bool enabled;
   final List<String> examples;
+
+  /// Why the bar takes no question now, said where the question would go,
+  /// as when the day's questions are used up; null while it takes them.
+  final String? closed;
 
   /// How long each hint stays.
   static const Duration turn = Duration(seconds: 7);
@@ -58,26 +63,32 @@ class _AskBarState extends State<AskBar> {
   }
 
   String _hintText(BuildContext context) {
+    if (widget.closed case final String closed) return closed;
     final List<String> examples = widget.examples;
     if (_hint == 0 || examples.isEmpty) return context.l10n.askHint;
     return context.l10n.askExample(examples[(_hint - 1) % examples.length]);
   }
 
+  bool get _open => widget.enabled && widget.closed == null;
+
   void _send() {
     final String value = _text.text.trim();
-    if (value.isEmpty || !widget.enabled) return;
+    if (value.isEmpty || !_open) return;
     widget.onAsk(value);
     _text.clear();
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool closed = widget.closed != null;
     return Row(
       children: <Widget>[
         Expanded(
           child: TextField(
             controller: _text,
             focusNode: _focus,
+            // Closed, nothing typed in it could go anywhere.
+            enabled: !closed,
             textInputAction: TextInputAction.send,
             onSubmitted: (_) => _send(),
             style: context.type.bodyLarge,
@@ -98,6 +109,10 @@ class _AskBarState extends State<AskBar> {
                 borderRadius: BorderRadius.circular(99),
                 borderSide: BorderSide(color: context.colors.line),
               ),
+              disabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(99),
+                borderSide: BorderSide(color: context.colors.line),
+              ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(99),
                 borderSide: BorderSide(color: context.colors.brand, width: 1.6),
@@ -107,7 +122,7 @@ class _AskBarState extends State<AskBar> {
         ),
         const SizedBox(width: 10),
         IconButton.filled(
-          onPressed: widget.enabled ? _send : null,
+          onPressed: _open ? _send : null,
           tooltip: context.l10n.ask,
           style: IconButton.styleFrom(
             backgroundColor: context.colors.brand,

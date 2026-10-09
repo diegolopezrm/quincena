@@ -10,7 +10,10 @@ import '../session/session.dart';
 import '../theme/tokens.dart';
 import '../showcase.dart';
 
-/// Who answers, language, appearance, the developer panel, starting over.
+/// The web demo's settings for developers: who answers, language,
+/// appearance and the developer panel. Changing the language keeps the
+/// conversation; the next answer comes in the new one. Starting over is
+/// «Nueva», which can be undone.
 Future<void> showSettings(
   BuildContext context, {
   required AppSettings settings,
@@ -288,18 +291,10 @@ class _SettingsState extends State<_Settings> {
                   },
                   child: Text(widget.hasOwn ? t.backToOwn : t.useOwn),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 18),
               ],
-              OutlinedButton(
-                onPressed: () {
-                  widget.session.restart();
-                  Navigator.of(context).pop();
-                },
-                child: Text(t.startOver),
-              ),
-              const SizedBox(height: 18),
               Text(
-                showcase ? t.about : t.aboutExample,
+                t.about,
                 style: context.type.bodySmall,
                 textAlign: TextAlign.center,
               ),
