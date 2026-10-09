@@ -721,19 +721,19 @@ void main() {
       ),
     );
     double top(String text) => tester.getTopLeft(find.text(text)).dy;
-    // Variable income and trips in the budget, ahead of the goals; what is
-    // shared with the payments.
+    // Variable income organizes the money, ahead of what one wants to
+    // achieve, where trips are; what is shared and lent is being paid off.
     expect(
       top('Cobros pendientes, estimados y una reserva'),
-      lessThan(top('METAS')),
+      lessThan(top('LO QUE QUIERO LOGRAR')),
     );
     expect(
       top('Un presupuesto en la moneda del viaje'),
-      lessThan(top('METAS')),
+      greaterThan(top('LO QUE QUIERO LOGRAR')),
     );
     expect(
-      top('Divide una cuenta y lleva lo que te deben'),
-      greaterThan(top('PAGOS')),
+      top('Divide una cuenta o anota lo que prestaste'),
+      greaterThan(top('LO QUE ESTOY PAGANDO')),
     );
   });
 }

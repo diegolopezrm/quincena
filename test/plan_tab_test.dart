@@ -120,28 +120,28 @@ void main() {
     ),
   );
 
-  testWidgets('four groups: the budget, goals, payments and tools', (
-    tester,
-  ) async {
+  testWidgets('four groups by what one wants: organize, achieve, pay off '
+      'and weigh', (tester) async {
     await open(tester, tab);
     // Each row under its group, top to bottom.
     final List<String> order = <String>[
-      'PRESUPUESTO HASTA EL 15 DE OCTUBRE',
+      'ORGANIZAR MI PLATA',
+      'Hasta el 15 de octubre',
       'Repartir en sobres',
       'Ingresos variables',
-      'Viajes',
-      'METAS',
-      'Cartagena',
-      'Lo quiero, pero después',
-      'PAGOS',
       'Pagos fijos',
+      'LO QUE QUIERO LOGRAR',
+      'Cartagena',
+      'Viajes',
+      'Lo quiero, pero después',
+      'LO QUE ESTOY PAGANDO',
       'Compras a cuotas',
       'Gastos compartidos',
-      'Cargos para revisar',
       'HERRAMIENTAS',
       'Próximos 30 días',
       '¿Y si…?',
       'Fondo de emergencia en días',
+      'Cargos para revisar',
     ];
     final List<double> tops = <double>[
       for (final String text in order) tester.getTopLeft(find.text(text)).dy,
@@ -149,7 +149,12 @@ void main() {
     for (var i = 1; i < order.length; i++) {
       expect(tops[i], greaterThan(tops[i - 1]), reason: order[i]);
     }
-    for (final String gone in <String>['SI TE SIRVE', 'PARA DECIDIR']) {
+    for (final String gone in <String>[
+      'SI TE SIRVE',
+      'PARA DECIDIR',
+      'METAS',
+      'PAGOS',
+    ]) {
       expect(find.text(gone), findsNothing);
     }
 
@@ -157,7 +162,7 @@ void main() {
     final Finder add = find.text('Agregar meta');
     expect(
       tester.getCenter(add).dy,
-      closeTo(tester.getCenter(find.text('METAS')).dy, 4),
+      closeTo(tester.getCenter(find.text('LO QUE QUIERO LOGRAR')).dy, 4),
     );
     expect(
       tester

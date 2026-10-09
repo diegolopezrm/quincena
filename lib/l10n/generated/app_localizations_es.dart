@@ -2082,12 +2082,18 @@ class AppLocalizationsEs extends AppLocalizations {
   String get whatIfWith => 'Con el cambio';
 
   @override
-  String planPeriod(String date) {
-    return 'Presupuesto hasta el $date';
+  String get planOrganize => 'Organizar mi plata';
+
+  @override
+  String planUntil(String date) {
+    return 'Hasta el $date';
   }
 
   @override
-  String get planGoals => 'Metas';
+  String get planAchieve => 'Lo que quiero lograr';
+
+  @override
+  String get planPaying => 'Lo que estoy pagando';
 
   @override
   String get planNoGoals =>
@@ -3954,9 +3960,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sourceOther => 'Otra fuente';
 
   @override
-  String get planCommitments => 'Pagos';
-
-  @override
   String planFixedNext30(String amount) {
     return '$amount en los próximos 30 días';
   }
@@ -4024,7 +4027,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get rateSourceManual => 'tu tasa';
 
   @override
-  String get planSharedNone => 'Divide una cuenta y lleva lo que te deben';
+  String get planSharedNone => 'Divide una cuenta o anota lo que prestaste';
 
   @override
   String planShared(String owed, String owing) {

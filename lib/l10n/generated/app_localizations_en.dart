@@ -2083,12 +2083,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get whatIfWith => 'With the change';
 
   @override
-  String planPeriod(String date) {
-    return 'Budget until $date';
+  String get planOrganize => 'Organize my money';
+
+  @override
+  String planUntil(String date) {
+    return 'Until $date';
   }
 
   @override
-  String get planGoals => 'Goals';
+  String get planAchieve => 'What I want to achieve';
+
+  @override
+  String get planPaying => 'What I\'m paying off';
 
   @override
   String get planNoGoals =>
@@ -3752,7 +3758,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String instalOnCardBody(String amount, String card) {
-    return 'We didn\'t find a purchase of $amount on $card. What you owe on the card includes it only once it is written down, and its instalments are not counted apart.';
+    return 'We didn\'t find a purchase of $amount on $card. What you owe on the card includes it only once it is written down, and its installments are not counted apart.';
   }
 
   @override
@@ -3958,9 +3964,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sourceOther => 'Another source';
 
   @override
-  String get planCommitments => 'Payments';
-
-  @override
   String planFixedNext30(String amount) {
     return '$amount in the next 30 days';
   }
@@ -4029,8 +4032,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rateSourceManual => 'your rate';
 
   @override
-  String get planSharedNone =>
-      'Split a bill and keep track of what you\'re owed';
+  String get planSharedNone => 'Split a bill or note what you lent';
 
   @override
   String planShared(String owed, String owing) {

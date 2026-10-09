@@ -3218,17 +3218,29 @@ abstract class AppLocalizations {
   /// **'Con el cambio'**
   String get whatIfWith;
 
-  /// No description provided for @planPeriod.
+  /// No description provided for @planOrganize.
   ///
   /// In es, this message translates to:
-  /// **'Presupuesto hasta el {date}'**
-  String planPeriod(String date);
+  /// **'Organizar mi plata'**
+  String get planOrganize;
 
-  /// No description provided for @planGoals.
+  /// No description provided for @planUntil.
   ///
   /// In es, this message translates to:
-  /// **'Metas'**
-  String get planGoals;
+  /// **'Hasta el {date}'**
+  String planUntil(String date);
+
+  /// No description provided for @planAchieve.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que quiero lograr'**
+  String get planAchieve;
+
+  /// No description provided for @planPaying.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que estoy pagando'**
+  String get planPaying;
 
   /// No description provided for @planNoGoals.
   ///
@@ -6146,12 +6158,6 @@ abstract class AppLocalizations {
   /// **'Otra fuente'**
   String get sourceOther;
 
-  /// No description provided for @planCommitments.
-  ///
-  /// In es, this message translates to:
-  /// **'Pagos'**
-  String get planCommitments;
-
   /// No description provided for @planFixedNext30.
   ///
   /// In es, this message translates to:
@@ -6239,7 +6245,7 @@ abstract class AppLocalizations {
   /// No description provided for @planSharedNone.
   ///
   /// In es, this message translates to:
-  /// **'Divide una cuenta y lleva lo que te deben'**
+  /// **'Divide una cuenta o anota lo que prestaste'**
   String get planSharedNone;
 
   /// No description provided for @planShared.

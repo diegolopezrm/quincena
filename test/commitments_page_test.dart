@@ -515,7 +515,7 @@ void main() {
         );
       },
     );
-    expect(find.text('PAGOS'), findsOneWidget);
+    expect(find.text('LO QUE ESTOY PAGANDO'), findsOneWidget);
     expect(
       find.text('${pesos(100000)} en los próximos 30 días'),
       findsOneWidget,

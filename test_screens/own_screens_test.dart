@@ -301,13 +301,16 @@ void main() {
         200,
         scrollable: find.byType(Scrollable).first,
       );
+      // A row above the screen too.
+      await tester.ensureVisible(find.text(row));
+      await settle(tester);
       await tester.tap(find.text(row));
       await settle(tester);
       await shoot(name);
     }
 
     await tester.scrollUntilVisible(
-      find.text('PAGOS'),
+      find.text('LO QUE ESTOY PAGANDO'),
       200,
       scrollable: find.byType(Scrollable).first,
     );

@@ -30,10 +30,11 @@ import 'trips_page.dart';
 import 'what_if_page.dart';
 import 'wishes_page.dart';
 
-/// Planning the money ahead, in four groups: the budget until payday, with
-/// the income that varies and the trips; the savings goals, with the
-/// things wanted for later; the payments already promised; and the tools
-/// to weigh what comes.
+/// Planning the money ahead, in four groups by what the person wants to
+/// do: organize their money, with the split until payday, the income that
+/// varies and the fixed payments; what they want to achieve, with goals,
+/// trips and things wanted for later; what they are paying off; and the
+/// tools to weigh what comes.
 class PlanTab extends StatelessWidget {
   const PlanTab({super.key, required this.own});
 
@@ -58,13 +59,13 @@ class PlanTab extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        SectionLabel(l.planPeriod(dayMonth(ledger.nextPayday))),
+        SectionLabel(l.planOrganize),
         _EnvelopesCard(own: own, ledger: ledger),
         const SizedBox(height: 12),
         _BudgetExtras(own: own, ledger: ledger, open: _open),
         const SizedBox(height: 28),
         SectionLabel(
-          l.planGoals,
+          l.planAchieve,
           trailing: TextButton.icon(
             onPressed: () => showGoalSheet(context, own: own),
             icon: const Icon(Glyph.plus, size: 18),
@@ -84,6 +85,7 @@ class PlanTab extends StatelessWidget {
         const SizedBox(height: 12),
         Panel(
           children: <Widget>[
+            _TripsRow(own: own, open: _open),
             _ToolRow(
               icon: Glyph.gift,
               title: l.wishesTitle,
@@ -95,7 +97,7 @@ class PlanTab extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 28),
-        SectionLabel(l.planCommitments),
+        SectionLabel(l.planPaying),
         _PaymentsPanel(own: own, ledger: ledger, open: _open),
         const SizedBox(height: 28),
         SectionLabel(l.planTools),
@@ -123,6 +125,7 @@ class PlanTab extends StatelessWidget {
               },
               onTap: () => _open(context, CushionPage(own: own)),
             ),
+            _DetectiveRow(own: own, open: _open),
           ],
         ),
       ],
@@ -130,8 +133,62 @@ class PlanTab extends StatelessWidget {
   }
 }
 
-/// What is already promised ahead: fixed payments, instalments, what is
-/// owed among friends, and the charges worth a look.
+/// The charges worth a look, among the tools: none is a payment yet.
+class _DetectiveRow extends StatelessWidget {
+  const _DetectiveRow({required this.own, required this.open});
+
+  final OwnController own;
+  final void Function(BuildContext context, Widget page) open;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    final int alerts = <ChargeAlert>[
+      for (final ChargeAlert a in own.alerts)
+        if (own.detective.answers[a.id] == null) a,
+    ].length;
+    return _ToolRow(
+      icon: Glyph.magnifyingGlass,
+      title: l.detectiveTitle,
+      detail: alerts == 0 ? l.planDetectiveNone : l.planDetective(alerts),
+      onTap: () => open(context, DetectivePage(own: own)),
+    );
+  }
+}
+
+/// The trips, with what is left of the one under way.
+class _TripsRow extends StatelessWidget {
+  const _TripsRow({required this.own, required this.open});
+
+  final OwnController own;
+  final void Function(BuildContext context, Widget page) open;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    final Trip? trip = own.trips
+        .where((Trip t) => t.daysLeft(own.today) > 0)
+        .lastOrNull;
+    return _ToolRow(
+      icon: Glyph.airplaneTilt,
+      title: l.tripsTitle,
+      detail: switch (trip) {
+        null => l.planTripsNone,
+        final Trip t => switch (own.tripSummary(t).left) {
+          final Decimal left => l.planTripLeft(
+            t.name,
+            moneyText(Money(left, t.asset), base: own.profile?.base),
+          ),
+          null => t.name,
+        },
+      },
+      onTap: () => open(context, TripsPage(own: own)),
+    );
+  }
+}
+
+/// What is being paid off: purchases in instalments, and what is owed
+/// among friends, loans with them included.
 class _PaymentsPanel extends StatelessWidget {
   const _PaymentsPanel({
     required this.own,
@@ -147,12 +204,6 @@ class _PaymentsPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
     String amount(int minor) => pesos(ledger.major(minor));
-    final DateTime until = ledger.today.add(const Duration(days: 30));
-    final int fixed = <Movement>[
-      for (final Movement m in ledger.upcoming)
-        if (!m.id.startsWith('instalment:') && !m.date.isAfter(until)) m,
-    ].fold(0, (int sum, Movement m) => sum + m.amount);
-    final bool anyFixed = own.recurring.any((RecurringCharge r) => r.active);
     final List<Instalments> plans = own.instalments;
     var owed = 0;
     var estimated = false;
@@ -163,22 +214,8 @@ class _PaymentsPanel extends StatelessWidget {
       if (!p.totalKnown && left > 0) estimated = true;
     }
     final (int owedToYou, int youOwe) = own.sharedBalance;
-    final int alerts = <ChargeAlert>[
-      for (final ChargeAlert a in own.alerts)
-        if (own.detective.answers[a.id] == null) a,
-    ].length;
     return Panel(
       children: <Widget>[
-        _ToolRow(
-          icon: Glyph.repeat,
-          title: l.fixedTitle,
-          detail: anyFixed
-              ? l.planFixedNext30(amount(fixed))
-              : own.recurringGuesses.isNotEmpty
-              ? l.planFixedGuesses(own.recurringGuesses.length)
-              : l.planFixedNone,
-          onTap: () => open(context, CommitmentsPage(own: own)),
-        ),
         _ToolRow(
           icon: Glyph.creditCard,
           title: l.instalTitle,
@@ -197,19 +234,13 @@ class _PaymentsPanel extends StatelessWidget {
               : l.planShared(amount(owedToYou), amount(youOwe)),
           onTap: () => open(context, SharedPage(own: own)),
         ),
-        _ToolRow(
-          icon: Glyph.magnifyingGlass,
-          title: l.detectiveTitle,
-          detail: alerts == 0 ? l.planDetectiveNone : l.planDetective(alerts),
-          onTap: () => open(context, DetectivePage(own: own)),
-        ),
       ],
     );
   }
 }
 
-/// What some budgets need and others never will: income that varies, and
-/// a trip with its own budget. Each can be left alone.
+/// What organizes the money besides the split: income that varies, which
+/// some budgets never need, and the fixed payments.
 class _BudgetExtras extends StatelessWidget {
   const _BudgetExtras({
     required this.own,
@@ -233,9 +264,12 @@ class _BudgetExtras extends StatelessWidget {
     final int late = pending
         .where((ExpectedIncome i) => i.overdue(today))
         .length;
-    final Trip? trip = own.trips
-        .where((Trip t) => t.daysLeft(today) > 0)
-        .lastOrNull;
+    final DateTime until = ledger.today.add(const Duration(days: 30));
+    final int fixed = <Movement>[
+      for (final Movement m in ledger.upcoming)
+        if (!m.id.startsWith('instalment:') && !m.date.isAfter(until)) m,
+    ].fold(0, (int sum, Movement m) => sum + m.amount);
+    final bool anyFixed = own.recurring.any((RecurringCharge r) => r.active);
     return Panel(
       children: <Widget>[
         _ToolRow(
@@ -253,19 +287,14 @@ class _BudgetExtras extends StatelessWidget {
           onTap: () => open(context, FreelancePage(own: own)),
         ),
         _ToolRow(
-          icon: Glyph.airplaneTilt,
-          title: l.tripsTitle,
-          detail: switch (trip) {
-            null => l.planTripsNone,
-            final Trip t => switch (own.tripSummary(t).left) {
-              final Decimal left => l.planTripLeft(
-                t.name,
-                moneyText(Money(left, t.asset), base: own.profile?.base),
-              ),
-              null => t.name,
-            },
-          },
-          onTap: () => open(context, TripsPage(own: own)),
+          icon: Glyph.repeat,
+          title: l.fixedTitle,
+          detail: anyFixed
+              ? l.planFixedNext30(amount(fixed))
+              : own.recurringGuesses.isNotEmpty
+              ? l.planFixedGuesses(own.recurringGuesses.length)
+              : l.planFixedNone,
+          onTap: () => open(context, CommitmentsPage(own: own)),
         ),
       ],
     );
@@ -328,11 +357,18 @@ class _EnvelopesCard extends StatelessWidget {
         builder: (BuildContext context) => EnvelopesPage(own: own),
       ),
     );
+    // The period it covers, which the section's title no longer says.
+    final Widget until = Text(
+      l.planUntil(dayMonth(ledger.nextPayday)),
+      style: context.type.bodySmall,
+    );
     if (plan == null) {
       return Block(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
+            until,
+            const SizedBox(height: 2),
             Text(l.planSplitTitle, style: context.type.titleSmall),
             const SizedBox(height: 4),
             Text(
@@ -360,6 +396,8 @@ class _EnvelopesCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
+          until,
+          const SizedBox(height: 2),
           Text(l.envelopeDaily, style: context.type.titleSmall),
           const SizedBox(height: 2),
           Text(
