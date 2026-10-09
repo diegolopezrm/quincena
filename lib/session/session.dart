@@ -184,13 +184,16 @@ class Session extends ChangeNotifier {
   String get language => _language;
 
   /// Switches the language of the answers and of every amount and date
-  /// formatted after it, and starts over, since a conversation half in one
-  /// language and half in the other helps no one.
+  /// formatted after it. The conversation stays: what was said stays as it
+  /// was said, and the next answer comes in the new language. Losing it
+  /// because the app now speaks another language would cost the person
+  /// what they asked.
   set language(String value) {
     if (value == _language) return;
     _language = value;
     Intl.defaultLocale = intlLocaleFor(value);
-    restart();
+    _source.language = value;
+    notifyListeners();
   }
 
   /// How long the scripted agent takes to answer. A pause the length of a
@@ -1085,7 +1088,8 @@ class Session extends ChangeNotifier {
     _ledger = previous._ledger;
     controller = previous._controller;
     recorder = previous._recorder;
-    _source = previous._source;
+    // In the language the app speaks now, which may have changed since.
+    _source = previous._source..language = _language;
     _tools = previous._tools;
     turns
       ..clear()

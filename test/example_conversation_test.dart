@@ -359,13 +359,10 @@ void main() {
     expect(screen(tester), contains('Ahora puedes gastar $after'));
     expect(own().ledger!.freeUntilPayday, free - 45000);
 
-    // Who answers is not a choice here.
-    await tester.tap(find.byTooltip('Ajustes'));
-    await settle(tester);
+    // Who answers is not a choice here, and the conversation has no
+    // settings of its own: language and looks are the app's.
+    expect(find.byTooltip('Ajustes'), findsNothing);
     expect(find.text('Quién responde'), findsNothing);
-    expect(find.text('Gemini'), findsNothing);
-    Navigator.of(tester.element(find.text('Empezar de nuevo'))).pop();
-    await settle(tester);
 
     await tester.tap(find.byType(BackButton));
     await settle(tester);

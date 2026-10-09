@@ -361,8 +361,15 @@ void main() {
           ),
           web ? findsOneWidget : findsNothing,
         );
-        await tester.tap(find.byTooltip('Ajustes').last);
-        await settle(tester);
+        // The developer's settings are the web demo's. On a phone the
+        // conversation has none of its own: language and looks are the
+        // app's, in its Ajustes.
+        if (web) {
+          await tester.tap(find.byTooltip('Ajustes').last);
+          await settle(tester);
+        } else {
+          expect(find.byTooltip('Ajustes'), findsNothing);
+        }
         for (final String option in <String>[
           'Quién responde',
           'Gemini',
@@ -374,13 +381,6 @@ void main() {
             reason: option,
           );
         }
-        expect(
-          find.text(
-            'La cuenta, la persona y los comercios del ejemplo son '
-            'inventados.',
-          ),
-          web ? findsNothing : findsOneWidget,
-        );
         await tester.pumpWidget(const SizedBox());
         await settle(tester);
       },
