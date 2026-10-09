@@ -11,9 +11,11 @@ import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
 import '../../own/own_controller.dart';
+import '../../own/undo.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import '../messages.dart';
 import 'amount_input.dart';
 import 'look.dart';
 import 'shared_page.dart' show shareMessage;
@@ -476,10 +478,15 @@ class _IncomeSheetState extends State<_IncomeSheet> {
     navigator.pop();
   }
 
+  /// Deletes the payment, with a way back for a few seconds.
   Future<void> _delete() async {
     final NavigatorState navigator = Navigator.of(context);
-    await own.saveFreelance(own.freelance.withoutIncome(widget.income!.id));
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final ExpectedIncome income = widget.income!;
+    final String said = context.l10n.incomeDeleted(income.client);
+    final Undo back = await own.removeIncome(income);
     navigator.pop();
+    showUndo(messenger, said, back);
   }
 
   Future<DateTime?> _pick(DateTime initial) {

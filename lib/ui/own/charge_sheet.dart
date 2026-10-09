@@ -11,8 +11,10 @@ import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
 import '../../own/own_controller.dart';
+import '../../own/undo.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
+import '../messages.dart';
 import 'amount_input.dart';
 import 'look.dart';
 
@@ -225,31 +227,16 @@ class _ChargeSheetState extends State<_ChargeSheet> {
     navigator.pop();
   }
 
+  /// Deletes the fixed payment, which stops counting as committed; what
+  /// it already charged stays. A way back stays for a few seconds.
   Future<void> _delete() async {
-    final AppLocalizations l = context.l10n;
     final NavigatorState navigator = Navigator.of(context);
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     final RecurringCharge old = widget.charge!;
-    final bool? sure = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text(l.chargeDeleteTitle(old.name)),
-        content: Text(l.chargeDeleteBody),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l.chargeDelete),
-          ),
-        ],
-      ),
-    );
-    if (sure != true) return;
-    await own.store.deleteRecurring(old.id);
-    await own.forgetMemory(old.id);
+    final String said = context.l10n.chargeDeleted(old.name);
+    final Undo back = await own.removeCharge(old);
     navigator.pop();
+    showUndo(messenger, said, back);
   }
 
   Future<void> _pickNext() async {

@@ -614,9 +614,21 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Its $count transactions are deleted too. This can\'t be undone.',
-      one: 'Its transaction is deleted too. This can\'t be undone.',
+      other: 'Its $count transactions are deleted too.',
+      one: 'Its transaction is deleted too.',
       zero: 'It has no transactions.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String accountDeleted(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$name deleted, with its $count transactions.',
+      one: '$name deleted, with its transaction.',
+      zero: '$name deleted.',
     );
     return '$_temp0';
   }
@@ -652,6 +664,17 @@ class AppLocalizationsEn extends AppLocalizations {
           'They stop showing in Accounts and when you pick an account. You can restore them any time from \"Archived accounts\", in Accounts.',
       one:
           'It stops showing in Accounts and when you pick an account. You can restore it any time from \"Archived accounts\", in Accounts.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String accountsArchived(String names, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$names archived.',
+      one: '$names archived.',
     );
     return '$_temp0';
   }
@@ -1047,14 +1070,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noResultsBoth => 'Nothing matches the search and the filters.';
 
   @override
-  String get deleteMovementTitle => 'Delete this transaction?';
+  String get entryDeleted => 'Transaction deleted.';
 
   @override
-  String get deleteTransferBody => 'Both sides of the transfer are deleted.';
+  String get transferDeleted => 'Transfer deleted from both accounts.';
 
   @override
-  String get deleteSplitBody =>
-      'Its split goes too: what you\'re owed for it stops counting.';
+  String get entrySplitDeleted => 'Transaction deleted, with its split.';
 
   @override
   String get invalidAmount => 'Enter an amount';
@@ -1811,16 +1833,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goalIncomplete => 'Give it a name and how much you want to save.';
 
   @override
-  String goalDeleteTitle(String name) {
-    return 'Delete \"$name\"?';
-  }
-
-  @override
-  String get goalDeleteBody =>
-      'The goal is deleted. Your accounts and transactions don\'t change.';
-
-  @override
   String get goalDelete => 'Delete goal';
+
+  @override
+  String deletedNamed(String name) {
+    return 'Deleted \"$name\".';
+  }
 
   @override
   String get goalAdd => 'Add goal';
@@ -2107,6 +2125,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wishRemove => 'Remove wish';
 
   @override
+  String wishRemoved(String name) {
+    return '$name removed.';
+  }
+
+  @override
   String get wishBought => 'I bought it';
 
   @override
@@ -2269,6 +2292,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get whatIfRemove => 'Remove scenario';
+
+  @override
+  String get scenarioRemoved => 'Scenario removed.';
 
   @override
   String get whatIfToday => 'Today';
@@ -2569,6 +2595,29 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String captureDiscarded(String payee) {
+    return '$payee dismissed.';
+  }
+
+  @override
+  String captureDiscardedMuted(String payee, String app) {
+    return '$payee dismissed, and $app notifications are no longer read.';
+  }
+
+  @override
+  String muteAppTitle(String app) {
+    return 'Stop reading $app notifications?';
+  }
+
+  @override
+  String muteAppBody(String app) {
+    return 'What arrives from $app won\'t show up in Needs review. You can read them again from Settings › Automatic capture.';
+  }
+
+  @override
+  String get muteAppGo => 'Stop reading';
+
+  @override
   String get chooseAccount => 'Choose account';
 
   @override
@@ -2717,6 +2766,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ruleDelete => 'Delete rule';
+
+  @override
+  String get ruleDeleted => 'Rule deleted.';
 
   @override
   String get ruleOn => 'Use this rule';
@@ -3457,8 +3509,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get walletsRemove => 'Stop following';
 
   @override
-  String get walletsRemoveBody =>
-      'It is no longer read. The accounts it brought stay as yours.';
+  String walletUnfollowed(String wallet) {
+    return 'You stopped following $wallet; its accounts stay yours.';
+  }
 
   @override
   String walletsSyncedAt(String when) {
@@ -3625,13 +3678,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chargeDelete => 'Delete recurring payment';
 
   @override
-  String chargeDeleteTitle(String name) {
-    return 'Delete $name?';
+  String chargeDeleted(String name) {
+    return '$name deleted: it no longer counts in upcoming payments.';
   }
-
-  @override
-  String get chargeDeleteBody =>
-      'It\'s no longer counted in upcoming payments. Charges you already recorded stay.';
 
   @override
   String get fixedTitle => 'Recurring payments';
@@ -3663,6 +3712,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get guessNot => 'Not recurring';
+
+  @override
+  String guessNotDone(String name) {
+    return '$name won\'t be suggested as a recurring payment again.';
+  }
 
   @override
   String get fixedSubscriptions => 'Subscriptions';
@@ -3884,20 +3938,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get instalPaymentRemove => 'Remove this payment';
 
   @override
-  String get instalPaymentRemoveTitle => 'Remove this payment?';
-
-  @override
-  String instalPaymentRemoveBody(String amount) {
-    return 'What\'s left to pay goes back up by $amount.';
+  String paymentRemoved(String amount) {
+    return '$amount payment removed.';
   }
 
   @override
-  String instalPaymentRemoveEntry(String amount, String account) {
-    return 'Its $amount transaction in $account is deleted too.';
+  String paymentRemovedEntry(String amount, String account) {
+    return '$amount payment removed, with its transaction in $account.';
   }
-
-  @override
-  String get instalPaymentRemoveGo => 'Remove payment';
 
   @override
   String get instalSchedule => 'Installment schedule';
@@ -3982,6 +4030,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get instalDeleteBody =>
       'Its figures and payments here are deleted. Your transactions stay as they are.';
+
+  @override
+  String instalDeleteOwed(String amount) {
+    return 'You still have $amount left to pay, and it stops being counted once it\'s deleted.';
+  }
 
   @override
   String get instalSheetBody =>
@@ -4141,6 +4194,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get detectiveDismiss => 'Dismiss';
+
+  @override
+  String get alertDismissed => 'Alert dismissed.';
+
+  @override
+  String get alertExpected => 'Marked as expected.';
 
   @override
   String get detectiveShowAgain => 'Show again';
@@ -4401,6 +4460,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get splitRemove => 'Remove the split';
 
   @override
+  String get splitRemoved =>
+      'Split removed: this expense no longer counts in the group.';
+
+  @override
   String get splitThis => 'Split this expense';
 
   @override
@@ -4478,6 +4541,20 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get sharedDeleteBody =>
       'The group, its expenses and its payments are deleted here. Your transactions stay as they are.';
+
+  @override
+  String sharedDeleteOwed(String amount) {
+    return 'You\'re owed $amount in this group: it stops counting once it\'s deleted.';
+  }
+
+  @override
+  String sharedDeleteOwing(String amount) {
+    return 'You owe $amount in this group: it stops counting once it\'s deleted.';
+  }
+
+  @override
+  String get sharedDeletePending =>
+      'There are still debts between them: they stop counting once it\'s deleted.';
 
   @override
   String get sharedAddExpense => 'Add expense';
@@ -4786,6 +4863,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get freelanceDelete => 'Delete payment';
 
   @override
+  String incomeDeleted(String client) {
+    return 'Payment from $client deleted.';
+  }
+
+  @override
   String get tripsTitle => 'Trips';
 
   @override
@@ -4803,15 +4885,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripDelete => 'Delete trip';
-
-  @override
-  String tripDeleteTitle(String name) {
-    return 'Delete $name?';
-  }
-
-  @override
-  String get tripDeleteBody =>
-      'The trip is deleted here. Its expenses stay in your accounts.';
 
   @override
   String tripLeftShort(String amount) {
@@ -4898,6 +4971,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripExclude => 'Not part of the trip';
+
+  @override
+  String tripLeftOut(String payee) {
+    return '$payee no longer counts in the trip.';
+  }
 
   @override
   String tripForeign(

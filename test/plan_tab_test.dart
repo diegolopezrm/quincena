@@ -8,6 +8,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/domain/freelance.dart';
 import 'package:quincena/domain/pay_schedule.dart';
+import 'package:quincena/domain/plan.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/format/money.dart';
 import 'package:quincena/l10n/l10n.dart';
@@ -260,13 +261,14 @@ void main() {
     expect(find.text('Moto'), findsOneWidget);
     expect(find.textContaining('llega en octubre de 2027'), findsOneWidget);
 
+    // Deleting it asks nothing: it says so, with a way back.
     await tester.tap(find.text('Moto'));
     await settle(tester);
     await tester.tap(find.text('Borrar meta').last);
     await settle(tester);
-    await tester.tap(find.text('Borrar meta').last);
-    await settle(tester);
     expect(find.text('Moto'), findsNothing);
+    expect(find.text('Se borró «Moto».'), findsOneWidget);
+    expect(find.text('Deshacer'), findsOneWidget);
     expect((await tester.runAsync(own.store.snapshot))!.goals, hasLength(1));
   });
 
@@ -280,9 +282,11 @@ void main() {
     expect(own.ledger!.setAside, 150000);
     expect(own.ledger!.freeUntilPayday, 1750000);
 
+    final SavingsGoal goal = own.snapshot!.goals.single;
+    final List<String> envelopes = <String>[
+      for (final Envelope e in own.plan!.envelopes) e.id,
+    ];
     await tester.tap(find.text('Cartagena').last);
-    await settle(tester);
-    await tester.tap(find.text('Borrar meta').last);
     await settle(tester);
     await tester.tap(find.text('Borrar meta').last);
     await settle(tester);
@@ -292,6 +296,17 @@ void main() {
     expect(own.ledger!.setAside, 0);
     expect(own.ledger!.freeUntilPayday, 1900000);
     expect(find.text('Cartagena'), findsNothing);
+
+    // «Deshacer» brings the goal back with its envelope, where it was.
+    await tester.tap(find.text('Deshacer'));
+    await settle(tester);
+    expect(own.snapshot!.goals.single.id, goal.id);
+    expect(own.snapshot!.goals.single.saved, goal.saved);
+    expect(<String>[
+      for (final Envelope e in own.plan!.envelopes) e.id,
+    ], envelopes);
+    expect(own.ledger!.setAside, 150000);
+    expect(own.ledger!.freeUntilPayday, 1750000);
   });
 
   testWidgets('the cushion asks where it is, and says why it cannot count', (

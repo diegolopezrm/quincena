@@ -11,10 +11,12 @@ import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
 import '../../own/own_controller.dart';
+import '../../own/undo.dart';
 import '../../platform/share_text.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import '../messages.dart';
 import 'amount_input.dart';
 import 'loan_sheet.dart';
 import 'look.dart';
@@ -206,29 +208,36 @@ class GroupPage extends StatelessWidget {
   final OwnController own;
   final String id;
 
+  /// Deletes the group with a way back for a few seconds. While someone
+  /// still owes something in it, those debts would stop counting: it asks
+  /// first.
   Future<void> _delete(BuildContext context, Group group) async {
     final AppLocalizations l = context.l10n;
     final NavigatorState navigator = Navigator.of(context);
-    final bool? sure = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text(l.sharedDeleteTitle(group.name)),
-        content: Text(l.sharedDeleteBody),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l.sharedDelete),
-          ),
-        ],
-      ),
-    );
-    if (sure != true) return;
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final Ledger? ledger = own.ledger;
+    final int mine = group.balances[meId] ?? 0;
+    final String? debts = ledger == null
+        ? null
+        : mine > 0
+        ? l.sharedDeleteOwed(pesos(ledger.major(mine)))
+        : mine < 0
+        ? l.sharedDeleteOwing(pesos(ledger.major(-mine)))
+        : group.balances.values.any((int b) => b != 0)
+        ? l.sharedDeletePending
+        : null;
+    if (debts != null &&
+        !await confirmDanger(
+          context,
+          title: l.sharedDeleteTitle(group.name),
+          body: '${l.sharedDeleteBody} $debts',
+          action: l.sharedDelete,
+        )) {
+      return;
+    }
+    final String said = l.deletedNamed(group.name);
     navigator.pop();
-    await own.deleteGroup(group.id);
+    showUndo(messenger, said, await own.removeGroup(group));
   }
 
   @override
@@ -616,8 +625,8 @@ String? _movedIn(AppLocalizations l, OwnController own, Settlement s) {
       : l.sharedArrivedIn(account);
 }
 
-/// Takes a payment back. When the Plan wrote down its movement, it says
-/// that goes too and waits for a yes.
+/// Takes a payment back, and says when the movement the Plan wrote down for
+/// it goes too. A way back stays for a few seconds.
 Future<void> _removeSettlement(
   BuildContext context,
   OwnController own,
@@ -625,39 +634,22 @@ Future<void> _removeSettlement(
   Settlement s,
 ) async {
   final AppLocalizations l = context.l10n;
-  final Entry? entry = switch (s.entryId) {
-    final String id => own.entryById(id),
+  final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+  final Ledger? ledger = own.ledger;
+  if (ledger == null) return;
+  final String amount = pesos(ledger.major(s.amount));
+  final String? where = switch (s.entryId) {
+    final String id => switch (own.entryById(id)) {
+      final Entry e when e.source == OwnController.planSource =>
+        own.snapshot?.account(e.accountId)?.name,
+      _ => null,
+    },
     null => null,
   };
-  if (entry != null && entry.source == OwnController.planSource) {
-    final String amount = moneyText(
-      Money(
-        entry.amount.abs(),
-        own.snapshot?.account(entry.accountId)?.asset ?? Asset.cop,
-      ),
-      base: own.profile?.base ?? Asset.cop,
-    );
-    final String account = own.snapshot?.account(entry.accountId)?.name ?? '';
-    final bool? sure = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text(l.instalPaymentRemoveTitle),
-        content: Text(l.instalPaymentRemoveEntry(amount, account)),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l.instalPaymentRemoveGo),
-          ),
-        ],
-      ),
-    );
-    if (sure != true) return;
-  }
-  await own.unsettle(group, s);
+  final String said = where == null
+      ? l.paymentRemoved(amount)
+      : l.paymentRemovedEntry(amount, where);
+  showUndo(messenger, said, await own.removeSettlement(group, s));
 }
 
 /// Records that [from] paid [to]. When the money came to the person, it can

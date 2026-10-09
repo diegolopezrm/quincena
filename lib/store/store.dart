@@ -606,12 +606,6 @@ class QuincenaStore {
         ),
       );
 
-  /// Puts [entry] back as it was before it was deleted, its id included,
-  /// so what pointed at it points at it again: how a deletion is undone
-  /// while the person can still take it back.
-  Future<void> restoreEntry(Entry entry) =>
-      db.into(db.entries).insertOnConflictUpdate(_companion(entry));
-
   /// Deletes a movement; for a transfer, both of its legs.
   Future<void> deleteEntry(Entry entry) async {
     if (entry.transferId != null) {

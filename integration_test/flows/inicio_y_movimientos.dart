@@ -919,9 +919,10 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.tap('Eliminar');
       await f.step(
         'Para deshacerlo, en Movimientos abre «Bicicleta» y toca '
-        '«Eliminar»: la app pregunta antes de borrar.',
+        '«Eliminar»: se borra enseguida, y abajo «Movimiento eliminado.» '
+        'ofrece «Deshacer» por unos segundos.',
       );
-      await f.tap('Eliminar');
+      await _hideNotice(f);
       await f.tap('Inicio');
       await f.step(
         'Borrado el gasto, Inicio vuelve a «Puedes gastar» con la cifra de '
@@ -1822,7 +1823,17 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         expect(_fieldShows('Parte de Ana', '15.500'), findsOneWidget);
       });
       await f.tap('Quitar la división');
-      await f.step('«Quitar la división» lo deja como un gasto solo tuyo.');
+      await f.step(
+        '«Quitar la división», en rojo, lo deja como un gasto solo tuyo, y '
+        'abajo lo dice con «Deshacer» por unos segundos.',
+      );
+      await f.check('El aviso dice que el gasto ya no cuenta en el grupo', () {
+        expect(
+          f.shows('División quitada: este gasto ya no cuenta en el grupo.'),
+          isTrue,
+        );
+        expect(f.shows('Deshacer'), isTrue);
+      });
       await f.check(
         'Ya no está dividido y el gasto del mes vuelve a ser el de antes',
         () {
@@ -1849,31 +1860,58 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.tap('Fit24 gimnasio');
       await f.tap('Eliminar');
       await f.step(
-        '«Eliminar» no borra de una vez: pregunta «¿Eliminar este '
-        'movimiento?» con «Cancelar» y «Eliminar».',
+        '«Eliminar» lo borra sin preguntar: el formulario se cierra, el '
+        'gimnasio ya no está en la lista y abajo dice «Movimiento '
+        'eliminado.» con «Deshacer» por unos segundos.',
       );
-      await f.tap('Cancelar');
-      await f.step('«Cancelar» vuelve al formulario y no borra nada.');
-      await f.check('Cancelar no borra el movimiento', () {
-        expect(own.snapshot!.entries.any((Entry e) => e.id == gym.id), isTrue);
-      });
-      await f.tap('Eliminar');
-      await f.tap('Eliminar');
-      await f.step(
-        'Confirmado, el formulario se cierra y el gimnasio ya no está en la '
-        'lista.',
+      await f.check(
+        'El movimiento ya no existe y el aviso ofrece deshacerlo',
+        () {
+          expect(
+            own.snapshot!.entries.any((Entry e) => e.id == gym.id),
+            isFalse,
+          );
+          expect(f.shows('Fit24 gimnasio'), isFalse);
+          expect(f.shows('Movimiento eliminado.'), isTrue);
+          expect(f.shows('Deshacer'), isTrue);
+        },
       );
-      await f.check('El movimiento ya no existe', () {
-        expect(own.snapshot!.entries.any((Entry e) => e.id == gym.id), isFalse);
-        expect(f.shows('Fit24 gimnasio'), isFalse);
-      });
       await f.check('Bancolombia recuperó los 119.000', () {
         expect(_held(own, 'Bancolombia'), bank + Decimal.parse('119000'));
+      });
+      await f.tap('Deshacer');
+      await f.step('«Deshacer» lo trae de vuelta tal como estaba.');
+      await f.check('Volvió el mismo movimiento, con su fecha y su monto', () {
+        final Entry back = own.snapshot!.entries.firstWhere(
+          (Entry e) => e.id == gym.id,
+        );
+        expect(back.date, gym.date);
+        expect(back.amount, gym.amount);
+        expect(back.accountId, gym.accountId);
+        expect(own.ledger!.freeUntilPayday, free);
+      });
+      await f.tap('Fit24 gimnasio');
+      await f.tap('Eliminar');
+      // Six seconds untouched, the time the offer to undo lasts.
+      await f.tester.pump(const Duration(seconds: 7));
+      await settle(f.tester);
+      await f.step(
+        'Borrado otra vez y sin tocar «Deshacer»: a los seis segundos el '
+        'aviso se va y el gimnasio no vuelve.',
+      );
+      await f.check('El aviso se fue y el movimiento sigue borrado', () {
+        expect(f.shows('Deshacer'), isFalse);
+        expect(own.snapshot!.entries.any((Entry e) => e.id == gym.id), isFalse);
       });
       await f.check('Lo que puedes gastar subió 119.000', () {
         expect(own.ledger!.freeUntilPayday, free + 119000);
       });
     },
+    manual: <String>[
+      'El aviso «Movimiento eliminado.» se va solo a los seis segundos; con '
+          'VoiceOver o TalkBack se queda hasta tocar «Deshacer» o hasta el '
+          'siguiente aviso.',
+    ],
   ),
   AppFlow(
     '03-06-registrar-un-ingreso',
@@ -2044,17 +2082,13 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.tap('Bancolombia → Nequi');
       await f.tap('Eliminar');
       await f.step(
-        'Al eliminarla, la pregunta avisa: «Se eliminan las dos partes de la '
-        'transferencia.»',
+        'Al eliminarla se van sus dos partes y el aviso lo dice: '
+        '«Transferencia eliminada de las dos cuentas.», con «Deshacer». '
+        'Bancolombia y Nequi quedan como estaban.',
       );
-      await f.check('Avisa que se borran las dos partes', () {
-        expect(
-          f.shows('Se eliminan las dos partes de la transferencia.'),
-          isTrue,
-        );
+      await f.check('Avisa que se borraron las dos partes', () {
+        expect(f.shows('Transferencia eliminada de las dos cuentas.'), isTrue);
       });
-      await f.tap('Eliminar');
-      await f.step('Borrada, Bancolombia y Nequi quedan como estaban.');
       await f.check('Las dos cuentas volvieron a su saldo', () {
         expect(_held(own, 'Bancolombia'), bank);
         expect(_held(own, 'Nequi'), nequi);
@@ -2787,17 +2821,41 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.check('Sin nombre escrito, el grupo toma el del comercio', () {
         expect(own.splitOf(crepes.id)!.$1.name, 'Crepes & Waffles');
       });
+      final Group group = own.splitOf(crepes.id)!.$1;
       await _open(f, crepes);
       await f.tap('Eliminar');
       await f.step(
-        '«Eliminar» pregunta antes de borrar y avisa que la división con Ana '
-        'se va con el movimiento.',
+        '«Eliminar» borra las crepes sin preguntar, y el aviso dice que la '
+        'división con Ana se fue con ellas: «Movimiento eliminado, con su '
+        'división.», con «Deshacer».',
       );
-      await f.check('La pregunta dice que también se quita la división', () {
-        expect(f.shows(_deleteSplitBody), isTrue);
+      await f.check('El aviso dice que también se quitó la división', () {
+        expect(f.shows(_deletedWithSplit), isTrue);
+        expect(own.splitOf(crepes.id), isNull);
       });
+      await f.tap('Deshacer');
+      await f.step(
+        '«Deshacer» trae de vuelta las crepes y su división: Ana vuelve a '
+        'deberte 11.750.',
+      );
+      await f.check('Volvieron el movimiento y su división, como estaban', () {
+        expect(
+          own.snapshot!.entries.any((Entry e) => e.id == crepes.id),
+          isTrue,
+        );
+        final (Group back, SharedExpense split) = own.splitOf(crepes.id)!;
+        expect(back.id, group.id);
+        expect(split.othersPart, 11750);
+        expect(back.balances['p-ana'], -11750);
+        expect(own.ledger!.freeUntilPayday, free);
+      });
+      await _open(f, crepes);
       await f.tap('Eliminar');
-      await f.step('Borradas las crepes, la fila ya no está en Movimientos.');
+      await _hideNotice(f);
+      await f.step(
+        'Borradas otra vez y pasado el aviso, la fila ya no está en '
+        'Movimientos.',
+      );
       await f.check('El movimiento ya no existe', () {
         expect(
           own.snapshot!.entries.any((Entry e) => e.id == crepes.id),
@@ -3213,10 +3271,8 @@ String _money(OwnController own, int minor) => pesos(own.ledger!.major(minor));
 /// What the split sheet says when no one else has a part.
 const String _splitNeedsShare = 'Marca al menos a otra persona con su parte.';
 
-/// What deleting a split movement warns of.
-const String _deleteSplitBody =
-    'También se quita su división: lo que te deben por este gasto deja de '
-    'contar.';
+/// What deleting a split movement says.
+const String _deletedWithSplit = 'Movimiento eliminado, con su división.';
 
 /// Splits [entry] in equal parts with Ana, in a group made for it, from
 /// the list of movements on screen.

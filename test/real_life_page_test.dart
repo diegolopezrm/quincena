@@ -240,16 +240,19 @@ void main() {
     expect(owed(), -60000);
     await tapText(tester, 'Cena');
     await tapText(tester, 'Eliminar');
-    expect(
-      find.text(
-        'También se quita su división: lo que te deben por este gasto deja '
-        'de contar.',
-      ),
-      findsOneWidget,
-    );
-    await tester.tap(find.text('Eliminar').last);
-    await settle(tester);
+    // Gone at once, its split with it, and the notice says so.
+    expect(find.text('Movimiento eliminado, con su división.'), findsOneWidget);
     expect(own.snapshot!.entries.any((Entry e) => e.id == cena.id), isFalse);
+    expect(own.splitOf(cena.id), isNull);
+    expect(owed(), 0);
+    // «Deshacer» brings back both, the split on the same movement.
+    await tester.tap(find.text('Deshacer'));
+    await settle(tester);
+    expect(own.snapshot!.entries.any((Entry e) => e.id == cena.id), isTrue);
+    expect(own.splitOf(cena.id), isNotNull);
+    expect(owed(), -60000);
+    await tapText(tester, 'Cena');
+    await tapText(tester, 'Eliminar');
     expect(own.splitOf(cena.id), isNull);
     expect(owed(), 0);
 

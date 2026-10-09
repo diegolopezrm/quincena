@@ -11,9 +11,11 @@ import '../../format/money.dart';
 import '../../l10n/l10n.dart';
 import '../../money/money.dart';
 import '../../own/own_controller.dart';
+import '../../own/undo.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import '../messages.dart';
 import 'amount_input.dart';
 import 'coming_days_page.dart';
 import 'entry_sheet.dart';
@@ -124,10 +126,13 @@ class _WishCard extends StatelessWidget {
               Figures(amount(wish.price), style: context.type.titleSmall),
               IconButton(
                 tooltip: l.wishRemove,
-                onPressed: () => own.saveWishes(<Wish>[
-                  for (final Wish w in own.wishes)
-                    if (w.id != wish.id) w,
-                ]),
+                onPressed: () async {
+                  final ScaffoldMessengerState messenger = ScaffoldMessenger.of(
+                    context,
+                  );
+                  final Undo back = await own.removeWish(wish);
+                  showUndo(messenger, l.wishRemoved(wish.name), back);
+                },
                 icon: Icon(
                   Glyph.trash,
                   size: 18,

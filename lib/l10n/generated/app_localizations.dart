@@ -1103,8 +1103,14 @@ abstract class AppLocalizations {
   /// No description provided for @deleteAccountBody.
   ///
   /// In es, this message translates to:
-  /// **'{count, plural, =0{No tiene movimientos.} =1{Se borra también su movimiento. No se puede deshacer.} other{Se borran también sus {count} movimientos. No se puede deshacer.}}'**
+  /// **'{count, plural, =0{No tiene movimientos.} =1{Se borra también su movimiento.} other{Se borran también sus {count} movimientos.}}'**
   String deleteAccountBody(int count);
+
+  /// No description provided for @accountDeleted.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Se eliminó {name}.} =1{Se eliminó {name}, con su movimiento.} other{Se eliminó {name}, con sus {count} movimientos.}}'**
+  String accountDeleted(String name, int count);
 
   /// No description provided for @archive.
   ///
@@ -1135,6 +1141,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{count, plural, =1{Deja de aparecer en Cuentas y al elegir una cuenta. La puedes restaurar cuando quieras desde «Cuentas archivadas», en Cuentas.} other{Dejan de aparecer en Cuentas y al elegir una cuenta. Las puedes restaurar cuando quieras desde «Cuentas archivadas», en Cuentas.}}'**
   String archiveAccountHidden(int count);
+
+  /// No description provided for @accountsArchived.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Se archivó {names}.} other{Se archivaron {names}.}}'**
+  String accountsArchived(String names, int count);
 
   /// No description provided for @deleteAccountPreferArchive.
   ///
@@ -1688,23 +1700,23 @@ abstract class AppLocalizations {
   /// **'Nada coincide con la búsqueda y los filtros.'**
   String get noResultsBoth;
 
-  /// No description provided for @deleteMovementTitle.
+  /// No description provided for @entryDeleted.
   ///
   /// In es, this message translates to:
-  /// **'¿Eliminar este movimiento?'**
-  String get deleteMovementTitle;
+  /// **'Movimiento eliminado.'**
+  String get entryDeleted;
 
-  /// No description provided for @deleteTransferBody.
+  /// No description provided for @transferDeleted.
   ///
   /// In es, this message translates to:
-  /// **'Se eliminan las dos partes de la transferencia.'**
-  String get deleteTransferBody;
+  /// **'Transferencia eliminada de las dos cuentas.'**
+  String get transferDeleted;
 
-  /// No description provided for @deleteSplitBody.
+  /// No description provided for @entrySplitDeleted.
   ///
   /// In es, this message translates to:
-  /// **'También se quita su división: lo que te deben por este gasto deja de contar.'**
-  String get deleteSplitBody;
+  /// **'Movimiento eliminado, con su división.'**
+  String get entrySplitDeleted;
 
   /// No description provided for @invalidAmount.
   ///
@@ -2804,23 +2816,17 @@ abstract class AppLocalizations {
   /// **'Ponle un nombre y cuánto quieres juntar.'**
   String get goalIncomplete;
 
-  /// No description provided for @goalDeleteTitle.
-  ///
-  /// In es, this message translates to:
-  /// **'¿Borrar «{name}»?'**
-  String goalDeleteTitle(String name);
-
-  /// No description provided for @goalDeleteBody.
-  ///
-  /// In es, this message translates to:
-  /// **'Se borra la meta. Tus cuentas y movimientos no cambian.'**
-  String get goalDeleteBody;
-
   /// No description provided for @goalDelete.
   ///
   /// In es, this message translates to:
   /// **'Borrar meta'**
   String get goalDelete;
+
+  /// No description provided for @deletedNamed.
+  ///
+  /// In es, this message translates to:
+  /// **'Se borró «{name}».'**
+  String deletedNamed(String name);
 
   /// No description provided for @goalAdd.
   ///
@@ -3254,6 +3260,12 @@ abstract class AppLocalizations {
   /// **'Quitar deseo'**
   String get wishRemove;
 
+  /// No description provided for @wishRemoved.
+  ///
+  /// In es, this message translates to:
+  /// **'Se quitó {name}.'**
+  String wishRemoved(String name);
+
   /// No description provided for @wishBought.
   ///
   /// In es, this message translates to:
@@ -3499,6 +3511,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Quitar escenario'**
   String get whatIfRemove;
+
+  /// No description provided for @scenarioRemoved.
+  ///
+  /// In es, this message translates to:
+  /// **'Se quitó el escenario.'**
+  String get scenarioRemoved;
 
   /// No description provided for @whatIfToday.
   ///
@@ -3908,6 +3926,36 @@ abstract class AppLocalizations {
   /// **'Descartar y no leer más {app}'**
   String dismissAndMute(String app);
 
+  /// No description provided for @captureDiscarded.
+  ///
+  /// In es, this message translates to:
+  /// **'Se descartó {payee}.'**
+  String captureDiscarded(String payee);
+
+  /// No description provided for @captureDiscardedMuted.
+  ///
+  /// In es, this message translates to:
+  /// **'Se descartó {payee} y ya no se leen las notificaciones de {app}.'**
+  String captureDiscardedMuted(String payee, String app);
+
+  /// No description provided for @muteAppTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Dejar de leer las notificaciones de {app}?'**
+  String muteAppTitle(String app);
+
+  /// No description provided for @muteAppBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que llegue de {app} no va a aparecer en Por revisar. Las puedes volver a leer desde Ajustes › Captura automática.'**
+  String muteAppBody(String app);
+
+  /// No description provided for @muteAppGo.
+  ///
+  /// In es, this message translates to:
+  /// **'Dejar de leer'**
+  String get muteAppGo;
+
   /// No description provided for @chooseAccount.
   ///
   /// In es, this message translates to:
@@ -4117,6 +4165,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Borrar regla'**
   String get ruleDelete;
+
+  /// No description provided for @ruleDeleted.
+  ///
+  /// In es, this message translates to:
+  /// **'Regla borrada.'**
+  String get ruleDeleted;
 
   /// No description provided for @ruleOn.
   ///
@@ -5318,11 +5372,11 @@ abstract class AppLocalizations {
   /// **'Dejar de seguir'**
   String get walletsRemove;
 
-  /// No description provided for @walletsRemoveBody.
+  /// No description provided for @walletUnfollowed.
   ///
   /// In es, this message translates to:
-  /// **'Ya no se lee. Las cuentas que trajo se quedan como tuyas.'**
-  String get walletsRemoveBody;
+  /// **'Ya no sigues {wallet}; sus cuentas se quedan como tuyas.'**
+  String walletUnfollowed(String wallet);
 
   /// No description provided for @walletsSyncedAt.
   ///
@@ -5612,17 +5666,11 @@ abstract class AppLocalizations {
   /// **'Borrar pago fijo'**
   String get chargeDelete;
 
-  /// No description provided for @chargeDeleteTitle.
+  /// No description provided for @chargeDeleted.
   ///
   /// In es, this message translates to:
-  /// **'¿Borrar {name}?'**
-  String chargeDeleteTitle(String name);
-
-  /// No description provided for @chargeDeleteBody.
-  ///
-  /// In es, this message translates to:
-  /// **'Deja de contarse como comprometido. Los cobros que ya registraste se quedan.'**
-  String get chargeDeleteBody;
+  /// **'Se borró {name}: deja de contarse como comprometido.'**
+  String chargeDeleted(String name);
 
   /// No description provided for @fixedTitle.
   ///
@@ -5677,6 +5725,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'No es fijo'**
   String get guessNot;
+
+  /// No description provided for @guessNotDone.
+  ///
+  /// In es, this message translates to:
+  /// **'{name} ya no se propone como pago fijo.'**
+  String guessNotDone(String name);
 
   /// No description provided for @fixedSubscriptions.
   ///
@@ -6014,29 +6068,17 @@ abstract class AppLocalizations {
   /// **'Quitar este pago'**
   String get instalPaymentRemove;
 
-  /// No description provided for @instalPaymentRemoveTitle.
+  /// No description provided for @paymentRemoved.
   ///
   /// In es, this message translates to:
-  /// **'¿Quitar este pago?'**
-  String get instalPaymentRemoveTitle;
+  /// **'Se quitó el pago de {amount}.'**
+  String paymentRemoved(String amount);
 
-  /// No description provided for @instalPaymentRemoveBody.
+  /// No description provided for @paymentRemovedEntry.
   ///
   /// In es, this message translates to:
-  /// **'Lo que falta pagar vuelve a subir {amount}.'**
-  String instalPaymentRemoveBody(String amount);
-
-  /// No description provided for @instalPaymentRemoveEntry.
-  ///
-  /// In es, this message translates to:
-  /// **'También se borra su movimiento de {amount} en {account}.'**
-  String instalPaymentRemoveEntry(String amount, String account);
-
-  /// No description provided for @instalPaymentRemoveGo.
-  ///
-  /// In es, this message translates to:
-  /// **'Quitar pago'**
-  String get instalPaymentRemoveGo;
+  /// **'Se quitó el pago de {amount} y su movimiento en {account}.'**
+  String paymentRemovedEntry(String amount, String account);
 
   /// No description provided for @instalSchedule.
   ///
@@ -6163,6 +6205,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Se borran sus datos y pagos aquí. Tus movimientos no se tocan.'**
   String get instalDeleteBody;
+
+  /// No description provided for @instalDeleteOwed.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía te falta pagar {amount}, y deja de contarse al borrarla.'**
+  String instalDeleteOwed(String amount);
 
   /// No description provided for @instalSheetBody.
   ///
@@ -6421,6 +6469,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Descartar'**
   String get detectiveDismiss;
+
+  /// No description provided for @alertDismissed.
+  ///
+  /// In es, this message translates to:
+  /// **'Alerta descartada.'**
+  String get alertDismissed;
+
+  /// No description provided for @alertExpected.
+  ///
+  /// In es, this message translates to:
+  /// **'Marcada como esperada.'**
+  String get alertExpected;
 
   /// No description provided for @detectiveShowAgain.
   ///
@@ -6818,6 +6878,12 @@ abstract class AppLocalizations {
   /// **'Quitar la división'**
   String get splitRemove;
 
+  /// No description provided for @splitRemoved.
+  ///
+  /// In es, this message translates to:
+  /// **'División quitada: este gasto ya no cuenta en el grupo.'**
+  String get splitRemoved;
+
   /// No description provided for @splitThis.
   ///
   /// In es, this message translates to:
@@ -6949,6 +7015,24 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Se borran el grupo, sus gastos y sus pagos aquí. Tus movimientos no se tocan.'**
   String get sharedDeleteBody;
+
+  /// No description provided for @sharedDeleteOwed.
+  ///
+  /// In es, this message translates to:
+  /// **'En este grupo te deben {amount}: deja de contar al borrarlo.'**
+  String sharedDeleteOwed(String amount);
+
+  /// No description provided for @sharedDeleteOwing.
+  ///
+  /// In es, this message translates to:
+  /// **'En este grupo debes {amount}: deja de contar al borrarlo.'**
+  String sharedDeleteOwing(String amount);
+
+  /// No description provided for @sharedDeletePending.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía hay cuentas pendientes entre ellos: dejan de contar al borrarlo.'**
+  String get sharedDeletePending;
 
   /// No description provided for @sharedAddExpense.
   ///
@@ -7418,6 +7502,12 @@ abstract class AppLocalizations {
   /// **'Borrar cobro'**
   String get freelanceDelete;
 
+  /// No description provided for @incomeDeleted.
+  ///
+  /// In es, this message translates to:
+  /// **'Se borró el cobro a {client}.'**
+  String incomeDeleted(String client);
+
   /// No description provided for @tripsTitle.
   ///
   /// In es, this message translates to:
@@ -7453,18 +7543,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Borrar viaje'**
   String get tripDelete;
-
-  /// No description provided for @tripDeleteTitle.
-  ///
-  /// In es, this message translates to:
-  /// **'¿Borrar {name}?'**
-  String tripDeleteTitle(String name);
-
-  /// No description provided for @tripDeleteBody.
-  ///
-  /// In es, this message translates to:
-  /// **'Se borra el viaje aquí. Sus gastos siguen en tus cuentas.'**
-  String get tripDeleteBody;
 
   /// No description provided for @tripLeftShort.
   ///
@@ -7579,6 +7657,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'No es del viaje'**
   String get tripExclude;
+
+  /// No description provided for @tripLeftOut.
+  ///
+  /// In es, this message translates to:
+  /// **'{payee} ya no cuenta en el viaje.'**
+  String tripLeftOut(String payee);
 
   /// No description provided for @tripForeign.
   ///

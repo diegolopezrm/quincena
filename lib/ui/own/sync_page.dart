@@ -19,6 +19,7 @@ import '../../sync/sync_service.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import '../messages.dart';
 import 'code_dialogs.dart';
 import 'look.dart';
 
@@ -186,23 +187,14 @@ class _SyncPageState extends State<SyncPage> {
 
   /// Lets what waits go, with a way back for a few seconds.
   Future<void> _dismiss(SyncConflict conflict) async {
-    final AppLocalizations l = context.l10n;
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final String said = context.l10n.syncDismissed;
     await _sync.dismiss(conflict);
     await _refresh();
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(l.syncDismissed),
-        duration: const Duration(seconds: 6),
-        action: SnackBarAction(
-          label: l.undo,
-          onPressed: () async {
-            await _sync.keepWaiting(conflict);
-            await _refresh();
-          },
-        ),
-      ),
-    );
+    showUndo(messenger, said, () async {
+      await _sync.keepWaiting(conflict);
+      await _refresh();
+    });
   }
 
   /// The person picks, field by field, what stays of the two versions; the

@@ -8,8 +8,10 @@ import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
 import '../../own/own_controller.dart';
+import '../../own/undo.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
+import '../messages.dart';
 import 'amount_input.dart';
 
 /// Adds a savings goal, or changes or deletes [goal].
@@ -100,29 +102,16 @@ class _GoalSheetState extends State<_GoalSheet> {
     if (mounted) Navigator.of(context).pop();
   }
 
+  /// Deletes the goal and its envelope; the accounts and movements stay.
+  /// A way back stays for a few seconds.
   Future<void> _delete() async {
-    final AppLocalizations l = context.l10n;
     final NavigatorState navigator = Navigator.of(context);
-    final bool? sure = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text(l.goalDeleteTitle(widget.goal!.name)),
-        content: Text(l.goalDeleteBody),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l.goalDelete),
-          ),
-        ],
-      ),
-    );
-    if (sure != true) return;
-    await widget.own.deleteGoal(widget.goal!.id);
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final SavingsGoal goal = widget.goal!;
+    final String said = context.l10n.deletedNamed(goal.name);
+    final Undo back = await widget.own.removeGoal(goal);
     navigator.pop();
+    showUndo(messenger, said, back);
   }
 
   Widget _field(TextEditingController c, String label) => Padding(

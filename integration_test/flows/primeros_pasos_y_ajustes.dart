@@ -738,18 +738,34 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tap('Gimnasio');
       await f.tap('Borrar pago fijo');
       await f.step(
-        '«Borrar pago fijo» pregunta antes: «¿Borrar Gimnasio?», y explica '
-        'que deja de contarse como comprometido.',
+        '«Borrar pago fijo» no pregunta: el gimnasio sale de la lista y abajo '
+        '«Se borró Gimnasio: deja de contarse como comprometido.» ofrece '
+        '«Deshacer».',
       );
-      await f.tap('Cancelar');
-      await f.check('Con «Cancelar» el gimnasio sigue', () async {
-        expect(await _read(f, () => _store(f).recurring()), hasLength(1));
+      await f.check('El aviso dice que deja de contarse', () async {
+        expect(await _read(f, () => _store(f).recurring()), isEmpty);
+        expect(
+          f.shows('Se borró Gimnasio: deja de contarse como comprometido.'),
+          isTrue,
+        );
       });
+      await f.tap('Deshacer');
+      await f.check(
+        'Con «Deshacer» el gimnasio vuelve, con sus 95.000',
+        () async {
+          final RecurringCharge gym = (await _read(
+            f,
+            () => _store(f).recurring(),
+          )).single;
+          expect(gym.amount.amount, Decimal.parse('95000'));
+        },
+      );
+      await f.tap('Gimnasio');
       await f.tap('Borrar pago fijo');
-      await f.tap('Borrar pago fijo');
+      await _waitMessages(f);
       await f.step(
-        'Con «Borrar pago fijo» la lista queda vacía y vuelve a aparecer «No '
-        'tengo pagos fijos» bajo «Empezar».',
+        'Borrado otra vez y pasado el aviso, la lista queda vacía y vuelve a '
+        'aparecer «No tengo pagos fijos» bajo «Empezar».',
       );
       await f.check('No queda ningún pago fijo', () async {
         expect(await _read(f, () => _store(f).recurring()), isEmpty);
@@ -1471,6 +1487,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         expect(s.merchantCategories['exito laureles'], 'groceries');
         expect(s.use(RuleKind.merchant, 'exito laureles'), isNull);
       });
+      final String card = _own(f).captureSettings.cardAccounts['1234']!;
       await f.tapFound(
         find.descendant(
           of: find.ancestor(
@@ -1481,8 +1498,8 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         ),
       );
       await f.step(
-        '«Borrar regla» en «Tarjeta *1234» la quita enseguida, sin preguntar '
-        'ni ofrecer deshacer.',
+        '«Borrar regla» en «Tarjeta *1234» la quita sin preguntar, y abajo '
+        '«Regla borrada.» ofrece «Deshacer» por unos segundos.',
       );
       await f.check('La tarjeta *1234 ya no tiene regla', () async {
         final CaptureSettings saved = await _read(
@@ -1491,7 +1508,30 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         );
         expect(saved.cardAccounts.containsKey('1234'), isFalse);
         expect(saved.rules, hasLength(rules - 1));
+        expect(f.shows('Regla borrada.'), isTrue);
       });
+      await f.tap('Deshacer');
+      await f.check(
+        'Con «Deshacer» la regla vuelve a la misma cuenta',
+        () async {
+          final CaptureSettings saved = await _read(
+            f,
+            () => _store(f).captureSettings(),
+          );
+          expect(saved.rules, hasLength(rules));
+          expect(saved.cardAccounts['1234'], card);
+        },
+      );
+      await f.tapFound(
+        find.descendant(
+          of: find.ancestor(
+            of: find.text('Tarjeta *1234'),
+            matching: find.byType(ListTile),
+          ),
+          matching: find.byTooltip('Borrar regla'),
+        ),
+      );
+      await _waitMessages(f);
       await f.tap('Nequi');
       await f.step(
         'Una regla de banco o billetera pregunta «¿A qué cuenta va?», con '

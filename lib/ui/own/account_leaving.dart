@@ -8,9 +8,11 @@ import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
 import '../../own/own_controller.dart';
+import '../../own/undo.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import '../messages.dart';
 import 'accounts_tab.dart' show AccountRow;
 import 'look.dart';
 
@@ -22,8 +24,8 @@ enum Leaving { archived, deleted }
 /// transfers left in other accounts, what is paid from them and where it
 /// is paid from now on, and the net worth before and after, with why it
 /// changes. Deleting offers to archive instead, unless [archive] is false.
-/// [why] goes first, when something else asked for it. Null when the
-/// person changed their mind.
+/// [why] goes first, when something else asked for it. Once done, a way
+/// back stays for a few seconds. Null when the person changed their mind.
 Future<Leaving?> confirmLeaving(
   BuildContext context,
   OwnController own,
@@ -32,6 +34,8 @@ Future<Leaving?> confirmLeaving(
   bool archive = true,
   String? why,
 }) async {
+  final AppLocalizations l = context.l10n;
+  final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
   final (Leaving, String?)? choice = await showDialog<(Leaving, String?)>(
     context: context,
     builder: (BuildContext context) => _LeavingDialog(
@@ -44,13 +48,25 @@ Future<Leaving?> confirmLeaving(
   );
   if (choice == null) return null;
   final (Leaving leaving, String? movedTo) = choice;
-  if (leaving == Leaving.deleted) {
-    await own.deleteAccount(accounts.single.id, movedTo: movedTo);
-  } else {
-    await own.archiveAccounts(<String>{
-      for (final Account a in accounts) a.id,
-    }, movedTo: movedTo);
-  }
+  final Set<String> ids = <String>{for (final Account a in accounts) a.id};
+  final int movements = (own.snapshot?.entries ?? const <Entry>[])
+      .where((Entry e) => ids.contains(e.accountId))
+      .length;
+  final String names = listed(<String>[
+    for (final Account a in accounts) a.name,
+  ]);
+  final Undo back = await own.leave(
+    accounts,
+    delete: leaving == Leaving.deleted,
+    movedTo: movedTo,
+  );
+  showUndo(
+    messenger,
+    leaving == Leaving.deleted
+        ? l.accountDeleted(names, movements)
+        : l.accountsArchived(names, accounts.length),
+    back,
+  );
   return leaving;
 }
 

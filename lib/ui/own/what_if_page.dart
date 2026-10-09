@@ -10,9 +10,11 @@ import '../../format/money.dart';
 import '../../l10n/l10n.dart';
 import '../../money/money.dart';
 import '../../own/own_controller.dart';
+import '../../own/undo.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import '../messages.dart';
 import 'amount_input.dart';
 import 'look.dart';
 
@@ -374,10 +376,12 @@ class _WhatIfPageState extends State<WhatIfPage> {
                           }, style: context.type.bodySmall),
                           trailing: IconButton(
                             tooltip: l.whatIfRemove,
-                            onPressed: () => own.saveScenarios(<Scenario>[
-                              for (final Scenario s in own.scenarios)
-                                if (s.id != x.id) s,
-                            ]),
+                            onPressed: () async {
+                              final ScaffoldMessengerState messenger =
+                                  ScaffoldMessenger.of(context);
+                              final Undo back = await own.removeScenario(x);
+                              showUndo(messenger, l.scenarioRemoved, back);
+                            },
                             icon: Icon(
                               Glyph.trash,
                               size: 18,

@@ -483,7 +483,7 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.tap('Descartar');
       await f.step(
         'Con «Descartar» el repetido sale de la lista y no se anota nada '
-        'nuevo.',
+        'nuevo; abajo «Se descartó Spotify.» ofrece «Deshacer».',
       );
       await f.check('La captura quedó descartada', () async {
         final List<InboxItem> all = (await f.tester.runAsync(
@@ -670,8 +670,9 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       );
       await f.tap('Descartar');
       await f.step(
-        'Con «Descartar» la tarjeta se va sin registrar nada y sin pedir '
-        'confirmación.',
+        'Con «Descartar» la tarjeta se va sin registrar nada y sin preguntar; '
+        'abajo «Se descartó Laura Gómez.» ofrece «Deshacer» por unos '
+        'segundos.',
       );
       await f.check('Laura Gómez quedó descartada y sin movimiento', () async {
         final List<InboxItem> all = (await f.tester.runAsync(
@@ -686,8 +687,22 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await _openMenu(f, 'Éxito Laureles');
       await f.tap('Descartar y no leer más Bancolombia');
       await f.step(
-        'Con «Descartar y no leer más Bancolombia» se va la compra: arriba '
-        'dice «Todo al día.» aunque el posible repetido sigue abajo.',
+        'Dejar de leer una app tiene mucho efecto, y lo que llegue mientras '
+        'no se puede recuperar: antes pregunta «¿Dejar de leer las '
+        'notificaciones de Bancolombia?», con «Cancelar» y «Dejar de leer».',
+      );
+      await f.check('Pregunta antes, y nada cambia todavía', () {
+        expect(
+          f.shows('¿Dejar de leer las notificaciones de Bancolombia?'),
+          isTrue,
+        );
+        expect(own.captureSettings.mutedApps, isEmpty);
+      });
+      await f.tap('Dejar de leer');
+      await f.step(
+        'Con «Dejar de leer» se va la compra: arriba dice «Todo al día.» '
+        'aunque el posible repetido sigue abajo, y el aviso dice que ya no se '
+        'leen las notificaciones de Bancolombia.',
       );
       await f.check('La app de Bancolombia quedó silenciada', () {
         final CaptureSettings s = own.captureSettings;
@@ -1459,11 +1474,12 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       });
       await f.tapFound(_ruleTrash('Nequi'));
       await f.step(
-        'La papelera de «Nequi» la borra de una vez, sin preguntar: el grupo '
-        'Bancos y billeteras desaparece.',
+        'La papelera de «Nequi» la borra sin preguntar: el grupo Bancos y '
+        'billeteras desaparece, y abajo «Regla borrada.» ofrece «Deshacer».',
       );
       await f.check('La regla de Nequi se borró', () async {
         expect((await saved()).institutionAccounts, isEmpty);
+        expect(f.shows('Regla borrada.'), isTrue);
       });
       await f.tapFound(_ruleTrash('Exito Laureles'));
       await f.tapFound(_ruleTrash('Tarjeta *1234'));

@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../../domain/commitments.dart';
 import '../../domain/records.dart';
-import '../../domain/shared.dart';
 import '../../format/dates.dart';
 import '../../l10n/l10n.dart';
 import '../../money/money.dart';
 import '../../own/own_controller.dart';
 import '../../own/repeats.dart';
+import '../../own/undo.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import '../messages.dart';
 import 'entry_origin.dart';
 import 'look.dart';
 
@@ -60,32 +61,11 @@ class _RepeatSheetState extends State<_RepeatSheet> {
   /// Deletes the one recorded last, and its split with it, as deleting it
   /// from its form does; «Deshacer» puts both back as they were.
   Future<void> _remove() async {
-    final AppLocalizations l = context.l10n;
+    final String said = context.l10n.repeatRemoved;
     setState(() => _busy = true);
-    final Entry gone = widget.pair.repeat;
-    final (Group, SharedExpense)? split = own.splitOf(gone.id);
-    await own.store.deleteEntry(gone);
-    if (split case (final Group group, final SharedExpense expense)) {
-      await own.saveGroup(group.withoutExpense(expense.id));
-    }
+    final Undo back = await own.deleteMovement(widget.pair.repeat);
     if (mounted) Navigator.of(context).pop();
-    widget.messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(l.repeatRemoved),
-          duration: const Duration(seconds: 6),
-          action: SnackBarAction(
-            label: l.undo,
-            onPressed: () async {
-              await own.store.restoreEntry(gone);
-              if (split case (final Group group, _)) {
-                await own.saveGroup(group);
-              }
-            },
-          ),
-        ),
-      );
+    showUndo(widget.messenger, said, back);
   }
 
   /// Remembers the two are two payments. When the charge detective saw the
