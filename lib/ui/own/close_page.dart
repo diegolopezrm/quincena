@@ -1,8 +1,13 @@
-import 'package:flutter/material.dart';
+import 'dart:math' as math;
+
+import 'package:decimal/decimal.dart';
+import 'package:flutter/material.dart' hide Flow;
 
 import '../../data/category.dart';
 import '../../data/ledger.dart';
 import '../../domain/decisions.dart';
+import '../../domain/plan.dart';
+import '../../domain/records.dart';
 import '../../format/dates.dart';
 import '../../format/money.dart';
 import '../../l10n/l10n.dart';
@@ -11,6 +16,7 @@ import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
 import 'coming_days_page.dart';
+import 'goal_contribution.dart';
 
 /// The pay period that just ended, in three cards: what changed against the
 /// one before, what comes until the next payday, and one thing to do. Each
@@ -290,10 +296,107 @@ class ClosePage extends StatelessWidget {
                 child: Text(l.closeSeePayments),
               ),
             ),
+          // What is left to spend can go to a goal: from here, as money
+          // that moves to where the goal is saved.
+          if (close.action == CloseAction.moveToGoal)
+            if (_openGoals.firstOrNull case final SavingsGoal goal)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () =>
+                      showGoalContribution(context, own: own, goal: goal),
+                  icon: const Icon(Glyph.plus, size: 18),
+                  label: Text(l.closeContributeTo(goal.name)),
+                ),
+              ),
         ],
       ),
+      // What the period's envelopes kept for each goal is still only on
+      // paper: at the close it can go to where the goal is saved.
+      if (_goalEnvelopes(ledger, close) case final List<_GoalEnvelope> goals
+          when goals.isNotEmpty) ...<Widget>[
+        const SizedBox(height: 12),
+        _Card(
+          title: l.closeGoalsTitle,
+          children: <Widget>[
+            for (final _GoalEnvelope g in goals)
+              if (g.left > 0)
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        l.closeGoalEnvelope(g.goal.name, amount(g.left)),
+                        style: context.type.bodyMedium,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => showGoalContribution(
+                        context,
+                        own: own,
+                        goal: g.goal,
+                        amount: Decimal.parse('${ledger.major(g.left)}'),
+                      ),
+                      child: Text(l.closeGoalMove),
+                    ),
+                  ],
+                )
+              else
+                Text(
+                  l.closeGoalMoved(g.goal.name, amount(g.envelope)),
+                  style: context.type.bodyMedium,
+                ),
+          ],
+        ),
+      ],
     ];
   }
+
+  /// Goals still short of what they are for, the ones with a monthly
+  /// part first.
+  List<SavingsGoal> get _openGoals =>
+      <SavingsGoal>[
+        for (final SavingsGoal g
+            in own.snapshot?.goals ?? const <SavingsGoal>[])
+          if (g.saved.amount < g.target.amount) g,
+      ]..sort(
+        (SavingsGoal a, SavingsGoal b) =>
+            b.monthly.amount.compareTo(a.monthly.amount),
+      );
+
+  /// What the envelopes of the closed period, or of the one that starts,
+  /// set aside for each goal still short, and what of it is still to move:
+  /// what went from the money to spend in the goal's name since counts as
+  /// moved.
+  List<_GoalEnvelope> _goalEnvelopes(Ledger ledger, PeriodClose close) {
+    final EnvelopePlan? plan = own.lastPlan;
+    if (plan == null || plan.period.isBefore(close.start)) {
+      return const <_GoalEnvelope>[];
+    }
+    int moved(SavingsGoal goal) => <Movement>[
+      for (final Movement m in ledger.movements)
+        if (m.flow == Flow.saving &&
+            m.merchant == goal.name &&
+            !m.date.isBefore(plan.period))
+          m,
+    ].fold(0, (int a, Movement m) => a + m.amount);
+    return <_GoalEnvelope>[
+      for (final Envelope e in plan.envelopes)
+        if (e.kind == EnvelopeKind.goal && e.amount > 0)
+          for (final SavingsGoal g in _openGoals)
+            if (g.id == e.goalId)
+              _GoalEnvelope(g, e.amount, math.max(0, e.amount - moved(g))),
+    ];
+  }
+}
+
+/// A goal's envelope at the close: what it set aside, and what of that is
+/// still in the money to spend.
+class _GoalEnvelope {
+  const _GoalEnvelope(this.goal, this.envelope, this.left);
+
+  final SavingsGoal goal;
+  final int envelope;
+  final int left;
 }
 
 class _Card extends StatelessWidget {

@@ -2,8 +2,10 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../capture/merchants.dart';
 import '../../data/ledger.dart';
 import '../../domain/plan.dart';
+import '../../domain/records.dart';
 import '../../format/dates.dart';
 import '../../format/money.dart';
 import '../../l10n/l10n.dart';
@@ -14,6 +16,7 @@ import '../icons.dart';
 import '../kit.dart';
 import 'amount_input.dart';
 import 'coming_days_page.dart';
+import 'entry_sheet.dart';
 import 'look.dart';
 
 /// Things wanted for later: a price typed by hand, a priority, and maybe a
@@ -157,22 +160,47 @@ class _WishCard extends StatelessWidget {
                       style: context.type.bodySmall,
                     ),
                   ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (BuildContext context) => ComingDaysPage(
-                    own: own,
-                    tryPurchase: true,
-                    price: wish.price,
-                    label: wish.name,
+          Wrap(
+            children: <Widget>[
+              TextButton.icon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (BuildContext context) => ComingDaysPage(
+                      own: own,
+                      tryPurchase: true,
+                      price: wish.price,
+                      label: wish.name,
+                    ),
                   ),
                 ),
+                icon: const Icon(Glyph.shoppingBag, size: 18),
+                label: Text(l.buyTitle),
               ),
-              icon: const Icon(Glyph.shoppingBag, size: 18),
-              label: Text(l.buyTitle),
-            ),
+              // Bought: the expense opens written, and the wish goes once
+              // it is saved, so the money leaves an account the day it did.
+              TextButton.icon(
+                onPressed: () async {
+                  final bool? saved = await showEntrySheet(
+                    context,
+                    own: own,
+                    kind: EntryKind.expense,
+                    draft: EntryDraft(
+                      amount: Decimal.parse('${ledger.major(wish.price)}'),
+                      payee: wish.name,
+                      category: knownCategory(wish.name),
+                      date: own.today,
+                    ),
+                  );
+                  if (saved != true) return;
+                  await own.saveWishes(<Wish>[
+                    for (final Wish w in own.wishes)
+                      if (w.id != wish.id) w,
+                  ]);
+                },
+                icon: const Icon(Glyph.check, size: 18),
+                label: Text(l.wishBought),
+              ),
+            ],
           ),
         ],
       ),

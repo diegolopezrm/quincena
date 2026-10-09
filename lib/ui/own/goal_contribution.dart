@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../domain/records.dart';
-import 'look.dart';
 import '../../l10n/l10n.dart';
 import '../../money/money.dart';
 import '../../own/own_controller.dart';
@@ -11,6 +10,7 @@ import '../../theme/tokens.dart';
 import '../icons.dart';
 import 'account_sheet.dart';
 import 'amount_input.dart';
+import 'look.dart';
 
 /// Puts money into [goal]: from an everyday account to the one it is saved
 /// in, so it leaves the money to spend, or only counted, for money already
@@ -19,23 +19,37 @@ Future<void> showGoalContribution(
   BuildContext context, {
   required OwnController own,
   required SavingsGoal goal,
+  Decimal? amount,
 }) => showDialog<void>(
   context: context,
-  builder: (BuildContext context) => _Contribution(own: own, goal: goal),
+  builder: (BuildContext context) =>
+      _Contribution(own: own, goal: goal, amount: amount),
 );
 
 class _Contribution extends StatefulWidget {
-  const _Contribution({required this.own, required this.goal});
+  const _Contribution({required this.own, required this.goal, this.amount});
 
   final OwnController own;
   final SavingsGoal goal;
+
+  /// What to put in, when it is known: what an envelope set aside for it.
+  final Decimal? amount;
 
   @override
   State<_Contribution> createState() => _ContributionState();
 }
 
 class _ContributionState extends State<_Contribution> {
-  final TextEditingController _amount = TextEditingController();
+  late final TextEditingController _amount = TextEditingController(
+    text: switch (widget.amount) {
+      final Decimal a => formatDecimal(
+        a,
+        decimals: widget.goal.target.asset.decimals,
+        trim: true,
+      ),
+      null => '',
+    },
+  );
   late String? _from = _likelyFrom();
   late String? _to = _savings.firstOrNull?.id;
   String? _error;

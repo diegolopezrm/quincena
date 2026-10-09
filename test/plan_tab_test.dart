@@ -340,6 +340,47 @@ void main() {
     );
   });
 
+  testWidgets('a wish bought opens as the expense, and goes once saved', (
+    tester,
+  ) async {
+    final OwnController own = await open(
+      tester,
+      (OwnController own) => WishesPage(own: own),
+    );
+    await tester.tap(find.text('Agregar deseo'));
+    await settle(tester);
+    await tester.enterText(
+      find.widgetWithText(TextField, '¿Qué quieres?'),
+      'Audífonos',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, '¿Cuánto cuesta?'),
+      '600.000',
+    );
+    await tester.tap(find.text('Guardar'));
+    await settle(tester);
+    final int before = own.ledger!.balance;
+
+    await tester.tap(find.text('Lo compré'));
+    await settle(tester);
+    expect(find.widgetWithText(TextField, '600.000'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'Audífonos'), findsOneWidget);
+    // Closed without saving, the wish stays.
+    await tester.binding.handlePopRoute();
+    await settle(tester);
+    expect(find.widgetWithText(TextField, '600.000'), findsNothing);
+    expect(own.wishes, hasLength(1));
+
+    await tester.tap(find.text('Lo compré'));
+    await settle(tester);
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Guardar'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Guardar'));
+    await settle(tester);
+    expect(own.wishes, isEmpty);
+    expect(own.ledger!.balance, before - 600000);
+    expect(find.text('Audífonos'), findsNothing);
+  });
+
   testWidgets('what if a charge goes up: compared, saved, applied when sure', (
     tester,
   ) async {

@@ -8,6 +8,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/domain/freelance.dart';
 import 'package:quincena/domain/pay_schedule.dart';
+import 'package:quincena/domain/plan.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/format/money.dart';
 import 'package:quincena/l10n/l10n.dart';
@@ -232,6 +233,69 @@ void main() {
     await tester.tap(find.text('Ver los pagos'));
     await settle(tester);
     expect(find.text('Crepes'), findsOneWidget);
+  });
+
+  testWidgets('the close moves what a goal envelope kept, once', (
+    tester,
+  ) async {
+    final OwnController own = await open(
+      tester,
+      (OwnController own) => ClosePage(own: own),
+    );
+    await tester.runAsync(() async {
+      final SavingsGoal trip = await own.store.addGoal(
+        name: 'Viaje',
+        target: Money(d('2000000'), Asset.cop),
+      );
+      await own.store.addAccount(
+        name: 'Ahorros',
+        kind: AccountKind.investment,
+        asset: Asset.cop,
+        opening: Decimal.zero,
+      );
+      await own.savePlan(
+        EnvelopePlan(
+          period: DateTime(2026, 9, 15),
+          envelopes: <Envelope>[
+            Envelope(
+              id: 'trip',
+              kind: EnvelopeKind.goal,
+              name: 'Viaje',
+              amount: 200000,
+              goalId: trip.id,
+            ),
+          ],
+        ),
+      );
+    });
+    await settle(tester);
+    final Finder kept = find.text('Viaje: ${pesos(200000)} en el sobre');
+    await tester.scrollUntilVisible(kept, 200);
+    expect(find.text('Lo que apartaste para tus metas'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Pasar a lo ahorrado'));
+    await settle(tester);
+    await tester.tap(find.text('Pasar a lo ahorrado'));
+    await settle(tester);
+    expect(find.text('Abonar a Viaje'), findsOneWidget);
+    expect(find.widgetWithText(TextField, '200.000'), findsOneWidget);
+    expect(
+      find.textContaining(
+        'Bancolombia baja ${pesos(200000)} y Ahorros sube lo mismo',
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Abonar'));
+    await settle(tester);
+
+    expect(own.ledger!.balance, 700000);
+    expect(own.snapshot!.goals.single.saved.amount, d('200000'));
+    expect(kept, findsNothing);
+    expect(find.text('Pasar a lo ahorrado'), findsNothing);
+    expect(
+      find.text('Viaje: ya pasaste ${pesos(200000)} a lo ahorrado'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('the dashed keys under the chart show their dashes', (

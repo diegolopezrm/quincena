@@ -1628,14 +1628,33 @@ final List<AppFlow> planFlows = <AppFlow>[
         expect(own.ledger!.freeUntilPayday, l.freeUntilPayday);
       });
       await f.back();
-      await _tapTipBy(f, 'Chaqueta', 'Quitar deseo');
+      final int beforeBuying = own.ledger!.freeUntilPayday;
+      await _tapTextBy(f, 'Chaqueta', 'Lo compré');
       await f.step(
-        'La caneca de la chaqueta la quita de una vez, sin preguntar ni '
-        'ofrecer deshacer.',
+        '«Lo compré» abre el gasto ya escrito: «Chaqueta», \$180.000 y la '
+        'fecha de hoy. Solo falta ver de dónde salió y guardar.',
       );
-      await f.check('Solo quedan los audífonos', () {
-        expect(own.wishes.map((Wish w) => w.name), <String>['Audífonos']);
+      await f.check('El gasto viene lleno con el deseo', () {
+        expect(_fieldText(f, 'Monto'), '180.000');
+        expect(_fieldText(f, '¿Dónde o a quién?'), 'Chaqueta');
       });
+      await f.tap('Guardar');
+      await f.step(
+        'Guardado, la chaqueta sale de la lista: ya no es un deseo sino un '
+        'gasto de \$180.000.',
+      );
+      await f.check(
+        'Solo quedan los audífonos, y la chaqueta salió de lo que puedes '
+        'gastar',
+        () {
+          expect(own.wishes.map((Wish w) => w.name), <String>['Audífonos']);
+          final Entry e = own.snapshot!.entries.firstWhere(
+            (Entry e) => e.payee == 'Chaqueta',
+          );
+          expect(e.amount, Decimal.fromInt(-180000));
+          expect(own.ledger!.freeUntilPayday, beforeBuying - 180000);
+        },
+      );
       await f.back();
       await f.reveal(find.text('Lo quiero, pero después'));
       await f.step('En Plan, la fila de deseos dice «Un deseo».');

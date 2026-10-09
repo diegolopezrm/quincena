@@ -24,7 +24,31 @@ import 'split_sheet.dart';
 
 /// Records a movement, or edits [entry]. A transfer is edited as one move,
 /// whichever of its legs was tapped. A new one opens as [kind] when given.
-Future<void> showEntrySheet(
+/// What a new movement starts with, from what the app already knows: the
+/// pay of a payday, a wish that was bought. Each part is only a start the
+/// person can change.
+@immutable
+class EntryDraft {
+  const EntryDraft({
+    this.amount,
+    this.payee,
+    this.category,
+    this.date,
+    this.accountId,
+    this.note,
+  });
+
+  /// In the account's own currency.
+  final Decimal? amount;
+  final String? payee;
+  final String? category;
+  final DateTime? date;
+  final String? accountId;
+  final String? note;
+}
+
+/// Opens the form for a movement. True once it was saved.
+Future<bool?> showEntrySheet(
   BuildContext context, {
   required OwnController own,
   Entry? entry,
@@ -32,14 +56,15 @@ Future<void> showEntrySheet(
   InboxItem? fromInbox,
   bool ownTransfer = false,
   EntryKind? kind,
+  EntryDraft? draft,
 }) {
   if (own.accounts.isEmpty) {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(context.l10n.needAccountFirst)));
-    return Future<void>.value();
+    return Future<bool?>.value();
   }
-  return showModalBottomSheet<void>(
+  return showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
@@ -53,6 +78,7 @@ Future<void> showEntrySheet(
       fromInbox: fromInbox,
       ownTransfer: ownTransfer,
       kind: kind,
+      draft: draft,
     ),
   );
 }
@@ -65,11 +91,15 @@ class _EntryForm extends StatefulWidget {
     this.fromInbox,
     this.ownTransfer = false,
     this.kind,
+    this.draft,
   });
 
   final OwnController own;
   final Entry? entry;
   final String? accountId;
+
+  /// What a new movement starts with.
+  final EntryDraft? draft;
 
   /// A capture being confirmed: its reading fills the form, and saving it
   /// records it through the inbox, so the app learns from what changed.
@@ -124,6 +154,7 @@ class _EntryFormState extends State<_EntryForm> {
             _editing?.accountId ??
             _capture?.suggestion.accountId ??
             widget.accountId ??
+            widget.draft?.accountId ??
             (_capture == null ? own.accounts.first.id : null);
   late String? _toAccountId = _arrived
       ? (_capture?.suggestion.accountId ?? _secondAccount())
@@ -134,7 +165,10 @@ class _EntryFormState extends State<_EntryForm> {
     text: _capture?.parsed.amount != null
         ? _decimalText(_capture!.parsed.amount!, _assetOf(_accountId))
         : _editing == null
-        ? ''
+        ? switch (widget.draft?.amount) {
+            final Decimal amount => _decimalText(amount, _assetOf(_accountId)),
+            null => '',
+          }
         : _decimalText(
             _legs?.$1.amount ?? _editing!.amount,
             _assetOf(_accountId),
@@ -151,16 +185,24 @@ class _EntryFormState extends State<_EntryForm> {
   /// keeps what its alert says arrived.
   bool _amountTouched = false;
   late final TextEditingController _payee = TextEditingController(
-    text: _editing?.payee ?? _capture?.suggestion.payee ?? '',
+    text:
+        _editing?.payee ??
+        _capture?.suggestion.payee ??
+        widget.draft?.payee ??
+        '',
   );
   late final TextEditingController _note = TextEditingController(
-    text: _editing?.note ?? '',
+    text: _editing?.note ?? widget.draft?.note ?? '',
   );
-  late String? _category = _editing?.category ?? _capture?.suggestion.category;
+  late String? _category =
+      _editing?.category ??
+      _capture?.suggestion.category ??
+      widget.draft?.category;
   late DateTime _date =
       _editing?.date ??
       _capture?.parsed.when ??
       _capture?.event.at ??
+      widget.draft?.date ??
       own.today;
   String? _amountError;
   String? _receivedError;
@@ -329,7 +371,7 @@ class _EntryFormState extends State<_EntryForm> {
           date: _when(),
           note: _note.text,
         );
-        if (mounted) Navigator.of(context).pop();
+        if (mounted) Navigator.of(context).pop(true);
         return;
       }
     }
@@ -355,7 +397,7 @@ class _EntryFormState extends State<_EntryForm> {
         note: _note.text,
       );
       showRecorded(messenger, own, done);
-      if (mounted) Navigator.of(context).pop();
+      if (mounted) Navigator.of(context).pop(true);
       return;
     }
     if (_kind == EntryKind.transfer) {
@@ -431,7 +473,7 @@ class _EntryFormState extends State<_EntryForm> {
         await own.saveGroup(group.withExpense(expense.resizedTo(total)));
       }
     }
-    if (mounted) Navigator.of(context).pop();
+    if (mounted) Navigator.of(context).pop(true);
   }
 
   /// The card the expense being saved looks like a payment to, when the

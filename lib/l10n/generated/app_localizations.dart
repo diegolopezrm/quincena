@@ -2216,6 +2216,36 @@ abstract class AppLocalizations {
   /// **'Puedes gastar {amount} hasta el pago. Si quieres, una parte puede ir a tu meta.'**
   String closeActionGoal(String amount);
 
+  /// No description provided for @closeContributeTo.
+  ///
+  /// In es, this message translates to:
+  /// **'Abonar a {goal}'**
+  String closeContributeTo(String goal);
+
+  /// No description provided for @closeGoalsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que apartaste para tus metas'**
+  String get closeGoalsTitle;
+
+  /// No description provided for @closeGoalEnvelope.
+  ///
+  /// In es, this message translates to:
+  /// **'{goal}: {amount} en el sobre'**
+  String closeGoalEnvelope(String goal, String amount);
+
+  /// No description provided for @closeGoalMove.
+  ///
+  /// In es, this message translates to:
+  /// **'Pasar a lo ahorrado'**
+  String get closeGoalMove;
+
+  /// No description provided for @closeGoalMoved.
+  ///
+  /// In es, this message translates to:
+  /// **'{goal}: ya pasaste {amount} a lo ahorrado'**
+  String closeGoalMoved(String goal, String amount);
+
   /// No description provided for @closeActionNone.
   ///
   /// In es, this message translates to:
@@ -2779,6 +2809,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Quitar deseo'**
   String get wishRemove;
+
+  /// No description provided for @wishBought.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo compré'**
+  String get wishBought;
 
   /// No description provided for @wishWaiting.
   ///

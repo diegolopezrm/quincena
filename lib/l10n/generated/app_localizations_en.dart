@@ -1453,6 +1453,27 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String closeContributeTo(String goal) {
+    return 'Add to $goal';
+  }
+
+  @override
+  String get closeGoalsTitle => 'What you set aside for your goals';
+
+  @override
+  String closeGoalEnvelope(String goal, String amount) {
+    return '$goal: $amount in the envelope';
+  }
+
+  @override
+  String get closeGoalMove => 'Move to savings';
+
+  @override
+  String closeGoalMoved(String goal, String amount) {
+    return '$goal: $amount already moved to savings';
+  }
+
+  @override
   String get closeActionNone => 'Nothing to adjust this time.';
 
   @override
@@ -1813,6 +1834,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wishRemove => 'Remove wish';
+
+  @override
+  String get wishBought => 'I bought it';
 
   @override
   String wishWaiting(String date) {
