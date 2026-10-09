@@ -491,7 +491,11 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         find.widgetWithText(TextField, 'Precio'),
         '50000',
       );
-      await f.tester.testTextInput.receiveAction(TextInputAction.go);
+      await pressKeyIn(
+        f.tester,
+        find.widgetWithText(TextField, 'Precio'),
+        TextInputAction.go,
+      );
       await settle(f.tester);
       await f.step(
         'La tecla «Ir» del teclado hace lo mismo que «Ver»: abre «¿Me '

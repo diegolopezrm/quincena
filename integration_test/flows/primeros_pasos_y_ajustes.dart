@@ -642,7 +642,11 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tap('Con mis cuentas');
       await enterTextIn(f.tester, find.byType(TextField).first, 'Sofía');
       // «Siguiente» on the keyboard moves on, as the button does.
-      await f.tester.testTextInput.receiveAction(TextInputAction.next);
+      await pressKeyIn(
+        f.tester,
+        find.byType(TextField).first,
+        TextInputAction.next,
+      );
       await settle(f.tester);
       await f.check('«Siguiente» del teclado pasa al paso 2', () {
         expect(f.shows('Paso 2 de 4'), isTrue);

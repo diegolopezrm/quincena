@@ -35,6 +35,30 @@ import '../test_screens/accounts.dart';
 /// Takes the picture of what is on screen now, under [name].
 typedef Shot = Future<void> Function(String name);
 
+/// Presses the keyboard's [action] key in the field [finder] finds, as
+/// [TestTextInput.receiveAction] does but on the field itself: on a
+/// simulator the test's keyboard can still be talking to a connection the
+/// field already closed.
+Future<void> pressKeyIn(
+  WidgetTester tester,
+  Finder finder,
+  TextInputAction action,
+) async {
+  tester
+      .state<EditableTextState>(
+        find.descendant(
+          of: finder,
+          matching: find.byType(
+            EditableText,
+            skipOffstage: finder.skipOffstage,
+          ),
+          matchRoot: true,
+        ),
+      )
+      .performAction(action);
+  await tester.pump();
+}
+
 /// Types [text] in the field [finder] finds, replacing what was there, as
 /// [WidgetTester.enterText] does. On a simulator the text can reach the
 /// field's previous input connection and be dropped, which leaves the field

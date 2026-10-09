@@ -169,7 +169,7 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       });
       const String unknown = '¿Cuánto debo en la tarjeta?';
       await enterTextIn(f.tester, _askField, unknown);
-      await f.tester.testTextInput.receiveAction(TextInputAction.send);
+      await pressKeyIn(f.tester, _askField, TextInputAction.send);
       await settle(f.tester);
       await _read(
         f,
