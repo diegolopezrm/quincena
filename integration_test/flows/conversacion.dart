@@ -1975,9 +1975,13 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       await _read(
         f,
         '«Editar» en el recibo, 5.500 y «Guardar gasto» otra vez: la nueva '
-        'respuesta dice $corrected, y arriba sigue la anterior con $after.',
+        'respuesta dice $corrected, y la anterior, con $after, queda atenuada '
+        'con «Corregida: estas cifras son de antes» y «Ver la nueva».',
         most: 1,
       );
+      await f.check('La respuesta de antes dice que se corrigió', () {
+        expect(f.shows('Corregida: estas cifras son de antes'), isTrue);
+      });
       await f.check(
         'Sigue habiendo un solo gasto, ahora de ${pesos(5500)}: puedes '
         'gastar $corrected, y corregir tampoco gastó preguntas',

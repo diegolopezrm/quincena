@@ -314,6 +314,12 @@ void main() {
       expect(added().single.amount, 60000);
       expect(session.ledger.freeUntilPayday, 1369300 - 60000);
       expect(model.saves, isEmpty);
+      // The first answer's figures are from before: it says so, once.
+      expect(find.text('Corregida: estas cifras son de antes'), findsOneWidget);
+      final Turn first = session.turns.firstWhere(
+        (Turn t) => session.correctedBy(t) != null,
+      );
+      expect(session.correctedBy(first), session.turns.last);
     });
 
     testWidgets('opens again when the save does not go through', (

@@ -331,6 +331,14 @@ class Session extends ChangeNotifier {
   /// or null while it is the latest.
   Turn? replacedBy(String surfaceId) => _replaced[surfaceId];
 
+  /// The answers a correction made old, each with the one answering the
+  /// correction: their figures are from before it.
+  final Map<Turn, Turn> _corrected = Map<Turn, Turn>.identity();
+
+  /// The turn answering the correction of what [turn] answered, or null
+  /// while its figures still hold.
+  Turn? correctedBy(Turn turn) => _corrected[turn];
+
   /// The expense form whose save [turn] is answering, if it is one.
   Settled? _savingIn(Turn? turn) {
     for (final Settled settled in _settled.values) {
@@ -800,6 +808,8 @@ class Session extends ChangeNotifier {
       (interaction['action']! as Map<Object?, Object?>)['context'] = context;
     }
     final Turn turn = Turn(note: _describe(name));
+    // Saved again, what was answered the first time has old figures.
+    if (earlier != null) _corrected[earlier.turn] = turn;
     final Settled now = settled[surfaceId] = Settled._(
       name,
       DateTime.now(),

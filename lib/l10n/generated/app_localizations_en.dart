@@ -7039,6 +7039,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get replacedBySelection => 'Replaced by your new selection';
 
   @override
+  String get correctedAnswer => 'Corrected: these figures are from before';
+
+  @override
   String get seeNewSelection => 'See the new one';
 
   @override

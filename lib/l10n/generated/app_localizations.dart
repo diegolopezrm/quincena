@@ -10602,6 +10602,12 @@ abstract class AppLocalizations {
   /// **'Reemplazada por tu nueva selección'**
   String get replacedBySelection;
 
+  /// No description provided for @correctedAnswer.
+  ///
+  /// In es, this message translates to:
+  /// **'Corregida: estas cifras son de antes'**
+  String get correctedAnswer;
+
   /// No description provided for @seeNewSelection.
   ///
   /// In es, this message translates to:

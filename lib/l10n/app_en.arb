@@ -1759,6 +1759,7 @@
   "statementPaymentWaits": "{count, plural, =1{The card payment stays unchecked until you say which of your accounts it came from: check it and choose the account.} other{The {count} card payments stay unchecked until you say which of your accounts they came from: check them and choose the account.}}",
   "statementPaymentNoSource": "{count, plural, =1{The card payment stays unchecked: none of your other accounts is in {currency}, and checked it would count as income. Record it as a transfer between your accounts from the one that paid it.} other{The {count} card payments stay unchecked: none of your other accounts is in {currency}, and checked they would count as income. Record them as transfers between your accounts from the one that paid them.}}",
   "replacedBySelection": "Replaced by your new selection",
+  "correctedAnswer": "Corrected: these figures are from before",
   "seeNewSelection": "See the new one",
   "rulesEmptyWithMovements": "You don't have any rules right now. When you record something in Needs review, one is created for its shop, card or bank. Your transactions stay as they are.",
   "badgeExample": "SAMPLE",

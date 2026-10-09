@@ -7032,6 +7032,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get replacedBySelection => 'Reemplazada por tu nueva selección';
 
   @override
+  String get correctedAnswer => 'Corregida: estas cifras son de antes';
+
+  @override
   String get seeNewSelection => 'Ver la nueva';
 
   @override

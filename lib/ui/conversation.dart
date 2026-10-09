@@ -391,6 +391,15 @@ class _TurnView extends StatelessWidget {
             Text(turn.text.toString().trim(), style: context.type.bodyLarge),
             const SizedBox(height: 12),
           ],
+          // Corrected since: its figures are old, and the new answer is a
+          // tap away.
+          if (_correction(turn) case final Turn newer) ...<Widget>[
+            _Replaced(
+              corrected: true,
+              onSeeNew: onShow == null ? null : () => onShow!(newer),
+            ),
+            const SizedBox(height: 6),
+          ],
           for (final String id in turn.surfaceIds) ...<Widget>[
             if (_receipt(id) case final Settled settled) ...<Widget>[
               _Receipt(
@@ -410,7 +419,8 @@ class _TurnView extends StatelessWidget {
               child: _Closed(
                 closed:
                     session.settledOf(id) != null ||
-                    session.replacedBy(id) != null,
+                    session.replacedBy(id) != null ||
+                    _correction(turn) != null,
                 child: Surface(
                   surfaceContext: session.controller.contextFor(id),
                 ),
@@ -493,6 +503,16 @@ class _TurnView extends StatelessWidget {
     final bool answering =
         session.busy && identical(settled.turn, session.turns.lastOrNull);
     return answering ? null : settled;
+  }
+
+  /// The turn answering the correction of what [turn] answered, once it
+  /// has its answer.
+  Turn? _correction(Turn turn) {
+    final Turn? newer = session.correctedBy(turn);
+    if (newer == null || !session.turns.contains(newer)) return null;
+    final bool answering =
+        session.busy && identical(newer, session.turns.lastOrNull);
+    return answering ? null : newer;
   }
 
   /// The turn with the choice that replaced the surface [id], once it has
@@ -595,9 +615,13 @@ class _Receipt extends StatelessWidget {
 /// Over a surface a newer choice replaced: that it did, and a way to the
 /// newer one.
 class _Replaced extends StatelessWidget {
-  const _Replaced({this.onSeeNew});
+  const _Replaced({this.onSeeNew, this.corrected = false});
 
   final VoidCallback? onSeeNew;
+
+  /// Corrected rather than replaced by another choice: its figures are
+  /// from before the correction.
+  final bool corrected;
 
   @override
   Widget build(BuildContext context) {
@@ -619,7 +643,7 @@ class _Replaced extends StatelessWidget {
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
-                  l.replacedBySelection,
+                  corrected ? l.correctedAnswer : l.replacedBySelection,
                   style: context.type.labelLarge,
                 ),
               ),
