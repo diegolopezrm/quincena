@@ -1760,17 +1760,41 @@ abstract class AppLocalizations {
   /// **'Próximos 30 días'**
   String get comingTitle;
 
-  /// No description provided for @comingLowest.
+  /// No description provided for @comingFreeLowest.
   ///
   /// In es, this message translates to:
-  /// **'Saldo mínimo estimado antes del pago: {amount} {when}'**
-  String comingLowest(String amount, String when);
+  /// **'Lo mínimo libre antes del pago: {amount} {when}'**
+  String comingFreeLowest(String amount, String when);
+
+  /// No description provided for @comingFreeLowestWithout.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin lo que pruebas, lo mínimo libre antes del pago: {amount} {when}'**
+  String comingFreeLowestWithout(String amount, String when);
+
+  /// No description provided for @comingShortLowest.
+  ///
+  /// In es, this message translates to:
+  /// **'Antes del pago te faltarían {amount} {when}'**
+  String comingShortLowest(String amount, String when);
+
+  /// No description provided for @comingShortLowestWithout.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin lo que pruebas, antes del pago te faltarían {amount} {when}'**
+  String comingShortLowestWithout(String amount, String when);
 
   /// No description provided for @comingTight.
   ///
   /// In es, this message translates to:
   /// **'{when} quedarías bajo tu colchón.'**
   String comingTight(String when);
+
+  /// No description provided for @comingTouchesKept.
+  ///
+  /// In es, this message translates to:
+  /// **'{when} tendrías que tocar lo apartado.'**
+  String comingTouchesKept(String when);
 
   /// No description provided for @comingRunsOut.
   ///
@@ -1796,6 +1820,12 @@ abstract class AppLocalizations {
   /// **'No te quedas sin plata en estos 30 días.'**
   String get comingNoTightZero;
 
+  /// No description provided for @comingNoTouchKept.
+  ///
+  /// In es, this message translates to:
+  /// **'Ningún día tocas lo apartado en estos 30 días.'**
+  String get comingNoTouchKept;
+
   /// No description provided for @comingLegendSure.
   ///
   /// In es, this message translates to:
@@ -1814,11 +1844,23 @@ abstract class AppLocalizations {
   /// **'Colchón de {amount}'**
   String comingLegendCushion(String amount);
 
+  /// No description provided for @comingLegendKept.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo apartado: {amount}'**
+  String comingLegendKept(String amount);
+
   /// No description provided for @comingLeft.
   ///
   /// In es, this message translates to:
   /// **'Quedan {amount}'**
   String comingLeft(String amount);
+
+  /// No description provided for @comingLeftFree.
+  ///
+  /// In es, this message translates to:
+  /// **'{amount} libres'**
+  String comingLeftFree(String amount);
 
   /// No description provided for @comingLeftTrying.
   ///
@@ -1837,6 +1879,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Bajo tu colchón'**
   String get comingUnderCushion;
+
+  /// No description provided for @comingUnderKept.
+  ///
+  /// In es, this message translates to:
+  /// **'Toca lo apartado'**
+  String get comingUnderKept;
 
   /// No description provided for @comingPay.
   ///
@@ -1928,17 +1976,17 @@ abstract class AppLocalizations {
   /// **'Te alcanza, según lo que sabe la app'**
   String get buyFits;
 
-  /// No description provided for @buyFitsBody.
+  /// No description provided for @buyFitsFree.
   ///
   /// In es, this message translates to:
-  /// **'Tu saldo mínimo estimado sería {amount} {when}, por encima de tu colchón.'**
-  String buyFitsBody(String amount, String when);
+  /// **'Te quedarían mínimo {amount} libres {when}.'**
+  String buyFitsFree(String amount, String when);
 
-  /// No description provided for @buyFitsBodyNoCushion.
+  /// No description provided for @buyLowestInAccounts.
   ///
   /// In es, this message translates to:
-  /// **'Tu saldo mínimo estimado sería {amount} {when}.'**
-  String buyFitsBodyNoCushion(String amount, String when);
+  /// **'En tus cuentas quedarían mínimo {amount} {when}.'**
+  String buyLowestInAccounts(String amount, String when);
 
   /// No description provided for @buyBelow.
   ///
@@ -1994,11 +2042,17 @@ abstract class AppLocalizations {
   /// **'Si esperas al {date}'**
   String buyCompareAfter(String date);
 
-  /// No description provided for @buyLowest.
+  /// No description provided for @buyLowestFree.
   ///
   /// In es, this message translates to:
-  /// **'saldo mínimo: {amount}'**
-  String buyLowest(String amount);
+  /// **'mínimo libre: {amount}'**
+  String buyLowestFree(String amount);
+
+  /// No description provided for @buyLowestShort.
+  ///
+  /// In es, this message translates to:
+  /// **'te faltarían {amount}'**
+  String buyLowestShort(String amount);
 
   /// No description provided for @closeTitle.
   ///
@@ -2167,12 +2221,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'No registraste gastos en esta quincena.'**
   String get closeSpentNone;
-
-  /// No description provided for @comingLowestWithout.
-  ///
-  /// In es, this message translates to:
-  /// **'Sin lo que pruebas, saldo mínimo estimado antes del pago: {amount} {when}'**
-  String comingLowestWithout(String amount, String when);
 
   /// No description provided for @computedBuy.
   ///
@@ -7363,11 +7411,65 @@ abstract class AppLocalizations {
   /// **'© 2026 DL SOFT TECHNOLOGIES SAS. Los comercios cercanos vienen de © colaboradores de OpenStreetMap (ODbL).'**
   String get licensesLegalese;
 
-  /// No description provided for @comingLowestLine.
+  /// No description provided for @comingFreeLine.
   ///
   /// In es, this message translates to:
-  /// **'Tu saldo mínimo estimado será {amount} el {date}.'**
-  String comingLowestLine(String amount, String date);
+  /// **'Lo mínimo que tendrás libre será {amount} el {date}.'**
+  String comingFreeLine(String amount, String date);
+
+  /// No description provided for @comingFreeLineSure.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo mínimo que tendrás libre será {amount} el {date}, sin contar lo que esperas recibir.'**
+  String comingFreeLineSure(String amount, String date);
+
+  /// No description provided for @comingFreeLineToday.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo mínimo que tendrás libre antes del pago es lo de hoy: {amount}.'**
+  String comingFreeLineToday(String amount);
+
+  /// No description provided for @comingShortLine.
+  ///
+  /// In es, this message translates to:
+  /// **'El {date} te faltarían {amount}.'**
+  String comingShortLine(String amount, String date);
+
+  /// No description provided for @comingShortLineSure.
+  ///
+  /// In es, this message translates to:
+  /// **'El {date} te faltarían {amount}, sin contar lo que esperas recibir.'**
+  String comingShortLineSure(String amount, String date);
+
+  /// No description provided for @comingShortLineToday.
+  ///
+  /// In es, this message translates to:
+  /// **'Hoy ya te faltan {amount}.'**
+  String comingShortLineToday(String amount);
+
+  /// No description provided for @comingKept.
+  ///
+  /// In es, this message translates to:
+  /// **'Aparte siguen guardados {parts}.'**
+  String comingKept(String parts);
+
+  /// No description provided for @comingKeptReserve.
+  ///
+  /// In es, this message translates to:
+  /// **'{amount} en tu reserva'**
+  String comingKeptReserve(String amount);
+
+  /// No description provided for @comingKeptEnvelopes.
+  ///
+  /// In es, this message translates to:
+  /// **'{amount} en tus sobres'**
+  String comingKeptEnvelopes(String amount);
+
+  /// No description provided for @comingKeptCushion.
+  ///
+  /// In es, this message translates to:
+  /// **'{amount} en tu colchón'**
+  String comingKeptCushion(String amount);
 
   /// No description provided for @timelineFortnight.
   ///
@@ -7986,12 +8088,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{a} {sound, select, i{e} other{y}} {b}'**
   String listAnd(String a, String b, String sound);
-
-  /// No description provided for @comingLowestLineSure.
-  ///
-  /// In es, this message translates to:
-  /// **'Tu saldo mínimo estimado será {amount} el {date}, sin contar lo que esperas recibir.'**
-  String comingLowestLineSure(String amount, String date);
 
   /// No description provided for @totalExplainOwedToYou.
   ///
@@ -8993,12 +9089,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'hoy'**
   String get todayWhen;
-
-  /// No description provided for @comingLowestLineToday.
-  ///
-  /// In es, this message translates to:
-  /// **'Tu saldo mínimo estimado antes del pago es el de hoy: {amount}.'**
-  String comingLowestLineToday(String amount);
 
   /// No description provided for @buyTakesApart.
   ///

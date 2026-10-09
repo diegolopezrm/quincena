@@ -280,6 +280,32 @@ class Projection {
     }
     return null;
   }
+
+  /// What is kept apart from what can be spent: the cushion, what this
+  /// period's envelopes set aside and the reserve kept from variable
+  /// payments. It stays in the accounts, so every balance here holds it,
+  /// and «Puedes gastar» leaves all of it out.
+  int get kept =>
+      math.max<int>(0, ledger.cushion) +
+      math.max<int>(0, ledger.setAside) +
+      math.max<int>(0, ledger.reserved);
+
+  /// What will be free to spend on [day], counted the way «Puedes gastar»
+  /// counts it: what is sure that day, less what is kept apart. Negative
+  /// when that day would take from it.
+  int free(ProjectedDay day) => day.sure - kept;
+
+  /// Whether [day] reaches into what is kept apart, as [judged] says: the
+  /// money the person put aside would have to pay for it.
+  bool touchesKept(ProjectedDay day) => judged(day) < kept;
+
+  /// The first day that reaches into what is kept apart, as [judged] says.
+  ProjectedDay? get firstTouchingKept {
+    for (final ProjectedDay d in days) {
+      if (touchesKept(d)) return d;
+    }
+    return null;
+  }
 }
 
 /// The last payday, when it passed without income of at least half the

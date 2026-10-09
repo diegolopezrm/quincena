@@ -2774,22 +2774,23 @@ final List<AppFlow> planFlows = <AppFlow>[
       await _openPlan(f);
       await f.tap('Próximos 30 días');
       await f.page(
-        '«Próximos 30 días»: el saldo mínimo antes del pago, la gráfica con '
-        'lo seguro y lo probable, y debajo cada día con sus cobros.',
+        '«Próximos 30 días»: lo mínimo libre antes del pago y, aparte, lo que '
+        'sigue guardado en la reserva; la gráfica con lo seguro, lo probable '
+        'y la línea de lo apartado; y debajo cada día con sus cobros.',
         most: 3,
       );
-      await f.check(
-        'El saldo mínimo dice ${_pesos(l, low.sure)} el '
-        '${dayShortMonth(low.date)}, como lo calcula la app',
-        () => expect(
+      await f.check('Lo mínimo libre dice ${_pesos(l, p.free(low))} el '
+          '${dayShortMonth(low.date)}, contado como «Puedes gastar»', () {
+        expect(p.free(low), l.freeUntilPayday);
+        expect(
           _says(
             f,
-            'Saldo mínimo estimado antes del pago: ${_pesos(l, low.sure)} el '
+            'Lo mínimo libre antes del pago: ${_pesos(l, p.free(low))} el '
             '${dayShortMonth(low.date)}',
           ),
           isTrue,
-        ),
-      );
+        );
+      });
       await f.tapFound(find.text(weekdayDayMonth(netflix)).last);
       await f.top();
       await f.step(
@@ -2872,15 +2873,20 @@ final List<AppFlow> planFlows = <AppFlow>[
       await f.type('¿Qué es? (opcional)', 'Zapatos');
       final PurchaseCheck small = check(100000, l.today);
       await f.step(
-        'Zapatos de 100.000 hoy: «Te alcanza», con el saldo más bajo por '
-        'encima del colchón, y la comparación con esperar.',
+        'Zapatos de 100.000 hoy: «Te alcanza», con lo mínimo que te '
+        'quedaría libre después del colchón, y la comparación con esperar.',
       );
+      final int smallFree = small.lowest - small.projection.kept;
       await f.check(
-        'Te alcanza: el saldo más bajo sería ${_pesos(l, small.lowest)}',
+        'Te alcanza: te quedarían mínimo ${_pesos(l, smallFree)} libres, '
+        'contados como «Puedes gastar»',
         () {
           expect(small.verdict, PurchaseVerdict.fits);
           expect(f.shows('Te alcanza, según lo que sabe la app'), isTrue);
-          expect(_says(f, _pesos(l, small.lowest)), isTrue);
+          expect(
+            _says(f, 'Te quedarían mínimo ${_pesos(l, smallFree)} libres'),
+            isTrue,
+          );
         },
       );
       await f.type('¿Cuánto cuesta?', '250000');
@@ -2948,8 +2954,9 @@ final List<AppFlow> planFlows = <AppFlow>[
         'pago», en vez de mirar la quincena siguiente sin ningún pago.',
       );
       await f.check(
-        'El mismo día del pago cuenta con ese pago: alcanza, con un saldo '
-        'mínimo de ${_pesos(l, onPayday.lowest)}',
+        'El mismo día del pago cuenta con ese pago: alcanza, y te quedarían '
+        'mínimo ${_pesos(l, onPayday.lowest - onPayday.projection.kept)} '
+        'libres',
         () {
           expect(onPayday.verdict, PurchaseVerdict.fits);
           expect(onPayday.reliesOnPay, isTrue);
@@ -2959,7 +2966,9 @@ final List<AppFlow> planFlows = <AppFlow>[
           expect(
             _says(
               f,
-              'Tu saldo mínimo estimado sería ${_pesos(l, onPayday.lowest)}',
+              'Te quedarían mínimo '
+              '${_pesos(l, onPayday.lowest - onPayday.projection.kept)} '
+              'libres',
             ),
             isTrue,
           );
@@ -3404,13 +3413,19 @@ final List<AppFlow> planFlows = <AppFlow>[
       await f.step(
         'Unos tenis de 100.000: para gastar solo hay ${_pesos(l, free)}, así '
         'que dice «Te alcanza, pero tocando lo apartado» y que usarías '
-        '${_pesos(l, fromReserve)} de la reserva; el saldo mínimo sería '
-        '${_pesos(l, shoes.lowest)}.',
+        '${_pesos(l, fromReserve)} de la reserva; en tus cuentas quedarían '
+        'mínimo ${_pesos(l, shoes.lowest)}.',
       );
       await f.check(
-        'El saldo mínimo que muestra es el que calcula la app: '
+        'Lo que quedaría en las cuentas es lo que calcula la app: '
         '${_pesos(l, shoes.lowest)}',
-        () => expect(_says(f, _pesos(l, shoes.lowest)), isTrue),
+        () => expect(
+          _says(
+            f,
+            'En tus cuentas quedarían mínimo ${_pesos(l, shoes.lowest)}',
+          ),
+          isTrue,
+        ),
       );
       await f.check(
         'Con ${_pesos(l, free)} para gastar y ${_pesos(l, l.reserved)} de '

@@ -517,7 +517,11 @@ class _ComingDays extends StatelessWidget {
                 e.certainty == Certainty.expected && e.amount > 0,
           ),
     );
-    final ProjectedDay? tight = projection.firstTight;
+    // Told as «Puedes gastar» tells it: what will be free, with what is
+    // kept apart said apart, never a balance that still holds it.
+    final int free = projection.free(low);
+    final int kept = projection.kept;
+    final ProjectedDay? tight = projection.firstTouchingKept;
     final DateTime payday = projection.nextPayday;
     final PeriodClose? close = closePeriod(ledger);
     final bool closeFresh =
@@ -543,20 +547,26 @@ class _ComingDays extends StatelessWidget {
           Text(l.homeComing, style: context.type.titleSmall),
           const SizedBox(height: 4),
           Text(
-            // Nothing lowers it before payday: today is no day ahead.
-            !low.date.isAfter(projection.days.first.date)
-                ? l.comingLowestLineToday(pesos(ledger.major(low.sure)))
-                : (expecting ? l.comingLowestLineSure : l.comingLowestLine)(
-                    pesos(ledger.major(low.sure)),
-                    dayMonth(low.date),
-                  ),
+            comingFreeLine(
+              l,
+              free: free,
+              on: low.date,
+              // Nothing lowers it before payday: today is no day ahead.
+              today: !low.date.isAfter(projection.days.first.date),
+              expecting: expecting,
+              amount: (int minor) => pesos(ledger.major(minor)),
+            ),
             style: context.type.bodyMedium,
           ),
+          if (kept > 0)
+            Text(
+              keptLine(l, ledger, (int minor) => pesos(ledger.major(minor))),
+              style: context.type.bodySmall,
+            ),
           if (tight != null)
             Text(
-              // Without a cushion, under it is out of money. The same words
-              // and the same days as «Próximos 30 días».
-              (ledger.cushion > 0 ? l.comingTight : l.comingRunsOut)(
+              // The same words and the same days as «Próximos 30 días».
+              keptWarning(l, ledger)(
                 sentence(dayOrToday(l, tight.date, ledger.today)),
               ),
               style: context.type.bodySmall?.copyWith(

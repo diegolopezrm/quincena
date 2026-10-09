@@ -89,7 +89,8 @@ void main() {
     expect(
       text,
       contains(
-        'Tu saldo mínimo estimado será ${pesos(1973100)} el 12 de octubre.',
+        'Lo mínimo que tendrás libre será ${pesos(1973100)} el 12 de '
+        'octubre.',
       ),
     );
     expect(text, isNot(contains('sin contar lo que esperas recibir')));
@@ -148,7 +149,7 @@ void main() {
       expect(
         text,
         contains(
-          'Tu saldo mínimo estimado será ${pesos(1973100)} el 12 de '
+          'Lo mínimo que tendrás libre será ${pesos(1973100)} el 12 de '
           'octubre, sin contar lo que esperas recibir.',
         ),
       );

@@ -1138,13 +1138,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get comingTitle => 'Next 30 days';
 
   @override
-  String comingLowest(String amount, String when) {
-    return 'Lowest estimated balance before payday: $amount $when';
+  String comingFreeLowest(String amount, String when) {
+    return 'The least free before payday: $amount $when';
+  }
+
+  @override
+  String comingFreeLowestWithout(String amount, String when) {
+    return 'Without what you\'re trying out, the least free before payday: $amount $when';
+  }
+
+  @override
+  String comingShortLowest(String amount, String when) {
+    return 'Before payday you\'d be $amount short $when';
+  }
+
+  @override
+  String comingShortLowestWithout(String amount, String when) {
+    return 'Without what you\'re trying out, you\'d be $amount short before payday $when';
   }
 
   @override
   String comingTight(String when) {
     return '$when you\'d dip below your safety buffer.';
+  }
+
+  @override
+  String comingTouchesKept(String when) {
+    return '$when you\'d have to dip into what you keep apart.';
   }
 
   @override
@@ -1164,6 +1184,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'You don\'t run out of money in the next 30 days.';
 
   @override
+  String get comingNoTouchKept =>
+      'You don\'t touch what you keep apart in the next 30 days.';
+
+  @override
   String get comingLegendSure => 'What\'s sure';
 
   @override
@@ -1175,8 +1199,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String comingLegendKept(String amount) {
+    return 'Kept apart: $amount';
+  }
+
+  @override
   String comingLeft(String amount) {
     return '$amount left';
+  }
+
+  @override
+  String comingLeftFree(String amount) {
+    return '$amount free';
   }
 
   @override
@@ -1191,6 +1225,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get comingUnderCushion => 'Below your buffer';
+
+  @override
+  String get comingUnderKept => 'Dips into what you keep apart';
 
   @override
   String get comingPay => 'Your pay';
@@ -1239,13 +1276,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get buyFits => 'It fits, from what the app knows';
 
   @override
-  String buyFitsBody(String amount, String when) {
-    return 'Your lowest estimated balance would be $amount $when, above your safety buffer.';
+  String buyFitsFree(String amount, String when) {
+    return 'You\'d have at least $amount free $when.';
   }
 
   @override
-  String buyFitsBodyNoCushion(String amount, String when) {
-    return 'Your lowest estimated balance would be $amount $when.';
+  String buyLowestInAccounts(String amount, String when) {
+    return 'Your accounts would hold at least $amount $when.';
   }
 
   @override
@@ -1286,8 +1323,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String buyLowest(String amount) {
-    return 'lowest balance: $amount';
+  String buyLowestFree(String amount) {
+    return 'least free: $amount';
+  }
+
+  @override
+  String buyLowestShort(String amount) {
+    return '$amount short';
   }
 
   @override
@@ -1412,11 +1454,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get closeSpentNone => 'You recorded no spending this pay period.';
-
-  @override
-  String comingLowestWithout(String amount, String when) {
-    return 'Without what you\'re trying out, lowest estimated balance before payday: $amount $when';
-  }
 
   @override
   String get computedBuy =>
@@ -4748,8 +4785,53 @@ class AppLocalizationsEn extends AppLocalizations {
       '© 2026 DL SOFT TECHNOLOGIES SAS. Nearby shops come from © OpenStreetMap contributors (ODbL).';
 
   @override
-  String comingLowestLine(String amount, String date) {
-    return 'Your lowest estimated balance will be $amount on $date.';
+  String comingFreeLine(String amount, String date) {
+    return 'The least you\'ll have free will be $amount on $date.';
+  }
+
+  @override
+  String comingFreeLineSure(String amount, String date) {
+    return 'The least you\'ll have free will be $amount on $date, not counting money you\'re still expecting.';
+  }
+
+  @override
+  String comingFreeLineToday(String amount) {
+    return 'The least you\'ll have free before payday is today\'s: $amount.';
+  }
+
+  @override
+  String comingShortLine(String amount, String date) {
+    return 'On $date you\'d be $amount short.';
+  }
+
+  @override
+  String comingShortLineSure(String amount, String date) {
+    return 'On $date you\'d be $amount short, not counting money you\'re still expecting.';
+  }
+
+  @override
+  String comingShortLineToday(String amount) {
+    return 'You\'re already $amount short today.';
+  }
+
+  @override
+  String comingKept(String parts) {
+    return 'Still kept apart: $parts.';
+  }
+
+  @override
+  String comingKeptReserve(String amount) {
+    return '$amount in your reserve';
+  }
+
+  @override
+  String comingKeptEnvelopes(String amount) {
+    return '$amount in your envelopes';
+  }
+
+  @override
+  String comingKeptCushion(String amount) {
+    return '$amount in your buffer';
   }
 
   @override
@@ -5150,11 +5232,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String listAnd(String a, String b, String sound) {
     return '$a and $b';
-  }
-
-  @override
-  String comingLowestLineSure(String amount, String date) {
-    return 'Your lowest estimated balance will be $amount on $date, not counting money you\'re still expecting.';
   }
 
   @override
@@ -5912,11 +5989,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get todayWhen => 'today';
-
-  @override
-  String comingLowestLineToday(String amount) {
-    return 'Your lowest estimated balance before payday is today\'s: $amount.';
-  }
 
   @override
   String get buyTakesApart => 'It fits, but only with money you keep apart';

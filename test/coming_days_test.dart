@@ -117,10 +117,14 @@ void main() {
       (OwnController own) => ComingDaysPage(own: own, tryPurchase: true),
     );
     expect(own.ledger!.balance, 900000);
+    // 600.000 on the 10th, less the 100.000 cushion: what stays free, as
+    // «Puedes gastar» counts it, with the cushion named apart.
     expect(
-      find.text(
-        'Saldo mínimo estimado antes del pago: ${pesos(600000)} el 10 oct',
-      ),
+      find.text('Lo mínimo libre antes del pago: ${pesos(500000)} el 10 oct'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Aparte siguen guardados ${pesos(100000)} en tu colchón.'),
       findsOneWidget,
     );
 
@@ -377,9 +381,11 @@ void main() {
       ),
     );
     await settle(tester);
-    // 900.000 less the internet of the 10th; 2.000.000 more if paid.
+    // 900.000 less the internet of the 10th, 100.000 of it the cushion;
+    // 2.000.000 more if paid.
     final Finder expected = find.text(
-      'Quedan ${pesos(600000)} · si llega lo que esperas, ${pesos(2600000)}',
+      'Quedan ${pesos(600000)} · ${pesos(500000)} libres · si llega lo que '
+      'esperas, ${pesos(2600000)}',
     );
     await harness.reveal(tester, expected);
     expect(expected, findsOneWidget);
@@ -392,7 +398,8 @@ void main() {
     );
     await settle(tester);
     final Finder tried = find.text(
-      'Quedan ${pesos(600000)} · con lo que pruebas, ${pesos(2550000)}',
+      'Quedan ${pesos(600000)} · ${pesos(500000)} libres · con lo que '
+      'pruebas, ${pesos(2550000)}',
     );
     await harness.reveal(tester, tried);
     expect(tried, findsOneWidget);
@@ -455,7 +462,7 @@ void main() {
       find.text(
         'Es más de los ${pesos(2850000)} que puedes gastar hasta el 15 de '
         'octubre: usarías ${pesos(50000)} de tu reserva de ingresos '
-        'variables. Tu saldo mínimo estimado sería ${pesos(100000)} hoy.',
+        'variables. En tus cuentas quedarían mínimo ${pesos(100000)} hoy.',
       ),
       findsOneWidget,
     );
@@ -517,8 +524,8 @@ void main() {
     expect(
       find.text(
         'Hasta el 15 de octubre no te queda nada para gastar: usarías '
-        '${pesos(10000)} de tu reserva de ingresos variables. Tu saldo mínimo '
-        'estimado sería ${pesos(90000)} el 10 oct.',
+        '${pesos(10000)} de tu reserva de ingresos variables. En tus cuentas '
+        'quedarían mínimo ${pesos(90000)} el 10 oct.',
       ),
       findsOneWidget,
     );
@@ -556,7 +563,7 @@ void main() {
     // Nothing lowers the balance before payday: its lowest is today's.
     expect(
       find.text(
-        'Tu saldo mínimo estimado antes del pago es el de hoy: '
+        'Lo mínimo que tendrás libre antes del pago es lo de hoy: '
         '${pesos(2000000)}.',
       ),
       findsOneWidget,
@@ -565,7 +572,7 @@ void main() {
 
     await show(tester, own, ComingDaysPage(own: own));
     expect(
-      find.text('Saldo mínimo estimado antes del pago: ${pesos(2000000)} hoy'),
+      find.text('Lo mínimo libre antes del pago: ${pesos(2000000)} hoy'),
       findsOneWidget,
     );
     expect(
@@ -660,7 +667,8 @@ void main() {
     expect(own.projection!.lowestBeforePayday.sure, 500000);
     expect(
       find.text(
-        'Tu saldo mínimo estimado será ${pesos(500000)} el 3 de noviembre.',
+        'Lo mínimo que tendrás libre será ${pesos(500000)} el 3 de '
+        'noviembre.',
       ),
       findsOneWidget,
     );
@@ -668,9 +676,7 @@ void main() {
 
     await show(tester, own, ComingDaysPage(own: own));
     expect(
-      find.text(
-        'Saldo mínimo estimado antes del pago: ${pesos(500000)} el 3 nov',
-      ),
+      find.text('Lo mínimo libre antes del pago: ${pesos(500000)} el 3 nov'),
       findsOneWidget,
     );
   });

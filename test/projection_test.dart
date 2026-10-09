@@ -162,6 +162,39 @@ void main() {
     );
   });
 
+  test('what is kept apart is out of the lowest point, as «Puedes gastar» '
+      'leaves it out', () async {
+    final Account b = await bank('1000000');
+    await profile(cushion: '100000');
+    await store.addRecurring(
+      name: 'Arriendo',
+      amount: Money(d('800000'), Asset.cop),
+      cadence: Cadence.monthly,
+      nextDate: DateTime(2026, 10, 12),
+      accountId: b.id,
+      category: 'housing',
+    );
+    // 150.000 of this period's envelopes set aside for a goal.
+    final Ledger ledger = buildLedger(
+      (await store.snapshot())!,
+      today: today,
+      setAside: 150000,
+    ).ledger;
+    final Projection p = Projection.of(ledger);
+    expect(p.kept, 250000);
+    final ProjectedDay low = p.lowestBeforePayday;
+    expect(low.date, DateTime(2026, 10, 12));
+    expect(low.sure, 200000);
+    // What stays free is what «Puedes gastar» says: short by 50.000.
+    expect(p.free(low), -50000);
+    expect(p.free(low), ledger.freeUntilPayday);
+    // Above the cushion that day, but into the envelopes' money: what is
+    // kept apart is touched a month before the cushion is, with the next
+    // rent and no pay known.
+    expect(p.firstTouchingKept!.date, DateTime(2026, 10, 12));
+    expect(p.firstTight!.date, DateTime(2026, 11, 12));
+  });
+
   test('until payday only what is sure counts, pay or not', () async {
     final Account b = await bank('500000');
     await profile(pay: '2400000');

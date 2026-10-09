@@ -294,14 +294,14 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         },
       );
       await f.check(
-        'Nada baja el saldo antes del pago: dice que el mínimo es el de hoy, '
-        'sin nombrar el 3 de octubre como otro día',
+        'Nada baja el saldo antes del pago: dice que lo mínimo libre es lo '
+        'de hoy, sin nombrar el 3 de octubre como otro día',
         () {
           final ProjectedDay low = _own(f).projection!.lowestBeforePayday;
           expect(low.date, DateTime(2026, 10, 3));
           expect(
             f.shows(
-              'Tu saldo mínimo estimado antes del pago es el de hoy: '
+              'Lo mínimo que tendrás libre antes del pago es lo de hoy: '
               '${pesos(1080000)}.',
             ),
             isTrue,

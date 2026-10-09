@@ -157,53 +157,77 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       final OwnController own = f.own;
       final Projection projection = own.projection!;
       final ProjectedDay low = projection.lowestBeforePayday;
+      final int free = projection.free(low);
+      final int reserve = own.ledger!.reserved;
       await f.reveal(find.text('Próximos días'));
       await f.step(
-        '«Próximos días» dice el saldo más bajo antes del pago y lista los '
-        'cobros que vienen, con el día y el monto.',
+        '«Próximos días» dice lo mínimo que tendrás libre antes del pago, '
+        'contado como «Puedes gastar»; aparte, lo que sigue guardado en la '
+        'reserva; y los cobros que vienen, con el día y el monto.',
       );
       await f.check(
-        'El saldo mínimo dice ${_money(own, low.sure)} el ${dayMonth(low.date)}',
+        'Lo mínimo libre es ${_money(own, free)} el ${dayMonth(low.date)}, '
+        'la misma cifra que «Puedes gastar»',
+        () {
+          expect(free, own.ledger!.freeUntilPayday);
+          expect(
+            f.screenText,
+            contains(
+              'Lo mínimo que tendrás libre será ${_money(own, free)} el '
+              '${dayMonth(low.date)}',
+            ),
+          );
+        },
+      );
+      await f.check(
+        'Dice aparte los ${_money(own, reserve)} de la reserva, que siguen '
+        'en las cuentas',
         () => expect(
           f.screenText,
-          contains('${_money(own, low.sure)} el ${dayMonth(low.date)}'),
+          contains(
+            'Aparte siguen guardados ${_money(own, reserve)} en tu reserva.',
+          ),
         ),
       );
       await f.check(
-        'Inicio mira los mismos 30 días que «Ver 30 días»: ninguno queda sin '
-        'plata, así que no avisa nada, y sin colchón no habla de él',
+        'Inicio mira los mismos 30 días que «Ver 30 días»: ninguno toca lo '
+        'apartado, así que no avisa nada, y sin colchón no habla de él',
         () {
           expect(own.ledger!.cushion, 0);
           expect(
             projection.days.last.date,
             own.today.add(const Duration(days: 30)),
           );
-          expect(projection.firstTight, isNull);
-          expect(f.screenText, isNot(contains('te quedarías sin plata')));
+          expect(projection.firstTouchingKept, isNull);
+          expect(f.screenText, isNot(contains('tocar lo apartado')));
           expect(f.screenText, isNot(contains('colchón')));
         },
       );
       await f.tap('Ver 30 días');
       await f.page(
         'Toca «Ver 30 días»: la gráfica del saldo día por día durante un '
-        'mes, con el día del pago marcado, «No te quedas sin plata en estos '
-        '30 días.», como calla Inicio, y debajo lo que pasa cada día.',
+        'mes, con el día del pago y la línea de lo apartado, «Ningún día '
+        'tocas lo apartado en estos 30 días.», como calla Inicio, y debajo lo '
+        'que pasa cada día.',
       );
       await f.check('Abre «Próximos 30 días»', () {
         expect(f.shows('Próximos 30 días'), isTrue);
       });
       await f.check(
-        'Dice lo mismo que Inicio: el mismo saldo mínimo y ningún día sin '
-        'plata',
+        'Dice lo mismo que Inicio: lo mismo libre y ningún día que toque lo '
+        'apartado',
         () {
           expect(
             f.screenText,
             contains(
-              'Saldo mínimo estimado antes del pago: ${_money(own, low.sure)} '
+              'Lo mínimo libre antes del pago: ${_money(own, free)} '
               'el ${dayShortMonth(low.date)}',
             ),
           );
-          expect(f.shows('No te quedas sin plata en estos 30 días.'), isTrue);
+          expect(
+            f.shows('Ningún día tocas lo apartado en estos 30 días.'),
+            isTrue,
+          );
           expect(f.screenText, isNot(contains('colchón')));
         },
       );
@@ -294,8 +318,11 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
           .firstWhere((ProjectedEvent e) => e.label == 'Televisor')
           .amount;
       final String tried =
-          'Quedan ${_money(own, day5.sure)} · con lo que pruebas, '
+          'Quedan ${_money(own, day5.sure)} · '
+          '${_money(own, projection.free(day5))} libres · con lo que pruebas, '
           '${_money(own, day5.likely + tv)}';
+      // The 5th is further down the list: it is built once in view.
+      await f.reveal(find.text(weekdayDayMonth(DateTime(2026, 10, 5))));
       await f.check('El 5 oct dice «$tried»: la cuota vuelve al saldo', () {
         expect(f.screenText, contains(tried));
       });
@@ -373,8 +400,14 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         () => expect(f.shows(_verdict(today.verdict)), isTrue),
       );
       await f.check(
-        'El saldo mínimo con la compra es ${_money(own, today.lowest)}',
-        () => expect(f.screenText, contains(_money(own, today.lowest))),
+        'Como toca lo apartado, no habla de lo libre sino de las cuentas: '
+        '«En tus cuentas quedarían mínimo ${_money(own, today.lowest)}»',
+        () => expect(
+          f.screenText,
+          contains(
+            'En tus cuentas quedarían mínimo ${_money(own, today.lowest)}',
+          ),
+        ),
       );
       await f.check(
         'Con 120.000, más de los ${_money(own, ledger.freeUntilPayday)} que '

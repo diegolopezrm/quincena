@@ -1140,13 +1140,33 @@ class AppLocalizationsEs extends AppLocalizations {
   String get comingTitle => 'Próximos 30 días';
 
   @override
-  String comingLowest(String amount, String when) {
-    return 'Saldo mínimo estimado antes del pago: $amount $when';
+  String comingFreeLowest(String amount, String when) {
+    return 'Lo mínimo libre antes del pago: $amount $when';
+  }
+
+  @override
+  String comingFreeLowestWithout(String amount, String when) {
+    return 'Sin lo que pruebas, lo mínimo libre antes del pago: $amount $when';
+  }
+
+  @override
+  String comingShortLowest(String amount, String when) {
+    return 'Antes del pago te faltarían $amount $when';
+  }
+
+  @override
+  String comingShortLowestWithout(String amount, String when) {
+    return 'Sin lo que pruebas, antes del pago te faltarían $amount $when';
   }
 
   @override
   String comingTight(String when) {
     return '$when quedarías bajo tu colchón.';
+  }
+
+  @override
+  String comingTouchesKept(String when) {
+    return '$when tendrías que tocar lo apartado.';
   }
 
   @override
@@ -1164,6 +1184,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get comingNoTightZero => 'No te quedas sin plata en estos 30 días.';
 
   @override
+  String get comingNoTouchKept =>
+      'Ningún día tocas lo apartado en estos 30 días.';
+
+  @override
   String get comingLegendSure => 'Lo seguro';
 
   @override
@@ -1175,8 +1199,18 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String comingLegendKept(String amount) {
+    return 'Lo apartado: $amount';
+  }
+
+  @override
   String comingLeft(String amount) {
     return 'Quedan $amount';
+  }
+
+  @override
+  String comingLeftFree(String amount) {
+    return '$amount libres';
   }
 
   @override
@@ -1191,6 +1225,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get comingUnderCushion => 'Bajo tu colchón';
+
+  @override
+  String get comingUnderKept => 'Toca lo apartado';
 
   @override
   String get comingPay => 'Tu pago';
@@ -1239,13 +1276,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get buyFits => 'Te alcanza, según lo que sabe la app';
 
   @override
-  String buyFitsBody(String amount, String when) {
-    return 'Tu saldo mínimo estimado sería $amount $when, por encima de tu colchón.';
+  String buyFitsFree(String amount, String when) {
+    return 'Te quedarían mínimo $amount libres $when.';
   }
 
   @override
-  String buyFitsBodyNoCushion(String amount, String when) {
-    return 'Tu saldo mínimo estimado sería $amount $when.';
+  String buyLowestInAccounts(String amount, String when) {
+    return 'En tus cuentas quedarían mínimo $amount $when.';
   }
 
   @override
@@ -1286,8 +1323,13 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String buyLowest(String amount) {
-    return 'saldo mínimo: $amount';
+  String buyLowestFree(String amount) {
+    return 'mínimo libre: $amount';
+  }
+
+  @override
+  String buyLowestShort(String amount) {
+    return 'te faltarían $amount';
   }
 
   @override
@@ -1412,11 +1454,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get closeSpentNone => 'No registraste gastos en esta quincena.';
-
-  @override
-  String comingLowestWithout(String amount, String when) {
-    return 'Sin lo que pruebas, saldo mínimo estimado antes del pago: $amount $when';
-  }
 
   @override
   String get computedBuy =>
@@ -4743,8 +4780,53 @@ class AppLocalizationsEs extends AppLocalizations {
       '© 2026 DL SOFT TECHNOLOGIES SAS. Los comercios cercanos vienen de © colaboradores de OpenStreetMap (ODbL).';
 
   @override
-  String comingLowestLine(String amount, String date) {
-    return 'Tu saldo mínimo estimado será $amount el $date.';
+  String comingFreeLine(String amount, String date) {
+    return 'Lo mínimo que tendrás libre será $amount el $date.';
+  }
+
+  @override
+  String comingFreeLineSure(String amount, String date) {
+    return 'Lo mínimo que tendrás libre será $amount el $date, sin contar lo que esperas recibir.';
+  }
+
+  @override
+  String comingFreeLineToday(String amount) {
+    return 'Lo mínimo que tendrás libre antes del pago es lo de hoy: $amount.';
+  }
+
+  @override
+  String comingShortLine(String amount, String date) {
+    return 'El $date te faltarían $amount.';
+  }
+
+  @override
+  String comingShortLineSure(String amount, String date) {
+    return 'El $date te faltarían $amount, sin contar lo que esperas recibir.';
+  }
+
+  @override
+  String comingShortLineToday(String amount) {
+    return 'Hoy ya te faltan $amount.';
+  }
+
+  @override
+  String comingKept(String parts) {
+    return 'Aparte siguen guardados $parts.';
+  }
+
+  @override
+  String comingKeptReserve(String amount) {
+    return '$amount en tu reserva';
+  }
+
+  @override
+  String comingKeptEnvelopes(String amount) {
+    return '$amount en tus sobres';
+  }
+
+  @override
+  String comingKeptCushion(String amount) {
+    return '$amount en tu colchón';
   }
 
   @override
@@ -5147,11 +5229,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String listAnd(String a, String b, String sound) {
     String _temp0 = intl.Intl.selectLogic(sound, {'i': 'e', 'other': 'y'});
     return '$a $_temp0 $b';
-  }
-
-  @override
-  String comingLowestLineSure(String amount, String date) {
-    return 'Tu saldo mínimo estimado será $amount el $date, sin contar lo que esperas recibir.';
   }
 
   @override
@@ -5902,11 +5979,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get todayWhen => 'hoy';
-
-  @override
-  String comingLowestLineToday(String amount) {
-    return 'Tu saldo mínimo estimado antes del pago es el de hoy: $amount.';
-  }
 
   @override
   String get buyTakesApart => 'Te alcanza, pero tocando lo apartado';

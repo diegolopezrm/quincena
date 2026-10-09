@@ -186,8 +186,20 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
           .toList();
       final int selected = math.min(_selected, days.length - 1);
       final ProjectedDay low = scheduled.lowestBeforePayday;
-      final ProjectedDay? tight = scheduled.firstTight;
+      // Judged as «Puedes gastar» is: a day is tight when it would take
+      // from what is kept apart, and the lowest point is what stays free.
+      final ProjectedDay? tight = scheduled.firstTouchingKept;
       final String lowOn = dayOrToday(l, low.date, ledger.today);
+      final int free = scheduled.free(low);
+      final String lowest = free < 0
+          ? (check == null ? l.comingShortLowest : l.comingShortLowestWithout)(
+              amount(-free),
+              lowOn,
+            )
+          : (check == null ? l.comingFreeLowest : l.comingFreeLowestWithout)(
+              amount(free),
+              lowOn,
+            );
       // Whether the dashed line has something tried in it, or only the
       // money expected.
       final bool trying = moves.isNotEmpty || check != null;
@@ -275,22 +287,24 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Text(
-                        (check == null
-                            ? l.comingLowest
-                            : l.comingLowestWithout)(amount(low.sure), lowOn),
-                        style: context.type.titleSmall,
-                      ),
+                      Text(lowest, style: context.type.titleSmall),
+                      if (scheduled.kept > 0) ...<Widget>[
+                        const SizedBox(height: 2),
+                        Text(
+                          keptLine(l, ledger, amount),
+                          style: context.type.bodySmall,
+                        ),
+                      ],
                       const SizedBox(height: 2),
                       Text(
                         tight != null
-                            ? (ledger.cushion > 0
-                                  ? l.comingTight
-                                  : l.comingRunsOut)(
+                            ? keptWarning(l, ledger)(
                                 sentence(
                                   dayOrToday(l, tight.date, ledger.today),
                                 ),
                               )
+                            : keepsMoreThanCushion(ledger)
+                            ? l.comingNoTouchKept
                             : ledger.cushion > 0
                             ? l.comingNoTight
                             : l.comingNoTightZero,
@@ -301,11 +315,11 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
                       const SizedBox(height: 12),
                       ComingChart(
                         days: days,
-                        cushion: ledger.cushion,
-                        isTight: scheduled.tight,
+                        kept: scheduled.kept,
+                        isTight: scheduled.touchesKept,
                         selected: selected,
                         onSelect: (int i) => setState(() => _selected = i),
-                        semanticsLabel: l.comingLowest(amount(low.sure), lowOn),
+                        semanticsLabel: lowest,
                         payday: _dayOf(ledger.nextPayday),
                         startLabel: l.buyToday,
                         paydayLabel: l.comingPay,
@@ -326,12 +340,14 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
                               text: l.comingLegendLikely,
                               dashed: true,
                             ),
-                          if (ledger.cushion > 0)
+                          if (scheduled.kept > 0)
                             _Key(
                               color: context.colors.caution,
-                              text: l.comingLegendCushion(
-                                amount(ledger.cushion),
-                              ),
+                              text: keepsMoreThanCushion(ledger)
+                                  ? l.comingLegendKept(amount(scheduled.kept))
+                                  : l.comingLegendCushion(
+                                      amount(ledger.cushion),
+                                    ),
                               dashed: true,
                             ),
                         ],
@@ -343,7 +359,8 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
                 _DayDetail(
                   day: days[selected],
                   ledger: ledger,
-                  under: scheduled.tight(days[selected]),
+                  under: scheduled.touchesKept(days[selected]),
+                  free: scheduled.free(days[selected]),
                   onMove: (ProjectedEvent e) => _move(e, ledger),
                   trying: trying,
                   highlighted: true,
@@ -356,7 +373,8 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
                       child: _DayDetail(
                         day: days[i],
                         ledger: ledger,
-                        under: scheduled.tight(days[i]),
+                        under: scheduled.touchesKept(days[i]),
+                        free: scheduled.free(days[i]),
                         onMove: (ProjectedEvent e) => _move(e, ledger),
                         trying: trying,
                       ),
@@ -495,9 +513,12 @@ class _Verdict extends StatelessWidget {
     ]);
     final int free = ledger.freeUntilPayday;
     final String payday = dayMonth(ledger.nextPayday);
-    final String lowest = ledger.cushion > 0
-        ? l.buyFitsBody(amount(check.lowest), on)
-        : l.buyFitsBodyNoCushion(amount(check.lowest), on);
+    // What stays free is what «Puedes gastar» would say; when the purchase
+    // takes from what is kept apart, only the accounts are left to name.
+    final int kept = check.projection.kept;
+    final String lowest = check.lowest >= kept
+        ? l.buyFitsFree(amount(check.lowest - kept), on)
+        : l.buyLowestInAccounts(amount(check.lowest), on);
     final (
       String title,
       String body,
@@ -627,7 +648,14 @@ class _Compare extends StatelessWidget {
           Text(title, style: context.type.labelMedium),
           const SizedBox(height: 2),
           Figures(
-            l.buyLowest(pesos(ledger.major(c.lowest))),
+            // Free as «Puedes gastar» counts it: what is kept apart is out.
+            c.lowest >= c.projection.kept
+                ? l.buyLowestFree(
+                    pesos(ledger.major(c.lowest - c.projection.kept)),
+                  )
+                : l.buyLowestShort(
+                    pesos(ledger.major(c.projection.kept - c.lowest)),
+                  ),
             style: context.type.titleSmall?.copyWith(
               color: switch (c.verdict) {
                 PurchaseVerdict.fits => context.colors.ink,
@@ -668,6 +696,7 @@ class _DayDetail extends StatelessWidget {
     required this.day,
     required this.ledger,
     required this.under,
+    required this.free,
     required this.onMove,
     required this.trying,
     this.highlighted = false,
@@ -676,9 +705,12 @@ class _DayDetail extends StatelessWidget {
   final ProjectedDay day;
   final Ledger ledger;
 
-  /// Whether the day falls under the cushion, or out of money, by the same
-  /// rule as the line above the chart.
+  /// Whether the day takes from what is kept apart, or runs out of money,
+  /// by the same rule as the line above the chart.
   final bool under;
+
+  /// What will be free that day once what is kept apart is out.
+  final int free;
   final ValueChanged<ProjectedEvent> onMove;
 
   /// Whether something is being tried: without it, what the day would
@@ -720,6 +752,10 @@ class _DayDetail extends StatelessWidget {
               Text(
                 <String>[
                   l.comingLeft(amount(day.sure)),
+                  // What of it is free, when some of it is kept apart: the
+                  // same count as «Puedes gastar».
+                  if (free != day.sure && free >= 0)
+                    l.comingLeftFree(amount(free)),
                   if (day.likely != day.sure)
                     (trying ? l.comingLeftTrying : l.comingLeftExpected)(
                       amount(day.likely),
@@ -738,7 +774,9 @@ class _DayDetail extends StatelessWidget {
                     borderRadius: BorderRadius.circular(99),
                   ),
                   child: Text(
-                    ledger.cushion > 0
+                    keepsMoreThanCushion(ledger)
+                        ? l.comingUnderKept
+                        : ledger.cushion > 0
                         ? l.comingUnderCushion
                         : l.comingRunsOutBadge,
                     style: context.type.labelSmall?.copyWith(
@@ -792,6 +830,61 @@ DateTime _dayOf(DateTime moment) =>
 /// it is [today], which is never named as if it were another day.
 String dayOrToday(AppLocalizations l, DateTime day, DateTime today) =>
     _dayOf(day) == _dayOf(today) ? l.todayWhen : l.dayWhen(dayShortMonth(day));
+
+/// The least that will be free before payday, said the way «Puedes
+/// gastar» says it: what is left once what is kept apart is out, or what
+/// would be short. [today] when nothing lowers it before payday.
+String comingFreeLine(
+  AppLocalizations l, {
+  required int free,
+  required DateTime on,
+  required bool today,
+  required bool expecting,
+  required String Function(int minor) amount,
+}) {
+  if (free < 0) {
+    final String short = amount(-free);
+    if (today) return l.comingShortLineToday(short);
+    return (expecting ? l.comingShortLineSure : l.comingShortLine)(
+      short,
+      dayMonth(on),
+    );
+  }
+  if (today) return l.comingFreeLineToday(amount(free));
+  return (expecting ? l.comingFreeLineSure : l.comingFreeLine)(
+    amount(free),
+    dayMonth(on),
+  );
+}
+
+/// What stays kept apart besides what is free, by name: the reserve, the
+/// envelopes and the cushion, each only when there is some.
+String keptLine(
+  AppLocalizations l,
+  Ledger ledger,
+  String Function(int minor) amount,
+) => l.comingKept(
+  listOf(l, <String>[
+    if (ledger.reserved > 0) l.comingKeptReserve(amount(ledger.reserved)),
+    if (ledger.setAside > 0) l.comingKeptEnvelopes(amount(ledger.setAside)),
+    if (ledger.cushion > 0) l.comingKeptCushion(amount(ledger.cushion)),
+  ]),
+);
+
+/// Whether more than the cushion is kept apart: the envelopes or the
+/// reserve. With only a cushion, going under it keeps its own words.
+bool keepsMoreThanCushion(Ledger ledger) =>
+    ledger.setAside > 0 || ledger.reserved > 0;
+
+/// How the first day that takes from what is kept apart is told: out of
+/// money when nothing is kept apart, under the cushion when it is all
+/// there is, touching what is kept apart otherwise.
+String Function(String when) keptWarning(AppLocalizations l, Ledger ledger) =>
+    keepsMoreThanCushion(ledger)
+    ? l.comingTouchesKept
+    : ledger.cushion > 0
+    ? l.comingTight
+    : l.comingRunsOut;
 
 /// [items] said as one list: «a, b y c».
 String listOf(AppLocalizations l, List<String> items) => items.length < 2

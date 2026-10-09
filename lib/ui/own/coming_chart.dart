@@ -7,13 +7,14 @@ import '../../theme/tokens.dart';
 
 /// The money to spend over the coming days: what is sure as a solid line,
 /// what includes the expected pay and anything tried out as a dashed one,
-/// the cushion and zero as guides, and the days under the cushion shaded.
+/// what is kept apart and zero as guides, and the days that take from what
+/// is kept apart shaded.
 /// A tap or a drag picks a day.
 class ComingChart extends StatelessWidget {
   const ComingChart({
     super.key,
     required this.days,
-    required this.cushion,
+    required this.kept,
     required this.selected,
     required this.onSelect,
     required this.semanticsLabel,
@@ -25,9 +26,12 @@ class ComingChart extends StatelessWidget {
   });
 
   final List<ProjectedDay> days;
-  final int cushion;
 
-  /// Whether a day falls under the cushion, as the words beside the chart
+  /// What is kept apart from what can be spent: the cushion, the envelopes
+  /// and the reserve, drawn as a guide.
+  final int kept;
+
+  /// Whether a day takes from what is kept apart, as the words beside the chart
   /// judge it; without it, when what is sure does.
   final bool Function(ProjectedDay day)? isTight;
 
@@ -111,8 +115,8 @@ class ComingChart extends StatelessWidget {
         size: Size(box.maxWidth, 180),
         painter: _ComingPainter(
           days: days,
-          cushion: cushion,
-          isTight: isTight ?? (ProjectedDay d) => d.sure < cushion,
+          kept: kept,
+          isTight: isTight ?? (ProjectedDay d) => d.sure < kept,
           selected: selected,
           paydayAt: paydayAt,
           sure: context.colors.brand,
@@ -130,7 +134,7 @@ class ComingChart extends StatelessWidget {
 class _ComingPainter extends CustomPainter {
   _ComingPainter({
     required this.days,
-    required this.cushion,
+    required this.kept,
     required this.isTight,
     required this.selected,
     required this.paydayAt,
@@ -143,7 +147,7 @@ class _ComingPainter extends CustomPainter {
   });
 
   final List<ProjectedDay> days;
-  final int cushion;
+  final int kept;
   final bool Function(ProjectedDay day) isTight;
   final int selected;
   final int paydayAt;
@@ -159,7 +163,7 @@ class _ComingPainter extends CustomPainter {
     if (days.length < 2) return;
     final List<int> all = <int>[
       for (final ProjectedDay d in days) ...<int>[d.sure, d.likely],
-      cushion,
+      kept,
       0,
     ];
     final double low = all.reduce(math.min).toDouble();
@@ -171,7 +175,7 @@ class _ComingPainter extends CustomPainter {
     double y(num v) => pad + h - (v - low) / spread * h;
     final double step = size.width / (days.length - 1);
 
-    // Days under the cushion, shaded behind everything.
+    // Days that take from what is kept apart, shaded behind everything.
     final Paint shade = Paint()..color = tight;
     for (var i = 0; i < days.length; i++) {
       if (isTight(days[i])) {
@@ -192,7 +196,7 @@ class _ComingPainter extends CustomPainter {
     }
 
     dashed(y(0), guide);
-    if (cushion > 0) dashed(y(cushion), caution);
+    if (kept > 0) dashed(y(kept), caution);
     if (paydayAt >= 0) {
       final Paint p = Paint()
         ..color = sure.withValues(alpha: 0.5)
@@ -255,6 +259,6 @@ class _ComingPainter extends CustomPainter {
   bool shouldRepaint(_ComingPainter old) =>
       old.days != days ||
       old.selected != selected ||
-      old.cushion != cushion ||
+      old.kept != kept ||
       old.sure != sure;
 }
