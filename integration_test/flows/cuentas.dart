@@ -1086,20 +1086,37 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
           expect(btc, Decimal.parse('84616.92') * trm);
         },
       );
-      await f.tapContaining('1 USD =');
-      await enterTextIn(f.tester, find.byType(TextField).last, '0');
-      await f.tap('Guardar');
-      await f.check('Guardar una tasa de 0 no cambia nada', () {
-        expect(own.rates.rate(Asset.usd, Asset.cop), trm);
-        expect(_typedRate(own, Asset.usd), isFalse);
-      });
+      await f.check(
+        'El dólar no dice su tasa dos veces: debajo de «1 USD = \$3.312,84» '
+        'va solo de dónde sale y de qué día',
+        () => expect(
+          _said(f),
+          contains('1 USD = \$3.312,84 | TRM oficial del 3 oct'),
+        ),
+      );
       await f.tapContaining('1 USD =');
       await f.step(
         'Tocar la línea del dólar abre «Escribir una tasa» con la de hoy ya '
-        'escrita; solo hay «Guardar», sin «Cancelar».',
+        'escrita en «1 USD en», con COP al lado, y «Cancelar» y «Guardar».',
       );
-      await f.back();
-      await f.check('Cerrar el cuadro sin guardar deja la TRM', () {
+      await enterTextIn(f.tester, find.byType(TextField).last, '0');
+      await f.tap('Guardar');
+      await f.step(
+        'Guardar una tasa de 0 no cierra el cuadro: debajo del campo dice '
+        '«Escribe una tasa mayor que cero.».',
+      );
+      await f.check(
+        'Guardar una tasa de 0 no cambia nada y dice qué falta',
+        () {
+          expect(own.rates.rate(Asset.usd, Asset.cop), trm);
+          expect(_typedRate(own, Asset.usd), isFalse);
+          expect(f.shows('Escribe una tasa mayor que cero.'), isTrue);
+          expect(_field(f, '1 USD en').decoration!.suffixText, 'COP');
+        },
+      );
+      await f.tap('Cancelar');
+      await f.check('«Cancelar» cierra el cuadro y deja la TRM', () {
+        expect(find.byType(AlertDialog), findsNothing);
         expect(own.rates.rate(Asset.usd, Asset.cop), trm);
         expect(_typedRate(own, Asset.usd), isFalse);
       });
@@ -1107,8 +1124,9 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await enterTextIn(f.tester, find.byType(TextField).last, '4100');
       await f.tap('Guardar');
       await f.step(
-        'Con 4.100 guardado, la línea dice «Manual», cuándo se escribió y '
-        'ofrece «Usar la automática».',
+        'Con 4.100 guardado, la línea dice «Manual» y cuándo se escribió; '
+        'para volver a la automática pide actualizar las tasas, porque hoy '
+        'aún no se han traído.',
       );
       final Money at4100 = _pesos('${(held * Decimal.fromInt(4100)).round()}');
       await f.check(
@@ -1120,19 +1138,32 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
           expect(f.screenText, contains('1 tasa escrita a mano'));
         },
       );
+      await f.check(
+        'Sin la automática de hoy no ofrece volver a ella: dice cómo traerla',
+        () {
+          expect(
+            f.shows('Para volver a la automática, actualiza las tasas.'),
+            isTrue,
+          );
+          expect(f.shows('Usar la automática'), isFalse);
+        },
+      );
       await f.tapTip('Actualizar tasas');
       await f.step(
-        '«Actualizar tasas» trae las automáticas, pero la escrita a mano se '
-        'queda; ahora se ve debajo la automática de hoy.',
+        '«Actualizar tasas», con sus flechas en círculo, trae las '
+        'automáticas, pero la escrita a mano se queda; ahora se ve debajo la '
+        'automática de hoy y «Usar la automática».',
       );
       await f.check('Actualizar no reemplaza la tasa escrita', () {
         expect(own.rates.rate(Asset.usd, Asset.cop), Decimal.fromInt(4100));
         expect(f.screenText, contains('La automática hoy: \$4.000'));
+        expect(f.shows('Usar la automática'), isTrue);
       });
+      final Decimal bitcoin = own.rates.rate(Asset.btc, Asset.usdt)!;
       await f.tap('Usar la automática');
       await f.step(
-        '«Usar la automática» vuelve a la TRM: se va «Manual» y la línea '
-        'dice de nuevo de dónde viene la tasa.',
+        '«Usar la automática» vuelve a la TRM de hoy, la que decía debajo: '
+        'se va «Manual» y la línea dice de nuevo de dónde viene la tasa.',
       );
       final Money at4000 = _pesos('${(held * Decimal.fromInt(4000)).round()}');
       await f.check(
@@ -1143,6 +1174,9 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
           expect(own.partOfTotal(usd), at4000);
         },
       );
+      await f.check('Volver a la TRM no cambió el precio del bitcoin', () {
+        expect(own.rates.rate(Asset.btc, Asset.usdt), bitcoin);
+      });
       await f.back();
       await f.reveal(find.text('Cuenta en dólares'));
       await f.step(
@@ -1202,7 +1236,10 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       );
       await enterTextIn(f.tester, find.byType(TextField).last, '4350');
       await f.tap('Guardar');
-      await f.step('Con 4.350 guardado, el euro tiene tasa, marcada «Manual».');
+      await f.step(
+        'Con 4.350 guardado, el euro tiene tasa, marcada «Manual»; para '
+        'volver a la automática, la línea pide actualizar las tasas.',
+      );
       final Money euros = _pesos('1305000');
       await f.check(
         'Los €300 a \$4.350 suman ${_cop(euros)} al patrimonio',
@@ -1213,23 +1250,32 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       );
       await f.tapContaining('1 EUR =');
       await f.step(
-        'Con una tasa escrita, el cuadro ofrece además «Volver a la tasa '
-        'automática».',
+        'El cuadro del euro no ofrece «Volver a la tasa automática»: no hay '
+        'una automática de hoy a la cual volver.',
       );
-      await f.tap('Volver a la tasa automática');
+      await f.check('Sin automática, el cuadro solo deja cambiar la tuya', () {
+        expect(f.shows('Volver a la tasa automática'), isFalse);
+        expect(f.shows('Cancelar'), isTrue);
+      });
+      await f.tap('Cancelar');
+      await f.tapTip('Actualizar tasas');
       await f.step(
-        'Sin conseguir la del euro, la app avisa que sigue la tuya: la tasa '
-        'escrita no se pierde.',
+        '«Actualizar tasas» tampoco consigue la del euro: la línea dice que '
+        'hoy no hay tasa automática para EUR y que se usa la tuya.',
       );
       await f.check('La tasa escrita de \$4.350 sigue en uso', () {
         expect(own.rates.rate(Asset.eur, Asset.cop), Decimal.fromInt(4350));
         expect(_typedRate(own, Asset.eur), isTrue);
-        expect(f.screenText, contains('No se pudo traer la tasa automática'));
+        expect(
+          f.shows('Hoy no hay tasa automática para EUR: se usa la tuya.'),
+          isTrue,
+        );
+        expect(f.shows('Usar la automática'), isFalse);
       });
     },
     manual: <String>[
-      'En modo avión, «Usar la automática» en la línea del dólar: la tasa '
-          'escrita debe quedarse y salir el aviso.',
+      'En modo avión, «Actualizar tasas» con un dólar escrito a mano: la '
+          'tasa escrita debe quedarse y no ofrecer «Usar la automática».',
     ],
   ),
   AppFlow(
@@ -1519,16 +1565,43 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       );
       await f.back();
       await f.tap('Ver tasas usadas');
+      await f.reveal(find.textContaining('1 BTC ='));
+      await f.step(
+        'Con un precio escrito, la línea del bitcoin dice «Manual» y, como '
+        'hoy aún no se traen las tasas, que para volver a la automática hay '
+        'que actualizarlas.',
+      );
+      await f.check('Sin la automática de hoy, no ofrece volver a ella', () {
+        expect(
+          f.shows('Para volver a la automática, actualiza las tasas.'),
+          isTrue,
+        );
+        expect(f.shows('Usar la automática'), isFalse);
+      });
+      await f.tapTip('Actualizar tasas');
+      await f.step(
+        '«Actualizar tasas» trae el dólar y los precios de hoy; tu precio del '
+        'bitcoin se queda, y debajo sale el de Binance con «Usar la '
+        'automática».',
+      );
+      await f.check('Debajo del precio escrito sale el de Binance de hoy', () {
+        expect(f.shows('La automática hoy: US\$80.000'), isTrue);
+        expect(own.rates.rate(Asset.btc, Asset.usd), Decimal.fromInt(90000));
+      });
+      final Decimal dollarBefore = own.rates.rate(Asset.usd, Asset.cop)!;
       await f.tapContaining('1 BTC =');
       await f.step(
-        'Con un precio escrito, el cuadro del bitcoin ofrece también «Volver '
-        'a la tasa automática».',
+        'Con la automática de hoy a la mano, el cuadro del bitcoin ofrece '
+        'también «Volver a la tasa automática».',
       );
       await f.tap('Volver a la tasa automática');
       await f.step(
-        '«Volver a la tasa automática» trae otra vez los precios: el bitcoin '
-        'vuelve al de Binance, el dólar a la TRM del día y se va «Manual».',
+        '«Volver a la tasa automática» deja el bitcoin en el precio de '
+        'Binance de hoy y se va «Manual»; el dólar no cambia.',
       );
+      await f.check('Volver al precio del bitcoin no movió el dólar', () {
+        expect(own.rates.rate(Asset.usd, Asset.cop), dollarBefore);
+      });
       await f.check(
         'El bitcoin vuelve al precio de Binance, 80.000 USDT, y vale eso en '
         'pesos',

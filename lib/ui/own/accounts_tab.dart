@@ -533,12 +533,7 @@ String _stepLine(AppLocalizations l, RateStep step, Asset base) {
     base: base,
     decimals: r.value < Decimal.fromInt(10) ? 4 : 2,
   );
-  final String source = switch (r.source) {
-    'trm' => l.rateSourceTrm,
-    'binance' => l.rateSourceBinance,
-    'ecb' => l.rateSourceEcb,
-    _ => r.source,
-  };
+  final String source = _sourceName(l, r.source);
   return switch (step.kind) {
     RateStepKind.manual => l.rateStepManual(unit, value),
     RateStepKind.price => l.rateStepPrice(
@@ -550,6 +545,14 @@ String _stepLine(AppLocalizations l, RateStep step, Asset base) {
     _ => l.rateStepConvert(step.to, unit, value, source, dayShortMonth(r.asOf)),
   };
 }
+
+/// Where a rate comes from, as a person calls it.
+String _sourceName(AppLocalizations l, String source) => switch (source) {
+  'trm' => l.rateSourceTrm,
+  'binance' => l.rateSourceBinance,
+  'ecb' => l.rateSourceEcb,
+  _ => source,
+};
 
 /// What the rates are for, how current they are, and each rate the totals
 /// use.
@@ -589,7 +592,7 @@ class RatesPanel extends StatelessWidget {
                       dimension: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Glyph.arrowCounterClockwise, size: 20),
+                  : const Icon(Glyph.arrowsClockwise, size: 20),
             ),
           ],
         ),
@@ -645,7 +648,7 @@ class _RateLine extends StatelessWidget {
         asset: asset,
         quote: quote,
         current: own.rates.rate(asset, quote),
-        typedByHand: _typed != null,
+        restorable: _typed != null && own.fetchedRate(asset, quote) != null,
       ),
     );
     if (choice == null) return;
@@ -658,8 +661,8 @@ class _RateLine extends StatelessWidget {
     await own.store.setManualRate(asset.code, quote.code, typed);
   }
 
-  /// Back to the automatic rate, or a word that the typed one stays when
-  /// the automatic one could not be fetched.
+  /// Back to today's automatic rate, or a word that the typed one stays
+  /// when there was none to go back to.
   Future<void> _restore(BuildContext context) async {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     final String failed = context.l10n.rateRestoreFailed;
@@ -676,7 +679,23 @@ class _RateLine extends StatelessWidget {
     final Decimal? fetched = typed == null
         ? null
         : own.fetchedRate(asset, _quote);
-    final List<String> steps = rateStepLines(l, own.rates, asset, base);
+    final List<RateStep> legs = own.rates.steps(asset, base);
+    final Rate? only = legs.length == 1 ? legs.single.rate : null;
+    // The steps under the rate, unless one alone would say it again: a rate
+    // typed for the pair itself, or one conversion, of which only where it
+    // comes from and what day are news.
+    final List<String> steps = typed != null
+        ? (legs.length > 1
+              ? rateStepLines(l, own.rates, asset, base)
+              : const <String>[])
+        : only != null && legs.single.kind == RateStepKind.conversion
+        ? <String>[
+            l.rateSourceOn(
+              _sourceName(l, only.source),
+              dayShortMonth(only.asOf),
+            ),
+          ]
+        : rateStepLines(l, own.rates, asset, base);
     final String text = r == null
         ? l.ratesMissing(asset.code)
         : '1 ${asset.code} = ${formatAmount(r, base, base: base, decimals: r < Decimal.fromInt(10) ? 4 : 2)}';
@@ -707,17 +726,24 @@ class _RateLine extends StatelessWidget {
                       if (typed != null) const _ManualTag(),
                     ],
                   ),
-                  // A rate typed for the pair itself is the line above:
-                  // its one step would only say it again.
-                  if (typed == null || steps.length > 1)
-                    for (final String step in steps)
-                      Figures(step, style: context.type.bodySmall),
+                  for (final String step in steps)
+                    Figures(step, style: context.type.bodySmall),
                   if (typed != null) ...<Widget>[
                     Text(
                       l.rateManualOn(dayShortMonth(typed.asOf)),
                       style: context.type.bodySmall,
                     ),
-                    if (fetched != null)
+                    // The way back only to an automatic rate known today,
+                    // said beside it; without one, that the sources had none
+                    // today, or how to ask them.
+                    if (fetched == null)
+                      Text(
+                        own.fetchedToday
+                            ? l.rateAutomaticNone(asset.code)
+                            : l.rateAutomaticUnknown,
+                        style: context.type.bodySmall,
+                      )
+                    else ...<Widget>[
                       Figures(
                         l.rateAutomaticNow(
                           formatAmount(
@@ -729,16 +755,17 @@ class _RateLine extends StatelessWidget {
                         ),
                         style: context.type.bodySmall,
                       ),
-                    TextButton(
-                      // One way back at a time: it waits for any fetch.
-                      onPressed: own.refreshingRates
-                          ? null
-                          : () => _restore(context),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                      TextButton(
+                        // Not while the rates are fetched again.
+                        onPressed: own.refreshingRates
+                            ? null
+                            : () => _restore(context),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                        ),
+                        child: Text(l.rateUseFetchedShort),
                       ),
-                      child: Text(l.rateUseFetchedShort),
-                    ),
+                    ],
                   ],
                 ],
               ),
@@ -768,16 +795,16 @@ class _RateDialog extends StatefulWidget {
     required this.asset,
     required this.quote,
     required this.current,
-    required this.typedByHand,
+    required this.restorable,
   });
 
   final Asset asset;
   final Asset quote;
   final Decimal? current;
 
-  /// Whether the rate in use was typed by hand: only then is there an
-  /// automatic one to go back to.
-  final bool typedByHand;
+  /// Whether the rate in use was typed by hand and today's automatic one is
+  /// known: only then is there one to go back to.
+  final bool restorable;
 
   @override
   State<_RateDialog> createState() => _RateDialogState();
@@ -838,7 +865,7 @@ class _RateDialogState extends State<_RateDialog> {
         ],
       ),
       actions: <Widget>[
-        if (widget.typedByHand)
+        if (widget.restorable)
           TextButton(
             onPressed: () => Navigator.of(
               context,

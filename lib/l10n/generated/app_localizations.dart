@@ -9331,6 +9331,18 @@ abstract class AppLocalizations {
   /// **'La automática hoy: {value}'**
   String rateAutomaticNow(String value);
 
+  /// No description provided for @rateAutomaticUnknown.
+  ///
+  /// In es, this message translates to:
+  /// **'Para volver a la automática, actualiza las tasas.'**
+  String get rateAutomaticUnknown;
+
+  /// No description provided for @rateAutomaticNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Hoy no hay tasa automática para {asset}: se usa la tuya.'**
+  String rateAutomaticNone(String asset);
+
   /// No description provided for @rateUseFetchedShort.
   ///
   /// In es, this message translates to:
@@ -9366,6 +9378,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'1 {asset} = {value} · escrita a mano'**
   String rateStepManual(String asset, String value);
+
+  /// No description provided for @rateSourceOn.
+  ///
+  /// In es, this message translates to:
+  /// **'{source} del {date}'**
+  String rateSourceOn(String source, String date);
 
   /// No description provided for @ratesIntro.
   ///

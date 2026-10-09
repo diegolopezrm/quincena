@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:decimal/decimal.dart';
@@ -21,6 +20,7 @@ import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
 import 'package:quincena/theme/theme.dart';
+import 'package:quincena/ui/icons.dart';
 import 'package:quincena/ui/own/accounts_tab.dart';
 import 'package:quincena/ui/own/free_explained.dart';
 
@@ -149,7 +149,9 @@ void main() {
     await settle(tester);
 
     expect(find.text(r'1 USD = $4.000'), findsOneWidget);
-    expect(find.textContaining('TRM oficial'), findsOneWidget);
+    // One conversion: under it, only where it comes from and what day.
+    expect(find.text('TRM oficial del 3 oct'), findsOneWidget);
+    expect(find.textContaining('Conversión a COP'), findsNothing);
     expect(find.text('Manual'), findsNothing);
     expect(find.text('Usar la automática'), findsNothing);
     final Rate dollar = await storedDollar(tester);
@@ -157,24 +159,25 @@ void main() {
     expect(dollar.value, d('4000'));
   });
 
-  testWidgets('offline, the typed rate stays and a notice says why', (
-    tester,
-  ) async {
+  testWidgets('offline, there is no automatic rate to go back to, and the '
+      'line says how to get one', (tester) async {
     await open(tester, fetcher: downRates(), typed: '3400');
 
-    // From the dialog, the long way back.
-    await tester.tap(find.text(r'1 USD = $3.400'));
-    await settle(tester);
-    await tester.tap(find.text('Volver a la tasa automática'));
-    await settle(tester);
-
+    expect(find.text('Usar la automática'), findsNothing);
     expect(
-      find.text(
-        'No se pudo traer la tasa automática. Sigue la tuya; intenta de '
-        'nuevo con conexión.',
-      ),
+      find.text('Para volver a la automática, actualiza las tasas.'),
       findsOneWidget,
     );
+    // Nor in the dialog, where only the typed rate can change.
+    await tester.tap(find.text(r'1 USD = $3.400'));
+    await settle(tester);
+    expect(find.text('Volver a la tasa automática'), findsNothing);
+    await tester.tap(find.text('Cancelar'));
+    await settle(tester);
+
+    // Refreshing offline brings none: the typed rate stays.
+    await tester.tap(find.byTooltip('Actualizar tasas'));
+    await settle(tester);
     expect(find.text(r'1 USD = $3.400'), findsOneWidget);
     expect(find.text('Manual'), findsOneWidget);
     expect(find.textContaining('Sin tasa'), findsNothing);
@@ -207,46 +210,68 @@ void main() {
     expect((await storedDollar(tester)).source, 'trm');
   });
 
-  testWidgets('going back waits for its fetch before it can be asked again', (
+  testWidgets('a rate the sources did not have today says so, and keeps the '
+      'typed one', (tester) async {
+    await open(tester, fetcher: fakeRates(), held: Asset.eur, typed: '4350');
+
+    expect(find.text(r'1 EUR = $4.350'), findsOneWidget);
+    expect(
+      find.text('Hoy no hay tasa automática para EUR: se usa la tuya.'),
+      findsOneWidget,
+    );
+    expect(find.text('Usar la automática'), findsNothing);
+  });
+
+  testWidgets('going back asks no one again, and moves only that rate', (
     tester,
   ) async {
-    Completer<void>? gate;
-    final RateFetcher slow = RateFetcher(
+    var asked = 0;
+    var trm = 0;
+    // The TRM changes between one fetch and the next.
+    final RateFetcher changing = RateFetcher(
       client: MockClient((http.Request request) async {
-        await gate?.future;
-        if (request.url.host != 'www.datos.gov.co') {
-          return http.Response('{}', 404);
+        asked++;
+        switch (request.url.host) {
+          case 'www.datos.gov.co':
+            trm++;
+            return http.Response(
+              jsonEncode(<Object>[
+                <String, String>{
+                  'valor': trm == 1 ? '3900' : '4100',
+                  'vigenciadesde': '2026-10-03T00:00:00.000',
+                },
+              ]),
+              200,
+            );
+          case 'data-api.binance.vision':
+            return http.Response(
+              jsonEncode(<String, String>{'price': '80000'}),
+              200,
+            );
         }
-        return http.Response(
-          jsonEncode(<Object>[
-            <String, String>{
-              'valor': '4000',
-              'vigenciadesde': '2026-10-03T00:00:00.000',
-            },
-          ]),
-          200,
-        );
+        return http.Response('{}', 404);
       }),
     );
-    await open(tester, fetcher: slow, typed: '3400');
-
-    gate = Completer<void>();
-    await tester.tap(find.text('Usar la automática'));
-    await tester.pump();
-    expect(
-      tester
-          .widget<TextButton>(
-            find.widgetWithText(TextButton, 'Usar la automática'),
-          )
-          .onPressed,
-      isNull,
+    final OwnController own = await open(
+      tester,
+      fetcher: changing,
+      held: Asset.btc,
+      typed: '90000',
+      others: <Asset>[Asset.usd],
     );
-    // The typed rate holds until the automatic one is here.
-    expect(find.text(r'1 USD = $3.400'), findsOneWidget);
+    final int before = asked;
+    final Decimal dollar = own.rates.rate(Asset.usd, Asset.cop)!;
+    expect(dollar, d('3900'));
+    expect(find.text(r'La automática hoy: US$80.000'), findsOneWidget);
 
-    gate.complete();
+    await tester.tap(find.text('Usar la automática'));
     await settle(tester);
-    expect(find.text(r'1 USD = $4.000'), findsOneWidget);
+
+    // The bitcoin is back at the price fetched today; the dollar is where it
+    // was, as nothing was fetched again.
+    expect(asked, before);
+    expect(own.rates.rate(Asset.btc, Asset.usd), d('80000'));
+    expect(own.rates.rate(Asset.usd, Asset.cop), dollar);
     expect(find.text('Manual'), findsNothing);
   });
 
@@ -307,6 +332,23 @@ void main() {
     );
     expect(
       find.text('Sin tasa para BTC: cuenta como cero en los totales.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('one conversion says only where it comes from and what day, '
+      'not the rate again', (tester) async {
+    await open(tester, fetcher: fakeRates());
+
+    expect(find.text(r'1 USD = $4.000'), findsOneWidget);
+    expect(find.text('TRM oficial del 3 oct'), findsOneWidget);
+    expect(find.textContaining(r'1 US$ = $4.000'), findsNothing);
+    // The refresh is two arrows in a circle, not a way back.
+    expect(
+      find.descendant(
+        of: find.byTooltip('Actualizar tasas'),
+        matching: find.byIcon(Glyph.arrowsClockwise),
+      ),
       findsOneWidget,
     );
   });

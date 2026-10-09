@@ -6053,6 +6053,15 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get rateAutomaticUnknown =>
+      'Para volver a la automática, actualiza las tasas.';
+
+  @override
+  String rateAutomaticNone(String asset) {
+    return 'Hoy no hay tasa automática para $asset: se usa la tuya.';
+  }
+
+  @override
   String get rateUseFetchedShort => 'Usar la automática';
 
   @override
@@ -6078,6 +6087,11 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String rateStepManual(String asset, String value) {
     return '1 $asset = $value · escrita a mano';
+  }
+
+  @override
+  String rateSourceOn(String source, String date) {
+    return '$source del $date';
   }
 
   @override
