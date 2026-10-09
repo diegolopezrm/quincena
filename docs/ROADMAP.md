@@ -699,6 +699,71 @@ pide un teléfono real está en [`QUALITY.md`](QUALITY.md).
   - Las de tienda se regeneran con precios fijos.
   - Ninguna captura de tienda muestra 0 % por no leer precios.
 
+### 25. Flujo por flujo
+
+**Estado:** construida, build 20 (1.1.0).
+
+Cada cosa que una persona puede hacer en la app es un flujo en
+`integration_test/flows/`:
+- Tiene un objetivo en primera persona.
+- Lleva una foto por paso, con una línea que dice qué se hizo y qué
+  mirar.
+- Trae comprobaciones sobre los datos de verdad: montos exactos, registros
+  creados o borrados, "Deshacer" que deja todo como estaba, ajustes que se
+  guardan.
+
+Son 181 flujos, con 1.168 pasos y 1.210 comprobaciones:
+- Sin teléfono corren con `test_screens/flows_check_test.dart`.
+- En un simulador propio corren con `tool/flows/run.sh`, que arma una
+  imagen por flujo para que la revisen expertos.
+
+Escribirlos sacó a la luz cerca de cien errores, todos corregidos con su
+prueba. Entre ellos:
+- "Borrar todo" dejaba avisos programados y la llave de Binance.
+- Pagar la tarjeta desde el banco no bajaba lo que se le debe.
+- "¿Me alcanza?" no descontaba la reserva ni los sobres.
+- El sobre "Día a día" decía "Te pasaste" recién repartido.
+
+Las cuentas cerradas ahora se archivan en vez de borrarse.
+
+### 26. Lo que pidieron las tiendas
+
+**Estado:** construida, build 20 (1.1.0); falta enviarla a las dos
+tiendas.
+
+El 6 de octubre Google Play rechazó la versión de Android por dos
+motivos:
+- **Aviso de ubicación:** el permiso de ubicación del sistema salía sin un
+  aviso propio antes.
+- **Capturas:** mostraban la app completa, y "Con datos de ejemplo" abría
+  solo una conversación.
+
+El 8 de octubre Apple rechazó la 1.0 por la pauta 5.6: le pareció que la
+app escondía funciones durante la revisión. La causa era la misma que la
+de las capturas.
+
+Lo que cambió:
+- **"Con datos de ejemplo":** abre toda la app con la cuenta inventada de
+  Valentina.
+  - La cuenta vive en memoria y se borra al salir.
+  - Una franja visible dice que es el ejemplo.
+  - La conversación responde con las mismas cifras de las pantallas.
+  - Hay un extracto y un mensaje de banco para probar sin archivos.
+  - Nada toca los datos, avisos, widget, llavero o sincronización de la
+    persona.
+- **Capturas de tienda:** salen de ese mismo modo, así que no pueden
+  mostrar algo que la app no tenga.
+- **Aviso de ubicación:** antes de cualquier permiso de ubicación o de
+  acceso a notificaciones sale un aviso que dice qué se recoge, para qué,
+  cuándo y a dónde va. Solo "Aceptar" lleva al permiso, y el de "Permitir
+  todo el tiempo" tiene su propio aviso.
+- **Opciones de desarrollador:** "Quién responde", una key propia de
+  Gemini, el inspector y las sesiones grabadas quedan solo en la demo web,
+  que es la vitrina para desarrolladores. Las apps de las tiendas son el
+  producto.
+- **Notas para los revisores:** dicen dónde está cada pantalla de las
+  capturas y cómo probar los atajos de iOS y la extensión de compartir.
+
 ## Trazabilidad de las 15 ideas
 
 Los números conservan la referencia del [registro de ideación](IDEAS_PRODUCTO.md).
