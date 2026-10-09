@@ -33,31 +33,46 @@ List<String> namesIn(String text) {
 
 /// Splits an expense in [group], or the movement [entry] the person paid,
 /// or changes [expense]. With neither group nor an existing split, the
-/// people are typed by name and a group is made for them.
-Future<void> showSplitSheet(
+/// people are typed by name and a group is made for them, named
+/// [groupName] when there is one to suggest. The group it was saved in
+/// once saved.
+Future<Group?> showSplitSheet(
   BuildContext context, {
   required OwnController own,
   Group? group,
   SharedExpense? expense,
   Entry? entry,
-}) => showModalBottomSheet<void>(
+  String? groupName,
+}) => showModalBottomSheet<Group>(
   context: context,
   isScrollControlled: true,
   showDragHandle: true,
   useSafeArea: true,
   backgroundColor: context.colors.surface,
   constraints: const BoxConstraints(maxWidth: 560),
-  builder: (BuildContext context) =>
-      _SplitSheet(own: own, group: group, expense: expense, entry: entry),
+  builder: (BuildContext context) => _SplitSheet(
+    own: own,
+    group: group,
+    expense: expense,
+    entry: entry,
+    groupName: groupName,
+  ),
 );
 
 class _SplitSheet extends StatefulWidget {
-  const _SplitSheet({required this.own, this.group, this.expense, this.entry});
+  const _SplitSheet({
+    required this.own,
+    this.group,
+    this.expense,
+    this.entry,
+    this.groupName,
+  });
 
   final OwnController own;
   final Group? group;
   final SharedExpense? expense;
   final Entry? entry;
+  final String? groupName;
 
   @override
   State<_SplitSheet> createState() => _SplitSheetState();
@@ -71,7 +86,7 @@ class _SplitSheetState extends State<_SplitSheet> {
   /// The group it goes to; null makes a new one from [_names].
   late Group? _group = widget.group;
   late final TextEditingController _groupName = TextEditingController(
-    text: widget.entry?.payee ?? '',
+    text: widget.groupName ?? widget.entry?.payee ?? '',
   );
   final TextEditingController _names = TextEditingController();
   late final TextEditingController _label = TextEditingController(
@@ -301,7 +316,7 @@ class _SplitSheetState extends State<_SplitSheet> {
       ),
     );
     await own.saveGroup(group);
-    navigator.pop();
+    navigator.pop(group);
   }
 
   Future<void> _remove() async {

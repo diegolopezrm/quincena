@@ -16,10 +16,11 @@ import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
 import 'amount_input.dart';
+import 'coming_days_page.dart' show listOf;
 import 'entry_sheet.dart';
 import 'look.dart';
 import 'shared_page.dart';
-import 'split_sheet.dart' show memberName;
+import 'split_sheet.dart' show memberName, showSplitSheet;
 
 /// Where a rate came from, for the person.
 String rateSourceLabel(AppLocalizations l, String source) => switch (source) {
@@ -358,11 +359,30 @@ class _TripLineRow extends StatelessWidget {
     );
   }
 
+  /// Splits the expense with whoever went: in the trip's group, or in one
+  /// made for it now, which the next ones then go to.
+  Future<void> _split(BuildContext context) async {
+    final Group? group = trip.groupId == null ? null : own.group(trip.groupId!);
+    final Group? saved = await showSplitSheet(
+      context,
+      own: own,
+      entry: line.entry,
+      group: group,
+      groupName: trip.name,
+    );
+    if (group == null && saved != null) {
+      await own.saveTrip(
+        (own.trip(trip.id) ?? trip).copyWith(groupId: saved.id),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
     final Asset? base = own.profile?.base;
     final Entry e = line.entry;
+    final (Group, SharedExpense)? split = own.splitOf(e.id);
     final Account? account = own.snapshot?.account(e.accountId);
     String money(Decimal d, Asset a) => moneyText(Money(d, a), base: base);
     // A rate keeps its cents even in pesos: the TRM has them.
@@ -463,15 +483,36 @@ class _TripLineRow extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 2, right: 12),
                 child: Text(text, style: context.type.bodySmall),
               ),
-            if (foreign != null && line.adjustedFrom == null)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton(
-                  style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                  onPressed: () => _adjust(context),
-                  child: Text(l.tripAdjust),
+            if (split case (final Group g, final SharedExpense x))
+              Padding(
+                padding: const EdgeInsets.only(top: 2, right: 12),
+                child: Text(
+                  l.tripSplitWith(
+                    listOf(l, <String>[
+                      for (final String id in x.shares.keys)
+                        if (id != meId) memberName(l, g.member(id)),
+                    ]),
+                  ),
+                  style: context.type.bodySmall,
                 ),
               ),
+            Wrap(
+              spacing: 16,
+              children: <Widget>[
+                if (foreign != null && line.adjustedFrom == null)
+                  TextButton(
+                    style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                    onPressed: () => _adjust(context),
+                    child: Text(l.tripAdjust),
+                  ),
+                if (split == null && e.kind == EntryKind.expense)
+                  TextButton(
+                    style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                    onPressed: () => _split(context),
+                    child: Text(l.tripSplit),
+                  ),
+              ],
+            ),
           ],
         ),
       ),

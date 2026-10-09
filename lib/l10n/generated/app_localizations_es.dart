@@ -4535,6 +4535,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get tripAdjust => 'Ajustar al cargo real';
 
   @override
+  String get tripSplit => 'Dividir';
+
+  @override
+  String tripSplitWith(String names) {
+    return 'Dividido con $names';
+  }
+
+  @override
   String get tripCharged => '¿Cuánto te cobró el banco?';
 
   @override

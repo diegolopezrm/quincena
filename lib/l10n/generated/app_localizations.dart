@@ -7033,6 +7033,18 @@ abstract class AppLocalizations {
   /// **'Ajustar al cargo real'**
   String get tripAdjust;
 
+  /// No description provided for @tripSplit.
+  ///
+  /// In es, this message translates to:
+  /// **'Dividir'**
+  String get tripSplit;
+
+  /// No description provided for @tripSplitWith.
+  ///
+  /// In es, this message translates to:
+  /// **'Dividido con {names}'**
+  String tripSplitWith(String names);
+
   /// No description provided for @tripCharged.
   ///
   /// In es, this message translates to:

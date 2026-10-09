@@ -1165,6 +1165,8 @@
   "tripChargedMore": "The bank charged {charged}: {difference} more than estimated",
   "tripChargedLess": "The bank charged {charged}: {difference} less than estimated",
   "tripAdjust": "Set to the real charge",
+  "tripSplit": "Split",
+  "tripSplitWith": "Split with {names}",
   "tripCharged": "How much did the bank charge?",
   "tripAdjustHelp": "The transaction changes to what the statement says, and the difference from the estimate is kept.",
   "tripName": "Where are you going?",

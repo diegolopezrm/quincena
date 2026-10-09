@@ -654,6 +654,63 @@ void main() {
     );
   });
 
+  testWidgets('a trip expense is split from the trip, and the next ones go '
+      'to the same group', (tester) async {
+    final OwnController own = await openPage(
+      tester,
+      (OwnController own) => TripPage(own: own, id: 'trip'),
+      data: (QuincenaStore store, Account bank, _) => dinner(store, bank),
+    );
+    await tester.runAsync(
+      () => own.saveTrip(
+        Trip(
+          id: 'trip',
+          name: 'Cartagena',
+          from: DateTime(2026, 10, 1),
+          to: DateTime(2026, 10, 5),
+          currency: 'COP',
+        ),
+      ),
+    );
+    await settle(tester);
+    await tapText(tester, 'Dividir');
+    expect(find.widgetWithText(TextField, 'Cartagena'), findsOneWidget);
+    await tester.enterText(
+      find.widgetWithText(TextField, '¿Con quién lo divides?'),
+      'Ana',
+    );
+    await settle(tester);
+    await tapText(tester, 'Guardar');
+    final Group group = own.groups.single;
+    expect(group.name, 'Cartagena');
+    expect(own.trip('trip')!.groupId, group.id);
+    expect(find.text('Dividido con Ana'), findsOneWidget);
+    expect(own.ledger!.spentIn(2026, 10), 60000);
+
+    // The next one goes to the trip's group, with whoever is in it.
+    await tester.runAsync(
+      () => own.store.addEntry(
+        accountId: own.accounts.first.id,
+        amount: d('80000'),
+        kind: EntryKind.expense,
+        date: DateTime(2026, 10, 3, 13),
+        category: 'restaurants',
+        payee: 'Almuerzo',
+      ),
+    );
+    await settle(tester);
+    await tapText(tester, 'Dividir');
+    expect(
+      find.widgetWithText(TextField, '¿Con quién lo divides?'),
+      findsNothing,
+    );
+    await tapText(tester, 'Guardar');
+    expect(own.groups, hasLength(1));
+    expect(own.groups.single.expenses, hasLength(2));
+    expect(find.text('Dividido con Ana'), findsNWidgets(2));
+    expect(find.text('Dividir'), findsNothing);
+  });
+
   testWidgets('the Plan tab offers each module without needing any', (
     tester,
   ) async {
