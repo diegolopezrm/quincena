@@ -34,6 +34,9 @@ import 'package:quincena/sync/sync_service.dart';
 import 'package:quincena/sync/vault.dart';
 import 'package:quincena/version.dart';
 import 'package:quincena/ui/home_page.dart';
+import 'package:quincena/ui/own/capture_rules_page.dart';
+import 'package:quincena/ui/own/look.dart' show Panel, SectionLabel;
+import 'package:quincena/ui/own/own_settings_page.dart';
 import 'package:quincena/ui/own/own_shell.dart';
 import 'package:quincena/ui/own/statement_page.dart';
 import 'package:quincena/data/example_prices.dart';
@@ -887,14 +890,43 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
     (FlowRun f) async {
       await f.tapTip('Ajustes');
       await f.page(
-        'Ajustes: perfil, avisos, widget, captura automática, apariencia, '
-        'tus datos y privacidad, en ese orden.',
-        most: 7,
+        'Ajustes va por secciones: «Tu perfil», «Automatización», «Cuentas '
+        'conectadas», «Apariencia», «Tus datos» y «Ayuda y privacidad»; al '
+        'final, aparte y en rojo, «Borrar todo».',
+        most: 8,
       );
+      await f.check('Las secciones van en ese orden y «Borrar todo» va solo, '
+          'al final', () async {
+        expect(_sections(f), <String>[
+          'Tu perfil',
+          'Automatización',
+          'Cuentas conectadas',
+          'Apariencia',
+          'Tus datos',
+          'Ayuda y privacidad',
+        ]);
+        expect(_settingsRows(f).last, isA<Panel>());
+        await f.reveal(find.text('Borrar todo'));
+        expect(
+          f.tester.getTopLeft(find.text('Borrar todo')).dy,
+          greaterThan(
+            f.tester.getTopLeft(find.text('Licencias y créditos')).dy,
+          ),
+        );
+      });
+      await f.tap('Reglas aprendidas');
+      await f.step(
+        '«Reglas aprendidas» es ahora una fila propia en «Automatización», '
+        'bajo «Captura automática»: abre lo que la app aprendió de tus pagos.',
+      );
+      await f.check('Abrió las reglas aprendidas', () {
+        expect(find.byType(CaptureRulesPage), findsOneWidget);
+      });
+      await f.back();
       await f.tap('Billeteras propias');
       await f.step(
-        '«Billeteras propias» abre la página para seguir Ledger, MetaMask o '
-        'Trust Wallet por su dirección pública.',
+        'En «Cuentas conectadas», «Billeteras propias» abre la página para '
+        'seguir Ledger, MetaMask o Trust Wallet por su dirección pública.',
       );
       await f.check('Abrió Billeteras propias, sin ninguna seguida', () {
         expect(f.shows('Agregar billetera'), isTrue);
@@ -904,8 +936,8 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.back();
       await f.tap('Binance');
       await f.step(
-        '«Binance» abre la conexión con una llave de solo lectura: Quincena '
-        'nunca podrá mover tus fondos.',
+        '«Binance», en la misma sección, abre la conexión con una llave de '
+        'solo lectura: Quincena nunca podrá mover tus fondos.',
       );
       await f.check('Binance abre sin conectar, pidiendo las dos llaves', () {
         expect(_own(f).binance.connected, isFalse);
@@ -948,11 +980,21 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tap('Nombre');
       await enterTextIn(f.tester, find.byType(TextField), '   ');
       await f.tap('Guardar');
-      await f.check('Un nombre en blanco no se guarda', () {
+      await f.step(
+        'Con el nombre en blanco, «Guardar» no cierra el cuadro: bajo el campo '
+        'dice «Escribe tu nombre.»',
+      );
+      await f.check('Un nombre en blanco no se guarda y el cuadro dice qué '
+          'falta', () {
         expect(_own(f).profile!.name, 'Diego');
+        expect(f.shows('Escribe tu nombre.'), isTrue);
+        expect(find.byType(AlertDialog), findsOneWidget);
       });
-      await f.tap('Nombre');
       await enterTextIn(f.tester, find.byType(TextField), 'Diego Alejandro');
+      await settle(f.tester);
+      await f.check('Al escribir el nombre, el aviso se va', () {
+        expect(f.shows('Escribe tu nombre.'), isFalse);
+      });
       await f.tap('Guardar');
       await f.step('Con «Guardar» la fila «Nombre» dice «Diego Alejandro».');
       await f.check('El perfil quedó con el nombre nuevo', () {
@@ -1145,8 +1187,9 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tapTip('Ajustes');
       await f.tap('Avisarme el día de pago');
       await f.step(
-        'Si el teléfono no deja notificar, el interruptor sigue apagado y '
-        'abajo explica que hay que permitirlas en los ajustes del teléfono.',
+        'En «Automatización», si el teléfono no deja notificar, el interruptor '
+        'sigue apagado y abajo explica que hay que permitirlas en los ajustes '
+        'del teléfono, con el botón «Abrir ajustes».',
       );
       await f.check('Sin permiso no queda encendido y dice qué hacer', () {
         expect(_own(f).remindsClose, isFalse);
@@ -1158,6 +1201,11 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           ),
           isTrue,
         );
+      });
+      await f.tap('Abrir ajustes');
+      await f.check('«Abrir ajustes» abre la página de Quincena en los ajustes '
+          'del iPhone', () {
+        expect(phone.opened.last, 'app-settings:');
       });
       phone.notifications = true;
       phone.reminders.clear();
@@ -1211,10 +1259,10 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       final String free = pesos(_own(f).ledger!.freeUntilPayday);
       // The widget gets the figure again whenever it changes.
       await f.tapTip('Ajustes');
-      await _near(f, find.text('WIDGET DE INICIO'));
+      await _near(f, find.text('Widget de inicio'));
       await f.step(
-        '«Widget de inicio» explica cómo agregarlo desde la pantalla de '
-        'inicio. «Ocultar montos en el widget» está apagado.',
+        'En «Apariencia», «Widget de inicio» explica cómo agregarlo desde la '
+        'pantalla de inicio. «Ocultar montos en el widget» está apagado.',
       );
       await f.tap('Ocultar montos en el widget');
       await f.step('Encendido: el widget dice hasta cuándo, sin la cifra.');
@@ -1558,10 +1606,24 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
     (FlowRun f) async {
       final _Phone phone = await _Phone.install(f);
       await f.tapTip('Ajustes');
+      await _near(f, find.text('APARIENCIA'));
+      await f.step(
+        '«Apariencia» tiene una fila «Tema» (Sistema, Claro, Oscuro) y debajo '
+        'una fila «Idioma» (Sistema, Español, English), cada una con su '
+        'título.',
+      );
+      await f.check(
+        '«Tema» va sobre sus botones e «Idioma» sobre los suyos',
+        () {
+          double top(Finder finder) => f.tester.getTopLeft(finder).dy;
+          expect(top(find.text('Tema')), lessThan(top(find.text('Claro'))));
+          expect(top(find.text('Claro')), lessThan(top(find.text('Idioma'))));
+          expect(top(find.text('Idioma')), lessThan(top(find.text('English'))));
+        },
+      );
       await f.tap('Oscuro');
       await f.step(
-        'En «Apariencia», «Oscuro» cambia toda la app a colores oscuros al '
-        'instante.',
+        'En «Tema», «Oscuro» cambia toda la app a colores oscuros al instante.',
       );
       await f.check('La app quedó en modo oscuro', () {
         expect(_app(f).themeMode, ThemeMode.dark);
@@ -1573,12 +1635,14 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       });
       await f.tap('English');
       await f.step(
-        'Con «Claro» vuelve a los colores claros, y en la fila de idiomas '
-        '«English» pasa todo a inglés: «Settings», «Your data», «Privacy policy».',
+        'Con «Claro» vuelve a los colores claros, y en «Idioma» «English» pasa '
+        'todo a inglés: «Settings», «Theme», «Language», «Your data».',
       );
       await f.check('La app quedó en inglés', () {
         expect(_app(f).locale, const Locale('en'));
         expect(f.shows('Settings'), isTrue);
+        expect(f.shows('Theme'), isTrue);
+        expect(f.shows('Language'), isTrue);
       });
       await f.tap('Privacy policy');
       await f.check('En inglés, la política abre su página en inglés', () {
@@ -1595,7 +1659,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           expect(f.shows('Ajustes'), isTrue);
         },
       );
-      // The two rows start with «Sistema»: the theme's first, the language's
+      // The two rows start with «Sistema»: «Tema»'s first, «Idioma»'s
       // second.
       await f.tapFound(find.text('Sistema').first);
       await f.tapFound(find.text('Sistema').last);
@@ -1639,10 +1703,11 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
     (FlowRun f) async {
       final _Phone phone = await _Phone.install(f);
       await f.tapTip('Ajustes');
-      await _near(f, find.text('PRIVACIDAD'));
+      await _near(f, find.text('AYUDA Y PRIVACIDAD'));
       await f.step(
-        '«Privacidad» dice que todo se guarda solo en el teléfono, sin '
-        'publicidad ni venta de datos, y tiene tres filas.',
+        '«Ayuda y privacidad» dice que todo se guarda solo en el teléfono, sin '
+        'publicidad ni venta de datos, y tiene tres filas: «Soporte», '
+        '«Política de privacidad» y «Licencias y créditos».',
       );
       await f.tap('Política de privacidad');
       await f.check('«Política de privacidad» abre la página en español', () {
@@ -1699,8 +1764,8 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tapTip('Ajustes');
       await _near(f, find.text('TUS DATOS'));
       await f.step(
-        'En «Tus datos», «Ver los datos de ejemplo» está junto a exportar, '
-        'importar y «Borrar todo».',
+        'En «Tus datos», «Ver los datos de ejemplo» va al final, después de '
+        'exportar y de «Restaurar un respaldo».',
       );
       await f.tap('Ver los datos de ejemplo');
       await f.step(
@@ -1793,8 +1858,10 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         expect(phone.scheduledClose(), isNotEmpty);
       });
       await f.tap('English');
-      await f.check('Antes de borrar, la app está en inglés', () {
+      await f.check('Antes de borrar, la app está en inglés', () async {
         expect(_app(f).locale, const Locale('en'));
+        // «Borrar todo» sits apart at the end of the list.
+        await f.reveal(find.text('Delete everything'));
         expect(f.shows('Delete everything'), isTrue);
       });
       await f.tap('Delete everything');
@@ -2267,14 +2334,18 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       try {
         await f.tapTip('Ajustes');
         await f.step(
-          'En el computador, Ajustes no tiene avisos del día de pago ni '
-          'widget: de «Perfil» pasa directo a «Captura automática».',
+          'En el computador, Ajustes no tiene el aviso del día de pago ni el '
+          'widget: «Automatización» trae «Captura automática» y «Reglas '
+          'aprendidas».',
         );
-        await f.check('Sin avisos ni widget en el computador', () {
+        await f.check('Sin avisos ni widget en el computador', () async {
           expect(f.shows('Avisarme el día de pago'), isFalse);
-          expect(f.shows('WIDGET DE INICIO'), isFalse);
-          expect(f.shows('CAPTURA AUTOMÁTICA'), isTrue);
+          expect(f.shows('AUTOMATIZACIÓN'), isTrue);
+          expect(f.shows('Captura automática'), isTrue);
+          await f.reveal(find.text('APARIENCIA'));
+          expect(f.shows('Widget de inicio'), isFalse);
         });
+        await f.top();
         await f.tap('Captura automática');
         await f.step(
           '«Captura automática» dice que lo automático funciona en el teléfono '
@@ -2353,7 +2424,8 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         'Binance',
         'Varios dispositivos',
         'Exportar mis datos',
-        'Importar un archivo',
+        'Restaurar un respaldo',
+        'Reglas aprendidas',
       ]) {
         await f.tap(row);
         if (!f.shows('Seguir en el ejemplo')) refused.add(row);
@@ -2361,9 +2433,10 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       }
       await f.tap('Borrar todo');
       await f.step(
-        'Lo mismo dicen «Captura automática», «Billeteras propias», '
-        '«Binance», «Varios dispositivos», exportar, importar y hasta «Borrar '
-        'todo»: en el ejemplo no hacen nada.',
+        'Lo mismo dicen «Captura automática», «Reglas aprendidas», '
+        '«Billeteras propias», «Binance», «Varios dispositivos», exportar, '
+        '«Restaurar un respaldo» y hasta «Borrar todo»: en el ejemplo no '
+        'hacen nada.',
       );
       await f.check('Cada una lo dijo y no abrió nada', () {
         expect(refused, isEmpty);
@@ -2983,10 +3056,10 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       );
       phone.toPick.add(second!);
       await _waitMessages(f);
-      await f.tap('Importar un archivo');
+      await f.tap('Restaurar un respaldo');
       await f.step(
-        'En este teléfono, «Importar un archivo» abre su propio respaldo sin '
-        'pedir el código: solo pregunta si reemplazar todo.',
+        'En este teléfono, «Restaurar un respaldo» abre su propio respaldo '
+        'sin pedir el código: solo pregunta si reemplazar todo.',
       );
       await f.tap('Cancelar');
       await f.check('Con «Cancelar» todo sigue igual', () {
@@ -3082,13 +3155,13 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       final int kept = (await _read(f, copy.entries)).length;
       await f.tapTip('Ajustes');
       await _waitMessages(f);
-      await f.tap('Importar un archivo');
+      await f.tap('Restaurar un respaldo');
       await f.check('Si el selector se cierra sin elegir, nada cambia', () {
         expect(_own(f).snapshot!.entries, hasLength(entries));
       });
       phone.toPick.add(Uint8List.fromList(utf8.encode('Lista del mercado')));
       await _waitMessages(f);
-      await f.tap('Importar un archivo');
+      await f.tap('Restaurar un respaldo');
       await f.step(
         'Un archivo que no es de Quincena: «Ese archivo no lo exportó '
         'Quincena. No se cambió nada.»',
@@ -3108,7 +3181,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           ),
         ),
       );
-      await f.tap('Importar un archivo');
+      await f.tap('Restaurar un respaldo');
       // Right after the tap, before the picture takes its time: queued, the
       // notice about the other file would still be the one showing.
       await f.check('Al momento, el aviso es el de este archivo', () {
@@ -3142,7 +3215,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         ),
       );
       await _waitMessages(f);
-      await f.tap('Importar un archivo');
+      await f.tap('Restaurar un respaldo');
       await f.tap('Reemplazar');
       await f.step(
         'Uno que se rompe a mitad de camino: aunque se dijo «Reemplazar», '
@@ -3166,7 +3239,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       );
       phone.toPick.add(backup);
       await _waitMessages(f);
-      await f.tap('Importar un archivo');
+      await f.tap('Restaurar un respaldo');
       await f.step(
         'Con el respaldo, antes de tocar nada pregunta «¿Reemplazar todo con '
         'este archivo?»',
@@ -3177,7 +3250,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       });
       phone.toPick.add(backup);
       await _waitMessages(f);
-      await f.tap('Importar un archivo');
+      await f.tap('Restaurar un respaldo');
       await f.tap('Reemplazar');
       await f.step('Con «Reemplazar»: «Datos importados.»');
       await f.check('Quedaron los $kept movimientos del archivo', () async {
@@ -3225,7 +3298,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       phone.toPick.add(await _read(f, oldSync.export));
       await f.tapTip('Ajustes');
       await _waitMessages(f);
-      await f.tap('Importar un archivo');
+      await f.tap('Restaurar un respaldo');
       await f.step(
         'Un archivo de sincronizar no es un respaldo: dice que se abre en '
         '«Varios dispositivos» y no cambia nada.',
@@ -3236,7 +3309,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       });
       phone.toPick.add(sealed.file);
       await _waitMessages(f);
-      await f.tap('Importar un archivo');
+      await f.tap('Restaurar un respaldo');
       await f.step(
         'El respaldo cifrado del otro teléfono pide su código: «Respaldo '
         'cifrado», con «Cancelar» y «Abrir».',
@@ -3247,7 +3320,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       });
       phone.toPick.add(sealed.file);
       await _waitMessages(f);
-      await f.tap('Importar un archivo');
+      await f.tap('Restaurar un respaldo');
       await f.type('Código', VaultKey.generate().code);
       await f.tap('Abrir');
       await f.step(
@@ -3432,6 +3505,25 @@ Future<void> _near(FlowRun f, Finder finder) async {
   await Scrollable.ensureVisible(f.tester.element(finder.last), alignment: 0.1);
   await settle(f.tester);
 }
+
+/// What Ajustes lists, top to bottom, built or not yet.
+List<Widget> _settingsRows(FlowRun f) =>
+    (f.tester
+                .widget<ListView>(
+                  find.descendant(
+                    of: find.byType(OwnSettingsPage),
+                    matching: find.byType(ListView),
+                  ),
+                )
+                .childrenDelegate
+            as SliverChildListDelegate)
+        .children;
+
+/// The titles of Ajustes' sections, in order.
+List<String> _sections(FlowRun f) => <String>[
+  for (final Widget w in _settingsRows(f))
+    if (w is SectionLabel) w.text,
+];
 
 /// The person's accounts, also from a page pushed over them.
 OwnController _own(FlowRun f) =>

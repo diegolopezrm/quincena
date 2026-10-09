@@ -195,6 +195,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearance => 'Appearance';
 
   @override
+  String get themeTitle => 'Theme';
+
+  @override
   String get themeSystem => 'System';
 
   @override
@@ -905,10 +908,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scheduled => 'Scheduled';
 
   @override
-  String get settingsProfile => 'Profile';
+  String get settingsProfile => 'Your profile';
+
+  @override
+  String get settingsAutomation => 'Automation';
+
+  @override
+  String get settingsConnected => 'Connected accounts';
 
   @override
   String get settingsName => 'Name';
+
+  @override
+  String get settingsNameEmpty => 'Type your name.';
 
   @override
   String get settingsBase => 'Currency for totals';
@@ -921,6 +933,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get exportData => 'Export my data';
+
+  @override
+  String get exportDataSubtitle => 'Saves a backup of everything to a file';
 
   @override
   String get exportDone => 'File saved.';
@@ -1929,7 +1944,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get importData => 'Import a file';
+  String get importData => 'Restore a backup';
+
+  @override
+  String get importDataSubtitle =>
+      'Replaces everything here with the backup\'s data';
 
   @override
   String get importConfirmTitle => 'Replace everything with this file?';
@@ -1977,6 +1996,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacyTitle => 'Privacy';
+
+  @override
+  String get settingsHelp => 'Help and privacy';
 
   @override
   String get privacyBody =>

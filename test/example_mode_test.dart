@@ -126,15 +126,22 @@ void main() {
 
     await tester.tap(find.byTooltip('Ajustes'));
     await settle(tester);
+    // Whose example this is goes before everything else.
+    expect(
+      tester.getTopLeft(find.text('CUENTA DE EJEMPLO')).dy,
+      lessThan(tester.getTopLeft(find.text('TU PERFIL')).dy),
+    );
     await tapText(tester, 'Avisarme el día de pago');
     expect(find.byType(AlertDialog), findsOneWidget);
     await tester.tap(find.text('Seguir en el ejemplo'));
     await settle(tester);
     for (final String row in <String>[
       'Captura automática',
+      'Reglas aprendidas',
       'Binance',
       'Varios dispositivos',
       'Exportar mis datos',
+      'Restaurar un respaldo',
       'Borrar todo',
     ]) {
       await tapText(tester, row);

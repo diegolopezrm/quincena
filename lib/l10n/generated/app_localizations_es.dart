@@ -195,6 +195,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get appearance => 'Apariencia';
 
   @override
+  String get themeTitle => 'Tema';
+
+  @override
   String get themeSystem => 'Sistema';
 
   @override
@@ -905,10 +908,19 @@ class AppLocalizationsEs extends AppLocalizations {
   String get scheduled => 'Programado';
 
   @override
-  String get settingsProfile => 'Perfil';
+  String get settingsProfile => 'Tu perfil';
+
+  @override
+  String get settingsAutomation => 'Automatización';
+
+  @override
+  String get settingsConnected => 'Cuentas conectadas';
 
   @override
   String get settingsName => 'Nombre';
+
+  @override
+  String get settingsNameEmpty => 'Escribe tu nombre.';
 
   @override
   String get settingsBase => 'Moneda de los totales';
@@ -921,6 +933,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get exportData => 'Exportar mis datos';
+
+  @override
+  String get exportDataSubtitle => 'Guarda un respaldo de todo en un archivo';
 
   @override
   String get exportDone => 'Archivo guardado.';
@@ -1928,7 +1943,11 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get importData => 'Importar un archivo';
+  String get importData => 'Restaurar un respaldo';
+
+  @override
+  String get importDataSubtitle =>
+      'Reemplaza todo lo de ahora por lo del respaldo';
 
   @override
   String get importConfirmTitle => '¿Reemplazar todo con este archivo?';
@@ -1976,6 +1995,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get privacyTitle => 'Privacidad';
+
+  @override
+  String get settingsHelp => 'Ayuda y privacidad';
 
   @override
   String get privacyBody =>

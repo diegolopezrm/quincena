@@ -183,7 +183,8 @@ void main() {
         settings: AppSettings(),
       ),
     );
-    await reveal(tester, find.text('WIDGET DE INICIO'));
+    // Under Apariencia, with a title of its own.
+    await reveal(tester, find.text('Widget de inicio'));
     expect(find.textContaining('mantén presionado'), findsOneWidget);
     await tapText(tester, 'Ocultar montos en el widget');
     expect(own.widgetHidesAmounts, isTrue);

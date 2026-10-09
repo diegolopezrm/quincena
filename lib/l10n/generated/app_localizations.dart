@@ -398,6 +398,12 @@ abstract class AppLocalizations {
   /// **'Apariencia'**
   String get appearance;
 
+  /// No description provided for @themeTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tema'**
+  String get themeTitle;
+
   /// No description provided for @themeSystem.
   ///
   /// In es, this message translates to:
@@ -1469,14 +1475,32 @@ abstract class AppLocalizations {
   /// No description provided for @settingsProfile.
   ///
   /// In es, this message translates to:
-  /// **'Perfil'**
+  /// **'Tu perfil'**
   String get settingsProfile;
+
+  /// No description provided for @settingsAutomation.
+  ///
+  /// In es, this message translates to:
+  /// **'Automatización'**
+  String get settingsAutomation;
+
+  /// No description provided for @settingsConnected.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuentas conectadas'**
+  String get settingsConnected;
 
   /// No description provided for @settingsName.
   ///
   /// In es, this message translates to:
   /// **'Nombre'**
   String get settingsName;
+
+  /// No description provided for @settingsNameEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe tu nombre.'**
+  String get settingsNameEmpty;
 
   /// No description provided for @settingsBase.
   ///
@@ -1501,6 +1525,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Exportar mis datos'**
   String get exportData;
+
+  /// No description provided for @exportDataSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Guarda un respaldo de todo en un archivo'**
+  String get exportDataSubtitle;
 
   /// No description provided for @exportDone.
   ///
@@ -2969,8 +2999,14 @@ abstract class AppLocalizations {
   /// No description provided for @importData.
   ///
   /// In es, this message translates to:
-  /// **'Importar un archivo'**
+  /// **'Restaurar un respaldo'**
   String get importData;
+
+  /// No description provided for @importDataSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Reemplaza todo lo de ahora por lo del respaldo'**
+  String get importDataSubtitle;
 
   /// No description provided for @importConfirmTitle.
   ///
@@ -3055,6 +3091,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Privacidad'**
   String get privacyTitle;
+
+  /// No description provided for @settingsHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Ayuda y privacidad'**
+  String get settingsHelp;
 
   /// No description provided for @privacyBody.
   ///
