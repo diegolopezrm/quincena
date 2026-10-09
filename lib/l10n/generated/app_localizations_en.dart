@@ -1551,6 +1551,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get comingMove => 'Move in the simulation';
 
   @override
+  String comingMovedFrom(String name, String date) {
+    return '$name, moved from $date';
+  }
+
+  @override
   String get comingSimulation =>
       'You\'re trying things out: none of this is saved or changes your payments.';
 

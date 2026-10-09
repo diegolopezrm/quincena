@@ -87,22 +87,24 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
   static String _key(ProjectedEvent e) =>
       '${e.kind.name}|${e.label}|${e.date.toIso8601String()}|${e.amount}';
 
+  // A charge moved stays as sure as it was, on its new day, said as moved;
+  // on its old day it and what takes it back cancel out of sight.
   List<ProjectedEvent> get _moves => <ProjectedEvent>[
     for (final (ProjectedEvent e, DateTime to)
         in _moved.values) ...<ProjectedEvent>[
       ProjectedEvent(
         date: e.date,
         amount: -e.amount,
-        certainty: Certainty.hypothetical,
+        certainty: Certainty.scheduled,
         kind: ProjectedKind.tryOut,
         label: e.label,
       ),
       ProjectedEvent(
         date: to,
         amount: e.amount,
-        certainty: Certainty.hypothetical,
+        certainty: Certainty.scheduled,
         kind: ProjectedKind.tryOut,
-        label: e.label,
+        label: context.l10n.comingMovedFrom(e.label, dayShortMonth(e.date)),
       ),
     ],
   ];
@@ -367,7 +369,7 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
                 ),
                 const SizedBox(height: 8),
                 for (var i = 0; i < days.length; i++)
-                  if (i != selected && days[i].events.isNotEmpty)
+                  if (i != selected && shownEvents(days[i]).isNotEmpty)
                     InkWell(
                       onTap: () => setState(() => _selected = i),
                       child: _DayDetail(
@@ -379,7 +381,7 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
                         trying: trying,
                       ),
                     ),
-                if (days.every((ProjectedDay d) => d.events.isEmpty))
+                if (days.every((ProjectedDay d) => shownEvents(d).isEmpty))
                   Text(l.comingNoEvents, style: context.type.bodyMedium),
               ],
             ),
@@ -786,7 +788,7 @@ class _DayDetail extends StatelessWidget {
                 ),
             ],
           ),
-          for (final ProjectedEvent e in day.events)
+          for (final ProjectedEvent e in shownEvents(day))
             Row(
               children: <Widget>[
                 Expanded(
@@ -803,7 +805,9 @@ class _DayDetail extends StatelessWidget {
                     color: e.amount > 0 ? context.colors.positive : null,
                   ),
                 ),
-                if (e.certainty == Certainty.scheduled && e.amount < 0)
+                if (e.certainty == Certainty.scheduled &&
+                    e.amount < 0 &&
+                    e.kind != ProjectedKind.tryOut)
                   IconButton(
                     tooltip: l.comingMove,
                     onPressed: () => onMove(e),
@@ -825,6 +829,31 @@ class _DayDetail extends StatelessWidget {
 
 DateTime _dayOf(DateTime moment) =>
     DateTime(moment.year, moment.month, moment.day);
+
+/// What happens on [day], without a charge moved away and what takes it
+/// back: together they are nothing that day.
+List<ProjectedEvent> shownEvents(ProjectedDay day) {
+  final List<ProjectedEvent> back = <ProjectedEvent>[
+    for (final ProjectedEvent e in day.events)
+      if (e.kind == ProjectedKind.tryOut && e.amount > 0) e,
+  ];
+  final List<ProjectedEvent> shown = <ProjectedEvent>[...day.events];
+  for (final ProjectedEvent b in back) {
+    final ProjectedEvent? moved = shown
+        .where(
+          (ProjectedEvent e) =>
+              e.kind != ProjectedKind.tryOut &&
+              e.label == b.label &&
+              e.amount == -b.amount,
+        )
+        .firstOrNull;
+    if (moved == null) continue;
+    shown
+      ..remove(moved)
+      ..remove(b);
+  }
+  return shown;
+}
 
 /// [day] as these screens say it in a sentence: «el 3 oct», or «hoy» when
 /// it is [today], which is never named as if it were another day.

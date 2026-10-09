@@ -394,6 +394,7 @@
   "comingLatePay": "Your late pay",
   "comingTryOut": "What you're trying",
   "comingMove": "Move in the simulation",
+  "comingMovedFrom": "{name}, moved from {date}",
   "comingSimulation": "You're trying things out: none of this is saved or changes your payments.",
   "comingClearSimulation": "Clear what you're trying",
   "comingNoEvents": "Nothing scheduled in these days.",

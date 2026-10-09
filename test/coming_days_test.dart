@@ -201,6 +201,46 @@ void main() {
     expect(find.textContaining('Estás probando'), findsNothing);
   });
 
+  testWidgets('a charge moved in the simulation shows once, as moved, and '
+      'the lowest point follows it', (tester) async {
+    await open(tester, (OwnController own) => ComingDaysPage(own: own));
+    expect(
+      find.text('Lo mínimo libre antes del pago: ${pesos(500000)} el 10 oct'),
+      findsOneWidget,
+    );
+    final Finder move = find.descendant(
+      of: find.ancestor(of: find.text('Internet'), matching: find.byType(Row)),
+      matching: find.byTooltip('Mover en la simulación'),
+    );
+    await tester.scrollUntilVisible(
+      move,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(move.first);
+    await settle(tester);
+    await tester.tap(find.text('20'));
+    final String ok = MaterialLocalizations.of(
+      tester.element(find.byType(DatePickerDialog)),
+    ).okButtonLabel;
+    await tester.tap(find.text(ok));
+    await settle(tester);
+    // Past payday, the internet no longer weighs before it.
+    expect(
+      find.textContaining('Lo mínimo libre antes del pago: ${pesos(800000)}'),
+      findsOneWidget,
+    );
+    final Finder moved = find.text('Internet, movido del 10 oct');
+    await tester.scrollUntilVisible(
+      moved,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(moved, findsOneWidget);
+    // Its old day lists it neither taken nor given back.
+    expect(find.text('Internet'), findsNothing);
+  });
+
   testWidgets('the close tells what changed, what comes, and one thing to do', (
     tester,
   ) async {

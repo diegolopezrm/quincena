@@ -157,7 +157,11 @@ class Projection {
           ProjectedEvent(
             date: e.date.isAfter(today) ? _day(e.date) : today,
             amount: e.amount,
-            certainty: Certainty.hypothetical,
+            // A scheduled charge moved to another day stays as sure as it
+            // was; anything else tried is only hypothetical.
+            certainty: e.certainty == Certainty.scheduled
+                ? Certainty.scheduled
+                : Certainty.hypothetical,
             kind: ProjectedKind.tryOut,
             label: e.label,
             category: e.category,

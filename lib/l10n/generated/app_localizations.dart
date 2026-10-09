@@ -2414,6 +2414,12 @@ abstract class AppLocalizations {
   /// **'Mover en la simulación'**
   String get comingMove;
 
+  /// No description provided for @comingMovedFrom.
+  ///
+  /// In es, this message translates to:
+  /// **'{name}, movido del {date}'**
+  String comingMovedFrom(String name, String date);
+
   /// No description provided for @comingSimulation.
   ///
   /// In es, this message translates to:

@@ -490,6 +490,8 @@
   "comingLatePay": "Tu pago atrasado",
   "comingTryOut": "Lo que pruebas",
   "comingMove": "Mover en la simulación",
+  "comingMovedFrom": "{name}, movido del {date}",
+  "@comingMovedFrom": {"placeholders": {"name": {"type": "String"}, "date": {"type": "String"}}},
   "comingSimulation": "Estás probando: nada de esto se guarda ni cambia tus pagos.",
   "comingClearSimulation": "Quitar lo que pruebas",
   "comingNoEvents": "Nada programado en estos días.",
