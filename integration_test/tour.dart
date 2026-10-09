@@ -707,6 +707,10 @@ class _Lenient extends Finder {
   @override
   String get description => inner.describeMatch(Plurality.many);
 
+  // Where [inner] looks, as the descendants of what it is inside of.
+  @override
+  Iterable<Element> get allCandidates => inner.allCandidates;
+
   @override
   Iterable<Element> findInCandidates(Iterable<Element> candidates) {
     try {
