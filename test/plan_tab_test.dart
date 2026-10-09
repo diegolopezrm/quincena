@@ -270,6 +270,35 @@ void main() {
     expect((await tester.runAsync(own.store.snapshot))!.goals, hasLength(1));
   });
 
+  testWidgets('a goal reached says so, not the month it would arrive', (
+    tester,
+  ) async {
+    final OwnController own = await open(tester, tab);
+    await tester.runAsync(
+      () => own.store.addGoal(
+        name: 'Bicicleta',
+        target: Money(d('800000'), Asset.cop),
+        saved: Money(d('800000'), Asset.cop),
+        monthly: Money(d('100000'), Asset.cop),
+      ),
+    );
+    await settle(tester);
+    final Finder row = find.textContaining('Meta cumplida');
+    await tester.scrollUntilVisible(
+      row,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(row, findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.ancestor(of: row, matching: find.byType(InkWell)).first,
+        matching: find.textContaining('llega en'),
+      ),
+      findsNothing,
+    );
+  });
+
   testWidgets('a goal deleted takes its envelope, and what it set aside '
       'is free again', (tester) async {
     final OwnController own = await open(tester, tab);

@@ -548,7 +548,10 @@ class _GoalRow extends StatelessWidget {
                   moneyText(goal.saved, base: own.profile?.base),
                   moneyText(goal.target, base: own.profile?.base),
                 ),
-                if (arrives != null)
+                // Reached, it says so, not the month it would arrive in.
+                if (reached)
+                  l.goalReached
+                else if (arrives != null)
                   l.goalArrives(monthYear(arrives))
                 else
                   l.goalNoMonthly,
