@@ -285,6 +285,15 @@ Version 1.0 went to App Review on 2 October 2026 with build 12. The
 review contact is Diego López, +57 316 605 0934, admin@dlsoft.dev. Release
 is set to manual, so an approved version waits for someone to release it.
 
+App Review turned version 1.0 down on 8 October 2026 under guideline 5.6,
+for features that seemed hidden during review: "Con datos de ejemplo"
+opened only a sample conversation while the screenshots showed the whole
+app, and that conversation offered developer options. The same submission
+went back that night as version 1.1.0, build 20, with the screenshots from
+the example account (6.9-inch iPhone and 13-inch iPad, both languages),
+the notes above, the 1.1.0 promotional text and a reply in App Review that
+explains the cause and the fix.
+
 ## Google Play
 
 ### Spanish
@@ -335,6 +344,23 @@ screen of the pictures is.
 > statement, in Ajustes, with a sample statement). Nothing done there
 > touches anyone's data, and it is erased on leaving with "Usar mis
 > cuentas".
+
+Play Console now calls this "Datos de inicio de sesión", and answering "No"
+(nothing restricted), as 1.0.0 did, leaves no place for instructions. Since
+8 October 2026 it answers "Sí" with one set of instructions, "Sample data,
+no sign-in", in English as Play asks and within its 500 characters:
+
+> No account or password is needed. On the first screen, tap "Con datos de
+> ejemplo" (With sample data): it opens the whole app on a made-up account,
+> the one in the screenshots; every screen in them is one tap away: Inicio
+> (with "Pregúntale a tu plata", which answers offline), Movimientos,
+> Cuentas and its crypto, Plan, Por revisar (tray icon) and Importar
+> extracto (in Ajustes). "Con mis cuentas" needs no sign-in either. Only
+> the optional Binance link asks for a read-only API key of one's own.
+
+It is marked as giving full access (there is no paid content), and Play's
+switch that lets Google use these details for tests on its own devices is
+left as Play sets it, on.
 
 ### Data safety
 
@@ -462,14 +488,31 @@ step 3, goes through step 3 as well. The feature for the next submission:
 > time". The location stays on the phone; only coordinates go to Photon
 > (OpenStreetMap search).
 
-**Owner's task:** `background-location.mp4` shows the old order, so the
-declaration video must be recorded again with the new one: the switch,
-"Ubicación de tus pagos", "Aceptar", Android's prompt, "Ubicación con la
-app cerrada", "Aceptar", "Permitir todo el tiempo", then the app closed,
-a bank notification with no shop name and the payment in Por revisar with
-the shop found nearby. Then update the link and the feature text in Play
-Console (App content, Sensitive app permissions) and send the new build
-for review.
+Sent again on 8 October 2026, within the 500 characters Play allows for
+the feature:
+
+> **Feature:** Finding the shop of a payment. Payment alerts arrive while
+> Quincena is closed, and many do not name the shop ("Compra POS 4512").
+> With "Use where the payment happened" on (off by default), Quincena
+> reads the location once per payment notification and suggests the shop
+> nearby. Before any location request, the disclosure "Location of your
+> payments" asks for consent; "Location while Quincena is closed" precedes
+> "Allow all the time". Only coordinates leave the phone, to Photon
+> (OpenStreetMap).
+
+The video was recorded again with build 20 on the emulator, in short takes
+checked one by one, and captioned in seven steps: `background-location.mp4`
+(52 seconds). Quincena opens from the home screen; Settings, Automatic
+capture; "Use where the payment happened" turned on; "Location of your
+payments", "Accept", Android's prompt and "While using the app"; "Location
+while Quincena is closed", "Accept" and "Allow all the time"; then the app
+is left, a bank notification with no shop name ("Compra por $18.500 POS
+7731", posted with adb) arrives with Quincena closed, and the payment waits
+in Needs review as Éxito Laureles, found 6 m from the phone. Google
+recommends 30 seconds or less; the two disclosures stay on screen long
+enough to be read. It is shared from DL SOFT's Google Drive to anyone with
+the link (Google accepts Drive or YouTube):
+https://drive.google.com/file/d/1HJEv706cKrW4xn3lmS_IL8uExR2a9Y4p/view?usp=sharing
 
 **Notification access** (`BIND_NOTIFICATION_LISTENER_SERVICE`). Not a
 Play declaration, but the listing and the app say what it reads. Before
@@ -489,7 +532,8 @@ of a trial); it reads no data.
 
 ## Version 1.1.0
 
-Not submitted yet. What goes to both stores when it is.
+Submitted to both stores on 8 October 2026 with build 20 (`1.1.0+20`).
+What went with it:
 
 **Promotional text** (App Store, 170): Quincena sabe cuánto puedes gastar
 sin dañar tus planes. Pregúntale a tu plata y recibe la respuesta como una
@@ -520,6 +564,19 @@ can touch.
 > a statement no longer checks repeats and understands a card payment.
 > There is a home screen widget, which can hide amounts, and backups are
 > encrypted with a code of your own.
+
+The App Store shows no "What's new" for an app's first version, so these
+notes went only to Play, whose release notes take 500 characters per
+language: the sentences about net worth and about importing a statement
+were left out there.
+
+Google Play turned 1.0.0 (13) down on 6 October 2026 (misleading claims,
+and an inadequate prominent disclosure for the location). On 8 October
+2026 release 20 (1.1.0) replaced it in production, full rollout, with the
+listings' new phone screenshots in both languages (declared as not made
+with AI), the sign-in instructions and the background location
+declaration with the new video. The 12 changes went to review that night;
+managed publishing is still off, so Google's approval publishes the app.
 
 The 1.1.0 screenshots in `screenshots/` were rendered on 4 October 2026
 from `test_screens/store_screens_test.dart`, with fixed prices so Spanish

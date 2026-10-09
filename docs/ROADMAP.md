@@ -728,8 +728,11 @@ Las cuentas cerradas ahora se archivan en vez de borrarse.
 
 ### 26. Lo que pidieron las tiendas
 
-**Estado:** construida, build 20 (1.1.0); falta enviarla a las dos
-tiendas.
+**Estado:** construida, build 20 (1.1.0), enviada a las dos tiendas el 8
+de octubre. En App Store, la 1.1.0 volvió a revisión con la respuesta a
+Apple; en Google Play, la versión 20 reemplazó a la 13 con las capturas,
+las instrucciones de acceso y la declaración de ubicación con el video
+nuevo. Detalle en `docs/store/README.md`.
 
 El 6 de octubre Google Play rechazó la versión de Android por dos
 motivos:
