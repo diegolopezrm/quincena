@@ -204,20 +204,23 @@ What happens today, with a movement «Almuerzo» on both devices:
    The later stamp wins whole, say the computer's: both devices show
    «Almuerzo» with the note. The phone's version waits in "Para revisar"
    as it was, «Almuerzo con Juan» with no note.
-3. "Para revisar" names it by its payee and amount and says it was
-   changed on both devices. It does not say which fields differ, so the
-   person cannot tell that bringing it back takes the note away.
-4. «Traer de vuelta» writes the waiting version whole, as the newest
-   change: the name comes back, the note goes, and the version it
-   replaced, with the note, waits in its turn. «Descartar» on that one
-   lets the note go on every device. «Descartar» on the first instead
-   keeps the note and loses the name. Either way one of two edits that
-   never touched the same field is lost, unless the person types it
-   again. Nothing is counted twice: amounts change only if one of the
-   edits was to the amount.
+3. "Para revisar" shows the two versions side by side, field by field,
+   the one that stayed and the one that waits, with the name and the note
+   marked as different.
+4. «Combinar» asks, for each field that differs, which version keeps it,
+   starting from the one that says something: the person keeps the
+   phone's name and the computer's note. The result is written on this
+   device as an edit of the version that stayed, so the next file carries
+   it like any other edit, and nothing waits any more. «Traer de vuelta»
+   still writes the waiting version whole, and what it replaced waits in
+   its turn; «Descartar» lets it go, with «Deshacer» for a few seconds.
+   Nothing is counted twice: an amount is taken with its kind and its
+   account, and one leg of a transfer cannot take its amount or date
+   alone.
 
-`test/sync_test.dart` holds this: "a name changed on one and a note
-added on the other are two versions".
+The merge itself is still of whole records: `test/sync_test.dart` holds
+it in "a name changed on one and a note added on the other are two
+versions", and `test/sync_page_test.dart` holds the combining.
 
 ### What a merge field by field would take
 
@@ -254,11 +257,13 @@ added on the other are two versions".
   random histories run per field, the test above turns around, and the
   merge gets a review pass like the two before, since the format changes.
 
-A cheaper step needs no new format: "Para revisar" could show what differs
-between the waiting version and the one shown, and «Traer de vuelta» could
-take only the fields the person picks. The result is a new whole version
-that syncs as any edit does. The person does the merging, but nothing they
-see is lost without them choosing it.
+The cheaper step, which needs no new format, is the one built: "Para
+revisar" shows what differs between the waiting version and the one shown,
+and «Combinar» takes only the fields the person picks. The result is a new
+whole version that syncs as any edit does. The person does the merging, but
+nothing they see is lost without them choosing it. Movements, accounts,
+fixed payments and goals are compared this way; settings and the items of a
+list still come back whole.
 
 ## Revoking, deleting and keeping
 

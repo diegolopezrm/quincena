@@ -3,9 +3,11 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart' as hash;
+import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../store/store.dart';
+import 'compare.dart';
 import 'merge.dart';
 import 'sync_file.dart';
 import 'vault.dart';
@@ -117,13 +119,136 @@ class MemoryKeyStore implements KeyStore {
 
 /// What merging a file did.
 class SyncReport {
-  const SyncReport({required this.applied, required this.conflicts});
+  const SyncReport({
+    required this.applied,
+    required this.conflicts,
+    this.changes = const SyncChanges(),
+  });
 
   /// Records changed on this device.
   final int applied;
 
   /// Versions that lost and wait for the person.
   final int conflicts;
+
+  /// What changed here, by what the person calls it.
+  final SyncChanges changes;
+}
+
+/// What a file changed on this device, counted the way the person sees it:
+/// a transfer is one movement, and a list of the Plan changes item by item.
+@immutable
+class SyncChanges {
+  const SyncChanges({
+    this.movements = 0,
+    this.accounts = 0,
+    this.plan = 0,
+    this.settings = 0,
+    this.movementsGone = 0,
+    this.accountsGone = 0,
+  });
+
+  /// What changed between [before] and [after], this device's records
+  /// around a merge.
+  factory SyncChanges.between(
+    Map<String, SyncRecord> before,
+    Map<String, SyncRecord> after,
+  ) {
+    final Set<String> movements = <String>{};
+    final Set<String> movementsGone = <String>{};
+    var accounts = 0;
+    var accountsGone = 0;
+    var plan = 0;
+    var settings = 0;
+    // Both legs of a transfer are one movement.
+    String movement(SyncRecord r) => switch (r.data?['transferId']) {
+      final String t when t.isNotEmpty => 'transfer/$t',
+      _ => r.key,
+    };
+    void count(SyncRecord r, {required bool gone}) {
+      switch (r.table) {
+        case 'entries':
+          (gone ? movementsGone : movements).add(movement(r));
+        case 'accounts':
+          gone ? accountsGone++ : accounts++;
+        case _ when _ofPlan(r):
+          plan++;
+        default:
+          settings++;
+      }
+    }
+
+    for (final MapEntry<String, SyncRecord> e in after.entries) {
+      final SyncRecord? was = before[e.key];
+      if (was != null && contentHash(was.data!) == contentHash(e.value.data!)) {
+        continue;
+      }
+      count(e.value, gone: false);
+    }
+    for (final MapEntry<String, SyncRecord> e in before.entries) {
+      if (!after.containsKey(e.key)) count(e.value, gone: true);
+    }
+    return SyncChanges(
+      movements: movements.length,
+      accounts: accounts,
+      plan: plan,
+      settings: settings,
+      movementsGone: movementsGone.length,
+      accountsGone: accountsGone,
+    );
+  }
+
+  /// Movements and accounts that arrived, new or changed.
+  final int movements;
+  final int accounts;
+
+  /// Goals, fixed payments and the rest of the Plan, added, changed or
+  /// deleted.
+  final int plan;
+
+  /// The profile, categories, rates typed by hand and what the app learned.
+  final int settings;
+
+  /// Movements and accounts deleted here because they were elsewhere.
+  final int movementsGone;
+  final int accountsGone;
+
+  /// The settings that are the Plan's: what syncs of them is the Plan.
+  static const Set<String> _planSettings = <String>{
+    'plan.envelopes',
+    'plan.wishes',
+    'plan.cushion',
+    'plan.scenarios',
+    'commitments.memories',
+    'commitments.instalments',
+    'commitments.detective',
+    'shared.groups',
+    'freelance',
+    'trips',
+    'setup.noFixed',
+  };
+
+  static bool _ofPlan(SyncRecord r) => switch (r.table) {
+    'recurring' || 'goals' || 'budgets' => true,
+    'settings' => _planSettings.contains(r.id),
+    'list' ||
+    'item' ||
+    'map' => _planSettings.contains(QuincenaStore.settingOfItem(r.id)),
+    _ => false,
+  };
+}
+
+/// A version that waits for the person, and the one that stayed in its
+/// place, when there is one to set beside it.
+@immutable
+class Waiting {
+  const Waiting(this.conflict, this.kept);
+
+  final SyncConflict conflict;
+
+  /// The version shown now: under the same id or, for a line that arrived
+  /// twice, the copy that stayed. Null when it is gone.
+  final SyncRecord? kept;
 }
 
 /// The id something deleted for good comes back under: the same on every
@@ -326,6 +451,7 @@ class SyncService {
     return SyncReport(
       applied: result.applied + twice,
       conflicts: result.conflicts.length,
+      changes: SyncChanges.between(here, await _here()),
     );
   }
 
@@ -562,6 +688,87 @@ class SyncService {
           ...replaced,
         ]),
       },
+    );
+  }
+
+  /// What waits, oldest first, each beside the version that stayed.
+  Future<List<Waiting>> waiting() async {
+    final List<SyncConflict> all = await conflicts();
+    if (all.isEmpty) return const <Waiting>[];
+    final Map<String, SyncRecord> present = await _here();
+    SyncRecord? kept(SyncRecord waits, ConflictReason reason) {
+      if (present[waits.key] case final SyncRecord same) return same;
+      if (reason != ConflictReason.duplicate || waits.table != 'entries') {
+        return null;
+      }
+      // Of a line that arrived twice, the copy that stayed has another id.
+      for (final SyncRecord r in present.values) {
+        if (r.table == 'entries' &&
+            r.data?['sourceRef'] == waits.data?['sourceRef'] &&
+            r.data?['accountId'] == waits.data?['accountId']) {
+          return r;
+        }
+      }
+      return null;
+    }
+
+    return <Waiting>[
+      for (final SyncConflict c in all) Waiting(c, kept(c.record, c.reason)),
+    ];
+  }
+
+  /// Takes from [conflict]'s waiting version the fields in [take] into
+  /// [kept], the version that stayed, and writes the result here as an
+  /// edit made on this device: the next file carries it like any other.
+  /// What waited goes with it; nothing else changes.
+  ///
+  /// The merge itself stays a merge of whole records: the person does the
+  /// combining, seeing both versions, so nothing goes without them
+  /// choosing it.
+  Future<void> combine(
+    SyncConflict conflict,
+    SyncRecord kept,
+    Iterable<SyncField> take,
+  ) async {
+    final Map<String, Object?> data = combineVersions(
+      kept,
+      conflict.record,
+      take,
+    );
+    final bool changed = contentHash(data) != contentHash(kept.data!);
+    await store.applySync(
+      upserts: <SyncRecord>[
+        if (changed)
+          SyncRecord(kept.table, kept.id, <String, Object?>{
+            ...data,
+            // Edited now, as an edit in the movement's sheet would say.
+            if (kept.table == 'entries')
+              'updatedAt': _now().millisecondsSinceEpoch,
+          }),
+      ],
+      deletes: const <SyncRecord>[],
+      settings: <String, String>{
+        _conflictsKey: _conflictsJson(<SyncConflict>[
+          for (final SyncConflict c in await conflicts())
+            if (!_same(c, conflict)) c,
+        ]),
+      },
+    );
+  }
+
+  /// Puts [conflict] back among what waits, in its place by when it came:
+  /// «Deshacer» after «Descartar».
+  Future<void> keepWaiting(SyncConflict conflict) async {
+    final List<SyncConflict> all = await conflicts();
+    if (all.any((SyncConflict c) => _same(c, conflict))) return;
+    final int at = all.indexWhere(
+      (SyncConflict c) => c.at.isAfter(conflict.at),
+    );
+    await store.setSetting(
+      _conflictsKey,
+      _conflictsJson(
+        <SyncConflict>[...all]..insert(at < 0 ? all.length : at, conflict),
+      ),
     );
   }
 

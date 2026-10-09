@@ -4538,32 +4538,81 @@ class AppLocalizationsEs extends AppLocalizations {
   String get syncSaved => 'Archivo guardado. Ábrelo en tu otro dispositivo.';
 
   @override
-  String syncMerged(int count) {
+  String get syncUpToDate => 'Ya estaba todo al día.';
+
+  @override
+  String syncArrivedOne(String items) {
+    return 'Llegó $items.';
+  }
+
+  @override
+  String syncArrivedMany(String items) {
+    return 'Llegaron $items.';
+  }
+
+  @override
+  String syncGoneOne(String items) {
+    return 'Se borró $items.';
+  }
+
+  @override
+  String syncGoneMany(String items) {
+    return 'Se borraron $items.';
+  }
+
+  @override
+  String syncItemMovements(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Listo: $count cambios.',
-      one: 'Listo: un cambio.',
-      zero: 'Ya estaba todo al día.',
+      other: '$count movimientos',
+      one: 'un movimiento',
     );
     return '$_temp0';
   }
 
   @override
-  String syncMergedWaiting(int count, int waiting) {
+  String syncItemAccounts(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count cambios',
-      one: 'Un cambio',
+      other: '$count cuentas',
+      one: 'una cuenta',
     );
-    String _temp1 = intl.Intl.pluralLogic(
-      waiting,
+    return '$_temp0';
+  }
+
+  @override
+  String syncItemPlan(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
       locale: localeName,
-      other: '$waiting esperan',
-      one: 'uno espera',
+      other: '$count cambios del Plan',
+      one: 'un cambio del Plan',
     );
-    return '$_temp0; $_temp1 a que lo revises.';
+    return '$_temp0';
+  }
+
+  @override
+  String syncItemSettings(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ajustes',
+      one: 'un ajuste',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String syncWaitingCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count esperan en «Para revisar».',
+      one: 'Uno espera en «Para revisar».',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -4619,6 +4668,71 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get syncDismiss => 'Descartar';
+
+  @override
+  String get syncDismissed => 'Descartado.';
+
+  @override
+  String get syncKept => 'Lo que quedó';
+
+  @override
+  String get syncWaitingVersion => 'Lo que espera';
+
+  @override
+  String get syncSameFields =>
+      'Las dos versiones dicen lo mismo en lo que se ve.';
+
+  @override
+  String get syncCombine => 'Combinar';
+
+  @override
+  String get syncCombineTitle => 'Combinar los dos cambios';
+
+  @override
+  String get syncCombineBody => 'Elige qué queda en cada dato que cambió.';
+
+  @override
+  String get syncCombined =>
+      'Combinado. Tus otros dispositivos lo reciben con el próximo archivo.';
+
+  @override
+  String get syncFieldName => 'Nombre';
+
+  @override
+  String get syncFieldNote => 'Nota';
+
+  @override
+  String get syncFieldInstitution => 'Entidad';
+
+  @override
+  String get syncFieldOpening => 'Saldo inicial';
+
+  @override
+  String get syncFieldLimit => 'Cupo';
+
+  @override
+  String get syncFieldCadence => 'Cada cuánto';
+
+  @override
+  String get syncFieldNext => 'Próximo cobro';
+
+  @override
+  String get syncFieldState => 'Estado';
+
+  @override
+  String get syncActive => 'Activo';
+
+  @override
+  String get syncPaused => 'En pausa';
+
+  @override
+  String get syncFieldTarget => 'Meta';
+
+  @override
+  String get syncFieldSaved => 'Llevas';
+
+  @override
+  String get syncFieldMonthly => 'Cada mes';
 
   @override
   String get syncRestored =>

@@ -12,6 +12,7 @@ import 'package:quincena/money/asset.dart';
 import 'package:quincena/money/money.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
+import 'package:quincena/sync/compare.dart';
 import 'package:quincena/sync/merge.dart';
 import 'package:quincena/sync/sync_file.dart';
 import 'package:quincena/sync/sync_service.dart';
@@ -150,6 +151,79 @@ void main() {
       expect(again.sublist(6, 38), isNot(file.sublist(6, 38)));
       expect(file.length, again.length);
       expect((file.length - 78) % (16 * 1024), 0);
+    });
+  });
+
+  group('two versions, field by field', () {
+    SyncRecord lunch(Map<String, Object?> data) =>
+        SyncRecord('entries', 'e1', <String, Object?>{
+          'id': 'e1',
+          'accountId': 'a1',
+          'amount': '-30000',
+          'kind': 'expense',
+          'category': 'restaurants',
+          'payee': 'Almuerzo',
+          'note': '',
+          'date': 1790000000000,
+          ...data,
+        });
+
+    test('say which fields differ, an amount with its kind and account', () {
+      final List<FieldDiff> diffs = compareVersions(
+        lunch(<String, Object?>{'note': 'Con factura'}),
+        lunch(<String, Object?>{'payee': 'Almuerzo con Juan'}),
+      );
+      expect(
+        <String, bool>{
+          for (final FieldDiff f in diffs) f.field.name: f.differs,
+        },
+        <String, bool>{
+          'payee': true,
+          'money': false,
+          'category': false,
+          'date': false,
+          'note': true,
+        },
+      );
+      expect(
+        compareVersions(
+          lunch({}),
+          lunch(<String, Object?>{'accountId': 'a2'}),
+        ).firstWhere((FieldDiff f) => f.field.name == 'money').differs,
+        isTrue,
+      );
+      // A leg of a transfer cannot take its amount or date alone.
+      final List<FieldDiff> leg = compareVersions(
+        lunch(<String, Object?>{'transferId': 't1'}),
+        lunch(<String, Object?>{'transferId': 't1', 'note': 'x'}),
+      );
+      expect(
+        <String>[
+          for (final FieldDiff f in leg)
+            if (!f.free) f.field.name,
+        ],
+        <String>['money', 'date'],
+      );
+      // Records known by name are not compared this way.
+      expect(fieldsOf('settings'), isEmpty);
+    });
+
+    test('combining takes only the fields chosen', () {
+      final SyncRecord kept = lunch(<String, Object?>{'note': 'Con factura'});
+      final SyncRecord waiting = lunch(<String, Object?>{
+        'payee': 'Almuerzo con Juan',
+        'amount': '-32000',
+      });
+      final Map<String, Object?> both = combineVersions(
+        kept,
+        waiting,
+        <SyncField>[
+          fieldsOf('entries').firstWhere((SyncField f) => f.name == 'payee'),
+        ],
+      );
+      expect(both['payee'], 'Almuerzo con Juan');
+      expect(both['note'], 'Con factura');
+      expect(both['amount'], '-30000');
     });
   });
 
@@ -330,6 +404,63 @@ void main() {
         expect(shown.note, isNot('Pagó la mitad'));
       }
       expect(await phone.sync.conflicts(), isEmpty);
+    });
+
+    test('a file says what it brought: movements with a transfer once, '
+        'accounts, the Plan and the rest', () async {
+      await send(phone, laptop);
+      laptop.later();
+      final String bankId = await bank(laptop);
+      final Account cash = await laptop.store.addAccount(
+        name: 'Efectivo',
+        kind: AccountKind.cash,
+        asset: Asset.cop,
+        opening: d('0'),
+      );
+      Future<Entry> spend(String payee, String amount) => laptop.store.addEntry(
+        accountId: bankId,
+        amount: d(amount),
+        kind: EntryKind.expense,
+        date: DateTime(2026, 10, 3),
+        category: 'transport',
+        payee: payee,
+      );
+      final Entry uber = await spend('Uber', '20000');
+      await spend('D1', '60000');
+      await laptop.store.addTransfer(
+        fromAccountId: bankId,
+        toAccountId: cash.id,
+        sent: d('50000'),
+        date: DateTime(2026, 10, 3),
+      );
+      await laptop.store.addGoal(
+        name: 'Cartagena',
+        target: Money(d('2000000'), Asset.cop),
+      );
+      await laptop.store.setSetting(
+        'plan.wishes',
+        jsonEncode(<Object?>[
+          <String, Object?>{'id': 'w1', 'name': 'Silla', 'price': 650000},
+        ]),
+      );
+      final Profile ana = (await laptop.store.profile())!;
+      await laptop.store.saveProfile(ana.copyWith(name: 'Ana María'));
+
+      SyncChanges changes = (await send(laptop, phone)).changes;
+      expect(changes.movements, 3);
+      expect(changes.accounts, 1);
+      expect(changes.plan, 2);
+      expect(changes.settings, 1);
+      expect(changes.movementsGone, 0);
+
+      // The same file again brings nothing.
+      expect((await send(laptop, phone)).changes.movements, 0);
+
+      laptop.later();
+      await laptop.store.deleteEntry(uber);
+      changes = (await send(laptop, phone)).changes;
+      expect(changes.movements, 0);
+      expect(changes.movementsGone, 1);
     });
 
     test('deleted on one, edited on the other: it stays deleted, the edit '

@@ -23,6 +23,7 @@ import 'package:quincena/exchanges/binance_link.dart';
 import 'package:quincena/format/money.dart';
 import 'package:quincena/licenses.dart';
 import 'package:quincena/money/asset.dart';
+import 'package:quincena/money/money.dart';
 import 'package:quincena/money/rates.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/session/session.dart';
@@ -35,7 +36,7 @@ import 'package:quincena/sync/vault.dart';
 import 'package:quincena/version.dart';
 import 'package:quincena/ui/home_page.dart';
 import 'package:quincena/ui/own/capture_rules_page.dart';
-import 'package:quincena/ui/own/look.dart' show Panel, SectionLabel;
+import 'package:quincena/ui/own/look.dart' show Panel, SectionLabel, moneyText;
 import 'package:quincena/ui/own/own_settings_page.dart';
 import 'package:quincena/ui/own/own_shell.dart';
 import 'package:quincena/ui/own/statement_page.dart';
@@ -2839,9 +2840,28 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       phone.toPick.add(file);
       await _waitMessages(f);
       await f.tap('Abrir un archivo de otro dispositivo');
+      final String arrived = _notice(f);
       await f.step(
-        'Al abrir el archivo del computador avisa «Listo: 19 cambios.», sin '
-        'decir cuáles.',
+        'Al abrir el archivo del computador, el aviso dice qué llegó: '
+        '«$arrived»',
+      );
+      // Their movements, a transfer once, and their accounts: all new here.
+      final List<Entry> moved = await _read(f, computer.entries);
+      final int movements = <String>{
+        for (final Entry e in moved) e.transferId ?? e.id,
+      }.length;
+      final int accounts = (await _read(
+        f,
+        () => computer.accounts(archived: true),
+      )).length;
+      await f.check(
+        'El aviso dice que llegaron $movements movimientos y $accounts cuentas',
+        () {
+          expect(
+            arrived,
+            startsWith('Llegaron $movements movimientos, $accounts cuentas'),
+          );
+        },
       );
       await f.check(
         'Llegaron las cuentas y los $theirs movimientos del computador, y '
@@ -2939,14 +2959,17 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       phone.toPick.add(await _read(f, there.export));
       await _waitMessages(f);
       await f.tap('Abrir un archivo de otro dispositivo');
-      await f.step('Al abrir el archivo del computador: «Listo: un cambio.»');
+      await f.step(
+        'Al abrir el archivo del computador el aviso dice qué llegó: «Llegó un '
+        'movimiento.»',
+      );
       await f.check('Llegó el almuerzo anotado en el computador', () {
         expect(_own(f).snapshot!.entries, hasLength(mine + 1));
         expect(
           _own(f).snapshot!.entries.map((Entry e) => e.payee),
           contains('Almuerzo en el computador'),
         );
-        expect(f.shows('Listo: un cambio.'), isTrue);
+        expect(f.shows('Llegó un movimiento.'), isTrue);
       });
       phone.toPick.add(await _read(f, there.export));
       await f.tap('Abrir un archivo de otro dispositivo');
@@ -2956,7 +2979,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         'Al momento, el aviso es el de este archivo y no el de antes',
         () {
           expect(f.shows('Ya estaba todo al día.'), isTrue);
-          expect(f.shows('Listo: un cambio.'), isFalse);
+          expect(f.shows('Llegó un movimiento.'), isFalse);
           expect(find.byType(SnackBar), findsOneWidget);
         },
       );
@@ -3092,18 +3115,42 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       phone.toPick.add(await _read(f, there.export));
       await _waitMessages(f);
       await f.tap('Abrir un archivo de otro dispositivo');
+      await f.check('El aviso dice qué llegó y que uno espera', () {
+        expect(
+          f.shows('Llegó un movimiento. Uno espera en «Para revisar».'),
+          isTrue,
+        );
+      });
       await f.reveal(find.text('Traer de vuelta'));
       await f.step(
         'Cambiado en los dos: quedó lo del computador y tu cambio espera en '
-        '«Para revisar», con «Descartar» y «Traer de vuelta».',
+        '«Para revisar», lado a lado con lo que quedó: «Nombre» y «Nota» '
+        'marcados porque cambiaron. Abajo, «Descartar», «Combinar» y «Traer '
+        'de vuelta».',
       );
       Entry lunch() => _own(
         f,
       ).snapshot!.entries.firstWhere((Entry e) => e.category == 'restaurants');
-      await f.check('Quedó la versión del computador y la tuya espera', () {
+      await f.check('Quedó la versión del computador y la tuya espera, campo '
+          'por campo', () {
         expect(lunch().payee, 'Crepes & Waffles');
         expect(lunch().note, 'Con factura');
         expect(find.textContaining('Crepes con Laura'), findsOneWidget);
+        expect(_compared(f), <String, (String, String, bool)>{
+          'Nombre': ('Crepes & Waffles', 'Crepes con Laura', true),
+          'Monto': (
+            _rowAmount(f, 'Crepes & Waffles'),
+            _rowAmount(f, 'Crepes & Waffles'),
+            false,
+          ),
+          'Categoría': ('Restaurantes', 'Restaurantes', false),
+          'Fecha': (
+            _compared(f)['Fecha']!.$1,
+            _compared(f)['Fecha']!.$1,
+            false,
+          ),
+          'Nota': ('Con factura', '\u2014', true),
+        });
       });
       await f.tap('Traer de vuelta');
       await f.reveal(find.text('Descartar'));
@@ -3144,18 +3191,31 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       });
       await f.tap('Descartar');
       await f.step(
-        '«Descartar» lo quita de la lista y «Para revisar» desaparece.',
+        '«Descartar» lo quita de la lista, «Para revisar» desaparece y abajo '
+        'dice «Descartado.» con «Deshacer», por si fue sin querer.',
+      );
+      Future<List<SyncConflict>> waiting() => _read(
+        f,
+        () => SyncService(_store(f), keys: SecureKeyStore()).conflicts(),
       );
       await f.check('No queda nada por revisar', () async {
         expect(f.shows('PARA REVISAR'), isFalse);
-        expect(
-          await _read(
-            f,
-            () => SyncService(_store(f), keys: SecureKeyStore()).conflicts(),
-          ),
-          isEmpty,
-        );
+        expect(await waiting(), isEmpty);
         expect(lunch().payee, 'Crepes con Laura');
+      });
+      await f.tap('Deshacer');
+      await f.step('Con «Deshacer» vuelve a «Para revisar», como estaba.');
+      await f.check('Volvió lo del computador, con su nota', () async {
+        expect(f.shows('PARA REVISAR'), isTrue);
+        final List<SyncConflict> back = await waiting();
+        expect(back, hasLength(1));
+        expect(back.single.record.data?['note'], 'Con factura');
+      });
+      await _waitMessages(f);
+      await f.tap('Descartar');
+      await f.check('Descartado otra vez, ya no queda nada', () async {
+        expect(f.shows('PARA REVISAR'), isFalse);
+        expect(await waiting(), isEmpty);
       });
     },
   ),
@@ -3649,6 +3709,133 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       );
     },
   ),
+  AppFlow(
+    '10-09-combinar-dos-cambios',
+    'Combinar dos cambios del mismo movimiento',
+    area: 'Varios dispositivos y respaldo',
+    goal:
+        'En el teléfono le cambié el nombre a un movimiento y en el computador '
+        'le puse una nota: quiero quedarme con las dos cosas.',
+    data: seeded,
+    manual: <String>[
+      'Llevar el archivo de un dispositivo al otro y de vuelta, y ver el '
+          'movimiento combinado en los dos.',
+    ],
+    (FlowRun f) async {
+      final _Phone phone = await _Phone.install(f);
+      await f.tapTip('Ajustes');
+      await f.tap('Varios dispositivos');
+      await f.tap('Empezar en este dispositivo');
+      await f.tap('Listo');
+      final String code = (await _syncCode(f))!;
+      // The computer joins with the code and opens this phone's file.
+      final (QuincenaStore computer, SyncService there) = await _otherDevice(f);
+      await _read(f, () async {
+        await there.join(code);
+        await there.import(
+          await SyncService(
+            _store(f),
+            keys: SecureKeyStore(),
+            now: () => screensNow,
+          ).export(),
+        );
+        // The same lunch: here a new name; there, later, a note.
+        final Entry here = (await _store(
+          f,
+        ).entries()).firstWhere((Entry e) => e.payee == 'Crepes & Waffles');
+        await _store(f).updateEntry(here.copyWith(payee: 'Crepes con Laura'));
+        final Entry theirs = (await computer.entries()).firstWhere(
+          (Entry e) => e.id == here.id,
+        );
+        await computer.updateEntry(theirs.copyWith(note: 'Con factura'));
+      });
+      phone.toPick.add(await _read(f, there.export));
+      await _waitMessages(f);
+      await f.tap('Abrir un archivo de otro dispositivo');
+      await f.reveal(find.text('Combinar'));
+      await f.step(
+        'Al abrir el archivo del computador, «Para revisar» muestra las dos '
+        'versiones lado a lado: el nombre y la nota cambiaron, cada uno en un '
+        'lado, y están marcados. Abajo está «Combinar».',
+      );
+      Entry lunch() => _own(
+        f,
+      ).snapshot!.entries.firstWhere((Entry e) => e.category == 'restaurants');
+      await f.check('Quedó lo del computador; tu nombre espera al lado', () {
+        expect(lunch().payee, 'Crepes & Waffles');
+        expect(lunch().note, 'Con factura');
+        final Map<String, (String, String, bool)> rows = _compared(f);
+        expect(rows['Nombre'], ('Crepes & Waffles', 'Crepes con Laura', true));
+        expect(rows['Nota'], ('Con factura', '\u2014', true));
+        expect(rows['Categoría']!.$3, isFalse);
+      });
+      await f.tap('Combinar');
+      await f.step(
+        '«Combinar» pregunta solo por lo que cambió: en «Nombre», lo que quedó '
+        'o lo que espera; en «Nota» ya viene marcada la que dice algo, «Con '
+        'factura».',
+      );
+      bool chosen(String text) {
+        final Finder tile = find.ancestor(
+          of: find.text(text),
+          matching: find.byType(RadioListTile<bool>),
+        );
+        final RadioGroup<bool> group = f.tester.widget<RadioGroup<bool>>(
+          find.ancestor(of: tile, matching: find.byType(RadioGroup<bool>)),
+        );
+        return group.groupValue ==
+            f.tester.widget<RadioListTile<bool>>(tile).value;
+      }
+
+      await f.check('Pregunta por el nombre y la nota, y nada más', () {
+        expect(f.shows('NOMBRE'), isTrue);
+        expect(f.shows('NOTA'), isTrue);
+        expect(f.shows('CATEGORÍA'), isFalse);
+        expect(chosen('Crepes & Waffles'), isTrue);
+        expect(chosen('Con factura'), isTrue);
+      });
+      await f.tap('Crepes con Laura');
+      await f.tap('Guardar');
+      await f.step(
+        'Con «Crepes con Laura» y «Guardar», el movimiento queda con el nombre '
+        'del teléfono y la nota del computador; «Para revisar» se va y abajo '
+        'dice «Combinado. Tus otros dispositivos lo reciben con el próximo '
+        'archivo.»',
+      );
+      await f.check('Quedaron los dos cambios y nada espera', () async {
+        expect(lunch().payee, 'Crepes con Laura');
+        expect(lunch().note, 'Con factura');
+        expect(f.shows('PARA REVISAR'), isFalse);
+        expect(
+          await _read(
+            f,
+            () => SyncService(_store(f), keys: SecureKeyStore()).conflicts(),
+          ),
+          isEmpty,
+        );
+      });
+      await _waitMessages(f);
+      await f.tap('Guardar mis cambios en un archivo');
+      await f.step(
+        'El cambio combinado viaja como cualquier otro: «Guardar mis cambios '
+        'en un archivo» guarda quincena-2026-10-03.qsync para el computador.',
+      );
+      await f.check('El computador recibe el movimiento combinado, sin nada '
+          'que revisar', () async {
+        final SyncReport report = await _read(
+          f,
+          () => there.import(phone.saved['quincena-2026-10-03.qsync']!),
+        );
+        expect(report.conflicts, 0);
+        final Entry theirs = (await _read(
+          f,
+          computer.entries,
+        )).firstWhere((Entry e) => e.category == 'restaurants');
+        expect(theirs.payee, 'Crepes con Laura');
+        expect(theirs.note, 'Con factura');
+      });
+    },
+  ),
 ];
 
 /// The suggestions on the accounts step not added in 01-02: the chip, the
@@ -3667,6 +3854,42 @@ const List<String> _otherFixed = <String>[
   'Internet',
   'Plan del celular',
 ];
+
+/// What the message at the bottom says now.
+String _notice(FlowRun f) => <String>[
+  for (final Element e
+      in find
+          .descendant(of: find.byType(SnackBar), matching: find.byType(Text))
+          .evaluate())
+    (e.widget as Text).data ?? '',
+].join(' ');
+
+/// The comparison in «Para revisar», by the field's name: what stayed,
+/// what waits, and whether the row is marked as different.
+Map<String, (String, String, bool)> _compared(FlowRun f) {
+  final Table table = f.tester.widget<Table>(find.byType(Table).first);
+  String text(Widget cell) =>
+      cell is Padding ? (cell.child! as Text).data! : '';
+  return <String, (String, String, bool)>{
+    for (final TableRow row in table.children.skip(1))
+      text(row.children[0]): (
+        text(row.children[1]),
+        text(row.children[2]),
+        row.decoration != null,
+      ),
+  };
+}
+
+/// The amount and account a movement named [payee] shows, as the
+/// comparison writes them.
+String _rowAmount(FlowRun f, String payee) {
+  final Entry e = _own(
+    f,
+  ).snapshot!.entries.firstWhere((Entry e) => e.payee == payee);
+  final Account a = _own(f).snapshot!.account(e.accountId)!;
+  return '${moneyText(Money(e.amount, a.asset), base: _own(f).profile!.base)}'
+      ' · ${a.name}';
+}
 
 /// What «¿Restaurar este respaldo?» says [held] brings, line by line.
 List<String> _holds(BackupContents held) {

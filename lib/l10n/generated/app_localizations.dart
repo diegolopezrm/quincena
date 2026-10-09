@@ -7069,17 +7069,65 @@ abstract class AppLocalizations {
   /// **'Archivo guardado. Ábrelo en tu otro dispositivo.'**
   String get syncSaved;
 
-  /// No description provided for @syncMerged.
+  /// No description provided for @syncUpToDate.
   ///
   /// In es, this message translates to:
-  /// **'{count, plural, =0{Ya estaba todo al día.} =1{Listo: un cambio.} other{Listo: {count} cambios.}}'**
-  String syncMerged(int count);
+  /// **'Ya estaba todo al día.'**
+  String get syncUpToDate;
 
-  /// No description provided for @syncMergedWaiting.
+  /// No description provided for @syncArrivedOne.
   ///
   /// In es, this message translates to:
-  /// **'{count, plural, =1{Un cambio} other{{count} cambios}}; {waiting, plural, =1{uno espera} other{{waiting} esperan}} a que lo revises.'**
-  String syncMergedWaiting(int count, int waiting);
+  /// **'Llegó {items}.'**
+  String syncArrivedOne(String items);
+
+  /// No description provided for @syncArrivedMany.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegaron {items}.'**
+  String syncArrivedMany(String items);
+
+  /// No description provided for @syncGoneOne.
+  ///
+  /// In es, this message translates to:
+  /// **'Se borró {items}.'**
+  String syncGoneOne(String items);
+
+  /// No description provided for @syncGoneMany.
+  ///
+  /// In es, this message translates to:
+  /// **'Se borraron {items}.'**
+  String syncGoneMany(String items);
+
+  /// No description provided for @syncItemMovements.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{un movimiento} other{{count} movimientos}}'**
+  String syncItemMovements(int count);
+
+  /// No description provided for @syncItemAccounts.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{una cuenta} other{{count} cuentas}}'**
+  String syncItemAccounts(int count);
+
+  /// No description provided for @syncItemPlan.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{un cambio del Plan} other{{count} cambios del Plan}}'**
+  String syncItemPlan(int count);
+
+  /// No description provided for @syncItemSettings.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{un ajuste} other{{count} ajustes}}'**
+  String syncItemSettings(int count);
+
+  /// No description provided for @syncWaitingCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Uno espera en «Para revisar».} other{{count} esperan en «Para revisar».}}'**
+  String syncWaitingCount(int count);
 
   /// No description provided for @syncNotSync.
   ///
@@ -7170,6 +7218,132 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Descartar'**
   String get syncDismiss;
+
+  /// No description provided for @syncDismissed.
+  ///
+  /// In es, this message translates to:
+  /// **'Descartado.'**
+  String get syncDismissed;
+
+  /// No description provided for @syncKept.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que quedó'**
+  String get syncKept;
+
+  /// No description provided for @syncWaitingVersion.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que espera'**
+  String get syncWaitingVersion;
+
+  /// No description provided for @syncSameFields.
+  ///
+  /// In es, this message translates to:
+  /// **'Las dos versiones dicen lo mismo en lo que se ve.'**
+  String get syncSameFields;
+
+  /// No description provided for @syncCombine.
+  ///
+  /// In es, this message translates to:
+  /// **'Combinar'**
+  String get syncCombine;
+
+  /// No description provided for @syncCombineTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Combinar los dos cambios'**
+  String get syncCombineTitle;
+
+  /// No description provided for @syncCombineBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige qué queda en cada dato que cambió.'**
+  String get syncCombineBody;
+
+  /// No description provided for @syncCombined.
+  ///
+  /// In es, this message translates to:
+  /// **'Combinado. Tus otros dispositivos lo reciben con el próximo archivo.'**
+  String get syncCombined;
+
+  /// No description provided for @syncFieldName.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre'**
+  String get syncFieldName;
+
+  /// No description provided for @syncFieldNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Nota'**
+  String get syncFieldNote;
+
+  /// No description provided for @syncFieldInstitution.
+  ///
+  /// In es, this message translates to:
+  /// **'Entidad'**
+  String get syncFieldInstitution;
+
+  /// No description provided for @syncFieldOpening.
+  ///
+  /// In es, this message translates to:
+  /// **'Saldo inicial'**
+  String get syncFieldOpening;
+
+  /// No description provided for @syncFieldLimit.
+  ///
+  /// In es, this message translates to:
+  /// **'Cupo'**
+  String get syncFieldLimit;
+
+  /// No description provided for @syncFieldCadence.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada cuánto'**
+  String get syncFieldCadence;
+
+  /// No description provided for @syncFieldNext.
+  ///
+  /// In es, this message translates to:
+  /// **'Próximo cobro'**
+  String get syncFieldNext;
+
+  /// No description provided for @syncFieldState.
+  ///
+  /// In es, this message translates to:
+  /// **'Estado'**
+  String get syncFieldState;
+
+  /// No description provided for @syncActive.
+  ///
+  /// In es, this message translates to:
+  /// **'Activo'**
+  String get syncActive;
+
+  /// No description provided for @syncPaused.
+  ///
+  /// In es, this message translates to:
+  /// **'En pausa'**
+  String get syncPaused;
+
+  /// No description provided for @syncFieldTarget.
+  ///
+  /// In es, this message translates to:
+  /// **'Meta'**
+  String get syncFieldTarget;
+
+  /// No description provided for @syncFieldSaved.
+  ///
+  /// In es, this message translates to:
+  /// **'Llevas'**
+  String get syncFieldSaved;
+
+  /// No description provided for @syncFieldMonthly.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada mes'**
+  String get syncFieldMonthly;
 
   /// No description provided for @syncRestored.
   ///
