@@ -1480,6 +1480,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get closeChanged => 'Qué cambió';
 
   @override
+  String get closeMonthly =>
+      'Pagos de cada mes, en los últimos 30 días frente a los 30 anteriores:';
+
+  @override
   String get closeComing => 'Qué viene';
 
   @override
@@ -1487,22 +1491,22 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String closeSpentMore(String spent, String difference) {
-    return 'Gastaste $spent, $difference más que la quincena anterior.';
+    return 'En el día a día gastaste $spent, $difference más que la quincena anterior.';
   }
 
   @override
   String closeSpentLess(String spent, String difference) {
-    return 'Gastaste $spent, $difference menos que la quincena anterior.';
+    return 'En el día a día gastaste $spent, $difference menos que la quincena anterior.';
   }
 
   @override
   String closeSpentSame(String spent) {
-    return 'Gastaste $spent, lo mismo que la quincena anterior.';
+    return 'En el día a día gastaste $spent, lo mismo que la quincena anterior.';
   }
 
   @override
   String closeSpentFirst(String spent) {
-    return 'Gastaste $spent. Es tu primera quincena completa registrada: todavía no hay con qué compararla.';
+    return 'En el día a día gastaste $spent. Es tu primera quincena completa registrada: todavía no hay con qué compararla.';
   }
 
   @override
@@ -1610,7 +1614,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get buyWithoutPay => 'sin contar tu pago';
 
   @override
-  String get closeSpentNone => 'No registraste gastos en esta quincena.';
+  String get closeSpentNone =>
+      'No registraste gastos del día a día en esta quincena.';
 
   @override
   String get computedBuy =>

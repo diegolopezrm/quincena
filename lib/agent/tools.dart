@@ -255,12 +255,16 @@ List<Tool> accountTools(
   Tool<Map<String, dynamic>>(
     name: 'fortnight_close',
     description:
-        'The pay period that just ended, payday to payday: what was spent '
-        'and earned; the period before, only when a whole one is recorded '
-        '(without it, compare nothing and never draw a trend); the categories '
-        'that moved most; what is committed until the next payday; and the '
-        'one suggestion the app worked out (a tight day ahead, a category '
-        'that grew, free money and a goal), or none. Never judge the spending.',
+        'The pay period that just ended, payday to payday: what the day to '
+        'day spent and what was earned; the period before, only when a whole '
+        'one is recorded (without it, compare nothing and never draw a '
+        'trend); the day-to-day categories that moved most; the monthly '
+        'payments (rent, utilities, subscriptions, loans) over the last 30 '
+        'days against the 30 before, apart, since by fortnight they swing '
+        'with the day they fall on; what is committed until the next '
+        'payday; and the one suggestion the app worked out (a tight day '
+        'ahead, a category that grew, free money and a goal), or none. Never '
+        'judge the spending.',
     onCall: (_) {
       final Ledger ledger = current();
       final PeriodClose? c = closePeriod(ledger);
@@ -285,6 +289,14 @@ List<Tool> accountTools(
               'category': ch.category.name,
               'spent': ledger.major(ch.now),
               if (ch.before != null) 'spentBefore': ledger.major(ch.before!),
+            },
+        ],
+        'monthlyPayments': <Map<String, Object?>>[
+          for (final CategoryChange ch in c.monthly)
+            <String, Object?>{
+              'category': ch.category.name,
+              'last30Days': ledger.major(ch.now),
+              if (ch.before != null) 'the30Before': ledger.major(ch.before!),
             },
         ],
         'committedUntilPayday': <Map<String, Object?>>[

@@ -229,6 +229,16 @@ class CategoryChange {
   int get difference => now - (before ?? 0);
 }
 
+/// What is usually paid once a month: compared fortnight to fortnight it
+/// swings with the fortnight the day falls in, so the close compares it
+/// month to month instead.
+const Set<Category> monthlyCategories = <Category>{
+  Category.housing,
+  Category.utilities,
+  Category.subscriptions,
+  Category.debt,
+};
+
 /// The one thing the close suggests, if any.
 enum CloseAction {
   /// A day ahead goes under the cushion.
@@ -261,22 +271,30 @@ class PeriodClose {
     this.tightDay,
     this.actionCategory,
     this.startBefore,
+    this.monthly = const <CategoryChange>[],
   });
 
   /// The period: from [start], a payday, to the day before [end], the
   /// payday that closed it.
   final DateTime start;
   final DateTime end;
+
+  /// What the day to day took: the [monthlyCategories] go apart.
   final int spent;
   final int income;
 
-  /// The period before; null without a whole one recorded.
+  /// The day to day of the period before; null without a whole one
+  /// recorded.
   final int? spentBefore;
+
+  /// What the [monthlyCategories] took in the 30 days up to [end], against
+  /// the 30 before when they were recorded; largest first.
+  final List<CategoryChange> monthly;
 
   /// Where the period before starts; null without a whole one recorded.
   final DateTime? startBefore;
 
-  /// Largest movement first.
+  /// The day to day's categories, largest movement first.
   final List<CategoryChange> changes;
 
   /// What is committed until the next payday.
@@ -343,8 +361,30 @@ PeriodClose? closePeriod(Ledger ledger, {bool hasGoals = false}) {
     return by;
   }
 
-  final Map<Category, int> now = spentIn(start, end);
-  final Map<Category, int>? then = comparable ? spentIn(before, start) : null;
+  Map<Category, int> dayToDay(Map<Category, int> by) => <Category, int>{
+    for (final MapEntry<Category, int> e in by.entries)
+      if (!monthlyCategories.contains(e.key)) e.key: e.value,
+  };
+  final Map<Category, int> now = dayToDay(spentIn(start, end));
+  final Map<Category, int>? then = comparable
+      ? dayToDay(spentIn(before, start))
+      : null;
+  // The monthly payments, month against month.
+  final DateTime monthAgo = DateTime(end.year, end.month, end.day - 30);
+  final DateTime twoMonthsAgo = DateTime(end.year, end.month, end.day - 60);
+  final Map<Category, int> thisMonth = spentIn(monthAgo, end);
+  final Map<Category, int>? lastMonth = first.isAfter(twoMonthsAgo)
+      ? null
+      : spentIn(twoMonthsAgo, monthAgo);
+  final List<CategoryChange> monthly = <CategoryChange>[
+    for (final Category c in monthlyCategories)
+      if ((thisMonth[c] ?? 0) > 0 || (lastMonth?[c] ?? 0) > 0)
+        CategoryChange(
+          c,
+          thisMonth[c] ?? 0,
+          lastMonth == null ? null : (lastMonth[c] ?? 0),
+        ),
+  ]..sort((CategoryChange a, CategoryChange b) => b.now.compareTo(a.now));
   final int spent = now.values.fold(0, (int a, int b) => a + b);
   final int? spentBefore = then?.values.fold<int>(0, (int a, int b) => a + b);
   final int income = all
@@ -401,6 +441,7 @@ PeriodClose? closePeriod(Ledger ledger, {bool hasGoals = false}) {
     tightDay: tight?.date,
     actionCategory: actionCategory,
     startBefore: comparable ? before : null,
+    monthly: monthly,
   );
 }
 

@@ -206,6 +206,38 @@ class ClosePage extends StatelessWidget {
                 ),
               ),
             ),
+          // Paid once a month, they fall in one fortnight or the other: they
+          // are compared month to month, apart from the day to day.
+          if (close.monthly.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 8),
+            Text(l.closeMonthly, style: context.type.bodySmall),
+            for (final CategoryChange c in close.monthly)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        c.category.labelIn(lang),
+                        style: context.type.bodyMedium,
+                      ),
+                    ),
+                    Figures(amount(c.now), style: context.type.bodyMedium),
+                    if (c.before != null) ...<Widget>[
+                      const SizedBox(width: 10),
+                      Figures(
+                        c.difference == 0
+                            ? '='
+                            : pesos(ledger.major(c.difference), signed: true),
+                        style: context.type.bodySmall,
+                      ),
+                    ],
+                    // Lined up with the rows above, which open their payments.
+                    const SizedBox(width: 20),
+                  ],
+                ),
+              ),
+          ],
         ],
       ),
       const SizedBox(height: 12),

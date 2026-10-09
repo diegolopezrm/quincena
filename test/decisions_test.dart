@@ -367,20 +367,48 @@ void main() {
 
     test('a category that fell to nothing keeps the payments it had', () async {
       await spend('300000', DateTime(2026, 8, 30, 12), 'groceries');
-      await spend('900000', DateTime(2026, 9, 5, 12), 'housing');
+      await spend('900000', DateTime(2026, 9, 5, 12), 'shopping');
       await spend('290000', DateTime(2026, 9, 16, 12), 'groceries');
       final Ledger l = await ledger();
       final PeriodClose close = (closePeriod(l))!;
       expect(close.startBefore, DateTime(2026, 8, 30));
-      expect(close.changes.first.category, Category.housing);
+      expect(close.changes.first.category, Category.shopping);
       expect(close.changes.first.now, 0);
-      expect(close.movementsOf(l, Category.housing), isEmpty);
+      expect(close.movementsOf(l, Category.shopping), isEmpty);
       expect(
         <int>[
-          for (final Movement m in close.movementsBefore(l, Category.housing))
+          for (final Movement m in close.movementsBefore(l, Category.shopping))
             m.amount,
         ],
         <int>[900000],
+      );
+    });
+
+    test('what is paid once a month goes apart, month against month', () async {
+      await spend('100000', DateTime(2026, 7, 30, 12), 'groceries');
+      await spend('900000', DateTime(2026, 8, 5, 12), 'housing');
+      await spend('300000', DateTime(2026, 8, 30, 12), 'groceries');
+      await spend('900000', DateTime(2026, 9, 5, 12), 'housing');
+      await spend('120000', DateTime(2026, 9, 8, 12), 'utilities');
+      await spend('290000', DateTime(2026, 9, 16, 12), 'groceries');
+      final PeriodClose close = (closePeriod(await ledger()))!;
+      // By fortnight the rent fell to nothing only because of its day: the
+      // day to day is groceries alone.
+      expect(close.spent, 290000);
+      expect(close.spentBefore, 300000);
+      expect(close.changes.map((CategoryChange c) => c.category), <Category>[
+        Category.groceries,
+      ]);
+      // Month against month: the 30 days to the 29th and the 30 before.
+      expect(
+        <(Category, int, int?)>[
+          for (final CategoryChange c in close.monthly)
+            (c.category, c.now, c.before),
+        ],
+        <(Category, int, int?)>[
+          (Category.housing, 900000, 900000),
+          (Category.utilities, 120000, 0),
+        ],
       );
     });
 

@@ -1479,6 +1479,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get closeChanged => 'What changed';
 
   @override
+  String get closeMonthly =>
+      'Monthly payments, over the last 30 days against the 30 before:';
+
+  @override
   String get closeComing => 'Coming up';
 
   @override
@@ -1486,22 +1490,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String closeSpentMore(String spent, String difference) {
-    return 'You spent $spent, $difference more than the previous pay period.';
+    return 'Day to day you spent $spent, $difference more than the previous pay period.';
   }
 
   @override
   String closeSpentLess(String spent, String difference) {
-    return 'You spent $spent, $difference less than the previous pay period.';
+    return 'Day to day you spent $spent, $difference less than the previous pay period.';
   }
 
   @override
   String closeSpentSame(String spent) {
-    return 'You spent $spent, the same as the previous pay period.';
+    return 'Day to day you spent $spent, the same as the previous pay period.';
   }
 
   @override
   String closeSpentFirst(String spent) {
-    return 'You spent $spent. This is your first full pay period on record, so there\'s nothing to compare it with yet.';
+    return 'Day to day you spent $spent. This is your first full pay period on record, so there\'s nothing to compare it with yet.';
   }
 
   @override
@@ -1609,7 +1613,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get buyWithoutPay => 'without counting your pay';
 
   @override
-  String get closeSpentNone => 'You recorded no spending this pay period.';
+  String get closeSpentNone =>
+      'You recorded no day-to-day spending this pay period.';
 
   @override
   String get computedBuy =>

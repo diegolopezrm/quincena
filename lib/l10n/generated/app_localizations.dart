@@ -2306,6 +2306,12 @@ abstract class AppLocalizations {
   /// **'Qué cambió'**
   String get closeChanged;
 
+  /// No description provided for @closeMonthly.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagos de cada mes, en los últimos 30 días frente a los 30 anteriores:'**
+  String get closeMonthly;
+
   /// No description provided for @closeComing.
   ///
   /// In es, this message translates to:
@@ -2321,25 +2327,25 @@ abstract class AppLocalizations {
   /// No description provided for @closeSpentMore.
   ///
   /// In es, this message translates to:
-  /// **'Gastaste {spent}, {difference} más que la quincena anterior.'**
+  /// **'En el día a día gastaste {spent}, {difference} más que la quincena anterior.'**
   String closeSpentMore(String spent, String difference);
 
   /// No description provided for @closeSpentLess.
   ///
   /// In es, this message translates to:
-  /// **'Gastaste {spent}, {difference} menos que la quincena anterior.'**
+  /// **'En el día a día gastaste {spent}, {difference} menos que la quincena anterior.'**
   String closeSpentLess(String spent, String difference);
 
   /// No description provided for @closeSpentSame.
   ///
   /// In es, this message translates to:
-  /// **'Gastaste {spent}, lo mismo que la quincena anterior.'**
+  /// **'En el día a día gastaste {spent}, lo mismo que la quincena anterior.'**
   String closeSpentSame(String spent);
 
   /// No description provided for @closeSpentFirst.
   ///
   /// In es, this message translates to:
-  /// **'Gastaste {spent}. Es tu primera quincena completa registrada: todavía no hay con qué compararla.'**
+  /// **'En el día a día gastaste {spent}. Es tu primera quincena completa registrada: todavía no hay con qué compararla.'**
   String closeSpentFirst(String spent);
 
   /// No description provided for @closeNone.
@@ -2483,7 +2489,7 @@ abstract class AppLocalizations {
   /// No description provided for @closeSpentNone.
   ///
   /// In es, this message translates to:
-  /// **'No registraste gastos en esta quincena.'**
+  /// **'No registraste gastos del día a día en esta quincena.'**
   String get closeSpentNone;
 
   /// No description provided for @computedBuy.

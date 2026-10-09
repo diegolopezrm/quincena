@@ -212,7 +212,8 @@ void main() {
     // 490.000 against 400.000 the fortnight before.
     expect(
       find.text(
-        'Gastaste ${pesos(490000)}, ${pesos(90000)} más que la quincena anterior.',
+        'En el día a día gastaste ${pesos(490000)}, ${pesos(90000)} más que '
+        'la quincena anterior.',
       ),
       findsOneWidget,
     );
@@ -327,7 +328,7 @@ void main() {
         for (final (String amount, DateTime on, String category, String payee)
             in <(String, DateTime, String, String)>[
               ('90000', DateTime(2026, 8, 30, 12), 'groceries', 'Éxito'),
-              ('1200000', DateTime(2026, 9, 5, 12), 'housing', 'Arriendo'),
+              ('1200000', DateTime(2026, 9, 5, 12), 'shopping', 'Falabella'),
               ('80000', DateTime(2026, 9, 16, 12), 'groceries', 'D1'),
             ]) {
           await store.addEntry(
@@ -341,11 +342,11 @@ void main() {
         }
       },
     );
-    await harness.tapText(tester, 'Arriendo');
-    expect(find.text('Arriendo del 15 sept al 29 sept'), findsOneWidget);
+    await harness.tapText(tester, 'Compras');
+    expect(find.text('Compras del 15 sept al 29 sept'), findsOneWidget);
     expect(
       find.text(
-        'En esta quincena no hubo pagos de Arriendo. Estos son los de la '
+        'En esta quincena no hubo pagos de Compras. Estos son los de la '
         'anterior:',
       ),
       findsOneWidget,
