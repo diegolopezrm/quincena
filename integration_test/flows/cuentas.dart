@@ -891,7 +891,19 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tapFound(find.byType(SwitchListTile));
       await f.step(
         'Apaga «Cuenta de uso diario»: como dice su ayuda, lo que debes en '
-        'esta tarjeta deja de restarse de lo que puedes gastar.',
+        'esta tarjeta y lo que se cobra en ella dejan de restarse de lo que '
+        'puedes gastar.',
+      );
+      await f.check(
+        'La ayuda dice que también cuenta lo que se cobra en la tarjeta',
+        () => expect(
+          f.shows(
+            'Si está encendido, lo que debes en esta tarjeta y lo que se '
+            'cobra en ella se restan de lo que puedes gastar, porque los '
+            'pagas con tus cuentas de uso diario.',
+          ),
+          isTrue,
+        ),
       );
       await f.tap('Guardar');
       await f.back();

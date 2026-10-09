@@ -1949,7 +1949,7 @@
   "chartPerformanceNoteFxPlain": "Lo que movieron los precios y el dólar frente a tu moneda: comprar o vender no cambia esta línea.",
   "freeExplainSpendableSection": "Tus cuentas de uso diario",
   "standingCardDebtLine": "Lo que debes en tarjetas",
-  "cardSpendableHelp": "Si está encendido, lo que debes en esta tarjeta se resta de lo que puedes gastar, porque lo pagas con tus cuentas de uso diario.",
+  "cardSpendableHelp": "Si está encendido, lo que debes en esta tarjeta y lo que se cobra en ella se restan de lo que puedes gastar, porque los pagas con tus cuentas de uso diario.",
   "freeExplainAssumePending": "{count, plural, =1{No cuenta 1 movimiento que espera en Por revisar. Cuando lo registres, la cifra puede cambiar.} other{No cuenta {count} movimientos que esperan en Por revisar. Cuando los registres, la cifra puede cambiar.}}",
   "@freeExplainAssumePending": {"placeholders": {"count": {"type": "int"}}},
   "paydayArrivedAmount": "Te llegó la quincena: {amount}",

@@ -6130,7 +6130,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cardSpendableHelp =>
-      'When it\'s on, what you owe on this card comes off what you can spend, since you pay it from your everyday accounts.';
+      'When it\'s on, what you owe on this card and what is charged to it come off what you can spend, since you pay them from your everyday accounts.';
 
   @override
   String freeExplainAssumePending(int count) {

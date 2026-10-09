@@ -1566,7 +1566,7 @@
   "chartPerformanceNoteFxPlain": "What prices and the dollar against your currency did: buying or selling doesn't move this line.",
   "freeExplainSpendableSection": "Your everyday accounts",
   "standingCardDebtLine": "What you owe on cards",
-  "cardSpendableHelp": "When it's on, what you owe on this card comes off what you can spend, since you pay it from your everyday accounts.",
+  "cardSpendableHelp": "When it's on, what you owe on this card and what is charged to it come off what you can spend, since you pay them from your everyday accounts.",
   "freeExplainAssumePending": "{count, plural, =1{It leaves out 1 transaction waiting for review. Once you record it, the figure may change.} other{It leaves out {count} transactions waiting for review. Once you record them, the figure may change.}}",
   "paydayArrivedAmount": "Your paycheck arrived: {amount}",
   "paydayArrivedPayAmount": "Your pay arrived: {amount}",

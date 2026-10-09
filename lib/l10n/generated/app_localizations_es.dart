@@ -6130,7 +6130,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get cardSpendableHelp =>
-      'Si está encendido, lo que debes en esta tarjeta se resta de lo que puedes gastar, porque lo pagas con tus cuentas de uso diario.';
+      'Si está encendido, lo que debes en esta tarjeta y lo que se cobra en ella se restan de lo que puedes gastar, porque los pagas con tus cuentas de uso diario.';
 
   @override
   String freeExplainAssumePending(int count) {
