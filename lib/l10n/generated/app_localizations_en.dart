@@ -551,6 +551,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assetOtherHint => 'Ticker, for example ADA';
 
   @override
+  String get assetOtherMissing => 'Type the coin\'s ticker, for example ADA';
+
+  @override
   String get accountInstitution => 'Institution (optional)';
 
   @override

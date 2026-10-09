@@ -157,6 +157,7 @@
   "assetCrypto": "Crypto",
   "assetOther": "Other crypto",
   "assetOtherHint": "Ticker, for example ADA",
+  "assetOtherMissing": "Type the coin's ticker, for example ADA",
   "accountInstitution": "Institution (optional)",
   "accountBalanceNow": "How much is in it today?",
   "accountDebtNow": "How much do you owe today?",

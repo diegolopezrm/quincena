@@ -184,6 +184,7 @@
   "assetCrypto": "Cripto",
   "assetOther": "Otra cripto",
   "assetOtherHint": "Símbolo, por ejemplo ADA",
+  "assetOtherMissing": "Escribe el símbolo de la moneda, por ejemplo ADA",
   "accountInstitution": "Entidad (opcional)",
   "accountBalanceNow": "¿Cuánto tiene hoy?",
   "accountDebtNow": "¿Cuánto debes hoy?",

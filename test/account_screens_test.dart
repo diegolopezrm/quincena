@@ -133,6 +133,16 @@ void main() {
     );
     await tester.tap(find.text('Otra cripto').last);
     await settle(tester);
+    // A crypto from the moment it is picked: no pesos beside its balance,
+    // which takes decimals, and its cost asked for.
+    expect(field(tester, '¿Cuánto tiene hoy?').suffixText, isNull);
+    expect(find.text('¿Cuánto te costó?'), findsOneWidget);
+    await tester.enterText(
+      find.widgetWithText(TextField, '¿Cuánto tiene hoy?'),
+      '1500,25',
+    );
+    await settle(tester);
+    expect(find.text('1.500,25'), findsOneWidget);
     await tester.enterText(
       find.widgetWithText(TextField, '¿Cuánto tiene hoy?'),
       '1500',
@@ -141,13 +151,13 @@ void main() {
     await tester.tap(find.text('Guardar'));
     await settle(tester);
     expect(own.accounts, hasLength(count));
-    // The label says what is missing, and so does the error under it.
+    // The error says what to type, not the label again.
     final Finder ticker = find
         .widgetWithText(TextField, 'Símbolo, por ejemplo ADA')
         .first;
     expect(
       tester.widget<TextField>(ticker).decoration!.errorText,
-      'Símbolo, por ejemplo ADA',
+      'Escribe el símbolo de la moneda, por ejemplo ADA',
     );
 
     await tester.enterText(
@@ -156,12 +166,58 @@ void main() {
     );
     await settle(tester);
     expect(field(tester, 'Símbolo, por ejemplo ADA').errorText, isNull);
+    expect(field(tester, '¿Cuánto tiene hoy?').suffixText, 'ADA');
     await tester.ensureVisible(find.text('Guardar'));
     await tester.tap(find.text('Guardar'));
     await settle(tester);
     final Account ada = named(own, 'Cardano');
     expect(ada.asset.code, 'ADA');
     expect(balance(own, ada).amount, Decimal.fromInt(1500));
+    // Crypto is kept, not spent.
+    expect(ada.spendable, isFalse);
+  });
+
+  testWidgets('a crypto turns the day to day off by itself, unless it was '
+      'set by hand', (tester) async {
+    final OwnController own = await open(tester);
+    unawaited(
+      showAccountSheet(tester.element(find.byType(PortfolioPage)), own: own),
+    );
+    await settle(tester);
+    bool spendable() =>
+        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value;
+    Future<void> pick(String asset) async {
+      await tester.tap(find.byType(DropdownButtonFormField<String>));
+      await settle(tester);
+      await tester.scrollUntilVisible(
+        find.text(asset).last,
+        200,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.tap(find.text(asset).last);
+      await settle(tester);
+    }
+
+    // A bank in pesos counts in the day to day; in ether it does not, nor
+    // as a wallet, and back in pesos it does again.
+    expect(spendable(), isTrue);
+    await pick('ETH · Ether');
+    expect(spendable(), isFalse);
+    await tester.tap(find.text('Billetera digital'));
+    await settle(tester);
+    expect(spendable(), isFalse);
+    await pick('COP · Peso colombiano');
+    expect(spendable(), isTrue);
+
+    // Set by hand, it stays as the person left it.
+    await tester.ensureVisible(find.byType(SwitchListTile));
+    await tester.tap(find.byType(SwitchListTile));
+    await settle(tester);
+    expect(spendable(), isFalse);
+    await tester.tap(find.byType(SwitchListTile));
+    await settle(tester);
+    await pick('BTC · Bitcoin');
+    expect(spendable(), isTrue);
   });
 
   testWidgets('a card in its holder\'s favor stays so when its limit changes', (

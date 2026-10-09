@@ -2650,17 +2650,19 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.reveal(find.text('¿Cuánto te costó?'));
       await f.step(
         'Con una cripto como moneda aparece «¿Cuánto te costó?», en pesos o '
-        'dólares, para calcular la ganancia.',
+        'dólares, para calcular la ganancia, y «Cuenta de uso diario» se '
+        'apaga sola: la cripto se guarda, no se gasta.',
       );
-      await f.check('Al elegir una cripto no se apaga el uso diario solo', () {
-        expect(_switchOn(f), isTrue);
-      });
-      await f.tapFound(find.byType(SwitchListTile));
+      await f.check(
+        'Al elegir una cripto se apaga sola «Cuenta de uso diario», también '
+        'como billetera digital',
+        () => expect(_switchOn(f), isFalse),
+      );
       await f.type('¿Cuánto tiene hoy?', '0,5');
       await f.tap('USD');
       await f.type('¿Cuánto te costó?', '1200');
       await f.step(
-        'Con 0,5 ETH, apagado el uso diario y un costo de US\$1.200, todo '
+        'Con 0,5 ETH, el uso diario apagado y un costo de US\$1.200, todo '
         'listo para guardar.',
       );
       await f.tap('Guardar');
@@ -2678,6 +2680,26 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.type('Nombre', 'Cardano');
       await f.tapFound(find.byType(DropdownButtonFormField<String>));
       await f.tap('Otra cripto');
+      await f.type('¿Cuánto tiene hoy?', '1500,5');
+      await f.reveal(find.text('¿Cuánto te costó?'));
+      await f.step(
+        '«Otra cripto» es cripto desde que se elige: el saldo ya no dice COP '
+        'y acepta decimales, aparece «¿Cuánto te costó?» y el uso diario se '
+        'apaga solo.',
+      );
+      await f.check(
+        'Sin símbolo todavía, el saldo no dice COP, acepta decimales y se '
+        'pregunta lo que costó',
+        () {
+          expect(
+            _field(f, '¿Cuánto tiene hoy?').decoration!.suffixText,
+            isNull,
+          );
+          expect(_fieldText(f, '¿Cuánto tiene hoy?'), '1.500,5');
+          expect(f.shows('¿Cuánto te costó?'), isTrue);
+          expect(_switchOn(f), isFalse);
+        },
+      );
       await f.type('¿Cuánto tiene hoy?', '1500');
       final int before = own.accounts.length;
       await f.tap('Guardar');
@@ -2685,26 +2707,27 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         find.widgetWithText(TextField, 'Símbolo, por ejemplo ADA'),
       );
       await f.step(
-        'Con «Otra cripto» y el símbolo vacío, «Guardar» no deja seguir: el '
-        'símbolo se pone en rojo, en vez de crear una cuenta en pesos.',
+        'Con el símbolo vacío, «Guardar» no deja seguir: debajo del símbolo '
+        'dice en rojo qué escribir, en vez de crear una cuenta en pesos.',
       );
       await f.check('Sin símbolo no se crea ninguna cuenta', () {
         expect(own.accounts.length, before);
         expect(own.accounts.where((Account a) => a.name == 'Cardano'), isEmpty);
         expect(
           _errorOf(f, 'Símbolo, por ejemplo ADA'),
-          'Símbolo, por ejemplo ADA',
+          'Escribe el símbolo de la moneda, por ejemplo ADA',
         );
       });
       await f.type('Símbolo, por ejemplo ADA', 'ada');
-      await f.check('Al escribir el símbolo se quita el rojo', () {
+      await f.check('Al escribir el símbolo se quita el rojo y el saldo lo '
+          'dice', () {
         expect(_errorOf(f, 'Símbolo, por ejemplo ADA'), isNull);
+        expect(_field(f, '¿Cuánto tiene hoy?').decoration!.suffixText, 'ADA');
       });
       await f.tap('Exchange de cripto');
-      await f.type('¿Cuánto tiene hoy?', '1500');
       await f.step(
-        '«Otra cripto» deja escribir el símbolo, ADA; con «Exchange de '
-        'cripto» el uso diario se apaga solo.',
+        'Con el símbolo, ADA, al lado del saldo y «Exchange de cripto» como '
+        'tipo, todo listo para guardar.',
       );
       await f.tap('Guardar');
       await f.reveal(find.text('Cardano'));

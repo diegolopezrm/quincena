@@ -551,6 +551,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get assetOtherHint => 'Símbolo, por ejemplo ADA';
 
   @override
+  String get assetOtherMissing =>
+      'Escribe el símbolo de la moneda, por ejemplo ADA';
+
+  @override
   String get accountInstitution => 'Entidad (opcional)';
 
   @override

@@ -998,6 +998,12 @@ abstract class AppLocalizations {
   /// **'Símbolo, por ejemplo ADA'**
   String get assetOtherHint;
 
+  /// No description provided for @assetOtherMissing.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe el símbolo de la moneda, por ejemplo ADA'**
+  String get assetOtherMissing;
+
   /// No description provided for @accountInstitution.
   ///
   /// In es, this message translates to:

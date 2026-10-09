@@ -102,7 +102,7 @@ class _AccountFormState extends State<_AccountForm> {
   late AccountKind _kind =
       _editing?.kind ?? widget.draft?.kind ?? AccountKind.bank;
   late Asset _asset = _editing?.asset ?? widget.draft?.asset ?? _defaultAsset;
-  late bool _spendable = _editing?.spendable ?? _kind.spendableByDefault;
+  late bool _spendable = _editing?.spendable ?? _spendableFor(_kind);
   bool _spendableTouched = false;
   bool _other = false;
   String? _otherError;
@@ -157,9 +157,16 @@ class _AccountFormState extends State<_AccountForm> {
     super.dispose();
   }
 
-  Asset get _chosenAsset => _other && _otherAsset.text.trim().isNotEmpty
-      ? Asset.of(_otherAsset.text)
-      : _asset;
+  /// The currency the account will hold. Another crypto is crypto from the
+  /// moment it is picked: until its ticker is typed, a coin with no name
+  /// yet, whose balance takes decimals and whose cost is asked for.
+  Asset get _chosenAsset => _other ? Asset.of(_otherAsset.text) : _asset;
+
+  /// Whether the day to day counts an account of [kind] unless the person
+  /// says otherwise: never crypto, which is kept rather than spent, as
+  /// savings and exchanges are.
+  bool _spendableFor(AccountKind kind) =>
+      kind.spendableByDefault && !_chosenAsset.isCrypto;
 
   Future<void> _save() async {
     final AppLocalizations l = context.l10n;
@@ -190,7 +197,7 @@ class _AccountFormState extends State<_AccountForm> {
     final bool noTicker = _other && _otherAsset.text.trim().isEmpty;
     setState(() {
       _nameError = name.isEmpty ? l.accountNameHint : null;
-      _otherError = noTicker ? l.assetOtherHint : null;
+      _otherError = noTicker ? l.assetOtherMissing : null;
       _balanceError = typed == null ? l.invalidAmount : null;
       _costError = costInvalid ? l.invalidAmount : null;
       _limitError = limitInvalid ? l.invalidAmount : null;
@@ -327,7 +334,7 @@ class _AccountFormState extends State<_AccountForm> {
                       // Each kind has its own usual side of zero.
                       if (k != _kind) _otherSide = false;
                       _kind = k;
-                      if (!_spendableTouched) _spendable = k.spendableByDefault;
+                      if (!_spendableTouched) _spendable = _spendableFor(k);
                     }),
                   ),
               ],
@@ -341,11 +348,17 @@ class _AccountFormState extends State<_AccountForm> {
                 other: _other,
                 otherController: _otherAsset,
                 otherError: _otherError,
+                // A crypto turns the day to day off by itself, as a savings
+                // kind does, unless the person set it.
                 onChanged: (Asset? a) => setState(() {
                   _other = a == null;
                   if (a != null) _asset = a;
+                  if (!_spendableTouched) _spendable = _spendableFor(_kind);
                 }),
-                onOtherChanged: () => setState(() => _otherError = null),
+                onOtherChanged: () => setState(() {
+                  _otherError = null;
+                  if (!_spendableTouched) _spendable = _spendableFor(_kind);
+                }),
               ),
             const SizedBox(height: 16),
             TextField(
@@ -391,7 +404,9 @@ class _AccountFormState extends State<_AccountForm> {
                   (_, true) => l.accountOverdraftNow,
                   _ => l.accountBalanceNow,
                 },
-                suffixText: asset.code,
+                // Another crypto's ticker once it is typed, never the
+                // pesos it is not.
+                suffixText: asset.code.isEmpty ? null : asset.code,
                 errorText: _balanceError,
               ),
             ),
