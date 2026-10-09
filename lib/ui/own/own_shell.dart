@@ -22,6 +22,7 @@ import 'entry_sheet.dart';
 import 'home_tab.dart';
 import 'inbox_page.dart';
 import 'look.dart';
+import 'movements_tab.dart';
 import 'own_settings_page.dart';
 import 'plan_tab.dart';
 

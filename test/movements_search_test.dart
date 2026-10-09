@@ -7,8 +7,8 @@ import 'package:quincena/domain/records.dart';
 import 'package:quincena/money/asset.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/store/store.dart';
-import 'package:quincena/ui/own/home_tab.dart';
 import 'package:quincena/ui/own/movement_list.dart';
+import 'package:quincena/ui/own/movements_tab.dart';
 
 import 'own_flow_test.dart' show settle;
 import 'page_harness.dart';

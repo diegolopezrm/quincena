@@ -16,7 +16,7 @@ import 'package:quincena/money/rates.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/store/store.dart';
 import 'package:quincena/ui/own/freelance_page.dart';
-import 'package:quincena/ui/own/home_tab.dart';
+import 'package:quincena/ui/own/movements_tab.dart';
 import 'package:quincena/ui/own/plan_tab.dart';
 import 'package:quincena/ui/own/shared_page.dart';
 import 'package:quincena/ui/own/trips_page.dart';

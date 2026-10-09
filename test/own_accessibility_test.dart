@@ -51,6 +51,7 @@ import 'package:quincena/ui/own/goal_sheet.dart';
 import 'package:quincena/ui/own/home_tab.dart';
 import 'package:quincena/ui/own/inbox_page.dart';
 import 'package:quincena/ui/own/instalments_page.dart';
+import 'package:quincena/ui/own/movements_tab.dart';
 import 'package:quincena/ui/own/onboarding_page.dart';
 import 'package:quincena/ui/own/own_settings_page.dart';
 import 'package:quincena/ui/own/own_shell.dart';
