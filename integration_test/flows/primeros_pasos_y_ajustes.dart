@@ -3059,8 +3059,19 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tap('Restaurar un respaldo');
       await f.step(
         'En este teléfono, «Restaurar un respaldo» abre su propio respaldo '
-        'sin pedir el código: solo pregunta si reemplazar todo.',
+        'sin pedir el código y, antes de reemplazar, dice qué trae: «Respaldo '
+        'del 3 de octubre de 2026», sus cuentas, movimientos, metas y lo demás '
+        'del Plan.',
       );
+      await f.check('Dice qué trae el respaldo antes de tocar nada', () async {
+        final BackupContents held = BackupContents.of(
+          await _read(f, () => _store(f).exportJson()),
+        );
+        expect(f.shows('Respaldo del 3 de octubre de 2026:'), isTrue);
+        for (final String line in _holds(held)) {
+          expect(f.shows(line), isTrue, reason: line);
+        }
+      });
       await f.tap('Cancelar');
       await f.check('Con «Cancelar» todo sigue igual', () {
         expect(_own(f).snapshot!.entries, hasLength(entries));
@@ -3216,9 +3227,9 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       );
       await _waitMessages(f);
       await f.tap('Restaurar un respaldo');
-      await f.tap('Reemplazar');
+      await f.tap('Restaurar');
       await f.step(
-        'Uno que se rompe a mitad de camino: aunque se dijo «Reemplazar», '
+        'Uno que se rompe a mitad de camino: aunque se dijo «Restaurar», '
         'avisa «Ese archivo está dañado o incompleto. No se cambió nada.»',
       );
       await f.check(
@@ -3241,9 +3252,39 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await _waitMessages(f);
       await f.tap('Restaurar un respaldo');
       await f.step(
-        'Con el respaldo, antes de tocar nada pregunta «¿Reemplazar todo con '
-        'este archivo?»',
+        'Con el respaldo, antes de tocar nada pregunta «¿Restaurar este '
+        'respaldo?» y dice qué trae: la fecha, las cuentas, los movimientos, '
+        'las metas y lo demás del Plan. Avisa que lo de ahora se borra y '
+        'ofrece «Guardar lo de ahora primero».',
       );
+      final BackupContents held = BackupContents.of(
+        jsonDecode(utf8.decode(backup)) as Map<String, Object?>,
+      );
+      await f.check('Dice lo que trae el archivo, no lo que hay ahora', () {
+        expect(f.shows('Respaldo del 3 de octubre de 2026:'), isTrue);
+        for (final String line in _holds(held)) {
+          expect(f.shows(line), isTrue, reason: line);
+        }
+        expect(
+          f.shows('${_own(f).snapshot!.entries.length} movimientos'),
+          isFalse,
+        );
+      });
+      await f.tap('Guardar lo de ahora primero');
+      await f.tap('Exportar');
+      await f.tap('Ya lo guardé');
+      await f.step(
+        '«Guardar lo de ahora primero» abre la hoja de exportar; al guardar el '
+        'respaldo cifrado de lo de ahora vuelve la misma pregunta, con lo que '
+        'trae el archivo.',
+      );
+      await f.check('Se guardó lo de ahora y la pregunta sigue ahí', () async {
+        final Uint8List? now = phone.saved['quincena-2026-10-03.qbackup'];
+        expect(now, isNotNull);
+        final String code = (await _read(f, () => Backups(_store(f)).code()))!;
+        expect(await _openBackup(f, now!, code), hasLength(entries));
+        expect(f.shows('¿Restaurar este respaldo?'), isTrue);
+      });
       await f.tap('Cancelar');
       await f.check('Con «Cancelar» siguen los $entries movimientos', () {
         expect(_own(f).snapshot!.entries, hasLength(entries));
@@ -3251,8 +3292,8 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       phone.toPick.add(backup);
       await _waitMessages(f);
       await f.tap('Restaurar un respaldo');
-      await f.tap('Reemplazar');
-      await f.step('Con «Reemplazar»: «Datos importados.»');
+      await f.tap('Restaurar');
+      await f.step('Con «Restaurar»: «Respaldo restaurado.»');
       await f.check('Quedaron los $kept movimientos del archivo', () async {
         expect(await _read(f, () => _store(f).entries()), hasLength(kept));
         expect(_own(f).snapshot!.entries, hasLength(kept));
@@ -3339,8 +3380,23 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       });
       await f.type('Código', code);
       await f.tap('Abrir');
-      await f.tap('Reemplazar');
-      await f.step('Con el código bueno y «Reemplazar»: «Datos importados.»');
+      await f.step(
+        'Con el código bueno se abre y, antes de reemplazar, dice qué trae el '
+        'respaldo del otro teléfono.',
+      );
+      await f.check(
+        'Dice lo que trae el respaldo del teléfono viejo',
+        () async {
+          final BackupContents held = BackupContents.of(
+            await _read(f, old.exportJson),
+          );
+          for (final String line in _holds(held)) {
+            expect(f.shows(line), isTrue, reason: line);
+          }
+        },
+      );
+      await f.tap('Restaurar');
+      await f.step('Con «Restaurar»: «Respaldo restaurado.»');
       await f.check(
         'Quedaron los $kept movimientos del teléfono viejo',
         () async {
@@ -3373,6 +3429,23 @@ const List<String> _otherFixed = <String>[
   'Internet',
   'Plan del celular',
 ];
+
+/// What «¿Restaurar este respaldo?» says [held] brings, line by line.
+List<String> _holds(BackupContents held) {
+  String count(int n, String none, String one, String many) =>
+      n == 0 ? none : (n == 1 ? one : '$n $many');
+  return <String>[
+    count(held.accounts, 'Ninguna cuenta', 'Una cuenta', 'cuentas'),
+    count(held.movements, 'Ningún movimiento', 'Un movimiento', 'movimientos'),
+    count(held.goals, 'Ninguna meta', 'Una meta', 'metas'),
+    count(
+      held.plan,
+      'Nada más del Plan',
+      'Una cosa más del Plan',
+      'cosas más del Plan',
+    ),
+  ];
+}
 
 /// The sync code this device keeps, if it syncs.
 Future<String?> _syncCode(FlowRun f) =>

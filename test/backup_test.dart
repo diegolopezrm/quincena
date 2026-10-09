@@ -17,6 +17,7 @@ import 'package:quincena/backup/backup.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/money/asset.dart';
+import 'package:quincena/money/money.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
@@ -352,6 +353,101 @@ void main() {
     });
   });
 
+  group('what a backup holds', () {
+    test('counts what the person sees: accounts in sight, a transfer once, '
+        'goals and the rest of the Plan', () async {
+      final QuincenaStore phone = await phoneWithData();
+      addTearDown(phone.close);
+      final Account bank = (await phone.accounts()).single;
+      final Account savings = await phone.addAccount(
+        name: 'Ahorros',
+        kind: AccountKind.bank,
+        asset: Asset.cop,
+        opening: Decimal.zero,
+      );
+      final Account old = await phone.addAccount(
+        name: 'Cuenta vieja',
+        kind: AccountKind.bank,
+        asset: Asset.cop,
+        opening: Decimal.zero,
+      );
+      await phone.updateAccount(old.copyWith(archived: true));
+      await phone.addTransfer(
+        fromAccountId: bank.id,
+        toAccountId: savings.id,
+        sent: Decimal.parse('100000'),
+        date: DateTime(2026, 10, 2),
+      );
+      await phone.addGoal(
+        name: 'Cartagena',
+        target: Money(Decimal.parse('2000000'), Asset.cop),
+      );
+      await phone.addRecurring(
+        name: 'Arriendo',
+        amount: Money(Decimal.parse('1200000'), Asset.cop),
+        cadence: Cadence.monthly,
+        nextDate: DateTime(2026, 11, 1),
+      );
+      await phone.setSetting(
+        'plan.wishes',
+        jsonEncode(<Object?>[
+          <String, Object?>{'id': 'w1', 'name': 'Silla', 'price': 650000},
+          <String, Object?>{'id': 'w2', 'name': 'Cámara', 'price': 420000},
+        ]),
+      );
+      await phone.setSetting(
+        'freelance',
+        jsonEncode(<String, Object?>{
+          'incomes': <Object?>[
+            <String, Object?>{'id': 'f1'},
+          ],
+        }),
+      );
+
+      final BackupContents held = BackupContents.of(await phone.exportJson());
+      expect(held.made, DateTime(2026, 10, 3, 9));
+      // Bancolombia and Ahorros; the archived one comes back out of sight.
+      expect(held.accounts, 2);
+      // Éxito, and the transfer's two legs as one.
+      expect(held.movements, 2);
+      expect(held.goals, 1);
+      // The rent, two wishes and one variable income.
+      expect(held.plan, 4);
+    });
+
+    test('an older or odd file counts what it has and nothing it lacks', () {
+      final BackupContents bare = BackupContents.of(<String, Object?>{
+        'app': 'quincena',
+        'version': 1,
+      });
+      expect(bare.made, isNull);
+      expect(
+        <int>[bare.accounts, bare.movements, bare.goals, bare.plan],
+        <int>[0, 0, 0, 0],
+      );
+      final BackupContents odd = BackupContents.of(<String, Object?>{
+        'app': 'quincena',
+        'version': 3,
+        'exportedAt': 'ayer',
+        'accounts': 'ninguna',
+        'entries': <Object?>[
+          1,
+          null,
+          <String, Object?>{'id': 'e1'},
+        ],
+        'settings': <String, Object?>{
+          'plan.wishes': '{roto',
+          'trips': '[{"id": "t1"}]',
+          'freelance': '[]',
+        },
+      });
+      expect(odd.made, isNull);
+      expect(odd.accounts, 0);
+      expect(odd.movements, 1);
+      expect(odd.plan, 1);
+    });
+  });
+
   group('on screen', () {
     setUpAll(() async {
       Intl.defaultLocale = 'es_CO';
@@ -364,7 +460,6 @@ void main() {
       Backups Function(OwnController own) backups, {
       required SaveFile save,
       required PickFile pick,
-      required Future<bool?> Function() confirm,
     }) => Scaffold(
       body: Builder(
         builder: (BuildContext context) => Column(
@@ -379,11 +474,12 @@ void main() {
               child: const Text('Exportar ahora'),
             ),
             TextButton(
-              onPressed: () => importData(
+              onPressed: () => restoreBackup(
                 context,
                 backups: backups(own),
-                confirm: confirm,
+                today: own.today,
                 pick: pick,
+                save: save,
               ),
               child: const Text('Importar ahora'),
             ),
@@ -415,7 +511,6 @@ void main() {
           (OwnController own) => Backups(own.store, keys: keys),
           save: save,
           pick: () async => null,
-          confirm: () async => true,
         ),
       );
       await tapText(tester, 'Exportar ahora');
@@ -482,7 +577,6 @@ void main() {
         await before.close();
       });
       final MemoryBackupKeyStore keys = MemoryBackupKeyStore();
-      var asked = 0;
       final OwnController own = await openPage(
         tester,
         (OwnController own) => buttons(
@@ -496,10 +590,6 @@ void main() {
                 List<String>? extensions,
               }) async => false,
           pick: () async => sealed.file,
-          confirm: () async {
-            asked++;
-            return true;
-          },
         ),
       );
       await tapText(tester, 'Importar ahora');
@@ -513,18 +603,85 @@ void main() {
         find.textContaining('Ese código no abre este respaldo'),
         findsOneWidget,
       );
-      expect(asked, 0);
+      expect(find.text('¿Restaurar este respaldo?'), findsNothing);
 
       await tester.enterText(find.byType(TextField), sealed.newCode!);
       await tapText(tester, 'Abrir');
-      expect(asked, 1);
-      expect(find.text('Datos importados.'), findsOneWidget);
+      expect(find.text('¿Restaurar este respaldo?'), findsOneWidget);
+      await tapText(tester, 'Restaurar');
+      expect(find.text('Respaldo restaurado.'), findsOneWidget);
       final List<Entry> entries = (await tester.runAsync(own.store.entries))!;
       expect(entries.map((Entry e) => e.payee), contains('Éxito'));
       expect(
         await tester.runAsync(Backups(own.store, keys: keys).code),
         sealed.newCode,
       );
+    });
+
+    testWidgets('restoring says what the backup brings, and can keep what '
+        'is here first', (tester) async {
+      late Uint8List file;
+      await tester.runAsync(() async {
+        final QuincenaStore before = await phoneWithData();
+        file = await Backups(before, keys: MemoryBackupKeyStore()).plain();
+        await before.close();
+      });
+      final List<String> saved = <String>[];
+      final OwnController own = await openPage(
+        tester,
+        (OwnController own) => buttons(
+          own,
+          (OwnController own) =>
+              Backups(own.store, keys: MemoryBackupKeyStore()),
+          save:
+              (
+                String name,
+                _, {
+                required String mimeType,
+                List<String>? extensions,
+              }) async {
+                saved.add(name);
+                return true;
+              },
+          pick: () async => file,
+        ),
+      );
+      Future<List<String>> payees() async => <String>[
+        for (final Entry e in (await tester.runAsync(own.store.entries))!)
+          e.payee,
+      ];
+
+      await tapText(tester, 'Importar ahora');
+      expect(find.text('¿Restaurar este respaldo?'), findsOneWidget);
+      expect(find.text('Respaldo del 3 de octubre de 2026:'), findsOneWidget);
+      for (final String line in <String>[
+        'Una cuenta',
+        'Un movimiento',
+        'Ninguna meta',
+        'Nada más del Plan',
+      ]) {
+        expect(find.text(line), findsOneWidget, reason: line);
+      }
+      expect(find.textContaining('se borra y queda lo del'), findsOneWidget);
+
+      // What is here first, through the same export, and the same question
+      // again.
+      await tapText(tester, 'Guardar lo de ahora primero');
+      expect(find.text('Cifrado (recomendado)'), findsOneWidget);
+      await tapText(tester, 'Sin cifrar (JSON)');
+      await tapText(tester, 'Exportar');
+      expect(saved, <String>['quincena-2026-10-03.json']);
+      expect(find.text('¿Restaurar este respaldo?'), findsOneWidget);
+      expect(await payees(), contains('Nómina'));
+
+      await tapText(tester, 'Cancelar');
+      expect(find.text('¿Restaurar este respaldo?'), findsNothing);
+      expect(await payees(), contains('Nómina'));
+
+      await tapText(tester, 'Importar ahora');
+      await tapText(tester, 'Restaurar');
+      expect(find.text('Respaldo restaurado.'), findsOneWidget);
+      expect(await payees(), <String>['Éxito']);
     });
 
     testWidgets('a sync file is sent where it opens, with nothing asked', (
@@ -536,7 +693,6 @@ void main() {
           <String, Object?>{'records': <Object?>[]},
         ),
       ))!;
-      var asked = 0;
       await openPage(
         tester,
         (OwnController own) => buttons(
@@ -551,10 +707,6 @@ void main() {
                 List<String>? extensions,
               }) async => false,
           pick: () async => sync,
-          confirm: () async {
-            asked++;
-            return true;
-          },
         ),
       );
       await tapText(tester, 'Importar ahora');
@@ -562,7 +714,7 @@ void main() {
         find.textContaining('Ese es un archivo de sincronización'),
         findsOneWidget,
       );
-      expect(asked, 0);
+      expect(find.text('¿Restaurar este respaldo?'), findsNothing);
     });
   });
 }

@@ -1951,17 +1951,73 @@ class AppLocalizationsEn extends AppLocalizations {
       'Replaces everything here with the backup\'s data';
 
   @override
-  String get importConfirmTitle => 'Replace everything with this file?';
+  String get restoreTitle => 'Restore this backup?';
 
   @override
-  String get importConfirmBody =>
-      'What is in Quincena now is deleted and replaced by the file.';
+  String restoreFrom(String date) {
+    return 'Backup from $date:';
+  }
 
   @override
-  String get importConfirm => 'Replace';
+  String get restoreHolds => 'This backup has:';
 
   @override
-  String get importDone => 'Data imported.';
+  String restoreAccounts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count accounts',
+      one: 'One account',
+      zero: 'No accounts',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String restoreMovements(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count transactions',
+      one: 'One transaction',
+      zero: 'No transactions',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String restoreGoals(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count goals',
+      one: 'One goal',
+      zero: 'No goals',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String restorePlan(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count more things in the Plan',
+      one: 'One more thing in the Plan',
+      zero: 'Nothing else in the Plan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get restoreReplaces =>
+      'What you have in Quincena now is deleted and replaced with the backup.';
+
+  @override
+  String get restoreSaveFirst => 'Save what\'s here first';
+
+  @override
+  String get importDone => 'Backup restored.';
 
   @override
   String get importNotQuincena =>

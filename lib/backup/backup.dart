@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../store/store.dart';
@@ -90,6 +91,89 @@ class OpenedBackup {
 
   /// The key a typed code gave.
   final VaultKey? key;
+
+  /// What it holds, to say before it replaces anything.
+  BackupContents get contents => BackupContents.of(json);
+}
+
+/// What a backup holds, counted the way the person sees it, so they know
+/// what they get before it replaces what they have. Any part an older file
+/// lacks counts as none.
+@immutable
+class BackupContents {
+  const BackupContents({
+    this.made,
+    this.accounts = 0,
+    this.movements = 0,
+    this.goals = 0,
+    this.plan = 0,
+  });
+
+  /// What [json], an export, holds.
+  factory BackupContents.of(Map<String, Object?> json) {
+    List<Map<Object?, Object?>> rows(String key) => <Map<Object?, Object?>>[
+      if (json[key] case final List<Object?> list)
+        for (final Object? row in list)
+          if (row is Map<Object?, Object?>) row,
+    ];
+    // The two legs of a transfer are one movement to the person.
+    final Set<String> movements = <String>{
+      for (final (int i, Map<Object?, Object?> e) in rows('entries').indexed)
+        switch (e['transferId']) {
+          final String t when t.isNotEmpty => 'transfer:$t',
+          _ => 'entry:${e['id'] ?? i}',
+        },
+    };
+    final Object? settings = json['settings'];
+    int listed(String key, [String field = '']) {
+      final Object? text = settings is Map ? settings[key] : null;
+      if (text is! String || text.isEmpty) return 0;
+      try {
+        final Object? value = jsonDecode(text);
+        final Object? list = field.isEmpty
+            ? value
+            : (value is Map ? value[field] : null);
+        return list is List ? list.length : 0;
+      } on FormatException {
+        return 0;
+      }
+    }
+
+    final Object? made = json['exportedAt'];
+    return BackupContents(
+      made: made is String ? DateTime.tryParse(made)?.toLocal() : null,
+      // Archived accounts come back too, but out of sight, as they were.
+      accounts: rows(
+        'accounts',
+      ).where((Map<Object?, Object?> a) => a['archived'] != true).length,
+      movements: movements.length,
+      goals: rows('goals').length,
+      plan:
+          rows('recurring').length +
+          listed('commitments.instalments') +
+          listed('shared.groups') +
+          listed('plan.wishes') +
+          listed('trips') +
+          listed('freelance', 'incomes') +
+          listed('plan.envelopes', 'envelopes') +
+          listed('plan.scenarios'),
+    );
+  }
+
+  /// When it was made, when the file says.
+  final DateTime? made;
+
+  /// The accounts Cuentas will show.
+  final int accounts;
+
+  /// Movements, a transfer between two accounts counted once.
+  final int movements;
+  final int goals;
+
+  /// What else the Plan keeps: fixed payments, purchases in instalments,
+  /// shared expenses, wishes, trips, variable income, envelopes and
+  /// scenarios.
+  final int plan;
 }
 
 /// A copy of everything, kept somewhere else for the day a phone is lost:

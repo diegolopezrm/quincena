@@ -211,19 +211,13 @@ class OwnSettingsPage extends StatelessWidget {
     await exportData(context, backups: Backups(own.store), today: own.today);
   }
 
-  Future<void> _import(BuildContext context) async {
-    final AppLocalizations l = context.l10n;
-    if (await explainExample(context, own, l.importData)) return;
+  Future<void> _restore(BuildContext context) async {
+    if (await explainExample(context, own, context.l10n.importData)) return;
     if (!context.mounted) return;
-    return importData(
+    return restoreBackup(
       context,
       backups: Backups(own.store),
-      confirm: () => _confirm(
-        context,
-        title: l.importConfirmTitle,
-        body: l.importConfirmBody,
-        action: l.importConfirm,
-      ),
+      today: own.today,
       after: () => own.refreshRates(force: true),
     );
   }
@@ -795,7 +789,7 @@ class OwnSettingsPage extends StatelessWidget {
             icon: Glyph.arrowCounterClockwise,
             title: l.importData,
             value: l.importDataSubtitle,
-            onTap: () => _import(context),
+            onTap: () => _restore(context),
           ),
           if (!own.example)
             _row(

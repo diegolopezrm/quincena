@@ -3008,28 +3008,64 @@ abstract class AppLocalizations {
   /// **'Reemplaza todo lo de ahora por lo del respaldo'**
   String get importDataSubtitle;
 
-  /// No description provided for @importConfirmTitle.
+  /// No description provided for @restoreTitle.
   ///
   /// In es, this message translates to:
-  /// **'¿Reemplazar todo con este archivo?'**
-  String get importConfirmTitle;
+  /// **'¿Restaurar este respaldo?'**
+  String get restoreTitle;
 
-  /// No description provided for @importConfirmBody.
+  /// No description provided for @restoreFrom.
   ///
   /// In es, this message translates to:
-  /// **'Lo que tienes ahora en Quincena se borra y queda lo del archivo.'**
-  String get importConfirmBody;
+  /// **'Respaldo del {date}:'**
+  String restoreFrom(String date);
 
-  /// No description provided for @importConfirm.
+  /// No description provided for @restoreHolds.
   ///
   /// In es, this message translates to:
-  /// **'Reemplazar'**
-  String get importConfirm;
+  /// **'Este respaldo trae:'**
+  String get restoreHolds;
+
+  /// No description provided for @restoreAccounts.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Ninguna cuenta} =1{Una cuenta} other{{count} cuentas}}'**
+  String restoreAccounts(int count);
+
+  /// No description provided for @restoreMovements.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Ningún movimiento} =1{Un movimiento} other{{count} movimientos}}'**
+  String restoreMovements(int count);
+
+  /// No description provided for @restoreGoals.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Ninguna meta} =1{Una meta} other{{count} metas}}'**
+  String restoreGoals(int count);
+
+  /// No description provided for @restorePlan.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Nada más del Plan} =1{Una cosa más del Plan} other{{count} cosas más del Plan}}'**
+  String restorePlan(int count);
+
+  /// No description provided for @restoreReplaces.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que tienes ahora en Quincena se borra y queda lo del respaldo.'**
+  String get restoreReplaces;
+
+  /// No description provided for @restoreSaveFirst.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar lo de ahora primero'**
+  String get restoreSaveFirst;
 
   /// No description provided for @importDone.
   ///
   /// In es, this message translates to:
-  /// **'Datos importados.'**
+  /// **'Respaldo restaurado.'**
   String get importDone;
 
   /// No description provided for @importNotQuincena.

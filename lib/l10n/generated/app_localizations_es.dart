@@ -1950,17 +1950,73 @@ class AppLocalizationsEs extends AppLocalizations {
       'Reemplaza todo lo de ahora por lo del respaldo';
 
   @override
-  String get importConfirmTitle => '¿Reemplazar todo con este archivo?';
+  String get restoreTitle => '¿Restaurar este respaldo?';
 
   @override
-  String get importConfirmBody =>
-      'Lo que tienes ahora en Quincena se borra y queda lo del archivo.';
+  String restoreFrom(String date) {
+    return 'Respaldo del $date:';
+  }
 
   @override
-  String get importConfirm => 'Reemplazar';
+  String get restoreHolds => 'Este respaldo trae:';
 
   @override
-  String get importDone => 'Datos importados.';
+  String restoreAccounts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cuentas',
+      one: 'Una cuenta',
+      zero: 'Ninguna cuenta',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String restoreMovements(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count movimientos',
+      one: 'Un movimiento',
+      zero: 'Ningún movimiento',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String restoreGoals(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count metas',
+      one: 'Una meta',
+      zero: 'Ninguna meta',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String restorePlan(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cosas más del Plan',
+      one: 'Una cosa más del Plan',
+      zero: 'Nada más del Plan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get restoreReplaces =>
+      'Lo que tienes ahora en Quincena se borra y queda lo del respaldo.';
+
+  @override
+  String get restoreSaveFirst => 'Guardar lo de ahora primero';
+
+  @override
+  String get importDone => 'Respaldo restaurado.';
 
   @override
   String get importNotQuincena =>
