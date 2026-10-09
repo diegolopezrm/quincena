@@ -2773,6 +2773,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pasteDuplicate => 'That payment was already there.';
 
   @override
+  String get pasteJoined =>
+      'That notice belongs to a transfer you already recorded.';
+
+  @override
   String get readScreenshot => 'Read a screenshot or PDF';
 
   @override
@@ -5555,6 +5559,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notMove => 'That\'s not it';
+
+  @override
+  String joinedArrival(String to, String from) {
+    return 'It arrived in $to: it was the transfer from $from.';
+  }
+
+  @override
+  String joinedDeparture(String from, String to) {
+    return 'It left $from: it was the transfer to $to.';
+  }
+
+  @override
+  String get transferJoined =>
+      'The other notice for the same money was recorded too.';
 
   @override
   String get moreActions => 'More actions';

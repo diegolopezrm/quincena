@@ -444,6 +444,23 @@ class _InboxCardState extends State<InboxCard> {
     return null;
   }
 
+  /// The accounts of the move a recorded notice is a side of: where the
+  /// money left and where it arrived.
+  (Account, Account)? get _moved {
+    final Entry? made = _made;
+    final String? transfer = made?.transferId;
+    if (made == null || transfer == null) return null;
+    final Entry? other = own.snapshot?.entries
+        .where((Entry e) => e.transferId == transfer && e.id != made.id)
+        .firstOrNull;
+    final Account? here = own.snapshot?.account(made.accountId);
+    final Account? there = other == null
+        ? null
+        : own.snapshot?.account(other.accountId);
+    if (here == null || there == null) return null;
+    return made.amount < Decimal.zero ? (here, there) : (there, here);
+  }
+
   /// The move between the person's accounts the capture most likely is,
   /// while it waits.
   OwnMove? get _move =>
@@ -782,15 +799,23 @@ class _InboxCardState extends State<InboxCard> {
     // Money that only changed accounts reads as the move it is: from one
     // to the other, neither spent nor earned.
     final OwnMove? move = waiting ? _move : null;
-    final String payee = move != null
-        ? '${own.snapshot?.account(move.fromId)?.name} → '
-              '${own.snapshot?.account(move.toId)?.name}'
+    final (Account, Account)? moved = _moved;
+    final (String, String)? between = move != null
+        ? (
+            own.snapshot?.account(move.fromId)?.name ?? '',
+            own.snapshot?.account(move.toId)?.name ?? '',
+          )
+        : moved == null
+        ? null
+        : (moved.$1.name, moved.$2.name);
+    final String payee = between != null
+        ? '${between.$1} → ${between.$2}'
         : (made == null || made.payee.isEmpty ? null : made.payee) ??
               i.suggestion.payee ??
               i.parsed.merchant ??
               l.noMerchant;
-    final String? disc = move != null ? null : category;
-    final String what = move != null ? l.moveBetween : categoryName;
+    final String? disc = between != null ? null : category;
+    final String what = between != null ? l.moveBetween : categoryName;
     // When the payment happened, as the receipt says, not when it was
     // shared.
     final DateTime when = made?.date ?? i.parsed.when ?? i.event.at;
@@ -803,9 +828,9 @@ class _InboxCardState extends State<InboxCard> {
         : moneyText(
             Money(income || kind == null ? amount : -amount, asset),
             base: own.profile?.base,
-            signed: kind != null && move == null,
+            signed: kind != null && between == null,
           );
-    final Color amountColor = income && move == null
+    final Color amountColor = income && between == null
         ? context.colors.positive
         : context.colors.ink;
     // With large text the amount and the day go under the name, which
@@ -995,9 +1020,21 @@ class _InboxCardState extends State<InboxCard> {
                 ),
             if (waiting && account != null && i.suggestion.why.contains('only'))
               _caution(context, l.accountGuessed(account.asset.code)),
-            // Every automatic record says why it went in without asking.
+            // Every automatic record says why it went in without asking: a
+            // notice of a move already recorded, which side of it it was.
             if (recorded)
-              if (reasonsText(context, own, i) case final String why)
+              if (moved != null &&
+                  i.suggestion.why.contains(CaptureService.joined))
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    made != null && made.amount > Decimal.zero
+                        ? l.joinedArrival(moved.$2.name, moved.$1.name)
+                        : l.joinedDeparture(moved.$1.name, moved.$2.name),
+                    style: context.type.bodySmall,
+                  ),
+                )
+              else if (reasonsText(context, own, i) case final String why)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(why, style: context.type.bodySmall),
@@ -1194,6 +1231,8 @@ Future<void> showPasteDialog(BuildContext context, OwnController own) async {
             ? l.pasteRecorded
             : r.added > 0
             ? l.pasteAdded
+            : r.joined > 0
+            ? l.pasteJoined
             : r.duplicates > 0
             ? l.pasteDuplicate
             : l.pasteNothing,

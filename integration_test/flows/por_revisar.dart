@@ -1212,21 +1212,18 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       );
       await _hideNotice(f);
       await _paste(f, rappi);
-      await f.reveal(find.text('POSIBLES REPETIDOS'));
+      await f.top();
       await f.step(
         'El mismo mensaje pegado otra vez: el aviso dice «Ese pago ya '
-        'estaba.» y la copia queda en «Posibles repetidos», no en los listos.',
+        'estaba.» y no queda una copia por revisar ni por descartar.',
       );
-      await f.check('El mismo mensaje dos veces queda como repetido', () {
+      await f.check('El mismo mensaje dos veces se lee una sola vez', () {
         final List<InboxItem> same = <InboxItem>[
           for (final InboxItem i in own.inbox)
             if (i.event.text == rappi) i,
         ];
-        expect(same, hasLength(2));
-        expect(
-          same.where((InboxItem i) => i.status == InboxStatus.duplicate),
-          hasLength(1),
-        );
+        expect(same, hasLength(1));
+        expect(same.single.status, InboxStatus.pending);
         expect(f.shows('Ese pago ya estaba.'), isTrue);
       });
     },
@@ -1905,7 +1902,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
     data: _sentToNequi,
     manual: <String>[
       'Con las notificaciones reales de Bancolombia y de Nequi por una misma '
-          'transferencia, que la segunda quede en «Posibles repetidos».',
+          'transferencia, que la segunda quede sola con la primera, en '
+          '«Registrado automáticamente».',
     ],
     (FlowRun f) async {
       final OwnController own = f.own;
@@ -1996,27 +1994,30 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         ]),
       );
       await settle(f.tester);
-      await f.reveal(_card('Diego Lopez'));
+      await f.reveal(find.text('REGISTRADO AUTOMÁTICAMENTE'));
       await f.step(
-        'Al rato llega el aviso de Nequi por la misma plata: queda en '
-        '«Posibles repetidos», no como un ingreso de \$150.000 más.',
+        'Al rato llega el aviso de Nequi por la misma plata: no queda por '
+        'revisar ni como repetido; va solo a «Registrado automáticamente» con '
+        '«Llegó a Nequi: era la transferencia desde Bancolombia.»',
       );
-      await f.check('El aviso de Nequi es la llegada que ya está', () {
-        final InboxItem got = own.inbox.firstWhere(
+      await f.check('El aviso de Nequi quedó con la llegada que ya está', () {
+        final InboxItem got = own.recentAutomatic.firstWhere(
           (InboxItem i) => i.event.text.contains('Diego Lopez'),
         );
-        expect(got.status, InboxStatus.duplicate);
+        expect(got.status, InboxStatus.accepted);
         final Entry arrived = legs().firstWhere(
           (Entry e) => e.accountId == nequi.id,
         );
-        expect(got.duplicateOf, arrived.id);
+        expect(got.entryId, arrived.id);
         expect(
-          own.pendingInbox.where((InboxItem i) => i.id == got.id),
+          own.inbox.where((InboxItem i) => i.event.text.contains('Diego')),
           isEmpty,
         );
+        expect(
+          f.shows('Llegó a Nequi: era la transferencia desde Bancolombia.'),
+          isTrue,
+        );
       });
-      await _openMenu(f, 'Diego Lopez');
-      await f.tap('Descartar');
       await f.back();
       await f.step(
         'Inicio: sigue ${_headline(own)}; los \$150.000 pasaron de '

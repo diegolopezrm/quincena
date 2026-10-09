@@ -4214,6 +4214,12 @@ abstract class AppLocalizations {
   /// **'Ese pago ya estaba.'**
   String get pasteDuplicate;
 
+  /// No description provided for @pasteJoined.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese aviso es de una transferencia que ya registraste.'**
+  String get pasteJoined;
+
   /// No description provided for @readScreenshot.
   ///
   /// In es, this message translates to:
@@ -8598,6 +8604,24 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'No fue eso'**
   String get notMove;
+
+  /// No description provided for @joinedArrival.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegó a {to}: era la transferencia desde {from}.'**
+  String joinedArrival(String to, String from);
+
+  /// No description provided for @joinedDeparture.
+  ///
+  /// In es, this message translates to:
+  /// **'Salió de {from}: era la transferencia a {to}.'**
+  String joinedDeparture(String from, String to);
+
+  /// No description provided for @transferJoined.
+  ///
+  /// In es, this message translates to:
+  /// **'El otro aviso de esa misma plata también quedó registrado.'**
+  String get transferJoined;
 
   /// No description provided for @moreActions.
   ///

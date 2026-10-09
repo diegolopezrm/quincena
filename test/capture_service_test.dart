@@ -394,7 +394,7 @@ Fecha
   });
 
   test('the other bank\'s alert for money moved between own accounts is '
-      'a possible repeat, not more money', () async {
+      'that move\'s other side, recorded with it, not more money', () async {
     final String transfer = await store.addTransfer(
       fromAccountId: bancolombia.id,
       toAccountId: nequi.id,
@@ -408,14 +408,89 @@ Fecha
         at: now.add(const Duration(minutes: 2)),
       ),
     ]);
-    expect(r.duplicates, 1);
-    expect(r.added, 0);
+    expect(r.joined, 1);
+    expect(r.added + r.duplicates, 0);
     final InboxItem item = (await store.inbox()).single;
-    expect(item.status, InboxStatus.duplicate);
+    expect(item.status, InboxStatus.accepted);
+    expect(item.automatic, isTrue);
+    expect(item.suggestion.why, contains(CaptureService.joined));
     final Entry arrived = (await store.entries(
       accountId: nequi.id,
     )).firstWhere((Entry e) => e.transferId == transfer);
-    expect(item.duplicateOf, arrived.id);
+    expect(item.entryId, arrived.id);
+    // Nothing more came in.
+    expect(await store.entries(), hasLength(2));
+
+    // Taken back, the move stays: the notice is a possible repeat of it.
+    await capture.undo(item);
+    final InboxItem back = (await store.inbox()).single;
+    expect(back.status, InboxStatus.duplicate);
+    expect(back.duplicateOf, arrived.id);
+    expect(await store.entries(), hasLength(2));
+  });
+
+  test('a move recorded from one notice takes the other one waiting with '
+      'it, and gives it back with Deshacer', () async {
+    await capture.ingest(<CaptureEvent>[
+      push(r'Bancolombia: Transferiste $150.000 a tu Nequi'),
+      push(
+        r'Nequi · Recibiste $150.000 de Diego Lopez',
+        app: 'com.nequi.MobileApp',
+        at: now.add(const Duration(minutes: 1)),
+      ),
+    ]);
+    expect(await pending(), hasLength(2));
+    final InboxItem sent = (await pending()).firstWhere(
+      (InboxItem i) => i.parsed.kind == EntryKind.expense,
+    );
+    final Accepted done = await capture.acceptTransfer(
+      sent,
+      fromAccountId: bancolombia.id,
+      toAccountId: nequi.id,
+      sent: d('150000'),
+      date: now,
+    );
+    expect(done.joined, hasLength(1));
+    expect(await pending(), isEmpty);
+    final InboxItem got = (await store.inbox()).firstWhere(
+      (InboxItem i) => i.parsed.kind == EntryKind.income,
+    );
+    expect(got.status, InboxStatus.accepted);
+    final Entry arrived = (await store.entries(accountId: nequi.id)).single;
+    expect(got.entryId, arrived.id);
+
+    await capture.takeBack(<Accepted>[done]);
+    expect(await pending(), hasLength(2));
+    expect(await store.entries(), isEmpty);
+  });
+
+  test('the same message shared twice is read once', () async {
+    CaptureEvent pasted(String text, int minute) => CaptureEvent(
+      source: CaptureSource.paste,
+      at: now.add(Duration(minutes: minute)),
+      text: text,
+    );
+    final IngestReport first = await capture.ingest(<CaptureEvent>[
+      pasted(r'Nequi: Pagaste $32.000 en Rappi', 0),
+    ]);
+    expect(first.added, 1);
+    final IngestReport again = await capture.ingest(<CaptureEvent>[
+      pasted(r'  Nequi: Pagaste $32.000 en Rappi ', 3),
+    ]);
+    expect(again.duplicates, 1);
+    expect(await store.inbox(), hasLength(1));
+    // Two notifications alike can be two purchases: they wait to be told
+    // apart.
+    final IngestReport twice = await capture.ingest(<CaptureEvent>[
+      push(r'Nequi · Pagaste $12.000 en OXXO', app: 'com.nequi.MobileApp'),
+      push(
+        r'Nequi · Pagaste $12.000 en OXXO',
+        app: 'com.nequi.MobileApp',
+        at: now.add(const Duration(minutes: 4)),
+      ),
+    ]);
+    expect(twice.added + twice.duplicates, 2);
+    expect(await store.inbox(), hasLength(3));
   });
 
   test('a rule learned later reaches what is still waiting', () async {

@@ -216,6 +216,7 @@ void _offerUndo(
     for (final Accepted a in done) ...a.learned,
   ];
   final int resolved = done.fold(0, (int n, Accepted a) => n + a.resolved);
+  final bool joined = done.any((Accepted a) => a.joined.isNotEmpty);
   messenger
     ..hideCurrentSnackBar()
     ..showSnackBar(
@@ -225,6 +226,7 @@ void _offerUndo(
             said,
             if (learned.isNotEmpty) learnedText(context, own, learned),
             if (resolved > 0) context.l10n.ruleResolved(resolved),
+            if (joined) context.l10n.transferJoined,
           ].join(' '),
         ),
         duration: const Duration(seconds: 6),

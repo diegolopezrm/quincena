@@ -2773,6 +2773,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get pasteDuplicate => 'Ese pago ya estaba.';
 
   @override
+  String get pasteJoined =>
+      'Ese aviso es de una transferencia que ya registraste.';
+
+  @override
   String get readScreenshot => 'Leer un pantallazo o PDF';
 
   @override
@@ -5553,6 +5557,20 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get notMove => 'No fue eso';
+
+  @override
+  String joinedArrival(String to, String from) {
+    return 'Llegó a $to: era la transferencia desde $from.';
+  }
+
+  @override
+  String joinedDeparture(String from, String to) {
+    return 'Salió de $from: era la transferencia a $to.';
+  }
+
+  @override
+  String get transferJoined =>
+      'El otro aviso de esa misma plata también quedó registrado.';
 
   @override
   String get moreActions => 'Más acciones';

@@ -21,6 +21,7 @@ class IngestReport {
     this.recorded = 0,
     this.duplicates = 0,
     this.ignored = 0,
+    this.joined = 0,
   });
 
   /// Waiting in the inbox for the person.
@@ -33,11 +34,16 @@ class IngestReport {
   /// Not movements: security codes, ads, muted apps, text with no amount.
   final int ignored;
 
+  /// The other side of a move between the person's accounts already
+  /// recorded: the other bank's notice for the same money.
+  final int joined;
+
   IngestReport operator +(IngestReport o) => IngestReport(
     added: added + o.added,
     recorded: recorded + o.recorded,
     duplicates: duplicates + o.duplicates,
     ignored: ignored + o.ignored,
+    joined: joined + o.joined,
   );
 }
 
@@ -63,12 +69,25 @@ class CaptureService {
     final Asset base = profile?.base ?? Asset.cop;
     final String? person = profile?.name;
     final DateTime since = _now().subtract(lookBack);
+    final List<InboxItem> recent = await store.inbox(since: since);
+    final List<Entry> entries = await store.entries();
     // Each side of a move between the person's accounts counts too: the
     // other bank's alert for the same money is that side seen again.
+    final Map<String, Entry> legs = <String, Entry>{
+      for (final Entry e in entries)
+        if (e.transferId != null) e.id: e,
+    };
+    // What the person shared lately, word for word: the same message read
+    // again is the same payment, not one more to look at.
+    final Set<String> shared = <String>{
+      for (final InboxItem i in recent)
+        if (i.status != InboxStatus.dismissed && _byHand(i.event.source))
+          i.event.text.trim(),
+    };
     final List<Sighting> known = <Sighting>[
-      for (final InboxItem i in await store.inbox(since: since))
+      for (final InboxItem i in recent)
         if (i.status != InboxStatus.dismissed) ?_sighting(i),
-      for (final Entry e in await store.entries())
+      for (final Entry e in entries)
         if (!e.date.isBefore(since) && e.amount != Decimal.zero)
           Sighting(
             id: e.id,
@@ -86,6 +105,10 @@ class CaptureService {
     for (final CaptureEvent event in events) {
       if (event.app != null && settings.mutedApps.contains(event.app)) {
         report += const IngestReport(ignored: 1);
+        continue;
+      }
+      if (_byHand(event.source) && shared.contains(event.text.trim())) {
+        report += const IngestReport(duplicates: 1);
         continue;
       }
       final ParsedCapture parsed = parseCapture(event);
@@ -110,7 +133,11 @@ class CaptureService {
       );
       final Sighting? seen = _sighting(item, accounts: accounts);
       final Sighting? twin = seen == null ? null : duplicateOf(seen, known);
-      if (twin != null) {
+      final Entry? leg = twin == null ? null : legs[twin.id];
+      if (leg != null && _isSideOf(item, leg, accounts)) {
+        item = _joinedTo(item, leg);
+        report += const IngestReport(joined: 1);
+      } else if (twin != null) {
         item = item.copyWith(
           status: InboxStatus.duplicate,
           duplicateOf: twin.id,
@@ -131,9 +158,43 @@ class CaptureService {
       }
       await store.saveInboxItem(item);
       if (seen != null) known.add(seen);
+      if (_byHand(event.source)) shared.add(event.text.trim());
     }
     return report;
   }
+
+  /// Whether [source] is the person sharing a message or a picture, which
+  /// they may do twice with the same one.
+  static bool _byHand(CaptureSource source) =>
+      source == CaptureSource.paste || source == CaptureSource.screenshot;
+
+  /// What [Suggestion.why] holds for a notice found to be the other side
+  /// of a move already recorded.
+  static const String joined = 'joined';
+
+  /// Whether [item]'s alert is about [leg]'s account: the one it was placed
+  /// in, or one at the bank it came from.
+  static bool _isSideOf(InboxItem item, Entry leg, Iterable<Account> accounts) {
+    final String? here = item.suggestion.accountId;
+    if (here != null) return here == leg.accountId;
+    final String? bank = item.parsed.institution;
+    return bank != null &&
+        accountsAt(bank, accounts).any((Account a) => a.id == leg.accountId);
+  }
+
+  /// [item] recorded as [leg], the side of a move it is the notice of.
+  static InboxItem _joinedTo(InboxItem item, Entry leg) => item.copyWith(
+    status: InboxStatus.accepted,
+    entryId: leg.id,
+    automatic: true,
+    suggestion: Suggestion(
+      accountId: leg.accountId,
+      category: item.suggestion.category,
+      payee: item.suggestion.payee,
+      place: item.suggestion.place,
+      why: <String>[...item.suggestion.why, joined],
+    ),
+  );
 
   /// Records [item] as a movement, with whatever the person changed, and
   /// learns from it: the merchant's category, the card's account. What it
@@ -258,7 +319,48 @@ class CaptureService {
       const <RuleChange>[],
       item: recorded,
       toAccountId: toAccountId,
+      joined: await _joinWaiting(transferId, apart: item.id),
     );
+  }
+
+  /// Records with the move [transferId] the notices still waiting that are
+  /// its other side, the other bank's alert for the same money, and gives
+  /// them back as they were.
+  Future<List<InboxItem>> _joinWaiting(
+    String transferId, {
+    required String apart,
+  }) async {
+    final List<Account> accounts = await store.accounts();
+    final CaptureSettings settings = await store.captureSettings();
+    final List<Entry> legs = <Entry>[
+      for (final Entry e in await store.entries())
+        if (e.transferId == transferId) e,
+    ];
+    final List<InboxItem> joined = <InboxItem>[];
+    for (final InboxItem waiting in await store.inbox(
+      statuses: <InboxStatus>{InboxStatus.pending},
+    )) {
+      if (waiting.id == apart) continue;
+      final InboxItem i = withRules(waiting, settings, accounts);
+      final Sighting? seen = _sighting(i, accounts: accounts);
+      if (seen == null) continue;
+      for (final Entry leg in legs) {
+        final Sighting side = Sighting(
+          id: leg.id,
+          amount: leg.amount.abs(),
+          asset: _asset(accounts, leg.accountId),
+          kind: leg.amount < Decimal.zero
+              ? EntryKind.expense
+              : EntryKind.income,
+          when: leg.date,
+        );
+        if (!samePayment(seen, side) || !_isSideOf(i, leg, accounts)) continue;
+        await store.saveInboxItem(_joinedTo(i, leg));
+        joined.add(waiting);
+        break;
+      }
+    }
+    return joined;
   }
 
   /// Takes back what [accept], [acceptAll] or [acceptTransfer] did: each
@@ -267,6 +369,9 @@ class CaptureService {
   Future<void> takeBack(List<Accepted> done) async {
     for (final Accepted a in done) {
       await undo(a.item);
+      for (final InboxItem j in a.joined) {
+        await store.saveInboxItem(j);
+      }
     }
     final List<RuleChange> learned = <RuleChange>[
       for (final Accepted a in done.reversed) ...a.learned.reversed,
@@ -305,9 +410,32 @@ class CaptureService {
   }
 
   /// Takes back a movement recorded automatically: it goes back to the
-  /// inbox.
+  /// inbox. A notice found to be the other side of a move recorded from
+  /// another one leaves the move alone: it is a possible repeat of it again.
   Future<void> undo(InboxItem item) async {
     final String? id = item.entryId;
+    if (id != null && item.suggestion.why.contains(joined)) {
+      await store.saveInboxItem(
+        InboxItem(
+          id: item.id,
+          event: item.event,
+          parsed: item.parsed,
+          suggestion: Suggestion(
+            accountId: item.suggestion.accountId,
+            category: item.suggestion.category,
+            payee: item.suggestion.payee,
+            place: item.suggestion.place,
+            why: <String>[
+              for (final String w in item.suggestion.why)
+                if (w != joined) w,
+            ],
+          ),
+          status: InboxStatus.duplicate,
+          duplicateOf: id,
+        ),
+      );
+      return;
+    }
     if (id != null) {
       for (final Entry e in await store.entries()) {
         if (e.id == id) await store.deleteEntry(e);
@@ -913,6 +1041,7 @@ class Accepted {
     required this.item,
     this.resolved = 0,
     this.toAccountId,
+    this.joined = const <InboxItem>[],
   });
 
   final Entry entry;
@@ -927,6 +1056,10 @@ class Accepted {
   /// Where the money went, when it moved between the person's accounts:
   /// [entry] is the side it left.
   final String? toAccountId;
+
+  /// The other bank's notices for the same move, recorded with it, as they
+  /// were waiting.
+  final List<InboxItem> joined;
 }
 
 /// Money moved between two of the person's accounts, as an alert proposes
