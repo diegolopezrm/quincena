@@ -5,10 +5,16 @@ import 'package:intl/intl.dart';
 import 'package:quincena/app.dart';
 import 'package:quincena/session/session.dart';
 import 'package:quincena/theme/tokens.dart';
+import 'package:quincena/showcase.dart';
 
 import 'fonts.dart';
 
 void main() {
+  // These are the web demo's, the showcase for developers: the phone apps
+  // have none of them.
+  setUp(() => debugShowcaseOverride = true);
+  tearDown(() => debugShowcaseOverride = null);
+
   setUpAll(() async {
     await loadAppFonts();
     Intl.defaultLocale = 'es_CO';

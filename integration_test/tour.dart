@@ -556,11 +556,6 @@ final List<Scene> scenes = <Scene>[
     await t.back();
     await t.conversation();
     await t.page('demo-inicio');
-    // The recordings load after the home shows.
-    await t.waitFor(find.text(_seeRecorded));
-    await t.tap(_seeRecorded);
-    await t.page('lo-que-respondio-gemini');
-    await t.back();
     await t.tapTip('Ajustes');
     await t.page('demo-ajustes');
     await t.back();
@@ -568,6 +563,9 @@ final List<Scene> scenes = <Scene>[
       await t.tapContaining(_starters[i]);
       await t.page('respuesta-${i + 1}', most: 10);
       await t.tapTip('Nueva conversación');
+      // The offer to undo covers the last question until it goes.
+      await t.tester.pump(const Duration(seconds: 7));
+      await settle(t.tester);
     }
   }),
   Scene('15-modo-oscuro', data: fullAccount, dark: true, (Tour t) async {
@@ -619,5 +617,3 @@ const List<String> _startersEn = <String>[
   'Where did my money go in September?',
   'Can I afford Cartagena in December?',
 ];
-
-const String _seeRecorded = 'Mira lo que respondió Gemini de verdad';

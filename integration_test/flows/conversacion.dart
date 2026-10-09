@@ -4,9 +4,7 @@ import 'dart:convert';
 
 import 'package:dartantic_ai/dartantic_ai.dart' as dartantic;
 import 'package:decimal/decimal.dart';
-import 'package:flutter/foundation.dart' show FlutterExceptionHandler;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart' show ChatMessage, Surface;
 import 'package:quincena/agent/catalog.dart';
@@ -981,85 +979,6 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
     },
   ),
   AppFlow(
-    '11-09-lo-que-respondio-gemini',
-    'Ver lo que respondió Gemini de verdad',
-    area: _demoArea,
-    goal:
-        'Quiero ver si un modelo de verdad responde igual de bien que la '
-        'demo, sin poner una key.',
-    (FlowRun f) async {
-      // A flow that ended while the home was still reading its recordings
-      // leaves them cached half read: this home reads them afresh.
-      rootBundle.clear();
-      await f.tap('Con datos de ejemplo');
-      await f.toConversation();
-      await f.waitFor(find.text(_seeRecorded));
-      await f.reveal(find.text(_seeRecorded));
-      await f.step(
-        'En el ejemplo, «Otra pregunta» abre la conversación; al final de su '
-        'inicio está «Mira lo que respondió Gemini de verdad».',
-      );
-      await f.tap(_seeRecorded);
-      await f.page(
-        'Lo abre: cinco sesiones grabadas, una por pregunta, con el modelo, '
-        'los pasos y cuántos segundos tardó.',
-      );
-      await f.check('Hay una sesión grabada por cada pregunta de la demo', () {
-        for (final String q in ScriptedAgent.starters) {
-          expect(find.text(q), findsOneWidget);
-        }
-      });
-      await f.tap(ScriptedAgent.starters[0]);
-      await f.page(
-        'Toca la primera: la pregunta, la respuesta como la armó Gemini y un '
-        'control con los pasos que mandó.',
-      );
-      final RecordedSlider at = RecordedSlider(f);
-      await f.check('La reproducción empieza en el último paso', () {
-        expect(at.value, at.max);
-        expect(find.text('${at.max.round()} de ${at.max.round()}'), findsOne);
-      });
-      await f.tester.drag(_replaySlider, const Offset(-800, 0));
-      await settle(f.tester);
-      await f.step(
-        'Arrastra el control al principio: «Antes de la respuesta», 0 de 5, '
-        'y la respuesta desaparece.',
-      );
-      await f.check('Al principio no hay nada dibujado', () {
-        expect(RecordedSlider(f).value, 0);
-        expect(find.text('Antes de la respuesta'), findsOneWidget);
-      });
-      await _seek(f, 3);
-      await f.step(
-        'En el paso 3, «Manda los componentes»: la pantalla aparece armada '
-        'pero sin cifras, que llegan en el paso siguiente.',
-      );
-      await f.check('El paso 3 es el que manda los componentes', () {
-        expect(RecordedSlider(f).value, 3);
-        expect(find.text('Manda los componentes'), findsOneWidget);
-      });
-      await f.back();
-      // Each of the five, opened from the list: every one plays to its end.
-      final List<String> short = <String>[];
-      for (final String q in ScriptedAgent.starters) {
-        await f.tap(q);
-        final RecordedSlider played = RecordedSlider(f);
-        if (played.max < 1 || played.value != played.max) short.add(q);
-        if (find.byType(Surface).evaluate().isEmpty) short.add(q);
-        await f.back();
-      }
-      await f.check(
-        'Las cinco grabaciones abren con su respuesta armada, en el último '
-        'paso',
-        () => expect(short, isEmpty),
-      );
-      await f.back();
-      await f.check('Ver las grabaciones no toca la conversación', () {
-        expect(_demo(f).turns, isEmpty);
-      });
-    },
-  ),
-  AppFlow(
     '11-10-quien-responde',
     'Saber quién responde en el ejemplo',
     area: _demoArea,
@@ -1207,128 +1126,6 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
         expect(settings.themeMode, ThemeMode.system);
         expect(await _setting(f, 'app.theme'), 'system');
         expect(await _setting(f, 'app.language'), isEmpty);
-      });
-    },
-  ),
-  AppFlow(
-    '11-12-modo-desarrollador',
-    'Mirar por dentro una respuesta',
-    area: _demoArea,
-    goal:
-        'Soy desarrollador y quiero ver cómo arma la pantalla el agente y '
-        'copiar la sesión para reportar un error.',
-    demo: true,
-    manual: <String>[
-      'Pegar en otra app lo que dejó «Copiar la sesión» y ver que llega '
-          'entero.',
-      'El inspector con su letra de verdad (Menlo): en una prueba sin '
-          'teléfono se dibuja con cuadros.',
-    ],
-    (FlowRun f) async {
-      // The conversation opens from the example's Inicio.
-      await f.toConversation();
-      final Session s = _demo(f);
-      final AppSettings settings = _settings(f);
-      await f.tapTip('Ajustes');
-      await f.tap('Modo desarrollador');
-      await f.step(
-        'En Ajustes, enciende «Modo desarrollador»: aparece «Copiar la '
-        'sesión», apagado porque todavía no hay conversación.',
-      );
-      await f.check('El modo quedó encendido y no hay nada que copiar', () {
-        expect(settings.developer, isTrue);
-        final OutlinedButton copy = f.tester.widget<OutlinedButton>(
-          find.widgetWithText(OutlinedButton, 'Copiar la sesión'),
-        );
-        expect(copy.onPressed, isNull);
-      });
-      await f.back();
-      await f.tap(ScriptedAgent.starters[4]);
-      await f.type('Dónde', 'Regalo para mamá');
-      await f.step(
-        'Pide anotar un gasto y escribe «Regalo para mamá» en «Dónde»; '
-        'abajo a la izquierda está la pestaña «genui 1».',
-      );
-      // The inspector writes in a monospace font that a run without a phone
-      // draws as squares a whole letter wide, too wide for its tab bar;
-      // with the phone's Menlo it fits. Only that overflow is let through.
-      final FlutterExceptionHandler? report = FlutterError.onError;
-      FlutterError.onError = (FlutterErrorDetails e) {
-        if (!e.exceptionAsString().startsWith('A RenderFlex overflowed')) {
-          report?.call(e);
-        }
-      };
-      try {
-        await f.tap('genui 1');
-        await f.step(
-          'Toca «genui 1»: el inspector muestra el árbol de componentes que '
-          'mandó el agente.',
-        );
-        await f.tap('data');
-        await f.step(
-          '«data» muestra los datos del formulario tal como están ahora.',
-        );
-        await f.tap('messages');
-        await f.step('«messages» lista cada mensaje que llegó del agente.');
-        await f.tap('semantics');
-        await f.step(
-          '«semantics» muestra lo que leería un lector de pantalla, con '
-          '«reload» para leerlo otra vez.',
-        );
-        await f.tap('reload');
-        await f.tap('close');
-      } finally {
-        FlutterError.onError = report;
-      }
-      await f.tapTip('Ajustes');
-      String? copied;
-      f.tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-        SystemChannels.platform,
-        (MethodCall call) async {
-          if (call.method == 'Clipboard.setData') {
-            copied =
-                (call.arguments as Map<Object?, Object?>)['text'] as String?;
-          }
-          return null;
-        },
-      );
-      try {
-        await f.tap('Copiar la sesión');
-      } finally {
-        f.tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-          SystemChannels.platform,
-          null,
-        );
-      }
-      await f.step(
-        'Cierra el inspector y toca «Copiar la sesión» en Ajustes: la hoja se '
-        'cierra sola y abajo avisa que la sesión se copió sin lo que '
-        'escribió.',
-      );
-      await f.check('Lo copiado trae la sesión sin «Regalo para mamá»', () {
-        expect(copied, isNotNull);
-        expect(copied, contains('"draft"'));
-        expect(copied, isNot(contains('Regalo para mamá')));
-      });
-      await f.check('La hoja se cerró y el aviso se ve, sin nada encima', () {
-        expect(find.byType(BottomSheet), findsNothing);
-        expect(
-          find
-              .text(
-                'Sesión copiada, sin lo que escribiste. Pégala en un issue y '
-                'se puede reproducir.',
-              )
-              .hitTestable(),
-          findsOneWidget,
-        );
-      });
-      await f.tapTip('Ajustes');
-      await f.tap('Modo desarrollador');
-      await f.back();
-      await f.check('Apagado, el inspector desaparece', () {
-        expect(settings.developer, isFalse);
-        expect(find.text('genui 1'), findsNothing);
-        expect(s.turns, hasLength(1));
       });
     },
   ),
@@ -2197,8 +1994,6 @@ const List<String> _ownStarters = <String>[
   'Quiero anotar un gasto',
 ];
 
-const String _seeRecorded = 'Mira lo que respondió Gemini de verdad';
-
 /// The demo's conversation.
 /// The trip to Cartagena in the account the conversation is about, as it is
 /// now: the example keeps its goals in its own database, by name.
@@ -2325,17 +2120,6 @@ class RecordedSlider {
 /// The slider that steps through a replay, above the answer it replays,
 /// which may have sliders of its own.
 final Finder _replaySlider = find.byType(Slider).first;
-
-/// Taps the replay's slider where step [position] is.
-Future<void> _seek(FlowRun f, int position) async {
-  final Finder found = _replaySlider;
-  final Slider slider = f.tester.widget<Slider>(found);
-  final Rect track = f.tester.getRect(found);
-  await f.tester.tapAt(
-    Offset(track.left + track.width * position / slider.max, track.center.dy),
-  );
-  await settle(f.tester);
-}
 
 /// How much [c] moved between August and September in [ledger].
 int _moved(Ledger ledger, Category c) =>
