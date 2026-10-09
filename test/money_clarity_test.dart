@@ -770,7 +770,10 @@ void main() {
       expect(text, contains('CRIPTO\n\$6.000.000'));
       expect(text, contains('500 USDT\n≈ \$2.000.000'));
       expect(text, contains('0,01 BTC\n≈ \$4.000.000'));
-      expect(find.text(r'$6.000.000'), findsOneWidget);
+      // Once on the section and once among what the net worth adds up
+      // from; the row of how it did repeats neither.
+      expect(text, contains('En cripto\n\$6.000.000'));
+      expect(find.text(r'$6.000.000'), findsNWidgets(2));
       expect(
         text,
         contains('Rendimiento y ganancia\nGanancia no realizada +33,3 %'),

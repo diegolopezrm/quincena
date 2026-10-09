@@ -974,6 +974,24 @@ abstract class AppLocalizations {
   /// **'¿Cuánto debes hoy?'**
   String get accountDebtNow;
 
+  /// No description provided for @accountInFavorNow.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto tienes a favor hoy?'**
+  String get accountInFavorNow;
+
+  /// No description provided for @accountOverdraftNow.
+  ///
+  /// In es, this message translates to:
+  /// **'¿De cuánto es el sobregiro hoy?'**
+  String get accountOverdraftNow;
+
+  /// No description provided for @accountOverdrawn.
+  ///
+  /// In es, this message translates to:
+  /// **'Está en sobregiro'**
+  String get accountOverdrawn;
+
   /// No description provided for @accountSpendable.
   ///
   /// In es, this message translates to:

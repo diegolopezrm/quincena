@@ -174,15 +174,21 @@ void main() {
 
     await tester.tap(find.byTooltip('Editar cuenta'));
     await settle(tester);
-    // What is owed, below zero: nothing owed, and some in favor.
+    // In favor is chosen, and the amount has no sign to lose.
+    expect(
+      tester
+          .widget<SegmentedButton<bool>>(find.byType(SegmentedButton<bool>))
+          .selected,
+      <bool>{true},
+    );
     expect(
       tester
           .widget<TextField>(
-            find.widgetWithText(TextField, '¿Cuánto debes hoy?'),
+            find.widgetWithText(TextField, '¿Cuánto tienes a favor hoy?'),
           )
           .controller!
           .text,
-      '-55.200',
+      '55.200',
     );
     await tester.enterText(
       find.widgetWithText(TextField, 'Cupo total (opcional)'),
@@ -197,6 +203,45 @@ void main() {
     expect(edited.creditLimit, Decimal.fromInt(3000000));
     expect(balance(own, edited), Money(Decimal.fromInt(55200), Asset.cop));
     expect(find.text('A favor'), findsOneWidget);
+  });
+
+  testWidgets('a card in favor, its amount typed again, stays in favor', (
+    tester,
+  ) async {
+    final OwnController own = await open(tester, inFavor: true);
+    final Account visa = named(own, 'Visa');
+    await push(tester, AccountPage(own: own, accountId: visa.id));
+    await tester.tap(find.byTooltip('Editar cuenta'));
+    await settle(tester);
+    // It used to take the minus sign away and save the credit as a debt.
+    await tester.enterText(
+      find.widgetWithText(TextField, '¿Cuánto tienes a favor hoy?'),
+      '60.000',
+    );
+    await tester.ensureVisible(find.text('Guardar'));
+    await tester.tap(find.text('Guardar'));
+    await settle(tester);
+    expect(
+      balance(own, named(own, 'Visa')),
+      Money(Decimal.fromInt(60000), Asset.cop),
+    );
+
+    // And told it is owed now, it owes the amount typed.
+    await tester.tap(find.byTooltip('Editar cuenta'));
+    await settle(tester);
+    await tester.tap(find.text('Debes'));
+    await settle(tester);
+    await tester.enterText(
+      find.widgetWithText(TextField, '¿Cuánto debes hoy?'),
+      '10.000',
+    );
+    await tester.ensureVisible(find.text('Guardar'));
+    await tester.tap(find.text('Guardar'));
+    await settle(tester);
+    expect(
+      balance(own, named(own, 'Visa')),
+      Money(Decimal.fromInt(-10000), Asset.cop),
+    );
   });
 
   testWidgets('a balance typed again still moves the opening', (tester) async {

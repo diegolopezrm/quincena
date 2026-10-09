@@ -115,19 +115,35 @@ class _AccountFormState extends State<_AccountForm> {
   Money get _currentBalance =>
       widget.own.balances[_editing!.id] ?? _editing.openingMoney;
 
-  String _initialBalanceText() {
-    final Decimal value = _currentBalance.amount;
-    final Decimal shown = _editing!.kind == AccountKind.card ? -value : value;
-    return formatDecimal(shown, decimals: _editing.asset.decimals, trim: true);
-  }
+  /// Today's balance without its sign: which side of zero it is on is
+  /// [_otherSide], chosen apart, as a sign is not something to type.
+  String _initialBalanceText() => formatDecimal(
+    _currentBalance.amount.abs(),
+    decimals: _editing!.asset.decimals,
+    trim: true,
+  );
 
-  /// Today's balance as the form showed it on opening.
+  /// Whether today's balance is on the side a [kind] is not usually on: a
+  /// card in the person's favor, a bank account overdrawn.
+  static bool _isOtherSide(AccountKind kind, Decimal balance) =>
+      kind == AccountKind.card
+      ? balance > Decimal.zero
+      : balance < Decimal.zero;
+
+  /// The side of zero the balance is on, as the person chose it: «A favor»
+  /// for a card, «Está en sobregiro» for a bank account.
+  late bool _otherSide =
+      _editing != null && _isOtherSide(_editing.kind, _currentBalance.amount);
+
+  /// Today's balance as the form showed it on opening, and its side.
   late final String _shownBalance;
+  late final bool _shownSide;
 
   @override
   void initState() {
     super.initState();
     _shownBalance = _balance.text;
+    _shownSide = _otherSide;
   }
 
   @override
@@ -189,8 +205,11 @@ class _AccountFormState extends State<_AccountForm> {
     }
     final Money? openingCost = cost == null ? null : Money(cost, _costAsset);
     setState(() => _saving = true);
-    // A card shows what is owed, a positive number; its balance is negative.
-    final Decimal balance = _kind == AccountKind.card ? -typed.abs() : typed;
+    // The amount is typed without a sign; the side it is on was chosen
+    // apart. A card owes unless it is in the person's favor, and any other
+    // account has money unless it is overdrawn.
+    final bool below = _kind == AccountKind.card ? !_otherSide : _otherSide;
+    final Decimal balance = below ? -typed.abs() : typed.abs();
     final Account saved;
     if (_editing == null) {
       saved = await widget.own.store.addAccount(
@@ -209,12 +228,10 @@ class _AccountFormState extends State<_AccountForm> {
         kind: _kind,
         institution: _institution.text,
         spendable: _spendable,
-        // The person corrected today's balance: the opening absorbs the
-        // difference, and the movements stay as they were. Left as it was
-        // shown, it stays as it is: a card's credit in the person's favor
-        // shows below zero, and saving another change must not make it a
-        // debt.
-        opening: _balance.text == _shownBalance
+        // The person corrected today's balance or its side: the opening
+        // absorbs the difference, and the movements stay as they were. Left
+        // as it was shown, it stays exactly as it is.
+        opening: _balance.text == _shownBalance && _otherSide == _shownSide
             ? _editing.opening
             : _editing.opening + (balance - _currentBalance.amount),
         openingCost: openingCost,
@@ -307,6 +324,8 @@ class _AccountFormState extends State<_AccountForm> {
                     label: Text(accountKindLabel(context, k)),
                     selected: _kind == k,
                     onSelected: (_) => setState(() {
+                      // Each kind has its own usual side of zero.
+                      if (k != _kind) _otherSide = false;
                       _kind = k;
                       if (!_spendableTouched) _spendable = k.spendableByDefault;
                     }),
@@ -335,6 +354,27 @@ class _AccountFormState extends State<_AccountForm> {
               decoration: InputDecoration(labelText: l.accountInstitution),
             ),
             const SizedBox(height: 16),
+            // What a card owes or has in favor, said with a choice: a minus
+            // sign is not something a person types, nor reads as a debt.
+            if (_kind == AccountKind.card) ...<Widget>[
+              SegmentedButton<bool>(
+                segments: <ButtonSegment<bool>>[
+                  ButtonSegment<bool>(
+                    value: false,
+                    label: Text(l.cardOwedLabel),
+                  ),
+                  ButtonSegment<bool>(
+                    value: true,
+                    label: Text(l.cardInFavorLabel),
+                  ),
+                ],
+                selected: <bool>{_otherSide},
+                showSelectedIcon: false,
+                onSelectionChanged: (Set<bool> side) =>
+                    setState(() => _otherSide = side.single),
+              ),
+              const SizedBox(height: 12),
+            ],
             TextField(
               controller: _balance,
               inputFormatters: <TextInputFormatter>[
@@ -345,13 +385,25 @@ class _AccountFormState extends State<_AccountForm> {
               ),
               onChanged: (_) => _clear(() => _balanceError = null),
               decoration: InputDecoration(
-                labelText: _kind == AccountKind.card
-                    ? l.accountDebtNow
-                    : l.accountBalanceNow,
+                labelText: switch ((_kind, _otherSide)) {
+                  (AccountKind.card, false) => l.accountDebtNow,
+                  (AccountKind.card, true) => l.accountInFavorNow,
+                  (_, true) => l.accountOverdraftNow,
+                  _ => l.accountBalanceNow,
+                },
                 suffixText: asset.code,
                 errorText: _balanceError,
               ),
             ),
+            if (_kind == AccountKind.bank)
+              CheckboxListTile(
+                value: _otherSide,
+                onChanged: (bool? v) => setState(() => _otherSide = v ?? false),
+                title: Text(l.accountOverdrawn),
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+              ),
             if (_kind == AccountKind.card) ...<Widget>[
               const SizedBox(height: 16),
               TextField(

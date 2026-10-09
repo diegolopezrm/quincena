@@ -1343,23 +1343,33 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tapTip('Editar cuenta');
       await f.reveal(find.text('Cupo total (opcional)'));
       await f.step(
-        'En «Editar cuenta», «¿Cuánto debes hoy?» trae '
-        '-${_plain(favor)}: debes menos que nada.',
+        'En «Editar cuenta», arriba del saldo está elegido «A favor», y '
+        '«¿Cuánto tienes a favor hoy?» trae ${_plain(favor)}, sin signo.',
       );
-      await f.check('El campo trae el saldo a favor con signo menos', () {
-        expect(_fieldText(f, '¿Cuánto debes hoy?'), '-${_plain(favor)}');
+      await f.check('El saldo a favor viene elegido y sin signo menos', () {
+        expect(
+          f.tester
+              .widget<SegmentedButton<bool>>(find.byType(SegmentedButton<bool>))
+              .selected,
+          <bool>{true},
+        );
+        expect(_fieldText(f, '¿Cuánto tienes a favor hoy?'), _plain(favor));
       });
+      // The amount corrected: it used to lose its sign and become a debt.
+      final Money corrected = favor + _pesos('10000');
+      await f.type('¿Cuánto tienes a favor hoy?', _plain(corrected));
       await f.type('Cupo total (opcional)', '3500000');
       await f.tap('Guardar');
       await f.step(
-        'Con el cupo nuevo de \$3.500.000, la Visa sigue «A favor» '
-        '${_cop(favor)}.',
+        'Corregido el saldo a ${_cop(corrected)} y con el cupo nuevo de '
+        '\$3.500.000, la Visa sigue «A favor».',
       );
       await f.check(
-        'Cambiar el cupo no vuelve deuda el saldo a favor de ${_cop(favor)}',
+        'Corregir el monto y el cupo no vuelve deuda el saldo a favor: queda '
+        'en ${_cop(corrected)}',
         () {
           expect(_account(own, visa.id).creditLimit, Decimal.parse('3500000'));
-          expect(_balance(own, visa), favor);
+          expect(_balance(own, visa), corrected);
           expect(f.shows('A favor'), isTrue);
         },
       );

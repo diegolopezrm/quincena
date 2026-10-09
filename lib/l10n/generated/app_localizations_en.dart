@@ -538,6 +538,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountDebtNow => 'How much do you owe today?';
 
   @override
+  String get accountInFavorNow => 'How much is in your favor today?';
+
+  @override
+  String get accountOverdraftNow => 'How much is it overdrawn today?';
+
+  @override
+  String get accountOverdrawn => 'It\'s overdrawn';
+
+  @override
   String get accountSpendable => 'Everyday account';
 
   @override
