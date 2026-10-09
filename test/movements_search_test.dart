@@ -98,12 +98,16 @@ void main() {
     await settle(tester);
   }
 
-  /// What the line over the results says: how many, and what they add up
-  /// to in each currency.
-  String foundLine(String count, List<Money> totals) => <String>[
-    count,
+  /// [totals] as a list says what it adds up to, one currency after the
+  /// other.
+  String sums(List<Money> totals) => <String>[
     for (final Money m in totals) moneyText(m, base: Asset.cop, signed: true),
   ].join(' · ');
+
+  /// What the line over the results says: how many, and what they add up
+  /// to in each currency.
+  String foundLine(String count, List<Money> totals) =>
+      '$count · ${sums(totals)}';
 
   Money cop(String amount) => Money(Decimal.parse(amount), Asset.cop);
   Money usd(String amount) => Money(Decimal.parse(amount), Asset.usd);
@@ -151,6 +155,29 @@ void main() {
     expect(find.text('Nada coincide con la búsqueda.'), findsNothing);
     expect(find.text('Éxito Laureles'), findsOneWidget);
     expect(find.textContaining(RegExp(r'^\d+ movimientos?')), findsNothing);
+  });
+
+  testWidgets('each day says what its movements add up to, in each '
+      'currency, leaving out the transfers', (tester) async {
+    await open(tester);
+    String? totalOf(String day) {
+      final Finder label = find.ancestor(
+        of: find.text(day),
+        matching: find.byType(SectionLabel),
+      );
+      final Iterable<Text> texts = tester.widgetList<Text>(
+        find.descendant(of: label, matching: find.byType(Text)),
+      );
+      return texts.length < 2 ? null : texts.last.data;
+    }
+
+    expect(totalOf('AYER'), sums(<Money>[cop('-187400'), usd('-10.99')]));
+    // Only the move to Nequi on the 1st: nothing adds up.
+    expect(totalOf('JUEVES 1 DE OCTUBRE'), isNull);
+    expect(
+      totalOf('MIÉRCOLES 30 DE SEPTIEMBRE'),
+      sums(<Money>[cop('2000000')]),
+    );
   });
 
   testWidgets('a search finds an amount written with its points and sign or '

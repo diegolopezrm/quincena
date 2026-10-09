@@ -1412,7 +1412,8 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.page(
         'Movimientos: el buscador arriba, con el embudo de los filtros al '
         'lado, y los movimientos agrupados por día, del más reciente: «Hoy», '
-        '«Ayer» y luego cada fecha.',
+        '«Ayer» y luego cada fecha, cada uno con lo que suman sus '
+        'movimientos.',
         most: 3,
       );
       await f.check('Los días van del más reciente al más viejo', () {
@@ -1423,6 +1424,14 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
           expect(shown[i].date.isAfter(shown[i - 1].date), isFalse);
         }
       });
+      final int today = <Entry>[
+        for (final Entry e in own.snapshot!.entries)
+          if (!e.isTransfer && DateUtils.isSameDay(e.date, own.today)) e,
+      ].fold(0, (int sum, Entry e) => sum + e.amount.toBigInt().toInt());
+      await f.check(
+        '«Hoy» dice lo que suman sus movimientos: ${_signed(own, today)}',
+        () => expect(_dayTotal(f, 'HOY'), _signed(own, today)),
+      );
       await f.tester.drag(
         find.byType(CustomScrollView).first,
         const Offset(0, -500),
@@ -3433,6 +3442,22 @@ String _searchText(FlowRun f) =>
 /// search found writes it.
 String _signed(OwnController own, int minor) =>
     pesos(own.ledger!.major(minor), signed: true);
+
+/// What the day titled [day] says its movements add up to, if anything.
+String? _dayTotal(FlowRun f, String day) {
+  final List<Text> texts = f.tester
+      .widgetList<Text>(
+        find.descendant(
+          of: find.ancestor(
+            of: find.text(day),
+            matching: find.byType(SectionLabel),
+          ),
+          matching: find.byType(Text),
+        ),
+      )
+      .toList();
+  return texts.length < 2 ? null : texts.last.data;
+}
 
 /// The «¿Repetido?» mark in the row of [entry].
 Finder _markOf(Entry entry) => find.descendant(

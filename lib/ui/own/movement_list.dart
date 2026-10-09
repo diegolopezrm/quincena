@@ -8,6 +8,7 @@ import '../../format/dates.dart';
 import '../../format/money.dart';
 import '../../l10n/l10n.dart';
 import '../../money/money.dart';
+import '../../own/movement_search.dart';
 import '../../own/own_controller.dart';
 import '../../own/repeats.dart';
 import '../../theme/tokens.dart';
@@ -315,6 +316,19 @@ class MovementGroups extends StatelessWidget {
     return weekdayDayMonth(d);
   }
 
+  /// What the movements of one day add up to, in each currency, beside its
+  /// title: in one account's list its transfers count too, as they moved
+  /// its money. Empty when it all comes to nothing.
+  String _dayTotal(List<Entry> day) => <String>[
+    for (final Money m in totalsOf(
+      day,
+      assetOf: (String id) => own.snapshot?.account(id)?.asset,
+      base: own.profile?.base,
+      transfers: inAccount,
+    ))
+      if (!m.isZero) moneyText(m, base: own.profile?.base, signed: true),
+  ].join(' · ');
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
@@ -333,7 +347,16 @@ class MovementGroups extends StatelessWidget {
       itemBuilder: (BuildContext context, int i) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          SectionLabel(_dayLabel(l, list[i].key)),
+          SectionLabel(
+            _dayLabel(l, list[i].key),
+            trailing: switch (_dayTotal(list[i].value)) {
+              '' => null,
+              final String total => Figures(
+                total,
+                style: context.type.labelMedium,
+              ),
+            },
+          ),
           Panel(
             children: <Widget>[
               for (final Entry e in list[i].value)

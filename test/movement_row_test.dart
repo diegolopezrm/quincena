@@ -14,10 +14,12 @@ import 'package:quincena/domain/records.dart';
 import 'package:quincena/domain/shared.dart';
 import 'package:quincena/format/money.dart';
 import 'package:quincena/money/asset.dart';
+import 'package:quincena/money/money.dart';
 import 'package:quincena/money/rates.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/store/store.dart';
 import 'package:quincena/ui/own/account_page.dart';
+import 'package:quincena/ui/own/look.dart';
 import 'package:quincena/ui/own/movement_list.dart';
 import 'package:quincena/ui/own/movements_tab.dart';
 
@@ -185,6 +187,23 @@ void main() {
       scrollable: find.byType(Scrollable).first,
     );
     expect(_rowSays(title, r'Salieron $331.300'), isTrue);
+    // In an account's list a transfer moves its money, and its day says so.
+    expect(
+      find.descendant(
+        of: find.ancestor(
+          of: find.text('JUEVES 1 DE OCTUBRE'),
+          matching: find.byType(SectionLabel),
+        ),
+        matching: find.text(
+          moneyText(
+            Money(Decimal.parse('98.5'), Asset.usd),
+            base: Asset.cop,
+            signed: true,
+          ),
+        ),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('on a narrow phone the labels stay whole, and a transfer '

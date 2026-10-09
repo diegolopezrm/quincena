@@ -345,26 +345,40 @@ class MovementFinder {
     return rate == null ? null : e.amount.abs() * rate;
   }
 
-  /// What [entries] add up to in each currency they are in, the base
-  /// currency first: each one as its row shows it. Moves between the
-  /// person's own accounts are left out, as they leave what the person has
-  /// the same.
-  List<Money> totals(Iterable<Entry> entries) {
-    final Map<Asset, Decimal> sums = <Asset, Decimal>{};
-    for (final Entry e in entries) {
-      if (e.isTransfer) continue;
-      final Asset? asset = _accounts[e.accountId]?.asset;
-      if (asset == null) continue;
-      sums[asset] = (sums[asset] ?? Decimal.zero) + e.amount;
-    }
-    final List<Asset> order = sums.keys.toList()
-      ..sort(
-        (Asset a, Asset b) => a == _base
-            ? -1
-            : b == _base
-            ? 1
-            : a.code.compareTo(b.code),
-      );
-    return <Money>[for (final Asset a in order) Money(sums[a]!, a)];
+  /// What [entries] add up to in each currency, the base currency first,
+  /// without the moves between the person's own accounts.
+  List<Money> totals(Iterable<Entry> entries) => totalsOf(
+    entries,
+    assetOf: (String id) => _accounts[id]?.asset,
+    base: _base,
+  );
+}
+
+/// What [entries] add up to in each currency they are in, [base] first:
+/// each one signed, as its row shows it. Moves between the person's own
+/// accounts count only with [transfers], as in one account's list, where
+/// they move its money; among all the movements they leave what the person
+/// has the same. [assetOf] says what each account holds.
+List<Money> totalsOf(
+  Iterable<Entry> entries, {
+  required Asset? Function(String accountId) assetOf,
+  Asset? base,
+  bool transfers = false,
+}) {
+  final Map<Asset, Decimal> sums = <Asset, Decimal>{};
+  for (final Entry e in entries) {
+    if (e.isTransfer && !transfers) continue;
+    final Asset? asset = assetOf(e.accountId);
+    if (asset == null) continue;
+    sums[asset] = (sums[asset] ?? Decimal.zero) + e.amount;
   }
+  final List<Asset> order = sums.keys.toList()
+    ..sort(
+      (Asset a, Asset b) => a == base
+          ? -1
+          : b == base
+          ? 1
+          : a.code.compareTo(b.code),
+    );
+  return <Money>[for (final Asset a in order) Money(sums[a]!, a)];
 }
