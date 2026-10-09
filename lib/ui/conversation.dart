@@ -87,6 +87,17 @@ class ConversationFollower extends ChangeNotifier {
     if (session.turns.lastOrNull case final Turn latest) show(latest);
   }
 
+  /// Opens a conversation already under way where the person left it: at
+  /// its newest turn, at once, once the page is laid out.
+  void openAtLatest() => _afterLayout(() {
+    final Turn? latest = session.turns.lastOrNull;
+    final BuildContext? target = latest == null
+        ? null
+        : _keys[latest]?.currentContext;
+    if (target == null || !target.mounted) return;
+    unawaited(Scrollable.ensureVisible(target, alignment: 0));
+  });
+
   /// What the person does with the page: scrolling while an answer is on
   /// its way keeps the page where they put it, and reaching the newest turn
   /// puts the bubble away. For a [NotificationListener] over the view.

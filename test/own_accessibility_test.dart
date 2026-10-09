@@ -384,7 +384,7 @@ class _AskState extends State<_Ask> {
 
   @override
   Widget build(BuildContext context) =>
-      AskPage(own: widget.own, session: _session);
+      AskPage(own: widget.own, session: _session!);
 }
 
 void main() {
@@ -515,7 +515,7 @@ void main() {
       (WidgetTester tester) async {
         final Session session = tester
             .widget<AskPage>(find.byType(AskPage))
-            .session!;
+            .session;
         final Future<void> answered = session.ask(
           ScriptedAgent.startersFor(session.language).first,
         );

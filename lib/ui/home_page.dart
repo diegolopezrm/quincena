@@ -49,6 +49,8 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    // Back to a conversation kept from an earlier visit: where it was left.
+    if (_session.turns.isNotEmpty) _follower.openAtLatest();
     // Recorded Gemini sessions are for developers: the web demo plays them.
     if (!showcase) return;
     loadRecordings().then((List<Recording> found) {

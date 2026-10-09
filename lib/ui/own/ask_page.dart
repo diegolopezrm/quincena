@@ -1,14 +1,10 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../../ai/allowance.dart';
-import '../../ai/cloud.dart';
 import '../../l10n/l10n.dart';
 import '../../domain/plan.dart';
 import '../../domain/records.dart';
 import '../../own/own_controller.dart';
-import '../../own/own_tools.dart';
 import '../../session/session.dart';
 import '../../theme/tokens.dart';
 import '../ask_bar.dart';
@@ -53,16 +49,22 @@ List<String> askExamples(AppLocalizations l, OwnController own) => <String>[
 
 /// Asking Gemini about the person's own money, through Quincena's project:
 /// the same conversation as the demo's, over their own accounts.
+///
+/// The conversation is the shell's, kept while the app is open: leaving
+/// this page and coming back finds it as it was.
 class AskPage extends StatefulWidget {
   const AskPage({
     super.key,
     required this.own,
+    required this.session,
     this.allowance,
     this.question,
-    this.session,
   });
 
   final OwnController own;
+
+  /// The conversation to show, which outlives the page.
+  final Session session;
 
   /// The day's questions; null leaves them uncounted.
   final Allowance? allowance;
@@ -70,47 +72,49 @@ class AskPage extends StatefulWidget {
   /// A question picked on the home screen, asked as the page opens.
   final String? question;
 
-  /// A conversation to show instead of a new one, for tests.
-  final Session? session;
-
   @override
   State<AskPage> createState() => _AskPageState();
 }
 
 class _AskPageState extends State<AskPage> {
-  Session? _session;
   late final ConversationFollower _follower = ConversationFollower(session);
 
-  Session get session => _session!;
+  Session get session => widget.session;
 
+  @override
+  void initState() {
+    super.initState();
+    // Back to a conversation under way: where the person left it.
+    if (session.turns.isNotEmpty) _follower.openAtLatest();
+    if (widget.question case final String question) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _speak();
+        session.ask(question);
+      });
+    }
+  }
+
+  /// Answers in the language the app is in now, which may have changed
+  /// since the conversation started: what was said stays as it was.
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_session != null) return;
-    _session =
-        widget.session ??
-        Session(
-          mode: AgentMode.gemini,
-          language: Localizations.localeOf(context).languageCode,
-          ledgerOf: () => widget.own.ledger!,
-          toolsFor: (_) => ownTools(widget.own),
-          own: true,
-          allowance: widget.allowance,
-        );
-    // App Check and the anonymous sign-in take a moment the first time;
-    // better while the person reads the questions than after they ask.
-    if (widget.session == null) unawaited(Cloud.start());
-    if (widget.question case final String question) {
+    if (session.language != Localizations.localeOf(context).languageCode) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) session.ask(question);
+        if (mounted) _speak();
       });
     }
+  }
+
+  void _speak() {
+    final String language = Localizations.localeOf(context).languageCode;
+    if (session.language != language) session.language = language;
   }
 
   @override
   void dispose() {
     _follower.dispose();
-    if (widget.session == null) session.dispose();
     super.dispose();
   }
 

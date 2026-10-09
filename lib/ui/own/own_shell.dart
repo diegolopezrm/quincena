@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:dartantic_ai/dartantic_ai.dart' as dartantic;
 import 'package:flutter/material.dart';
 
+import '../../agent/model_client.dart';
 import '../../agent/scripted_agent.dart';
 import '../../agent/understand.dart';
 import '../../ai/cloud.dart';
@@ -10,6 +13,7 @@ import '../../app_mode.dart';
 import '../../capture/native_channel.dart';
 import '../../l10n/l10n.dart';
 import '../../own/own_controller.dart';
+import '../../own/own_tools.dart';
 import '../../session/session.dart';
 import '../../theme/tokens.dart';
 import '../../widget/home_widget.dart';
@@ -24,6 +28,12 @@ import 'inbox_page.dart';
 import 'look.dart';
 import 'own_settings_page.dart';
 import 'plan_tab.dart';
+
+/// Answers the conversation about the person's own money instead of
+/// Gemini, for the flows, which play with no network: the model a test
+/// gives, with the tools the conversation hands it.
+@visibleForTesting
+ModelClient Function(List<dartantic.Tool> tools)? debugAskClient;
 
 /// The person's own accounts, or the example's: home, movements and
 /// accounts, a tap apart.
@@ -89,6 +99,7 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
   void dispose() {
     own.removeListener(_feedWidget);
     WidgetsBinding.instance.removeObserver(this);
+    _asking?.dispose();
     super.dispose();
   }
 
@@ -102,17 +113,42 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
     _openInboxIfAsked();
   }
 
+  /// The conversation with Gemini about the person's money, made the first
+  /// time it is opened and kept while these accounts are open: going back
+  /// to Inicio and returning finds it as it was, as the example's does.
+  /// The questions it took were spent; its answers stay to be read.
+  Session? _asking;
+
+  Session _askingIn(String language) => _asking ??= Session(
+    mode: AgentMode.gemini,
+    clientFor: debugAskClient,
+    language: language,
+    ledgerOf: () => own.ledger!,
+    toolsFor: (_) => ownTools(own),
+    own: true,
+    allowance: widget.modes.allowance,
+  );
+
   /// Asking Gemini about the person's money, with [question] already asked
   /// when they picked one.
-  void _openAsk([String? question]) => Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (BuildContext context) => AskPage(
-        own: own,
-        allowance: widget.modes.allowance,
-        question: question,
+  Future<void> _openAsk([String? question]) async {
+    // App Check and the anonymous sign-in take a moment the first time;
+    // better while the person reads the questions than after they ask.
+    unawaited(Cloud.start());
+    final Session session = _askingIn(
+      Localizations.localeOf(context).languageCode,
+    );
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) => AskPage(
+          own: own,
+          session: session,
+          allowance: widget.modes.allowance,
+          question: question,
+        ),
       ),
-    ),
-  );
+    );
+  }
 
   /// The example's conversation, with [question] asked when the script
   /// knows it; otherwise it opens on the questions it does know.
