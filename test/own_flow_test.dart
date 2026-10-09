@@ -158,16 +158,19 @@ void main() {
       contains('Aquí aparecerá tu plata entrando y saliendo.'),
     );
 
-    // A payment at the supermarket.
+    // A payment at the supermarket: what happened, how much and where; a
+    // name the app knows brings its category.
     await tester.tap(find.byTooltip('Agregar movimiento'));
     await settle(tester);
+    await tester.tap(find.text('Gasté plata'));
+    await settle(tester);
     await tester.enterText(find.widgetWithText(TextField, 'Monto'), '45.900');
-    await tester.tap(find.text('Mercado'));
     await tester.enterText(
       find.widgetWithText(TextField, '¿Dónde o a quién?'),
       'Éxito',
     );
-    await tester.ensureVisible(find.text('Guardar'));
+    await settle(tester);
+    expect(find.text('Mercado · Bancolombia · Hoy'), findsOneWidget);
     await tester.ensureVisible(find.text('Guardar'));
     await tester.tap(find.text('Guardar'));
     await settle(tester);

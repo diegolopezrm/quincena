@@ -1364,6 +1364,84 @@ abstract class AppLocalizations {
   /// **'Agregar movimiento'**
   String get addMovement;
 
+  /// No description provided for @entryWhatHappened.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Qué pasó?'**
+  String get entryWhatHappened;
+
+  /// No description provided for @entrySpent.
+  ///
+  /// In es, this message translates to:
+  /// **'Gasté plata'**
+  String get entrySpent;
+
+  /// No description provided for @entrySpentBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Una compra, un servicio, algo que pagaste'**
+  String get entrySpentBody;
+
+  /// No description provided for @entryGot.
+  ///
+  /// In es, this message translates to:
+  /// **'Me entró plata'**
+  String get entryGot;
+
+  /// No description provided for @entryGotBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu pago, una transferencia que te hicieron, un reembolso'**
+  String get entryGotBody;
+
+  /// No description provided for @entryMoved.
+  ///
+  /// In es, this message translates to:
+  /// **'Moví plata entre mis cuentas'**
+  String get entryMoved;
+
+  /// No description provided for @entryMovedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagar la tarjeta, pasar a Nequi, sacar del cajero'**
+  String get entryMovedBody;
+
+  /// No description provided for @entryChangeKind.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar qué pasó'**
+  String get entryChangeKind;
+
+  /// No description provided for @entryNoCategory.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin categoría'**
+  String get entryNoCategory;
+
+  /// No description provided for @entryStaysIn.
+  ///
+  /// In es, this message translates to:
+  /// **'Si no eliges una, queda en {category}.'**
+  String entryStaysIn(String category);
+
+  /// No description provided for @entryLikeLastTime.
+  ///
+  /// In es, this message translates to:
+  /// **'{kind, select, income{Como la última vez de {payee}.} other{Como la última vez en {payee}.}}'**
+  String entryLikeLastTime(String kind, String payee);
+
+  /// No description provided for @entryChange.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar'**
+  String get entryChange;
+
+  /// No description provided for @entryCurrencyChanged.
+  ///
+  /// In es, this message translates to:
+  /// **'Pasó de {from} a {to}: revisa el monto.'**
+  String entryCurrencyChanged(String from, String to);
+
   /// No description provided for @editMovement.
   ///
   /// In es, this message translates to:
@@ -1705,6 +1783,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'También se quita su división: lo que te deben por este gasto deja de contar.'**
   String get deleteSplitBody;
+
+  /// No description provided for @kindChangeSplitTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Ya no es un gasto?'**
+  String get kindChangeSplitTitle;
+
+  /// No description provided for @kindChangeSplitYes.
+  ///
+  /// In es, this message translates to:
+  /// **'Sí, cambiarlo'**
+  String get kindChangeSplitYes;
 
   /// No description provided for @invalidAmount.
   ///

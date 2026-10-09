@@ -855,6 +855,56 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addMovement => 'Add transaction';
 
   @override
+  String get entryWhatHappened => 'What happened?';
+
+  @override
+  String get entrySpent => 'I spent money';
+
+  @override
+  String get entrySpentBody => 'A purchase, a bill, something you paid for';
+
+  @override
+  String get entryGot => 'Money came in';
+
+  @override
+  String get entryGotBody => 'Your pay, money someone sent you, a refund';
+
+  @override
+  String get entryMoved => 'I moved money between my accounts';
+
+  @override
+  String get entryMovedBody =>
+      'Paying your card, moving to savings, taking out cash';
+
+  @override
+  String get entryChangeKind => 'Change what happened';
+
+  @override
+  String get entryNoCategory => 'No category';
+
+  @override
+  String entryStaysIn(String category) {
+    return 'If you don\'t pick one, it goes in $category.';
+  }
+
+  @override
+  String entryLikeLastTime(String kind, String payee) {
+    String _temp0 = intl.Intl.selectLogic(kind, {
+      'income': 'Same as last time from $payee.',
+      'other': 'Same as last time at $payee.',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get entryChange => 'Change';
+
+  @override
+  String entryCurrencyChanged(String from, String to) {
+    return 'It went from $from to $to: check the amount.';
+  }
+
+  @override
   String get editMovement => 'Edit transaction';
 
   @override
@@ -1055,6 +1105,12 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get deleteSplitBody =>
       'Its split goes too: what you\'re owed for it stops counting.';
+
+  @override
+  String get kindChangeSplitTitle => 'No longer an expense?';
+
+  @override
+  String get kindChangeSplitYes => 'Yes, change it';
 
   @override
   String get invalidAmount => 'Enter an amount';

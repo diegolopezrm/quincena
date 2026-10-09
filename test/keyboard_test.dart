@@ -144,16 +144,28 @@ void main() {
     await initializeDateFormatting('es');
   });
 
-  testWidgets('a new movement: its amount and its note', (tester) async {
+  testWidgets('a new movement: its amount, where it was and its note', (
+    tester,
+  ) async {
     await _open(
       tester,
       (OwnController own) =>
           _opener((BuildContext context) => showEntrySheet(context, own: own)),
     );
     await _openSheet(tester);
+    await tester.tap(find.text(l.entrySpent));
+    await settle(tester);
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
     final Finder save = _inSheet(find.widgetWithText(FilledButton, l.save));
     await _typesIn(tester, _field(l.amount), go: save, scroll: true);
-    // The note is the last field: the button comes up with it.
+    await _typesIn(tester, _field(l.payee), go: save, scroll: true);
+    // The rest, opened: the note is the last field, and the button comes
+    // up with it.
+    await tester.ensureVisible(find.text(l.entryChange));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l.entryChange));
+    await settle(tester);
     await _typesIn(tester, _field(l.note), go: save);
   });
 

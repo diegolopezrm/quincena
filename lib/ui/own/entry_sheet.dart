@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,6 +14,7 @@ import '../../format/dates.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
+import '../../own/entry_guess.dart';
 import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
@@ -23,8 +26,6 @@ import 'entry_origin.dart';
 import 'look.dart';
 import 'split_sheet.dart';
 
-/// Records a movement, or edits [entry]. A transfer is edited as one move,
-/// whichever of its legs was tapped. A new one opens as [kind] when given.
 /// What a new movement starts with, from what the app already knows: the
 /// pay of a payday, a wish that was bought. Each part is only a start the
 /// person can change.
@@ -48,7 +49,11 @@ class EntryDraft {
   final String? note;
 }
 
-/// Opens the form for a movement. True once it was saved.
+/// Opens the form for a movement, or for [entry] to change it. True once
+/// it was saved.
+///
+/// A new one opens as [kind] when given, with [draft] filled in; without
+/// either it starts by asking what happened.
 Future<bool?> showEntrySheet(
   BuildContext context, {
   required OwnController own,
@@ -84,6 +89,8 @@ Future<bool?> showEntrySheet(
   );
 }
 
+/// Records a movement, or edits [entry]. A transfer is edited as one move,
+/// whichever of its legs was tapped.
 class _EntryForm extends StatefulWidget {
   const _EntryForm({
     required this.own,
@@ -130,6 +137,26 @@ class _EntryFormState extends State<_EntryForm> {
 
   InboxItem? get _capture => widget.fromInbox;
 
+  /// A movement the person writes down now. It shows the amount and where
+  /// it was, with the rest in a line until they open it; one being
+  /// changed, or a capture being checked, shows every field it has.
+  late final bool _new = _editing == null && _capture == null;
+
+  /// Whether the form starts by asking what happened: a new movement
+  /// opened without saying what kind it is.
+  late final bool _asks = _new && widget.kind == null && widget.draft == null;
+
+  /// Whether the form is asking what happened now.
+  late bool _asking = _asks;
+
+  /// Whether what happened is known: asked again, the answer given before
+  /// is marked.
+  late bool _answered = !_asks;
+
+  /// Whether the account, the category, the day and the note show as
+  /// fields: on a new movement they wait in a line until it is opened.
+  late bool _more = !_new;
+
   late EntryKind _kind = widget.ownTransfer
       ? EntryKind.transfer
       : _capture != null
@@ -147,16 +174,27 @@ class _EntryFormState extends State<_EntryForm> {
   late final bool _arrived =
       widget.ownTransfer && _capture?.parsed.kind == EntryKind.income;
 
+  /// What the person wrote down before says of a new movement: the
+  /// account and the category of the last one with the same name, or else
+  /// the account of the last time.
+  EntryGuess _guess = const EntryGuess();
+
+  /// Whether the person chose the account or the category themselves:
+  /// what was written before no longer moves them. A category the draft
+  /// brings counts as chosen.
+  bool _accountChosen = false;
+  late bool _categoryChosen = widget.draft?.category != null;
+
   /// Null for a capture the app could not place: the person chooses,
-  /// since whatever account the form guessed would be learned from.
+  /// since whatever account the form guessed would be learned from. A new
+  /// movement's is placed from the start.
   late String? _accountId = _arrived
       ? _otherThan(_capture?.suggestion.accountId)
       : _legs?.$1.accountId ??
             _editing?.accountId ??
             _capture?.suggestion.accountId ??
             widget.accountId ??
-            widget.draft?.accountId ??
-            (_capture == null ? own.accounts.first.id : null);
+            widget.draft?.accountId;
   late String? _toAccountId = _arrived
       ? (_capture?.suggestion.accountId ?? _secondAccount())
       : widget.ownTransfer
@@ -182,6 +220,11 @@ class _EntryFormState extends State<_EntryForm> {
   );
   late bool _receivedTouched = _legs != null;
 
+  /// The currency the amount was written in. In an account of another
+  /// one, chosen or guessed, the same number is another amount: the field
+  /// says so until it is written again.
+  late Asset _amountIn = _assetOf(_accountId);
+
   /// Whether the person typed what left: until then, money that arrived
   /// keeps what its alert says arrived.
   bool _amountTouched = false;
@@ -192,6 +235,7 @@ class _EntryFormState extends State<_EntryForm> {
         widget.draft?.payee ??
         '',
   );
+  final FocusNode _payeeFocus = FocusNode();
   late final TextEditingController _note = TextEditingController(
     text: _editing?.note ?? widget.draft?.note ?? '',
   );
@@ -243,6 +287,18 @@ class _EntryFormState extends State<_EntryForm> {
     return null;
   }
 
+  /// The account a new movement starts in when nothing says another: the
+  /// first to spend from in the currency of the totals.
+  String _mainAccount() {
+    final Asset base = own.profile?.base ?? Asset.cop;
+    return (own.accounts
+                .where((Account a) => a.spendable && a.asset == base)
+                .firstOrNull ??
+            own.accounts.where((Account a) => a.spendable).firstOrNull ??
+            own.accounts.first)
+        .id;
+  }
+
   Asset _assetOf(String? id) =>
       (id == null ? null : own.snapshot?.account(id))?.asset ??
       own.profile?.base ??
@@ -264,6 +320,7 @@ class _EntryFormState extends State<_EntryForm> {
     _amount.dispose();
     _received.dispose();
     _payee.dispose();
+    _payeeFocus.dispose();
     _note.dispose();
     super.dispose();
   }
@@ -276,7 +333,52 @@ class _EntryFormState extends State<_EntryForm> {
   @override
   void initState() {
     super.initState();
+    _rethink();
     if (_arrived) _suggestReceived();
+  }
+
+  /// For a new movement, what was written before: the account and the
+  /// category of the last one with the same name, or the account of the
+  /// last time, for those the person has not chosen.
+  void _rethink() {
+    if (!_new) return;
+    _guess = guessEntry(
+      entries: own.snapshot?.entries ?? const <Entry>[],
+      accounts: own.accounts,
+      kind: _kind,
+      payee: _payee.text,
+      today: own.today,
+      learned: own.captureSettings.merchantCategories,
+    );
+    if (_kind != EntryKind.transfer && !_categoryChosen) {
+      _category = _guess.category;
+    }
+    _placeAccounts();
+  }
+
+  /// Puts a new movement in the account it most likely is, while the
+  /// person has not chosen one: the one it was opened from or the draft
+  /// brings, or else the one its name or the last time says.
+  void _placeAccounts() {
+    if (_accountChosen) return;
+    final String? given = widget.accountId ?? widget.draft?.accountId;
+    final Account? page = given == null ? null : own.snapshot?.account(given);
+    if (_kind == EntryKind.transfer && page?.kind == AccountKind.card) {
+      // From a card's own page, a move is most likely its payment: into
+      // it, from where payments usually come.
+      _toAccountId = page!.id;
+      _accountId = own.likelyPaymentAccount?.id ?? _otherThan(page.id);
+      return;
+    }
+    _accountId =
+        given ??
+        (_kind == EntryKind.transfer ? null : _guess.accountId) ??
+        _mainAccount();
+    if (_toAccountId == null || _toAccountId == _accountId) {
+      _toAccountId = _kind == EntryKind.transfer
+          ? _otherThan(_accountId)
+          : _secondAccount();
+    }
   }
 
   /// Fills what arrives with what the rates say, until the person types it.
@@ -289,6 +391,7 @@ class _EntryFormState extends State<_EntryForm> {
         : null;
     if (arrived != null) {
       final Asset from = _assetOf(_accountId);
+      _amountIn = from;
       if (!_crossCurrency) {
         _amount.text = _decimalText(arrived, from);
         return;
@@ -315,6 +418,40 @@ class _EntryFormState extends State<_EntryForm> {
     if (converted == null) return;
     _received.text = _decimalText(converted.amount, converted.asset);
     _receivedError = null;
+  }
+
+  /// Another kind of movement: what was chosen for the other kind does not
+  /// carry over, and a new one takes what was written before for this
+  /// kind.
+  void _switchKind(EntryKind kind) {
+    if (_kind != EntryKind.transfer &&
+        kind != EntryKind.transfer &&
+        kind != _kind) {
+      _category = null;
+      _categoryChosen = false;
+    }
+    _kind = kind;
+    _toAccountId ??= _secondAccount();
+    _rethink();
+    _suggestReceived();
+  }
+
+  /// What happened, answered: the form for it, with the amount to type.
+  void _answer(EntryKind kind) => setState(() {
+    _asking = false;
+    _answered = true;
+    _switchKind(kind);
+  });
+
+  /// Where the money went or came from, picked from the usual ones: said,
+  /// the keyboard goes and the rest shows, to save.
+  void _pickPayee(String name) {
+    _payee.value = TextEditingValue(
+      text: name,
+      selection: TextSelection.collapsed(offset: name.length),
+    );
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(_rethink);
   }
 
   DateTime _stamp(DateTime day) {
@@ -358,6 +495,15 @@ class _EntryFormState extends State<_EntryForm> {
     if (badAmount || from == null || badAccounts || badReceived || _saving) {
       return;
     }
+    final (Group, SharedExpense)? split = _editing == null
+        ? null
+        : own.splitOf(_editing!.id);
+    // No longer an expense, it leaves its split behind: said first, as
+    // deleting it says it.
+    if (split != null && _kind != EntryKind.expense) {
+      final bool? sure = await _askLeaveSplit();
+      if (sure != true || !mounted) return;
+    }
     // Paying a card written as an expense would count what was bought on
     // it twice: asked first, it becomes a payment between the accounts.
     if (_kind == EntryKind.expense && _editing == null && _capture == null) {
@@ -377,9 +523,6 @@ class _EntryFormState extends State<_EntryForm> {
       }
     }
     setState(() => _saving = true);
-    final (Group, SharedExpense)? split = _editing == null
-        ? null
-        : own.splitOf(_editing!.id);
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     final DateTime when = _when();
     final String? category = _kind == EntryKind.transfer
@@ -475,6 +618,29 @@ class _EntryFormState extends State<_EntryForm> {
       }
     }
     if (mounted) Navigator.of(context).pop(true);
+  }
+
+  /// Whether a split expense is to be saved as something else, which takes
+  /// its split away: what the others owe for it stops counting.
+  Future<bool?> _askLeaveSplit() {
+    final AppLocalizations l = context.l10n;
+    return showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: Text(l.kindChangeSplitTitle),
+        content: Text(l.deleteSplitBody),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l.kindChangeSplitYes),
+          ),
+        ],
+      ),
+    );
   }
 
   /// The card the expense being saved looks like a payment to, when the
@@ -601,6 +767,8 @@ class _EntryFormState extends State<_EntryForm> {
     String? error,
   }) {
     return DropdownButtonFormField<String>(
+      // Placed again by a guess, the field shows the new account.
+      key: ValueKey<String?>('$label $value'),
       icon: const Icon(Glyph.caretDown, size: 18),
       initialValue: value,
       isExpanded: true,
@@ -627,10 +795,21 @@ class _EntryFormState extends State<_EntryForm> {
     );
   }
 
+  /// What each kind of movement is, as a person says it happened.
+  (IconData, String, String) _said(AppLocalizations l, EntryKind kind) =>
+      switch (kind) {
+        EntryKind.income => (Glyph.handCoins, l.entryGot, l.entryGotBody),
+        EntryKind.transfer => (
+          Glyph.arrowsLeftRight,
+          l.entryMoved,
+          l.entryMovedBody,
+        ),
+        _ => (Glyph.shoppingBag, l.entrySpent, l.entrySpentBody),
+      };
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
-    final bool transfer = _kind == EntryKind.transfer;
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SingleChildScrollView(
@@ -638,214 +817,493 @@ class _EntryFormState extends State<_EntryForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              _editing != null
-                  ? l.editMovement
-                  : _capture != null
-                  ? l.reviewMovement
-                  : l.addMovement,
-              style: context.type.headlineMedium,
+          children: _asking ? _question(l) : _form(l),
+        ),
+      ),
+    );
+  }
+
+  /// «¿Qué pasó?»: the movement starts by what happened, not by its kind.
+  /// Moving money takes two accounts, so it is offered once there are.
+  List<Widget> _question(AppLocalizations l) => <Widget>[
+    Text(l.entryWhatHappened, style: context.type.headlineMedium),
+    const SizedBox(height: 16),
+    for (final EntryKind kind in <EntryKind>[
+      EntryKind.expense,
+      EntryKind.income,
+      if (own.accounts.length > 1) EntryKind.transfer,
+    ]) ...<Widget>[
+      _Answer(
+        said: _said(l, kind),
+        selected: _answered && kind == _kind,
+        onTap: () => _answer(kind),
+      ),
+      const SizedBox(height: 10),
+    ],
+  ];
+
+  List<Widget> _form(AppLocalizations l) {
+    final bool transfer = _kind == EntryKind.transfer;
+    final bool income = _kind == EntryKind.income;
+    final double scale = MediaQuery.textScalerOf(context).scale(48);
+    return <Widget>[
+      if (_new)
+        _KindTitle(
+          said: _said(l, _kind),
+          tooltip: l.entryChangeKind,
+          onTap: () => setState(() => _asking = true),
+        )
+      else ...<Widget>[
+        Text(
+          _editing != null ? l.editMovement : l.reviewMovement,
+          style: context.type.headlineMedium,
+        ),
+        if (_editing case final Entry e) EntryOrigin(own: own, entry: e),
+        const SizedBox(height: 16),
+        SegmentedButton<EntryKind>(
+          segments: <ButtonSegment<EntryKind>>[
+            ButtonSegment<EntryKind>(
+              value: EntryKind.expense,
+              label: Text(l.kindExpense),
             ),
-            if (_editing case final Entry e) EntryOrigin(own: own, entry: e),
-            const SizedBox(height: 16),
-            SegmentedButton<EntryKind>(
-              segments: <ButtonSegment<EntryKind>>[
-                ButtonSegment<EntryKind>(
-                  value: EntryKind.expense,
-                  label: Text(l.kindExpense),
-                ),
-                ButtonSegment<EntryKind>(
-                  value: EntryKind.income,
-                  label: Text(l.kindIncome),
-                ),
-                if (own.accounts.length > 1)
-                  ButtonSegment<EntryKind>(
-                    value: EntryKind.transfer,
-                    label: Text(l.kindTransfer),
-                  ),
-              ],
-              selected: <EntryKind>{_kind},
-              showSelectedIcon: false,
-              // With large text one kind under the other, each word whole.
-              direction: largeText(context) ? Axis.vertical : Axis.horizontal,
-              onSelectionChanged: (Set<EntryKind> s) => setState(() {
-                if (_kind != EntryKind.transfer &&
-                    s.first != EntryKind.transfer &&
-                    s.first != _kind) {
-                  _category = null;
-                }
-                _kind = s.first;
-                _toAccountId ??= _secondAccount();
-                _suggestReceived();
-              }),
+            ButtonSegment<EntryKind>(
+              value: EntryKind.income,
+              label: Text(l.kindIncome),
             ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _amount,
-              autofocus: _editing == null,
-              inputFormatters: <TextInputFormatter>[
-                AmountInputFormatter(
-                  maxDecimals: _assetOf(_accountId).decimals,
-                ),
-              ],
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
+            if (own.accounts.length > 1)
+              ButtonSegment<EntryKind>(
+                value: EntryKind.transfer,
+                label: Text(l.kindTransfer),
               ),
-              style: context.type.displaySmall,
-              // What saving said of the amount no longer holds.
-              onChanged: (_) => setState(() {
-                _amountTouched = true;
-                _amountError = null;
-                _suggestReceived();
-              }),
-              decoration: InputDecoration(
-                labelText: l.amount,
-                suffixText: _assetOf(_accountId).code,
-                errorText: _amountError,
-              ),
-            ),
-            const SizedBox(height: 16),
-            _accountField(
-              transfer ? l.fromAccount : l.account,
-              _accountId,
-              (String? id) => setState(() {
-                if (id != null) _accountId = id;
-                _fromError = null;
-                _accountError = null;
-                _suggestReceived();
-              }),
-              error: _fromError,
-            ),
-            if (transfer) ...<Widget>[
-              const SizedBox(height: 12),
-              _accountField(
-                l.toAccount,
-                _toAccountId,
-                (String? id) => setState(() {
-                  _toAccountId = id;
-                  _accountError = null;
-                  _suggestReceived();
-                }),
-                error: _accountError,
-              ),
-              if (_crossCurrency) ...<Widget>[
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _received,
-                  inputFormatters: <TextInputFormatter>[
-                    AmountInputFormatter(
-                      maxDecimals: _assetOf(_toAccountId).decimals,
-                    ),
-                  ],
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  onChanged: (_) => setState(() {
-                    _receivedTouched = true;
-                    _receivedError = null;
-                  }),
-                  decoration: InputDecoration(
-                    labelText: l.received,
-                    helperText: l.receivedHelp,
-                    suffixText: _assetOf(_toAccountId).code,
-                    errorText: _receivedError,
-                  ),
-                ),
-              ],
-            ],
-            if (!transfer) ...<Widget>[
-              const SizedBox(height: 20),
-              Text(l.category, style: context.type.labelMedium),
-              const SizedBox(height: 8),
-              CategoryChoices(
-                own: own,
-                income: _kind == EntryKind.income,
-                selected: _category,
-                onChanged: (String? key) => setState(() => _category = key),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _payee,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(
-                  labelText: _kind == EntryKind.income
-                      ? l.payeeIncome
-                      : l.payee,
-                ),
-              ),
-            ],
-            const SizedBox(height: 12),
-            InkWell(
-              onTap: _pickDate,
-              borderRadius: BorderRadius.circular(12),
-              child: InputDecorator(
-                decoration: InputDecoration(
-                  labelText: l.date,
-                  suffixIcon: const Icon(Glyph.calendarBlank, size: 20),
-                ),
-                child: Text(_dateLabel(l)),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _note,
-              textCapitalization: TextCapitalization.sentences,
-              // The last field: the button that saves comes above the
-              // keyboard with it.
-              scrollPadding: EdgeInsets.fromLTRB(
-                20,
-                20,
-                20,
-                40 + MediaQuery.textScalerOf(context).scale(48),
-              ),
-              decoration: InputDecoration(labelText: l.note),
-            ),
-            const SizedBox(height: 20),
-            FilledButton(
-              onPressed: _saving ? null : _save,
-              child: Text(
-                _capture == null
-                    ? l.save
-                    : switch (_kind) {
-                        EntryKind.income => l.recordIncome,
-                        EntryKind.transfer => l.recordTransfer,
-                        _ => l.recordExpense,
-                      },
-              ),
-            ),
-            // Only while it is still an expense: switched to another kind,
-            // there is nothing to split.
-            if (_editing case final Entry editing
-                when editing.kind == EntryKind.expense &&
-                    _kind == EntryKind.expense &&
-                    !editing.isTrade &&
-                    !editing.isTransfer) ...<Widget>[
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: () {
-                  // The split opens over the page this sheet came from.
-                  final NavigatorState navigator = Navigator.of(context)..pop();
-                  showSplitSheet(navigator.context, own: own, entry: editing);
-                },
-                icon: const Icon(Glyph.usersThree, size: 18),
-                label: Text(
-                  own.splitOf(editing.id) == null ? l.splitThis : l.splitChange,
-                ),
-              ),
-            ],
-            if (_editing != null) ...<Widget>[
-              const SizedBox(height: 8),
-              TextButton.icon(
-                onPressed: _delete,
-                style: TextButton.styleFrom(
-                  foregroundColor: context.colors.negative,
-                ),
-                icon: const Icon(Glyph.trash, size: 18),
-                label: Text(l.delete),
-              ),
-            ],
           ],
+          selected: <EntryKind>{_kind},
+          showSelectedIcon: false,
+          // With large text one kind under the other, each word whole.
+          direction: largeText(context) ? Axis.vertical : Axis.horizontal,
+          onSelectionChanged: (Set<EntryKind> s) =>
+              setState(() => _switchKind(s.first)),
+        ),
+      ],
+      const SizedBox(height: 20),
+      TextField(
+        controller: _amount,
+        // A draft with its amount is there to be confirmed, not typed.
+        autofocus: _editing == null && widget.draft?.amount == null,
+        inputFormatters: <TextInputFormatter>[
+          AmountInputFormatter(maxDecimals: _assetOf(_accountId).decimals),
+        ],
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        // On a new expense or income, where it was comes next.
+        textInputAction: _new && !transfer
+            ? TextInputAction.next
+            : TextInputAction.done,
+        onSubmitted: _new && !transfer
+            ? (_) => _payeeFocus.requestFocus()
+            : null,
+        style: context.type.displaySmall,
+        // What saving said of the amount no longer holds.
+        onChanged: (_) => setState(() {
+          _amountTouched = true;
+          _amountError = null;
+          _amountIn = _assetOf(_accountId);
+          _suggestReceived();
+        }),
+        decoration: InputDecoration(
+          labelText: l.amount,
+          suffixText: _assetOf(_accountId).code,
+          helperText:
+              _amount.text.trim().isEmpty || _amountIn == _assetOf(_accountId)
+              ? null
+              : l.entryCurrencyChanged(
+                  _amountIn.code,
+                  _assetOf(_accountId).code,
+                ),
+          helperMaxLines: 2,
+          errorText: _amountError,
+        ),
+      ),
+      if (_new) ...<Widget>[
+        if (transfer)
+          ..._accounts(l)
+        else ...<Widget>[
+          const SizedBox(height: 16),
+          _payeeField(l, scrollPadding: _payeeRoom(scale)),
+          _usual(),
+        ],
+        if (_more) ...<Widget>[
+          if (!transfer) ..._accounts(l),
+          if (!transfer) ..._categories(l, income: income),
+          ..._dayAndNote(l, scale),
+        ] else ...<Widget>[const SizedBox(height: 16), _summary(l)],
+      ] else ...<Widget>[
+        ..._accounts(l),
+        if (!transfer) ...<Widget>[
+          ..._categories(l, income: income),
+          const SizedBox(height: 16),
+          _payeeField(l),
+        ],
+        ..._dayAndNote(l, scale),
+      ],
+      const SizedBox(height: 20),
+      FilledButton(
+        onPressed: _saving ? null : _save,
+        child: Text(
+          _capture == null
+              ? l.save
+              : switch (_kind) {
+                  EntryKind.income => l.recordIncome,
+                  EntryKind.transfer => l.recordTransfer,
+                  _ => l.recordExpense,
+                },
+        ),
+      ),
+      // Only while it is still an expense: switched to another kind,
+      // there is nothing to split.
+      if (_editing case final Entry editing
+          when editing.kind == EntryKind.expense &&
+              _kind == EntryKind.expense &&
+              !editing.isTrade &&
+              !editing.isTransfer) ...<Widget>[
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: () {
+            // The split opens over the page this sheet came from.
+            final NavigatorState navigator = Navigator.of(context)..pop();
+            showSplitSheet(navigator.context, own: own, entry: editing);
+          },
+          icon: const Icon(Glyph.usersThree, size: 18),
+          label: Text(
+            own.splitOf(editing.id) == null ? l.splitThis : l.splitChange,
+          ),
+        ),
+      ],
+      if (_editing != null) ...<Widget>[
+        const SizedBox(height: 8),
+        TextButton.icon(
+          onPressed: _delete,
+          style: TextButton.styleFrom(foregroundColor: context.colors.negative),
+          icon: const Icon(Glyph.trash, size: 18),
+          label: Text(l.delete),
+        ),
+      ],
+    ];
+  }
+
+  /// The account it is in, or the two a move goes between, and what
+  /// arrived when they are in different currencies.
+  List<Widget> _accounts(AppLocalizations l) {
+    final bool transfer = _kind == EntryKind.transfer;
+    return <Widget>[
+      const SizedBox(height: 16),
+      _accountField(
+        transfer ? l.fromAccount : l.account,
+        _accountId,
+        (String? id) => setState(() {
+          if (id != null) _accountId = id;
+          _accountChosen = true;
+          _fromError = null;
+          _accountError = null;
+          _suggestReceived();
+        }),
+        error: _fromError,
+      ),
+      if (transfer) ...<Widget>[
+        const SizedBox(height: 12),
+        _accountField(
+          l.toAccount,
+          _toAccountId,
+          (String? id) => setState(() {
+            _toAccountId = id;
+            _accountChosen = true;
+            _accountError = null;
+            _suggestReceived();
+          }),
+          error: _accountError,
+        ),
+        if (_crossCurrency) ...<Widget>[
+          const SizedBox(height: 12),
+          TextField(
+            controller: _received,
+            inputFormatters: <TextInputFormatter>[
+              AmountInputFormatter(
+                maxDecimals: _assetOf(_toAccountId).decimals,
+              ),
+            ],
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onChanged: (_) => setState(() {
+              _receivedTouched = true;
+              _receivedError = null;
+            }),
+            decoration: InputDecoration(
+              labelText: l.received,
+              helperText: l.receivedHelp,
+              suffixText: _assetOf(_toAccountId).code,
+              errorText: _receivedError,
+            ),
+          ),
+        ],
+      ],
+    ];
+  }
+
+  List<Widget> _categories(AppLocalizations l, {required bool income}) =>
+      <Widget>[
+        const SizedBox(height: 20),
+        Text(l.category, style: context.type.labelMedium),
+        const SizedBox(height: 8),
+        CategoryChoices(
+          own: own,
+          income: income,
+          selected: _category,
+          onChanged: (String? key) => setState(() {
+            _category = key;
+            _categoryChosen = true;
+          }),
+        ),
+      ];
+
+  /// Room under the field where a new movement's name is typed, for what
+  /// comes after it to come above the keyboard with it: the usual names,
+  /// the line with the rest and the button that saves. Never more than half
+  /// of what the keyboard leaves, so the field itself stays in sight.
+  EdgeInsets _payeeRoom(double scale) {
+    final double left =
+        MediaQuery.sizeOf(context).height -
+        MediaQuery.viewInsetsOf(context).bottom;
+    return EdgeInsets.fromLTRB(20, 20, 20, math.min(120 + 3 * scale, left / 2));
+  }
+
+  Widget _payeeField(
+    AppLocalizations l, {
+    EdgeInsets scrollPadding = const EdgeInsets.all(20),
+  }) => TextField(
+    controller: _payee,
+    focusNode: _payeeFocus,
+    textCapitalization: TextCapitalization.sentences,
+    scrollPadding: scrollPadding,
+    // On a new movement the name says the rest: the account and the
+    // category of the last time it was used.
+    onChanged: _new ? (_) => setState(_rethink) : null,
+    decoration: InputDecoration(
+      labelText: _kind == EntryKind.income ? l.payeeIncome : l.payee,
+    ),
+  );
+
+  /// The names this kind of movement went to or came from most lately, to
+  /// pick instead of typing; as the field fills, those that fit it.
+  Widget _usual() {
+    final List<String> names = usualPayees(
+      entries: own.snapshot?.entries ?? const <Entry>[],
+      kind: _kind,
+      today: own.today,
+      typed: _payee.text,
+    );
+    if (names.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: <Widget>[
+          for (final String name in names)
+            ActionChip(label: Text(name), onPressed: () => _pickPayee(name)),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _dayAndNote(AppLocalizations l, double scale) => <Widget>[
+    const SizedBox(height: 12),
+    InkWell(
+      onTap: _pickDate,
+      borderRadius: BorderRadius.circular(12),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: l.date,
+          suffixIcon: const Icon(Glyph.calendarBlank, size: 20),
+        ),
+        child: Text(_dateLabel(l)),
+      ),
+    ),
+    const SizedBox(height: 12),
+    TextField(
+      controller: _note,
+      textCapitalization: TextCapitalization.sentences,
+      // The last field: the button that saves comes above the keyboard
+      // with it.
+      scrollPadding: EdgeInsets.fromLTRB(20, 20, 20, 40 + scale),
+      decoration: InputDecoration(labelText: l.note),
+    ),
+  ];
+
+  /// The rest of a new movement in a line, as it will be saved: its
+  /// category, its account and its day, or only the day for a move. Under
+  /// it, that they repeat the last time, when the name was seen before, or
+  /// where it goes with no category. «Cambiar» opens each as a field.
+  Widget _summary(AppLocalizations l) {
+    final bool transfer = _kind == EntryKind.transfer;
+    final bool income = _kind == EntryKind.income;
+    final String fallback = income ? 'other_income' : 'other';
+    final String? account = _accountId == null
+        ? null
+        : own.snapshot?.account(_accountId!)?.name;
+    final String line = <String>[
+      if (!transfer)
+        _category == null
+            ? l.entryNoCategory
+            : categoryNameFor(context, _category!, own.categories),
+      if (!transfer && account != null) account,
+      _dateLabel(l),
+    ].join(' · ');
+    final Entry? like = _guess.like;
+    final String? why = transfer
+        ? null
+        : like != null &&
+              like.category == _category &&
+              like.accountId == _accountId
+        ? l.entryLikeLastTime(income ? 'income' : 'other', _payee.text.trim())
+        : _category == null
+        ? l.entryStaysIn(categoryNameFor(context, fallback, own.categories))
+        : null;
+    final String note = _note.text.trim();
+    final Widget said = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(line, style: context.type.titleSmall),
+        if (note.isNotEmpty) Text(note, style: context.type.bodySmall),
+        if (why != null) Text(why, style: context.type.bodySmall),
+      ],
+    );
+    final Widget change = TextButton(
+      onPressed: () => setState(() => _more = true),
+      child: Text(l.entryChange),
+    );
+    return Block(
+      padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
+      // With large text what changes it goes under what it says.
+      child: largeText(context)
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[said, change],
+            )
+          : Row(
+              children: <Widget>[
+                if (transfer)
+                  Icon(
+                    Glyph.calendarBlank,
+                    size: 22,
+                    color: context.colors.inkSoft,
+                  )
+                else
+                  CategoryDisc(_category ?? fallback, size: 32),
+                const SizedBox(width: 12),
+                Expanded(child: said),
+                change,
+              ],
+            ),
+    );
+  }
+}
+
+/// One answer to «¿Qué pasó?»: what happened, and the cases it covers.
+class _Answer extends StatelessWidget {
+  const _Answer({
+    required this.said,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final (IconData, String, String) said;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final (IconData icon, String title, String body) = said;
+    return Material(
+      color: selected ? context.colors.brandSoft : context.colors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: selected ? context.colors.brand : context.colors.line,
+          width: selected ? 1.5 : 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+          child: Row(
+            children: <Widget>[
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: context.colors.brandSoft,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.center,
+                child: Icon(icon, size: 20, color: context.colors.brand),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(title, style: context.type.titleMedium),
+                    const SizedBox(height: 2),
+                    Text(body, style: context.type.bodySmall),
+                  ],
+                ),
+              ),
+              Icon(Glyph.caretRight, size: 18, color: context.colors.inkFaint),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// What happened, as the title of a new movement, and the way back to the
+/// question to answer it otherwise.
+class _KindTitle extends StatelessWidget {
+  const _KindTitle({
+    required this.said,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final (IconData, String, String) said;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final (IconData icon, String title, _) = said;
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: Tooltip(
+        message: tooltip,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Icon(icon, size: 24, color: context.colors.brand),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Text(title, style: context.type.headlineMedium),
+                ),
+                const SizedBox(width: 6),
+                Icon(Glyph.caretDown, size: 20, color: context.colors.inkSoft),
+              ],
+            ),
+          ),
         ),
       ),
     );

@@ -276,6 +276,9 @@ void main() {
     expect(find.text('Cambiar la división'), findsOneWidget);
     await tapText(tester, 'Ingreso');
     await tapText(tester, 'Guardar');
+    // Said first, as deleting it says it: the split goes with it.
+    expect(find.text('¿Ya no es un gasto?'), findsOneWidget);
+    await tapText(tester, 'Sí, cambiarlo');
     expect(
       own.snapshot!.entries.singleWhere((Entry e) => e.id == lunch.id).kind,
       EntryKind.income,
