@@ -154,7 +154,8 @@ class _Starter extends StatelessWidget {
               ),
               const SizedBox(width: 14),
               Expanded(child: Text(text, style: context.type.titleSmall)),
-              Icon(Glyph.arrowRight, size: 18, color: context.colors.inkFaint),
+              // The same mark as the questions on Inicio: a row to open.
+              Icon(Glyph.caretRight, size: 18, color: context.colors.inkFaint),
             ],
           ),
         ),
