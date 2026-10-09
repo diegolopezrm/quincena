@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'package:quincena/domain/commitments.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/domain/shared.dart';
 import 'package:quincena/own/own_controller.dart';
@@ -161,12 +162,22 @@ void main() {
       'lets go of pairs whose movements are gone', (tester) async {
     final OwnController own = await openPage(tester, _movements, data: _twice);
     final PossibleRepeat pair = own.repeats.values.first;
+    // The charge detective sees the same two as charged twice.
+    expect(
+      own.alerts.where((ChargeAlert a) => a.kind == AlertKind.twice),
+      hasLength(1),
+    );
     await tester.tap(_marks.first);
     await settle(tester);
     await tapText(tester, 'No es repetido');
     expect(find.text('¿El mismo pago dos veces?'), findsNothing);
     expect(_marks, findsNothing);
     expect(own.repeats, isEmpty);
+    // «Cargos para revisar» heard the same answer.
+    expect(
+      own.alerts.where((ChargeAlert a) => a.kind == AlertKind.twice),
+      isEmpty,
+    );
     // Both stay.
     expect(find.text('Éxito Laureles'), findsOneWidget);
     expect(find.text('EXITO LAURELES'), findsOneWidget);

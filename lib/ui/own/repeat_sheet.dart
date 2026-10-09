@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../domain/commitments.dart';
 import '../../domain/records.dart';
 import '../../domain/shared.dart';
 import '../../format/dates.dart';
@@ -87,9 +88,20 @@ class _RepeatSheetState extends State<_RepeatSheet> {
       );
   }
 
+  /// Remembers the two are two payments. When the charge detective saw the
+  /// same two as charged twice, it hears the same answer, so «Cargos para
+  /// revisar» does not ask again what Movimientos was told.
   Future<void> _keep() async {
     setState(() => _busy = true);
-    await own.sayNotRepeated(widget.pair);
+    final PossibleRepeat pair = widget.pair;
+    await own.sayNotRepeated(pair);
+    for (final ChargeAlert alert in own.allAlerts) {
+      if (alert.kind == AlertKind.twice &&
+          alert.evidence.any((Entry e) => e.id == pair.kept.id) &&
+          alert.evidence.any((Entry e) => e.id == pair.repeat.id)) {
+        await own.answerAlert(alert.id, AlertAnswer.expected);
+      }
+    }
     if (mounted) Navigator.of(context).pop();
   }
 
