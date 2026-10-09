@@ -2018,6 +2018,30 @@ abstract class AppLocalizations {
   /// **'Escribe un monto mayor que cero.'**
   String get settingsAmountAboveZero;
 
+  /// No description provided for @settingsAmountHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Por ejemplo, {amount}'**
+  String settingsAmountHint(String amount);
+
+  /// No description provided for @settingsCushionField.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuánto guardas sin tocar'**
+  String get settingsCushionField;
+
+  /// No description provided for @settingsCushionAfter.
+  ///
+  /// In es, this message translates to:
+  /// **'Con este colchón podrías gastar {amount} hasta el {date}.'**
+  String settingsCushionAfter(String amount, String date);
+
+  /// No description provided for @settingsCushionShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Con este colchón te faltarían {amount} para llegar al {date}.'**
+  String settingsCushionShort(String amount, String date);
+
   /// No description provided for @freeExplainCushion.
   ///
   /// In es, this message translates to:
@@ -5966,6 +5990,12 @@ abstract class AppLocalizations {
   /// **'{rate} {kind} ({monthly} al mes)'**
   String instalRateValue(String rate, String kind, String monthly);
 
+  /// No description provided for @instalRateImplied.
+  ///
+  /// In es, this message translates to:
+  /// **'Unos {rate} al mes, calculada con la cuota'**
+  String instalRateImplied(String rate);
+
   /// No description provided for @instalNotKnown.
   ///
   /// In es, this message translates to:
@@ -7357,6 +7387,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Sin reserva: todo lo que cobras cuenta en lo que puedes gastar.'**
   String get freelanceReserveOff;
+
+  /// No description provided for @freelanceReserveCounts.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta para todo lo cobrado desde el {date}, no solo desde hoy.'**
+  String freelanceReserveCounts(String date);
 
   /// No description provided for @freelanceNoTax.
   ///

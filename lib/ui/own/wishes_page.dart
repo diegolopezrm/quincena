@@ -225,6 +225,22 @@ class _WishSheetState extends State<_WishSheet> {
   String? _error;
 
   @override
+  void initState() {
+    super.initState();
+    // What was missing is said until something is typed.
+    for (final TextEditingController c in <TextEditingController>[
+      _name,
+      _price,
+    ]) {
+      c.addListener(_typed);
+    }
+  }
+
+  void _typed() {
+    if (_error != null) setState(() => _error = null);
+  }
+
+  @override
   void dispose() {
     _name.dispose();
     _price.dispose();

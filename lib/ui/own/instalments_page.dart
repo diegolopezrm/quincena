@@ -468,13 +468,21 @@ class InstalmentDetailPage extends StatelessWidget {
                   children: <Widget>[
                     _Fact(l.instalFinanced, amount(plan.principal)),
                     _Fact(l.instalCount, '${plan.count}'),
-                    _Fact(l.instalRate, switch ((plan.rate, plan.monthlyRate)) {
-                      (final double rate, final double monthly) =>
+                    _Fact(l.instalRate, switch ((
+                      plan.rate,
+                      plan.monthlyRate,
+                      plan.impliedMonthlyRate,
+                    )) {
+                      (final double rate, final double monthly, _) =>
                         l.instalRateValue(
                           percent(rate, decimals: 2, trim: true),
                           rateKindLabel(l, plan.rateKind),
                           percent(monthly * 100, decimals: 2, trim: true),
                         ),
+                      // Not said, but the instalment says it.
+                      (_, _, final double implied) => l.instalRateImplied(
+                        percent(implied * 100, decimals: 2, trim: true),
+                      ),
                       _ => l.instalNotKnown,
                     }),
                     _Fact(l.instalPayment, switch (plan.payment) {
@@ -946,6 +954,27 @@ class _InstalmentSheetState extends State<_InstalmentSheet> {
                 trim: true,
               ),
       );
+
+  @override
+  void initState() {
+    super.initState();
+    // What was missing is said until something is typed.
+    for (final TextEditingController c in <TextEditingController>[
+      _name,
+      _principal,
+      _count,
+      _rate,
+      _instalment,
+      _fee,
+      _cash,
+    ]) {
+      c.addListener(_typed);
+    }
+  }
+
+  void _typed() {
+    if (_error != null) setState(() => _error = null);
+  }
 
   @override
   void dispose() {

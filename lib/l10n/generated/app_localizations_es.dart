@@ -1235,6 +1235,24 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsAmountAboveZero => 'Escribe un monto mayor que cero.';
 
   @override
+  String settingsAmountHint(String amount) {
+    return 'Por ejemplo, $amount';
+  }
+
+  @override
+  String get settingsCushionField => 'Cuánto guardas sin tocar';
+
+  @override
+  String settingsCushionAfter(String amount, String date) {
+    return 'Con este colchón podrías gastar $amount hasta el $date.';
+  }
+
+  @override
+  String settingsCushionShort(String amount, String date) {
+    return 'Con este colchón te faltarían $amount para llegar al $date.';
+  }
+
+  @override
   String get freeExplainCushion => 'Colchón que guardas';
 
   @override
@@ -3857,6 +3875,11 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String instalRateImplied(String rate) {
+    return 'Unos $rate al mes, calculada con la cuota';
+  }
+
+  @override
   String get instalNotKnown => 'No la sabes';
 
   @override
@@ -4749,6 +4772,11 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get freelanceReserveOff =>
       'Sin reserva: todo lo que cobras cuenta en lo que puedes gastar.';
+
+  @override
+  String freelanceReserveCounts(String date) {
+    return 'Cuenta para todo lo cobrado desde el $date, no solo desde hoy.';
+  }
 
   @override
   String get freelanceNoTax =>

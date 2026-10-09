@@ -315,6 +315,29 @@ class Instalments {
     }.toDouble();
   }
 
+  /// The rate a month that the stated [instalment] implies for [principal]
+  /// over [count] months, when the rate itself was not said: what the bank
+  /// charges, worked back. Null without an instalment or with a rate; zero
+  /// when the instalments add up to no more than what was financed.
+  double? get impliedMonthlyRate {
+    final int? p = instalment;
+    if (rate != null || p == null || count < 1 || principal <= 0) return null;
+    if (p * count <= principal) return 0;
+    double paymentAt(double i) =>
+        principal * i / (1 - math.pow(1 + i, -count).toDouble());
+    var low = 0.0;
+    var high = 1.0;
+    for (var k = 0; k < 60; k++) {
+      final double mid = (low + high) / 2;
+      if (paymentAt(mid) > p) {
+        high = mid;
+      } else {
+        low = mid;
+      }
+    }
+    return (low + high) / 2;
+  }
+
   /// The instalment before any fee: the bank's when it said one, else
   /// worked out from the rate; null when neither is known.
   int? get payment {

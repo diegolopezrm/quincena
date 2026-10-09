@@ -77,6 +77,44 @@ void main() {
       expect(perYear(Cadence.biweekly), 26);
     });
 
+    test('a stated instalment without a rate says the rate it implies', () {
+      // 3.600.000 in 12 instalments of 338.327 is 1,9 % a month.
+      final Instalments laptop = Instalments(
+        id: 'l',
+        name: 'Portátil',
+        principal: 3600000,
+        count: 12,
+        firstDue: DateTime(2026, 11, 3),
+        instalment: 338327,
+      );
+      expect(laptop.impliedMonthlyRate! * 100, closeTo(1.9, 0.001));
+      // With no interest in it, none; with the rate said, nothing to infer.
+      expect(
+        Instalments(
+          id: 'z',
+          name: 'Nevera',
+          principal: 1200000,
+          count: 12,
+          firstDue: DateTime(2026, 11, 3),
+          instalment: 100000,
+        ).impliedMonthlyRate,
+        0,
+      );
+      expect(
+        Instalments(
+          id: 'r',
+          name: 'Portátil',
+          principal: 3600000,
+          count: 12,
+          firstDue: DateTime(2026, 11, 3),
+          instalment: 338327,
+          rate: 1.9,
+          rateKind: RateKind.monthly,
+        ).impliedMonthlyRate,
+        isNull,
+      );
+    });
+
     test('after a trial it charges from the day the trial ended', () {
       // Saved a month after it was added, with a trial to the 28th.
       final RecurringCharge max = RecurringCharge(

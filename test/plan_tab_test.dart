@@ -270,6 +270,26 @@ void main() {
     expect((await tester.runAsync(own.store.snapshot))!.goals, hasLength(1));
   });
 
+  testWidgets('what a form misses is said until something is typed', (
+    tester,
+  ) async {
+    await open(tester, tab);
+    await tester.tap(find.text('Agregar meta'));
+    await settle(tester);
+    await tester.tap(find.widgetWithText(FilledButton, 'Guardar'));
+    await settle(tester);
+    final Finder missing = find.text(
+      'Ponle un nombre y cuánto quieres juntar.',
+    );
+    expect(missing, findsOneWidget);
+    await tester.enterText(
+      find.widgetWithText(TextField, '¿Para qué es?'),
+      'Moto',
+    );
+    await settle(tester);
+    expect(missing, findsNothing);
+  });
+
   testWidgets('a goal reached says so, not the month it would arrive', (
     tester,
   ) async {

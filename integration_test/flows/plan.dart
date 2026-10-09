@@ -2280,10 +2280,26 @@ final List<AppFlow> planFlows = <AppFlow>[
         () => expect(own.ledger!.freeUntilPayday, free - l.minor(320000)),
       );
       await f.tap('Nevera');
+      final double implied = fridge().impliedMonthlyRate!;
+      final String impliedText = percent(
+        implied * 100,
+        decimals: 2,
+        trim: true,
+      );
       await f.page(
-        'El detalle dice «unos» 1.920.000: es un estimado. La tasa y la cuota '
-        'de manejo figuran como «No la sabes».',
+        'El detalle dice «unos» 1.920.000: es un estimado. La tasa sale de la '
+        'cuota, «Unos $impliedText al mes, calculada con la cuota», y la '
+        'cuota de manejo figura como «No la sabes».',
         most: 4,
+      );
+      await f.check(
+        'La tasa se calcula con la cuota: unos $impliedText al mes',
+        () {
+          expect(
+            f.shows('Unos $impliedText al mes, calculada con la cuota'),
+            isTrue,
+          );
+        },
       );
       await f.check('El total es estimado: 6 cuotas de 320.000', () {
         expect(fridge().total, l.minor(1920000));

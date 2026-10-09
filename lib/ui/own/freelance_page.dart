@@ -220,6 +220,15 @@ class FreelancePage extends StatelessWidget {
                         isExpanded: true,
                         decoration: InputDecoration(
                           labelText: l.freelanceReservePercent,
+                          // A new percentage counts for all that came in
+                          // since the reserve began, not from today.
+                          helperText: switch (plan.reserveSince) {
+                            final DateTime since => l.freelanceReserveCounts(
+                              dayMonth(since),
+                            ),
+                            null => null,
+                          },
+                          helperMaxLines: 2,
                         ),
                         items: <DropdownMenuItem<int>>[
                           for (final int p in _percents)
@@ -514,6 +523,23 @@ class _IncomeSheetState extends State<_IncomeSheet> {
   late DateTime _collectedOn = widget.income?.collectedOn ?? own.today;
   late String? _entryId = widget.income?.entryId;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    // What was missing is said until something is typed.
+    for (final TextEditingController c in <TextEditingController>[
+      _client,
+      _amount,
+      _note,
+    ]) {
+      c.addListener(_typed);
+    }
+  }
+
+  void _typed() {
+    if (_error != null) setState(() => _error = null);
+  }
 
   @override
   void dispose() {

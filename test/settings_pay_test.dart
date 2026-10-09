@@ -78,6 +78,9 @@ void main() {
       findsOneWidget,
     );
     await tester.enterText(find.byType(TextField), '150000');
+    await tester.pump();
+    // Before saving, what it leaves to spend until payday.
+    expect(find.textContaining('Con este colchón'), findsOneWidget);
     await tester.tap(find.text('Guardar'));
     await settle(tester);
     expect(

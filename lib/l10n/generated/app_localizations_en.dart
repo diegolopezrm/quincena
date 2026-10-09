@@ -1234,6 +1234,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAmountAboveZero => 'Enter an amount above zero.';
 
   @override
+  String settingsAmountHint(String amount) {
+    return 'For example, $amount';
+  }
+
+  @override
+  String get settingsCushionField => 'How much you keep untouched';
+
+  @override
+  String settingsCushionAfter(String amount, String date) {
+    return 'With this buffer you could spend $amount until $date.';
+  }
+
+  @override
+  String settingsCushionShort(String amount, String date) {
+    return 'With this buffer you would be $amount short of $date.';
+  }
+
+  @override
   String get freeExplainCushion => 'Safety buffer';
 
   @override
@@ -3860,6 +3878,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String instalRateImplied(String rate) {
+    return 'About $rate a month, worked back from the installment';
+  }
+
+  @override
   String get instalNotKnown => 'Unknown';
 
   @override
@@ -4753,6 +4776,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get freelanceReserveOff =>
       'No reserve: everything you collect counts as money to spend.';
+
+  @override
+  String freelanceReserveCounts(String date) {
+    return 'It counts for everything collected since $date, not only from today.';
+  }
 
   @override
   String get freelanceNoTax =>

@@ -127,9 +127,11 @@ class _ChargeSheetState extends State<_ChargeSheet> {
   void initState() {
     super.initState();
     _amount.addListener(_changed);
+    _name.addListener(_changed);
   }
 
-  void _changed() => setState(() {});
+  // What was missing is said until something is typed.
+  void _changed() => setState(() => _error = null);
 
   @override
   void dispose() {

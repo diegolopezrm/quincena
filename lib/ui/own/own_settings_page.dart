@@ -6,10 +6,12 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../app.dart';
 import '../../app_mode.dart';
 import '../../backup/backup.dart';
+import '../../data/ledger.dart';
 import '../../domain/pay_schedule.dart';
 import '../../domain/records.dart';
 import '../../exchanges/binance_link.dart';
 import '../../format/dates.dart';
+import '../../format/money.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
@@ -94,6 +96,8 @@ class OwnSettingsPage extends StatelessWidget {
     required Decimal? current,
     required Asset base,
     required Future<void> Function(Decimal? value) save,
+    String? label,
+    String? Function(Decimal? value)? after,
   }) async {
     final String? sign = base.localSymbol ?? base.symbol;
     // Null when cancelled; an empty text forgets the amount.
@@ -111,6 +115,14 @@ class OwnSettingsPage extends StatelessWidget {
         ],
         prefix: sign == null ? null : '$sign ',
         suffix: sign == null ? base.code : null,
+        label: label,
+        hint: context.l10n.settingsAmountHint(
+          formatDecimal(Decimal.fromInt(500000), decimals: 0),
+        ),
+        after: after == null
+            ? null
+            : (String text) =>
+                  after(text.trim().isEmpty ? null : parseAmount(text)),
         canRemove: current != null,
         check: (String text) {
           if (text.trim().isEmpty) return null;
@@ -547,6 +559,23 @@ class OwnSettingsPage extends StatelessWidget {
               body: l.settingsCushionBody,
               current: p.cushion,
               base: p.base,
+              label: l.settingsCushionField,
+              // Said before saving: what can be spent until payday with it.
+              after: (Decimal? v) {
+                final Ledger? ledger = own.ledger;
+                if (ledger == null) return null;
+                final int free =
+                    ledger.freeUntilPayday +
+                    ledger.cushion -
+                    (v == null ? 0 : ledger.minor(v.toDouble()));
+                final String payday = dayMonth(ledger.nextPayday);
+                return free >= 0
+                    ? l.settingsCushionAfter(pesos(ledger.major(free)), payday)
+                    : l.settingsCushionShort(
+                        pesos(ledger.major(-free)),
+                        payday,
+                      );
+              },
               save: (Decimal? v) => own.store.saveProfile(
                 p.copyWith(cushion: v, clearCushion: v == null),
               ),
@@ -1069,11 +1098,22 @@ class _TextDialog extends StatefulWidget {
     this.suffix,
     this.canRemove = false,
     this.check,
+    this.label,
+    this.hint,
+    this.after,
   });
 
   final String title;
   final String initial;
   final String? body;
+
+  /// What the field asks, above it, and an example inside it while empty.
+  final String? label;
+  final String? hint;
+
+  /// What saving the text would do, said under the field as it is typed;
+  /// null when there is nothing to say.
+  final String? Function(String text)? after;
   final TextCapitalization capitalization;
   final TextInputType? keyboardType;
   final List<TextInputFormatter>? formatters;
@@ -1133,16 +1173,20 @@ class _TextDialogState extends State<_TextDialog> {
             keyboardType: widget.keyboardType,
             inputFormatters: widget.formatters,
             decoration: InputDecoration(
+              labelText: widget.label,
+              hintText: widget.hint,
               prefixText: widget.prefix,
               suffixText: widget.suffix,
               errorText: _error,
               errorMaxLines: 3,
             ),
-            onChanged: (_) {
-              if (_error != null) setState(() => _error = null);
-            },
+            onChanged: (_) => setState(() => _error = null),
             onSubmitted: (_) => _save(),
           ),
+          if (widget.after?.call(_text.text) case final String after) ...[
+            const SizedBox(height: 12),
+            Text(after, style: context.type.bodySmall),
+          ],
         ],
       ),
       actions: <Widget>[

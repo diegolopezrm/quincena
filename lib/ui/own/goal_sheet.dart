@@ -57,6 +57,24 @@ class _GoalSheetState extends State<_GoalSheet> {
   );
 
   @override
+  void initState() {
+    super.initState();
+    // What was missing is said until something is typed.
+    for (final TextEditingController c in <TextEditingController>[
+      _name,
+      _target,
+      _saved,
+      _monthly,
+    ]) {
+      c.addListener(_typed);
+    }
+  }
+
+  void _typed() {
+    if (_error != null) setState(() => _error = null);
+  }
+
+  @override
   void dispose() {
     _name.dispose();
     _target.dispose();

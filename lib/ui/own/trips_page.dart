@@ -718,6 +718,23 @@ class _TripSheetState extends State<_TripSheet> {
   String? _error;
 
   @override
+  void initState() {
+    super.initState();
+    // What was missing is said until something is typed.
+    for (final TextEditingController c in <TextEditingController>[
+      _name,
+      _budget,
+      _fee,
+    ]) {
+      c.addListener(_typed);
+    }
+  }
+
+  void _typed() {
+    if (_error != null) setState(() => _error = null);
+  }
+
+  @override
   void dispose() {
     _name.dispose();
     _budget.dispose();
