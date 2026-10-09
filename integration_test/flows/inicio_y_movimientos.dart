@@ -17,9 +17,12 @@ import 'package:quincena/format/money.dart';
 import 'package:quincena/money/asset.dart';
 import 'package:quincena/money/money.dart';
 import 'package:quincena/own/own_controller.dart';
+import 'package:quincena/own/repeats.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
+import 'package:quincena/ui/own/inbox_page.dart' show InboxCard;
 import 'package:quincena/ui/own/look.dart';
+import 'package:quincena/ui/own/movement_filters.dart' show ActiveFilters;
 import 'package:quincena/ui/own/movement_list.dart';
 
 import '../../test/own_flow_test.dart' show settle;
@@ -1439,14 +1442,17 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
     area: 'Movimientos',
     goal:
         'Quiero encontrar rápido lo que pagué en el Éxito, lo que gasté en '
-        'transporte y todo lo que salió de Nequi.',
+        'transporte, todo lo que salió de Nequi y un pago del que solo '
+        'recuerdo el monto: \$187.400.',
     data: fullAccount,
     (FlowRun f) async {
       final OwnController own = f.own;
       await f.tap('Movimientos');
       await f.page(
-        'Movimientos: el buscador arriba y los movimientos agrupados por día, '
-        'del más reciente: «Hoy», «Ayer» y luego cada fecha.',
+        'Movimientos: el buscador arriba, con el embudo de los filtros al '
+        'lado, y los movimientos agrupados por día, del más reciente: «Hoy», '
+        '«Ayer» y luego cada fecha, cada uno con lo que suman sus '
+        'movimientos.',
         most: 3,
       );
       await f.check('Los días van del más reciente al más viejo', () {
@@ -1457,6 +1463,14 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
           expect(shown[i].date.isAfter(shown[i - 1].date), isFalse);
         }
       });
+      final int today = <Entry>[
+        for (final Entry e in own.snapshot!.entries)
+          if (!e.isTransfer && DateUtils.isSameDay(e.date, own.today)) e,
+      ].fold(0, (int sum, Entry e) => sum + e.amount.toBigInt().toInt());
+      await f.check(
+        '«Hoy» dice lo que suman sus movimientos: ${_signed(own, today)}',
+        () => expect(_dayTotal(f, 'HOY'), _signed(own, today)),
+      );
       await f.tester.drag(
         find.byType(CustomScrollView).first,
         const Offset(0, -500),
@@ -1483,7 +1497,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         (
           'uber',
           'Escribe «uber» en minúscula: queda solo el Uber del jueves 1 de '
-              'octubre.',
+              'octubre, y arriba dice «1 movimiento · −\$15.600».',
         ),
         (
           'exito',
@@ -1503,6 +1517,11 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
           '«ahorro» busca en las notas: la compra de USDT en Binance, que '
               'dice «Ahorro en USDT».',
         ),
+        (
+          '187400',
+          'Sin puntos ni signo, «187400» encuentra el mercado de \$187.400 en '
+              'el Éxito: el buscador también busca por monto.',
+        ),
       ]) {
         await _search(f, query);
         await f.step(caption);
@@ -1511,15 +1530,25 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
           '«$query» muestra ${expected.length} movimientos, los que coinciden',
           () {
             expect(expected, isNotEmpty);
-            expect(
-              <String>{
-                for (final MovementRow r in f.tester.widgetList<MovementRow>(
-                  find.byType(MovementRow),
-                ))
-                  r.entry.id,
-              },
-              <String>{for (final Entry e in expected) e.id},
-            );
+            expect(_shownIds(f), <String>{
+              for (final Entry e in expected) e.id,
+            });
+          },
+        );
+      }
+      final Entry market = _entryOf(own, 'Éxito Laureles', '-187400');
+      await f.check(
+        'Arriba dice cuántos encontró y cuánto suman: «1 movimiento · '
+        '${_signed(own, -187400)}»',
+        () =>
+            expect(f.shows('1 movimiento · ${_signed(own, -187400)}'), isTrue),
+      );
+      for (final String typed in <String>['187.400', r'$187.400']) {
+        await _search(f, typed);
+        await f.check(
+          '«$typed», con puntos o con signo, encuentra lo mismo',
+          () {
+            expect(_shownIds(f), <String>{market.id});
           },
         );
       }
@@ -1532,11 +1561,43 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         expect(f.shows('Nada coincide con la búsqueda.'), isTrue);
         expect(find.byType(MovementRow), findsNothing);
       });
-      await _search(f, '');
-      await f.step('Al borrar la búsqueda vuelven todos los movimientos.');
+      await f.tapTip('Borrar la búsqueda');
+      await f.step(
+        'La «x» del buscador borra lo escrito de un toque y vuelven todos los '
+        'movimientos.',
+      );
       await f.check('Sin búsqueda vuelve la lista completa', () {
+        expect(_searchText(f), isEmpty);
         expect(f.shows('HOY'), isTrue);
         expect(f.shows('Nada coincide con la búsqueda.'), isFalse);
+      });
+      await f.tapTip('Filtrar');
+      await f.page(
+        'El embudo abre «Filtrar movimientos»: tipo, fechas, cuentas, '
+        'categorías y monto. Abajo, el botón dice cuántos movimientos hay.',
+        most: 2,
+      );
+      await f.tapFound(find.widgetWithText(FilterChip, 'Nequi'));
+      await f.tap('Ver 2 movimientos');
+      await f.step(
+        'Con la cuenta «Nequi» elegida, quedan sus dos gastos; bajo el '
+        'buscador, la etiqueta «Nequi» dice qué filtra, y arriba, «2 '
+        'movimientos · −\$33.300».',
+      );
+      await f.check('Quedan solo los dos gastos de Nequi', () {
+        expect(_shownIds(f), <String>{
+          for (final Entry e in visibleEntries(own))
+            if (e.accountId == _account(own, 'Nequi').id) e.id,
+        });
+        expect(f.shows('2 movimientos · ${_signed(own, -33300)}'), isTrue);
+        expect(find.widgetWithText(ActionChip, 'Nequi'), findsOneWidget);
+      });
+      await f.tapFound(find.widgetWithText(ActionChip, 'Nequi'));
+      await f.step('Tocar la etiqueta quita el filtro y vuelven todos.');
+      await f.check('Sin filtros vuelve la lista completa', () {
+        expect(find.byType(ActiveFilters), findsNothing);
+        expect(f.shows('HOY'), isTrue);
+        expect(f.screenText, isNot(contains('movimientos ·')));
       });
     },
   ),
@@ -1558,13 +1619,14 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.tap('Movimientos');
       await _open(f, old);
       await f.page(
-        'Tocar un movimiento abre «Editar movimiento» con todo lo que tiene: '
-        'monto, cuenta, categoría, fecha y nota, y abajo «Dividir este gasto» '
-        'y «Eliminar».',
+        'Tocar un movimiento abre «Editar movimiento», que dice de dónde vino '
+        '(«Anotado a mano») y trae todo lo que tiene: monto, cuenta, '
+        'categoría, fecha y nota, y abajo «Dividir este gasto» y «Eliminar».',
         most: 2,
       );
       await f.check('El formulario trae el monto y la categoría guardados', () {
         expect(f.shows('Editar movimiento'), isTrue);
+        expect(f.shows('Anotado a mano'), isTrue);
         expect(
           find.descendant(
             of: find.byType(TextField),
@@ -1718,11 +1780,11 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       );
       await f.tap('Guardar');
       await f.step(
-        'Al guardar vuelves a Movimientos y la fila de las crepes agrega '
-        '«Dividido: tu parte…».',
+        'Al guardar vuelves a Movimientos y la fila de las crepes lleva, '
+        'aparte y entera, la etiqueta «Tu parte \$8.000».',
       );
-      await f.check('La fila dice «Dividido: tu parte ${pesos(8000)}»', () {
-        expect(f.screenText, contains('Dividido: tu parte ${pesos(8000)}'));
+      await f.check('La fila lleva la etiqueta «Tu parte ${pesos(8000)}»', () {
+        expect(_rowSays(crepes, 'Tu parte ${pesos(8000)}'), isTrue);
       });
       await f.check('Ana te debe 15.500 y tu parte es 8.000', () {
         final SharedExpense split = own.splitOf(crepes.id)!.$2;
@@ -2122,8 +2184,12 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.tap('Movimientos');
       await f.step(
         'En Movimientos: «Bancolombia → Cuenta en dólares», por los pesos que '
-        'salieron.',
+        'salieron, y aparte la etiqueta «Llegaron US\$98,50».',
       );
+      await f.check('La fila dice lo que llegó: «Llegaron US\$98,50»', () {
+        expect(f.shows('Bancolombia → Cuenta en dólares'), isTrue);
+        expect(f.shows('Llegaron US\$98,50'), isTrue);
+      });
       await f.check('Salieron 331.300 pesos y llegaron 98,50 dólares', () {
         expect(_held(own, 'Bancolombia'), bank - Decimal.parse('331300'));
         expect(
@@ -2253,12 +2319,17 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       });
       await f.tap('Movimientos');
       await f.step(
-        'En Movimientos va arriba de todo, en el sábado 10, marcado '
-        '«Programado», aunque la línea lo corta en «Progra…».',
+        'En Movimientos va arriba de todo, en el sábado 10: «Servicios · '
+        'Bancolombia» y, aparte y entera, la etiqueta «Programado».',
       );
-      await f.check('La fila dice «Programado»', () {
-        expect(f.screenText, contains('Servicios · Bancolombia · Programado'));
-      });
+      await f.check(
+        'La fila dice «Servicios · Bancolombia» y lleva «Programado» aparte',
+        () {
+          final Entry epm = _entry(own, 'EPM');
+          expect(_rowSays(epm, 'Servicios · Bancolombia'), isTrue);
+          expect(_rowSays(epm, 'Programado'), isTrue);
+        },
+      );
     },
   ),
   AppFlow(
@@ -2439,8 +2510,8 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       });
       await f.tap('Guardar');
       await f.step(
-        'Guardado, la fila del Éxito agrega «Dividid…», cortado por la cuenta, '
-        'y el grupo del paseo suma el mercado.',
+        'Guardado, la fila del Éxito lleva aparte la etiqueta «Tu parte '
+        '\$62.468», entera, y el grupo del paseo suma el mercado.',
       );
       await f.check('El grupo del paseo tiene el mercado, en tres partes', () {
         final Group now = own.groups.firstWhere((Group g) => g.id == trip.id);
@@ -2455,8 +2526,8 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         );
         expect(added.shares[meId], 62468);
       });
-      await f.check('La fila dice «Dividido: tu parte ${pesos(62468)}»', () {
-        expect(f.screenText, contains('Dividido: tu parte ${pesos(62468)}'));
+      await f.check('La fila lleva «Tu parte ${pesos(62468)}»', () {
+        expect(_rowSays(market, 'Tu parte ${pesos(62468)}'), isTrue);
       });
     },
   ),
@@ -2705,8 +2776,8 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.tap('Movimientos');
       await _splitWithAna(f, crepes);
       await f.step(
-        'Las crepes quedan divididas con Ana en partes iguales: la fila dice '
-        '«Dividido: tu parte…».',
+        'Las crepes quedan divididas con Ana en partes iguales: la fila lleva '
+        'la etiqueta «Tu parte \$11.750».',
       );
       await f.check('Ana te debe 11.750 por las crepes', () {
         final (Group group, SharedExpense split) = own.splitOf(crepes.id)!;
@@ -2771,7 +2842,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await _splitWithAna(f, crepes);
       await f.step(
         'Las crepes divididas con Ana: 11.750 cada uno de los 23.500; la '
-        'fila dice «Dividido: tu parte…».',
+        'fila lleva la etiqueta «Tu parte \$11.750».',
       );
       await _open(f, crepes);
       await f.type('Monto', '30000');
@@ -2790,10 +2861,10 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         },
       );
       await f.check(
-        'La fila dice «Dividido: tu parte ${pesos(15000)}», lo que la app '
-        'cuenta como tu gasto',
+        'La fila lleva «Tu parte ${pesos(15000)}», lo que la app cuenta como '
+        'tu gasto',
         () {
-          expect(f.screenText, contains('Dividido: tu parte ${pesos(15000)}'));
+          expect(_rowSays(crepes, 'Tu parte ${pesos(15000)}'), isTrue);
           // The crepes count 15.000 of yours instead of 11.750.
           expect(_spentIn(own, 2026, 10), spent - 11750 + 3250);
         },
@@ -2807,7 +2878,7 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.reveal(_row(crepes));
       await f.step(
         'Por montos, Ana pidió más: 20.000 para ella y 10.000 para ti. La '
-        'fila sigue marcada «Dividido: tu…», cortada por la cuenta.',
+        'etiqueta de la fila pasa a «Tu parte \$10.000».',
       );
       await _open(f, crepes);
       await f.type('Monto', '36000');
@@ -2815,19 +2886,322 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.reveal(_row(crepes));
       await f.step(
         'Con la propina, la fila pasa a −\$36.000: Ana sigue debiendo sus '
-        '20.000 y tu parte, que la línea corta, sube a 16.000.',
+        '20.000 y la etiqueta dice que tu parte sube a \$16.000.',
       );
       await f.check(
         'Por montos, lo de Ana no cambia y tu parte toma la diferencia',
         () {
           final SharedExpense split = own.splitOf(crepes.id)!.$2;
           expect(split.shares, <String, int>{meId: 16000, 'p-ana': 20000});
-          expect(f.screenText, contains('Dividido: tu parte ${pesos(16000)}'));
+          expect(_rowSays(crepes, 'Tu parte ${pesos(16000)}'), isTrue);
         },
       );
       await f.check('Lo que te deben en el grupo es 20.000', () {
         final Group group = own.splitOf(crepes.id)!.$1;
         expect(group.balances['p-ana'], -20000);
+      });
+    },
+  ),
+  AppFlow(
+    '03-19-filtrar-movimientos',
+    'Filtrar movimientos',
+    area: 'Movimientos',
+    goal:
+        'Quiero ver lo que gasté en restaurantes en esta quincena y, aparte, '
+        'lo grande del mes pasado, sin buscar fila por fila.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final int all = visibleEntries(own).length;
+      await f.tap('Movimientos');
+      await f.tapTip('Filtrar');
+      await f.page(
+        'El embudo de Movimientos abre los filtros: «Tipo», «Fechas», '
+        '«Cuentas», «Categorías» y «Monto». Sin nada elegido, el botón dice '
+        '«Ver $all movimientos».',
+        most: 2,
+      );
+      await f.check('Sin filtros, el botón cuenta todos los movimientos', () {
+        expect(f.shows('Ver $all movimientos'), isTrue);
+      });
+      await f.tap('Gastos');
+      await f.tap('Esta quincena');
+      await f.tapFound(find.widgetWithText(FilterChip, 'Restaurantes'));
+      await f.reveal(find.text('Ver 2 movimientos'));
+      await f.step(
+        'Con «Gastos», «Esta quincena» y «Restaurantes» elegidos, el botón ya '
+        'dice «Ver 2 movimientos»: cuenta mientras eliges.',
+      );
+      await f.check('Cuenta 2 mientras se eligen', () {
+        expect(f.shows('Ver 2 movimientos'), isTrue);
+      });
+      await f.tap('Ver 2 movimientos');
+      await f.step(
+        'Quedan las crepes y Joe\'s Pizza. Bajo el buscador, cada filtro es '
+        'una etiqueta con su «x», y arriba dice «2 movimientos · '
+        '−\$238.400».',
+      );
+      final Entry crepes = _entry(own, 'Crepes & Waffles');
+      final Entry pizza = _entry(own, 'Joe\'s Pizza');
+      final Entry lunch = _entry(own, 'Almuerzo en Guatapé');
+      await f.check('Quedan los gastos en restaurantes desde el pago del 30 de '
+          'septiembre', () {
+        expect(_shownIds(f), <String>{crepes.id, pizza.id});
+        expect(f.shows('2 movimientos · ${_signed(own, -238400)}'), isTrue);
+      });
+      await f.check('Cada filtro queda a la vista como una etiqueta', () {
+        for (final String label in <String>[
+          'Gastos',
+          'Esta quincena',
+          'Restaurantes',
+        ]) {
+          expect(find.widgetWithText(ActionChip, label), findsOneWidget);
+        }
+      });
+      await f.tapFound(find.widgetWithText(ActionChip, 'Esta quincena'));
+      await f.step(
+        'Tocar «Esta quincena» quita solo ese filtro: vuelve el almuerzo en '
+        'Guatapé del 27 de septiembre.',
+      );
+      await f.check('Sin las fechas, entra el almuerzo de septiembre', () {
+        expect(_shownIds(f), <String>{crepes.id, pizza.id, lunch.id});
+        expect(f.shows('3 movimientos · ${_signed(own, -328400)}'), isTrue);
+        expect(find.widgetWithText(ActionChip, 'Esta quincena'), findsNothing);
+      });
+      await f.tapFound(find.widgetWithText(TextButton, 'Quitar filtros'));
+      await f.step(
+        '«Quitar filtros», junto a las etiquetas, los quita todos de una vez.',
+      );
+      await f.check('Sin filtros vuelve la lista completa', () {
+        expect(find.byType(ActiveFilters), findsNothing);
+        expect(f.shows('HOY'), isTrue);
+      });
+      // The funnel is at the top of the list.
+      await f.top();
+      await f.tapTip('Filtrar');
+      await f.tap('Mes pasado');
+      await f.type('Desde', '100000');
+      await f.reveal(find.text('Ver 2 movimientos'));
+      await f.step(
+        'Para lo grande del mes pasado: «Mes pasado» y, en «Monto», «Desde» '
+        '100.000. El monto es en pesos, como lo dice cada fila.',
+      );
+      await f.tap('Ver 2 movimientos');
+      final Entry pay = _entry(own, 'Nómina');
+      final Entry rent = _entry(own, 'Arriendo octubre');
+      await f.step(
+        'Quedan la Nómina y el arriendo de septiembre; el total suma lo que '
+        'entró y lo que salió: «2 movimientos · +\$750.000».',
+      );
+      await f.check('Quedan los movimientos de septiembre desde 100.000', () {
+        expect(_shownIds(f), <String>{pay.id, rent.id});
+        expect(f.shows('2 movimientos · ${_signed(own, 750000)}'), isTrue);
+        expect(find.widgetWithText(ActionChip, 'Mes pasado'), findsOneWidget);
+        expect(
+          find.widgetWithText(ActionChip, 'Desde ${_money(own, 100000)}'),
+          findsOneWidget,
+        );
+      });
+      await _search(f, 'arriendo');
+      await f.step(
+        'Con los filtros puestos, buscar «arriendo» busca dentro de ellos: '
+        'queda el arriendo, por −\$1.650.000.',
+      );
+      await f.check('La búsqueda se suma a los filtros', () {
+        expect(_shownIds(f), <String>{rent.id});
+        expect(f.shows('1 movimiento · ${_signed(own, -1650000)}'), isTrue);
+      });
+    },
+  ),
+  AppFlow(
+    '03-20-quitar-un-repetido',
+    'Quitar un repetido desde la lista',
+    area: 'Movimientos',
+    goal:
+        'El pago del Éxito me quedó dos veces, por la notificación y por el '
+        'extracto, y quiero dejar uno. Los dos cobros de Fit24 sí son dos: '
+        'pagué mi mes y el de mi hermano.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Entry notified = own.snapshot!.entries.firstWhere(
+        (Entry e) => e.source == 'notification',
+      );
+      final Entry statement = own.snapshot!.entries.firstWhere(
+        (Entry e) => e.source == 'statement',
+      );
+      final Entry fit = _entry(own, 'Fit24', on: DateTime(2026, 10, 1));
+      final Entry gym = _entry(own, 'Fit24 gimnasio');
+      final int free = own.ledger!.freeUntilPayday;
+      final int count = own.snapshot!.entries.length;
+      await f.tap('Movimientos');
+      // Ayer, the 2nd: both rows under its title.
+      await f.reveal(find.text('AYER'));
+      await f.step(
+        'En Movimientos, los dos pagos de \$63.200 en el Éxito de ayer, '
+        'viernes 2, llevan «¿Repetido?»: la misma cuenta, el mismo monto, la '
+        'misma hora.',
+      );
+      await f.check('Los dos pagos del Éxito están marcados', () {
+        expect(_markOf(notified), findsOneWidget);
+        expect(_markOf(statement), findsOneWidget);
+        expect(own.repeats[notified.id]?.repeat.id, statement.id);
+      });
+      await f.tapFound(_markOf(statement));
+      await f.page(
+        'La marca abre los dos, uno sobre el otro, con la hora y de dónde '
+        'vino cada uno: «De una notificación» y «De un extracto». El del '
+        'extracto es «El más reciente», el que se quitaría.',
+        most: 2,
+      );
+      await f.check('Muestra los dos con de dónde vino cada uno', () {
+        expect(f.shows('¿El mismo pago dos veces?'), isTrue);
+        expect(f.shows('De una notificación'), isTrue);
+        expect(f.shows('De un extracto'), isTrue);
+        expect(f.shows('El más reciente'), isTrue);
+      });
+      await f.tap('Quitar repetido');
+      await f.reveal(find.text('AYER'));
+      await f.step(
+        '«Quitar repetido» borra el más reciente, el del extracto, y deja el '
+        'de la notificación. Abajo, «Se quitó el repetido.» ofrece '
+        '«Deshacer».',
+      );
+      await f.check(
+        'Se borró el del extracto y quedó el de la notificación',
+        () {
+          final Iterable<String> ids = own.snapshot!.entries.map(
+            (Entry e) => e.id,
+          );
+          expect(ids, isNot(contains(statement.id)));
+          expect(ids, contains(notified.id));
+          expect(own.snapshot!.entries, hasLength(count - 1));
+          expect(f.shows('Se quitó el repetido.'), isTrue);
+          expect(_markOf(notified), findsNothing);
+        },
+      );
+      await f.check(
+        'Lo que puedes gastar subió los 63.200 que contaba dos veces',
+        () {
+          expect(own.ledger!.freeUntilPayday, free + 63200);
+        },
+      );
+      await f.tap('Deshacer');
+      await f.reveal(find.text('AYER'));
+      await f.step(
+        '«Deshacer» lo trae de vuelta tal como estaba, y los dos vuelven a '
+        'decir «¿Repetido?».',
+      );
+      await f.check('Volvió el mismo movimiento, del extracto', () {
+        final Entry back = own.snapshot!.entries.firstWhere(
+          (Entry e) => e.id == statement.id,
+        );
+        expect(back.source, 'statement');
+        expect(back.payee, 'EXITO LAURELES');
+        expect(own.ledger!.freeUntilPayday, free);
+        expect(_markOf(statement), findsOneWidget);
+      });
+      await f.tapFound(_markOf(statement));
+      await f.tap('Quitar repetido');
+      await _hideNotice(f);
+      await f.reveal(_row(notified));
+      await f.step(
+        'Quitado otra vez, el pago del Éxito queda una sola vez, el de la '
+        'notificación, ya sin marca.',
+      );
+      await f.check('Queda un solo pago de \$63.200 en el Éxito', () {
+        expect(
+          own.snapshot!.entries.where(
+            (Entry e) => e.amount == Decimal.parse('-63200'),
+          ),
+          hasLength(1),
+        );
+        expect(_markOf(notified), findsNothing);
+      });
+      await f.reveal(_markOf(gym));
+      await f.tapFound(_markOf(gym));
+      await f.tap('No es repetido');
+      await f.reveal(_row(gym));
+      await f.step(
+        'Los dos cobros de Fit24 del jueves 1 sí son dos: «No es repetido» '
+        'quita la marca, los dos se quedan y la app no vuelve a marcarlos.',
+      );
+      await f.check(
+        'Los dos cobros de Fit24 siguen y ya no están marcados',
+        () {
+          expect(
+            own.snapshot!.entries.map((Entry e) => e.id),
+            containsAll(<String>[fit.id, gym.id]),
+          );
+          expect(own.repeats.containsKey(gym.id), isFalse);
+          expect(own.repeats.containsKey(fit.id), isFalse);
+          expect(_markOf(gym), findsNothing);
+        },
+      );
+      await f.check(
+        'Queda guardado, para tus otros dispositivos y respaldos',
+        () async {
+          final String? said = await f.tester.runAsync<String?>(
+            () => own.store.setting('movements.notRepeated'),
+          );
+          expect(said, contains(repeatKey(fit.id, gym.id)));
+        },
+      );
+    },
+  ),
+  AppFlow(
+    '03-21-ver-de-donde-vino',
+    'Ver de dónde vino un movimiento',
+    area: 'Movimientos',
+    goal:
+        'Antes de borrar o corregir algo quiero saber si lo anoté yo, si me '
+        'lo trajo el banco o si vino de un extracto.',
+    data: fullAccount,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      await f.tap('Movimientos');
+      await _open(f, _entry(own, 'Uber'));
+      await f.step(
+        'Abierto el Uber del jueves 1, bajo «Editar movimiento» una línea '
+        'dice de dónde vino: «Anotado a mano».',
+      );
+      await f.check('El Uber se anotó a mano', () {
+        expect(f.shows('Anotado a mano'), isTrue);
+      });
+      await f.back();
+      await _open(f, _entry(own, 'EXITO LAURELES'));
+      await f.step(
+        'El pago del Éxito que trajo el extracto lo dice: «De un extracto».',
+      );
+      await f.check('El del Éxito vino de un extracto', () {
+        expect(f.shows('De un extracto'), isTrue);
+      });
+      await f.back();
+      await f.tapTip('Por revisar');
+      await f.tapFound(
+        find.descendant(
+          of: find.ancestor(
+            of: find.text('Laura Gómez'),
+            matching: find.byType(InboxCard),
+          ),
+          matching: find.text('Registrar ingreso'),
+        ),
+      );
+      await f.step(
+        'En Por revisar, «Registrar ingreso» anota los \$85.000 que Laura '
+        'envió por Nequi, como los leyó la notificación.',
+      );
+      await f.back();
+      await _hideNotice(f);
+      final Entry laura = _entry(own, 'Laura Gómez');
+      await _open(f, laura);
+      await f.step(
+        'En Movimientos, ese ingreso dice «De una notificación de Nequi»: la '
+        'app sabe qué banco le avisó.',
+      );
+      await f.check('El ingreso de Laura dice de qué notificación vino', () {
+        expect(laura.source, 'notification');
+        expect(f.shows('De una notificación de Nequi'), isTrue);
       });
     },
   ),
@@ -3060,6 +3434,13 @@ Finder _row(Entry entry) => find.byWidgetPredicate(
 /// Opens [entry] from the list on screen.
 Future<void> _open(FlowRun f, Entry entry) => f.tapFound(_row(entry));
 
+/// Whether the row of [entry] on screen says [text], whole, in a line or a
+/// label of its own.
+bool _rowSays(Entry entry, String text) => find
+    .descendant(of: _row(entry), matching: find.text(text))
+    .evaluate()
+    .isNotEmpty;
+
 /// The field labelled [label] when it holds [text].
 Finder _fieldShows(String label, String text) => find.descendant(
   of: find.widgetWithText(TextField, label),
@@ -3091,25 +3472,80 @@ Future<void> _search(FlowRun f, String text) async {
 }
 
 /// The movements a person searching [query] expects: those whose name,
-/// note, account or category has it, with or without accents.
+/// note, account or category has it, with or without accents, or whose
+/// amount it is, written with or without its points and sign.
 List<Entry> _found(FlowRun f, String query) {
   final OwnController own = f.own;
   final String q = _plain(query);
+  final String digits = query.replaceAll(RegExp(r'[$.\s]'), '');
+  final Decimal? amount = RegExp(r'^\d+$').hasMatch(digits)
+      ? Decimal.parse(digits)
+      : null;
   return <Entry>[
     for (final Entry e in visibleEntries(own))
-      if (<String>[
-        e.payee,
-        e.note,
-        // A transfer by either of its accounts.
-        for (final Entry leg in own.snapshot!.entries)
-          if (leg.id == e.id ||
-              (e.transferId != null && leg.transferId == e.transferId))
-            own.snapshot!.account(leg.accountId)?.name ?? '',
-        if (e.category case final String c)
-          categoryLabel(c, 'es', custom: _customName(own, c)),
-      ].any((String s) => _plain(s).contains(q)))
+      if (e.amount.abs() == amount ||
+          <String>[
+            e.payee,
+            e.note,
+            // A transfer by either of its accounts.
+            for (final Entry leg in own.snapshot!.entries)
+              if (leg.id == e.id ||
+                  (e.transferId != null && leg.transferId == e.transferId))
+                own.snapshot!.account(leg.accountId)?.name ?? '',
+            if (e.category case final String c)
+              categoryLabel(c, 'es', custom: _customName(own, c)),
+          ].any((String s) => _plain(s).contains(q)))
         e,
   ];
+}
+
+/// The ids of the movements whose rows are on screen.
+Set<String> _shownIds(FlowRun f) => <String>{
+  for (final MovementRow r in f.tester.widgetList<MovementRow>(
+    find.byType(MovementRow),
+  ))
+    r.entry.id,
+};
+
+/// What Movimientos' search holds.
+String _searchText(FlowRun f) =>
+    f.tester.widget<TextField>(find.byType(TextField).first).controller!.text;
+
+/// [minor] in the ledger's unit with its sign, as the line over what a
+/// search found writes it.
+String _signed(OwnController own, int minor) =>
+    pesos(own.ledger!.major(minor), signed: true);
+
+/// What the day titled [day] says its movements add up to, if anything.
+String? _dayTotal(FlowRun f, String day) {
+  final List<Text> texts = f.tester
+      .widgetList<Text>(
+        find.descendant(
+          of: find.ancestor(
+            of: find.text(day),
+            matching: find.byType(SectionLabel),
+          ),
+          matching: find.byType(Text),
+        ),
+      )
+      .toList();
+  return texts.length < 2 ? null : texts.last.data;
+}
+
+/// The «¿Repetido?» mark in the row of [entry].
+Finder _markOf(Entry entry) => find.descendant(
+  of: _row(entry),
+  matching: find.widgetWithText(ActionChip, '¿Repetido?'),
+);
+
+/// Takes the notice at the bottom away, as its time running out would.
+Future<void> _hideNotice(FlowRun f) async {
+  for (final ScaffoldMessengerState m in f.tester.stateList(
+    find.byWidgetPredicate((Widget w) => w is ScaffoldMessenger),
+  )) {
+    m.removeCurrentSnackBar();
+  }
+  await settle(f.tester);
 }
 
 String? _customName(OwnController own, String key) {

@@ -73,13 +73,15 @@ int _built(WidgetTester tester) =>
 /// Goes down the list until the oldest day's title shows, as a person
 /// flicking through it would, and back to the top.
 Future<void> _toOldest(WidgetTester tester) async {
-  final Finder oldest = find.text(
-    weekdayDayMonth(_when(_count - 1)).toUpperCase(),
-  );
+  final String title = weekdayDayMonth(_when(_count - 1)).toUpperCase();
+  final Finder oldest = find.text(title);
   expect(oldest, findsNothing);
   final Finder list = find.byType(Scrollable).first;
+  // Until the oldest day is built: a day taller than the screen, as the
+  // last can be with the largest text, ends the list with its title above
+  // it, where scrolling down never shows it.
   await tester.scrollUntilVisible(
-    oldest,
+    find.text(title, skipOffstage: false),
     4000,
     scrollable: list,
     maxScrolls: 100,

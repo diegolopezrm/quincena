@@ -8,11 +8,15 @@ import '../../format/dates.dart';
 import '../../format/money.dart';
 import '../../l10n/l10n.dart';
 import '../../money/money.dart';
+import '../../own/movement_search.dart';
 import '../../own/own_controller.dart';
+import '../../own/repeats.dart';
 import '../../theme/tokens.dart';
+import '../icons.dart';
 import '../kit.dart';
 import 'entry_sheet.dart';
 import 'look.dart';
+import 'repeat_sheet.dart';
 
 /// The movements to show, newest first, with each transfer once: by its
 /// leg in [accountId] when the list is one account's, by the leg that left
@@ -34,6 +38,7 @@ class MovementRow extends StatelessWidget {
     required this.own,
     required this.entry,
     this.inAccount = false,
+    this.markRepeats = false,
   });
 
   final OwnController own;
@@ -41,6 +46,10 @@ class MovementRow extends StatelessWidget {
 
   /// Shown inside one account's page, where its name goes without saying.
   final bool inAccount;
+
+  /// Whether a movement that may repeat another says so, with a way to
+  /// look at both: in the full lists, where the two can be compared.
+  final bool markRepeats;
 
   Account? _account(String id) => own.snapshot?.account(id);
 
@@ -98,6 +107,7 @@ class MovementRow extends StatelessWidget {
           ? entry.payee
           : (categoryName.isNotEmpty ? categoryName : l.kindExpense);
     }
+    // What it was and where: the line a narrow row may cut short.
     final List<String> detail = <String>[
       if (transfer)
         _transferKind(l, account, otherLeg)
@@ -106,13 +116,39 @@ class MovementRow extends StatelessWidget {
       else if (entry.payee.isNotEmpty)
         categoryName,
       if (!inAccount && !transfer) account.name,
-      if (entry.date.isAfter(endOfToday(own.today))) l.scheduled,
+    ]..removeWhere((String s) => s.isEmpty);
+    // What sets it apart, each in a label of its own under that line:
+    // cut with it, the mark is what went.
+    final Account? there = otherLeg == null
+        ? null
+        : _account(otherLeg.accountId);
+    final List<Widget> marks = <Widget>[
+      if (entry.date.isAfter(endOfToday(own.today))) _Tag(l.scheduled),
       if (own.splitOf(entry.id) case (
         _,
         final SharedExpense split,
       ) when own.ledger != null)
-        l.splitYours(pesos(own.ledger!.major(split.shares[meId] ?? 0))),
-    ]..removeWhere((String s) => s.isEmpty);
+        _Tag(
+          l.splitYours(pesos(own.ledger!.major(split.shares[meId] ?? 0))),
+          brand: true,
+        ),
+      // Between currencies the other side is another amount: what arrived
+      // for the money that left, what left for the money that arrived.
+      if (otherLeg != null && there != null && there.asset != account.asset)
+        _Tag(
+          (entry.amount < Decimal.zero ? l.transferArrived : l.transferSent)(
+            moneyText(
+              Money(otherLeg.amount.abs(), there.asset),
+              base: own.profile?.base,
+            ),
+          ),
+        ),
+      if (markRepeats ? own.repeats[entry.id] : null
+          case final PossibleRepeat pair)
+        _RepeatMark(
+          onPressed: () => showRepeatSheet(context, own: own, pair: pair),
+        ),
+    ];
 
     final Money money = Money(entry.amount, account.asset);
     final Money? base = account.asset == own.profile?.base
@@ -136,7 +172,8 @@ class MovementRow extends StatelessWidget {
         Text(
           title,
           style: context.type.titleSmall,
-          maxLines: large ? null : 1,
+          // A transfer's title is both accounts: two lines keep both.
+          maxLines: large ? null : (transfer ? 2 : 1),
           overflow: large ? null : TextOverflow.ellipsis,
         ),
         if (detail.isNotEmpty)
@@ -145,6 +182,16 @@ class MovementRow extends StatelessWidget {
             style: context.type.bodySmall,
             maxLines: large ? null : 1,
             overflow: large ? null : TextOverflow.ellipsis,
+          ),
+        if (marks.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: marks,
+            ),
           ),
       ],
     );
@@ -198,6 +245,51 @@ class MovementRow extends StatelessWidget {
   }
 }
 
+/// A mark on a row, such as «Programado», in a soft pill of its own: never
+/// cut, and with large text it wraps like the rest.
+class _Tag extends StatelessWidget {
+  const _Tag(this.text, {this.brand = false});
+
+  final String text;
+
+  /// In the brand's green, for the person's own part of a shared expense.
+  final bool brand;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+    decoration: BoxDecoration(
+      color: brand ? context.colors.brandSoft : context.colors.sunken,
+      borderRadius: BorderRadius.circular(99),
+    ),
+    child: Text(
+      text,
+      style: context.type.labelMedium?.copyWith(
+        color: brand ? context.colors.brand : context.colors.inkSoft,
+      ),
+    ),
+  );
+}
+
+/// Says a movement may repeat another, in caution's soft amber: a chip
+/// that opens both, to take the repeat away or say they are two.
+class _RepeatMark extends StatelessWidget {
+  const _RepeatMark({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => ActionChip(
+    onPressed: onPressed,
+    avatar: Icon(Glyph.copy, size: 16, color: context.colors.caution),
+    label: Text(context.l10n.repeatMark),
+    labelStyle: context.type.labelMedium?.copyWith(color: context.colors.ink),
+    backgroundColor: context.colors.cautionSoft,
+    side: BorderSide.none,
+    visualDensity: VisualDensity.compact,
+  );
+}
+
 DateTime endOfToday(DateTime today) =>
     DateTime(today.year, today.month, today.day, 23, 59, 59);
 
@@ -224,6 +316,19 @@ class MovementGroups extends StatelessWidget {
     return weekdayDayMonth(d);
   }
 
+  /// What the movements of one day add up to, in each currency, beside its
+  /// title: in one account's list its transfers count too, as they moved
+  /// its money. Empty when it all comes to nothing.
+  String _dayTotal(List<Entry> day) => <String>[
+    for (final Money m in totalsOf(
+      day,
+      assetOf: (String id) => own.snapshot?.account(id)?.asset,
+      base: own.profile?.base,
+      transfers: inAccount,
+    ))
+      if (!m.isZero) moneyText(m, base: own.profile?.base, signed: true),
+  ].join(' · ');
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
@@ -242,11 +347,25 @@ class MovementGroups extends StatelessWidget {
       itemBuilder: (BuildContext context, int i) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          SectionLabel(_dayLabel(l, list[i].key)),
+          SectionLabel(
+            _dayLabel(l, list[i].key),
+            trailing: switch (_dayTotal(list[i].value)) {
+              '' => null,
+              final String total => Figures(
+                total,
+                style: context.type.labelMedium,
+              ),
+            },
+          ),
           Panel(
             children: <Widget>[
               for (final Entry e in list[i].value)
-                MovementRow(own: own, entry: e, inAccount: inAccount),
+                MovementRow(
+                  own: own,
+                  entry: e,
+                  inAccount: inAccount,
+                  markRepeats: true,
+                ),
             ],
           ),
           const SizedBox(height: 20),

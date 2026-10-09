@@ -1484,6 +1484,180 @@ abstract class AppLocalizations {
   /// **'Buscar movimientos'**
   String get searchMovements;
 
+  /// No description provided for @searchClear.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrar la búsqueda'**
+  String get searchClear;
+
+  /// No description provided for @filterOpen.
+  ///
+  /// In es, this message translates to:
+  /// **'Filtrar'**
+  String get filterOpen;
+
+  /// No description provided for @filterTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Filtrar movimientos'**
+  String get filterTitle;
+
+  /// No description provided for @filterType.
+  ///
+  /// In es, this message translates to:
+  /// **'Tipo'**
+  String get filterType;
+
+  /// No description provided for @filterAnyType.
+  ///
+  /// In es, this message translates to:
+  /// **'Todos'**
+  String get filterAnyType;
+
+  /// No description provided for @filterExpenses.
+  ///
+  /// In es, this message translates to:
+  /// **'Gastos'**
+  String get filterExpenses;
+
+  /// No description provided for @filterIncomes.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresos'**
+  String get filterIncomes;
+
+  /// No description provided for @filterTransfers.
+  ///
+  /// In es, this message translates to:
+  /// **'Transferencias'**
+  String get filterTransfers;
+
+  /// No description provided for @filterDates.
+  ///
+  /// In es, this message translates to:
+  /// **'Fechas'**
+  String get filterDates;
+
+  /// No description provided for @filterAnyDate.
+  ///
+  /// In es, this message translates to:
+  /// **'Cualquier fecha'**
+  String get filterAnyDate;
+
+  /// No description provided for @filterThisPeriod.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta quincena'**
+  String get filterThisPeriod;
+
+  /// No description provided for @filterSincePayday.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde el último pago'**
+  String get filterSincePayday;
+
+  /// No description provided for @filterThisMonth.
+  ///
+  /// In es, this message translates to:
+  /// **'Este mes'**
+  String get filterThisMonth;
+
+  /// No description provided for @filterLastMonth.
+  ///
+  /// In es, this message translates to:
+  /// **'Mes pasado'**
+  String get filterLastMonth;
+
+  /// No description provided for @filterPickDays.
+  ///
+  /// In es, this message translates to:
+  /// **'Elegir fechas'**
+  String get filterPickDays;
+
+  /// No description provided for @filterAccounts.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuentas'**
+  String get filterAccounts;
+
+  /// No description provided for @filterCategories.
+  ///
+  /// In es, this message translates to:
+  /// **'Categorías'**
+  String get filterCategories;
+
+  /// No description provided for @filterAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'Monto'**
+  String get filterAmount;
+
+  /// No description provided for @filterAmountHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que salió o entró, en {currency}.'**
+  String filterAmountHelp(String currency);
+
+  /// No description provided for @filterAmountMin.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde'**
+  String get filterAmountMin;
+
+  /// No description provided for @filterAmountMax.
+  ///
+  /// In es, this message translates to:
+  /// **'Hasta'**
+  String get filterAmountMax;
+
+  /// No description provided for @filterAmountBetween.
+  ///
+  /// In es, this message translates to:
+  /// **'{min} a {max}'**
+  String filterAmountBetween(String min, String max);
+
+  /// No description provided for @filterAmountAtLeast.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde {amount}'**
+  String filterAmountAtLeast(String amount);
+
+  /// No description provided for @filterAmountAtMost.
+  ///
+  /// In es, this message translates to:
+  /// **'Hasta {amount}'**
+  String filterAmountAtMost(String amount);
+
+  /// No description provided for @filterShow.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Ver 1 movimiento} other{Ver {count} movimientos}}'**
+  String filterShow(int count);
+
+  /// No description provided for @filterRemove.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar el filtro {name}'**
+  String filterRemove(String name);
+
+  /// No description provided for @filterClear.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar filtros'**
+  String get filterClear;
+
+  /// No description provided for @foundCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{1 movimiento} other{{count} movimientos}}'**
+  String foundCount(int count);
+
+  /// No description provided for @foundLeavesTransfers.
+  ///
+  /// In es, this message translates to:
+  /// **'El total deja fuera las transferencias entre tus cuentas.'**
+  String get foundLeavesTransfers;
+
   /// No description provided for @noMovements.
   ///
   /// In es, this message translates to:
@@ -1501,6 +1675,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Nada coincide con la búsqueda.'**
   String get noResults;
+
+  /// No description provided for @noResultsFilters.
+  ///
+  /// In es, this message translates to:
+  /// **'Nada coincide con los filtros.'**
+  String get noResultsFilters;
+
+  /// No description provided for @noResultsBoth.
+  ///
+  /// In es, this message translates to:
+  /// **'Nada coincide con la búsqueda y los filtros.'**
+  String get noResultsBoth;
 
   /// No description provided for @deleteMovementTitle.
   ///
@@ -1573,6 +1759,66 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Cuentas conectadas'**
   String get settingsConnected;
+
+  /// No description provided for @transferArrived.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegaron {amount}'**
+  String transferArrived(String amount);
+
+  /// No description provided for @transferSent.
+  ///
+  /// In es, this message translates to:
+  /// **'Salieron {amount}'**
+  String transferSent(String amount);
+
+  /// No description provided for @repeatMark.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Repetido?'**
+  String get repeatMark;
+
+  /// No description provided for @repeatTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿El mismo pago dos veces?'**
+  String get repeatTitle;
+
+  /// No description provided for @repeatBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Los dos están en {account}, por el mismo monto y en fechas cercanas.'**
+  String repeatBody(String account);
+
+  /// No description provided for @repeatNewer.
+  ///
+  /// In es, this message translates to:
+  /// **'El más reciente'**
+  String get repeatNewer;
+
+  /// No description provided for @repeatRemove.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar repetido'**
+  String get repeatRemove;
+
+  /// No description provided for @repeatRemoveWhich.
+  ///
+  /// In es, this message translates to:
+  /// **'Se quita el más reciente y el otro se queda.'**
+  String get repeatRemoveWhich;
+
+  /// No description provided for @repeatKeep.
+  ///
+  /// In es, this message translates to:
+  /// **'No es repetido'**
+  String get repeatKeep;
+
+  /// No description provided for @repeatRemoved.
+  ///
+  /// In es, this message translates to:
+  /// **'Se quitó el repetido.'**
+  String get repeatRemoved;
 
   /// No description provided for @settingsName.
   ///
@@ -6206,6 +6452,96 @@ abstract class AppLocalizations {
   /// **'Otra fuente'**
   String get sourceOther;
 
+  /// No description provided for @originManual.
+  ///
+  /// In es, this message translates to:
+  /// **'Anotado a mano'**
+  String get originManual;
+
+  /// No description provided for @originApplePay.
+  ///
+  /// In es, this message translates to:
+  /// **'De Apple Pay'**
+  String get originApplePay;
+
+  /// No description provided for @originNotification.
+  ///
+  /// In es, this message translates to:
+  /// **'De una notificación'**
+  String get originNotification;
+
+  /// No description provided for @originNotificationOf.
+  ///
+  /// In es, this message translates to:
+  /// **'De una notificación de {name}'**
+  String originNotificationOf(String name);
+
+  /// No description provided for @originSms.
+  ///
+  /// In es, this message translates to:
+  /// **'De un SMS'**
+  String get originSms;
+
+  /// No description provided for @originSmsOf.
+  ///
+  /// In es, this message translates to:
+  /// **'De un SMS de {name}'**
+  String originSmsOf(String name);
+
+  /// No description provided for @originEmail.
+  ///
+  /// In es, this message translates to:
+  /// **'De un correo'**
+  String get originEmail;
+
+  /// No description provided for @originEmailOf.
+  ///
+  /// In es, this message translates to:
+  /// **'De un correo de {name}'**
+  String originEmailOf(String name);
+
+  /// No description provided for @originScreenshot.
+  ///
+  /// In es, this message translates to:
+  /// **'De una captura de pantalla'**
+  String get originScreenshot;
+
+  /// No description provided for @originPaste.
+  ///
+  /// In es, this message translates to:
+  /// **'De un mensaje que pegaste'**
+  String get originPaste;
+
+  /// No description provided for @originStatement.
+  ///
+  /// In es, this message translates to:
+  /// **'De un extracto'**
+  String get originStatement;
+
+  /// No description provided for @originBinance.
+  ///
+  /// In es, this message translates to:
+  /// **'De Binance'**
+  String get originBinance;
+
+  /// No description provided for @originWallet.
+  ///
+  /// In es, this message translates to:
+  /// **'De una billetera que sigues'**
+  String get originWallet;
+
+  /// No description provided for @originGemini.
+  ///
+  /// In es, this message translates to:
+  /// **'De una conversación con Gemini'**
+  String get originGemini;
+
+  /// No description provided for @originExample.
+  ///
+  /// In es, this message translates to:
+  /// **'De la conversación del ejemplo'**
+  String get originExample;
+
   /// No description provided for @planFixedNext30.
   ///
   /// In es, this message translates to:
@@ -6497,7 +6833,7 @@ abstract class AppLocalizations {
   /// No description provided for @splitYours.
   ///
   /// In es, this message translates to:
-  /// **'Dividido: tu parte {amount}'**
+  /// **'Tu parte {amount}'**
   String splitYours(String amount);
 
   /// No description provided for @sharedTitle.

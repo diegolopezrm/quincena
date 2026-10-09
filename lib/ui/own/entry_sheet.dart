@@ -19,6 +19,7 @@ import '../kit.dart';
 import 'amount_input.dart';
 import 'capture_reasons.dart';
 import 'category_choices.dart';
+import 'entry_origin.dart';
 import 'look.dart';
 import 'split_sheet.dart';
 
@@ -646,6 +647,7 @@ class _EntryFormState extends State<_EntryForm> {
                   : l.addMovement,
               style: context.type.headlineMedium,
             ),
+            if (_editing case final Entry e) EntryOrigin(own: own, entry: e),
             const SizedBox(height: 16),
             SegmentedButton<EntryKind>(
               segments: <ButtonSegment<EntryKind>>[

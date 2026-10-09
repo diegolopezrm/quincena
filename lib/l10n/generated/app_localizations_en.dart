@@ -916,6 +916,120 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchMovements => 'Search transactions';
 
   @override
+  String get searchClear => 'Clear the search';
+
+  @override
+  String get filterOpen => 'Filter';
+
+  @override
+  String get filterTitle => 'Filter transactions';
+
+  @override
+  String get filterType => 'Type';
+
+  @override
+  String get filterAnyType => 'All';
+
+  @override
+  String get filterExpenses => 'Expenses';
+
+  @override
+  String get filterIncomes => 'Income';
+
+  @override
+  String get filterTransfers => 'Transfers';
+
+  @override
+  String get filterDates => 'Dates';
+
+  @override
+  String get filterAnyDate => 'Any date';
+
+  @override
+  String get filterThisPeriod => 'This pay period';
+
+  @override
+  String get filterSincePayday => 'Since last payday';
+
+  @override
+  String get filterThisMonth => 'This month';
+
+  @override
+  String get filterLastMonth => 'Last month';
+
+  @override
+  String get filterPickDays => 'Pick dates';
+
+  @override
+  String get filterAccounts => 'Accounts';
+
+  @override
+  String get filterCategories => 'Categories';
+
+  @override
+  String get filterAmount => 'Amount';
+
+  @override
+  String filterAmountHelp(String currency) {
+    return 'What went out or came in, in $currency.';
+  }
+
+  @override
+  String get filterAmountMin => 'From';
+
+  @override
+  String get filterAmountMax => 'Up to';
+
+  @override
+  String filterAmountBetween(String min, String max) {
+    return '$min to $max';
+  }
+
+  @override
+  String filterAmountAtLeast(String amount) {
+    return 'From $amount';
+  }
+
+  @override
+  String filterAmountAtMost(String amount) {
+    return 'Up to $amount';
+  }
+
+  @override
+  String filterShow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Show $count transactions',
+      one: 'Show 1 transaction',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String filterRemove(String name) {
+    return 'Remove the $name filter';
+  }
+
+  @override
+  String get filterClear => 'Clear filters';
+
+  @override
+  String foundCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count transactions',
+      one: '1 transaction',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foundLeavesTransfers =>
+      'The total leaves out transfers between your accounts.';
+
+  @override
   String get noMovements =>
       'Your money coming in and going out will show up here.';
 
@@ -925,6 +1039,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noResults => 'Nothing matches the search.';
+
+  @override
+  String get noResultsFilters => 'Nothing matches the filters.';
+
+  @override
+  String get noResultsBoth => 'Nothing matches the search and the filters.';
 
   @override
   String get deleteMovementTitle => 'Delete this transaction?';
@@ -962,6 +1082,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsConnected => 'Connected accounts';
+
+  @override
+  String transferArrived(String amount) {
+    return '$amount arrived';
+  }
+
+  @override
+  String transferSent(String amount) {
+    return '$amount sent';
+  }
+
+  @override
+  String get repeatMark => 'Duplicate?';
+
+  @override
+  String get repeatTitle => 'The same payment twice?';
+
+  @override
+  String repeatBody(String account) {
+    return 'Both are in $account, for the same amount, on close dates.';
+  }
+
+  @override
+  String get repeatNewer => 'The newer one';
+
+  @override
+  String get repeatRemove => 'Remove duplicate';
+
+  @override
+  String get repeatRemoveWhich => 'The newer one goes and the other stays.';
+
+  @override
+  String get repeatKeep => 'Not a duplicate';
+
+  @override
+  String get repeatRemoved => 'Duplicate removed.';
 
   @override
   String get settingsName => 'Name';
@@ -4002,6 +4158,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sourceOther => 'Another source';
 
   @override
+  String get originManual => 'Entered by hand';
+
+  @override
+  String get originApplePay => 'From Apple Pay';
+
+  @override
+  String get originNotification => 'From a notification';
+
+  @override
+  String originNotificationOf(String name) {
+    return 'From a $name notification';
+  }
+
+  @override
+  String get originSms => 'From a text message';
+
+  @override
+  String originSmsOf(String name) {
+    return 'From a $name text message';
+  }
+
+  @override
+  String get originEmail => 'From an email';
+
+  @override
+  String originEmailOf(String name) {
+    return 'From a $name email';
+  }
+
+  @override
+  String get originScreenshot => 'From a screenshot';
+
+  @override
+  String get originPaste => 'From a message you pasted';
+
+  @override
+  String get originStatement => 'From a statement';
+
+  @override
+  String get originBinance => 'From Binance';
+
+  @override
+  String get originWallet => 'From a wallet you follow';
+
+  @override
+  String get originGemini => 'From a conversation with Gemini';
+
+  @override
+  String get originExample => 'From the example\'s conversation';
+
+  @override
   String planFixedNext30(String amount) {
     return '$amount in the next 30 days';
   }
@@ -4201,7 +4408,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String splitYours(String amount) {
-    return 'Split: your part $amount';
+    return 'Your part $amount';
   }
 
   @override

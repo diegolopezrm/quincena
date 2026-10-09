@@ -20,6 +20,7 @@ import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/l10n/l10n.dart';
 import 'package:quincena/money/asset.dart';
+import 'package:quincena/own/movement_search.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/portfolio/market.dart';
 import 'package:quincena/session/session.dart';
@@ -51,11 +52,15 @@ import 'package:quincena/ui/own/goal_sheet.dart';
 import 'package:quincena/ui/own/home_tab.dart';
 import 'package:quincena/ui/own/inbox_page.dart';
 import 'package:quincena/ui/own/instalments_page.dart';
+import 'package:quincena/ui/own/movement_filters.dart';
+import 'package:quincena/ui/own/movement_list.dart';
+import 'package:quincena/ui/own/movements_tab.dart';
 import 'package:quincena/ui/own/onboarding_page.dart';
 import 'package:quincena/ui/own/own_settings_page.dart';
 import 'package:quincena/ui/own/own_shell.dart';
 import 'package:quincena/ui/own/plan_tab.dart';
 import 'package:quincena/ui/own/portfolio_page.dart';
+import 'package:quincena/ui/own/repeat_sheet.dart';
 import 'package:quincena/ui/own/shared_page.dart';
 import 'package:quincena/ui/own/start_page.dart';
 import 'package:quincena/ui/own/statement_page.dart';
@@ -539,6 +544,54 @@ void main() {
     'where the net worth comes from, as a sheet': (
       (OwnController own) =>
           opener((BuildContext context) => showTotalExplained(context, own)),
+      openIt,
+    ),
+    'the filters of the movements': (
+      (OwnController own) => opener(
+        (BuildContext context) => showMovementFilters(
+          context,
+          own: own,
+          filter: const MovementFilter(),
+          entries: visibleEntries(own),
+          count: (MovementFilter _) => 12,
+          onChanged: (MovementFilter _) {},
+        ),
+      ),
+      openIt,
+    ),
+    'the movements, filtered': (
+      (OwnController own) => sliverTab(MovementsTab(own: own)),
+      (WidgetTester tester) async {
+        Future<void> tap(Finder finder) async {
+          await tester.ensureVisible(finder);
+          await settle(tester);
+          await tester.tap(finder);
+          await settle(tester);
+        }
+
+        await tap(find.byIcon(Glyph.funnel));
+        // Expenses, this month, the first account and from 50.000 up.
+        await tap(find.byType(ChoiceChip).at(1));
+        await tap(find.byType(ChoiceChip).at(6));
+        await tap(find.byType(FilterChip).first);
+        await tester.enterText(find.byType(TextField).at(1), '50000');
+        await settle(tester);
+        await tap(find.byType(FilledButton));
+        // What narrows the list, in sight under the search.
+        expect(
+          find.descendant(
+            of: find.byType(ActiveFilters),
+            matching: find.byType(ActionChip),
+          ),
+          findsNWidgets(4),
+        );
+      },
+    ),
+    'a possible repeat, both side by side': (
+      (OwnController own) => opener(
+        (BuildContext context) =>
+            showRepeatSheet(context, own: own, pair: own.repeats.values.first),
+      ),
       openIt,
     ),
     'a new movement': (

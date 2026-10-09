@@ -3572,8 +3572,8 @@ final List<AppFlow> planFlows = <AppFlow>[
       );
       await f.tap('Guardar');
       await f.step(
-        'De vuelta en Movimientos, la comida dice «Dividido: tu…»: la línea '
-        'se corta antes de decir cuánto es tu parte.',
+        'De vuelta en Movimientos, la comida lleva aparte la etiqueta «Tu '
+        'parte ${pesos(11750)}», entera, bajo «Restaurantes · Nequi».',
       );
       await f.check(
         'Quedó el grupo con Sofía y el gasto ligado al movimiento',
@@ -3587,7 +3587,7 @@ final List<AppFlow> planFlows = <AppFlow>[
           expect(e.entryId, crepes.id);
           expect(e.paidBy, meId);
           expect(e.shares.values, <int>[11750, 11750]);
-          expect(_says(f, 'Dividido: tu parte ${pesos(11750)}'), isTrue);
+          expect(_says(f, 'Tu parte ${pesos(11750)}'), isTrue);
         },
       );
       await f.check('Solo tu parte cuenta como gasto: lo gastado baja '
