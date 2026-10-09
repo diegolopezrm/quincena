@@ -726,6 +726,16 @@ prueba. Entre ellos:
 
 Las cuentas cerradas ahora se archivan en vez de borrarse.
 
+El 9 de octubre los 181 flujos se jugaron en un iPhone 17 Pro simulado y
+quedaron en una página para que expertos digan, flujo por flujo, si se
+entiende. Lo que dejó esa corrida y el plan que se propone después están en
+[la revisión flujo por flujo](reviews/2026-10-09-flujo-por-flujo.md).
+- Sin teléfono, `test_screens/flows_keyboard_test.dart` juega los flujos con
+  el teclado abierto mientras un campo tiene el foco, en un iPhone 17 Pro o
+  en un SE.
+- En el SE encontró cuatro cuadros que no cabían y no se podían desplazar.
+  Los diez cuadros que piden un dato ahora se desplazan cuando no caben.
+
 ### 26. Lo que pidieron las tiendas
 
 **Estado:** construida, build 20 (1.1.0), enviada a las dos tiendas el 8
