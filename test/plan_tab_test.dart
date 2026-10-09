@@ -141,7 +141,7 @@ void main() {
       'HERRAMIENTAS',
       'Próximos 30 días',
       '¿Y si…?',
-      'Colchón en días',
+      'Fondo de emergencia en días',
     ];
     final List<double> tops = <double>[
       for (final String text in order) tester.getTopLeft(find.text(text)).dy,

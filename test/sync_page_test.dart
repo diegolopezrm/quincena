@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'package:quincena/backup/backup.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/money/money.dart';
 import 'package:quincena/own/own_controller.dart';
@@ -80,11 +81,53 @@ void main() {
     );
   });
 
-  testWidgets('a change that lost waits, and comes back with a touch', (
+  testWidgets('a backup code pasted to join is named for what it is', (
     tester,
   ) async {
     final MemoryKeyStore keys = MemoryKeyStore();
+    final MemoryBackupKeyStore backups = MemoryBackupKeyStore();
+    final VaultKey backup = VaultKey.generate(Random(8));
+    await tester.runAsync(() => backups.write(backup.bytes));
+    await openPage(
+      tester,
+      (OwnController own) =>
+          SyncPage(own: own, keys: keys, backupKeys: backups),
+    );
+    await tapText(tester, 'Unir este dispositivo');
+    expect(find.text('Pegar'), findsOneWidget);
+    await tester.enterText(
+      find.byType(TextField),
+      'Código de respaldo de Quincena: ${backup.code}',
+    );
+    await tapText(tester, 'Unir');
+    expect(
+      find.textContaining('Ese es tu código de respaldo, no el de sincronizar'),
+      findsOneWidget,
+    );
+    expect(await tester.runAsync<List<int>?>(keys.read), isNull);
+
+    // The vault's own code, with the words it was shared with, joins.
+    final String code = VaultKey.generate(Random(9)).code;
+    await tester.enterText(
+      find.byType(TextField),
+      'Código de Quincena para unir tus dispositivos: $code',
+    );
+    await tapText(tester, 'Unir');
+    expect(
+      VaultKey((await tester.runAsync<List<int>?>(keys.read))!).code,
+      code,
+    );
+  });
+
+  /// The page over a phone where a lunch was renamed while the other
+  /// device, an hour ahead, added it a note: the other's version shows and
+  /// this one waits. [other] is the other device's store, closed after.
+  Future<(OwnController, QuincenaStore, SyncService)> lunchChangedOnBoth(
+    WidgetTester tester,
+    MemoryKeyStore keys,
+  ) async {
     late QuincenaStore other;
+    late SyncService there;
     final OwnController own = await openPage(
       tester,
       (OwnController own) => SyncPage(own: own, keys: keys),
@@ -98,7 +141,7 @@ void main() {
           QuincenaDatabase(NativeDatabase.memory()),
           now: () => pageNow.add(const Duration(hours: 1)),
         );
-        final SyncService there = SyncService(
+        there = SyncService(
           other,
           keys: MemoryKeyStore(),
           now: () => pageNow.add(const Duration(hours: 1)),
@@ -124,20 +167,46 @@ void main() {
       },
     );
     addTearDown(() => tester.runAsync(other.close));
+    return (own, other, there);
+  }
+
+  Entry lunchOf(OwnController own) => own.snapshot!.entries.firstWhere(
+    (Entry e) => e.category == 'restaurants',
+  );
+
+  testWidgets('a change that lost waits beside the one that stayed, field by '
+      'field, and comes back with a touch', (tester) async {
+    final (OwnController own, _, _) = await lunchChangedOnBoth(
+      tester,
+      MemoryKeyStore(),
+    );
     expect(find.text('PARA REVISAR'), findsOneWidget);
     await reveal(tester, find.text('Traer de vuelta'));
+    // Named as it shows now, with both versions side by side.
+    expect(find.text('Almuerzo · −$signJoiner\$30.000'), findsOneWidget);
+    expect(find.text('Lo que quedó'), findsOneWidget);
+    expect(find.text('Lo que espera'), findsOneWidget);
+    final Table table = tester.widget<Table>(find.byType(Table));
+    List<String> row(int i) => <String>[
+      for (final Widget cell in table.children[i].children)
+        if (cell is Padding) (cell.child! as Text).data!,
+    ];
+    expect(row(1), <String>['Nombre', 'Almuerzo', 'Almuerzo con Juan']);
+    expect(row(5), <String>['Nota', 'Con factura', '—']);
+    expect(row(3), <String>['Categoría', 'Restaurantes', 'Restaurantes']);
+    // What differs is marked; what is the same is not.
     expect(
-      find.text('Almuerzo con Juan · −$signJoiner\$30.000'),
-      findsOneWidget,
+      <bool>[
+        for (final TableRow r in table.children.skip(1)) r.decoration != null,
+      ],
+      <bool>[true, false, false, false, true],
     );
-    Entry lunch() => own.snapshot!.entries.firstWhere(
-      (Entry e) => e.category == 'restaurants',
-    );
-    expect(lunch().payee, 'Almuerzo');
+    expect(find.text('Combinar'), findsOneWidget);
+    expect(lunchOf(own).payee, 'Almuerzo');
 
     await tapText(tester, 'Traer de vuelta');
     await settle(tester);
-    expect(lunch().payee, 'Almuerzo con Juan');
+    expect(lunchOf(own).payee, 'Almuerzo con Juan');
     // What it replaced now waits in its place: nothing is lost either way.
     await reveal(
       tester,
@@ -147,5 +216,86 @@ void main() {
       find.textContaining('Lo que había antes de traer de vuelta'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('combining keeps the name of one and the note of the other, '
+      'as an edit the other device gets', (tester) async {
+    final MemoryKeyStore keys = MemoryKeyStore();
+    final (OwnController own, QuincenaStore other, SyncService there) =
+        await lunchChangedOnBoth(tester, keys);
+    await tapText(tester, 'Combinar');
+    expect(find.text('Combinar los dos cambios'), findsOneWidget);
+    // Only what differs is asked; the note starts on the version that has
+    // one, the name on the one that stayed.
+    expect(find.text('NOMBRE'), findsOneWidget);
+    expect(find.text('NOTA'), findsOneWidget);
+    expect(find.text('CATEGORÍA'), findsNothing);
+    bool chosen(String text) {
+      final Finder tile = find.ancestor(
+        of: find.text(text),
+        matching: find.byType(RadioListTile<bool>),
+      );
+      final RadioGroup<bool> group = tester.widget<RadioGroup<bool>>(
+        find.ancestor(of: tile, matching: find.byType(RadioGroup<bool>)),
+      );
+      return group.groupValue == tester.widget<RadioListTile<bool>>(tile).value;
+    }
+
+    expect(chosen('Almuerzo'), isTrue);
+    expect(chosen('Con factura'), isTrue);
+    await tapText(tester, 'Almuerzo con Juan');
+    expect(chosen('Almuerzo con Juan'), isTrue);
+    await tapText(tester, 'Guardar');
+
+    expect(lunchOf(own).payee, 'Almuerzo con Juan');
+    expect(lunchOf(own).note, 'Con factura');
+    expect(find.text('PARA REVISAR'), findsNothing);
+    expect(find.textContaining('Combinado.'), findsOneWidget);
+
+    // An edit like any other: the other device takes it, with nothing to
+    // review there.
+    final SyncReport report = (await tester.runAsync(() async {
+      final SyncService here = SyncService(
+        own.store,
+        keys: keys,
+        now: () => pageNow.add(const Duration(hours: 2)),
+      );
+      return there.import(await here.export());
+    }))!;
+    expect(report.conflicts, 0);
+    final Entry theirs = (await tester.runAsync(
+      other.entries,
+    ))!.firstWhere((Entry e) => e.category == 'restaurants');
+    expect(theirs.payee, 'Almuerzo con Juan');
+    expect(theirs.note, 'Con factura');
+  });
+
+  testWidgets('with large text the two versions go one under the other', (
+    tester,
+  ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await lunchChangedOnBoth(tester, MemoryKeyStore());
+    await reveal(tester, find.text('Lo que espera: Almuerzo con Juan'));
+    expect(find.byType(Table), findsNothing);
+    expect(find.text('Lo que quedó: Almuerzo'), findsOneWidget);
+    expect(find.text('Lo que quedó: Con factura'), findsOneWidget);
+    expect(find.text('Lo que espera: \u2014'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('what is dismissed can come back right after', (tester) async {
+    final (OwnController own, _, _) = await lunchChangedOnBoth(
+      tester,
+      MemoryKeyStore(),
+    );
+    await tapText(tester, 'Descartar');
+    expect(find.text('PARA REVISAR'), findsNothing);
+    expect(find.text('Descartado.'), findsOneWidget);
+    await tester.tap(find.text('Deshacer'));
+    await settle(tester);
+    expect(find.text('PARA REVISAR'), findsOneWidget);
+    expect(find.text('Almuerzo con Juan'), findsOneWidget);
+    expect(lunchOf(own).payee, 'Almuerzo');
   });
 }

@@ -4,8 +4,11 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../../backup/backup.dart';
+import '../../backup/movements_csv.dart';
+import '../../format/dates.dart';
 import '../../l10n/l10n.dart';
 import '../../store/store.dart';
+import '../../sync/sync_service.dart' show KeyStore, SecureKeyStore;
 import '../../sync/vault.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
@@ -75,6 +78,7 @@ Future<void> exportData(
         code: code,
         title: l.backupYourCode,
         keep: l.backupCodeKeep,
+        share: l.backupCodeShareText(code),
         done: l.backupCodeKept,
       );
     }
@@ -94,15 +98,49 @@ Future<void> exportData(
   if (saved) messenger.showSnackBar(SnackBar(content: Text(l.exportDone)));
 }
 
-/// Replaces everything with a file the person picks: a sealed backup, with
+/// The movements as a CSV a spreadsheet opens, saved where the person
+/// chooses, the same way as a backup on each platform. Read fresh from
+/// [store], in the interface's language.
+Future<void> exportMovements(
+  BuildContext context, {
+  required QuincenaStore store,
+  required DateTime today,
+  SaveFile save = _saveWithPicker,
+}) async {
+  final AppLocalizations l = context.l10n;
+  final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+  final StoreSnapshot? snapshot = await store.snapshot();
+  if (snapshot == null || snapshot.entries.isEmpty) {
+    messenger.showSnackBar(SnackBar(content: Text(l.exportCsvEmpty)));
+    return;
+  }
+  final String day = today.toIso8601String().substring(0, 10);
+  final bool saved = await save(
+    'quincena-movimientos-$day.csv',
+    movementsCsv(
+      entries: snapshot.entries,
+      accounts: snapshot.accounts,
+      categories: snapshot.categories,
+      l: l,
+    ),
+    mimeType: 'text/csv',
+    extensions: <String>['csv'],
+  );
+  if (saved) messenger.showSnackBar(SnackBar(content: Text(l.exportDone)));
+}
+
+/// Replaces everything with a backup the person picks: a sealed one, with
 /// its code if this device does not have it, or an export in JSON. The file
-/// is read whole before [confirm] asks; nothing changes until then.
-Future<void> importData(
+/// is read whole and what it holds is shown before anything changes, with a
+/// way to keep what is here first; nothing changes until «Restaurar».
+Future<void> restoreBackup(
   BuildContext context, {
   required Backups backups,
-  required Future<bool?> Function() confirm,
+  required DateTime today,
   Future<void> Function()? after,
   PickFile pick = _pickWithPicker,
+  SaveFile save = _saveWithPicker,
+  KeyStore? syncKeys,
 }) async {
   final AppLocalizations l = context.l10n;
   final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
@@ -137,6 +175,14 @@ Future<void> importData(
         try {
           opened = await backups.open(file, code: code);
         } on BackupException {
+          // The person has two codes: when this device knows the one typed,
+          // say which one it is.
+          if (await codeIsKey(code, (syncKeys ?? SecureKeyStore()).read)) {
+            return l.backupCodeIsSync;
+          }
+          if (await codeIsKey(code, backups.keys.read)) {
+            return l.backupCodeIsNewer;
+          }
           return l.backupWrongCode;
         } on CodeException {
           rethrow;
@@ -154,7 +200,22 @@ Future<void> importData(
     say(problem(failure));
     return;
   }
-  if (!context.mounted || await confirm() != true) return;
+  // What the file brings, before it replaces anything. Keeping what is
+  // here first comes back to the same question.
+  while (true) {
+    if (!context.mounted) return;
+    final _Restore? choice = await showDialog<_Restore>(
+      context: context,
+      builder: (BuildContext context) =>
+          _RestoreDialog(contents: backup.contents),
+    );
+    if (choice != _Restore.saveFirst) {
+      if (choice != _Restore.restore) return;
+      break;
+    }
+    if (!context.mounted) return;
+    await exportData(context, backups: backups, today: today, save: save);
+  }
   try {
     await backups.restore(backup);
   } on Object catch (e) {
@@ -163,6 +224,69 @@ Future<void> importData(
   }
   say(l.importDone);
   await after?.call();
+}
+
+enum _Restore { restore, saveFirst }
+
+/// What a backup brings, and the choice to replace what is here with it.
+class _RestoreDialog extends StatelessWidget {
+  const _RestoreDialog({required this.contents});
+
+  final BackupContents contents;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    final DateTime? made = contents.made;
+    Widget line(IconData icon, String text) => Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        children: <Widget>[
+          Icon(icon, size: 18, color: context.colors.inkSoft),
+          const SizedBox(width: 10),
+          Expanded(child: Text(text, style: context.type.bodyMedium)),
+        ],
+      ),
+    );
+    return AlertDialog(
+      scrollable: true,
+      title: Text(l.restoreTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            made == null ? l.restoreHolds : l.restoreFrom(dayMonthYear(made)),
+            style: context.type.titleSmall,
+          ),
+          const SizedBox(height: 4),
+          line(Glyph.bank, l.restoreAccounts(contents.accounts)),
+          line(Glyph.listBullets, l.restoreMovements(contents.movements)),
+          line(Glyph.flag, l.restoreGoals(contents.goals)),
+          line(Glyph.calendarBlank, l.restorePlan(contents.plan)),
+          const SizedBox(height: 16),
+          Text(l.restoreReplaces, style: context.type.bodyMedium),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () => Navigator.of(context).pop(_Restore.saveFirst),
+            icon: const Icon(Glyph.downloadSimple, size: 18),
+            label: Text(l.restoreSaveFirst),
+          ),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l.cancel),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_Restore.restore),
+          style: TextButton.styleFrom(foregroundColor: context.colors.negative),
+          child: Text(l.restore),
+        ),
+      ],
+    );
+  }
 }
 
 class _ExportSheet extends StatefulWidget {
@@ -214,6 +338,7 @@ class _ExportSheetState extends State<_ExportSheet> {
       code: code,
       title: l.backupNewCode,
       keep: l.backupCodeKeep,
+      share: l.backupCodeShareText(code),
       done: l.backupCodeKept,
     );
   }
@@ -260,6 +385,7 @@ class _ExportSheetState extends State<_ExportSheet> {
                     code: code,
                     title: l.backupYourCode,
                     keep: l.backupCodeKeep,
+                    share: l.backupCodeShareText(code),
                   ),
                   icon: const Icon(Glyph.lock, size: 18),
                   label: Text(l.backupShowCode),

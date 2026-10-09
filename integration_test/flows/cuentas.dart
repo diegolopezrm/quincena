@@ -2771,18 +2771,35 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         'solo en el teléfono y cómo crearla.',
       );
       await f.tap('Conectar');
-      await f.step('«Conectar» sin llaves no hace nada ni dice qué falta.');
-      await f.check('Sin llaves no se conecta', () {
+      await f.step(
+        '«Conectar» sin llaves no se conecta y dice qué falta bajo cada campo: '
+        '«Escribe tu API Key» y «Escribe tu Secret Key».',
+      );
+      await f.check('Sin llaves no se conecta y dice qué falta', () {
         expect(own.binance.connected, isFalse);
         expect(f.shows('Revisando la llave con Binance…'), isFalse);
+        expect(f.shows('Escribe tu API Key'), isTrue);
+        expect(f.shows('Escribe tu Secret Key'), isTrue);
       });
       await f.type('API Key', 'llave-de-prueba');
+      await f.check('Al escribir la API Key, su aviso se va', () {
+        expect(f.shows('Escribe tu API Key'), isFalse);
+      });
       await f.tap('Conectar');
-      await f.check('Con solo la API Key tampoco intenta conectar', () {
+      await f.check('Con solo la API Key tampoco intenta conectar, y sigue '
+          'pidiendo la Secret Key', () {
         expect(own.binance.connected, isFalse);
+        expect(f.shows('Escribe tu Secret Key'), isTrue);
       });
       await f.type('Secret Key', 'secreto');
-      await f.step('La Secret Key se escribe oculta, con un candado al lado.');
+      await f.step(
+        'La Secret Key se escribe oculta, con un candado al lado, y su aviso '
+        'se va.',
+      );
+      await f.check('Con las dos llaves escritas no queda ningún aviso', () {
+        expect(f.shows('Escribe tu API Key'), isFalse);
+        expect(f.shows('Escribe tu Secret Key'), isFalse);
+      });
       await f.tapFound(
         find.descendant(
           of: find.widgetWithText(TextField, 'Secret Key'),

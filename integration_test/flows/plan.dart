@@ -207,7 +207,7 @@ final List<AppFlow> planFlows = <AppFlow>[
             expect(f.shows('${own.alerts.length} cargos para revisar'), isTrue),
       );
       await f.check(
-        'Colchón en días pide elegir dónde está el fondo de emergencia',
+        'Fondo de emergencia en días pide elegir dónde está el fondo',
         () =>
             expect(f.shows('Elige dónde está tu fondo de emergencia'), isTrue),
       );
@@ -3408,7 +3408,7 @@ final List<AppFlow> planFlows = <AppFlow>[
   ),
   AppFlow(
     '06-26-medir-el-colchon-en-dias',
-    'Medir el colchón en días',
+    'Medir el fondo de emergencia en días',
     area: 'Plan',
     goal:
         'Quiero saber para cuántos días de gastos básicos me alcanza lo que '
@@ -3428,17 +3428,17 @@ final List<AppFlow> planFlows = <AppFlow>[
         essentials: own.cushionSettings.essentials,
       );
       await _openPlan(f);
-      await f.tap('Colchón en días');
+      await f.tap('Fondo de emergencia en días');
       await f.page(
-        '«Colchón en días» pide elegir las cuentas del fondo de emergencia, '
-        'qué es esencial para ti y cuántos días quieres cubrir.',
+        '«Fondo de emergencia en días» pide elegir las cuentas del fondo, qué '
+        'es esencial para ti y cuántos días quieres cubrir.',
         most: 3,
       );
       await f.tap('Cuenta en dólares');
       final CushionDays first = days();
       await f.top();
       await f.step(
-        'Con la cuenta en dólares, el colchón cubre unos ${first.days} días: '
+        'Con la cuenta en dólares, el fondo cubre unos ${first.days} días: '
         'lo que tiene, entre lo que gastas al día en lo esencial.',
       );
       await f.check(
@@ -3458,7 +3458,7 @@ final List<AppFlow> planFlows = <AppFlow>[
       await f.top();
       await f.step(
         'Contar los restaurantes como esenciales sube el gasto diario: el '
-        'colchón alcanza para menos días, ${second.days}.',
+        'fondo alcanza para menos días, ${second.days}.',
       );
       await f.check('Con restaurantes, alcanza para menos días', () {
         expect(own.cushionSettings.essentials, contains(Category.restaurants));
@@ -3503,7 +3503,7 @@ final List<AppFlow> planFlows = <AppFlow>[
         () => expect(own.ledger!.freeUntilPayday, free),
       );
       await f.back();
-      await f.reveal(find.text('Colchón en días'));
+      await f.reveal(find.text('Fondo de emergencia en días'));
       await f.step(
         'En Plan, la fila dice «Cubre unos ${second.days} días de gastos '
         'esenciales».',

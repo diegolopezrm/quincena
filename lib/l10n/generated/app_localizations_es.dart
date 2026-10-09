@@ -216,6 +216,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get appearance => 'Apariencia';
 
   @override
+  String get themeTitle => 'Tema';
+
+  @override
   String get themeSystem => 'Sistema';
 
   @override
@@ -864,6 +867,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get kindTransfer => 'Transferencia';
 
   @override
+  String get kindAdjustment => 'Ajuste';
+
+  @override
   String get amount => 'Monto';
 
   @override
@@ -948,10 +954,19 @@ class AppLocalizationsEs extends AppLocalizations {
   String get scheduled => 'Programado';
 
   @override
-  String get settingsProfile => 'Perfil';
+  String get settingsProfile => 'Tu perfil';
+
+  @override
+  String get settingsAutomation => 'Automatización';
+
+  @override
+  String get settingsConnected => 'Cuentas conectadas';
 
   @override
   String get settingsName => 'Nombre';
+
+  @override
+  String get settingsNameEmpty => 'Escribe tu nombre.';
 
   @override
   String get settingsBase => 'Moneda de los totales';
@@ -964,6 +979,43 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get exportData => 'Exportar mis datos';
+
+  @override
+  String get exportDataSubtitle => 'Guarda un respaldo de todo en un archivo';
+
+  @override
+  String get exportCsv => 'Exportar movimientos en CSV';
+
+  @override
+  String get exportCsvSubtitle =>
+      'Para abrirlos en Excel o en otra hoja de cálculo';
+
+  @override
+  String get exportCsvEmpty => 'Todavía no hay movimientos para exportar.';
+
+  @override
+  String get csvDate => 'Fecha';
+
+  @override
+  String get csvAccount => 'Cuenta';
+
+  @override
+  String get csvKind => 'Tipo';
+
+  @override
+  String get csvCategory => 'Categoría';
+
+  @override
+  String get csvPayee => 'Comercio';
+
+  @override
+  String get csvNote => 'Nota';
+
+  @override
+  String get csvAmount => 'Monto';
+
+  @override
+  String get csvCurrency => 'Moneda';
 
   @override
   String get exportDone => 'Archivo guardado.';
@@ -1763,7 +1815,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get envelopesSave => 'Guardar el reparto';
 
   @override
-  String get cushionDaysTitle => 'Colchón en días';
+  String get cushionDaysTitle => 'Fondo de emergencia en días';
 
   @override
   String cushionDaysCovers(int days) {
@@ -1814,7 +1866,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Es un promedio: un mes con gastos distintos cambia la cuenta.';
 
   @override
-  String get cushionDaysAccounts => 'Dónde está tu colchón';
+  String get cushionDaysAccounts => 'Dónde está tu fondo de emergencia';
 
   @override
   String get cushionDaysEssentials => 'Qué es esencial para ti';
@@ -2142,20 +2194,80 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get importData => 'Importar un archivo';
+  String get importData => 'Restaurar un respaldo';
 
   @override
-  String get importConfirmTitle => '¿Reemplazar todo con este archivo?';
+  String get importDataSubtitle =>
+      'Reemplaza todo lo de ahora por lo del respaldo';
 
   @override
-  String get importConfirmBody =>
-      'Lo que tienes ahora en Quincena se borra y queda lo del archivo.';
+  String get restoreTitle => '¿Restaurar este respaldo?';
 
   @override
-  String get importConfirm => 'Reemplazar';
+  String restoreFrom(String date) {
+    return 'Respaldo del $date:';
+  }
 
   @override
-  String get importDone => 'Datos importados.';
+  String get restoreHolds => 'Este respaldo trae:';
+
+  @override
+  String restoreAccounts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cuentas',
+      one: 'Una cuenta',
+      zero: 'Ninguna cuenta',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String restoreMovements(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count movimientos',
+      one: 'Un movimiento',
+      zero: 'Ningún movimiento',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String restoreGoals(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count metas',
+      one: 'Una meta',
+      zero: 'Ninguna meta',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String restorePlan(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cosas más del Plan',
+      one: 'Una cosa más del Plan',
+      zero: 'Nada más del Plan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get restoreReplaces =>
+      'Lo que tienes ahora en Quincena se borra y queda lo del respaldo.';
+
+  @override
+  String get restoreSaveFirst => 'Guardar lo de ahora primero';
+
+  @override
+  String get importDone => 'Respaldo restaurado.';
 
   @override
   String get importNotQuincena =>
@@ -2177,7 +2289,18 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get deleteAllBody =>
-      'Cuentas, movimientos y ajustes se borran de este dispositivo. No se puede deshacer; exporta primero si quieres conservarlos.';
+      'Cuentas, movimientos y ajustes se borran de este dispositivo. No se puede deshacer.';
+
+  @override
+  String get deleteAllRecover =>
+      'Para recuperarlos después vas a necesitar un respaldo guardado fuera de este teléfono y, si es cifrado, su código de respaldo.';
+
+  @override
+  String get deleteAllForgetsCode =>
+      'Al borrar, este teléfono olvida tu código de respaldo: guárdalo antes.';
+
+  @override
+  String get deleteAllBackupFirst => 'Guardar un respaldo primero';
 
   @override
   String get useDemo => 'Ver los datos de ejemplo';
@@ -2190,6 +2313,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get privacyTitle => 'Privacidad';
+
+  @override
+  String get settingsHelp => 'Ayuda y privacidad';
 
   @override
   String get privacyBody =>
@@ -2890,6 +3016,12 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get binanceSecretKey => 'Secret Key';
+
+  @override
+  String get binanceNeedKey => 'Escribe tu API Key';
+
+  @override
+  String get binanceNeedSecret => 'Escribe tu Secret Key';
 
   @override
   String get binanceConnect => 'Conectar';
@@ -4647,13 +4779,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get syncHow =>
-      'Empieza en el dispositivo que ya tiene tus datos. En el otro, toca «Unir este dispositivo» y escribe el código.';
+      'Empieza en el dispositivo que ya tiene tus datos y comparte o copia el código. En el otro, toca «Unir este dispositivo» y pégalo.';
 
   @override
-  String get syncYourCode => 'Tu código';
+  String get syncYourCode => 'Tu código para sincronizar';
 
   @override
-  String get syncNewCode => 'Tu código nuevo';
+  String get syncNewCode => 'Tu código nuevo para sincronizar';
 
   @override
   String get syncCodeKeep =>
@@ -4663,6 +4795,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get syncCopyCode => 'Copiar el código';
 
   @override
+  String get syncShareCode => 'Compartir el código';
+
+  @override
+  String syncCodeShareText(String code) {
+    return 'Código de Quincena para unir tus dispositivos: $code';
+  }
+
+  @override
   String get syncCodeCopied => 'Código copiado.';
 
   @override
@@ -4670,10 +4810,17 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get syncJoinBody =>
-      'Escribe el código que muestra tu otro dispositivo en Ajustes, Varios dispositivos. Los guiones no importan.';
+      'Pega el código que copiaste o compartiste desde tu otro dispositivo, en Ajustes, Varios dispositivos, o escríbelo. Los guiones no importan.';
 
   @override
   String get syncCodeField => 'Código';
+
+  @override
+  String get codePaste => 'Pegar';
+
+  @override
+  String get codeNothingCopied =>
+      'No hay nada copiado. Copia el código de donde lo guardaste, o escríbelo.';
 
   @override
   String get syncJoinAction => 'Unir';
@@ -4689,6 +4836,10 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get syncCodeCheck =>
       'El código no cuadra: revisa si hay un carácter cambiado.';
+
+  @override
+  String get syncCodeIsBackup =>
+      'Ese es tu código de respaldo, no el de sincronizar. Para unir este dispositivo usa el código que muestra el otro en Varios dispositivos.';
 
   @override
   String get syncJoined =>
@@ -4708,37 +4859,90 @@ class AppLocalizationsEs extends AppLocalizations {
   String get syncSaved => 'Archivo guardado. Ábrelo en tu otro dispositivo.';
 
   @override
-  String syncMerged(int count) {
+  String get syncUpToDate => 'Ya estaba todo al día.';
+
+  @override
+  String syncArrivedOne(String items) {
+    return 'Llegó $items.';
+  }
+
+  @override
+  String syncArrivedMany(String items) {
+    return 'Llegaron $items.';
+  }
+
+  @override
+  String syncGoneOne(String items) {
+    return 'Se borró $items.';
+  }
+
+  @override
+  String syncGoneMany(String items) {
+    return 'Se borraron $items.';
+  }
+
+  @override
+  String syncItemMovements(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Listo: $count cambios.',
-      one: 'Listo: un cambio.',
-      zero: 'Ya estaba todo al día.',
+      other: '$count movimientos',
+      one: 'un movimiento',
     );
     return '$_temp0';
   }
 
   @override
-  String syncMergedWaiting(int count, int waiting) {
+  String syncItemAccounts(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count cambios',
-      one: 'Un cambio',
+      other: '$count cuentas',
+      one: 'una cuenta',
     );
-    String _temp1 = intl.Intl.pluralLogic(
-      waiting,
+    return '$_temp0';
+  }
+
+  @override
+  String syncItemPlan(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
       locale: localeName,
-      other: '$waiting esperan',
-      one: 'uno espera',
+      other: '$count cambios del Plan',
+      one: 'un cambio del Plan',
     );
-    return '$_temp0; $_temp1 a que lo revises.';
+    return '$_temp0';
+  }
+
+  @override
+  String syncItemSettings(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ajustes',
+      one: 'un ajuste',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String syncWaitingCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count esperan en «Para revisar».',
+      one: 'Uno espera en «Para revisar».',
+    );
+    return '$_temp0';
   }
 
   @override
   String get syncNotSync =>
       'Ese no es un archivo de sincronización de Quincena.';
+
+  @override
+  String get syncIsBackup =>
+      'Ese es un respaldo, no un archivo de sincronizar: se abre en Ajustes, «Restaurar un respaldo». No cambió nada.';
 
   @override
   String get syncOtherVault =>
@@ -4785,6 +4989,71 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get syncDismiss => 'Descartar';
+
+  @override
+  String get syncDismissed => 'Descartado.';
+
+  @override
+  String get syncKept => 'Lo que quedó';
+
+  @override
+  String get syncWaitingVersion => 'Lo que espera';
+
+  @override
+  String get syncSameFields =>
+      'Las dos versiones dicen lo mismo en lo que se ve.';
+
+  @override
+  String get syncCombine => 'Combinar';
+
+  @override
+  String get syncCombineTitle => 'Combinar los dos cambios';
+
+  @override
+  String get syncCombineBody => 'Elige qué queda en cada dato que cambió.';
+
+  @override
+  String get syncCombined =>
+      'Combinado. Tus otros dispositivos lo reciben con el próximo archivo.';
+
+  @override
+  String get syncFieldName => 'Nombre';
+
+  @override
+  String get syncFieldNote => 'Nota';
+
+  @override
+  String get syncFieldInstitution => 'Entidad';
+
+  @override
+  String get syncFieldOpening => 'Saldo inicial';
+
+  @override
+  String get syncFieldLimit => 'Cupo';
+
+  @override
+  String get syncFieldCadence => 'Cada cuánto';
+
+  @override
+  String get syncFieldNext => 'Próximo cobro';
+
+  @override
+  String get syncFieldState => 'Estado';
+
+  @override
+  String get syncActive => 'Activo';
+
+  @override
+  String get syncPaused => 'En pausa';
+
+  @override
+  String get syncFieldTarget => 'Meta';
+
+  @override
+  String get syncFieldSaved => 'Llevas';
+
+  @override
+  String get syncFieldMonthly => 'Cada mes';
 
   @override
   String get syncRestored =>
@@ -5313,11 +5582,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get backupCodeKept => 'Ya lo guardé';
 
   @override
+  String backupCodeShareText(String code) {
+    return 'Código de respaldo de Quincena: $code';
+  }
+
+  @override
   String get backupCodeTitle => 'Respaldo cifrado';
 
   @override
   String get backupCodeBody =>
-      'Escribe el código de respaldo que Quincena te mostró la primera vez que exportaste cifrado.';
+      'Pega o escribe el código de respaldo que Quincena te mostró la primera vez que exportaste cifrado.';
 
   @override
   String get backupOpen => 'Abrir';
@@ -5325,6 +5599,14 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get backupWrongCode =>
       'Ese código no abre este respaldo. Si es el de sincronización, el de respaldo es otro.';
+
+  @override
+  String get backupCodeIsSync =>
+      'Ese es tu código para sincronizar, no el de respaldo. Este respaldo se abre con el código de respaldo que Quincena te mostró al exportar cifrado.';
+
+  @override
+  String get backupCodeIsNewer =>
+      'Ese es tu código de respaldo de ahora, pero este respaldo se hizo con otro: el que tenías antes de cambiarlo.';
 
   @override
   String get backupIsSync =>

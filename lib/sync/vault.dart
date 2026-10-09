@@ -87,6 +87,17 @@ class VaultKey {
     ].join('-');
   }
 
+  /// The code in [text] as it was copied or shared, perhaps with words
+  /// around it, as in a note that names what the code is for: 54 letters
+  /// and digits in groups of four, with or without what separates them.
+  /// Null when there is none; the text as typed then says what is wrong.
+  static String? codeIn(String text) => _inText.firstMatch(text)?[0];
+
+  static final RegExp _inText = RegExp(
+    r'(?<![0-9A-Za-z])[0-9A-Za-z]{4}(?:[ \-]?[0-9A-Za-z]{4}){12}'
+    r'[ \-]?[0-9A-Za-z]{2}(?![0-9A-Za-z])',
+  );
+
   /// What the person typed, as the alphabet spells it: dashes and spaces
   /// out, and the letters people mix up read the way Crockford says.
   static String _normalize(String code) => code

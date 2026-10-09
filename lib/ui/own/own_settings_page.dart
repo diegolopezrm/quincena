@@ -14,6 +14,7 @@ import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
 import '../../own/own_controller.dart';
+import '../../platform/app_settings.dart';
 import '../../sync/sync_service.dart' show SecureKeyStore;
 import '../../reminders/reminders.dart';
 import '../../theme/tokens.dart';
@@ -24,7 +25,9 @@ import '../kit.dart';
 import 'amount_input.dart';
 import 'backup_flow.dart';
 import 'binance_page.dart';
+import 'capture_rules_page.dart';
 import 'capture_settings_page.dart';
+import 'code_dialogs.dart';
 import 'example_bar.dart';
 import 'look.dart';
 import 'pay_schedule_editor.dart';
@@ -32,7 +35,9 @@ import 'statement_page.dart';
 import 'sync_page.dart';
 import 'wallets_page.dart';
 
-/// The person's profile, appearance, and what they can do with their data.
+/// The person's settings, in the order they look for them: who they are,
+/// what the app does by itself, what it is connected to, how it looks, their
+/// data and where to get help; deleting everything comes last, apart.
 class OwnSettingsPage extends StatelessWidget {
   const OwnSettingsPage({
     super.key,
@@ -71,6 +76,10 @@ class OwnSettingsPage extends StatelessWidget {
         title: context.l10n.settingsName,
         initial: p.name,
         capitalization: TextCapitalization.words,
+        // A blank name is not saved: the dialog says so instead of closing
+        // as if it had been.
+        check: (String text) =>
+            text.trim().isEmpty ? context.l10n.settingsNameEmpty : null,
       ),
     );
     if (typed == null || typed.trim().isEmpty) return;
@@ -203,19 +212,19 @@ class OwnSettingsPage extends StatelessWidget {
     await exportData(context, backups: Backups(own.store), today: own.today);
   }
 
-  Future<void> _import(BuildContext context) async {
-    final AppLocalizations l = context.l10n;
-    if (await explainExample(context, own, l.importData)) return;
+  Future<void> _exportCsv(BuildContext context) async {
+    if (await explainExample(context, own, context.l10n.exportCsv)) return;
     if (!context.mounted) return;
-    return importData(
+    await exportMovements(context, store: own.store, today: own.today);
+  }
+
+  Future<void> _restore(BuildContext context) async {
+    if (await explainExample(context, own, context.l10n.importData)) return;
+    if (!context.mounted) return;
+    return restoreBackup(
       context,
       backups: Backups(own.store),
-      confirm: () => _confirm(
-        context,
-        title: l.importConfirmTitle,
-        body: l.importConfirmBody,
-        action: l.importConfirm,
-      ),
+      today: own.today,
       after: () => own.refreshRates(force: true),
     );
   }
@@ -226,14 +235,23 @@ class OwnSettingsPage extends StatelessWidget {
     if (!context.mounted) return;
     final NavigatorState navigator = Navigator.of(context);
     final ModalRoute<Object?>? page = ModalRoute.of(context);
-    final bool? sure = await _confirm(
-      context,
-      title: l.deleteAllTitle,
-      body: l.deleteAllBody,
-      action: l.deleteAll,
-      destructive: true,
-    );
-    if (sure != true) return;
+    final Backups backups = Backups(own.store);
+    // What brings the data back afterwards, and a way to keep it first:
+    // saving comes back to the same question.
+    while (true) {
+      final String? code = await backups.code();
+      if (!context.mounted) return;
+      final _Delete? choice = await showDialog<_Delete>(
+        context: context,
+        builder: (BuildContext context) => _DeleteAllDialog(code: code),
+      );
+      if (choice != _Delete.backupFirst) {
+        if (choice != _Delete.delete) return;
+        break;
+      }
+      if (!context.mounted) return;
+      await exportData(context, backups: backups, today: own.today);
+    }
     // A Binance key lives in the keychain, apart from the data: it goes
     // first, through the link that kept it.
     if (BinanceLink.available) {
@@ -253,7 +271,7 @@ class OwnSettingsPage extends StatelessWidget {
     } on Object {
       // No keychain here, so no key either.
     }
-    await Backups(own.store).forget();
+    await backups.forget();
     navigator.popUntil((Route<void> r) => r.isFirst);
     await modes.wiped();
     // The theme and the language went with the rest: once this page is gone,
@@ -262,33 +280,6 @@ class OwnSettingsPage extends StatelessWidget {
     if (page != null) await page.completed;
     settings.forget();
   }
-
-  Future<bool?> _confirm(
-    BuildContext context, {
-    required String title,
-    required String body,
-    required String action,
-    bool destructive = false,
-  }) => showDialog<bool>(
-    context: context,
-    builder: (BuildContext context) => AlertDialog(
-      title: Text(title),
-      content: Text(body),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: Text(context.l10n.cancel),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(true),
-          style: destructive
-              ? TextButton.styleFrom(foregroundColor: context.colors.negative)
-              : null,
-          child: Text(action),
-        ),
-      ],
-    ),
-  );
 
   /// Opens [page], or in the example says why [title] is not there.
   Future<void> _open(
@@ -338,6 +329,45 @@ class OwnSettingsPage extends StatelessWidget {
     ),
   );
 
+  /// A row of choices, or a few lines, under a title of its own: two rows
+  /// of buttons that both start with «Sistema» read apart by their titles.
+  Widget _titled(BuildContext context, String title, Widget child) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text(title, style: context.type.titleSmall),
+        const SizedBox(height: 10),
+        child,
+      ],
+    ),
+  );
+
+  /// Asks the phone for the payday reminder; turned down, says where to
+  /// allow it, with a way there.
+  Future<void> _remind(BuildContext context, bool on) async {
+    final AppLocalizations l = context.l10n;
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    if (await explainExample(context, own, l.remindersTitle)) return;
+    final bool done = await own.remindClose(
+      on,
+      title: l.reminderTitle,
+      body: l.reminderBody,
+    );
+    if (done) return;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(l.remindersDenied),
+        action: AppSettingsPage.available
+            ? SnackBarAction(
+                label: l.openPhoneSettings,
+                onPressed: AppSettingsPage.open,
+              )
+            : null,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -346,6 +376,9 @@ class OwnSettingsPage extends StatelessWidget {
         final AppLocalizations l = context.l10n;
         final Profile? p = own.profile;
         final String lang = Localizations.localeOf(context).languageCode;
+        // Laid out the way the person looks for things: who they are, what
+        // the app does by itself, what it is connected to, how it looks,
+        // their data, help, and last, apart, what cannot be undone.
         return Scaffold(
           appBar: AppBar(
             backgroundColor: context.colors.canvas,
@@ -358,376 +391,15 @@ class OwnSettingsPage extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                 children: <Widget>[
-                  if (own.example) ...<Widget>[
-                    SectionLabel(l.exampleSection),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Text(
-                        l.exampleAboutBody(p?.name ?? ''),
-                        style: context.type.bodySmall,
-                      ),
-                    ),
-                    // Where the build keeps no accounts of the person's,
-                    // there is nowhere else to go.
-                    if (modes.canUseOwn) ...<Widget>[
-                      const SizedBox(height: 8),
-                      Panel(
-                        children: <Widget>[
-                          _row(
-                            context,
-                            icon: Glyph.wallet,
-                            title: l.exampleUseOwn,
-                            onTap: () =>
-                                ExampleScope.of(context)?.onUseOwn?.call(),
-                          ),
-                          if (modes.hasStart)
-                            _row(
-                              context,
-                              icon: Glyph.arrowLeft,
-                              title: l.exampleBackToStart,
-                              onTap: () {
-                                Navigator.of(
-                                  context,
-                                ).popUntil((Route<void> r) => r.isFirst);
-                                modes.backToStart();
-                              },
-                            ),
-                        ],
-                      ),
-                    ],
-                    const SizedBox(height: 24),
-                  ],
-                  if (p != null) ...<Widget>[
-                    SectionLabel(l.settingsProfile),
-                    Panel(
-                      children: <Widget>[
-                        _row(
-                          context,
-                          icon: Glyph.user,
-                          title: l.settingsName,
-                          value: p.name,
-                          onTap: () => _editName(context, p),
-                        ),
-                        _row(
-                          context,
-                          icon: Glyph.coins,
-                          title: l.settingsBase,
-                          value: '${p.base.code} · ${p.base.name(lang)}',
-                          onTap: () => _editBase(context, p),
-                        ),
-                        _row(
-                          context,
-                          icon: Glyph.calendarBlank,
-                          title: l.settingsPay,
-                          value: _schedule(l, p.schedule),
-                          onTap: () => _editSchedule(context, p),
-                        ),
-                        _row(
-                          context,
-                          icon: Glyph.money,
-                          title: l.settingsPayAmount,
-                          value: p.pay == null
-                              ? l.settingsNotSet
-                              : moneyText(Money(p.pay!, p.base), base: p.base),
-                          onTap: () => _editAmount(
-                            context,
-                            title: l.settingsPayAmount,
-                            body: l.settingsPayAmountBody,
-                            current: p.pay,
-                            base: p.base,
-                            save: (Decimal? v) => own.store.saveProfile(
-                              p.copyWith(pay: v, clearPay: v == null),
-                            ),
-                          ),
-                        ),
-                        _row(
-                          context,
-                          icon: Glyph.piggyBank,
-                          title: l.settingsCushion,
-                          value: p.cushion == null
-                              ? l.settingsNotSet
-                              : moneyText(
-                                  Money(p.cushion!, p.base),
-                                  base: p.base,
-                                ),
-                          onTap: () => _editAmount(
-                            context,
-                            title: l.settingsCushion,
-                            body: l.settingsCushionBody,
-                            current: p.cushion,
-                            base: p.base,
-                            save: (Decimal? v) => own.store.saveProfile(
-                              p.copyWith(cushion: v, clearCushion: v == null),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                  if (Reminders.supported) ...<Widget>[
-                    SectionLabel(l.remindersTitle),
-                    Panel(
-                      children: <Widget>[
-                        SwitchListTile(
-                          value: own.remindsClose,
-                          onChanged: (bool on) async {
-                            final ScaffoldMessengerState messenger =
-                                ScaffoldMessenger.of(context);
-                            if (await explainExample(
-                              context,
-                              own,
-                              l.remindersTitle,
-                            )) {
-                              return;
-                            }
-                            final bool done = await own.remindClose(
-                              on,
-                              title: l.reminderTitle,
-                              body: l.reminderBody,
-                            );
-                            if (!done) {
-                              messenger.showSnackBar(
-                                SnackBar(content: Text(l.remindersDenied)),
-                              );
-                            }
-                          },
-                          title: Text(
-                            l.remindersClose,
-                            style: context.type.titleSmall,
-                          ),
-                          subtitle: Text(
-                            l.remindersCloseHelp,
-                            style: context.type.bodySmall,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                  if (HomeWidget.available) ...<Widget>[
-                    SectionLabel(l.widgetSection),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Text(l.widgetHow, style: context.type.bodySmall),
-                    ),
-                    const SizedBox(height: 8),
-                    Panel(
-                      children: <Widget>[
-                        SwitchListTile(
-                          value: own.widgetHidesAmounts,
-                          onChanged: (bool hide) async {
-                            if (await explainExample(
-                              context,
-                              own,
-                              l.widgetSection,
-                            )) {
-                              return;
-                            }
-                            await own.hideWidgetAmounts(hide);
-                          },
-                          title: Text(
-                            l.widgetHide,
-                            style: context.type.titleSmall,
-                          ),
-                          subtitle: Text(
-                            l.widgetHideHelp,
-                            style: context.type.bodySmall,
-                          ),
-                        ),
-                        if (canPinWidget)
-                          _row(
-                            context,
-                            icon: Glyph.plus,
-                            title: l.widgetAdd,
-                            onTap: () async {
-                              final ScaffoldMessengerState messenger =
-                                  ScaffoldMessenger.of(context);
-                              if (await explainExample(
-                                context,
-                                own,
-                                l.widgetSection,
-                              )) {
-                                return;
-                              }
-                              if (!await pinWidget()) {
-                                messenger.showSnackBar(
-                                  SnackBar(content: Text(l.widgetAddFailed)),
-                                );
-                              }
-                            },
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                  SectionLabel(l.captureTitle),
+                  if (own.example) ..._example(context),
+                  if (p != null) ..._profile(context, p),
+                  ..._automation(context),
+                  ..._connected(context),
+                  ..._appearance(context),
+                  ..._data(context),
+                  ..._help(context, lang),
                   Panel(
                     children: <Widget>[
-                      _row(
-                        context,
-                        icon: Glyph.bell,
-                        title: l.captureTitle,
-                        value: l.captureSubtitle,
-                        onTap: () => _open(
-                          context,
-                          l.captureTitle,
-                          (BuildContext context) =>
-                              CaptureSettingsPage(own: own),
-                        ),
-                      ),
-                      _row(
-                        context,
-                        icon: Glyph.vault,
-                        title: l.walletsTitle,
-                        value: own.example
-                            ? l.exampleNotConnected
-                            : l.walletsCardBody,
-                        onTap: () => _open(
-                          context,
-                          l.walletsTitle,
-                          (BuildContext context) => WalletsPage(own: own),
-                        ),
-                      ),
-                      if (BinanceLink.available)
-                        _row(
-                          context,
-                          icon: Glyph.currencyBtc,
-                          title: l.binanceTitle,
-                          value: own.example
-                              ? l.exampleNotConnected
-                              : own.binance.connected
-                              ? l.binanceConnected
-                              : l.binanceCardBody,
-                          onTap: () => _open(
-                            context,
-                            l.binanceTitle,
-                            (BuildContext context) => BinancePage(own: own),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  SectionLabel(l.appearance),
-                  Panel(
-                    padding: const EdgeInsets.all(16),
-                    children: <Widget>[
-                      // One row: the two choices belong together.
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: <Widget>[
-                          SegmentedButton<ThemeMode>(
-                            segments: <ButtonSegment<ThemeMode>>[
-                              ButtonSegment<ThemeMode>(
-                                value: ThemeMode.system,
-                                label: Text(l.themeSystem),
-                              ),
-                              ButtonSegment<ThemeMode>(
-                                value: ThemeMode.light,
-                                label: Text(l.themeLight),
-                              ),
-                              ButtonSegment<ThemeMode>(
-                                value: ThemeMode.dark,
-                                label: Text(l.themeDark),
-                              ),
-                            ],
-                            selected: <ThemeMode>{settings.themeMode},
-                            showSelectedIcon: false,
-                            // With large text one choice under the other,
-                            // each word whole.
-                            direction: largeText(context)
-                                ? Axis.vertical
-                                : Axis.horizontal,
-                            onSelectionChanged: (Set<ThemeMode> s) =>
-                                settings.themeMode = s.first,
-                          ),
-                          const SizedBox(height: 12),
-                          SegmentedButton<String>(
-                            segments: <ButtonSegment<String>>[
-                              ButtonSegment<String>(
-                                value: '',
-                                label: Text(l.languageSystem),
-                              ),
-                              const ButtonSegment<String>(
-                                value: 'es',
-                                label: Text('Español'),
-                              ),
-                              const ButtonSegment<String>(
-                                value: 'en',
-                                label: Text('English'),
-                              ),
-                            ],
-                            selected: <String>{
-                              settings.locale?.languageCode ?? '',
-                            },
-                            showSelectedIcon: false,
-                            direction: largeText(context)
-                                ? Axis.vertical
-                                : Axis.horizontal,
-                            onSelectionChanged: (Set<String> s) =>
-                                settings.locale = s.first.isEmpty
-                                ? null
-                                : Locale(s.first),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  SectionLabel(l.settingsData),
-                  Panel(
-                    children: <Widget>[
-                      _row(
-                        context,
-                        icon: Glyph.fileText,
-                        title: l.statementTitle,
-                        value: l.statementSubtitle,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (BuildContext context) => StatementPage(
-                              own: own,
-                              // The example counts nothing in the person's
-                              // own day of questions.
-                              allowance: own.example ? null : modes.allowance,
-                            ),
-                          ),
-                        ),
-                      ),
-                      _row(
-                        context,
-                        icon: Glyph.deviceMobile,
-                        title: l.syncTitle,
-                        value: l.syncRow,
-                        onTap: () => _open(
-                          context,
-                          l.syncTitle,
-                          (BuildContext context) => SyncPage(own: own),
-                        ),
-                      ),
-                      _row(
-                        context,
-                        icon: Glyph.downloadSimple,
-                        title: l.exportData,
-                        onTap: () => _export(context),
-                      ),
-                      _row(
-                        context,
-                        icon: Glyph.uploadSimple,
-                        title: l.importData,
-                        onTap: () => _import(context),
-                      ),
-                      if (!own.example)
-                        _row(
-                          context,
-                          icon: Glyph.sparkle,
-                          title: l.useDemo,
-                          onTap: () {
-                            Navigator.of(
-                              context,
-                            ).popUntil((Route<void> r) => r.isFirst);
-                            modes.useDemo();
-                          },
-                        ),
                       _row(
                         context,
                         icon: Glyph.trash,
@@ -737,61 +409,522 @@ class OwnSettingsPage extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
-                  SectionLabel(l.privacyTitle),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Text(l.privacyBody, style: context.type.bodyMedium),
-                  ),
-                  const SizedBox(height: 12),
-                  Panel(
-                    children: <Widget>[
-                      _row(
-                        context,
-                        icon: Glyph.lock,
-                        title: l.privacyPolicy,
-                        onTap: () => launchUrl(
-                          Uri.parse(
-                            lang == 'en'
-                                ? 'https://diegolopezrm.github.io/quincena/privacy/'
-                                : 'https://diegolopezrm.github.io/quincena/privacidad/',
-                          ),
-                          mode: LaunchMode.externalApplication,
-                        ),
-                      ),
-                      _row(
-                        context,
-                        icon: Glyph.envelope,
-                        title: l.supportTitle,
-                        value: 'admin@dlsoft.dev',
-                        onTap: () => launchUrl(
-                          Uri.parse(
-                            lang == 'en'
-                                ? 'https://diegolopezrm.github.io/quincena/support/'
-                                : 'https://diegolopezrm.github.io/quincena/soporte/',
-                          ),
-                          mode: LaunchMode.externalApplication,
-                        ),
-                      ),
-                      _row(
-                        context,
-                        icon: Glyph.fileText,
-                        title: l.licensesTitle,
-                        onTap: () => showLicensePage(
-                          context: context,
-                          applicationName: 'Quincena',
-                          applicationVersion: appVersion,
-                          applicationLegalese: l.licensesLegalese,
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
               ),
             ),
           ),
         );
       },
+    );
+  }
+
+  /// Whose example this is, and the ways out of it.
+  List<Widget> _example(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    return <Widget>[
+      SectionLabel(l.exampleSection),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Text(
+          l.exampleAboutBody(own.profile?.name ?? ''),
+          style: context.type.bodySmall,
+        ),
+      ),
+      // Where the build keeps no accounts of the person's, there is
+      // nowhere else to go.
+      if (modes.canUseOwn) ...<Widget>[
+        const SizedBox(height: 8),
+        Panel(
+          children: <Widget>[
+            _row(
+              context,
+              icon: Glyph.wallet,
+              title: l.exampleUseOwn,
+              onTap: () => ExampleScope.of(context)?.onUseOwn?.call(),
+            ),
+            if (modes.hasStart)
+              _row(
+                context,
+                icon: Glyph.arrowLeft,
+                title: l.exampleBackToStart,
+                onTap: () {
+                  Navigator.of(context).popUntil((Route<void> r) => r.isFirst);
+                  modes.backToStart();
+                },
+              ),
+          ],
+        ),
+      ],
+      const SizedBox(height: 24),
+    ];
+  }
+
+  List<Widget> _profile(BuildContext context, Profile p) {
+    final AppLocalizations l = context.l10n;
+    final String lang = Localizations.localeOf(context).languageCode;
+    return <Widget>[
+      SectionLabel(l.settingsProfile),
+      Panel(
+        children: <Widget>[
+          _row(
+            context,
+            icon: Glyph.user,
+            title: l.settingsName,
+            value: p.name,
+            onTap: () => _editName(context, p),
+          ),
+          _row(
+            context,
+            icon: Glyph.coins,
+            title: l.settingsBase,
+            value: '${p.base.code} · ${p.base.name(lang)}',
+            onTap: () => _editBase(context, p),
+          ),
+          _row(
+            context,
+            icon: Glyph.calendarBlank,
+            title: l.settingsPay,
+            value: _schedule(l, p.schedule),
+            onTap: () => _editSchedule(context, p),
+          ),
+          _row(
+            context,
+            icon: Glyph.money,
+            title: l.settingsPayAmount,
+            value: p.pay == null
+                ? l.settingsNotSet
+                : moneyText(Money(p.pay!, p.base), base: p.base),
+            onTap: () => _editAmount(
+              context,
+              title: l.settingsPayAmount,
+              body: l.settingsPayAmountBody,
+              current: p.pay,
+              base: p.base,
+              save: (Decimal? v) => own.store.saveProfile(
+                p.copyWith(pay: v, clearPay: v == null),
+              ),
+            ),
+          ),
+          _row(
+            context,
+            icon: Glyph.piggyBank,
+            title: l.settingsCushion,
+            value: p.cushion == null
+                ? l.settingsNotSet
+                : moneyText(Money(p.cushion!, p.base), base: p.base),
+            onTap: () => _editAmount(
+              context,
+              title: l.settingsCushion,
+              body: l.settingsCushionBody,
+              current: p.cushion,
+              base: p.base,
+              save: (Decimal? v) => own.store.saveProfile(
+                p.copyWith(cushion: v, clearCushion: v == null),
+              ),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 24),
+    ];
+  }
+
+  /// What the app does by itself: payments that arrive, what it learned
+  /// from them, and the reminder on payday.
+  List<Widget> _automation(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    return <Widget>[
+      SectionLabel(l.settingsAutomation),
+      Panel(
+        children: <Widget>[
+          _row(
+            context,
+            icon: Glyph.bell,
+            title: l.captureTitle,
+            value: l.captureSubtitle,
+            onTap: () => _open(
+              context,
+              l.captureTitle,
+              (BuildContext context) => CaptureSettingsPage(own: own),
+            ),
+          ),
+          _row(
+            context,
+            icon: Glyph.listBullets,
+            title: l.rulesTitle,
+            value: l.rulesCount(own.captureSettings.rules.length),
+            onTap: () => _open(
+              context,
+              l.rulesTitle,
+              (BuildContext context) => CaptureRulesPage(own: own),
+            ),
+          ),
+          if (Reminders.supported)
+            SwitchListTile(
+              value: own.remindsClose,
+              onChanged: (bool on) => _remind(context, on),
+              // Its icon lines it up with the rows above; with large text
+              // the words beside the switch need that room more.
+              secondary: largeText(context)
+                  ? null
+                  : SizedBox(
+                      width: 40,
+                      child: Icon(
+                        Glyph.calendarCheck,
+                        size: 22,
+                        color: context.colors.inkSoft,
+                      ),
+                    ),
+              minLeadingWidth: 40,
+              horizontalTitleGap: 12,
+              title: Text(l.remindersClose, style: context.type.titleSmall),
+              subtitle: Text(
+                l.remindersCloseHelp,
+                style: context.type.bodySmall,
+              ),
+            ),
+        ],
+      ),
+      const SizedBox(height: 24),
+    ];
+  }
+
+  /// What keeps balances up to date from outside: an exchange and the
+  /// wallets followed by their address.
+  List<Widget> _connected(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    return <Widget>[
+      SectionLabel(l.settingsConnected),
+      Panel(
+        children: <Widget>[
+          if (BinanceLink.available)
+            _row(
+              context,
+              icon: Glyph.currencyBtc,
+              title: l.binanceTitle,
+              value: own.example
+                  ? l.exampleNotConnected
+                  : own.binance.connected
+                  ? l.binanceConnected
+                  : l.binanceCardBody,
+              onTap: () => _open(
+                context,
+                l.binanceTitle,
+                (BuildContext context) => BinancePage(own: own),
+              ),
+            ),
+          _row(
+            context,
+            icon: Glyph.vault,
+            title: l.walletsTitle,
+            value: own.example ? l.exampleNotConnected : l.walletsCardBody,
+            onTap: () => _open(
+              context,
+              l.walletsTitle,
+              (BuildContext context) => WalletsPage(own: own),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 24),
+    ];
+  }
+
+  /// The theme and the language, each under its title, and the widget on
+  /// the home screen.
+  List<Widget> _appearance(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    // With large text one choice under the other, each word whole.
+    final Axis direction = largeText(context) ? Axis.vertical : Axis.horizontal;
+    return <Widget>[
+      SectionLabel(l.appearance),
+      Panel(
+        indent: 16,
+        children: <Widget>[
+          _titled(
+            context,
+            l.themeTitle,
+            SegmentedButton<ThemeMode>(
+              segments: <ButtonSegment<ThemeMode>>[
+                ButtonSegment<ThemeMode>(
+                  value: ThemeMode.system,
+                  label: Text(l.themeSystem),
+                ),
+                ButtonSegment<ThemeMode>(
+                  value: ThemeMode.light,
+                  label: Text(l.themeLight),
+                ),
+                ButtonSegment<ThemeMode>(
+                  value: ThemeMode.dark,
+                  label: Text(l.themeDark),
+                ),
+              ],
+              selected: <ThemeMode>{settings.themeMode},
+              showSelectedIcon: false,
+              direction: direction,
+              onSelectionChanged: (Set<ThemeMode> s) =>
+                  settings.themeMode = s.first,
+            ),
+          ),
+          _titled(
+            context,
+            l.language,
+            SegmentedButton<String>(
+              segments: <ButtonSegment<String>>[
+                ButtonSegment<String>(value: '', label: Text(l.languageSystem)),
+                const ButtonSegment<String>(
+                  value: 'es',
+                  label: Text('Español'),
+                ),
+                const ButtonSegment<String>(
+                  value: 'en',
+                  label: Text('English'),
+                ),
+              ],
+              selected: <String>{settings.locale?.languageCode ?? ''},
+              showSelectedIcon: false,
+              direction: direction,
+              onSelectionChanged: (Set<String> s) =>
+                  settings.locale = s.first.isEmpty ? null : Locale(s.first),
+            ),
+          ),
+          if (HomeWidget.available) ...<Widget>[
+            _titled(
+              context,
+              l.widgetSection,
+              Text(l.widgetHow, style: context.type.bodySmall),
+            ),
+            SwitchListTile(
+              value: own.widgetHidesAmounts,
+              onChanged: (bool hide) async {
+                if (await explainExample(context, own, l.widgetSection)) {
+                  return;
+                }
+                await own.hideWidgetAmounts(hide);
+              },
+              title: Text(l.widgetHide, style: context.type.titleSmall),
+              subtitle: Text(l.widgetHideHelp, style: context.type.bodySmall),
+            ),
+            if (canPinWidget)
+              _row(
+                context,
+                icon: Glyph.plus,
+                title: l.widgetAdd,
+                onTap: () async {
+                  final ScaffoldMessengerState messenger = ScaffoldMessenger.of(
+                    context,
+                  );
+                  if (await explainExample(context, own, l.widgetSection)) {
+                    return;
+                  }
+                  if (!await pinWidget()) {
+                    messenger.showSnackBar(
+                      SnackBar(content: Text(l.widgetAddFailed)),
+                    );
+                  }
+                },
+              ),
+          ],
+        ],
+      ),
+      const SizedBox(height: 24),
+    ];
+  }
+
+  /// Everything about the person's data: bringing it in, carrying it to
+  /// another device, keeping a copy and bringing one back.
+  List<Widget> _data(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    return <Widget>[
+      SectionLabel(l.settingsData),
+      Panel(
+        children: <Widget>[
+          _row(
+            context,
+            icon: Glyph.fileText,
+            title: l.statementTitle,
+            value: l.statementSubtitle,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (BuildContext context) => StatementPage(
+                  own: own,
+                  // The example counts nothing in the person's own day of
+                  // questions.
+                  allowance: own.example ? null : modes.allowance,
+                ),
+              ),
+            ),
+          ),
+          _row(
+            context,
+            icon: Glyph.deviceMobile,
+            title: l.syncTitle,
+            value: l.syncRow,
+            onTap: () => _open(
+              context,
+              l.syncTitle,
+              (BuildContext context) => SyncPage(own: own),
+            ),
+          ),
+          _row(
+            context,
+            icon: Glyph.downloadSimple,
+            title: l.exportData,
+            value: l.exportDataSubtitle,
+            onTap: () => _export(context),
+          ),
+          _row(
+            context,
+            icon: Glyph.squaresFour,
+            title: l.exportCsv,
+            value: l.exportCsvSubtitle,
+            onTap: () => _exportCsv(context),
+          ),
+          _row(
+            context,
+            icon: Glyph.arrowCounterClockwise,
+            title: l.importData,
+            value: l.importDataSubtitle,
+            onTap: () => _restore(context),
+          ),
+          if (!own.example)
+            _row(
+              context,
+              icon: Glyph.sparkle,
+              title: l.useDemo,
+              onTap: () {
+                Navigator.of(context).popUntil((Route<void> r) => r.isFirst);
+                modes.useDemo();
+              },
+            ),
+        ],
+      ),
+      const SizedBox(height: 24),
+    ];
+  }
+
+  /// Where to ask for help, what happens with the data, and whose work the
+  /// app stands on.
+  List<Widget> _help(BuildContext context, String lang) {
+    final AppLocalizations l = context.l10n;
+    return <Widget>[
+      SectionLabel(l.settingsHelp),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Text(l.privacyBody, style: context.type.bodyMedium),
+      ),
+      const SizedBox(height: 12),
+      Panel(
+        children: <Widget>[
+          _row(
+            context,
+            icon: Glyph.envelope,
+            title: l.supportTitle,
+            value: 'admin@dlsoft.dev',
+            onTap: () => launchUrl(
+              Uri.parse(
+                lang == 'en'
+                    ? 'https://diegolopezrm.github.io/quincena/support/'
+                    : 'https://diegolopezrm.github.io/quincena/soporte/',
+              ),
+              mode: LaunchMode.externalApplication,
+            ),
+          ),
+          _row(
+            context,
+            icon: Glyph.lock,
+            title: l.privacyPolicy,
+            onTap: () => launchUrl(
+              Uri.parse(
+                lang == 'en'
+                    ? 'https://diegolopezrm.github.io/quincena/privacy/'
+                    : 'https://diegolopezrm.github.io/quincena/privacidad/',
+              ),
+              mode: LaunchMode.externalApplication,
+            ),
+          ),
+          _row(
+            context,
+            icon: Glyph.fileText,
+            title: l.licensesTitle,
+            onTap: () => showLicensePage(
+              context: context,
+              applicationName: 'Quincena',
+              applicationVersion: appVersion,
+              applicationLegalese: l.licensesLegalese,
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 24),
+    ];
+  }
+}
+
+enum _Delete { delete, backupFirst }
+
+/// Before everything goes: what it takes to get it back, the backup code
+/// the phone is about to forget, and a way to save a backup first.
+class _DeleteAllDialog extends StatelessWidget {
+  const _DeleteAllDialog({required this.code});
+
+  /// This phone's backup code, when it has one.
+  final String? code;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    final String? code = this.code;
+    return AlertDialog(
+      scrollable: true,
+      title: Text(l.deleteAllTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(l.deleteAllBody, style: context.type.bodyMedium),
+          const SizedBox(height: 12),
+          Text(l.deleteAllRecover, style: context.type.bodyMedium),
+          if (code != null) ...<Widget>[
+            const SizedBox(height: 12),
+            Text(l.deleteAllForgetsCode, style: context.type.bodyMedium),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => showCode(
+                  context,
+                  code: code,
+                  title: l.backupYourCode,
+                  keep: l.backupCodeKeep,
+                  share: l.backupCodeShareText(code),
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                ),
+                icon: const Icon(Glyph.lock, size: 18),
+                label: Text(l.backupShowCode),
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () => Navigator.of(context).pop(_Delete.backupFirst),
+            icon: const Icon(Glyph.downloadSimple, size: 18),
+            label: Text(l.deleteAllBackupFirst),
+          ),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l.cancel),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_Delete.delete),
+          style: TextButton.styleFrom(foregroundColor: context.colors.negative),
+          child: Text(l.deleteAll),
+        ),
+      ],
     );
   }
 }

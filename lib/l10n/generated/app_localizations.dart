@@ -440,6 +440,12 @@ abstract class AppLocalizations {
   /// **'Apariencia'**
   String get appearance;
 
+  /// No description provided for @themeTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tema'**
+  String get themeTitle;
+
   /// No description provided for @themeSystem.
   ///
   /// In es, this message translates to:
@@ -1382,6 +1388,12 @@ abstract class AppLocalizations {
   /// **'Transferencia'**
   String get kindTransfer;
 
+  /// No description provided for @kindAdjustment.
+  ///
+  /// In es, this message translates to:
+  /// **'Ajuste'**
+  String get kindAdjustment;
+
   /// No description provided for @amount.
   ///
   /// In es, this message translates to:
@@ -1547,14 +1559,32 @@ abstract class AppLocalizations {
   /// No description provided for @settingsProfile.
   ///
   /// In es, this message translates to:
-  /// **'Perfil'**
+  /// **'Tu perfil'**
   String get settingsProfile;
+
+  /// No description provided for @settingsAutomation.
+  ///
+  /// In es, this message translates to:
+  /// **'Automatización'**
+  String get settingsAutomation;
+
+  /// No description provided for @settingsConnected.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuentas conectadas'**
+  String get settingsConnected;
 
   /// No description provided for @settingsName.
   ///
   /// In es, this message translates to:
   /// **'Nombre'**
   String get settingsName;
+
+  /// No description provided for @settingsNameEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe tu nombre.'**
+  String get settingsNameEmpty;
 
   /// No description provided for @settingsBase.
   ///
@@ -1579,6 +1609,78 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Exportar mis datos'**
   String get exportData;
+
+  /// No description provided for @exportDataSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Guarda un respaldo de todo en un archivo'**
+  String get exportDataSubtitle;
+
+  /// No description provided for @exportCsv.
+  ///
+  /// In es, this message translates to:
+  /// **'Exportar movimientos en CSV'**
+  String get exportCsv;
+
+  /// No description provided for @exportCsvSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Para abrirlos en Excel o en otra hoja de cálculo'**
+  String get exportCsvSubtitle;
+
+  /// No description provided for @exportCsvEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no hay movimientos para exportar.'**
+  String get exportCsvEmpty;
+
+  /// No description provided for @csvDate.
+  ///
+  /// In es, this message translates to:
+  /// **'Fecha'**
+  String get csvDate;
+
+  /// No description provided for @csvAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta'**
+  String get csvAccount;
+
+  /// No description provided for @csvKind.
+  ///
+  /// In es, this message translates to:
+  /// **'Tipo'**
+  String get csvKind;
+
+  /// No description provided for @csvCategory.
+  ///
+  /// In es, this message translates to:
+  /// **'Categoría'**
+  String get csvCategory;
+
+  /// No description provided for @csvPayee.
+  ///
+  /// In es, this message translates to:
+  /// **'Comercio'**
+  String get csvPayee;
+
+  /// No description provided for @csvNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Nota'**
+  String get csvNote;
+
+  /// No description provided for @csvAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'Monto'**
+  String get csvAmount;
+
+  /// No description provided for @csvCurrency.
+  ///
+  /// In es, this message translates to:
+  /// **'Moneda'**
+  String get csvCurrency;
 
   /// No description provided for @exportDone.
   ///
@@ -2723,7 +2825,7 @@ abstract class AppLocalizations {
   /// No description provided for @cushionDaysTitle.
   ///
   /// In es, this message translates to:
-  /// **'Colchón en días'**
+  /// **'Fondo de emergencia en días'**
   String get cushionDaysTitle;
 
   /// No description provided for @cushionDaysCovers.
@@ -2777,7 +2879,7 @@ abstract class AppLocalizations {
   /// No description provided for @cushionDaysAccounts.
   ///
   /// In es, this message translates to:
-  /// **'Dónde está tu colchón'**
+  /// **'Dónde está tu fondo de emergencia'**
   String get cushionDaysAccounts;
 
   /// No description provided for @cushionDaysEssentials.
@@ -3287,31 +3389,73 @@ abstract class AppLocalizations {
   /// No description provided for @importData.
   ///
   /// In es, this message translates to:
-  /// **'Importar un archivo'**
+  /// **'Restaurar un respaldo'**
   String get importData;
 
-  /// No description provided for @importConfirmTitle.
+  /// No description provided for @importDataSubtitle.
   ///
   /// In es, this message translates to:
-  /// **'¿Reemplazar todo con este archivo?'**
-  String get importConfirmTitle;
+  /// **'Reemplaza todo lo de ahora por lo del respaldo'**
+  String get importDataSubtitle;
 
-  /// No description provided for @importConfirmBody.
+  /// No description provided for @restoreTitle.
   ///
   /// In es, this message translates to:
-  /// **'Lo que tienes ahora en Quincena se borra y queda lo del archivo.'**
-  String get importConfirmBody;
+  /// **'¿Restaurar este respaldo?'**
+  String get restoreTitle;
 
-  /// No description provided for @importConfirm.
+  /// No description provided for @restoreFrom.
   ///
   /// In es, this message translates to:
-  /// **'Reemplazar'**
-  String get importConfirm;
+  /// **'Respaldo del {date}:'**
+  String restoreFrom(String date);
+
+  /// No description provided for @restoreHolds.
+  ///
+  /// In es, this message translates to:
+  /// **'Este respaldo trae:'**
+  String get restoreHolds;
+
+  /// No description provided for @restoreAccounts.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Ninguna cuenta} =1{Una cuenta} other{{count} cuentas}}'**
+  String restoreAccounts(int count);
+
+  /// No description provided for @restoreMovements.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Ningún movimiento} =1{Un movimiento} other{{count} movimientos}}'**
+  String restoreMovements(int count);
+
+  /// No description provided for @restoreGoals.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Ninguna meta} =1{Una meta} other{{count} metas}}'**
+  String restoreGoals(int count);
+
+  /// No description provided for @restorePlan.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Nada más del Plan} =1{Una cosa más del Plan} other{{count} cosas más del Plan}}'**
+  String restorePlan(int count);
+
+  /// No description provided for @restoreReplaces.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que tienes ahora en Quincena se borra y queda lo del respaldo.'**
+  String get restoreReplaces;
+
+  /// No description provided for @restoreSaveFirst.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar lo de ahora primero'**
+  String get restoreSaveFirst;
 
   /// No description provided for @importDone.
   ///
   /// In es, this message translates to:
-  /// **'Datos importados.'**
+  /// **'Respaldo restaurado.'**
   String get importDone;
 
   /// No description provided for @importNotQuincena.
@@ -3347,8 +3491,26 @@ abstract class AppLocalizations {
   /// No description provided for @deleteAllBody.
   ///
   /// In es, this message translates to:
-  /// **'Cuentas, movimientos y ajustes se borran de este dispositivo. No se puede deshacer; exporta primero si quieres conservarlos.'**
+  /// **'Cuentas, movimientos y ajustes se borran de este dispositivo. No se puede deshacer.'**
   String get deleteAllBody;
+
+  /// No description provided for @deleteAllRecover.
+  ///
+  /// In es, this message translates to:
+  /// **'Para recuperarlos después vas a necesitar un respaldo guardado fuera de este teléfono y, si es cifrado, su código de respaldo.'**
+  String get deleteAllRecover;
+
+  /// No description provided for @deleteAllForgetsCode.
+  ///
+  /// In es, this message translates to:
+  /// **'Al borrar, este teléfono olvida tu código de respaldo: guárdalo antes.'**
+  String get deleteAllForgetsCode;
+
+  /// No description provided for @deleteAllBackupFirst.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar un respaldo primero'**
+  String get deleteAllBackupFirst;
 
   /// No description provided for @useDemo.
   ///
@@ -3373,6 +3535,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Privacidad'**
   String get privacyTitle;
+
+  /// No description provided for @settingsHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Ayuda y privacidad'**
+  String get settingsHelp;
 
   /// No description provided for @privacyBody.
   ///
@@ -4495,6 +4663,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Secret Key'**
   String get binanceSecretKey;
+
+  /// No description provided for @binanceNeedKey.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe tu API Key'**
+  String get binanceNeedKey;
+
+  /// No description provided for @binanceNeedSecret.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe tu Secret Key'**
+  String get binanceNeedSecret;
 
   /// No description provided for @binanceConnect.
   ///
@@ -7222,19 +7402,19 @@ abstract class AppLocalizations {
   /// No description provided for @syncHow.
   ///
   /// In es, this message translates to:
-  /// **'Empieza en el dispositivo que ya tiene tus datos. En el otro, toca «Unir este dispositivo» y escribe el código.'**
+  /// **'Empieza en el dispositivo que ya tiene tus datos y comparte o copia el código. En el otro, toca «Unir este dispositivo» y pégalo.'**
   String get syncHow;
 
   /// No description provided for @syncYourCode.
   ///
   /// In es, this message translates to:
-  /// **'Tu código'**
+  /// **'Tu código para sincronizar'**
   String get syncYourCode;
 
   /// No description provided for @syncNewCode.
   ///
   /// In es, this message translates to:
-  /// **'Tu código nuevo'**
+  /// **'Tu código nuevo para sincronizar'**
   String get syncNewCode;
 
   /// No description provided for @syncCodeKeep.
@@ -7248,6 +7428,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Copiar el código'**
   String get syncCopyCode;
+
+  /// No description provided for @syncShareCode.
+  ///
+  /// In es, this message translates to:
+  /// **'Compartir el código'**
+  String get syncShareCode;
+
+  /// No description provided for @syncCodeShareText.
+  ///
+  /// In es, this message translates to:
+  /// **'Código de Quincena para unir tus dispositivos: {code}'**
+  String syncCodeShareText(String code);
 
   /// No description provided for @syncCodeCopied.
   ///
@@ -7264,7 +7456,7 @@ abstract class AppLocalizations {
   /// No description provided for @syncJoinBody.
   ///
   /// In es, this message translates to:
-  /// **'Escribe el código que muestra tu otro dispositivo en Ajustes, Varios dispositivos. Los guiones no importan.'**
+  /// **'Pega el código que copiaste o compartiste desde tu otro dispositivo, en Ajustes, Varios dispositivos, o escríbelo. Los guiones no importan.'**
   String get syncJoinBody;
 
   /// No description provided for @syncCodeField.
@@ -7272,6 +7464,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Código'**
   String get syncCodeField;
+
+  /// No description provided for @codePaste.
+  ///
+  /// In es, this message translates to:
+  /// **'Pegar'**
+  String get codePaste;
+
+  /// No description provided for @codeNothingCopied.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay nada copiado. Copia el código de donde lo guardaste, o escríbelo.'**
+  String get codeNothingCopied;
 
   /// No description provided for @syncJoinAction.
   ///
@@ -7296,6 +7500,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'El código no cuadra: revisa si hay un carácter cambiado.'**
   String get syncCodeCheck;
+
+  /// No description provided for @syncCodeIsBackup.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese es tu código de respaldo, no el de sincronizar. Para unir este dispositivo usa el código que muestra el otro en Varios dispositivos.'**
+  String get syncCodeIsBackup;
 
   /// No description provided for @syncJoined.
   ///
@@ -7327,23 +7537,77 @@ abstract class AppLocalizations {
   /// **'Archivo guardado. Ábrelo en tu otro dispositivo.'**
   String get syncSaved;
 
-  /// No description provided for @syncMerged.
+  /// No description provided for @syncUpToDate.
   ///
   /// In es, this message translates to:
-  /// **'{count, plural, =0{Ya estaba todo al día.} =1{Listo: un cambio.} other{Listo: {count} cambios.}}'**
-  String syncMerged(int count);
+  /// **'Ya estaba todo al día.'**
+  String get syncUpToDate;
 
-  /// No description provided for @syncMergedWaiting.
+  /// No description provided for @syncArrivedOne.
   ///
   /// In es, this message translates to:
-  /// **'{count, plural, =1{Un cambio} other{{count} cambios}}; {waiting, plural, =1{uno espera} other{{waiting} esperan}} a que lo revises.'**
-  String syncMergedWaiting(int count, int waiting);
+  /// **'Llegó {items}.'**
+  String syncArrivedOne(String items);
+
+  /// No description provided for @syncArrivedMany.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegaron {items}.'**
+  String syncArrivedMany(String items);
+
+  /// No description provided for @syncGoneOne.
+  ///
+  /// In es, this message translates to:
+  /// **'Se borró {items}.'**
+  String syncGoneOne(String items);
+
+  /// No description provided for @syncGoneMany.
+  ///
+  /// In es, this message translates to:
+  /// **'Se borraron {items}.'**
+  String syncGoneMany(String items);
+
+  /// No description provided for @syncItemMovements.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{un movimiento} other{{count} movimientos}}'**
+  String syncItemMovements(int count);
+
+  /// No description provided for @syncItemAccounts.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{una cuenta} other{{count} cuentas}}'**
+  String syncItemAccounts(int count);
+
+  /// No description provided for @syncItemPlan.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{un cambio del Plan} other{{count} cambios del Plan}}'**
+  String syncItemPlan(int count);
+
+  /// No description provided for @syncItemSettings.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{un ajuste} other{{count} ajustes}}'**
+  String syncItemSettings(int count);
+
+  /// No description provided for @syncWaitingCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Uno espera en «Para revisar».} other{{count} esperan en «Para revisar».}}'**
+  String syncWaitingCount(int count);
 
   /// No description provided for @syncNotSync.
   ///
   /// In es, this message translates to:
   /// **'Ese no es un archivo de sincronización de Quincena.'**
   String get syncNotSync;
+
+  /// No description provided for @syncIsBackup.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese es un respaldo, no un archivo de sincronizar: se abre en Ajustes, «Restaurar un respaldo». No cambió nada.'**
+  String get syncIsBackup;
 
   /// No description provided for @syncOtherVault.
   ///
@@ -7422,6 +7686,132 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Descartar'**
   String get syncDismiss;
+
+  /// No description provided for @syncDismissed.
+  ///
+  /// In es, this message translates to:
+  /// **'Descartado.'**
+  String get syncDismissed;
+
+  /// No description provided for @syncKept.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que quedó'**
+  String get syncKept;
+
+  /// No description provided for @syncWaitingVersion.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que espera'**
+  String get syncWaitingVersion;
+
+  /// No description provided for @syncSameFields.
+  ///
+  /// In es, this message translates to:
+  /// **'Las dos versiones dicen lo mismo en lo que se ve.'**
+  String get syncSameFields;
+
+  /// No description provided for @syncCombine.
+  ///
+  /// In es, this message translates to:
+  /// **'Combinar'**
+  String get syncCombine;
+
+  /// No description provided for @syncCombineTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Combinar los dos cambios'**
+  String get syncCombineTitle;
+
+  /// No description provided for @syncCombineBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige qué queda en cada dato que cambió.'**
+  String get syncCombineBody;
+
+  /// No description provided for @syncCombined.
+  ///
+  /// In es, this message translates to:
+  /// **'Combinado. Tus otros dispositivos lo reciben con el próximo archivo.'**
+  String get syncCombined;
+
+  /// No description provided for @syncFieldName.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre'**
+  String get syncFieldName;
+
+  /// No description provided for @syncFieldNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Nota'**
+  String get syncFieldNote;
+
+  /// No description provided for @syncFieldInstitution.
+  ///
+  /// In es, this message translates to:
+  /// **'Entidad'**
+  String get syncFieldInstitution;
+
+  /// No description provided for @syncFieldOpening.
+  ///
+  /// In es, this message translates to:
+  /// **'Saldo inicial'**
+  String get syncFieldOpening;
+
+  /// No description provided for @syncFieldLimit.
+  ///
+  /// In es, this message translates to:
+  /// **'Cupo'**
+  String get syncFieldLimit;
+
+  /// No description provided for @syncFieldCadence.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada cuánto'**
+  String get syncFieldCadence;
+
+  /// No description provided for @syncFieldNext.
+  ///
+  /// In es, this message translates to:
+  /// **'Próximo cobro'**
+  String get syncFieldNext;
+
+  /// No description provided for @syncFieldState.
+  ///
+  /// In es, this message translates to:
+  /// **'Estado'**
+  String get syncFieldState;
+
+  /// No description provided for @syncActive.
+  ///
+  /// In es, this message translates to:
+  /// **'Activo'**
+  String get syncActive;
+
+  /// No description provided for @syncPaused.
+  ///
+  /// In es, this message translates to:
+  /// **'En pausa'**
+  String get syncPaused;
+
+  /// No description provided for @syncFieldTarget.
+  ///
+  /// In es, this message translates to:
+  /// **'Meta'**
+  String get syncFieldTarget;
+
+  /// No description provided for @syncFieldSaved.
+  ///
+  /// In es, this message translates to:
+  /// **'Llevas'**
+  String get syncFieldSaved;
+
+  /// No description provided for @syncFieldMonthly.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada mes'**
+  String get syncFieldMonthly;
 
   /// No description provided for @syncRestored.
   ///
@@ -8227,6 +8617,12 @@ abstract class AppLocalizations {
   /// **'Ya lo guardé'**
   String get backupCodeKept;
 
+  /// No description provided for @backupCodeShareText.
+  ///
+  /// In es, this message translates to:
+  /// **'Código de respaldo de Quincena: {code}'**
+  String backupCodeShareText(String code);
+
   /// No description provided for @backupCodeTitle.
   ///
   /// In es, this message translates to:
@@ -8236,7 +8632,7 @@ abstract class AppLocalizations {
   /// No description provided for @backupCodeBody.
   ///
   /// In es, this message translates to:
-  /// **'Escribe el código de respaldo que Quincena te mostró la primera vez que exportaste cifrado.'**
+  /// **'Pega o escribe el código de respaldo que Quincena te mostró la primera vez que exportaste cifrado.'**
   String get backupCodeBody;
 
   /// No description provided for @backupOpen.
@@ -8250,6 +8646,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Ese código no abre este respaldo. Si es el de sincronización, el de respaldo es otro.'**
   String get backupWrongCode;
+
+  /// No description provided for @backupCodeIsSync.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese es tu código para sincronizar, no el de respaldo. Este respaldo se abre con el código de respaldo que Quincena te mostró al exportar cifrado.'**
+  String get backupCodeIsSync;
+
+  /// No description provided for @backupCodeIsNewer.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese es tu código de respaldo de ahora, pero este respaldo se hizo con otro: el que tenías antes de cambiarlo.'**
+  String get backupCodeIsNewer;
 
   /// No description provided for @backupIsSync.
   ///

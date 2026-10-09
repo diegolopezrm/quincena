@@ -134,6 +134,35 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('connecting without a key says which one is missing, until it '
+      'is written', (tester) async {
+    final (OwnController own, MemoryVault vault) = await open(tester);
+    await reach(tester, find.text('Conectar'));
+    await tester.tap(find.text('Conectar'));
+    await settle(tester);
+    expect(find.text('Escribe tu API Key'), findsOneWidget);
+    expect(find.text('Escribe tu Secret Key'), findsOneWidget);
+
+    await tester.enterText(find.widgetWithText(TextField, 'API Key'), 'key');
+    await tester.pump();
+    expect(find.text('Escribe tu API Key'), findsNothing);
+    expect(find.text('Escribe tu Secret Key'), findsOneWidget);
+    await tester.ensureVisible(find.text('Conectar'));
+    await tester.tap(find.text('Conectar'));
+    await settle(tester);
+    expect(find.text('Escribe tu API Key'), findsNothing);
+    expect(find.text('Escribe tu Secret Key'), findsOneWidget);
+    expect(own.binance.connected, isFalse);
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Secret Key'),
+      'secret',
+    );
+    await tester.pump();
+    expect(find.text('Escribe tu Secret Key'), findsNothing);
+    expect(vault.keys, isNull);
+  });
+
   testWidgets('a key that can trade is turned away, and said why', (
     tester,
   ) async {
