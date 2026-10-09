@@ -20,6 +20,7 @@ import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../exit_list.dart';
 import '../kit.dart';
+import 'account_sheet.dart';
 import 'capture_reasons.dart';
 import 'entry_sheet.dart';
 import 'look.dart';
@@ -458,9 +459,9 @@ class _InboxCardState extends State<InboxCard> {
     showRecorded(messenger, own, done);
   }
 
-  /// Asks which account it was, those at the bank the alert names first,
-  /// then the everyday ones in its currency, and says what the answer will
-  /// teach.
+  /// Asks which account it was: those at the bank the alert names first,
+  /// then the everyday ones in its currency, and the rest apart under
+  /// «Otras cuentas»; and says what the answer will teach.
   Future<String?> _pickAccount() {
     final AppLocalizations l = context.l10n;
     final ParsedCapture p = item.parsed;
@@ -468,20 +469,27 @@ class _InboxCardState extends State<InboxCard> {
     final String? card = p.card;
     final String? number = p.account;
     final Asset asset = p.asset ?? own.profile?.base ?? Asset.cop;
-    bool likely(Account a) => a.spendable && a.asset == asset;
+    // Money that came in reached a bank or a wallet, not a card.
+    bool likely(Account a) =>
+        a.spendable &&
+        a.asset == asset &&
+        !(p.kind == EntryKind.income && a.kind == AccountKind.card);
     final List<Account> there = institution == null
         ? const <Account>[]
         : accountsAt(institution, own.accounts);
-    final Set<String> first = <String>{for (final Account a in there) a.id};
     final List<Account> choices = <Account>[
-      ...there,
+      for (final Account a in there)
+        if (likely(a)) a,
       for (final Account a in own.accounts)
-        if (!first.contains(a.id) && likely(a)) a,
+        if (!there.contains(a) && likely(a)) a,
+    ];
+    final List<Account> others = <Account>[
       for (final Account a in own.accounts)
-        if (!first.contains(a.id) && !likely(a)) a,
+        if (!choices.contains(a)) a,
     ];
     // Only what confirming will learn: a card's rule, or else the
-    // account's, or else the bank's, unless the person turned it off.
+    // account's, or else the bank's when the person has an account there,
+    // unless they turned it off.
     final Set<String> off = own.captureSettings.disabledRules;
     final String? note = card != null
         ? off.contains(CaptureRule.idOf(RuleKind.card, card))
@@ -492,10 +500,18 @@ class _InboxCardState extends State<InboxCard> {
               ? null
               : l.pickAccountNumberNote(number)
         : institution != null &&
+              there.isNotEmpty &&
               CaptureService.teachesInstitution(p, own.profile?.base) &&
               !off.contains(CaptureRule.idOf(RuleKind.institution, institution))
         ? l.pickAccountBankNote(institution)
         : null;
+    Widget choice(BuildContext context, Account a) => ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: AccountTile(a.kind, size: 36),
+      title: Text(a.name),
+      subtitle: Text('${accountKindLabel(context, a.kind)} · ${a.asset.code}'),
+      onTap: () => Navigator.of(context).pop(a.id),
+    );
     return showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -518,16 +534,14 @@ class _InboxCardState extends State<InboxCard> {
               Text(note, style: context.type.bodyMedium),
             ],
             const SizedBox(height: 8),
-            for (final Account a in choices)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: AccountTile(a.kind, size: 36),
-                title: Text(a.name),
-                subtitle: Text(
-                  '${accountKindLabel(context, a.kind)} · ${a.asset.code}',
-                ),
-                onTap: () => Navigator.of(context).pop(a.id),
-              ),
+            for (final Account a in choices) choice(context, a),
+            if (others.isNotEmpty) ...<Widget>[
+              if (choices.isNotEmpty) ...<Widget>[
+                const SizedBox(height: 12),
+                Text(l.pickAccountOthers, style: context.type.labelMedium),
+              ],
+              for (final Account a in others) choice(context, a),
+            ],
           ],
         ),
       ),
@@ -535,6 +549,19 @@ class _InboxCardState extends State<InboxCard> {
   }
 
   Future<void> _edit() => showEntrySheet(context, own: own, fromInbox: item);
+
+  /// Adds the person's account at [bank], which the alert came from: the
+  /// capture then waits ready to record in it.
+  Future<void> _addBankAccount(String bank) => showAccountSheet(
+    context,
+    own: own,
+    draft: AccountDraft(
+      name: bank,
+      kind: AccountKind.bank,
+      asset: item.parsed.asset ?? own.profile?.base ?? Asset.cop,
+      institution: bank,
+    ),
+  );
 
   /// The movement an automatic record made, to correct it in place.
   Future<void> _fix() async {
@@ -869,6 +896,22 @@ class _InboxCardState extends State<InboxCard> {
             if (waiting && kind == null) _caution(context, l.kindMissing),
             if (waiting && account == null)
               _caution(context, missingAccountText(context, own, i)),
+            // A bank the person has no account at in the app: that account
+            // is what is missing, not one of the others.
+            if (waiting && account == null)
+              if (i.parsed.institution case final String bank
+                  when accountsAt(bank, own.accounts).isEmpty)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: _busy ? null : () => _addBankAccount(bank),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                    ),
+                    icon: const Icon(Glyph.plus, size: 16),
+                    label: Text(l.addAccountAt(bank)),
+                  ),
+                ),
             if (waiting && account != null && i.suggestion.why.contains('only'))
               _caution(context, l.accountGuessed(account.asset.code)),
             // Every automatic record says why it went in without asking.

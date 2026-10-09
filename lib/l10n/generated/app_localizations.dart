@@ -10140,6 +10140,18 @@ abstract class AppLocalizations {
   /// **'¿A qué cuenta llegó?'**
   String get pickAccountIn;
 
+  /// No description provided for @pickAccountOthers.
+  ///
+  /// In es, this message translates to:
+  /// **'Otras cuentas'**
+  String get pickAccountOthers;
+
+  /// No description provided for @addAccountAt.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar mi cuenta de {institution}'**
+  String addAccountAt(String institution);
+
   /// No description provided for @pickAccountCardNote.
   ///
   /// In es, this message translates to:

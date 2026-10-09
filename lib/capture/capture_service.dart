@@ -164,6 +164,7 @@ class CaptureService {
     final CaptureSettings before = await store.captureSettings();
     final List<RuleChange> learned = await _learn(
       item,
+      accounts,
       accountId: accountId,
       category: category ?? entry.category,
       payee: entry.payee,
@@ -373,6 +374,7 @@ class CaptureService {
       final ({String accountId, String why})? ruled = _ruledAccount(
         item.parsed,
         settings,
+        accounts,
       );
       if (ruled != null &&
           accounts.any((Account a) => a.id == ruled.accountId)) {
@@ -415,10 +417,12 @@ class CaptureService {
   }
 
   /// The account the rules send [p] to, and which rule: its card's, its
-  /// account's, or its bank's.
+  /// account's, or its bank's; or else the bank's one account, which may
+  /// have been added after the alert arrived.
   static ({String accountId, String why})? _ruledAccount(
     ParsedCapture p,
     CaptureSettings settings,
+    Iterable<Account> accounts,
   ) {
     final String? card = p.card;
     final String? byCard = card == null
@@ -431,11 +435,34 @@ class CaptureService {
         : _byNumber(settings, number);
     if (byNumber != null) return (accountId: byNumber, why: 'account');
     final String? institution = p.institution;
-    final String? byBank = institution == null
-        ? null
-        : settings.use(RuleKind.institution, institution);
+    if (institution == null) return null;
+    final String? byBank =
+        (_bankSpeaksFor(p, institution, accounts)
+            ? settings.use(RuleKind.institution, institution)
+            : null) ??
+        bankAccount(institution, accounts)?.id;
     if (byBank != null) return (accountId: byBank, why: 'institution');
     return null;
+  }
+
+  /// Whether what the bank's alerts go to speaks for [p]: not for a card
+  /// the app does not know yet when the bank has a credit card in the app,
+  /// which that card may well be.
+  static bool _bankSpeaksFor(
+    ParsedCapture p,
+    String institution,
+    Iterable<Account> accounts,
+  ) =>
+      p.card == null ||
+      !accountsAt(
+        institution,
+        accounts,
+      ).any((Account a) => a.kind == AccountKind.card);
+
+  /// The one account the person has at [institution], or null.
+  static Account? bankAccount(String institution, Iterable<Account> accounts) {
+    final List<Account> there = accountsAt(institution, accounts);
+    return there.length == 1 ? there.single : null;
   }
 
   /// The account an account's last [digits] go to: its rule, or a card's
@@ -466,11 +493,11 @@ class CaptureService {
     }
     final String? institution = parsed.institution;
     if (accountId == null && institution != null) {
-      accountId = settings.use(RuleKind.institution, institution);
-      if (accountId == null) {
-        final List<Account> same = accountsAt(institution, accounts);
-        if (same.length == 1) accountId = same.single.id;
-      }
+      accountId =
+          (_bankSpeaksFor(parsed, institution, accounts)
+              ? settings.use(RuleKind.institution, institution)
+              : null) ??
+          bankAccount(institution, accounts)?.id;
       if (accountId != null) why.add('institution');
     }
     if (accountId == null && parsed.asset != null) {
@@ -605,7 +632,8 @@ class CaptureService {
   /// Turns what the person confirmed into rules, and says which ones are
   /// new or changed. A rule the person turned off is left as it is.
   Future<List<RuleChange>> _learn(
-    InboxItem item, {
+    InboxItem item,
+    List<Account> accounts, {
     required String accountId,
     String? category,
     String? payee,
@@ -651,12 +679,14 @@ class CaptureService {
     if (number != null && card == null) {
       learn(RuleKind.account, number, accountId);
     }
-    // A charge in another currency went where that currency is kept: it
-    // says nothing about where the bank's other alerts go.
+    // A charge in another currency went where that currency is kept, and
+    // an account at another bank is no account of this bank's: neither
+    // says where the bank's other alerts go.
     if (institution != null &&
         card == null &&
         number == null &&
-        teachesInstitution(item.parsed, (await store.profile())?.base)) {
+        teachesInstitution(item.parsed, (await store.profile())?.base) &&
+        !elsewhere(institution, accounts, accountId)) {
       learn(RuleKind.institution, institution, accountId);
     }
     if (changes.isNotEmpty || named) await store.saveCaptureSettings(s);
@@ -719,3 +749,14 @@ List<Account> accountsAt(String institution, Iterable<Account> accounts) =>
             normalize(a.name) == normalize(institution))
           a,
     ];
+
+/// Whether the account [id] is at a bank other than [institution]: it was
+/// set up with another one. One set up with none may be anywhere.
+bool elsewhere(String institution, Iterable<Account> accounts, String id) {
+  final Account? account = accounts
+      .where((Account a) => a.id == id)
+      .firstOrNull;
+  return account != null &&
+      account.institution.trim().isNotEmpty &&
+      !accountsAt(institution, <Account>[account]).contains(account);
+}

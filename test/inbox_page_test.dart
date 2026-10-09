@@ -123,7 +123,24 @@ void main() {
         ))
           (t.title! as Text).data,
       ];
-      expect(choices.take(2), <String>['Bancolombia', 'Visa']);
+      // The bank's first, then the everyday ones in pesos; dollars and
+      // crypto apart, under their own heading.
+      expect(choices, <String>[
+        'Bancolombia',
+        'Visa',
+        'Nequi',
+        'Efectivo',
+        'Cuenta en dólares',
+        'Binance',
+        'Bitcoin',
+      ]);
+      expect(
+        tester.getTopLeft(find.text('Otras cuentas')).dy,
+        allOf(
+          greaterThan(tester.getTopLeft(find.text('Efectivo').last).dy),
+          lessThan(tester.getTopLeft(find.text('Cuenta en dólares').last).dy),
+        ),
+      );
 
       await tester.tap(find.text('Visa').last);
       await settle(tester);
@@ -144,6 +161,61 @@ void main() {
       expect(find.text('NECESITAN INFORMACIÓN'), findsNothing);
     },
   );
+
+  testWidgets('a bank with no account in the app offers to add it, and '
+      'promises no rule for another bank', (tester) async {
+    final OwnController own = await open(tester, () async {
+      final QuincenaStore store = await withCaptures();
+      await CaptureService(store, now: () => screensNow).ingest(<CaptureEvent>[
+        CaptureEvent(
+          source: CaptureSource.notification,
+          at: DateTime(2026, 10, 3, 9, 30),
+          app: 'com.davivienda.daviviendaapp',
+          appName: 'Davivienda',
+          title: 'Davivienda',
+          text: r'Davivienda · Compra por $120.000 en Falabella',
+        ),
+      ]);
+      return store;
+    });
+    Finder on(String text) => find.descendant(
+      of: find.ancestor(
+        of: find.text('Falabella'),
+        matching: find.byType(InboxCard),
+      ),
+      matching: find.text(text),
+    );
+    expect(on('Agregar mi cuenta de Davivienda'), findsOneWidget);
+    // Choosing one of the others teaches nothing about Davivienda.
+    await tester.ensureVisible(on('Elegir la cuenta'));
+    await tester.tap(on('Elegir la cuenta'));
+    await settle(tester);
+    expect(find.textContaining('La próxima vez'), findsNothing);
+    await tester.tapAt(const Offset(20, 20));
+    await settle(tester);
+
+    await tester.ensureVisible(on('Agregar mi cuenta de Davivienda'));
+    await tester.tap(on('Agregar mi cuenta de Davivienda'));
+    await settle(tester);
+    expect(
+      find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.text('Davivienda'),
+      ),
+      findsWidgets,
+    );
+    await tester.ensureVisible(find.text('Guardar').last);
+    await tester.tap(find.text('Guardar').last);
+    await settle(tester);
+    final Account davivienda = own.accounts.firstWhere(
+      (Account a) => a.name == 'Davivienda',
+    );
+    expect(davivienda.institution, 'Davivienda');
+    // The purchase now waits ready, in the account just added.
+    expect(on('Compras · Davivienda'), findsOneWidget);
+    expect(on('Registrar gasto'), findsOneWidget);
+    expect(on('Agregar mi cuenta de Davivienda'), findsNothing);
+  });
 
   testWidgets('what the card taught reaches what waits with the same card, '
       'and goes back with Deshacer', (tester) async {

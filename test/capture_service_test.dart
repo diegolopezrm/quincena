@@ -468,6 +468,106 @@ Fecha
     expect(CaptureService.withRules(recorded, s, accounts), same(recorded));
   });
 
+  group('a bank with a card in the app', () {
+    late Account visa;
+
+    setUp(() async {
+      visa = await store.addAccount(
+        name: 'Visa',
+        kind: AccountKind.card,
+        asset: Asset.cop,
+        institution: 'Bancolombia',
+      );
+    });
+
+    test('its rule does not take a card the app does not know', () async {
+      await store.saveCaptureSettings(
+        const CaptureSettings().withRule(
+          CaptureRule(
+            kind: RuleKind.institution,
+            key: 'Bancolombia',
+            target: bancolombia.id,
+          ),
+        ),
+      );
+      await capture.ingest(<CaptureEvent>[
+        push(r'Bancolombia: Compraste $40.000 en ZARA con tu T.Cred *9876'),
+        push(
+          r'Bancolombia: Pago por $89.900 a Claro',
+          at: now.add(const Duration(minutes: 5)),
+        ),
+      ]);
+      final List<InboxItem> waiting = await pending();
+      final InboxItem zara = waiting.firstWhere(
+        (InboxItem i) => i.parsed.merchant == 'Zara',
+      );
+      // The card may be the Visa: the first time, the person says.
+      expect(zara.suggestion.accountId, isNull);
+      final List<Account> accounts = await store.accounts();
+      final CaptureSettings s = await store.captureSettings();
+      expect(
+        CaptureService.withRules(zara, s, accounts).suggestion.accountId,
+        isNull,
+      );
+      // What names no card is the bank's, as the rule says.
+      expect(
+        waiting
+            .firstWhere((InboxItem i) => i.parsed.merchant == 'Claro')
+            .suggestion
+            .accountId,
+        bancolombia.id,
+      );
+      // Once the card is known, it goes where the person said.
+      final InboxItem known = CaptureService.withRules(
+        zara,
+        s.withRule(
+          CaptureRule(kind: RuleKind.card, key: '9876', target: visa.id),
+        ),
+        accounts,
+      );
+      expect(known.suggestion.accountId, visa.id);
+    });
+  });
+
+  test('an account at another bank teaches nothing about that bank, and '
+      'the bank\'s own account, added later, takes what waits', () async {
+    await capture.ingest(<CaptureEvent>[
+      push(
+        r'Davivienda: Compra por $120.000 en FALABELLA',
+        app: 'com.davivienda.daviviendaapp',
+      ),
+      push(
+        r'Davivienda: Compra por $30.000 en KOAJ',
+        app: 'com.davivienda.daviviendaapp',
+        at: now.add(const Duration(minutes: 5)),
+      ),
+    ]);
+    final List<InboxItem> waiting = await pending();
+    final Accepted done = await capture.accept(
+      waiting.firstWhere((InboxItem i) => i.parsed.merchant == 'Falabella'),
+      accountId: bancolombia.id,
+    );
+    expect(
+      done.learned.map((RuleChange c) => c.rule.kind),
+      isNot(contains(RuleKind.institution)),
+    );
+    expect((await store.captureSettings()).institutionAccounts, isEmpty);
+
+    final Account davivienda = await store.addAccount(
+      name: 'Davivienda',
+      kind: AccountKind.bank,
+      asset: Asset.cop,
+      institution: 'Davivienda',
+    );
+    final InboxItem koaj = CaptureService.withRules(
+      (await pending()).single,
+      await store.captureSettings(),
+      await store.accounts(),
+    );
+    expect(koaj.suggestion.accountId, davivienda.id);
+    expect(koaj.suggestion.why.first, 'institution');
+  });
+
   test('what is learned reaches a capture whose account was only a guess, '
       'and its merchant\'s category', () async {
     // Nequi is put away: Bancolombia is the only everyday account in pesos.

@@ -6694,6 +6694,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pickAccountIn => 'Which account did it go into?';
 
   @override
+  String get pickAccountOthers => 'Other accounts';
+
+  @override
+  String addAccountAt(String institution) {
+    return 'Add my $institution account';
+  }
+
+  @override
   String pickAccountCardNote(String digits) {
     return 'Next time, payments with card *$digits will go straight to that account.';
   }

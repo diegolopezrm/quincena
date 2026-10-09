@@ -6686,6 +6686,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get pickAccountIn => '¿A qué cuenta llegó?';
 
   @override
+  String get pickAccountOthers => 'Otras cuentas';
+
+  @override
+  String addAccountAt(String institution) {
+    return 'Agregar mi cuenta de $institution';
+  }
+
+  @override
   String pickAccountCardNote(String digits) {
     return 'La próxima vez, lo de la tarjeta *$digits irá directo a esa cuenta.';
   }

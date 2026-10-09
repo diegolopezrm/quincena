@@ -1682,6 +1682,8 @@
   "whichAccountBankNone": "We detected {institution}, but you don't have an account from that bank in Quincena.",
   "pickAccountOut": "Which account did it come from?",
   "pickAccountIn": "Which account did it go into?",
+  "pickAccountOthers": "Other accounts",
+  "addAccountAt": "Add my {institution} account",
   "pickAccountCardNote": "Next time, payments with card *{digits} will go straight to that account.",
   "pickAccountBankNote": "Next time, alerts from {institution} will go straight to that account.",
   "accountRequired": "Choose the account.",

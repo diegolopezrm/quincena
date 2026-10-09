@@ -647,24 +647,24 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await _hideNotice(f);
       await f.top();
       await f.step(
-        'La compra de Éxito Laureles, que esperaba con la tarjeta *1234, pasa '
-        'sola a «Listos para registrar» con Bancolombia: lo que aprendió del '
-        'banco le llega.',
+        'La compra de Éxito Laureles, con la tarjeta *1234, sigue pidiendo la '
+        'cuenta: lo que aprendió del banco no decide por una tarjeta que la '
+        'app no conoce, porque en Bancolombia también tienes la Visa.',
       );
       await f.check(
-        'Éxito Laureles, que esperaba, ya va a Bancolombia sin preguntar',
+        'La regla del banco no toma la tarjeta *1234, que podría ser la Visa',
         () {
           final InboxItem exito = own.pendingInbox.firstWhere(
             (InboxItem i) => _payee(i) == 'Éxito Laureles',
           );
-          expect(exito.suggestion.accountId, bank.id);
-          expect(exito.suggestion.why.first, 'institution');
-          expect(CaptureService.isReady(exito, own.accounts), isTrue);
-          expect(find.textContaining('falta asociarla'), findsNothing);
+          expect(exito.parsed.card, '1234');
+          expect(exito.suggestion.accountId, isNull);
+          expect(CaptureService.isReady(exito, own.accounts), isFalse);
+          expect(find.textContaining('falta asociarla'), findsOneWidget);
           expect(
             find.descendant(
               of: _card('Éxito Laureles'),
-              matching: find.text('Registrar gasto'),
+              matching: find.text('Elegir la cuenta'),
             ),
             findsOneWidget,
           );
@@ -1051,19 +1051,31 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         () => expect(own.ledger!.freeUntilPayday, free + net),
       );
       await _hideNotice(f);
+      await f.check(
+        'Falabella, de un banco sin cuenta en la app, ofrece agregarla',
+        () {
+          expect(accountsAt('Davivienda', own.accounts), isEmpty);
+          expect(
+            find.descendant(
+              of: _card('Falabella'),
+              matching: find.text('Agregar mi cuenta de Davivienda'),
+            ),
+            findsOneWidget,
+          );
+        },
+      );
       await _tapOn(f, 'Falabella', 'Elegir la cuenta');
       await f.step(
         'Falabella llegó de Davivienda, donde no tienes cuenta: «Elegir la '
-        'cuenta» solo ofrece las que ya tienes y promete mandar ahí todo lo de '
-        'Davivienda.',
+        'cuenta» ofrece las que ya tienes, sin prometer mandar a una de ellas '
+        'todo lo de Davivienda.',
       );
-      await f.check('La hoja promete una regla para un banco sin cuenta', () {
-        expect(
-          f.shows('La próxima vez, lo de Davivienda irá directo a esa cuenta.'),
-          isTrue,
-        );
-        expect(accountsAt('Davivienda', own.accounts), isEmpty);
-      });
+      await f.check(
+        'La hoja no promete una regla para un banco sin cuenta',
+        () {
+          expect(find.textContaining('La próxima vez'), findsNothing);
+        },
+      );
       await f.back();
       await f.check('Cerrar sin elegir no registra Falabella', () {
         expect(own.pendingInbox.map(_payee), <String>['Falabella']);
@@ -1422,9 +1434,19 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.tap('Tarjeta *1234');
       await f.step(
         'Tocar «Tarjeta *1234» pregunta «¿A qué cuenta va?», con un chulo en '
-        'Visa, la de ahora; la lista trae todas las cuentas, también Binance '
-        'y Bitcoin.',
+        'Visa, la de ahora; la cuenta en dólares, Binance y Bitcoin van '
+        'aparte, bajo «Otras cuentas».',
       );
+      await f.check('Las cuentas que no gastan en pesos van aparte', () {
+        expect(f.shows('Otras cuentas'), isTrue);
+        double top(String name) => f.tester
+            .getTopLeft(find.widgetWithText(SimpleDialogOption, name))
+            .dy;
+        expect(
+          f.tester.getTopLeft(find.text('Otras cuentas')).dy,
+          allOf(greaterThan(top('Efectivo')), lessThan(top('Binance'))),
+        );
+      });
       await f.check('El chulo está en la cuenta de la regla', () {
         expect(
           find.descendant(
