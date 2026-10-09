@@ -10,6 +10,7 @@ import 'package:quincena/domain/categories.dart';
 import 'package:quincena/domain/decisions.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/projection.dart';
+import 'package:quincena/domain/plan.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/domain/shared.dart';
 import 'package:quincena/format/dates.dart';
@@ -648,52 +649,73 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       });
       await f.back();
       await f.tap('Repartir');
+      // What the page proposes: the day to day first, the trip with what
+      // is left, never past the money there is.
+      final List<Envelope> proposed = proposeEnvelopes(
+        own.ledger!,
+        goals: own.goalShares,
+        last: own.lastPlan,
+        dailyName: '',
+      );
+      final int daily = proposed
+          .where((Envelope e) => e.kind == EnvelopeKind.daily)
+          .fold(0, (int sum, Envelope e) => sum + e.amount);
+      final int apart = proposed
+          .where((Envelope e) => e.setAside)
+          .fold(0, (int sum, Envelope e) => sum + e.amount);
       await f.page(
         '«Repartir» abre «Reparte tu quincena»: hay ${_money(own, free)} '
-        'para repartir, con la suma que lo explica, y la propuesta no pasa '
-        'de eso: el viaje se lleva todo y el día a día queda vacío.',
+        'para repartir, con la suma que lo explica. La propuesta pone primero '
+        'el día a día y dice que esta quincena no alcanza para el viaje, que '
+        'puede esperar a la próxima.',
       );
       await f.check('Abre «Reparte tu quincena»', () {
         expect(f.shows('Reparte tu quincena'), isTrue);
       });
       await f.check(
-        'La propuesta pone los ${_money(own, free)} en el viaje, sin pasarse: '
-        '«Sin asignar» queda en ${_money(own, 0)}',
+        'El día a día recibe ${_money(own, daily)} primero y nada se pasa de '
+        'los ${_money(own, free)}',
         () {
+          expect(daily, greaterThan(0));
+          expect(daily + apart, lessThanOrEqualTo(free));
           expect(
             _fieldShows(
-              'Viaje a Cartagena',
-              formatDecimal(Decimal.fromInt(free), decimals: 0, trim: true),
+              'Día a día',
+              formatDecimal(Decimal.fromInt(daily), decimals: 0, trim: true),
             ),
             findsOneWidget,
           );
           expect(f.shows('Te pasas por'), isFalse);
-          expect(f.shows('Sin asignar'), isTrue);
         },
       );
+      await f.check('Dice que el viaje no alcanza y puede esperar', () {
+        expect(
+          f.screenText,
+          contains(
+            'Esta quincena no alcanza para todo: el día a día va '
+            'primero.',
+          ),
+        );
+      });
       await f.tap('Guardar el reparto');
       await f.check('Guarda sin avisar: no se pasa de lo que hay', () {
         expect(f.shows('Asignas más de lo que hay'), isFalse);
       });
       await f.top();
       await f.step(
-        'Guardado el reparto, Inicio ya no pide repartir y la tarjeta suma '
-        'la línea «Apartado en sobres», que deja en cero lo que puedes '
-        'gastar.',
+        'Guardado el reparto, Inicio ya no pide repartir; lo que puedes '
+        'gastar sigue siendo para el día a día.',
       );
       await f.check('Ya no está la tarea de repartir la quincena', () {
         expect(own.paidWithoutPlan, isFalse);
         expect(f.shows('Repartir'), isFalse);
       });
-      await f.check(
-        'Los ${_money(own, free)} quedaron en el sobre y lo que puedes '
-        'gastar quedó en cero',
-        () {
-          final Ledger now = own.ledger!;
-          expect(now.setAside, free);
-          expect(now.freeUntilPayday, 0);
-        },
-      );
+      await f.check('Solo lo de las metas sale de lo que puedes gastar: '
+          '${_money(own, apart)}', () {
+        final Ledger now = own.ledger!;
+        expect(now.setAside, apart);
+        expect(now.freeUntilPayday, free - apart);
+      });
     },
   ),
   AppFlow(
