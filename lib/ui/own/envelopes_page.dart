@@ -13,6 +13,7 @@ import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
 import 'amount_input.dart';
+import 'coming_days_page.dart' show listOf;
 
 /// The money of this pay period split into envelopes: the day to day,
 /// what goes to each goal, and anything else set aside. Envelopes are on
@@ -28,6 +29,15 @@ class EnvelopesPage extends StatefulWidget {
 
 class _EnvelopesPageState extends State<EnvelopesPage> {
   late List<Envelope> _envelopes;
+
+  /// What got less than it asked for in a new split, as the person reads
+  /// it: (name, what it asked, what it got). Empty when everything fit, or
+  /// when the split was already saved.
+  List<(String, int, int)> _short = const <(String, int, int)>[];
+
+  /// Whether [_short] compares with the split before, fitted to the money
+  /// there is now, rather than with what the goals ask.
+  bool _fitted = false;
   final Map<String, TextEditingController> _amounts =
       <String, TextEditingController>{};
   bool _saving = false;
@@ -38,16 +48,34 @@ class _EnvelopesPageState extends State<EnvelopesPage> {
   void initState() {
     super.initState();
     final Ledger ledger = own.ledger!;
+    final EnvelopePlan? last = own.lastPlan;
     _envelopes =
         own.plan?.envelopes ??
         proposeEnvelopes(
           ledger,
           goals: own.goalShares,
-          last: own.lastPlan,
+          last: last,
           dailyName: '',
         );
     for (final Envelope e in _envelopes) {
       _amounts[e.id] = _controller(ledger, e.amount);
+    }
+    // A new split that could not give everything what it asks says so,
+    // by name: the day to day went first, and the rest can wait.
+    if (own.plan == null) {
+      _fitted = last != null && last.envelopes.isNotEmpty;
+      final Map<String, int> asked = _fitted
+          ? <String, int>{
+              for (final Envelope e in last!.envelopes) e.id: e.amount,
+            }
+          : <String, int>{
+              for (final GoalShare g in own.goalShares)
+                'goal-${g.id}': goalShareFor(ledger, g),
+            };
+      _short = <(String, int, int)>[
+        for (final Envelope e in _envelopes)
+          if ((asked[e.id] ?? 0) > e.amount) (e.name, asked[e.id]!, e.amount),
+      ];
     }
   }
 
@@ -211,6 +239,33 @@ class _EnvelopesPageState extends State<EnvelopesPage> {
                 ),
                 style: context.type.bodyMedium,
               ),
+              if (_short.isNotEmpty) ...<Widget>[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  decoration: BoxDecoration(
+                    color: context.colors.cautionSoft,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    (_fitted ? l.envelopesAdjusted : l.envelopesShortGoals)(
+                      listOf(l, <String>[
+                        for (final (String name, int asked, int got) in _short)
+                          (_fitted
+                              ? l.envelopesAdjustedItem
+                              : l.envelopesShortItem)(
+                            name.isEmpty ? l.envelopeDaily : name,
+                            amount(asked),
+                            amount(got),
+                          ),
+                      ]),
+                    ),
+                    style: context.type.bodySmall?.copyWith(
+                      color: context.colors.ink,
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
               Block(
                 padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),

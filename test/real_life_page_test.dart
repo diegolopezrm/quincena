@@ -354,8 +354,8 @@ void main() {
 
     await tester.tap(find.text('Registrar pago').first);
     await settle(tester);
-    await tapText(tester, 'No, o no está en Quincena');
-    await tapText(tester, 'Ana te envió · ${pesos(40000)} · 3 oct');
+    // Ana's 40.000 that came in matches by name and amount: it comes chosen.
+    expect(find.text('Ana te envió · ${pesos(40000)} · 3 oct'), findsOneWidget);
     await tapText(tester, 'Guardar');
     expect(own.group('g')!.balances, <String, int>{
       meId: 40000,

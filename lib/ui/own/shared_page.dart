@@ -408,8 +408,12 @@ class GroupPage extends StatelessWidget {
                             paidLine(l, group, s.from, s.to),
                             style: context.type.bodyMedium,
                           ),
+                          // With large text the amount goes in the line
+                          // under it: beside the words it would squeeze an
+                          // account's name a letter a line.
                           subtitle: Text(
                             <String>[
+                              if (largeText(context)) amount(s.amount),
                               dayShortMonth(s.date),
                               ?_movedIn(l, own, s),
                             ].join(' · '),
@@ -418,10 +422,11 @@ class GroupPage extends StatelessWidget {
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: <Widget>[
-                              Figures(
-                                amount(s.amount),
-                                style: context.type.bodyMedium,
-                              ),
+                              if (!largeText(context))
+                                Figures(
+                                  amount(s.amount),
+                                  style: context.type.bodyMedium,
+                                ),
                               IconButton(
                                 tooltip: l.sharedRemovePayment,
                                 onPressed: () =>

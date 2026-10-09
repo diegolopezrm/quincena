@@ -548,6 +548,22 @@ class AppLocalizationsEs extends AppLocalizations {
   String get accountOverdrawn => 'Está en sobregiro';
 
   @override
+  String cardPaymentTitle(String card) {
+    return '¿Estás pagando tu $card?';
+  }
+
+  @override
+  String cardPaymentBody(String from, String card, String amount) {
+    return '$from → $card · $amount. Esto mueve plata entre tus cuentas: no lo contamos como un gasto nuevo, porque lo que compraste con la tarjeta ya está contado.';
+  }
+
+  @override
+  String get cardPaymentYes => 'Sí, registrar el pago';
+
+  @override
+  String get cardPaymentNo => 'No, es un gasto';
+
+  @override
   String get accountSpendable => 'Cuenta de uso diario';
 
   @override
@@ -1550,6 +1566,72 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String goalOnTime(String date) {
+    return 'a tiempo para el $date';
+  }
+
+  @override
+  String goalLate(String date, String amount) {
+    return 'Tu fecha es el $date: para llegar a tiempo necesitas $amount al mes.';
+  }
+
+  @override
+  String goalLatePassed(String date) {
+    return 'La fecha, el $date, ya pasó: cámbiala en la meta.';
+  }
+
+  @override
+  String goalUseMonthly(String amount) {
+    return 'Usar $amount al mes';
+  }
+
+  @override
+  String get goalContribute => 'Abonar';
+
+  @override
+  String goalContributeTitle(String goal) {
+    return 'Abonar a $goal';
+  }
+
+  @override
+  String get goalContributeFrom => 'Desde';
+
+  @override
+  String get goalContributeTo => '¿A dónde va?';
+
+  @override
+  String get goalContributeKept => 'Ya está guardada: solo sumarla';
+
+  @override
+  String get goalContributeNoSavings =>
+      'Para que salga de lo que puedes gastar, guárdala en una cuenta de ahorros, un bolsillo o un CDT.';
+
+  @override
+  String get goalContributeAddSavings => 'Agregar cuenta de ahorros';
+
+  @override
+  String goalSavingsName(String goal) {
+    return 'Ahorro para $goal';
+  }
+
+  @override
+  String goalContributeAfter(String saved, String target) {
+    return 'La meta quedará en $saved de $target.';
+  }
+
+  @override
+  String goalContributeMoves(String from, String amount, String to) {
+    return '$from baja $amount y $to sube lo mismo: sale de lo que puedes gastar.';
+  }
+
+  @override
+  String get goalContributeOnlyCounts =>
+      'Solo se suma a la meta: no mueve plata.';
+
+  @override
+  String get goalContributeInvalid => 'Escribe cuánto abonas.';
+
+  @override
   String get goalNoMonthly => 'sin aporte al mes, no tiene fecha';
 
   @override
@@ -1560,6 +1642,26 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get envelopesOverTitle => 'Asignas más de lo que hay';
+
+  @override
+  String envelopesShortGoals(String list) {
+    return 'Esta quincena no alcanza para todo: el día a día va primero. $list. Lo que falte puede esperar a la próxima quincena.';
+  }
+
+  @override
+  String envelopesShortItem(String name, String asked, String got) {
+    return '$name recibe $got de $asked';
+  }
+
+  @override
+  String envelopesAdjusted(String list) {
+    return 'El reparto anterior no cabe en lo que hay ahora, y el día a día va primero: $list.';
+  }
+
+  @override
+  String envelopesAdjustedItem(String name, String asked, String got) {
+    return '$name pasa de $asked a $got';
+  }
 
   @override
   String envelopesOver(String amount) {

@@ -2552,8 +2552,9 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
     'Anotar el pago de la tarjeta',
     area: 'Movimientos',
     goal:
-        'Pagué 480.000 de la Visa desde Bancolombia y lo anoté como gasto; '
-        'quiero que quede como pago a la tarjeta, sin contarlo dos veces.',
+        'Pagué 480.000 de la Visa desde Bancolombia y quiero anotarlo sin que '
+        'cuente como un gasto, porque lo que compré con la tarjeta ya está '
+        'contado.',
     data: fullAccount,
     (FlowRun f) async {
       final OwnController own = f.own;
@@ -2579,33 +2580,27 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.type('¿Dónde o a quién?', 'Pago Visa');
       await f.tap('Guardar');
       await f.step(
-        'Anotado como gasto, con «Compras» tocada dos veces para dejarla sin '
-        'elegir: la cifra baja 480.000, como si fuera plata gastada.',
+        'Al guardar «Pago Visa» como gasto, la app pregunta «¿Estás pagando '
+        'tu Visa?»: Bancolombia → Visa por \$480.000, y explica que pagar la '
+        'tarjeta no es un gasto nuevo.',
       );
-      final Entry wrong = _entry(own, 'Pago Visa');
-      await f.check('Sin categoría elegida, el gasto queda en «Otros»', () {
-        expect(wrong.category, 'other');
-        expect(own.ledger!.freeUntilPayday, free - 480000);
-        expect(_spentIn(own, 2026, 10), spent + 480000);
+      await f.check('Pregunta antes de contar el pago como gasto', () {
+        expect(f.shows('¿Estás pagando tu Visa?'), isTrue);
+        expect(f.screenText, contains('Bancolombia → Visa'));
+        expect(own.snapshot!.entries, hasLength(count));
       });
+      await f.tap('Sí, registrar el pago');
       await f.tap('Movimientos');
-      await _open(f, wrong);
-      await f.tap('Transferencia');
-      await f.tapFound(find.byType(DropdownButtonFormField<String>).last);
-      await f.step(
-        'Toca «Transferencia» y abre «Hacia»: la lista de tus cuentas, con '
-        'Nequi marcado porque es la que propone la app.',
-      );
-      await f.tapFound(find.text('Visa').last);
-      await f.tap('Guardar');
       await f.reveal(find.text('Bancolombia → Visa'));
       await f.step(
-        'Con Visa en «Hacia» y guardado, la fila es «Bancolombia → Visa», sin '
-        'signo, y el gasto «Pago Visa» ya no está.',
+        '«Sí, registrar el pago»: en Movimientos la fila es «Bancolombia → '
+        'Visa», sin signo, y no hay ningún gasto «Pago Visa».',
       );
-      await f.check('El gasto se volvió una transferencia de dos partes', () {
+      await f.check('Quedó una transferencia de dos partes, no un gasto', () {
         expect(
-          own.snapshot!.entries.where((Entry e) => e.payee == 'Pago Visa'),
+          own.snapshot!.entries.where(
+            (Entry e) => e.payee == 'Pago Visa' && e.transferId == null,
+          ),
           isEmpty,
         );
         expect(own.snapshot!.entries, hasLength(count + 2));
@@ -2629,22 +2624,61 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       );
       await f.check(
         'Pagar la tarjeta no es gastar: lo gastado del mes y lo que puedes '
-        'gastar vuelven a lo de antes',
+        'gastar no cambian',
         () {
           expect(_spentIn(own, 2026, 10), spent);
           expect(own.ledger!.freeUntilPayday, free);
         },
       );
+      // Said «no» by mistake, or written down elsewhere as an expense: the
+      // movement is put right from its edit form.
+      await f.tap('Inicio');
+      await f.tapTip('Agregar movimiento');
+      await f.type('Monto', '120000');
+      await f.type('¿Dónde o a quién?', 'Abono Visa');
+      await f.tap('Guardar');
+      await f.tap('No, es un gasto');
+      await f.step(
+        'Otro abono, de 120.000, con «No, es un gasto»: queda anotado como '
+        'gasto y la cifra baja, como si fuera plata gastada.',
+      );
+      final Entry wrong = _entry(own, 'Abono Visa');
+      await f.check('Con «No, es un gasto» queda como gasto en «Otros»', () {
+        expect(wrong.category, 'other');
+        expect(own.ledger!.freeUntilPayday, free - 120000);
+        expect(_spentIn(own, 2026, 10), spent + 120000);
+      });
+      await f.tap('Movimientos');
+      await _open(f, wrong);
+      await f.tap('Transferencia');
+      await f.tapFound(find.byType(DropdownButtonFormField<String>).last);
+      await f.step(
+        'Se corrige desde el movimiento: «Transferencia» y abre «Hacia», la '
+        'lista de tus cuentas.',
+      );
+      await f.tapFound(find.text('Visa').last);
+      await f.tap('Guardar');
+      await f.check('El gasto se volvió una transferencia de dos partes', () {
+        expect(
+          own.snapshot!.entries.where(
+            (Entry e) => e.payee == 'Abono Visa' && e.transferId == null,
+          ),
+          isEmpty,
+        );
+        expect(own.snapshot!.entries, hasLength(count + 4));
+        expect(_spentIn(own, 2026, 10), spent);
+        expect(own.ledger!.freeUntilPayday, free);
+      });
       await f.tap('Inicio');
       await f.step(
-        'En Inicio, «Lo que debes en tarjetas» bajó 480.000 y lo que puedes '
-        'gastar es el mismo de antes del error.',
+        'En Inicio, «Lo que debes en tarjetas» bajó los 600.000 pagados y lo '
+        'que puedes gastar es el mismo de antes.',
       );
       await f.check(
-        '«Lo que debes en tarjetas» dice ${_money(own, -(debt - 480000))}',
+        '«Lo que debes en tarjetas» dice ${_money(own, -(debt - 600000))}',
         () {
-          expect(own.spendableCardDebt, debt - 480000);
-          expect(f.shows(_money(own, -(debt - 480000))), isTrue);
+          expect(own.spendableCardDebt, debt - 600000);
+          expect(f.shows(_money(own, -(debt - 600000))), isTrue);
           expect(f.shows(_money(own, free)), isTrue);
         },
       );

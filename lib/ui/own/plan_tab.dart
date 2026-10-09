@@ -21,6 +21,7 @@ import 'cushion_page.dart';
 import 'detective_page.dart';
 import 'envelopes_page.dart';
 import 'freelance_page.dart';
+import 'goal_contribution.dart';
 import 'goal_sheet.dart';
 import 'instalments_page.dart';
 import 'look.dart';
@@ -454,32 +455,52 @@ class _GoalRow extends StatelessWidget {
             0,
             1,
           );
+    // With a date, whether it is reached by then, and what it takes when
+    // it is not: the date is there to be checked against, not only shown.
+    final DateTime? deadline = goal.deadline;
+    final bool reached = goal.saved.amount >= goal.target.amount;
+    final bool onTime =
+        arrives != null && deadline != null && !arrives.isAfter(deadline);
+    final int? needed = share == null || deadline == null || reached || onTime
+        ? null
+        : monthlyToReach(
+            share,
+            deadline,
+            from: own.today,
+            // Pesos round to ten thousand, other currencies to ten.
+            step: ledger.currency.decimals == 0 ? 10000 : 1000,
+          );
+    final bool late = deadline != null && !reached && !onTime;
+    final TextStyle? small = context.type.bodySmall;
     return InkWell(
       onTap: () => showGoalSheet(context, own: own, goal: goal),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(goal.name, style: context.type.titleSmall),
-                ),
-                Text(
-                  percent((done * 100).round()),
-                  style: context.type.bodySmall,
-                ),
-              ],
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(goal.name, style: context.type.titleSmall),
+                  ),
+                  Text(percent((done * 100).round()), style: small),
+                ],
+              ),
             ),
             const SizedBox(height: 6),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(99),
-              child: LinearProgressIndicator(
-                value: done,
-                minHeight: 6,
-                backgroundColor: context.colors.sunken,
-                color: context.colors.brand,
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(99),
+                child: LinearProgressIndicator(
+                  value: done,
+                  minHeight: 6,
+                  backgroundColor: context.colors.sunken,
+                  color: context.colors.brand,
+                ),
               ),
             ),
             const SizedBox(height: 6),
@@ -493,8 +514,52 @@ class _GoalRow extends StatelessWidget {
                   l.goalArrives(monthYear(arrives))
                 else
                   l.goalNoMonthly,
+                if (onTime) l.goalOnTime(dayMonthYear(deadline)),
               ].join(' · '),
-              style: context.type.bodySmall,
+              style: small,
+            ),
+            if (late) ...<Widget>[
+              const SizedBox(height: 4),
+              Text(
+                needed == null
+                    ? l.goalLatePassed(dayMonthYear(deadline))
+                    : l.goalLate(
+                        dayMonthYear(deadline),
+                        pesos(ledger.major(needed)),
+                      ),
+                style: small?.copyWith(color: context.colors.caution),
+              ),
+            ],
+            Wrap(
+              alignment: WrapAlignment.end,
+              children: <Widget>[
+                if (late && needed != null && needed > 0)
+                  TextButton(
+                    onPressed: () => own.store.updateGoal(
+                      SavingsGoal(
+                        id: goal.id,
+                        name: goal.name,
+                        target: goal.target,
+                        saved: goal.saved,
+                        monthly: Money(
+                          Decimal.fromInt(
+                            needed,
+                          ).shift(-goal.monthly.asset.decimals),
+                          goal.monthly.asset,
+                        ),
+                        deadline: goal.deadline,
+                      ),
+                    ),
+                    child: Text(l.goalUseMonthly(pesos(ledger.major(needed)))),
+                  ),
+                if (!reached)
+                  TextButton.icon(
+                    onPressed: () =>
+                        showGoalContribution(context, own: own, goal: goal),
+                    icon: const Icon(Glyph.plus, size: 18),
+                    label: Text(l.goalContribute),
+                  ),
+              ],
             ),
           ],
         ),

@@ -188,7 +188,7 @@ class _GoalSheetState extends State<_GoalSheet> {
               label: Text(
                 _deadline == null
                     ? l.goalNoDeadline
-                    : l.goalBy(dayMonth(_deadline!)),
+                    : l.goalBy(dayMonthYear(_deadline!)),
               ),
             ),
             if (_error case final String error) ...<Widget>[

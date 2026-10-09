@@ -668,6 +668,38 @@ class OwnController extends ChangeNotifier {
     await saveGroup(group.withSettlement(settled));
   }
 
+  /// Puts [amount], in the goal's currency, into [goal]: moved from
+  /// [fromId] to [toId] as a payment between the person's accounts, so it
+  /// leaves the money to spend; or, with no [toId], only counted, for money
+  /// already kept where it is saved.
+  Future<void> contributeToGoal(
+    SavingsGoal goal,
+    Decimal amount, {
+    required DateTime date,
+    String? fromId,
+    String? toId,
+  }) async {
+    if (fromId != null && toId != null && fromId != toId) {
+      await store.addTransfer(
+        fromAccountId: fromId,
+        toAccountId: toId,
+        sent: amount,
+        date: date,
+        note: goal.name,
+      );
+    }
+    await store.updateGoal(
+      SavingsGoal(
+        id: goal.id,
+        name: goal.name,
+        target: goal.target,
+        saved: Money(goal.saved.amount + amount, goal.saved.asset),
+        monthly: goal.monthly,
+        deadline: goal.deadline,
+      ),
+    );
+  }
+
   /// Takes [settlement] out of [group], with the movement the Plan made
   /// for it; one the person wrote down and linked stays theirs.
   Future<void> unsettle(Group group, Settlement settlement) async {

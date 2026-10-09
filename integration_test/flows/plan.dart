@@ -442,12 +442,25 @@ final List<AppFlow> planFlows = <AppFlow>[
         'Esta cuenta tiene poco para repartir: «Reparte esta quincena» dice '
         'que hay ${_pesos(l, money)}.',
       );
+      // The split the page proposes, as it proposes it.
+      final List<Envelope> proposal = proposeEnvelopes(
+        l,
+        goals: own.goalShares,
+        last: own.lastPlan,
+        dailyName: '',
+      );
+      final int daily = proposal
+          .firstWhere((Envelope e) => e.kind == EnvelopeKind.daily)
+          .amount;
+      final int toGoal = proposal
+          .firstWhere((Envelope e) => e.kind == EnvelopeKind.goal)
+          .amount;
       await f.tap('Repartir en sobres');
       await f.step(
         'La suma de arriba dice de dónde salen los ${_pesos(l, money)}: lo de '
         'tus cuentas, menos la tarjeta, los pagos y la reserva. La propuesta '
-        'no pasa de eso: todo a la meta y el día a día vacío, aunque faltan '
-        '12 días para el pago.',
+        'no pasa de eso y pone primero el día a día, porque faltan 12 días '
+        'para el pago; arriba avisa que la meta recibe menos y puede esperar.',
       );
       final int debt = own.spendableCardDebt;
       await f.check(
@@ -472,17 +485,34 @@ final List<AppFlow> planFlows = <AppFlow>[
           expect(f.shows('Colchón'), isFalse);
         },
       );
-      await f.check('La propuesta no deja «Te pasas por»: la meta se lleva '
-          '${_pesos(l, money)} y el día a día nada', () {
-        expect(f.shows('Te pasas por'), isFalse);
-        expect(_fieldText(f, 'Viaje a Cartagena'), _typed(l, money));
-        expect(_fieldText(f, 'Día a día'), isEmpty);
+      await f.check(
+        'La propuesta no deja «Te pasas por»: el día a día va primero con '
+        '${_pesos(l, daily)} y la meta recibe ${_pesos(l, toGoal)}',
+        () {
+          expect(f.shows('Te pasas por'), isFalse);
+          expect(daily, greaterThan(0));
+          expect(daily + toGoal, lessThanOrEqualTo(money));
+          expect(_fieldText(f, 'Día a día'), _typed(l, daily));
+          expect(
+            _fieldText(f, 'Viaje a Cartagena'),
+            toGoal == 0 ? isEmpty : _typed(l, toGoal),
+          );
+        },
+      );
+      await f.check('Arriba dice qué recibe menos de lo que pide', () {
+        expect(
+          f.screenText,
+          contains(
+            'Esta quincena no alcanza para todo: el día a día va '
+            'primero.',
+          ),
+        );
+        expect(f.screenText, contains('Viaje a Cartagena recibe'));
       });
       await f.type('Día a día', '300000');
-      final int goals =
-          proposeEnvelopes(l, goals: own.goalShares, dailyName: '')
-              .where((Envelope e) => e.kind != EnvelopeKind.daily)
-              .fold(0, (int s, Envelope e) => s + e.amount);
+      final int goals = proposal
+          .where((Envelope e) => e.kind != EnvelopeKind.daily)
+          .fold(0, (int s, Envelope e) => s + e.amount);
       final int over = l.minor(300000) + goals - money;
       await f.step(
         'Con 300.000 en el día a día el recuadro de abajo cambia a «Te '
@@ -1229,15 +1259,26 @@ final List<AppFlow> planFlows = <AppFlow>[
       await _pickDay(f, '30');
       await f.step(
         'Moto: 6.000.000 en total, 1.500.000 ya ahorrados, 500.000 al mes y '
-        '«Para el 30 de abril», sin decir el año.',
+        '«Para el 30 de abril de 2027», con el año.',
       );
+      await f.check('La fecha dice el año', () {
+        expect(f.shows('Para el 30 de abril de 2027'), isTrue);
+      });
       await f.tap('Guardar');
       final GoalShare moto = own.goalShares.single;
       final DateTime arrives = arrival(moto, from: own.today)!;
+      final int needed = monthlyToReach(
+        moto,
+        DateTime(2027, 4, 30),
+        from: own.today,
+        step: 10000,
+      )!;
       await f.reveal(find.text('Moto'));
       await f.step(
         'La meta queda en «Metas» con 25 % y «llega en ${monthYear(arrives)}»'
-        ': después del 30 de abril, y la fila no lo dice.',
+        ', después del 30 de abril, y lo dice: para llegar a tiempo hacen '
+        'falta ${_pesos(own.ledger!, needed)} al mes, con un botón para '
+        'usarlos.',
       );
       await f.check('La meta quedó guardada con todo lo escrito', () {
         final SavingsGoal g = own.snapshot!.goals.single;
@@ -1256,26 +1297,61 @@ final List<AppFlow> planFlows = <AppFlow>[
           expect(_says(f, 'llega en ${monthYear(arrives)}'), isTrue);
         },
       );
+      await f.check('Avisa que no llega a tiempo y que hacen falta '
+          '${_pesos(own.ledger!, needed)} al mes', () {
+        expect(needed, own.ledger!.minor(750000));
+        expect(
+          _says(
+            f,
+            'Tu fecha es el 30 de abril de 2027: para llegar a tiempo '
+            'necesitas ${_pesos(own.ledger!, needed)} al mes.',
+          ),
+          isTrue,
+        );
+      });
       await f.check('Crear la meta no cambia lo que puedes gastar', () {
         expect(own.ledger!.freeUntilPayday, free);
+      });
+      await f.tap('Usar ${_pesos(own.ledger!, needed)} al mes');
+      await f.step(
+        'Con «Usar ${_pesos(own.ledger!, needed)} al mes» el aporte cambia y '
+        'la fila dice que llega a tiempo para el 30 de abril de 2027.',
+      );
+      await f.check('Ahora pone 750.000 al mes y llega a tiempo', () {
+        expect(
+          own.snapshot!.goals.single.monthly.amount,
+          Decimal.fromInt(750000),
+        );
+        expect(_says(f, 'a tiempo para el 30 de abril de 2027'), isTrue);
       });
       await f.top();
       await f.tap('Repartir en sobres');
       final int share = proposeEnvelopes(
         own.ledger!,
         goals: own.goalShares,
+        last: own.lastPlan,
         dailyName: '',
       ).firstWhere((Envelope e) => e.kind == EnvelopeKind.goal).amount;
+      final int asks = goalShareFor(own.ledger!, own.goalShares.single);
       await f.step(
-        'Al repartir la quincena aparece un sobre para la Moto con la mitad '
-        'del aporte del mes, porque te pagan dos veces al mes.',
+        'Al repartir la quincena aparece un sobre para la Moto. Pide la mitad '
+        'del aporte del mes, porque te pagan dos veces al mes, pero el día a '
+        'día va primero: la Moto recibe lo que queda, y arriba lo dice.',
       );
       await f.check(
-        'El sobre de la Moto propone ${_pesos(own.ledger!, share)}, la mitad '
-        'de 500.000',
+        'La Moto pide ${_pesos(own.ledger!, asks)}, la mitad de 750.000, y '
+        'recibe ${_pesos(own.ledger!, share)}, lo que deja el día a día',
         () {
-          expect(share, own.ledger!.minor(250000));
-          expect(_fieldText(f, 'Moto'), '250.000');
+          expect(asks, own.ledger!.minor(375000));
+          expect(share, lessThanOrEqualTo(asks));
+          expect(_fieldText(f, 'Moto'), _typed(own.ledger!, share));
+          expect(
+            f.screenText,
+            contains(
+              'Moto recibe ${_pesos(own.ledger!, share)} de '
+              '${_pesos(own.ledger!, asks)}',
+            ),
+          );
         },
       );
       await f.back();
@@ -1292,24 +1368,63 @@ final List<AppFlow> planFlows = <AppFlow>[
     (FlowRun f) async {
       final OwnController own = f.own;
       final int entries = own.snapshot!.entries.length;
+      final int before = own.ledger!.freeUntilPayday;
+      final Money worth = own.netWorth().total;
+      final Account from = own.likelyPaymentAccount!;
       await _openPlan(f);
       await f.reveal(find.text('Viaje a Cartagena'));
       await f.step(
         'La meta del viaje va en 27 %: llevas 650.000 de 2.400.000 y llega '
-        'en abril de 2027.',
+        'en abril de 2027, después del 20 de diciembre que le pusiste; la '
+        'fila lo avisa y tiene «Abonar».',
       );
-      await f.tap('Viaje a Cartagena');
+      await f.tap('Abonar');
       await f.step(
-        'Al tocarla abre «Editar meta» con lo guardado y «Borrar meta» abajo. '
-        'No hay un botón para abonar: se cambia «¿Cuánto llevas?».',
+        '«Abonar a Viaje a Cartagena» pregunta a dónde va la plata. No hay '
+        'cuenta de ahorros en pesos: dice que la guardes en una para que '
+        'salga de lo que puedes gastar, y ofrece agregarla aquí mismo.',
       );
-      await f.type('¿Cuánto llevas?', '950000');
+      await f.tap('Agregar cuenta de ahorros');
+      await f.step(
+        'La cuenta nueva viene llena: «Ahorro para Viaje a Cartagena», de '
+        'tipo «Ahorro o inversión», fuera del uso diario.',
+      );
       await f.tap('Guardar');
+      await f.type('Monto', '300000');
+      await f.step(
+        'De vuelta en «Abonar», la cuenta nueva quedó elegida y viene «Desde» '
+        '${from.name}. Abajo dice qué va a pasar antes de guardar.',
+      );
+      await f.check(
+        'Antes de guardar dice cómo queda la meta y qué cuentas cambian',
+        () => expect(
+          f.screenText,
+          contains(
+            'La meta quedará en ${pesos(950000)} de ${pesos(2400000)}. '
+            '${from.name} baja ${pesos(300000)} y Ahorro para Viaje a '
+            'Cartagena sube lo mismo',
+          ),
+        ),
+      );
+      await f.tap('Abonar');
       await f.reveal(find.text('Viaje a Cartagena'));
       final GoalShare after = own.goalShares.single;
       await f.step(
         'Con 300.000 más ahorrados la meta sube a 40 % y llega en '
         '${monthYear(arrival(after, from: own.today)!)}.',
+      );
+      await f.check(
+        'Los 300.000 pasaron de ${from.name} a la cuenta de ahorros: salen de '
+        'lo que puedes gastar y el patrimonio no cambia',
+        () {
+          final Account savings = own.accounts.firstWhere(
+            (Account a) => a.name == 'Ahorro para Viaje a Cartagena',
+          );
+          expect(savings.spendable, isFalse);
+          expect(own.balances[savings.id]!.amount, Decimal.fromInt(300000));
+          expect(own.ledger!.freeUntilPayday, before - 300000);
+          expect(own.netWorth().total, worth);
+        },
       );
       await f.check('Lo ahorrado quedó en 950.000', () {
         expect(
@@ -1328,17 +1443,38 @@ final List<AppFlow> planFlows = <AppFlow>[
       await f.type('¿Cuánto pones al mes?', '500000');
       await f.tap('Guardar');
       await f.reveal(find.text('Viaje a Cartagena'));
+      final int needed = monthlyToReach(
+        own.goalShares.single,
+        DateTime(2026, 12, 20),
+        from: own.today,
+        step: 10000,
+      )!;
       await f.step(
-        'Con 500.000 al mes llega en enero de 2027: todavía después del 20 '
-        'de diciembre que le pusiste, y la fila no lo advierte.',
+        'Con 500.000 al mes llega en enero de 2027, todavía después del 20 de '
+        'diciembre, y la fila lo advierte: para llegar a tiempo hacen falta '
+        '${_pesos(own.ledger!, needed)} al mes.',
       );
-      await f.check('Con 500.000 al mes llega en enero de 2027', () {
-        expect(
-          arrival(own.goalShares.single, from: own.today),
-          DateTime(2027, 1, 3),
-        );
-        expect(_says(f, 'llega en ${monthYear(DateTime(2027, 1, 3))}'), isTrue);
-      });
+      await f.check(
+        'Con 500.000 al mes llega en enero de 2027, y lo avisa',
+        () {
+          expect(
+            arrival(own.goalShares.single, from: own.today),
+            DateTime(2027, 1, 3),
+          );
+          expect(
+            _says(f, 'llega en ${monthYear(DateTime(2027, 1, 3))}'),
+            isTrue,
+          );
+          expect(
+            _says(
+              f,
+              'Tu fecha es el 20 de diciembre de 2026: para llegar a tiempo '
+              'necesitas ${_pesos(own.ledger!, needed)} al mes.',
+            ),
+            isTrue,
+          );
+        },
+      );
       await f.top();
       await f.tap('Repartir en sobres');
       await f.tap('Guardar el reparto');
@@ -1366,7 +1502,8 @@ final List<AppFlow> planFlows = <AppFlow>[
       );
       await f.check('La meta ya no está y los movimientos siguen todos', () {
         expect(own.snapshot!.goals, isEmpty);
-        expect(own.snapshot!.entries.length, entries);
+        // The contribution's two legs stay: the money is still saved.
+        expect(own.snapshot!.entries.length, entries + 2);
       });
       await f.top();
       await f.step(
@@ -3625,11 +3762,22 @@ final List<AppFlow> planFlows = <AppFlow>[
       await _openPlan(f);
       await f.reveal(find.text('Moto'));
       await f.step(
-        'La Moto tenía fecha del 20 de septiembre, que ya pasó; la fila solo '
-        'dice cuándo llega, sin avisar que la fecha se venció.',
+        'La Moto tenía fecha del 20 de septiembre, que ya pasó, y la fila lo '
+        'avisa: «La fecha, el 20 de septiembre de 2026, ya pasó: cámbiala en '
+        'la meta.»',
       );
+      await f.check('La fila avisa que la fecha ya pasó', () {
+        expect(
+          _says(
+            f,
+            'La fecha, el 20 de septiembre de 2026, ya pasó: cámbiala en la '
+            'meta.',
+          ),
+          isTrue,
+        );
+      });
       await f.tap('Moto');
-      await f.tap('Para el 20 de septiembre');
+      await f.tap('Para el 20 de septiembre de 2026');
       await f.step(
         'La fecha vencida abre su calendario en septiembre, para moverla.',
       );
@@ -3643,7 +3791,7 @@ final List<AppFlow> planFlows = <AppFlow>[
         await f.tapTip('Mes siguiente');
       }
       await _pickDay(f, '20');
-      await f.step('La meta queda «Para el 20 de diciembre».');
+      await f.step('La meta queda «Para el 20 de diciembre de 2026».');
       await f.tap('Guardar');
       await f.check(
         'La Moto quedó para el 20 de diciembre, con lo ahorrado',
@@ -3719,7 +3867,8 @@ final List<AppFlow> planFlows = <AppFlow>[
       final OwnController own = f.own;
       final Ledger l = own.ledger!;
       final int money = allocatable(l);
-      final int over = l.minor(440000) - money;
+      // The trip gets what the day to day leaves of it.
+      final int trip = money - l.minor(300000);
       await _openPlan(f);
       await f.step(
         'La quincena del 30 de septiembre todavía no tiene reparto: arriba '
@@ -3734,28 +3883,41 @@ final List<AppFlow> planFlows = <AppFlow>[
       );
       await f.tap('Repartir en sobres');
       await f.step(
-        'Los sobres vienen como la quincena pasada: 300.000 de día a día, '
-        '100.000 para el viaje y 40.000 para el regalo. «Te pasas por» '
-        '${_pesos(l, over)}: esta vez hay menos.',
+        'Los sobres vienen como la quincena pasada, ajustados a lo que hay: '
+        'el día a día conserva sus 300.000, el viaje baja de 100.000 a '
+        '${_pesos(l, trip)} y el regalo queda en cero. Arriba dice qué cambió '
+        'y por qué.',
       );
       await f.check(
         'Trae los sobres de la quincena pasada, sin el de la meta que ya no '
-        'existe',
+        'existe, ajustados a lo que hay',
         () {
           expect(_fieldText(f, 'Día a día'), '300.000');
-          expect(_fieldText(f, 'Viaje a Cartagena'), '100.000');
-          expect(_fieldText(f, 'Regalo de mamá'), '40.000');
+          expect(_fieldText(f, 'Viaje a Cartagena'), _typed(l, trip));
+          expect(_fieldText(f, 'Regalo de mamá'), isEmpty);
           expect(find.widgetWithText(TextField, 'Moto'), findsNothing);
         },
       );
       await f.check(
-        'Copiar el reparto no mira lo que hay: se pasa por ${_pesos(l, over)}',
-        () => expect(_says(f, 'Te pasas por | ${_pesos(l, over)}'), isTrue),
+        'Copiar el reparto ya no se pasa: dice qué ajustó para que quepa',
+        () {
+          expect(f.shows('Te pasas por'), isFalse);
+          expect(
+            f.screenText,
+            contains(
+              'Viaje a Cartagena pasa de ${_pesos(l, l.minor(100000))} a '
+              '${_pesos(l, trip)} y Regalo de mamá pasa de '
+              '${_pesos(l, l.minor(40000))} a ${_pesos(l, 0)}',
+            ),
+          );
+        },
       );
       await f.type('Día a día', '200000');
+      await f.type('Viaje a Cartagena', '100000');
+      await f.type('Regalo de mamá', '40000');
       await f.step(
-        'Con 200.000 de día a día el reparto cabe: «Sin asignar» '
-        '${_pesos(l, money - l.minor(340000))}.',
+        'Con 200.000 de día a día caben el viaje y el regalo como antes: '
+        '«Sin asignar» ${_pesos(l, money - l.minor(340000))}.',
       );
       await f.tap('Guardar el reparto');
       await f.check('El reparto quedó guardado para esta quincena', () {

@@ -259,10 +259,24 @@ double paydaysPerMonth(Ledger ledger) {
   return count / 12;
 }
 
-/// A first split of the period's money: each goal its monthly share for one
-/// period, as far as the money goes, the day to day what was spent in a
-/// period lately, and what is left, free. With [last], the period before's
-/// envelopes are reused.
+/// What [goal] asks of one pay period: its monthly part over the paydays
+/// of a month, never more than is missing.
+int goalShareFor(Ledger ledger, GoalShare goal) {
+  if (goal.monthly <= 0 || goal.saved >= goal.target) return 0;
+  return math.min(
+    (goal.monthly / paydaysPerMonth(ledger)).round(),
+    goal.target - goal.saved,
+  );
+}
+
+/// A first split of the period's money. The day to day comes first, as it
+/// is what the person lives on until payday: what a period usually takes,
+/// or, with no period recorded, six tenths of the money. Then each goal its
+/// share for the period, as far as what is left goes, in order; the rest of
+/// a share waits for the next period. What is left after that is free.
+///
+/// With [last], the period before's envelopes are kept, fitted to the
+/// money there is now in the same order: the day to day first.
 List<Envelope> proposeEnvelopes(
   Ledger ledger, {
   required List<GoalShare> goals,
@@ -270,53 +284,51 @@ List<Envelope> proposeEnvelopes(
   required String dailyName,
 }) {
   final int money = math.max(0, allocatable(ledger));
+  var free = money;
+  int take(int wanted) {
+    final int given = math.min(math.max(0, wanted), free);
+    free -= given;
+    return given;
+  }
+
   if (last != null && last.envelopes.isNotEmpty) {
-    return <Envelope>[
+    final List<Envelope> kept = <Envelope>[
       for (final Envelope e in last.envelopes)
         if (e.kind != EnvelopeKind.goal ||
             goals.any((GoalShare g) => g.id == e.goalId))
           e,
     ];
+    // The day to day first, wherever it was in the list.
+    final Map<String, int> fitted = <String, int>{
+      for (final Envelope e in kept)
+        if (e.kind == EnvelopeKind.daily) e.id: take(e.amount),
+    };
+    for (final Envelope e in kept) {
+      if (e.kind != EnvelopeKind.daily) fitted[e.id] = take(e.amount);
+    }
+    return <Envelope>[
+      for (final Envelope e in kept) e.copyWith(amount: fitted[e.id]),
+    ];
   }
-  final double perMonth = paydaysPerMonth(ledger);
-  // Never more than there is: when money is short, the goals get what is
-  // left, in order, and the rest of each share waits.
-  var free = money;
-  final List<Envelope> out = <Envelope>[];
-  for (final GoalShare g in goals) {
-    if (g.monthly <= 0 || g.saved >= g.target) continue;
-    final int share = math.min(
-      math.min((g.monthly / perMonth).round(), g.target - g.saved),
-      free,
-    );
-    free -= share;
-    out.add(
-      Envelope(
-        id: 'goal-${g.id}',
-        kind: EnvelopeKind.goal,
-        name: g.name,
-        amount: share,
-        goalId: g.id,
-      ),
-    );
-  }
-  final int forGoals = out.fold(0, (int s, Envelope e) => s + e.amount);
-  final int left = math.max(0, money - forGoals);
   final int? usual = usualPeriodSpending(ledger);
-  out.insert(
-    0,
-    Envelope(
-      id: 'daily',
-      kind: EnvelopeKind.daily,
-      name: dailyName,
-      // What a period usually takes, or, without a period that spent
-      // anything, six tenths of what is left.
-      amount: usual == null || usual <= 0
-          ? (left * 0.6).round()
-          : math.min(usual, left),
-    ),
+  final Envelope daily = Envelope(
+    id: 'daily',
+    kind: EnvelopeKind.daily,
+    name: dailyName,
+    amount: take(usual == null || usual <= 0 ? (money * 0.6).round() : usual),
   );
-  return out;
+  return <Envelope>[
+    daily,
+    for (final GoalShare g in goals)
+      if (goalShareFor(ledger, g) > 0)
+        Envelope(
+          id: 'goal-${g.id}',
+          kind: EnvelopeKind.goal,
+          name: g.name,
+          amount: take(goalShareFor(ledger, g)),
+          goalId: g.id,
+        ),
+  ];
 }
 
 /// What the last whole pay periods took on average, recurring charges
@@ -410,6 +422,29 @@ DateTime? arrival(
   if (each <= 0) return null;
   final int months = (left / each).ceil();
   return DateTime(from.year, from.month + months, from.day);
+}
+
+/// What has to go into [goal] each month from [from] for [arrival] to fall
+/// by [deadline], rounded up to [step], in the ledger's unit. Zero when
+/// nothing is missing; null when no month is left before the deadline.
+int? monthlyToReach(
+  GoalShare goal,
+  DateTime deadline, {
+  required DateTime from,
+  int step = 1,
+}) {
+  final int left = goal.target - goal.saved;
+  if (left <= 0) return 0;
+  final DateTime limit = _day(deadline);
+  // The months whose contribution, as [arrival] counts them, lands in time.
+  var months = 0;
+  while (months < 1200 &&
+      !DateTime(from.year, from.month + months + 1, from.day).isAfter(limit)) {
+    months++;
+  }
+  if (months == 0) return null;
+  final int each = (left / months).ceil();
+  return ((each + step - 1) ~/ step) * step;
 }
 
 /// Why the cushion cannot be counted in days.

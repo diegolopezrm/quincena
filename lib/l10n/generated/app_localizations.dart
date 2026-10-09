@@ -992,6 +992,30 @@ abstract class AppLocalizations {
   /// **'Está en sobregiro'**
   String get accountOverdrawn;
 
+  /// No description provided for @cardPaymentTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Estás pagando tu {card}?'**
+  String cardPaymentTitle(String card);
+
+  /// No description provided for @cardPaymentBody.
+  ///
+  /// In es, this message translates to:
+  /// **'{from} → {card} · {amount}. Esto mueve plata entre tus cuentas: no lo contamos como un gasto nuevo, porque lo que compraste con la tarjeta ya está contado.'**
+  String cardPaymentBody(String from, String card, String amount);
+
+  /// No description provided for @cardPaymentYes.
+  ///
+  /// In es, this message translates to:
+  /// **'Sí, registrar el pago'**
+  String get cardPaymentYes;
+
+  /// No description provided for @cardPaymentNo.
+  ///
+  /// In es, this message translates to:
+  /// **'No, es un gasto'**
+  String get cardPaymentNo;
+
   /// No description provided for @accountSpendable.
   ///
   /// In es, this message translates to:
@@ -2384,6 +2408,102 @@ abstract class AppLocalizations {
   /// **'llega en {date}'**
   String goalArrives(String date);
 
+  /// No description provided for @goalOnTime.
+  ///
+  /// In es, this message translates to:
+  /// **'a tiempo para el {date}'**
+  String goalOnTime(String date);
+
+  /// No description provided for @goalLate.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu fecha es el {date}: para llegar a tiempo necesitas {amount} al mes.'**
+  String goalLate(String date, String amount);
+
+  /// No description provided for @goalLatePassed.
+  ///
+  /// In es, this message translates to:
+  /// **'La fecha, el {date}, ya pasó: cámbiala en la meta.'**
+  String goalLatePassed(String date);
+
+  /// No description provided for @goalUseMonthly.
+  ///
+  /// In es, this message translates to:
+  /// **'Usar {amount} al mes'**
+  String goalUseMonthly(String amount);
+
+  /// No description provided for @goalContribute.
+  ///
+  /// In es, this message translates to:
+  /// **'Abonar'**
+  String get goalContribute;
+
+  /// No description provided for @goalContributeTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Abonar a {goal}'**
+  String goalContributeTitle(String goal);
+
+  /// No description provided for @goalContributeFrom.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde'**
+  String get goalContributeFrom;
+
+  /// No description provided for @goalContributeTo.
+  ///
+  /// In es, this message translates to:
+  /// **'¿A dónde va?'**
+  String get goalContributeTo;
+
+  /// No description provided for @goalContributeKept.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya está guardada: solo sumarla'**
+  String get goalContributeKept;
+
+  /// No description provided for @goalContributeNoSavings.
+  ///
+  /// In es, this message translates to:
+  /// **'Para que salga de lo que puedes gastar, guárdala en una cuenta de ahorros, un bolsillo o un CDT.'**
+  String get goalContributeNoSavings;
+
+  /// No description provided for @goalContributeAddSavings.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar cuenta de ahorros'**
+  String get goalContributeAddSavings;
+
+  /// No description provided for @goalSavingsName.
+  ///
+  /// In es, this message translates to:
+  /// **'Ahorro para {goal}'**
+  String goalSavingsName(String goal);
+
+  /// No description provided for @goalContributeAfter.
+  ///
+  /// In es, this message translates to:
+  /// **'La meta quedará en {saved} de {target}.'**
+  String goalContributeAfter(String saved, String target);
+
+  /// No description provided for @goalContributeMoves.
+  ///
+  /// In es, this message translates to:
+  /// **'{from} baja {amount} y {to} sube lo mismo: sale de lo que puedes gastar.'**
+  String goalContributeMoves(String from, String amount, String to);
+
+  /// No description provided for @goalContributeOnlyCounts.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo se suma a la meta: no mueve plata.'**
+  String get goalContributeOnlyCounts;
+
+  /// No description provided for @goalContributeInvalid.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe cuánto abonas.'**
+  String get goalContributeInvalid;
+
   /// No description provided for @goalNoMonthly.
   ///
   /// In es, this message translates to:
@@ -2407,6 +2527,30 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Asignas más de lo que hay'**
   String get envelopesOverTitle;
+
+  /// No description provided for @envelopesShortGoals.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta quincena no alcanza para todo: el día a día va primero. {list}. Lo que falte puede esperar a la próxima quincena.'**
+  String envelopesShortGoals(String list);
+
+  /// No description provided for @envelopesShortItem.
+  ///
+  /// In es, this message translates to:
+  /// **'{name} recibe {got} de {asked}'**
+  String envelopesShortItem(String name, String asked, String got);
+
+  /// No description provided for @envelopesAdjusted.
+  ///
+  /// In es, this message translates to:
+  /// **'El reparto anterior no cabe en lo que hay ahora, y el día a día va primero: {list}.'**
+  String envelopesAdjusted(String list);
+
+  /// No description provided for @envelopesAdjustedItem.
+  ///
+  /// In es, this message translates to:
+  /// **'{name} pasa de {asked} a {got}'**
+  String envelopesAdjustedItem(String name, String asked, String got);
 
   /// No description provided for @envelopesOver.
   ///

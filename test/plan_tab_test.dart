@@ -548,8 +548,15 @@ void main() {
         deadline: DateTime(2026, 9, 20),
       ),
     );
+    // The row says the date went by, with its year.
+    expect(
+      find.text(
+        'La fecha, el 20 de septiembre de 2026, ya pasó: cámbiala en la meta.',
+      ),
+      findsOneWidget,
+    );
     await tapText(tester, 'Moto');
-    await tapText(tester, 'Para el 20 de septiembre');
+    await tapText(tester, 'Para el 20 de septiembre de 2026');
     expect(tester.takeException(), isNull);
     expect(find.byType(DatePickerDialog), findsOneWidget);
     // From September, on to December.
@@ -560,7 +567,7 @@ void main() {
     await tester.tap(find.text('20').last);
     await tester.tap(find.text('ACEPTAR'));
     await settle(tester);
-    expect(find.text('Para el 20 de diciembre'), findsOneWidget);
+    expect(find.text('Para el 20 de diciembre de 2026'), findsOneWidget);
     await tapText(tester, 'Guardar');
     expect(own.snapshot!.goals.single.deadline, DateTime(2026, 12, 20));
   });

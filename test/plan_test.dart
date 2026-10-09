@@ -125,9 +125,11 @@ void main() {
       },
     );
 
-    test('a first proposal never splits more than there is', () async {
-      // Rent before payday leaves 50.000 of the 2.000.000: the trip's
-      // 150.000 share does not fit, so it gets what there is.
+    test('a first proposal never splits more than there is, and the day to '
+        'day comes first', () async {
+      // Rent before payday leaves 50.000 of the 2.000.000. With no period
+      // behind, the day to day takes six tenths of it first; the trip's
+      // 150.000 share does not fit, so it gets the 20.000 left.
       await store.addRecurring(
         name: 'Arriendo',
         amount: Money(d('1950000'), Asset.cop),
@@ -143,12 +145,93 @@ void main() {
         goals: const <GoalShare>[trip],
         dailyName: 'Día a día',
       );
-      expect(proposal.last.amount, 50000);
-      expect(proposal.first.amount, 0);
+      expect(proposal.first.kind, EnvelopeKind.daily);
+      expect(proposal.first.amount, 30000);
+      expect(proposal.last.amount, 20000);
+      expect(goalShareFor(l, trip), 150000);
       expect(
         proposal.fold(0, (int s, Envelope e) => s + e.amount),
         allocatable(l),
       );
+    });
+
+    test('with a usual period that takes everything, the goals wait', () async {
+      // Paid on the 30th, three whole fortnights of 600.000 behind, and
+      // 400.000 to split after the rent.
+      await store.addEntry(
+        accountId: bank.id,
+        amount: d('2000000'),
+        kind: EntryKind.income,
+        date: DateTime(2026, 9, 30, 8),
+        category: 'salary',
+      );
+      await store.addRecurring(
+        name: 'Arriendo',
+        amount: Money(d('1800000'), Asset.cop),
+        cadence: Cadence.monthly,
+        nextDate: DateTime(2026, 10, 10),
+        accountId: bank.id,
+        category: 'housing',
+      );
+      for (final DateTime on in <DateTime>[
+        DateTime(2026, 8, 16),
+        DateTime(2026, 8, 31),
+        DateTime(2026, 9, 16),
+      ]) {
+        await spend('600000', on, 'groceries');
+      }
+      final Ledger l = await ledger();
+      final List<Envelope> proposal = proposeEnvelopes(
+        l,
+        goals: const <GoalShare>[trip],
+        dailyName: 'Día a día',
+      );
+      expect(allocatable(l), 400000);
+      expect(proposal.first.amount, 400000);
+      expect(proposal.last.kind, EnvelopeKind.goal);
+      expect(proposal.last.amount, 0);
+    });
+
+    test('the split before, fitted to less money, keeps the day to day '
+        'first', () async {
+      await store.addRecurring(
+        name: 'Arriendo',
+        amount: Money(d('1700000'), Asset.cop),
+        cadence: Cadence.monthly,
+        nextDate: DateTime(2026, 10, 10),
+        accountId: bank.id,
+        category: 'housing',
+      );
+      final Ledger l = await ledger();
+      expect(allocatable(l), 300000);
+      final List<Envelope> proposal = proposeEnvelopes(
+        l,
+        goals: const <GoalShare>[trip],
+        dailyName: 'Día a día',
+        last: EnvelopePlan(
+          period: DateTime(2026, 9, 15),
+          envelopes: const <Envelope>[
+            Envelope(
+              id: 'goal-g1',
+              kind: EnvelopeKind.goal,
+              name: 'Cartagena',
+              amount: 150000,
+              goalId: 'g1',
+            ),
+            Envelope(
+              id: 'daily',
+              kind: EnvelopeKind.daily,
+              name: 'Día a día',
+              amount: 250000,
+            ),
+          ],
+        ),
+      );
+      // The day to day keeps its 250.000; the goal gets the 50.000 left.
+      final Map<String, int> by = <String, int>{
+        for (final Envelope e in proposal) e.id: e.amount,
+      };
+      expect(by, <String, int>{'goal-g1': 50000, 'daily': 250000});
     });
 
     test(

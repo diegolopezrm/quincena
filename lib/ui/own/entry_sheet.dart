@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../../capture/capture_service.dart';
 import '../../capture/inbox.dart';
 import '../../data/ledger.dart';
+import '../../domain/card_payment.dart';
 import '../../domain/records.dart';
 import '../../domain/shared.dart';
 import '../../format/dates.dart';
@@ -314,6 +315,24 @@ class _EntryFormState extends State<_EntryForm> {
     if (badAmount || from == null || badAccounts || badReceived || _saving) {
       return;
     }
+    // Paying a card written as an expense would count what was bought on
+    // it twice: asked first, it becomes a payment between the accounts.
+    if (_kind == EntryKind.expense && _editing == null && _capture == null) {
+      final bool? toCard = await _askCardPayment(from, amount);
+      if (toCard == null || !mounted) return;
+      if (toCard) {
+        setState(() => _saving = true);
+        await own.store.addTransfer(
+          fromAccountId: from,
+          toAccountId: _cardPaid!.id,
+          sent: amount,
+          date: _when(),
+          note: _note.text,
+        );
+        if (mounted) Navigator.of(context).pop();
+        return;
+      }
+    }
     setState(() => _saving = true);
     final (Group, SharedExpense)? split = _editing == null
         ? null
@@ -413,6 +432,60 @@ class _EntryFormState extends State<_EntryForm> {
       }
     }
     if (mounted) Navigator.of(context).pop();
+  }
+
+  /// The card the expense being saved looks like a payment to, when the
+  /// person was asked about it.
+  Account? _cardPaid;
+
+  /// Whether the expense is a card's payment, when it looks like one: true
+  /// to save it as a payment to the card, false to keep it an expense, and
+  /// null when the person closed the question to keep editing. False when
+  /// it does not look like one.
+  Future<bool?> _askCardPayment(String from, Decimal amount) async {
+    final Account? source = own.snapshot?.account(from);
+    final Account? card = cardPaidBy(
+      '${_payee.text} ${_note.text}',
+      _category,
+      accounts: own.accounts,
+      owed: <String, num>{
+        for (final MapEntry<String, Money> b in own.balances.entries)
+          if (b.value.isNegative) b.key: -b.value.amount.toDouble(),
+      },
+    );
+    // A card in another currency, or the card paying itself, is no
+    // payment this form can write.
+    if (card == null ||
+        source == null ||
+        card.id == from ||
+        card.asset != source.asset) {
+      return false;
+    }
+    _cardPaid = card;
+    final AppLocalizations l = context.l10n;
+    return showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: Text(l.cardPaymentTitle(card.name)),
+        content: Text(
+          l.cardPaymentBody(
+            source.name,
+            card.name,
+            moneyText(Money(amount, source.asset), base: own.profile?.base),
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l.cardPaymentNo),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l.cardPaymentYes),
+          ),
+        ],
+      ),
+    );
   }
 
   /// [amount] held in the account [accountId], in the ledger's smallest

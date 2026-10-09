@@ -547,6 +547,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountOverdrawn => 'It\'s overdrawn';
 
   @override
+  String cardPaymentTitle(String card) {
+    return 'Are you paying your $card?';
+  }
+
+  @override
+  String cardPaymentBody(String from, String card, String amount) {
+    return '$from → $card · $amount. This moves money between your accounts: it won\'t count as a new expense, since what you bought with the card is already counted.';
+  }
+
+  @override
+  String get cardPaymentYes => 'Yes, record the payment';
+
+  @override
+  String get cardPaymentNo => 'No, it\'s an expense';
+
+  @override
   String get accountSpendable => 'Everyday account';
 
   @override
@@ -1551,6 +1567,72 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String goalOnTime(String date) {
+    return 'on time for $date';
+  }
+
+  @override
+  String goalLate(String date, String amount) {
+    return 'Your date is $date: to get there on time you need $amount a month.';
+  }
+
+  @override
+  String goalLatePassed(String date) {
+    return 'The date, $date, has passed: change it in the goal.';
+  }
+
+  @override
+  String goalUseMonthly(String amount) {
+    return 'Use $amount a month';
+  }
+
+  @override
+  String get goalContribute => 'Add money';
+
+  @override
+  String goalContributeTitle(String goal) {
+    return 'Add to $goal';
+  }
+
+  @override
+  String get goalContributeFrom => 'From';
+
+  @override
+  String get goalContributeTo => 'Where does it go?';
+
+  @override
+  String get goalContributeKept => 'It\'s already saved: just add it';
+
+  @override
+  String get goalContributeNoSavings =>
+      'For it to leave what you can spend, keep it in a savings account, a pocket or a CD.';
+
+  @override
+  String get goalContributeAddSavings => 'Add a savings account';
+
+  @override
+  String goalSavingsName(String goal) {
+    return 'Savings for $goal';
+  }
+
+  @override
+  String goalContributeAfter(String saved, String target) {
+    return 'The goal will be at $saved of $target.';
+  }
+
+  @override
+  String goalContributeMoves(String from, String amount, String to) {
+    return '$from goes down by $amount and $to goes up as much: it leaves what you can spend.';
+  }
+
+  @override
+  String get goalContributeOnlyCounts =>
+      'It\'s only added to the goal: no money moves.';
+
+  @override
+  String get goalContributeInvalid => 'Write how much you add.';
+
+  @override
   String get goalNoMonthly => 'with nothing a month, it has no date';
 
   @override
@@ -1561,6 +1643,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get envelopesOverTitle => 'You\'re assigning more than there is';
+
+  @override
+  String envelopesShortGoals(String list) {
+    return 'This period there isn\'t enough for everything: day to day comes first. $list. What\'s missing can wait for the next period.';
+  }
+
+  @override
+  String envelopesShortItem(String name, String asked, String got) {
+    return '$name gets $got of $asked';
+  }
+
+  @override
+  String envelopesAdjusted(String list) {
+    return 'Last period\'s split doesn\'t fit what there is now, and day to day comes first: $list.';
+  }
+
+  @override
+  String envelopesAdjustedItem(String name, String asked, String got) {
+    return '$name goes from $asked to $got';
+  }
 
   @override
   String envelopesOver(String amount) {
@@ -3393,7 +3495,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String instalPaymentRemoveEntry(String amount, String account) {
-    return 'Its $amount movement in $account is deleted too.';
+    return 'Its $amount transaction in $account is deleted too.';
   }
 
   @override
@@ -3442,7 +3544,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String instalPaidWithCard(String card) {
-    return 'This purchase is on $card: the instalment comes out when you pay the card.';
+    return 'This purchase is on $card: the installment comes out when you pay the card.';
   }
 
   @override
