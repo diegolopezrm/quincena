@@ -4034,29 +4034,41 @@ abstract class AppLocalizations {
   /// **'el mensaje dice de qué es'**
   String get whyWords;
 
-  /// No description provided for @ruleLearnedMerchant.
+  /// No description provided for @ruleLearned.
   ///
   /// In es, this message translates to:
-  /// **'Desde ahora, «{merchant}» va a {category}.'**
-  String ruleLearnedMerchant(String merchant, String category);
+  /// **'Desde ahora, {rules}.'**
+  String ruleLearned(String rules);
 
-  /// No description provided for @ruleLearnedCard.
+  /// No description provided for @ruleGoesMerchant.
   ///
   /// In es, this message translates to:
-  /// **'Desde ahora, la tarjeta *{digits} va a {account}.'**
-  String ruleLearnedCard(String digits, String account);
+  /// **'«{merchant}» va a {category}'**
+  String ruleGoesMerchant(String merchant, String category);
 
-  /// No description provided for @ruleLearnedInstitution.
+  /// No description provided for @ruleGoesCard.
   ///
   /// In es, this message translates to:
-  /// **'Desde ahora, lo de {institution} va a {account}.'**
-  String ruleLearnedInstitution(String institution, String account);
+  /// **'la tarjeta *{digits} va a {account}'**
+  String ruleGoesCard(String digits, String account);
 
-  /// No description provided for @ruleLearnedMore.
+  /// No description provided for @ruleGoesAccount.
   ///
   /// In es, this message translates to:
-  /// **'{count, plural, =1{Y una regla más.} other{Y {count} reglas más.}}'**
-  String ruleLearnedMore(int count);
+  /// **'la cuenta *{digits} va a {account}'**
+  String ruleGoesAccount(String digits, String account);
+
+  /// No description provided for @ruleGoesInstitution.
+  ///
+  /// In es, this message translates to:
+  /// **'lo de {institution} va a {account}'**
+  String ruleGoesInstitution(String institution, String account);
+
+  /// No description provided for @ruleResolved.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{También quedó listo otro movimiento.} other{También quedaron listos otros {count} movimientos.}}'**
+  String ruleResolved(int count);
 
   /// No description provided for @ruleMissingAccount.
   ///
@@ -10403,12 +10415,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'la cuenta *{digits} es {account}'**
   String whyAccount(String digits, String account);
-
-  /// No description provided for @ruleLearnedAccount.
-  ///
-  /// In es, this message translates to:
-  /// **'Desde ahora, la cuenta *{digits} va a {account}.'**
-  String ruleLearnedAccount(String digits, String account);
 
   /// No description provided for @ruleAccountKey.
   ///

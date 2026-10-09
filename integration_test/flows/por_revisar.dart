@@ -203,6 +203,22 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
           expect(s.rules.length, rules + 2);
         },
       );
+      await f.check(
+        'El aviso escribe «Laura Gómez» con tilde y nombra las dos reglas',
+        () {
+          expect(
+            own.captureSettings.merchantNames['laura gomez'],
+            'Laura Gómez',
+          );
+          expect(
+            f.screenText,
+            contains(
+              'Ingreso registrado en Nequi. Desde ahora, «Laura Gómez» va a '
+              'Otros ingresos y lo de Nequi va a Nequi.',
+            ),
+          );
+        },
+      );
       await f.back();
       await f.step(
         'De vuelta en Inicio: ${_headline(own)}, con los \$85.000 de Laura, '
@@ -293,8 +309,18 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.tap('Bancolombia');
       await f.step(
         'Elegida Bancolombia, el aviso dice «Gasto registrado en Bancolombia» '
-        'y lo que aprendió del comercio, con una regla más.',
+        'y nombra lo que aprendió: «Éxito Laureles» va a Mercado y la tarjeta '
+        '*1234 va a Bancolombia.',
       );
+      await f.check('El aviso nombra las dos reglas, con la tilde de Éxito', () {
+        expect(
+          f.screenText,
+          contains(
+            'Gasto registrado en Bancolombia. Desde ahora, «Éxito Laureles» va '
+            'a Mercado y la tarjeta *1234 va a Bancolombia.',
+          ),
+        );
+      });
       await f.check(
         'Quedó un gasto de \$63.200 en Bancolombia, en Mercado',
         () {
@@ -601,7 +627,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.tap('Bancolombia');
       await f.step(
         'Con Bancolombia elegida, el aviso dice «Gasto registrado en '
-        'Bancolombia» y lo que aprendió: Claro va a Servicios y una regla más.',
+        'Bancolombia» y lo que aprendió: «Claro» va a Servicios y lo de '
+        'Bancolombia va a Bancolombia.',
       );
       await f.check('Quedó el pago de Claro en Bancolombia', () {
         final Entry e = own.snapshot!.entries.firstWhere(
@@ -782,8 +809,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       );
       await f.tapFound(find.text('Registrar gasto'));
       await f.step(
-        'Registrado: el aviso dice que desde ahora «Exito Laureles» va a '
-        'Restaurantes, y una regla más (la tarjeta *1234).',
+        'Registrado: el aviso dice que desde ahora «Éxito Laureles» va a '
+        'Restaurantes y la tarjeta *1234 va a Bancolombia.',
       );
       await f.check('El gasto quedó como lo corregiste, con la nota', () {
         final Entry e = own.snapshot!.entries.firstWhere(
@@ -2152,8 +2179,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.tap('Bancolombia');
       await f.step(
         'Elegida Bancolombia: el aviso dice «Ingreso registrado en '
-        'Bancolombia.», que Andres Mejia va a Otros ingresos «y una regla '
-        'más»: la de la cuenta *5678.',
+        'Bancolombia.» y nombra las dos reglas: «Andres Mejia» va a Otros '
+        'ingresos y la cuenta *5678 va a Bancolombia.',
       );
       await f.check('Quedó el ingreso y aprendió la cuenta por su número', () {
         final Entry e = own.snapshot!.entries.firstWhere(
@@ -2166,7 +2193,13 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         // The number says which account: nothing about all of Bancolombia.
         expect(own.captureSettings.institutionAccounts, isEmpty);
         expect(f.screenText, contains('Ingreso registrado en Bancolombia.'));
-        expect(f.screenText, contains('Y una regla más.'));
+        expect(
+          f.screenText,
+          contains(
+            'Desde ahora, «Andres Mejia» va a Otros ingresos y la cuenta *5678 '
+            'va a Bancolombia.',
+          ),
+        );
       });
       await _hideNotice(f);
       await _paste(

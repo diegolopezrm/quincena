@@ -130,10 +130,11 @@ class _RuleRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
     final String target = ruleTarget(context, own, rule);
+    final String subject = ruleSubject(context, own, rule);
     return ListTile(
       contentPadding: const EdgeInsets.fromLTRB(16, 4, 4, 4),
       onTap: () => _change(context),
-      title: Text(ruleSubject(context, rule), style: context.type.titleSmall),
+      title: Text(subject, style: context.type.titleSmall),
       subtitle: Text(
         '→ $target',
         style: context.type.bodySmall?.copyWith(
@@ -144,7 +145,7 @@ class _RuleRow extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Semantics(
-            label: '${l.ruleOn}: ${ruleSubject(context, rule)}',
+            label: '${l.ruleOn}: $subject',
             child: Switch(
               value: rule.enabled,
               onChanged: (bool on) => _save(

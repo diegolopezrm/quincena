@@ -2650,27 +2650,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get whyWords => 'the message says what it is';
 
   @override
-  String ruleLearnedMerchant(String merchant, String category) {
-    return 'From now on, \"$merchant\" goes to $category.';
+  String ruleLearned(String rules) {
+    return 'From now on, $rules.';
   }
 
   @override
-  String ruleLearnedCard(String digits, String account) {
-    return 'From now on, card *$digits goes to $account.';
+  String ruleGoesMerchant(String merchant, String category) {
+    return '\"$merchant\" goes to $category';
   }
 
   @override
-  String ruleLearnedInstitution(String institution, String account) {
-    return 'From now on, $institution goes to $account.';
+  String ruleGoesCard(String digits, String account) {
+    return 'card *$digits goes to $account';
   }
 
   @override
-  String ruleLearnedMore(int count) {
+  String ruleGoesAccount(String digits, String account) {
+    return 'account *$digits goes to $account';
+  }
+
+  @override
+  String ruleGoesInstitution(String institution, String account) {
+    return '$institution alerts go to $account';
+  }
+
+  @override
+  String ruleResolved(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'And $count more rules.',
-      one: 'And one more rule.',
+      other: '$count more transactions are ready too.',
+      one: '1 more transaction is ready too.',
     );
     return '$_temp0';
   }
@@ -6875,11 +6885,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String whyAccount(String digits, String account) {
     return 'account *$digits is $account';
-  }
-
-  @override
-  String ruleLearnedAccount(String digits, String account) {
-    return 'From now on, account *$digits goes to $account.';
   }
 
   @override

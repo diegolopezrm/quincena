@@ -171,6 +171,16 @@ void main() {
     await settle(tester);
     await tester.tap(find.text('Bancolombia').last);
     await settle(tester);
+    // The notice names every rule, the shop with its accent, and what they
+    // settled.
+    expect(
+      find.text(
+        'Gasto registrado en Bancolombia. Desde ahora, «Éxito Laureles» va a '
+        'Mercado y la tarjeta *1234 va a Bancolombia. También quedó listo '
+        'otro movimiento.',
+      ),
+      findsOneWidget,
+    );
     // Carulla, paid with the same card, no longer asks.
     expect(on('Carulla', 'Mercado · Bancolombia'), findsOneWidget);
     expect(on('Carulla', 'Registrar gasto'), findsOneWidget);

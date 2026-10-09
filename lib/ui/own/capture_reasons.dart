@@ -99,37 +99,63 @@ String ruleTarget(BuildContext context, OwnController own, CaptureRule rule) =>
     ? categoryNameFor(context, rule.target, own.categories)
     : _accountName(context.l10n, own, rule.target);
 
-/// What a rule matches, the way the person would say it.
-String ruleSubject(BuildContext context, CaptureRule rule) =>
+/// What a rule matches, the way the person would say it: a merchant as
+/// the card showed it, accents and all, when the app kept that name.
+String ruleSubject(BuildContext context, OwnController own, CaptureRule rule) =>
     switch (rule.kind) {
-      RuleKind.merchant => merchantShown(rule.key),
+      RuleKind.merchant =>
+        own.captureSettings.merchantNames[rule.key] ?? merchantShown(rule.key),
       RuleKind.card => context.l10n.ruleCardKey(rule.key),
       RuleKind.account => context.l10n.ruleAccountKey(rule.key),
       RuleKind.institution => rule.key,
     };
 
-/// What a confirmation taught, for the message that offers to undo it.
+/// What a confirmation taught, for the message that offers to undo it:
+/// every rule, each by its name.
 String learnedText(
   BuildContext context,
   OwnController own,
   List<RuleChange> changes,
 ) {
   final AppLocalizations l = context.l10n;
-  final CaptureRule first = changes.first.rule;
-  final String target = ruleTarget(context, own, first);
-  final String said = switch (first.kind) {
-    RuleKind.merchant => l.ruleLearnedMerchant(
-      merchantShown(first.key),
-      target,
-    ),
-    RuleKind.card => l.ruleLearnedCard(first.key, target),
-    RuleKind.account => l.ruleLearnedAccount(first.key, target),
-    RuleKind.institution => l.ruleLearnedInstitution(first.key, target),
-  };
-  return changes.length == 1
-      ? said
-      : '$said ${l.ruleLearnedMore(changes.length - 1)}';
+  final List<String> rules = <String>[
+    for (final RuleChange c in changes)
+      switch (c.rule.kind) {
+        RuleKind.merchant => l.ruleGoesMerchant(
+          c.name ?? ruleSubject(context, own, c.rule),
+          ruleTarget(context, own, c.rule),
+        ),
+        RuleKind.card => l.ruleGoesCard(
+          c.rule.key,
+          ruleTarget(context, own, c.rule),
+        ),
+        RuleKind.account => l.ruleGoesAccount(
+          c.rule.key,
+          ruleTarget(context, own, c.rule),
+        ),
+        RuleKind.institution => l.ruleGoesInstitution(
+          c.rule.key,
+          ruleTarget(context, own, c.rule),
+        ),
+      },
+  ];
+  return l.ruleLearned(
+    rules.length < 2
+        ? rules.join()
+        : l.listAnd(
+            rules.take(rules.length - 1).join(', '),
+            rules.last,
+            _sound(rules.last),
+          ),
+  );
 }
+
+/// The sound [words] start with, as listAnd picks its conjunction: Spanish
+/// says «y» before most words and «e» before an «i».
+String _sound(String words) =>
+    RegExp(r'^[«"]?h?[ií](?![aeoáéó])', caseSensitive: false).hasMatch(words)
+    ? 'i'
+    : 'other';
 
 /// Says where [done] was recorded and what it taught, with one way to take
 /// both back: the movement goes, and the capture waits in Por revisar
@@ -168,7 +194,8 @@ void showRecordedMany(
   );
 }
 
-/// [said], then what [done] taught, with a way to take all of it back.
+/// [said], then what [done] taught and the captures waiting that it left
+/// ready, with a way to take all of it back.
 void _offerUndo(
   ScaffoldMessengerState messenger,
   OwnController own,
@@ -179,14 +206,17 @@ void _offerUndo(
   final List<RuleChange> learned = <RuleChange>[
     for (final Accepted a in done) ...a.learned,
   ];
+  final int resolved = done.fold(0, (int n, Accepted a) => n + a.resolved);
   messenger
     ..hideCurrentSnackBar()
     ..showSnackBar(
       SnackBar(
         content: Text(
-          learned.isEmpty
-              ? said
-              : '$said ${learnedText(context, own, learned)}',
+          <String>[
+            said,
+            if (learned.isNotEmpty) learnedText(context, own, learned),
+            if (resolved > 0) context.l10n.ruleResolved(resolved),
+          ].join(' '),
         ),
         duration: const Duration(seconds: 6),
         action: SnackBarAction(

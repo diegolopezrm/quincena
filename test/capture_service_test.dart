@@ -788,6 +788,67 @@ Fecha
       },
     );
 
+    test('a merchant\'s rule keeps the name the card showed', () async {
+      await capture.ingest(<CaptureEvent>[
+        push(
+          r'Nequi · Laura Gómez te envió $85.000',
+          app: 'com.nequi.MobileApp',
+        ),
+      ]);
+      final Accepted done = await capture.accept(
+        (await pending()).single,
+        accountId: nequi.id,
+      );
+      final RuleChange named = done.learned.firstWhere(
+        (RuleChange c) => c.rule.kind == RuleKind.merchant,
+      );
+      expect(named.rule.key, 'laura gomez');
+      expect(named.name, 'Laura Gómez');
+      CaptureSettings s = await store.captureSettings();
+      expect(s.merchantNames, <String, String>{'laura gomez': 'Laura Gómez'});
+      expect(
+        CaptureSettings.fromJson(s.toJson()).merchantNames,
+        s.merchantNames,
+      );
+      // The name goes with its rule.
+      s = s.withoutRule(named.rule);
+      expect(s.merchantNames, isEmpty);
+    });
+
+    test('a confirmation says how many waiting its rules left ready', () async {
+      CaptureEvent davivienda(String text, int minute) => push(
+        'Davivienda: $text',
+        app: 'com.davivienda.daviviendaapp',
+        at: DateTime(2026, 10, 1, 9, minute),
+      );
+      await capture.ingest(<CaptureEvent>[
+        davivienda(r'Compra por $45.000 en D1 con tu tarjeta *5678', 0),
+        davivienda(r'Compra por $18.500 en OXXO con tu tarjeta *5678', 10),
+        davivienda(r'Compra por $9.000 en KOAJ con tu tarjeta *5678', 20),
+        davivienda(r'Compra por $30.000 en ZARA con tu tarjeta *1111', 30),
+      ]);
+      final List<InboxItem> waiting = await pending();
+      // Davivienda is no bank of the person's: none has an account yet.
+      expect(
+        waiting.every((InboxItem i) => i.suggestion.accountId == null),
+        isTrue,
+      );
+      final Accepted done = await capture.accept(
+        waiting.firstWhere((InboxItem i) => i.parsed.merchant == 'D1'),
+        accountId: nequi.id,
+      );
+      // The card's two other purchases; the one with another card waits.
+      expect(done.resolved, 2);
+
+      final Accepted again = await capture.accept(
+        (await pending()).firstWhere(
+          (InboxItem i) => i.parsed.merchant == 'Oxxo',
+        ),
+        accountId: nequi.id,
+      );
+      expect(again.resolved, 0);
+    });
+
     test('confirming what a rule already says teaches nothing new', () async {
       await confirmFirst();
       await capture.ingest(<CaptureEvent>[bakery('9.500', day: 2)]);

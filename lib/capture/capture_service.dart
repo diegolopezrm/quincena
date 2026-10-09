@@ -161,13 +161,40 @@ class CaptureService {
       entryId: entry.id,
     );
     await store.saveInboxItem(recorded);
+    final CaptureSettings before = await store.captureSettings();
     final List<RuleChange> learned = await _learn(
       item,
       accountId: accountId,
       category: category ?? entry.category,
       payee: entry.payee,
     );
-    return Accepted(entry, learned, item: recorded);
+    return Accepted(
+      entry,
+      learned,
+      item: recorded,
+      resolved: learned.isEmpty
+          ? 0
+          : await _resolved(before, await store.captureSettings(), accounts),
+    );
+  }
+
+  /// How many captures still waiting were not ready under [before] and are
+  /// under [after]: what a confirmation's rules settled for the person.
+  Future<int> _resolved(
+    CaptureSettings before,
+    CaptureSettings after,
+    List<Account> accounts,
+  ) async {
+    var n = 0;
+    for (final InboxItem i in await store.inbox(
+      statuses: <InboxStatus>{InboxStatus.pending},
+    )) {
+      if (!isReady(withRules(i, before, accounts), accounts) &&
+          isReady(withRules(i, after, accounts), accounts)) {
+        n++;
+      }
+    }
+    return n;
   }
 
   /// Records each of [items] as the app proposes it, as [accept] would one
@@ -591,7 +618,8 @@ class CaptureService {
     final String? number = item.parsed.account;
     final String? institution = item.parsed.institution;
     final List<RuleChange> changes = <RuleChange>[];
-    void learn(RuleKind kind, String key, String target) {
+    var named = false;
+    void learn(RuleKind kind, String key, String target, {String? name}) {
       final CaptureRule rule = CaptureRule(
         kind: kind,
         key: key,
@@ -604,13 +632,18 @@ class CaptureService {
         RuleKind.account => s.accountNumbers[key],
         RuleKind.institution => s.institutionAccounts[key],
       };
+      // The name as the card showed it, for the rule to say it that way.
+      if (name != null && name.isNotEmpty && s.merchantNames[key] != name) {
+        s = s.withMerchantName(key, name);
+        named = true;
+      }
       if (before == target) return;
       s = s.withRule(rule);
-      changes.add(RuleChange(rule, previous: before));
+      changes.add(RuleChange(rule, previous: before, name: name));
     }
 
     if (key != null && key.isNotEmpty && category != null) {
-      learn(RuleKind.merchant, key, category);
+      learn(RuleKind.merchant, key, category, name: payee?.trim());
     }
     // The most precise thing the alert names: the card, or else the
     // account's digits, or else the bank.
@@ -626,7 +659,7 @@ class CaptureService {
         teachesInstitution(item.parsed, (await store.profile())?.base)) {
       learn(RuleKind.institution, institution, accountId);
     }
-    if (changes.isNotEmpty) await store.saveCaptureSettings(s);
+    if (changes.isNotEmpty || named) await store.saveCaptureSettings(s);
     return changes;
   }
 
@@ -660,13 +693,21 @@ class CaptureService {
 
 /// A capture recorded, and the rules recording it taught.
 class Accepted {
-  const Accepted(this.entry, this.learned, {required this.item});
+  const Accepted(
+    this.entry,
+    this.learned, {
+    required this.item,
+    this.resolved = 0,
+  });
 
   final Entry entry;
   final List<RuleChange> learned;
 
   /// The capture as it stands now: recorded, pointing at [entry].
   final InboxItem item;
+
+  /// How many other captures [learned] left ready to record.
+  final int resolved;
 }
 
 /// The person's accounts at [institution], by the bank they were set up
