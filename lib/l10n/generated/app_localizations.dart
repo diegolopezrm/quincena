@@ -5726,6 +5726,12 @@ abstract class AppLocalizations {
   /// **'{count} cobros parecidos, el último de {amount}: {dates}'**
   String guessEvidence(int count, String amount, String dates);
 
+  /// No description provided for @guessOnce.
+  ///
+  /// In es, this message translates to:
+  /// **'Un pago de {amount} el {date}: suele repetirse cada mes.'**
+  String guessOnce(String amount, String date);
+
   /// No description provided for @guessAdd.
   ///
   /// In es, this message translates to:
@@ -10109,6 +10115,30 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Listo. Lo que puedes gastar ya no es provisional.'**
   String get fixedNoneDone;
+
+  /// No description provided for @fixedNoneAskTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Y {name}?'**
+  String fixedNoneAskTitle(String name);
+
+  /// No description provided for @fixedNoneAskBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagaste {amount} el {date}, y eso suele repetirse cada mes. Si es un pago fijo, agrégalo para que lo que puedes gastar lo cuente antes de que llegue.'**
+  String fixedNoneAskBody(String amount, String date);
+
+  /// No description provided for @fixedNoneAskAdd.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregarlo'**
+  String get fixedNoneAskAdd;
+
+  /// No description provided for @fixedNoneAskNo.
+  ///
+  /// In es, this message translates to:
+  /// **'No es fijo'**
+  String get fixedNoneAskNo;
 
   /// No description provided for @freeExplainAssumeNoFixed.
   ///

@@ -88,13 +88,7 @@ class CommitmentsPage extends StatelessWidget {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: TextButton(
-                      onPressed: () async {
-                        final ScaffoldMessengerState messenger =
-                            ScaffoldMessenger.of(context);
-                        final String done = l.fixedNoneDone;
-                        await own.sayNoFixedPayments(true);
-                        messenger.showSnackBar(SnackBar(content: Text(done)));
-                      },
+                      onPressed: () => _noneAtAll(context, own, guesses),
                       child: Text(l.noFixedPayments),
                     ),
                   ),
@@ -131,6 +125,73 @@ class CommitmentsPage extends StatelessWidget {
     },
   );
 }
+
+/// The person says they pay nothing fixed. Rent, utilities or a loan the
+/// history shows are asked about first: one of them is most likely a fixed
+/// payment.
+Future<void> _noneAtAll(
+  BuildContext context,
+  OwnController own,
+  List<RecurringGuess> guesses,
+) async {
+  final AppLocalizations l = context.l10n;
+  final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+  final Ledger? ledger = own.ledger;
+  final List<RecurringGuess> usual = <RecurringGuess>[
+    for (final RecurringGuess g in guesses)
+      if (monthlyKinds.contains(g.category)) g,
+  ];
+  if (usual.isNotEmpty && ledger != null) {
+    final RecurringGuess first = usual.first;
+    final Movement paid = first.evidence.last;
+    final bool? none = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: Text(l.fixedNoneAskTitle(first.name)),
+        content: Text(
+          l.fixedNoneAskBody(
+            pesos(ledger.major(paid.amount)),
+            dayMonth(paid.date),
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l.fixedNoneAskNo),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l.fixedNoneAskAdd),
+          ),
+        ],
+      ),
+    );
+    if (none == null || !context.mounted) return;
+    if (!none) {
+      await showChargeSheet(
+        context,
+        own: own,
+        draft: _draftOf(first, ledger, own.profile?.base ?? Asset.cop),
+      );
+      return;
+    }
+    for (final RecurringGuess g in usual) {
+      await own.notRecurring(g.name);
+    }
+  }
+  final String done = l.fixedNoneDone;
+  await own.sayNoFixedPayments(true);
+  messenger.showSnackBar(SnackBar(content: Text(done)));
+}
+
+/// [guess] as a fixed payment to add, from its last charge.
+ChargeDraft _draftOf(RecurringGuess guess, Ledger ledger, Asset base) =>
+    ChargeDraft(
+      name: guess.name,
+      amount: Money(Decimal.parse('${ledger.major(guess.amount)}'), base),
+      next: guess.next,
+      category: guess.category.name,
+    );
 
 /// What comes in the next 30 days, and the subscriptions in a year.
 class _Summary extends StatelessWidget {
@@ -372,13 +433,18 @@ class _GuessCard extends StatelessWidget {
                   children: <Widget>[
                     Text(guess.name, style: context.type.titleSmall),
                     Text(
-                      l.guessEvidence(
-                        guess.evidence.length,
-                        pesos(ledger.major(guess.amount)),
-                        guess.evidence
-                            .map((Movement m) => dayShortMonth(m.date))
-                            .join(', '),
-                      ),
+                      guess.evidence.length == 1
+                          ? l.guessOnce(
+                              pesos(ledger.major(guess.amount)),
+                              dayMonth(guess.evidence.single.date),
+                            )
+                          : l.guessEvidence(
+                              guess.evidence.length,
+                              pesos(ledger.major(guess.amount)),
+                              guess.evidence
+                                  .map((Movement m) => dayShortMonth(m.date))
+                                  .join(', '),
+                            ),
                       style: context.type.bodySmall,
                     ),
                   ],
@@ -397,15 +463,7 @@ class _GuessCard extends StatelessWidget {
                 onPressed: () => showChargeSheet(
                   context,
                   own: own,
-                  draft: ChargeDraft(
-                    name: guess.name,
-                    amount: Money(
-                      Decimal.parse('${ledger.major(guess.amount)}'),
-                      base,
-                    ),
-                    next: guess.next,
-                    category: guess.category.name,
-                  ),
+                  draft: _draftOf(guess, ledger, base),
                 ),
                 icon: const Icon(Glyph.plus, size: 18),
                 label: Text(l.guessAdd),

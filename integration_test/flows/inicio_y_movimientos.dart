@@ -10,6 +10,7 @@ import 'package:quincena/domain/categories.dart';
 import 'package:quincena/domain/decisions.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/projection.dart';
+import 'package:quincena/domain/commitments.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/domain/shared.dart';
 import 'package:quincena/format/dates.dart';
@@ -777,36 +778,55 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       final int free = own.ledger!.freeUntilPayday;
       await f.reveal(find.text('Agrega tus pagos fijos'));
       await f.step(
-        'En «Después», «Agrega tus pagos fijos» dice «Uno parece pago fijo: '
-        'revísalo», con «Agregar».',
+        'En «Después», «Agrega tus pagos fijos» dice «2 parecen pagos fijos: '
+        'revísalos», con «Agregar».',
       );
-      await f.check('Dice que un gasto parece pago fijo', () {
-        expect(f.shows('Uno parece pago fijo: revísalo'), isTrue);
+      await f.check('Dice que dos gastos parecen pagos fijos', () {
+        expect(f.shows('2 parecen pagos fijos: revísalos'), isTrue);
       });
       await f.tap('Agregar');
       await f.page(
-        'Toca «Agregar»: abre «Pagos fijos», con Rappi propuesto porque se '
-        'cobró parecido tres meses, y «No tengo pagos fijos».',
+        'Toca «Agregar»: abre «Pagos fijos», con el Arriendo propuesto aunque '
+        'se pagó una sola vez, porque el arriendo se paga cada mes, y Rappi, '
+        'que se cobró parecido tres meses; y «No tengo pagos fijos».',
       );
+      await f.check('Propone el arriendo, visto una vez, y Rappi', () {
+        expect(own.recurringGuesses.map((RecurringGuess g) => g.name), <String>[
+          'Arriendo',
+          'Rappi',
+        ]);
+      });
       await f.tap('No es fijo');
       await f.step(
-        'Toca «No es fijo» en Rappi: deja de proponerlo y queda «No tengo '
-        'pagos fijos».',
+        'Toca «No es fijo» en Rappi: deja de proponerlo; queda el Arriendo.',
       );
       await f.check('Rappi ya no se propone como pago fijo', () {
         expect(own.detective.notRecurring, contains('rappi'));
-        expect(own.recurringGuesses, isEmpty);
+        expect(own.recurringGuesses.map((RecurringGuess g) => g.name), <String>[
+          'Arriendo',
+        ]);
       });
       await f.tap('No tengo pagos fijos');
       await f.step(
-        'Toca «No tengo pagos fijos»: un aviso abajo confirma que lo que '
-        'puedes gastar ya no es provisional.',
+        'Toca «No tengo pagos fijos»: antes, la app pregunta «¿Y Arriendo?», '
+        'que pagaste el 16 de septiembre y suele repetirse cada mes, con '
+        '«Agregarlo» y «No es fijo».',
+      );
+      await f.check('Pregunta por el arriendo antes de aceptar', () {
+        expect(f.shows('¿Y Arriendo?'), isTrue);
+        expect(own.provisional, isTrue);
+      });
+      await f.tap('No es fijo');
+      await f.step(
+        'Con «No es fijo», un aviso abajo confirma que lo que puedes gastar ya '
+        'no es provisional.',
       );
       await f.check('Muestra el aviso de que ya no es provisional', () {
         expect(
           f.shows('Listo. Lo que puedes gastar ya no es provisional.'),
           isTrue,
         );
+        expect(own.recurringGuesses, isEmpty);
       });
       await f.back();
       await f.top();

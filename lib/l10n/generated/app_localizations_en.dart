@@ -3724,6 +3724,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String guessOnce(String amount, String date) {
+    return 'One payment of $amount on $date: it usually comes every month.';
+  }
+
+  @override
   String get guessAdd => 'Add as a recurring payment';
 
   @override
@@ -6672,6 +6677,22 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get fixedNoneDone =>
       'Done. What you can spend is no longer provisional.';
+
+  @override
+  String fixedNoneAskTitle(String name) {
+    return 'What about $name?';
+  }
+
+  @override
+  String fixedNoneAskBody(String amount, String date) {
+    return 'You paid $amount on $date, and that usually comes every month. If it\'s a recurring payment, add it so what you can spend counts it before it comes.';
+  }
+
+  @override
+  String get fixedNoneAskAdd => 'Add it';
+
+  @override
+  String get fixedNoneAskNo => 'It isn\'t recurring';
 
   @override
   String get freeExplainAssumeNoFixed =>

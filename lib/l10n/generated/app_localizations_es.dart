@@ -3722,6 +3722,11 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String guessOnce(String amount, String date) {
+    return 'Un pago de $amount el $date: suele repetirse cada mes.';
+  }
+
+  @override
   String get guessAdd => 'Agregar como pago fijo';
 
   @override
@@ -6665,6 +6670,22 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get fixedNoneDone =>
       'Listo. Lo que puedes gastar ya no es provisional.';
+
+  @override
+  String fixedNoneAskTitle(String name) {
+    return '¿Y $name?';
+  }
+
+  @override
+  String fixedNoneAskBody(String amount, String date) {
+    return 'Pagaste $amount el $date, y eso suele repetirse cada mes. Si es un pago fijo, agrégalo para que lo que puedes gastar lo cuente antes de que llegue.';
+  }
+
+  @override
+  String get fixedNoneAskAdd => 'Agregarlo';
+
+  @override
+  String get fixedNoneAskNo => 'No es fijo';
 
   @override
   String get freeExplainAssumeNoFixed =>

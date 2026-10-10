@@ -151,47 +151,70 @@ class RecurringGuess {
   final List<Movement> evidence;
 }
 
+/// What is paid every month even when the app has seen it once: rent,
+/// utilities and loans.
+const Set<Category> monthlyKinds = <Category>{
+  Category.housing,
+  Category.utilities,
+  Category.debt,
+};
+
 /// Merchants charged two or more times, about a month apart and for about
-/// the same, over the last [days] days.
+/// the same, over the last [days] days; and rent, utilities and loans paid
+/// once in the last [once] days, which come every month all the same. A
+/// payment's month in its name («Arriendo octubre») is left out of it.
 List<RecurringGuess> guessRecurring(
   Ledger ledger, {
   required Iterable<String> known,
   int days = 130,
+  int once = 45,
 }) {
-  final DateTime since = _day(ledger.today).subtract(Duration(days: days));
+  final DateTime today = _day(ledger.today);
+  final DateTime since = today.subtract(Duration(days: days));
   final Set<String> skip = <String>{
-    for (final String k in known) merchantKey(k),
+    for (final String k in known) merchantKey(plainChargeName(k)),
   };
   final Map<String, List<Movement>> by = <String, List<Movement>>{};
   for (final Movement m in ledger.movements) {
     if (m.flow != Flow.expense || !ledger.settled(m)) continue;
     if (_day(m.date).isBefore(since)) continue;
-    final String key = merchantKey(m.merchant);
+    final String key = merchantKey(plainChargeName(m.merchant));
     if (key.isEmpty || skip.contains(key)) continue;
     by.putIfAbsent(key, () => <Movement>[]).add(m);
   }
   final List<RecurringGuess> out = <RecurringGuess>[];
   for (final List<Movement> group in by.values) {
-    if (group.length < 2) continue;
     group.sort((Movement a, Movement b) => a.date.compareTo(b.date));
-    var monthly = true;
-    for (var i = 1; i < group.length; i++) {
+    final Movement last = group.last;
+    var monthly = group.length >= 2;
+    for (var i = 1; monthly && i < group.length; i++) {
       final int gap = _day(
         group[i].date,
       ).difference(_day(group[i - 1].date)).inDays;
       final double ratio = group[i].amount / math.max(1, group[i - 1].amount);
       if (gap < 26 || gap > 35 || ratio < 0.85 || ratio > 1.15) {
         monthly = false;
-        break;
       }
     }
-    if (!monthly) continue;
-    final Movement last = group.last;
+    // Seen once, what is paid every month by its kind, while it is recent.
+    final bool essential =
+        group.length == 1 &&
+        monthlyKinds.contains(last.category) &&
+        today.difference(_day(last.date)).inDays <= once;
+    if (!monthly && !essential) continue;
+    DateTime next = DateTime(
+      last.date.year,
+      last.date.month + 1,
+      last.date.day,
+    );
+    while (!next.isAfter(today)) {
+      next = DateTime(next.year, next.month + 1, next.day);
+    }
     out.add(
       RecurringGuess(
-        name: last.merchant,
+        name: plainChargeName(last.merchant),
         amount: last.amount,
-        next: DateTime(last.date.year, last.date.month + 1, last.date.day),
+        next: next,
         category: last.category,
         evidence: List<Movement>.unmodifiable(group),
       ),
@@ -202,6 +225,49 @@ List<RecurringGuess> guessRecurring(
   );
   return out;
 }
+
+/// [name] without the month or the year a payment's name often carries:
+/// «Arriendo octubre» is «Arriendo», «Cuota 2026» is «Cuota».
+String plainChargeName(String name) {
+  final String plain = name
+      .split(RegExp(r'\s+'))
+      .where(
+        (String w) =>
+            !_monthWords.contains(normalize(w)) &&
+            !RegExp(r'^(19|20)\d\d$').hasMatch(w),
+      )
+      .join(' ')
+      .trim();
+  return plain.isEmpty ? name : plain;
+}
+
+const Set<String> _monthWords = <String>{
+  'enero',
+  'febrero',
+  'marzo',
+  'abril',
+  'mayo',
+  'junio',
+  'julio',
+  'agosto',
+  'septiembre',
+  'setiembre',
+  'octubre',
+  'noviembre',
+  'diciembre',
+  'january',
+  'february',
+  'march',
+  'april',
+  'may',
+  'june',
+  'july',
+  'august',
+  'september',
+  'october',
+  'november',
+  'december',
+};
 
 // Installments --------------------------------------------------------------
 

@@ -113,6 +113,56 @@ void main() {
       expect(guesses.single.next, DateTime(2026, 10, 5));
       expect(guesses.single.evidence, hasLength(3));
     });
+
+    test('rent, utilities and a loan are offered from one payment, without '
+        'its month', () async {
+      await spend(
+        '1650000',
+        DateTime(2026, 9, 5),
+        'Arriendo septiembre',
+        category: 'housing',
+      );
+      await spend(
+        '89900',
+        DateTime(2026, 9, 20),
+        'Claro',
+        category: 'utilities',
+      );
+      // Too long ago to tell, or of a kind not paid every month.
+      await spend(
+        '300000',
+        DateTime(2026, 6, 10),
+        'Cuota crédito',
+        category: 'debt',
+      );
+      await spend(
+        '45000',
+        DateTime(2026, 9, 25),
+        'Tienda X',
+        category: 'groceries',
+      );
+      final List<RecurringGuess> guesses = guessRecurring(
+        await ledger(),
+        known: const <String>[],
+      );
+      expect(guesses.map((RecurringGuess g) => g.name), <String>[
+        'Arriendo',
+        'Claro',
+      ]);
+      final RecurringGuess rent = guesses.first;
+      expect(rent.next, DateTime(2026, 10, 5));
+      expect(rent.evidence, hasLength(1));
+      // Once it is a fixed payment by that name, it is not offered again.
+      expect(
+        guessRecurring(
+          await ledger(),
+          known: const <String>['Arriendo'],
+        ).map((RecurringGuess g) => g.name),
+        <String>['Claro'],
+      );
+      expect(plainChargeName('Arriendo octubre 2026'), 'Arriendo');
+      expect(plainChargeName('Octubre'), 'Octubre');
+    });
   });
 
   group('instalments', () {
