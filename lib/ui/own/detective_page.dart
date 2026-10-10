@@ -242,6 +242,17 @@ class _AlertCard extends StatelessWidget {
     showUndo(messenger, said, await own.putAlertAway(alert.id, put));
   }
 
+  /// Deletes the later of a payment seen twice, the copy, with a way back
+  /// for a few seconds.
+  Future<void> _deleteRepeat(BuildContext context) async {
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final Entry copy = alert.evidence.last;
+    final String said = context.l10n.detectiveRepeatDeleted(
+      copy.payee.isEmpty ? context.l10n.kindExpense : copy.payee,
+    );
+    showUndo(messenger, said, await own.deleteMovement(copy));
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
@@ -275,6 +286,12 @@ class _AlertCard extends StatelessWidget {
           Wrap(
             alignment: WrapAlignment.end,
             children: <Widget>[
+              // One payment seen twice: the copy goes from here.
+              if (alert.kind == AlertKind.twice && alert.seenTwice)
+                TextButton(
+                  onPressed: () => _deleteRepeat(context),
+                  child: Text(l.detectiveDeleteRepeat),
+                ),
               if (answer == AlertAnswer.expected ||
                   answer == AlertAnswer.dismissed)
                 TextButton(

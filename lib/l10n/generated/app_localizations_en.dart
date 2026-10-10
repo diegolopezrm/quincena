@@ -4597,7 +4597,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String detectiveTwiceSeenWhy(String first, String second) {
-    return 'Same amount, merchant and account, close together, but they came two ways: $first and $second. Most likely it\'s one payment recorded twice. If one is extra, open it and delete it yourself.';
+    return 'Same amount, merchant and account, close together, but they came different ways: $first and $second. Most likely it is one payment recorded twice: «Delete the repeat» takes out the one that came later.';
+  }
+
+  @override
+  String get detectiveDeleteRepeat => 'Delete the repeat';
+
+  @override
+  String detectiveRepeatDeleted(String payee) {
+    return 'The repeat of $payee was deleted.';
   }
 
   @override

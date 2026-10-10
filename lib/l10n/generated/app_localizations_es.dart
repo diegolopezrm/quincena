@@ -4596,7 +4596,15 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String detectiveTwiceSeenWhy(String first, String second) {
-    return 'Mismo valor, comercio y cuenta, muy seguidos, pero llegaron por caminos distintos: $first y $second. Lo más probable es que sea un solo pago registrado dos veces. Si sobra uno, ábrelo y bórralo tú.';
+    return 'Mismo valor, comercio y cuenta, muy seguidos, pero llegaron por caminos distintos: $first y $second. Lo más probable es que sea un solo pago registrado dos veces: «Borrar el repetido» quita el que llegó después.';
+  }
+
+  @override
+  String get detectiveDeleteRepeat => 'Borrar el repetido';
+
+  @override
+  String detectiveRepeatDeleted(String payee) {
+    return 'Se borró el repetido de $payee.';
   }
 
   @override

@@ -583,6 +583,35 @@ void main() {
       );
     }
 
+    testWidgets('a payment seen twice loses its copy with «Borrar el '
+        'repetido», and «Deshacer» brings it back', (tester) async {
+      final OwnController own = await openPage(
+        tester,
+        (OwnController own) => DetectivePage(own: own),
+        data: twice,
+      );
+      final int entries = own.snapshot!.entries.length;
+      await tapText(tester, 'Borrar el repetido');
+      expect(own.snapshot!.entries, hasLength(entries - 1));
+      // The one that came later, from the statement, is the copy.
+      expect(
+        own.snapshot!.entries.where((Entry e) => e.source == 'statement'),
+        isEmpty,
+      );
+      expect(
+        find.text('Puede ser el mismo pago visto dos veces'),
+        findsNothing,
+      );
+      expect(find.text('Se borró el repetido de EXITO.'), findsOneWidget);
+
+      await tapText(tester, 'Deshacer');
+      expect(own.snapshot!.entries, hasLength(entries));
+      expect(
+        find.text('Puede ser el mismo pago visto dos veces'),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('a payment seen twice is shown with its evidence, put away '
         'and back, and nothing is deleted', (tester) async {
       final OwnController own = await openPage(

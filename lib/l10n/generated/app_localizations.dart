@@ -7025,8 +7025,20 @@ abstract class AppLocalizations {
   /// No description provided for @detectiveTwiceSeenWhy.
   ///
   /// In es, this message translates to:
-  /// **'Mismo valor, comercio y cuenta, muy seguidos, pero llegaron por caminos distintos: {first} y {second}. Lo más probable es que sea un solo pago registrado dos veces. Si sobra uno, ábrelo y bórralo tú.'**
+  /// **'Mismo valor, comercio y cuenta, muy seguidos, pero llegaron por caminos distintos: {first} y {second}. Lo más probable es que sea un solo pago registrado dos veces: «Borrar el repetido» quita el que llegó después.'**
   String detectiveTwiceSeenWhy(String first, String second);
+
+  /// No description provided for @detectiveDeleteRepeat.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrar el repetido'**
+  String get detectiveDeleteRepeat;
+
+  /// No description provided for @detectiveRepeatDeleted.
+  ///
+  /// In es, this message translates to:
+  /// **'Se borró el repetido de {payee}.'**
+  String detectiveRepeatDeleted(String payee);
 
   /// No description provided for @detectiveTwiceTitle.
   ///
