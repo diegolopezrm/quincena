@@ -4136,17 +4136,23 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         await _binanceIdle(f, own);
         await f.reveal(find.text('Billeteras propias'));
         await f.step(
-          'Al abrir la cripto otra vez, Binance no se lee sola enseguida: '
-          'tras dos fallas espera dos horas, y la fila dice que no se pudo '
-          'leer y de cuándo es la última lectura buena.',
+          rejected
+              ? 'Al abrir la cripto otra vez, Binance no se lee sola '
+                    'enseguida: tras cada falla espera el doble, y la fila dice '
+                    'que no se pudo leer y de cuándo es la última lectura buena.'
+              : 'Al abrir la cripto otra vez, Binance no se lee sola '
+                    'enseguida: tras dos fallas espera dos horas, y la fila '
+                    'dice que no se pudo leer y de cuándo es la última lectura '
+                    'buena.',
         );
         await f.check(
-          'La cripto no vuelve a leer Binance sola tras dos fallas seguidas',
+          'La cripto no vuelve a leer Binance sola tras las fallas seguidas',
           () {
-            expect(own.binance.failures, 2);
+            final int failures = own.binance.failures;
+            expect(failures, rejected ? greaterThanOrEqualTo(1) : 2);
             expect(
               own.binance.retryAfter(const Duration(minutes: 30)),
-              const Duration(hours: 2),
+              const Duration(minutes: 30) * (1 << failures),
             );
             expect(
               f.screenText,
