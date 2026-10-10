@@ -3852,6 +3852,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chargeIncomplete => 'Falta el nombre o el valor.';
 
   @override
+  String get chargeCategoryMissing => 'Elige la categoría del pago fijo.';
+
+  @override
   String get chargeRemindDenied =>
       'Sin permiso para avisarte. Si quieres el aviso, activa las notificaciones de Quincena en los ajustes del teléfono.';
 

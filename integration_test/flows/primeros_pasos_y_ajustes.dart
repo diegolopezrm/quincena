@@ -767,7 +767,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.step(
         '«Agregar», en «Tus pagos fijos» de Inicio, abre «¿Qué pagas fijo?»; '
         'ahí «Agregar pago fijo» abre el formulario vacío: cada mes, próximo '
-        'cobro el 3 de noviembre, pagado desde Nequi y en Suscripciones.',
+        'cobro el 3 de noviembre, pagado desde Nequi y sin categoría todavía.',
       );
       await f.tap('Guardar');
       await f.reveal(find.text('Falta el nombre o el valor.'));
@@ -780,14 +780,27 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       });
       await f.type('¿Qué es?', 'Gimnasio');
       await f.type('¿Cuánto cobra?', '90000');
+      await f.step(
+        'Con «Gimnasio» escrito, el pago queda en Salud por su nombre, sin '
+        'las preguntas de una suscripción.',
+      );
+      await f.check('El nombre trajo la categoría Salud', () {
+        expect(
+          f.tester
+              .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Salud'))
+              .selected,
+          isTrue,
+        );
+        expect(f.shows('¿Está en prueba gratis?'), isFalse);
+      });
       await f.tap('Guardar');
       await f.step(
         'Con «Gimnasio» y 90.000, el pago queda en la lista con su próximo '
         'cobro y su valor.',
       );
       await f.check(
-        'Quedó el gimnasio por 90.000, pagado desde Nequi, como suscripción '
-        'y con cobro el 3 de noviembre',
+        'Quedó el gimnasio por 90.000, pagado desde Nequi, en Salud y con '
+        'cobro el 3 de noviembre',
         () async {
           final RecurringCharge gym = (await _read(
             f,
@@ -795,7 +808,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           )).single;
           expect(gym.name, 'Gimnasio');
           expect(gym.amount.amount, Decimal.parse('90000'));
-          expect(gym.category, 'subscriptions');
+          expect(gym.category, 'health');
           expect(gym.nextDate, DateTime(2026, 11, 3));
           final List<Account> accounts = await _read(
             f,

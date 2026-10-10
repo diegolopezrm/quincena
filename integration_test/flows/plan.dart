@@ -1887,10 +1887,23 @@ final List<AppFlow> planFlows = <AppFlow>[
       await f.tap('Agregar pago fijo');
       await f.tap('Guardar');
       await f.step(
-        '«Agregar pago fijo» abre en Suscripciones; guardar sin datos avisa '
+        '«Agregar pago fijo» abre sin categoría; guardar sin datos avisa '
         '«Falta el nombre o el valor.»',
       );
       await f.type('¿Qué es?', 'Disney+');
+      await f.check(
+        '«Disney+» trae la categoría Suscripciones por su nombre',
+        () {
+          expect(
+            f.tester
+                .widget<ChoiceChip>(
+                  find.widgetWithText(ChoiceChip, 'Suscripciones'),
+                )
+                .selected,
+            isTrue,
+          );
+        },
+      );
       await f.type('¿Cuánto cobra?', '38900');
       await f.tapFound(find.byType(DropdownButtonFormField<Cadence>));
       await f.step(

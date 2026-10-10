@@ -3854,6 +3854,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chargeIncomplete => 'The name or the amount is missing.';
 
   @override
+  String get chargeCategoryMissing => 'Pick the fixed payment’s category.';
+
+  @override
   String get chargeRemindDenied =>
       'No permission to remind you. If you want the reminder, turn on Quincena\'s notifications in your phone\'s settings.';
 

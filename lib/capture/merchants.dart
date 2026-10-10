@@ -253,6 +253,47 @@ String? knownCategory(String merchant) {
   return null;
 }
 
+/// The category a fixed payment's name gives away, as «Arriendo» or
+/// «Crédito del carro»: a well-known merchant first, then the words people
+/// name their fixed payments with. Null when the name says nothing.
+String? fixedCategoryFor(String name) {
+  // «Disney+» is Disney's: the plus is part of no word.
+  final String plain = name.replaceAll('+', ' ');
+  if (knownCategory(plain) case final String known) return known;
+  final String n = ' ${normalize(plain)} ';
+  for (final (String word, String category) in _fixed) {
+    if (n.contains(' $word ')) return category;
+  }
+  return null;
+}
+
+const List<(String, String)> _fixed = <(String, String)>[
+  ('renta', 'housing'),
+  ('alquiler', 'housing'),
+  ('rent', 'housing'),
+  ('hipoteca', 'debt'),
+  ('mortgage', 'debt'),
+  ('tarjeta', 'debt'),
+  ('leasing', 'debt'),
+  ('loan', 'debt'),
+  ('luz', 'utilities'),
+  ('agua', 'utilities'),
+  ('gas', 'utilities'),
+  ('energia', 'utilities'),
+  ('internet', 'utilities'),
+  ('celular', 'utilities'),
+  ('telefono', 'utilities'),
+  ('electricity', 'utilities'),
+  ('water', 'utilities'),
+  ('phone', 'utilities'),
+  ('gimnasio', 'health'),
+  ('gym', 'health'),
+  ('eps', 'health'),
+  ('prepagada', 'health'),
+  ('parqueadero', 'transport'),
+  ('parking', 'transport'),
+];
+
 /// Institutions, and the words or app ids that give them away.
 const Map<String, List<String>> institutions = <String, List<String>>{
   'Bancolombia': <String>['bancolombia', 'com.todo1.mobile'],

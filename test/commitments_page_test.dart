@@ -49,7 +49,7 @@ void main() {
         '26.900',
       );
       await settle(tester);
-      // A subscription unless said otherwise: what it costs in a year.
+      // Its name says it is a subscription: what it costs in a year.
       expect(find.text('Al año son ${pesos(322800)}.'), findsOneWidget);
       await tapText(tester, 'No avisarme');
       await tapText(tester, '3 días antes');
@@ -191,10 +191,13 @@ void main() {
         'cancels nothing', (tester) async {
       await openPage(tester, (OwnController own) => CommitmentsPage(own: own));
       await tapText(tester, 'Agregar pago fijo');
+      // A new one is no subscription until said: no question about use.
+      expect(find.text('Ya no la uso'), findsNothing);
       await tester.enterText(
         find.widgetWithText(TextField, '¿Cuánto cobra?'),
         '26.900',
       );
+      await tapText(tester, 'Suscripciones');
       await tapText(tester, 'Ya no la uso');
       expect(
         find.textContaining(
@@ -208,6 +211,47 @@ void main() {
           'Un cobro que se repite no dice si la usas: eso solo lo sabes tú.',
         ),
         findsOneWidget,
+      );
+    });
+
+    testWidgets('a new one takes its category from its name, and asks for '
+        'one when the name says nothing', (tester) async {
+      final OwnController own = await openPage(
+        tester,
+        (OwnController own) => CommitmentsPage(own: own),
+      );
+      bool picked(String chip) => tester
+          .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, chip))
+          .selected;
+      await tapText(tester, 'Agregar pago fijo');
+      await tester.enterText(
+        find.widgetWithText(TextField, '¿Qué es?'),
+        'Crédito del carro',
+      );
+      await settle(tester);
+      expect(picked('Créditos'), isTrue);
+      expect(find.text('¿Está en prueba gratis?'), findsNothing);
+
+      await tester.enterText(
+        find.widgetWithText(TextField, '¿Qué es?'),
+        'Clases de inglés',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, '¿Cuánto cobra?'),
+        '180.000',
+      );
+      await settle(tester);
+      expect(picked('Créditos'), isFalse);
+      await tapText(tester, 'Guardar');
+      expect(find.text('Elige la categoría del pago fijo.'), findsOneWidget);
+      expect(await tester.runAsync(own.store.recurring), isEmpty);
+
+      await tapText(tester, 'Otros');
+      expect(find.text('Elige la categoría del pago fijo.'), findsNothing);
+      await tapText(tester, 'Guardar');
+      expect(
+        (await tester.runAsync(own.store.recurring))!.single.category,
+        'other',
       );
     });
 

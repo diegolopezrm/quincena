@@ -5954,6 +5954,12 @@ abstract class AppLocalizations {
   /// **'Falta el nombre o el valor.'**
   String get chargeIncomplete;
 
+  /// No description provided for @chargeCategoryMissing.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige la categoría del pago fijo.'**
+  String get chargeCategoryMissing;
+
   /// No description provided for @chargeRemindDenied.
   ///
   /// In es, this message translates to:

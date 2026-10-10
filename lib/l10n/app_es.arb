@@ -1218,6 +1218,7 @@
   "chargeSaving": "Si la pausas, te ahorras {amount} al año. Quincena no la cancela: hazlo en la app o en la página del servicio.",
   "@chargeSaving": {"placeholders": {"amount": {"type": "String"}}},
   "chargeIncomplete": "Falta el nombre o el valor.",
+  "chargeCategoryMissing": "Elige la categoría del pago fijo.",
   "chargeRemindDenied": "Sin permiso para avisarte. Si quieres el aviso, activa las notificaciones de Quincena en los ajustes del teléfono.",
   "chargePause": "Pausar",
   "chargeResume": "Reanudar",

@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../capture/merchants.dart' show fixedCategoryFor;
 import '../../data/ledger.dart';
 import '../../domain/commitments.dart';
 import '../../domain/records.dart';
@@ -104,8 +105,10 @@ class _ChargeSheetState extends State<_ChargeSheet> {
             .firstOrNull
             ?.id
       : _mainAccount();
-  late String? _category =
-      widget.charge?.category ?? widget.draft?.category ?? 'subscriptions';
+  // A new one has none until its name gives it away or the person picks
+  // one: a gym or a loan is not a subscription.
+  late String? _category = widget.charge?.category ?? widget.draft?.category;
+  late bool _categoryPicked = _category != null;
   late final ChargeMemory _memory = widget.charge == null
       ? const ChargeMemory()
       : own.memoryOf(widget.charge!.id);
@@ -132,8 +135,12 @@ class _ChargeSheetState extends State<_ChargeSheet> {
     _name.addListener(_changed);
   }
 
-  // What was missing is said until something is typed.
-  void _changed() => setState(() => _error = null);
+  // What was missing is said until something is typed, and a name that
+  // says what it is brings its category while none was picked.
+  void _changed() => setState(() {
+    _error = null;
+    if (!_categoryPicked) _category = fixedCategoryFor(_name.text);
+  });
 
   @override
   void dispose() {
@@ -160,6 +167,10 @@ class _ChargeSheetState extends State<_ChargeSheet> {
     final Decimal? amount = parseAmount(_amount.text);
     if (_name.text.trim().isEmpty || amount == null || amount <= Decimal.zero) {
       setState(() => _error = l.chargeIncomplete);
+      return;
+    }
+    if (_category == null) {
+      setState(() => _error = l.chargeCategoryMissing);
       return;
     }
     setState(() => _saving = true);
@@ -408,8 +419,11 @@ class _ChargeSheetState extends State<_ChargeSheet> {
                       categoryNameFor(context, c.key, own.categories),
                     ),
                     selected: _category == c.key,
-                    onSelected: (bool on) =>
-                        setState(() => _category = on ? c.key : null),
+                    onSelected: (bool on) => setState(() {
+                      _category = on ? c.key : null;
+                      _categoryPicked = on;
+                      _error = null;
+                    }),
                   ),
               ],
             ),

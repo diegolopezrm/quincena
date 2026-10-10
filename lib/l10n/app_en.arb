@@ -987,6 +987,7 @@
   "chargeYearly": "That's {amount} a year.",
   "chargeSaving": "Pausing it saves you {amount} a year. Quincena doesn't cancel it: do that in the service's app or website.",
   "chargeIncomplete": "The name or the amount is missing.",
+  "chargeCategoryMissing": "Pick the fixed payment’s category.",
   "chargeRemindDenied": "No permission to remind you. If you want the reminder, turn on Quincena's notifications in your phone's settings.",
   "chargePause": "Pause",
   "chargeResume": "Resume",
