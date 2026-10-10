@@ -5444,11 +5444,17 @@ abstract class AppLocalizations {
   /// **'Una billetera no se pudo leer; se muestran sus últimos saldos.'**
   String get walletsFailed;
 
-  /// No description provided for @chartWithoutTrades.
+  /// No description provided for @chartValueByPrice.
   ///
   /// In es, this message translates to:
-  /// **'Por el precio, sin contar lo que compraste o vendiste en esos días.'**
-  String get chartWithoutTrades;
+  /// **'Por el precio: {amount}'**
+  String chartValueByPrice(String amount);
+
+  /// No description provided for @chartValueSpoken.
+  ///
+  /// In es, this message translates to:
+  /// **'De {from} a {to} {range}'**
+  String chartValueSpoken(String from, String to, String range);
 
   /// No description provided for @privacyPolicy.
   ///

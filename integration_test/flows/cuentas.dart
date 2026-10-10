@@ -2331,9 +2331,10 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Valor');
       await _showChart(f);
       await f.step(
-        'Con «Valor» la línea es lo que valía la cripto en cada momento: la '
-        'plata que entró el 1 de octubre la sube de golpe, y las notas lo '
-        'dicen.',
+        'Con «Valor», arriba dice lo que valía la cripto al empezar los 7 '
+        'días y lo que vale ahora, y debajo lo que hizo el precio; la línea '
+        'sube de golpe el 1 de octubre con la plata que entró, y la nota lo '
+        'dice.',
       );
       await f.check('Con Valor la nota explica que cuenta las compras', () {
         expect(
@@ -2345,14 +2346,31 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         );
       });
       await f.check(
-        'Arriba se aclara que la cifra es por el precio, sin lo que entró',
-        () => expect(
-          f.shows(
-            'Por el precio, sin contar lo que compraste o vendiste en esos '
-            'días.',
-          ),
-          isTrue,
-        ),
+        'Arriba, de cuánto a cuánto fue el valor en los 7 días; debajo, lo '
+        'ganado por precio, aparte de la plata que entró',
+        () {
+          final List<ValuePoint> points = own.portfolio.chart(ChartRange.week)!;
+          final Portfolio p = own.portfolio.portfolio!;
+          final Decimal end = p.unpriced.isEmpty
+              ? p.value.base
+              : points.last.value.base;
+          final Money from = Money(points.first.value.base.round(), Asset.cop);
+          final Money to = Money(end.round(), Asset.cop);
+          final Money made = Money(points.last.gain.base.round(), Asset.cop);
+          final String said = _said(f);
+          expect(
+            said,
+            contains(
+              '${_plainText(_cop(from))} → ${_plainText(_cop(to))} en 7 días',
+            ),
+          );
+          expect(said, contains('Por el precio: ${_plainSigned(made)} ('));
+          // The money that came in is the rest of the change.
+          expect(
+            (to.amount - from.amount - made.amount).abs(),
+            greaterThan(Decimal.fromInt(1000)),
+          );
+        },
       );
       await f.tap('Rendimiento');
       await _showChart(f);

@@ -3544,8 +3544,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'A wallet could not be read; its last balances are shown.';
 
   @override
-  String get chartWithoutTrades =>
-      'From prices, not counting what you bought or sold in those days.';
+  String chartValueByPrice(String amount) {
+    return 'From prices: $amount';
+  }
+
+  @override
+  String chartValueSpoken(String from, String to, String range) {
+    return 'From $from to $to $range';
+  }
 
   @override
   String get privacyPolicy => 'Privacy policy';

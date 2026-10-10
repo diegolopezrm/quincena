@@ -3543,8 +3543,14 @@ class AppLocalizationsEs extends AppLocalizations {
       'Una billetera no se pudo leer; se muestran sus últimos saldos.';
 
   @override
-  String get chartWithoutTrades =>
-      'Por el precio, sin contar lo que compraste o vendiste en esos días.';
+  String chartValueByPrice(String amount) {
+    return 'Por el precio: $amount';
+  }
+
+  @override
+  String chartValueSpoken(String from, String to, String range) {
+    return 'De $from a $to $range';
+  }
 
   @override
   String get privacyPolicy => 'Política de privacidad';

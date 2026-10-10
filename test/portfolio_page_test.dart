@@ -811,6 +811,27 @@ void main() {
     expect(find.textContaining('valía'), findsNothing);
   });
 
+  testWidgets('with Valor, the top says from what to what, and what prices '
+      'made under it', (tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    await openCrypto(tester, CandleMarket());
+    await reveal(tester, find.text('Valor'));
+    await tester.tap(find.text('Valor'));
+    await settle(tester);
+
+    // 0,01 BTC from 98.000 to 100.000 dollars and 500 USDT, at 4.000 pesos.
+    expect(screen(tester), contains('\$5.920.000 → \$6.000.000 en 7 días'));
+    expect(screen(tester), contains('Por el precio: +\$80.000 (+1,35 %)'));
+    // Read aloud in words, not as an arrow.
+    expect(
+      find.bySemanticsLabel(
+        RegExp(r'^De \$5\.920\.000 a \$6\.000\.000 en 7 días$'),
+      ),
+      findsWidgets,
+    );
+    semantics.dispose();
+  });
+
   testWidgets('over a year, the chart says the year of each day', (
     tester,
   ) async {
