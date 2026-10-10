@@ -517,6 +517,7 @@
   "goalSaved": "How much do you have?",
   "goalMonthly": "How much do you put in a month?",
   "goalNoDeadline": "No deadline",
+  "goalDeadlineClear": "Remove the date",
   "goalBy": "By {date}",
   "goalSavedOf": "{saved} of {target}",
   "goalArrives": "arrives in {date}",

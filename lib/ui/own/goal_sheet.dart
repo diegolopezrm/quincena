@@ -120,6 +120,22 @@ class _GoalSheetState extends State<_GoalSheet> {
     if (mounted) Navigator.of(context).pop();
   }
 
+  /// Opens the calendar on the goal's date, or on this month with no day
+  /// picked yet: a date that already passed still opens, to move it.
+  Future<void> _pickDeadline() async {
+    final DateTime now = widget.own.today;
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _deadline,
+      currentDate: now,
+      firstDate: _deadline != null && _deadline!.isBefore(now)
+          ? _deadline!
+          : now,
+      lastDate: DateTime(now.year + 30),
+    );
+    if (picked != null) setState(() => _deadline = picked);
+  }
+
   /// Deletes the goal and its envelope; the accounts and movements stay.
   /// A way back stays for a few seconds.
   Future<void> _delete() async {
@@ -177,26 +193,26 @@ class _GoalSheetState extends State<_GoalSheet> {
             _field(_target, l.goalTarget),
             _field(_saved, l.goalSaved),
             _field(_monthly, l.goalMonthly),
-            OutlinedButton.icon(
-              onPressed: () async {
-                final DateTime now = widget.own.today;
-                final DateTime initial =
-                    _deadline ?? DateTime(now.year, now.month + 6);
-                final DateTime? picked = await showDatePicker(
-                  context: context,
-                  initialDate: initial,
-                  // A date that already passed still opens, to move it.
-                  firstDate: initial.isBefore(now) ? initial : now,
-                  lastDate: DateTime(now.year + 30),
-                );
-                if (picked != null) setState(() => _deadline = picked);
-              },
-              icon: const Icon(Glyph.calendarBlank, size: 18),
-              label: Text(
-                _deadline == null
-                    ? l.goalNoDeadline
-                    : l.goalBy(dayMonthYear(_deadline!)),
-              ),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _pickDeadline,
+                    icon: const Icon(Glyph.calendarBlank, size: 18),
+                    label: Text(
+                      _deadline == null
+                          ? l.goalNoDeadline
+                          : l.goalBy(dayMonthYear(_deadline!)),
+                    ),
+                  ),
+                ),
+                if (_deadline != null)
+                  IconButton(
+                    tooltip: l.goalDeadlineClear,
+                    onPressed: () => setState(() => _deadline = null),
+                    icon: const Icon(Glyph.x, size: 18),
+                  ),
+              ],
             ),
             if (_error case final String error) ...<Widget>[
               const SizedBox(height: 12),

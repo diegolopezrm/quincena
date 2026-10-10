@@ -646,6 +646,7 @@
   "goalSaved": "¿Cuánto llevas?",
   "goalMonthly": "¿Cuánto pones al mes?",
   "goalNoDeadline": "Sin fecha límite",
+  "goalDeadlineClear": "Quitar la fecha",
   "goalBy": "Para el {date}",
   "@goalBy": {"placeholders": {"date": {"type": "String"}}},
   "goalSavedOf": "Llevas {saved} de {target}",

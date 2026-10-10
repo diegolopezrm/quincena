@@ -2024,6 +2024,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get goalNoDeadline => 'Sin fecha límite';
 
   @override
+  String get goalDeadlineClear => 'Quitar la fecha';
+
+  @override
   String goalBy(String date) {
     return 'Para el $date';
   }

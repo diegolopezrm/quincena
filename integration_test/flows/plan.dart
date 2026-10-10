@@ -1331,9 +1331,15 @@ final List<AppFlow> planFlows = <AppFlow>[
       await f.type('¿Cuánto pones al mes?', '500000');
       await f.tap('Sin fecha límite');
       await f.step(
-        '«Sin fecha límite» abre el calendario seis meses adelante, en abril '
-        'de 2027.',
+        '«Sin fecha límite» abre el calendario en este mes, octubre de 2026, '
+        'sin ningún día escogido.',
       );
+      await f.check('El calendario abre en este mes, sin día escogido', () {
+        expect(f.shows('octubre de 2026'), isTrue);
+      });
+      for (var i = 0; i < 6; i++) {
+        await f.tapTip('Mes siguiente');
+      }
       await _pickDay(f, '30');
       await f.step(
         'Moto: 6.000.000 en total, 1.500.000 ya ahorrados, 500.000 al mes y '
@@ -4084,6 +4090,18 @@ final List<AppFlow> planFlows = <AppFlow>[
           expect(g.saved.amount, Decimal.fromInt(1500000));
         },
       );
+      await f.tap('Moto');
+      await f.tapTip('Quitar la fecha');
+      await f.step(
+        'La equis junto a la fecha la quita: el botón vuelve a decir «Sin '
+        'fecha límite».',
+      );
+      await f.tap('Guardar');
+      await f.check('La Moto quedó sin fecha, con lo ahorrado', () {
+        final SavingsGoal g = own.snapshot!.goals.single;
+        expect(g.deadline, isNull);
+        expect(g.saved.amount, Decimal.fromInt(1500000));
+      });
       await f.top();
       await f.tap('Pagos fijos');
       await f.step(

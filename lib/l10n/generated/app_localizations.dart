@@ -3140,6 +3140,12 @@ abstract class AppLocalizations {
   /// **'Sin fecha límite'**
   String get goalNoDeadline;
 
+  /// No description provided for @goalDeadlineClear.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar la fecha'**
+  String get goalDeadlineClear;
+
   /// No description provided for @goalBy.
   ///
   /// In es, this message translates to:
