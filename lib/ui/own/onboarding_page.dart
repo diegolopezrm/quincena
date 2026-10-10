@@ -326,6 +326,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     label: Text(l.onboardingPayArrivedNo),
                   ),
                 ],
+                // With large text each answer gets the whole width.
+                direction: largeText(context) ? Axis.vertical : Axis.horizontal,
                 emptySelectionAllowed: true,
                 selected: <bool>{?_arrived},
                 onSelectionChanged: (Set<bool> picked) =>
