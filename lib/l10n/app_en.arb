@@ -1661,6 +1661,7 @@
   "exportAction": "Export",
   "backupShowCode": "Show my backup code",
   "backupYourCode": "Your backup code",
+  "backupSavedAs": "{file} was saved.",
   "backupCodeKeep": "This code opens your encrypted backups, on this phone or another. Keep it where you keep your passwords: without it no one can open them, not even Quincena.",
   "backupCodeKept": "I saved it",
   "backupCodeShareText": "Quincena backup code: {code}",

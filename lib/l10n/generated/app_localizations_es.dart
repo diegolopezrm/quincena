@@ -6606,6 +6606,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get backupYourCode => 'Tu código de respaldo';
 
   @override
+  String backupSavedAs(String file) {
+    return 'Se guardó $file.';
+  }
+
+  @override
   String get backupCodeKeep =>
       'Con este código abres tus respaldos cifrados, en este teléfono o en otro. Guárdalo donde guardas tus contraseñas: sin él nadie podrá abrirlos, ni siquiera Quincena.';
 

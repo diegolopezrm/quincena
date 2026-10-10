@@ -6606,6 +6606,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupYourCode => 'Your backup code';
 
   @override
+  String backupSavedAs(String file) {
+    return '$file was saved.';
+  }
+
+  @override
   String get backupCodeKeep =>
       'This code opens your encrypted backups, on this phone or another. Keep it where you keep your passwords: without it no one can open them, not even Quincena.';
 

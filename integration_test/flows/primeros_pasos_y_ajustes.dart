@@ -3596,16 +3596,34 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         expect(phone.saved, isEmpty);
       });
       await _waitMessages(f);
+      phone.cancelSave = true;
+      await f.tap('Exportar mis datos');
+      await f.tap('Exportar');
+      await f.check('Si el selector se cierra sin guardar, no queda archivo '
+          'ni código', () async {
+        expect(phone.saved, isEmpty);
+        expect(await _read(f, () => Backups(_store(f)).code()), isNull);
+        expect(f.shows('Tu código de respaldo'), isFalse);
+      });
+      phone.cancelSave = false;
+      await _waitMessages(f);
       await f.tap('Exportar mis datos');
       await f.tap('Exportar');
       final String? code = await _read(f, () => Backups(_store(f)).code());
       await f.step(
-        'La primera vez, antes de guardar, muestra «Tu código de respaldo» con '
-        '«Copiar el código», «Compartir el código» y «Ya lo guardé».',
+        'La primera vez, primero se elige dónde guardar; ya guardado, muestra '
+        '«Tu código de respaldo» con el nombre del archivo, «Copiar el '
+        'código», «Compartir el código» y «Ya lo guardé».',
       );
-      await f.check('El código mostrado es el que quedó en el teléfono', () {
+      await f.check('El código mostrado es el que quedó en el teléfono, y dice '
+          'qué archivo se guardó', () {
         expect(code, isNotNull);
         expect(find.text(code!.split('-').first), findsWidgets);
+        expect(phone.saved.keys, <String>['quincena-2026-10-03.qbackup']);
+        expect(
+          find.textContaining('Se guardó quincena-2026-10-03.qbackup.'),
+          findsOneWidget,
+        );
       });
       await f.tap('Compartir el código');
       await f.check('«Compartir el código» lo pasa a la hoja de compartir '
@@ -3615,7 +3633,8 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       });
       await f.tap('Ya lo guardé');
       await f.step(
-        'Con «Ya lo guardé» se guarda el archivo: «Archivo guardado.»',
+        'Con «Ya lo guardé» el cuadro se cierra y abajo dice «Archivo '
+        'guardado.»',
       );
       final Uint8List? first = phone.saved['quincena-2026-10-03.qbackup'];
       await f.check(

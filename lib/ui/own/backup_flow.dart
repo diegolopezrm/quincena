@@ -48,7 +48,9 @@ Future<Uint8List?> _pickWithPicker() async {
 }
 
 /// Everything in one file: sealed with the person's backup code unless
-/// they choose JSON any app can read. The first sealed one shows the code.
+/// they choose JSON any app can read. The first sealed one shows the code
+/// once the file is saved, with its name; a file never saved leaves no code
+/// behind, and the next backup makes its own.
 Future<void> exportData(
   BuildContext context, {
   required Backups backups,
@@ -71,22 +73,24 @@ Future<void> exportData(
   final bool saved;
   if (sealed) {
     final SealedBackup backup = await backups.seal();
+    final String name = 'quincena-$day.qbackup';
+    saved = await save(name, backup.file, mimeType: 'application/octet-stream');
     if (backup.newCode case final String code) {
+      // No file came of it: its code goes too.
+      if (!saved) {
+        await backups.forget();
+        return;
+      }
       if (!context.mounted) return;
       await showCode(
         context,
         code: code,
         title: l.backupYourCode,
-        keep: l.backupCodeKeep,
+        keep: '${l.backupSavedAs(name)} ${l.backupCodeKeep}',
         share: l.backupCodeShareText(code),
         done: l.backupCodeKept,
       );
     }
-    saved = await save(
-      'quincena-$day.qbackup',
-      backup.file,
-      mimeType: 'application/octet-stream',
-    );
   } else {
     saved = await save(
       'quincena-$day.json',

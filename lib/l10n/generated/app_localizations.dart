@@ -10009,6 +10009,12 @@ abstract class AppLocalizations {
   /// **'Tu código de respaldo'**
   String get backupYourCode;
 
+  /// No description provided for @backupSavedAs.
+  ///
+  /// In es, this message translates to:
+  /// **'Se guardó {file}.'**
+  String backupSavedAs(String file);
+
   /// No description provided for @backupCodeKeep.
   ///
   /// In es, this message translates to:

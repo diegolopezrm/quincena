@@ -2089,6 +2089,8 @@
   "exportAction": "Exportar",
   "backupShowCode": "Ver mi código de respaldo",
   "backupYourCode": "Tu código de respaldo",
+  "backupSavedAs": "Se guardó {file}.",
+  "@backupSavedAs": {"placeholders": {"file": {"type": "String"}}},
   "backupCodeKeep": "Con este código abres tus respaldos cifrados, en este teléfono o en otro. Guárdalo donde guardas tus contraseñas: sin él nadie podrá abrirlos, ni siquiera Quincena.",
   "backupCodeKept": "Ya lo guardé",
   "backupCodeShareText": "Código de respaldo de Quincena: {code}",

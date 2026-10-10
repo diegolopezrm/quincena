@@ -489,18 +489,19 @@ void main() {
       ),
     );
 
-    testWidgets('exporting seals by default and shows the code once', (
-      tester,
-    ) async {
+    testWidgets('exporting seals by default and shows the code once, after '
+        'the file is saved', (tester) async {
       final MemoryBackupKeyStore keys = MemoryBackupKeyStore();
       final List<(String, Uint8List, String)> saved =
           <(String, Uint8List, String)>[];
+      var cancel = false;
       Future<bool> save(
         String name,
         Uint8List bytes, {
         required String mimeType,
         List<String>? extensions,
       }) async {
+        if (cancel) return false;
         saved.add((name, bytes, mimeType));
         return true;
       }
@@ -518,9 +519,24 @@ void main() {
       expect(find.text('Cifrado (recomendado)'), findsOneWidget);
       expect(find.text('Sin cifrar (JSON)'), findsOneWidget);
       expect(find.text('Ver mi código de respaldo'), findsNothing);
+      // Where to keep it, closed without choosing: no file, and no code
+      // left behind.
+      cancel = true;
       await tapText(tester, 'Exportar');
-      // The code first, then where to keep the file.
+      expect(find.text('Tu código de respaldo'), findsNothing);
+      expect(await tester.runAsync<List<int>?>(keys.read), isNull);
+      cancel = false;
+      await tapText(tester, 'Exportar ahora');
+      await tapText(tester, 'Exportar');
+      // The file first, then its code, with the file's name.
+      expect(saved, hasLength(1));
+      expect(saved.single.$1, 'quincena-2026-10-03.qbackup');
+      expect(SealedFile.backup.marks(saved.single.$2), isTrue);
       expect(find.text('Tu código de respaldo'), findsOneWidget);
+      expect(
+        find.textContaining('Se guardó quincena-2026-10-03.qbackup.'),
+        findsOneWidget,
+      );
       expect(find.textContaining('ni siquiera Quincena'), findsOneWidget);
       final String code = VaultKey(
         (await tester.runAsync<List<int>?>(keys.read))!,
@@ -528,11 +544,7 @@ void main() {
       for (final String group in code.split('-')) {
         expect(find.text(group), findsWidgets);
       }
-      expect(saved, isEmpty);
       await tapText(tester, 'Ya lo guardé');
-      expect(saved, hasLength(1));
-      expect(saved.single.$1, 'quincena-2026-10-03.qbackup');
-      expect(SealedFile.backup.marks(saved.single.$2), isTrue);
       expect(find.text('Archivo guardado.'), findsOneWidget);
 
       // The next one keeps the same code, and the code is at hand.
