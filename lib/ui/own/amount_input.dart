@@ -1,6 +1,16 @@
 import 'package:flutter/services.dart';
 
 import '../../l10n/l10n.dart';
+import '../../money/asset.dart';
+
+/// What goes before an amount typed in [asset], the same in every form:
+/// its sign and a space, as in `$ 80.000`, or nothing for a currency
+/// without one, whose code goes after the amount instead.
+String? amountPrefix(Asset asset) =>
+    switch (asset.localSymbol ?? asset.symbol) {
+      final String sign => '$sign ',
+      null => null,
+    };
 
 /// Groups the thousands of an amount as it is typed: `45900` shows as
 /// `45.900` in Spanish and `45,900` in English.

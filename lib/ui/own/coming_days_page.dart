@@ -10,6 +10,7 @@ import '../../domain/projection.dart';
 import '../../format/dates.dart';
 import '../../format/money.dart';
 import '../../l10n/l10n.dart';
+import '../../money/asset.dart';
 import '../../money/money.dart';
 import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
@@ -235,6 +236,7 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
               children: <Widget>[
                 if (_trying) ...<Widget>[
                   _PurchaseForm(
+                    asset: ledger.currency,
                     price: _price,
                     what: _what,
                     when: _when,
@@ -430,6 +432,7 @@ class _Key extends StatelessWidget {
 
 class _PurchaseForm extends StatelessWidget {
   const _PurchaseForm({
+    required this.asset,
     required this.price,
     required this.what,
     required this.when,
@@ -439,6 +442,7 @@ class _PurchaseForm extends StatelessWidget {
     required this.onWhen,
   });
 
+  final Asset asset;
   final TextEditingController price;
   final TextEditingController what;
   final _When when;
@@ -457,9 +461,14 @@ class _PurchaseForm extends StatelessWidget {
           controller: price,
           autofocus: true,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: <TextInputFormatter>[AmountInputFormatter()],
+          inputFormatters: <TextInputFormatter>[
+            AmountInputFormatter(maxDecimals: asset.decimals),
+          ],
           style: context.type.headlineMedium,
-          decoration: InputDecoration(labelText: l.buyPrice, prefixText: r'$ '),
+          decoration: InputDecoration(
+            labelText: l.buyPrice,
+            prefixText: amountPrefix(asset),
+          ),
           onChanged: (_) => onChanged(),
         ),
         const SizedBox(height: 10),

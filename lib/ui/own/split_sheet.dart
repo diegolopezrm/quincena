@@ -490,10 +490,7 @@ class _SplitSheetState extends State<_SplitSheet> {
               decoration: InputDecoration(
                 labelText: l.splitAmount,
                 helperText: fromEntry ? l.splitFromEntry : null,
-                prefixText: switch (_base.localSymbol ?? _base.symbol) {
-                  final String sign => '$sign ',
-                  null => null,
-                },
+                prefixText: amountPrefix(_base),
               ),
             ),
             const SizedBox(height: 12),

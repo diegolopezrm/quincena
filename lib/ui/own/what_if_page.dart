@@ -289,7 +289,7 @@ class _WhatIfPageState extends State<WhatIfPage> {
                       labelText: _kind == ScenarioKind.saveMore
                           ? l.whatIfSaveMoreAmount
                           : l.whatIfChargeUpAmount,
-                      prefixText: r'$ ',
+                      prefixText: amountPrefix(ledger.currency),
                     ),
                   )
                 else if (ledger.pay == null)

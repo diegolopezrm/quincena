@@ -184,11 +184,7 @@ class _ContributionState extends State<_Contribution> {
             decoration: InputDecoration(
               labelText: l.amount,
               errorText: _error,
-              prefixText: switch (widget.goal.target.asset.localSymbol ??
-                  widget.goal.target.asset.symbol) {
-                final String sign => '$sign ',
-                null => null,
-              },
+              prefixText: amountPrefix(widget.goal.target.asset),
             ),
           ),
           const SizedBox(height: 12),

@@ -158,10 +158,7 @@ class _GoalSheetState extends State<_GoalSheet> {
       ],
       decoration: InputDecoration(
         labelText: label,
-        prefixText: switch (_asset.localSymbol ?? _asset.symbol) {
-          final String sign => '$sign ',
-          null => null,
-        },
+        prefixText: amountPrefix(_asset),
       ),
     ),
   );

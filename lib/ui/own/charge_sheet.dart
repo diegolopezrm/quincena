@@ -321,10 +321,7 @@ class _ChargeSheetState extends State<_ChargeSheet> {
               ],
               decoration: InputDecoration(
                 labelText: l.chargeAmount,
-                prefixText: switch (_asset.localSymbol ?? _asset.symbol) {
-                  final String sign => '$sign ',
-                  null => null,
-                },
+                prefixText: amountPrefix(_asset),
                 suffixText: _asset == base ? null : _asset.code,
               ),
             ),

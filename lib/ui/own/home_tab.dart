@@ -747,7 +747,7 @@ class _CanIBuyState extends State<_CanIBuy> {
           : const EdgeInsets.all(20),
       decoration: InputDecoration(
         hintText: l.buyAskHint,
-        prefixText: r'$',
+        prefixText: amountPrefix(widget.ledger.currency),
         isDense: true,
       ),
     );

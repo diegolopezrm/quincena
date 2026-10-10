@@ -181,7 +181,7 @@ class _LoanSheetState extends State<_LoanSheet> {
               ],
               decoration: InputDecoration(
                 labelText: l.amount,
-                prefixText: _base.localSymbol ?? '${_base.code} ',
+                prefixText: amountPrefix(_base),
               ),
             ),
             const SizedBox(height: 12),

@@ -638,10 +638,7 @@ class _IncomeSheetState extends State<_IncomeSheet> {
               ],
               decoration: InputDecoration(
                 labelText: l.freelanceAmount,
-                prefixText: switch (_base.localSymbol ?? _base.symbol) {
-                  final String sign => '$sign ',
-                  null => null,
-                },
+                prefixText: amountPrefix(_base),
               ),
             ),
             const SizedBox(height: 16),

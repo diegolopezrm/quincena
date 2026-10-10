@@ -831,10 +831,7 @@ class _SettleDialogState extends State<_SettleDialog> {
               decoration: InputDecoration(
                 labelText: l.instalPaymentAmount,
                 errorText: _error,
-                prefixText: switch (_base.localSymbol ?? _base.symbol) {
-                  final String sign => '$sign ',
-                  null => null,
-                },
+                prefixText: amountPrefix(_base),
               ),
             ),
             const SizedBox(height: 12),

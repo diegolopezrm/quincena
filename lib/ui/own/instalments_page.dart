@@ -747,11 +747,7 @@ class _PaymentDialogState extends State<_PaymentDialog> {
             decoration: InputDecoration(
               labelText: l.instalPaymentAmount,
               errorText: _error,
-              prefixText: switch (widget.asset.localSymbol ??
-                  widget.asset.symbol) {
-                final String sign => '$sign ',
-                null => null,
-              },
+              prefixText: amountPrefix(widget.asset),
             ),
           ),
           const SizedBox(height: 8),
@@ -1066,10 +1062,7 @@ class _InstalmentSheetState extends State<_InstalmentSheet> {
         labelText: label,
         helperText: helper,
         helperMaxLines: 3,
-        prefixText: switch (_asset.localSymbol ?? _asset.symbol) {
-          final String sign => '$sign ',
-          null => null,
-        },
+        prefixText: amountPrefix(_asset),
       ),
     ),
   );

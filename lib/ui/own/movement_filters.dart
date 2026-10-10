@@ -235,7 +235,7 @@ class _FilterSheetState extends State<_FilterSheet> {
     ),
     decoration: InputDecoration(
       labelText: label,
-      prefixText: _base.localSymbol ?? '${_base.code} ',
+      prefixText: amountPrefix(_base),
     ),
   );
 

@@ -9,6 +9,7 @@ import '../../domain/records.dart';
 import '../../format/dates.dart';
 import '../../format/money.dart';
 import '../../l10n/l10n.dart';
+import '../../money/asset.dart';
 import '../../money/money.dart';
 import '../../own/own_controller.dart';
 import '../../own/undo.dart';
@@ -307,7 +308,7 @@ class _WishSheetState extends State<_WishSheet> {
               inputFormatters: <TextInputFormatter>[AmountInputFormatter()],
               decoration: InputDecoration(
                 labelText: l.wishPrice,
-                prefixText: r'$ ',
+                prefixText: amountPrefix(widget.own.profile?.base ?? Asset.cop),
               ),
             ),
             const SizedBox(height: 16),

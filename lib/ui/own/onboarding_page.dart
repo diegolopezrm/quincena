@@ -301,10 +301,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               ],
               decoration: InputDecoration(
                 labelText: l.amount,
-                prefixText: switch (_base.localSymbol ?? _base.symbol) {
-                  final String sign => '$sign ',
-                  null => null,
-                },
+                prefixText: amountPrefix(_base),
                 suffixText: _base.code,
               ),
             ),
