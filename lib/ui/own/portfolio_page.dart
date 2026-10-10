@@ -158,21 +158,7 @@ class _CryptoPerformanceRowState extends State<CryptoPerformanceRow> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: <Widget>[
-              ExcludeSemantics(
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: context.colors.brandSoft,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Glyph.chartLineUp,
-                    size: 20,
-                    color: context.colors.brand,
-                  ),
-                ),
-              ),
+              const IconTile(Glyph.chartLineUp),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

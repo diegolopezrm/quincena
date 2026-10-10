@@ -7,6 +7,12 @@ import 'package:flutter/material.dart';
 /// worth a second look (caution). It also needs one color per spending
 /// category that stays the same everywhere the category appears: in the
 /// donut, in a transaction row, in a budget meter.
+///
+/// Each color says one thing, so a screen can be read by its colors:
+/// strong green is what acts, the main action above all, and money that
+/// came in; light green is what is selected and the step the app suggests;
+/// amber asks for attention; red is risk, an error or a debt past due;
+/// everything else, the icons that only decorate included, is ink.
 @immutable
 class QuincenaColors extends ThemeExtension<QuincenaColors> {
   const QuincenaColors({
@@ -23,6 +29,7 @@ class QuincenaColors extends ThemeExtension<QuincenaColors> {
     required this.positive,
     required this.negative,
     required this.caution,
+    required this.onCaution,
     required this.cautionSoft,
     required this.negativeSoft,
     required this.categories,
@@ -35,12 +42,21 @@ class QuincenaColors extends ThemeExtension<QuincenaColors> {
   final Color inkSoft;
   final Color inkFaint;
   final Color line;
+
+  /// What acts: the main action's fill, a text action's icon, the focus.
   final Color brand;
+
+  /// What is selected, and the step the app suggests under the main action.
   final Color brandSoft;
   final Color onBrand;
+
+  /// Money that came in or stayed, and what went well.
   final Color positive;
   final Color negative;
   final Color caution;
+
+  /// Text and marks on [caution], as on a count that waits for the person.
+  final Color onCaution;
   final Color cautionSoft;
   final Color negativeSoft;
 
@@ -63,8 +79,11 @@ class QuincenaColors extends ThemeExtension<QuincenaColors> {
     brandSoft: Color(0xFFD5EEE2),
     onBrand: Color(0xFFFFFFFF),
     positive: Color(0xFF0B7552),
-    negative: Color(0xFFC8402F),
-    caution: Color(0xFF9A6A00),
+    // Red, amber and green hold 4.5:1 on the canvas too, where lists sit
+    // without a box, and on the sunken and soft grounds.
+    negative: Color(0xFFB8392A),
+    caution: Color(0xFF8A5F00),
+    onCaution: Color(0xFFFFFFFF),
     cautionSoft: Color(0xFFFBEFCF),
     negativeSoft: Color(0xFFFBE3DF),
     categories: <String, Color>{
@@ -96,6 +115,7 @@ class QuincenaColors extends ThemeExtension<QuincenaColors> {
     positive: Color(0xFF3FCB93),
     negative: Color(0xFFFF7A68),
     caution: Color(0xFFF2B93F),
+    onCaution: Color(0xFF261A00),
     cautionSoft: Color(0xFF372B10),
     negativeSoft: Color(0xFF3A1D18),
     categories: <String, Color>{
@@ -134,6 +154,7 @@ class QuincenaColors extends ThemeExtension<QuincenaColors> {
       positive: mix(positive, other.positive),
       negative: mix(negative, other.negative),
       caution: mix(caution, other.caution),
+      onCaution: mix(onCaution, other.onCaution),
       cautionSoft: mix(cautionSoft, other.cautionSoft),
       negativeSoft: mix(negativeSoft, other.negativeSoft),
       categories: <String, Color>{

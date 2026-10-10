@@ -9,6 +9,7 @@ import '../../capture/event.dart';
 import '../../capture/inbox.dart';
 import '../../capture/native_channel.dart';
 import '../../capture/parser.dart';
+import '../../catalog/tone.dart';
 import '../../data/example_account.dart' show exampleMessage;
 import '../../data/ledger.dart';
 import '../../domain/freelance.dart';
@@ -155,6 +156,13 @@ class InboxPage extends StatelessWidget {
           for (final InboxItem i in own.inbox)
             if (i.status == InboxStatus.duplicate) i,
         ];
+        // The one card whose answer is the screen's main action, in strong
+        // green: the first that waits with a button. Those after it answer
+        // in light green, and lead in turn once it is done.
+        final InboxItem? lead =
+            (compact ? null : ready.firstOrNull) ??
+            needs.firstOrNull ??
+            repeats.firstOrNull;
         final String addLabel = CaptureChannel.readsImages
             ? l.inboxAddFrom
             : l.pasteMessage;
@@ -301,7 +309,11 @@ class InboxPage extends StatelessWidget {
                         items: ready,
                         keyOf: (InboxItem i) => i.id,
                         builder: (BuildContext context, InboxItem item) =>
-                            InboxCard(own: own, item: item),
+                            InboxCard(
+                              own: own,
+                              item: item,
+                              lead: item.id == lead?.id,
+                            ),
                       ),
                   ],
                   if (needs.isNotEmpty) ...<Widget>[
@@ -311,14 +323,22 @@ class InboxPage extends StatelessWidget {
                       items: needs,
                       keyOf: (InboxItem i) => i.id,
                       builder: (BuildContext context, InboxItem item) =>
-                          InboxCard(own: own, item: item),
+                          InboxCard(
+                            own: own,
+                            item: item,
+                            lead: item.id == lead?.id,
+                          ),
                     ),
                   ],
                   if (repeats.isNotEmpty) ...<Widget>[
                     const SizedBox(height: 16),
                     SectionLabel(l.possibleDuplicates),
                     for (final InboxItem item in repeats) ...<Widget>[
-                      InboxCard(own: own, item: item),
+                      InboxCard(
+                        own: own,
+                        item: item,
+                        lead: item.id == lead?.id,
+                      ),
                       const SizedBox(height: 12),
                     ],
                   ],
@@ -457,10 +477,15 @@ class InboxCard extends StatefulWidget {
     required this.own,
     required this.item,
     this.compact = false,
+    this.lead = true,
   });
 
   final OwnController own;
   final InboxItem item;
+
+  /// Whether its answer is the screen's main action, in strong green; one
+  /// that waits after another answers in light green.
+  final bool lead;
 
   /// A line among others that are ready, which a tap opens into the whole
   /// card; the group around it draws the frame.
@@ -853,6 +878,13 @@ class _InboxCardState extends State<InboxCard> {
   Future<void> _ownTransfer() =>
       showEntrySheet(context, own: own, fromInbox: item, ownTransfer: true);
 
+  /// The answer the card waits for, on a button: strong green when the card
+  /// leads, light green when another comes first.
+  Widget _answer({required VoidCallback? onPressed, required Widget child}) =>
+      widget.lead
+      ? FilledButton(onPressed: onPressed, child: child)
+      : FilledButton.tonal(onPressed: onPressed, child: child);
+
   void _more(_More choice) => switch (choice) {
     _More.details => setState(() => _details = !_details),
     _More.dismiss => _dismiss(),
@@ -870,15 +902,13 @@ class _InboxCardState extends State<InboxCard> {
   }) {
     final AppLocalizations l = context.l10n;
     final InboxItem i = item;
-    final Color caution = context.colors.caution;
-    final Color brand = context.colors.brand;
     if (i.status == InboxStatus.duplicate) {
       final (String, Entry?)? twin = _twin(l);
       final Entry? entry = twin?.$2;
       return _StateLine(
         icon: Glyph.copy,
         label: l.stateRepeat,
-        color: caution,
+        tone: Tone.caution,
         detail: twin?.$1,
         onTap: entry == null
             ? null
@@ -890,7 +920,7 @@ class _InboxCardState extends State<InboxCard> {
       return _StateLine(
         icon: Glyph.arrowsLeftRight,
         label: l.stateMove,
-        color: brand,
+        tone: Tone.neutral,
         detail: _moveWhy(l, move),
       );
     }
@@ -898,14 +928,14 @@ class _InboxCardState extends State<InboxCard> {
       return _StateLine(
         icon: Glyph.warningCircle,
         label: l.stateKind,
-        color: caution,
+        tone: Tone.caution,
       );
     }
     if (account == null) {
       return _StateLine(
         icon: Glyph.warningCircle,
         label: l.stateAccount,
-        color: caution,
+        tone: Tone.caution,
         detail: <String>[
           missingAccountText(context, own, i),
           if (paid != null) _paidDetail(l, paid),
@@ -916,7 +946,7 @@ class _InboxCardState extends State<InboxCard> {
       return _StateLine(
         icon: Glyph.handCoins,
         label: paid.income != null ? l.stateClientPaid : l.stateFriendPaid,
-        color: brand,
+        tone: Tone.good,
         detail: _paidDetail(l, paid),
       );
     }
@@ -924,7 +954,7 @@ class _InboxCardState extends State<InboxCard> {
       return _StateLine(
         icon: Glyph.warningCircle,
         label: l.stateGuessed,
-        color: caution,
+        tone: Tone.caution,
         detail: l.accountGuessedWhy(account.asset.code),
       );
     }
@@ -932,7 +962,7 @@ class _InboxCardState extends State<InboxCard> {
     return _StateLine(
       icon: Glyph.checkCircle,
       label: l.stateReady,
-      color: brand,
+      tone: Tone.good,
       detail: CaptureService.isClear(i, own.accounts)
           ? null
           : i.suggestion.category == null
@@ -1390,7 +1420,7 @@ class _InboxCardState extends State<InboxCard> {
                       ] else if (repeat) ...<Widget>[
                         // What arrived twice is most often a repeat: taking
                         // it out comes first.
-                        FilledButton(
+                        _answer(
                           onPressed: _busy ? null : _dismiss,
                           child: Text(l.removeRepeat),
                         ),
@@ -1404,7 +1434,7 @@ class _InboxCardState extends State<InboxCard> {
                           child: Text(l.notDuplicate),
                         ),
                       ] else if (move != null) ...<Widget>[
-                        FilledButton(
+                        _answer(
                           onPressed: _busy || amount == null
                               ? null
                               : () => _recordMove(move),
@@ -1422,12 +1452,12 @@ class _InboxCardState extends State<InboxCard> {
                       ]
                       // Which way the money went is the form's to ask.
                       else if (kind == null)
-                        FilledButton(
+                        _answer(
                           onPressed: _busy ? null : _edit,
                           child: Text(l.reviewMovement),
                         )
                       else ...<Widget>[
-                        FilledButton(
+                        _answer(
                           onPressed: _busy || amount == null ? null : _confirm,
                           child: Text(
                             account == null
@@ -1511,25 +1541,28 @@ class _InboxCardState extends State<InboxCard> {
   }
 }
 
-/// A capture's state on its card: a short label in its color and, under
-/// it, the line that explains it; a tap opens what that line names.
+/// A capture's state on its card: a short label and, under it, the line
+/// that explains it; a tap opens what that line names. What asks for
+/// attention says it in amber; what is fine only marks its icon green, so
+/// it does not compete with the button that records it.
 class _StateLine extends StatelessWidget {
   const _StateLine({
     required this.icon,
     required this.label,
-    required this.color,
+    required this.tone,
     this.detail,
     this.onTap,
   });
 
   final IconData icon;
   final String label;
-  final Color color;
+  final Tone tone;
   final String? detail;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final Color color = tone.color(context);
     final Widget line = Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -1546,7 +1579,9 @@ class _StateLine extends StatelessWidget {
               children: <Widget>[
                 Text(
                   label,
-                  style: context.type.labelMedium?.copyWith(color: color),
+                  style: context.type.labelMedium?.copyWith(
+                    color: tone == Tone.caution ? color : context.colors.ink,
+                  ),
                 ),
                 if (detail case final String text)
                   Text(text, style: context.type.bodySmall),

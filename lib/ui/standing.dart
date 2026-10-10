@@ -245,7 +245,7 @@ class StandingCard extends StatelessWidget {
                   children: <Widget>[
                     Expanded(
                       flex: (share * 1000).round(),
-                      child: ColoredBox(color: context.colors.brand),
+                      child: ColoredBox(color: context.colors.positive),
                     ),
                     const SizedBox(width: 3),
                     Expanded(

@@ -89,6 +89,10 @@ ThemeData quincenaTheme(Brightness brightness) {
     onPrimaryContainer: c.ink,
     secondary: c.inkSoft,
     onSecondary: c.surface,
+    // A tonal button: the step the app suggests, light green under the one
+    // main action in strong green.
+    secondaryContainer: c.brandSoft,
+    onSecondaryContainer: c.ink,
     error: c.negative,
     onError: c.surface,
     errorContainer: c.negativeSoft,
@@ -128,10 +132,10 @@ ThemeData quincenaTheme(Brightness brightness) {
         side: BorderSide(color: c.line),
       ),
     ),
+    // The colors are the scheme's: strong green for a filled button, the
+    // main action, and light green for a tonal one.
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: c.brand,
-        foregroundColor: c.onBrand,
         textStyle: text.labelLarge,
         minimumSize: const Size(0, 48),
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -148,8 +152,9 @@ ThemeData quincenaTheme(Brightness brightness) {
         shape: const StadiumBorder(),
       ),
     ),
-    // Green is for the main action and for money coming in; a secondary
-    // action is ink, with its icon in the brand's color to say it acts.
+    // Strong green fills the main action and marks money coming in; a
+    // secondary action is ink, with its icon in the brand's color to say it
+    // acts.
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: c.ink,
@@ -237,13 +242,15 @@ ThemeData quincenaTheme(Brightness brightness) {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       extendedTextStyle: text.labelLarge,
     ),
+    // The tab that shows is selected: light green behind it, its icon in
+    // ink like its label.
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: c.surface,
       indicatorColor: c.brandSoft,
       elevation: 0,
       iconTheme: WidgetStateProperty.resolveWith(
         (Set<WidgetState> s) => IconThemeData(
-          color: s.contains(WidgetState.selected) ? c.brand : c.inkSoft,
+          color: s.contains(WidgetState.selected) ? c.ink : c.inkSoft,
           size: 24,
         ),
       ),
@@ -256,7 +263,7 @@ ThemeData quincenaTheme(Brightness brightness) {
     navigationRailTheme: NavigationRailThemeData(
       backgroundColor: c.canvas,
       indicatorColor: c.brandSoft,
-      selectedIconTheme: IconThemeData(color: c.brand),
+      selectedIconTheme: IconThemeData(color: c.ink),
       unselectedIconTheme: IconThemeData(color: c.inkSoft),
       selectedLabelTextStyle: text.labelMedium?.copyWith(color: c.ink),
       unselectedLabelTextStyle: text.labelMedium,
@@ -275,6 +282,12 @@ ThemeData quincenaTheme(Brightness brightness) {
         side: WidgetStatePropertyAll<BorderSide>(BorderSide(color: c.line)),
         textStyle: WidgetStatePropertyAll<TextStyle?>(text.labelMedium),
       ),
+    ),
+    // A count on an icon waits for the person, as what Por revisar holds:
+    // amber, the color of what asks for attention.
+    badgeTheme: BadgeThemeData(
+      backgroundColor: c.caution,
+      textColor: c.onCaution,
     ),
     tooltipTheme: TooltipThemeData(
       decoration: BoxDecoration(

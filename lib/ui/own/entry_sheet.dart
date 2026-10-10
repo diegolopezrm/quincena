@@ -102,7 +102,7 @@ Future<String?> _firstAccount(BuildContext context, OwnController own) async {
     context: context,
     builder: (BuildContext context) => AlertDialog(
       scrollable: true,
-      icon: Icon(Glyph.wallet, color: context.colors.brand),
+      icon: Icon(Glyph.wallet, color: context.colors.inkSoft),
       title: Text(l.entryNeedsAccountTitle),
       content: Text(l.entryNeedsAccountBody),
       actions: <Widget>[
@@ -1274,16 +1274,7 @@ class _Answer extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
           child: Row(
             children: <Widget>[
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: context.colors.brandSoft,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                alignment: Alignment.center,
-                child: Icon(icon, size: 20, color: context.colors.brand),
-              ),
+              IconTile(icon),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(

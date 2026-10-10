@@ -319,7 +319,7 @@ class _EnvelopesPageState extends State<EnvelopesPage> {
                         EnvelopeKind.daily => Glyph.wallet,
                         EnvelopeKind.goal => Glyph.piggyBank,
                         EnvelopeKind.aside => Glyph.handCoins,
-                      }, color: context.colors.brand),
+                      }, color: context.colors.inkSoft),
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextField(

@@ -321,7 +321,7 @@ class _ToolRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Widget mark = Icon(icon, color: context.colors.brand);
+    final Widget mark = Icon(icon, color: context.colors.inkSoft);
     final Widget name = Text(title, style: context.type.titleSmall);
     // With large text the icon goes above the title, as iOS lays out its
     // own rows at those sizes, and the words have the whole width.
@@ -381,7 +381,8 @@ class _EnvelopesCard extends StatelessWidget {
               style: context.type.bodyMedium,
             ),
             const SizedBox(height: 10),
-            FilledButton.tonalIcon(
+            // Plan's main action, while the pay has no split.
+            FilledButton.icon(
               onPressed: open,
               icon: const Icon(Glyph.wallet, size: 18),
               label: Text(l.planSplit),
@@ -416,7 +417,7 @@ class _EnvelopesCard extends StatelessWidget {
               value: daily <= 0 ? 0 : (spent / daily).clamp(0, 1).toDouble(),
               minHeight: 8,
               backgroundColor: context.colors.sunken,
-              color: over ? context.colors.caution : context.colors.brand,
+              color: over ? context.colors.caution : context.colors.positive,
             ),
           ),
           if (over)
@@ -542,7 +543,7 @@ class _GoalRow extends StatelessWidget {
                   value: done,
                   minHeight: 6,
                   backgroundColor: context.colors.sunken,
-                  color: context.colors.brand,
+                  color: context.colors.positive,
                 ),
               ),
             ),

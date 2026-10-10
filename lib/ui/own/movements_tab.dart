@@ -112,10 +112,13 @@ class _MovementsTabState extends State<MovementsTab> {
                   finder.find(all, query: _search.text, filter: filter).length,
               onChanged: _setFilter,
             ),
+      // How many filters are on, said in ink on the selected button: a
+      // count of what was chosen, not something that waits.
       icon: Badge(
         isLabelVisible: !_filter.isEmpty,
         label: Text('${_filter.active}'),
-        backgroundColor: context.colors.brand,
+        backgroundColor: context.colors.ink,
+        textColor: context.colors.surface,
         child: const Icon(Glyph.funnel),
       ),
     );

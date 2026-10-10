@@ -107,7 +107,7 @@ class _TripRow extends StatelessWidget {
           builder: (BuildContext context) => TripPage(own: own, id: trip.id),
         ),
       ),
-      leading: Icon(Glyph.suitcaseRolling, color: context.colors.brand),
+      leading: Icon(Glyph.suitcaseRolling, color: context.colors.inkSoft),
       title: Text(trip.name, style: context.type.titleSmall),
       subtitle: Text(
         '${dayShortMonth(trip.from)} – ${dayShortMonth(trip.to)}',
@@ -237,7 +237,7 @@ class TripPage extends StatelessWidget {
                     contentPadding: EdgeInsets.zero,
                     leading: Icon(
                       Glyph.usersThree,
-                      color: context.colors.brand,
+                      color: context.colors.inkSoft,
                     ),
                     title: Text(l.tripShared, style: context.type.titleSmall),
                     subtitle: Text(

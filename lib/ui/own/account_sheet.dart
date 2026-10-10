@@ -328,7 +328,7 @@ class _AccountFormState extends State<_AccountForm> {
                     avatar: Icon(
                       accountIcon(k),
                       size: 18,
-                      color: context.colors.brand,
+                      color: context.colors.inkSoft,
                     ),
                     label: Text(accountKindLabel(context, k)),
                     selected: _kind == k,

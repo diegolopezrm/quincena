@@ -260,7 +260,9 @@ class _StepRow extends StatelessWidget {
             Icon(
               step.done ? Glyph.checkCircle : step.icon,
               size: 24,
-              color: step.done ? context.colors.positive : context.colors.brand,
+              color: step.done
+                  ? context.colors.positive
+                  : context.colors.inkSoft,
             ),
             const SizedBox(width: 14),
             Expanded(child: words),

@@ -112,20 +112,30 @@ class AccountTile extends StatelessWidget {
   final double size;
 
   @override
+  Widget build(BuildContext context) => IconTile(accountIcon(kind), size: size);
+}
+
+/// [icon] on a soft rounded square, in ink: it only says what a row is
+/// about, so it takes none of the colors that mean something. A tint of
+/// ink rather than a fill of its own, so it shows on the canvas and on a
+/// sheet alike.
+class IconTile extends StatelessWidget {
+  const IconTile(this.icon, {super.key, this.size = 40});
+
+  final IconData icon;
+  final double size;
+
+  @override
   Widget build(BuildContext context) => ExcludeSemantics(
     child: Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: context.colors.brandSoft,
+        color: context.colors.ink.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(size * 0.3),
       ),
       alignment: Alignment.center,
-      child: Icon(
-        accountIcon(kind),
-        size: size * 0.5,
-        color: context.colors.brand,
-      ),
+      child: Icon(icon, size: size * 0.5, color: context.colors.inkSoft),
     ),
   );
 }

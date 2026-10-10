@@ -403,7 +403,7 @@ class RatesSummary extends StatelessWidget {
     ];
     final Widget mark = Icon(
       Glyph.arrowsLeftRight,
-      color: context.colors.brand,
+      color: context.colors.inkSoft,
     );
     final Widget name = Text(l.ratesSeeAll, style: context.type.titleSmall);
     return Panel(

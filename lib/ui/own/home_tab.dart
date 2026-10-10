@@ -379,7 +379,7 @@ class _AskRow extends StatelessWidget {
     final Widget row = ListTile(
       onTap: onTap,
       enabled: onTap != null,
-      leading: Icon(icon, color: context.colors.brand),
+      leading: Icon(icon, color: context.colors.inkSoft),
       title: Text(text, style: context.type.bodyMedium),
       trailing: Icon(
         Glyph.caretRight,
@@ -447,7 +447,7 @@ class _TodoRow extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
         child: Row(
           children: <Widget>[
-            Icon(todo.icon, size: 24, color: context.colors.brand),
+            Icon(todo.icon, size: 24, color: context.colors.inkSoft),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -788,7 +788,11 @@ class _CanIBuyState extends State<_CanIBuy> {
         isDense: true,
       ),
     );
-    final Widget go = FilledButton(onPressed: _check, child: Text(l.buyAskGo));
+    // Light green: Inicio's one main action is the movement to record.
+    final Widget go = FilledButton.tonal(
+      onPressed: _check,
+      child: Text(l.buyAskGo),
+    );
     return Block(
       padding: const EdgeInsets.fromLTRB(18, 14, 14, 14),
       child: Column(

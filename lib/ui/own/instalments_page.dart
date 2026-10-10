@@ -410,7 +410,7 @@ class InstalmentDetailPage extends StatelessWidget {
                             value: covered / plan.count,
                             minHeight: 8,
                             backgroundColor: context.colors.sunken,
-                            color: context.colors.brand,
+                            color: context.colors.positive,
                           ),
                         ),
                         if (next != null && owing > 0)

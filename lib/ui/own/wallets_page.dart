@@ -43,15 +43,7 @@ class WalletsRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: <Widget>[
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: context.colors.brandSoft,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Glyph.vault, size: 20, color: context.colors.brand),
-              ),
+              const IconTile(Glyph.vault),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

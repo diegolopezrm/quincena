@@ -99,7 +99,7 @@ class CushionPage extends StatelessWidget {
                               value: (c.days! / target).clamp(0, 1).toDouble(),
                               minHeight: 8,
                               backgroundColor: context.colors.sunken,
-                              color: context.colors.brand,
+                              color: context.colors.positive,
                             ),
                           ),
                           const SizedBox(height: 6),

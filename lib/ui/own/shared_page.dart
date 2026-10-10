@@ -190,7 +190,7 @@ class _GroupRow extends StatelessWidget {
             : l.sharedEven,
         style: context.type.bodySmall?.copyWith(
           color: mine > 0
-              ? context.colors.brand
+              ? context.colors.positive
               : mine < 0
               ? context.colors.caution
               : context.colors.inkSoft,

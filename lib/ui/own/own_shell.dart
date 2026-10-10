@@ -323,7 +323,6 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
                       context,
                     ).clamp(maxScaleFactor: 1.3),
                   ),
-                  backgroundColor: context.colors.brand,
                   child: const Icon(Glyph.tray),
                 ),
               );

@@ -671,7 +671,7 @@ class _StatementPageState extends State<StatementPage> {
       children: <Widget>[
         Row(
           children: <Widget>[
-            Icon(Glyph.checkCircle, color: context.colors.brand, size: 28),
+            Icon(Glyph.checkCircle, color: context.colors.positive, size: 28),
             const SizedBox(width: 12),
             Expanded(
               child: Text(

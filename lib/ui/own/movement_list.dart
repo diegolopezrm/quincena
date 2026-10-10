@@ -128,10 +128,7 @@ class MovementRow extends StatelessWidget {
         _,
         final SharedExpense split,
       ) when own.ledger != null)
-        _Tag(
-          l.splitYours(pesos(own.ledger!.major(split.shares[meId] ?? 0))),
-          brand: true,
-        ),
+        _Tag(l.splitYours(pesos(own.ledger!.major(split.shares[meId] ?? 0)))),
       // Between currencies the other side is another amount: what arrived
       // for the money that left, what left for the money that arrived.
       if (otherLeg != null && there != null && there.asset != account.asset)
@@ -245,28 +242,24 @@ class MovementRow extends StatelessWidget {
   }
 }
 
-/// A mark on a row, such as «Programado», in a soft pill of its own: never
-/// cut, and with large text it wraps like the rest.
+/// A mark on a row, such as «Programado» or the person's part of a shared
+/// expense, in a soft pill of its own: never cut, and with large text it
+/// wraps like the rest. In ink: it says what a row is, it asks nothing.
 class _Tag extends StatelessWidget {
-  const _Tag(this.text, {this.brand = false});
+  const _Tag(this.text);
 
   final String text;
-
-  /// In the brand's green, for the person's own part of a shared expense.
-  final bool brand;
 
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
     decoration: BoxDecoration(
-      color: brand ? context.colors.brandSoft : context.colors.sunken,
+      color: context.colors.sunken,
       borderRadius: BorderRadius.circular(99),
     ),
     child: Text(
       text,
-      style: context.type.labelMedium?.copyWith(
-        color: brand ? context.colors.brand : context.colors.inkSoft,
-      ),
+      style: context.type.labelMedium?.copyWith(color: context.colors.inkSoft),
     ),
   );
 }

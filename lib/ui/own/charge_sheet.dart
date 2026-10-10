@@ -522,7 +522,7 @@ class _ChargeSheetState extends State<_ChargeSheet> {
                     child: Text(
                       l.chargeSaving(moneyText(yearly, base: base)),
                       style: context.type.bodyMedium?.copyWith(
-                        color: context.colors.brand,
+                        color: context.colors.positive,
                       ),
                     ),
                   ),
