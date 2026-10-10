@@ -11,8 +11,10 @@ import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
 import '../../own/own_controller.dart';
+import '../../own/undo.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
+import '../messages.dart';
 import 'amount_input.dart';
 import 'coming_days_page.dart' show listOf;
 
@@ -356,8 +358,12 @@ class _SplitSheetState extends State<_SplitSheet> {
     navigator.pop(group);
   }
 
+  /// Takes the split away, and says what that changes with a way back for
+  /// a few seconds.
   Future<void> _remove() async {
     final NavigatorState navigator = Navigator.of(context);
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final String said = context.l10n.splitRemoved;
     final SharedExpense? old =
         widget.expense ??
         switch (widget.entry) {
@@ -368,9 +374,13 @@ class _SplitSheetState extends State<_SplitSheet> {
     if (old == null || group == null) return;
     // The movement the Plan wrote down for it goes with it; one the person
     // wrote down and split stays theirs.
-    if (widget.entry == null) await own.dropPlanEntry(old.entryId);
-    await own.saveGroup(group.withoutExpense(old.id));
+    final Undo back = await own.removeSplit(
+      group,
+      old,
+      dropEntry: widget.entry == null,
+    );
     navigator.pop();
+    showUndo(messenger, said, back);
   }
 
   @override
@@ -651,7 +661,13 @@ class _SplitSheetState extends State<_SplitSheet> {
             const SizedBox(height: 20),
             FilledButton(onPressed: _save, child: Text(l.save)),
             if (editing)
-              TextButton(onPressed: _remove, child: Text(l.splitRemove)),
+              TextButton(
+                onPressed: _remove,
+                style: TextButton.styleFrom(
+                  foregroundColor: context.colors.negative,
+                ),
+                child: Text(l.splitRemove),
+              ),
           ],
         ),
       ),

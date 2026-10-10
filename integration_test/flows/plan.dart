@@ -27,6 +27,7 @@ import 'package:quincena/ui/own/coming_chart.dart' show ComingChart;
 import 'package:quincena/ui/own/cushion_page.dart' show reserveOf;
 import 'package:quincena/ui/own/look.dart' show moneyText;
 
+import '../../test/own_flow_test.dart' show settle;
 import '../../test/real_life_data.dart' show guatape, newYork;
 import '../../test_screens/accounts.dart';
 import '../tour.dart';
@@ -733,8 +734,9 @@ final List<AppFlow> planFlows = <AppFlow>[
       await f.tap('Borrar cobro');
       await f.top();
       await f.step(
-        '«Borrar cobro» quita Taller de marca de una vez, sin preguntar ni '
-        'dejar deshacer: «Estimado» queda en $_zero.',
+        '«Borrar cobro» quita Taller de marca sin preguntar: «Estimado» queda '
+        'en $_zero, y abajo «Se borró el cobro a Taller de marca.» ofrece '
+        '«Deshacer» por unos segundos.',
       );
       await f.check('Taller de marca ya no está y lo estimado pasó de '
           '${_pesos(l, estimated)} a $_zero', () {
@@ -746,6 +748,26 @@ final List<AppFlow> planFlows = <AppFlow>[
         );
         expect(own.freelance.by(IncomeStatus.estimated), isEmpty);
         expect(_says(f, 'Estimado | $_zero'), isTrue);
+        expect(f.shows('Se borró el cobro a Taller de marca.'), isTrue);
+      });
+      await f.tap('Deshacer');
+      await f.step(
+        '«Deshacer» lo trae de vuelta: «Estimado» vuelve a '
+        '${_pesos(l, estimated)}.',
+      );
+      await f.check('Volvió Taller de marca, con lo estimado de antes', () {
+        expect(
+          own.freelance.incomes.any(
+            (ExpectedIncome i) => i.client == 'Taller de marca',
+          ),
+          isTrue,
+        );
+        expect(
+          own.freelance
+              .by(IncomeStatus.estimated)
+              .fold(0, (int s, ExpectedIncome i) => s + i.amount),
+          estimated,
+        );
       });
     },
     manual: <String>[
@@ -1072,11 +1094,35 @@ final List<AppFlow> planFlows = <AppFlow>[
         (Decimal s, TripLine t) => s + t.local!,
       );
       await _tapTipBy(f, 'Fit24 gimnasio', 'No es del viaje');
-      await _tapTipBy(f, 'Fit24', 'No es del viaje');
       await f.step(
-        'Los dos cobros de Fit24 son del gimnasio en Medellín: con «No es del '
-        'viaje» salen de la lista.',
+        'El cobro de Fit24 es del gimnasio en Medellín: «No es del viaje» lo '
+        'saca sin preguntar, y abajo dice «Fit24 gimnasio ya no cuenta en el '
+        'viaje.» con «Deshacer».',
       );
+      await f.check('El aviso nombra el gasto y ofrece deshacerlo', () {
+        expect(f.shows('Fit24 gimnasio ya no cuenta en el viaje.'), isTrue);
+        expect(f.shows('Deshacer'), isTrue);
+      });
+      await f.tap('Deshacer');
+      await f.check(
+        'Con «Deshacer» el gimnasio vuelve a contar en el viaje',
+        () {
+          expect(ny().excluded, isEmpty);
+          expect(own.tripSummary(ny()).left, left);
+        },
+      );
+      await _tapTipBy(f, 'Fit24 gimnasio', 'No es del viaje');
+      await _tapTipBy(f, 'Fit24', 'No es del viaje');
+      await _hideNotice(f);
+      await f.reveal(find.text('GASTOS QUE SACASTE'));
+      await f.step(
+        'Los dos cobros de Fit24 salen de la lista y esperan abajo, en '
+        '«Gastos que sacaste», cada uno con «Es del viaje» para devolverlo.',
+      );
+      await f.check('Los dos están en «Gastos que sacaste»', () {
+        expect(f.shows('GASTOS QUE SACASTE'), isTrue);
+        expect(find.text('Es del viaje'), findsNWidgets(2));
+      });
       await f.check('Sin el gimnasio, al viaje le quedan '
           '${left + gym} dólares', () {
         expect(
@@ -1226,16 +1272,28 @@ final List<AppFlow> planFlows = <AppFlow>[
       });
       await f.tapTip('Borrar viaje');
       await f.step(
-        '«¿Borrar Nueva York?» aclara que sus gastos siguen en tus cuentas.',
+        '«Borrar viaje» no pregunta: de vuelta en «Viajes», que queda vacío, '
+        'abajo dice «Se borró «Nueva York».» con «Deshacer». Sus gastos '
+        'siguen en tus cuentas.',
       );
-      await f.tap('Cancelar');
-      await f.check('Con «Cancelar» el viaje sigue', () {
-        expect(own.trip(newYork), isNotNull);
-      });
-      await f.tapTip('Borrar viaje');
-      await f.tap('Borrar viaje');
-      await f.step('Borrado: de vuelta en «Viajes», que queda vacío.');
       await f.check('El viaje no está y los movimientos siguen todos', () {
+        expect(own.trips, isEmpty);
+        expect(own.snapshot!.entries.length, entries);
+        expect(f.shows('Se borró «Nueva York».'), isTrue);
+      });
+      await f.tap('Deshacer');
+      await f.step('«Deshacer» lo trae de vuelta, con su presupuesto nuevo.');
+      await f.check('Volvió el mismo viaje, con lo que le quedaba', () {
+        expect(
+          own.tripSummary(own.trip(newYork)!).left,
+          left + Decimal.fromInt(500),
+        );
+      });
+      await f.tap('Nueva York');
+      await f.tapTip('Borrar viaje');
+      await _hideNotice(f);
+      await f.step('Borrado otra vez y pasado el aviso, «Viajes» queda vacío.');
+      await f.check('Pasado el aviso, el viaje no vuelve', () {
         expect(own.trips, isEmpty);
         expect(own.snapshot!.entries.length, entries);
       });
@@ -1506,19 +1564,40 @@ final List<AppFlow> planFlows = <AppFlow>[
       );
       await f.reveal(find.text('Viaje a Cartagena').last);
       await f.tap('Viaje a Cartagena');
+      final SavingsGoal goal = own.snapshot!.goals.single;
       await f.tap('Borrar meta');
       await f.step(
-        '«¿Borrar «Viaje a Cartagena»?» aclara que tus cuentas y movimientos '
-        'no cambian.',
+        '«Borrar meta» no pregunta: la meta se va y abajo dice «Se borró '
+        '«Viaje a Cartagena».» con «Deshacer». Tus cuentas y movimientos no '
+        'cambian.',
       );
-      await f.tap('Cancelar');
-      await f.check('Con «Cancelar» la meta sigue', () {
-        expect(own.snapshot!.goals, hasLength(1));
+      await f.check('La meta ya no está y el aviso ofrece deshacerlo', () {
+        expect(own.snapshot!.goals, isEmpty);
+        expect(f.shows('Se borró «Viaje a Cartagena».'), isTrue);
       });
-      await f.tap('Borrar meta');
-      await f.tap('Borrar meta');
+      await f.tap('Deshacer');
       await f.step(
-        'Borrada: «Metas» vuelve a decir que todavía no tienes metas.',
+        '«Deshacer» la trae de vuelta con lo que llevabas, y su sobre vuelve '
+        'al reparto.',
+      );
+      await f.check('Volvió la misma meta, con su sobre de '
+          '${_pesos(own.ledger!, aside)}', () {
+        final SavingsGoal back = own.snapshot!.goals.single;
+        expect(back.id, goal.id);
+        expect(back.saved, goal.saved);
+        expect(
+          own.plan!.envelopes.where((Envelope e) => e.goalId == goal.id),
+          hasLength(1),
+        );
+        expect(own.ledger!.freeUntilPayday, free);
+      });
+      await f.reveal(find.text('Viaje a Cartagena').last);
+      await f.tap('Viaje a Cartagena');
+      await f.tap('Borrar meta');
+      await _hideNotice(f);
+      await f.step(
+        'Borrada otra vez y pasado el aviso: «Metas» vuelve a decir que '
+        'todavía no tienes metas.',
       );
       await f.check('La meta ya no está y los movimientos siguen todos', () {
         expect(own.snapshot!.goals, isEmpty);
@@ -1679,6 +1758,23 @@ final List<AppFlow> planFlows = <AppFlow>[
           expect(own.ledger!.freeUntilPayday, beforeBuying - 180000);
         },
       );
+      await _tapTipBy(f, 'Audífonos', 'Quitar deseo');
+      await f.step(
+        'La caneca quita los audífonos sin preguntar, y abajo dice «Se quitó '
+        'Audífonos.» con «Deshacer».',
+      );
+      await f.check('Los audífonos salieron y el aviso ofrece deshacerlo', () {
+        expect(own.wishes, isEmpty);
+        expect(f.shows('Se quitó Audífonos.'), isTrue);
+      });
+      await f.tap('Deshacer');
+      await f.step('«Deshacer» los trae de vuelta, con su espera de 30 días.');
+      await f.check('Volvieron los mismos audífonos', () {
+        final Wish w = own.wishes.single;
+        expect(w.name, 'Audífonos');
+        expect(w.priority, 1);
+        expect(w.waitUntil, DateTime(2026, 11, 2));
+      });
       await f.back();
       await f.reveal(find.text('Lo quiero, pero después'));
       await f.step('En Plan, la fila de deseos dice «Un deseo».');
@@ -1715,7 +1811,8 @@ final List<AppFlow> planFlows = <AppFlow>[
       await _tapTextBy(f, 'Claro', 'No es fijo');
       await f.step(
         'Con «No es fijo» Claro sale de las sugerencias y no vuelve a '
-        'aparecer.',
+        'aparecer; abajo lo dice con «Deshacer», y queda en «Archivado y '
+        'descartado» por si cambias de idea.',
       );
       await f.check('Claro quedó como «no es fijo» y ya no se sugiere', () {
         expect(own.detective.notRecurring, <String>{merchantKey('Claro')});
@@ -2005,23 +2102,40 @@ final List<AppFlow> planFlows = <AppFlow>[
       await f.check('Reanudado, el aviso de Netflix vuelve a programarse', () {
         expect(_remindsOf(calls, 'Netflix'), isTrue);
       });
+      final String netflix = charge('Netflix').id;
       await f.tap('Netflix');
       await f.tap('Borrar pago fijo');
       await f.step(
-        '«¿Borrar Netflix?» aclara que los cobros que ya registraste se '
-        'quedan.',
+        '«Borrar pago fijo» no pregunta: Netflix sale de la lista y abajo '
+        'dice «Se borró Netflix: deja de contarse como comprometido.» con '
+        '«Deshacer». Los cobros que ya registraste se quedan.',
       );
-      await f.tap('Cancelar');
-      await f.check('Con «Cancelar» Netflix sigue', () {
+      await f.check('Netflix ya no está y el aviso ofrece deshacerlo', () {
         expect(
           own.recurring.any((RecurringCharge r) => r.name == 'Netflix'),
+          isFalse,
+        );
+        expect(
+          f.shows('Se borró Netflix: deja de contarse como comprometido.'),
           isTrue,
         );
       });
-      final String netflix = charge('Netflix').id;
+      await f.tap('Deshacer');
+      await f.step(
+        '«Deshacer» trae de vuelta a Netflix con su aviso de renovación.',
+      );
+      await f.check('Volvió el mismo Netflix, con su aviso', () {
+        expect(charge('Netflix').id, netflix);
+        expect(own.memoryOf(netflix).remindDays, 3);
+        expect(_remindsOf(calls, 'Netflix'), isTrue);
+      });
+      await f.tap('Netflix');
       await f.tap('Borrar pago fijo');
-      await f.tap('Borrar pago fijo');
-      await f.page('Sin Netflix, solo queda Fit24 en la lista.', most: 2);
+      await _hideNotice(f);
+      await f.page(
+        'Borrado otra vez y pasado el aviso, solo queda Fit24 en la lista.',
+        most: 2,
+      );
       await f.check(
         'Netflix ya no está, su aviso tampoco, y los movimientos siguen',
         () {
@@ -2217,9 +2331,13 @@ final List<AppFlow> planFlows = <AppFlow>[
       });
       await f.tapTip('Borrar compra');
       await f.step(
-        '«¿Borrar Portátil?» aclara que se borran sus datos y pagos, pero no '
-        'tus movimientos.',
+        'Como todavía falta pagarla, pregunta antes: «¿Borrar Portátil?» '
+        'aclara que se borran sus datos y pagos, pero no tus movimientos, y '
+        'cuánto te falta pagar, que deja de contarse.',
       );
+      await f.check('Pregunta diciendo lo que falta pagar', () {
+        expect(f.screenText, contains('Todavía te falta pagar '));
+      });
       await f.tap('Cancelar');
       await f.check('Con «Cancelar» la compra sigue', () {
         expect(own.instalments.length, plans + 1);
@@ -2227,7 +2345,8 @@ final List<AppFlow> planFlows = <AppFlow>[
       await f.tapTip('Borrar compra');
       await f.tap('Borrar compra');
       await f.step(
-        'Borrada: la lista vuelve a tener el Celular y el Televisor.',
+        'Borrada: la lista vuelve a tener el Celular y el Televisor, y abajo '
+        '«Se borró «Portátil».» ofrece «Deshacer».',
       );
       await f.check('El portátil ya no está', () {
         expect(own.instalments.length, plans);
@@ -2370,24 +2489,38 @@ final List<AppFlow> planFlows = <AppFlow>[
       );
       await _tapTipBy(f, pesos(200000), 'Quitar este pago');
       await f.step(
-        'La caneca pregunta antes: «¿Quitar este pago?», y avisa que también '
-        'se borra su movimiento de \$200.000 en ${from.name}.',
+        'La caneca quita el abono sin preguntar, y el aviso dice qué se fue '
+        'con él: «Se quitó el pago de \$200.000 y su movimiento en '
+        '${from.name}.», con «Deshacer».',
       );
-      await f.check('Dice que el movimiento se va con el pago', () {
-        expect(
-          f.screenText,
-          contains(
-            'También se borra su movimiento de ${pesos(200000)} en '
-            '${from.name}.',
-          ),
-        );
-      });
-      await f.tap('Quitar pago');
       await f.check('Quitar el abono también quita su movimiento', () {
         expect(fridge().payments, isEmpty);
         expect(own.entryById(paidWith), isNull);
         expect(own.ledger!.freeUntilPayday, free - l.minor(320000));
+        expect(
+          f.screenText,
+          contains(
+            'Se quitó el pago de ${pesos(200000)} y su movimiento en '
+            '${from.name}.',
+          ),
+        );
       });
+      await f.tap('Deshacer');
+      await f.step('«Deshacer» trae de vuelta el abono y su movimiento.');
+      await f.check('Volvieron el abono y su movimiento, ligados', () {
+        expect(fridge().payments.single.$2, l.minor(200000));
+        expect(fridge().entryOf(0), paidWith);
+        expect(own.entryById(paidWith)!.accountId, from.id);
+      });
+      await _tapTipBy(f, pesos(200000), 'Quitar este pago');
+      await _hideNotice(f);
+      await f.check(
+        'Quitado otra vez, el abono y su movimiento no vuelven',
+        () {
+          expect(fridge().payments, isEmpty);
+          expect(own.entryById(paidWith), isNull);
+        },
+      );
       await f.top();
       await f.tap('Registrar un pago');
       await f.tapFound(find.text(dayMonth(own.today)).last);
@@ -2603,17 +2736,41 @@ final List<AppFlow> planFlows = <AppFlow>[
       });
       await f.tapTip('Borrar grupo');
       await f.step(
-        '«¿Borrar Apto 301?» aclara que se borran sus gastos y pagos aquí, no '
-        'tus movimientos.',
+        'Como todavía te deben, pregunta antes: «¿Borrar Apto 301?» aclara '
+        'que se borran sus gastos y pagos aquí, no tus movimientos, y que '
+        'los 50.000 que te deben dejan de contar.',
       );
+      await f.check('Pregunta diciendo lo que te deben', () {
+        expect(
+          f.screenText,
+          contains('En este grupo te deben ${pesos(50000)}'),
+        );
+      });
       await f.tap('Cancelar');
       await f.check('Con «Cancelar» el grupo sigue', () {
         expect(own.groups, hasLength(1));
       });
       await f.tapTip('Borrar grupo');
       await f.tap('Borrar grupo');
-      await f.step('Borrado: «Gastos compartidos» vuelve a estar vacío.');
+      await f.step(
+        'Borrado: «Gastos compartidos» vuelve a estar vacío, y abajo «Se '
+        'borró «Apto 301».» ofrece «Deshacer».',
+      );
       await f.check('Ya no hay grupos ni nada que te deban', () {
+        expect(own.groups, isEmpty);
+        expect(own.sharedBalance, (0, 0));
+      });
+      await f.tap('Deshacer');
+      await f.step('«Deshacer» trae el grupo de vuelta, con lo que te deben.');
+      await f.check('Volvió Apto 301 y te deben 50.000 otra vez', () {
+        expect(own.groups.single.name, 'Apto 301');
+        expect(own.sharedBalance, (50000, 0));
+      });
+      await f.tap('Apto 301');
+      await f.tapTip('Borrar grupo');
+      await f.tap('Borrar grupo');
+      await _hideNotice(f);
+      await f.check('Borrado otra vez y pasado el aviso, no vuelve', () {
         expect(own.groups, isEmpty);
         expect(own.sharedBalance, (0, 0));
       });
@@ -2820,9 +2977,15 @@ final List<AppFlow> planFlows = <AppFlow>[
         },
       );
       await _tapTipBy(f, 'Pedro te pagó', 'Quitar este pago');
-      await f.step('La caneca quita el pago: Pedro vuelve a deberte 50.000.');
+      await f.step(
+        'La caneca quita el pago sin preguntar: Pedro vuelve a deberte '
+        '50.000, y abajo «Se quitó el pago de \$50.000.» ofrece «Deshacer». '
+        'Lo que llegó a Nequi se queda: lo anotaste tú.',
+      );
       await f.check('Sin el pago, Pedro debe otra vez 50.000', () {
         expect(own.group('group-pedro')!.balances[meId], 50000);
+        expect(f.shows('Se quitó el pago de ${pesos(50000)}.'), isTrue);
+        expect(own.entryById(back.id), isNotNull);
       });
       await f.back();
       await f.tap('Paseo a Guatapé');
@@ -2994,13 +3157,22 @@ final List<AppFlow> planFlows = <AppFlow>[
       await f.reveal(find.text('Ver las 2 que marcaste'));
       await f.step(
         'Fit24 «Es esperado» y la comida descartada se van de la lista; '
-        'aparece «Ver las 2 que marcaste».',
+        'aparece «Ver las 2 que marcaste», y abajo «Alerta descartada.» con '
+        '«Deshacer».',
       );
       await f.check('Fit24 quedó como esperado y la comida descartada', () {
         expect(own.detective.answers[gym], AlertAnswer.expected);
         expect(own.detective.answers[meal], AlertAnswer.dismissed);
         expect(own.alerts.map((ChargeAlert a) => a.id), isNot(contains(gym)));
+        expect(f.shows('Alerta descartada.'), isTrue);
       });
+      await f.tap('Deshacer');
+      await f.check('Con «Deshacer» la comida vuelve a la lista', () {
+        expect(own.detective.answers[meal], isNull);
+        expect(own.alerts.map((ChargeAlert a) => a.id), contains(meal));
+      });
+      await _tapTextBy(f, 'Mucho más de lo usual en Restaurantes', 'Descartar');
+      await _hideNotice(f);
       await f.tap('Ver las 2 que marcaste');
       await f.reveal(find.text('Volver a mostrar'));
       await f.step(
@@ -3050,9 +3222,9 @@ final List<AppFlow> planFlows = <AppFlow>[
         'ahí se borra el que sobra.',
       );
       await f.tap('Eliminar');
-      await f.tap('Eliminar');
       await f.step(
-        'Borrado el repetido, el aviso desaparece: no queda nada abierto.',
+        'Borrado el repetido, sin preguntar y con «Deshacer» abajo, el aviso '
+        'desaparece: no queda nada abierto.',
       );
       await f.check('El aviso de pago repetido ya no está', () {
         expect(own.alerts.map((ChargeAlert a) => a.id), isNot(contains(twice)));
@@ -3453,7 +3625,29 @@ final List<AppFlow> planFlows = <AppFlow>[
         'Apartar ${pesos(100000)} más en cada pago',
         'Quitar escenario',
       );
-      await f.step('Quitado el de ahorrar más, queda el del pago tarde.');
+      await f.step(
+        'La caneca quita el de ahorrar más sin preguntar; abajo «Se quitó el '
+        'escenario.» con «Deshacer».',
+      );
+      await f.check('El aviso ofrece deshacerlo', () {
+        expect(f.shows('Se quitó el escenario.'), isTrue);
+      });
+      await f.tap('Deshacer');
+      await f.check('Con «Deshacer» vuelve en su lugar, el primero', () {
+        expect(own.scenarios.map((Scenario s) => s.kind), <ScenarioKind>[
+          ScenarioKind.saveMore,
+          ScenarioKind.payLate,
+        ]);
+      });
+      await _tapTipBy(
+        f,
+        'Apartar ${pesos(100000)} más en cada pago',
+        'Quitar escenario',
+      );
+      await _hideNotice(f);
+      await f.step(
+        'Quitado otra vez el de ahorrar más, queda el del pago tarde.',
+      );
       await f.check('Queda el escenario del pago tarde', () {
         expect(own.scenarios.map((Scenario s) => s.kind), <ScenarioKind>[
           ScenarioKind.payLate,
@@ -4190,6 +4384,16 @@ Entry _entry(OwnController own, String payee) =>
 int _pendingTotal(OwnController own) => own.freelance
     .by(IncomeStatus.pending)
     .fold(0, (int s, ExpectedIncome i) => s + i.amount);
+
+/// Takes the notice at the bottom away, as its time running out would.
+Future<void> _hideNotice(FlowRun f) async {
+  for (final ScaffoldMessengerState m in f.tester.stateList(
+    find.byWidgetPredicate((Widget w) => w is ScaffoldMessenger),
+  )) {
+    m.removeCurrentSnackBar();
+  }
+  await settle(f.tester);
+}
 
 /// Taps [day] in the calendar on top, one day or a range.
 Future<void> _tapInDialog(FlowRun f, String day) async {

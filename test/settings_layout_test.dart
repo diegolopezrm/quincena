@@ -62,6 +62,7 @@ void main() {
       'Exportar mis datos',
       'Exportar movimientos en CSV',
       'Restaurar un respaldo',
+      'Archivado y descartado',
       'Ver los datos de ejemplo',
       'AYUDA Y PRIVACIDAD',
       'Soporte',

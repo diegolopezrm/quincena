@@ -623,9 +623,21 @@ class AppLocalizationsEs extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Se borran también sus $count movimientos. No se puede deshacer.',
-      one: 'Se borra también su movimiento. No se puede deshacer.',
+      other: 'Se borran también sus $count movimientos.',
+      one: 'Se borra también su movimiento.',
       zero: 'No tiene movimientos.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String accountDeleted(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Se eliminó $name, con sus $count movimientos.',
+      one: 'Se eliminó $name, con su movimiento.',
+      zero: 'Se eliminó $name.',
     );
     return '$_temp0';
   }
@@ -661,6 +673,17 @@ class AppLocalizationsEs extends AppLocalizations {
           'Dejan de aparecer en Cuentas y al elegir una cuenta. Las puedes restaurar cuando quieras desde «Cuentas archivadas», en Cuentas.',
       one:
           'Deja de aparecer en Cuentas y al elegir una cuenta. La puedes restaurar cuando quieras desde «Cuentas archivadas», en Cuentas.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String accountsArchived(String names, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Se archivaron $names.',
+      one: 'Se archivó $names.',
     );
     return '$_temp0';
   }
@@ -788,6 +811,43 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get archivedAccountsNone => 'No tienes cuentas archivadas.';
+
+  @override
+  String get putAwayTitle => 'Archivado y descartado';
+
+  @override
+  String get putAwayBody =>
+      'Lo que quitaste sin borrar. Tráelo de vuelta cuando quieras.';
+
+  @override
+  String get putAwayEmpty => 'No hay nada archivado ni descartado.';
+
+  @override
+  String get putAwayRow => 'Para traer de vuelta lo que quitaste';
+
+  @override
+  String get putAwayCaptures => 'Descartado en Por revisar';
+
+  @override
+  String get putAwayCapturesNote => 'Lo que llegó en los últimos 30 días.';
+
+  @override
+  String get putAwayAlerts => 'Cargos que marcaste';
+
+  @override
+  String get putAwayAlertDismissed => 'Descartada';
+
+  @override
+  String get putAwayNotRecurring => 'No son pagos fijos';
+
+  @override
+  String get putAwayTrips => 'Sacados de un viaje';
+
+  @override
+  String get bringBack => 'Traer de vuelta';
+
+  @override
+  String get offerAgain => 'Volver a proponer';
 
   @override
   String get accountArchivedNote =>
@@ -1127,13 +1187,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get noResultsBoth => 'Nada coincide con la búsqueda y los filtros.';
 
   @override
-  String get deleteMovementTitle => '¿Eliminar este movimiento?';
-
-  @override
-  String get deleteTransferBody =>
-      'Se eliminan las dos partes de la transferencia.';
-
-  @override
   String get deleteSplitBody =>
       'También se quita su división: lo que te deben por este gasto deja de contar.';
 
@@ -1142,6 +1195,15 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get kindChangeSplitYes => 'Sí, cambiarlo';
+
+  @override
+  String get entryDeleted => 'Movimiento eliminado.';
+
+  @override
+  String get transferDeleted => 'Transferencia eliminada de las dos cuentas.';
+
+  @override
+  String get entrySplitDeleted => 'Movimiento eliminado, con su división.';
 
   @override
   String get invalidAmount => 'Escribe un monto';
@@ -1933,16 +1995,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get goalIncomplete => 'Ponle un nombre y cuánto quieres juntar.';
 
   @override
-  String goalDeleteTitle(String name) {
-    return '¿Borrar «$name»?';
-  }
-
-  @override
-  String get goalDeleteBody =>
-      'Se borra la meta. Tus cuentas y movimientos no cambian.';
-
-  @override
   String get goalDelete => 'Borrar meta';
+
+  @override
+  String deletedNamed(String name) {
+    return 'Se borró «$name».';
+  }
 
   @override
   String get goalAdd => 'Agregar meta';
@@ -2232,6 +2290,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wishRemove => 'Quitar deseo';
 
   @override
+  String wishRemoved(String name) {
+    return 'Se quitó $name.';
+  }
+
+  @override
   String get wishBought => 'Lo compré';
 
   @override
@@ -2402,6 +2465,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get whatIfRemove => 'Quitar escenario';
+
+  @override
+  String get scenarioRemoved => 'Se quitó el escenario.';
 
   @override
   String get whatIfToday => 'Hoy';
@@ -2702,6 +2768,39 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String captureDiscarded(String payee) {
+    return 'Se descartó $payee.';
+  }
+
+  @override
+  String captureDiscardedMuted(String payee, String app) {
+    return 'Se descartó $payee y ya no se leen las notificaciones de $app.';
+  }
+
+  @override
+  String muteAppTitle(String app) {
+    return '¿Dejar de leer las notificaciones de $app?';
+  }
+
+  @override
+  String muteAppBody(String app) {
+    return 'Lo que llegue de $app no va a aparecer en Por revisar. Las puedes volver a leer desde Ajustes › Captura automática.';
+  }
+
+  @override
+  String get muteAppGo => 'Dejar de leer';
+
+  @override
+  String inboxDiscardedLink(int count) {
+    return 'Ver lo descartado ($count)';
+  }
+
+  @override
+  String captureBroughtBack(String payee) {
+    return '$payee volvió a Por revisar.';
+  }
+
+  @override
   String get chooseAccount => 'Elegir la cuenta';
 
   @override
@@ -2850,6 +2949,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get ruleDelete => 'Borrar regla';
+
+  @override
+  String get ruleDeleted => 'Regla borrada.';
 
   @override
   String get ruleOn => 'Usar esta regla';
@@ -3587,8 +3689,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get walletsRemove => 'Dejar de seguir';
 
   @override
-  String get walletsRemoveBody =>
-      'Ya no se lee. Las cuentas que trajo se quedan como tuyas.';
+  String walletUnfollowed(String wallet) {
+    return 'Ya no sigues $wallet; sus cuentas se quedan como tuyas.';
+  }
 
   @override
   String walletsSyncedAt(String when) {
@@ -3755,13 +3858,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chargeDelete => 'Borrar pago fijo';
 
   @override
-  String chargeDeleteTitle(String name) {
-    return '¿Borrar $name?';
+  String chargeDeleted(String name) {
+    return 'Se borró $name: deja de contarse como comprometido.';
   }
-
-  @override
-  String get chargeDeleteBody =>
-      'Deja de contarse como comprometido. Los cobros que ya registraste se quedan.';
 
   @override
   String get fixedTitle => 'Pagos fijos';
@@ -3793,6 +3892,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get guessNot => 'No es fijo';
+
+  @override
+  String guessNotDone(String name) {
+    return '$name ya no se propone como pago fijo.';
+  }
 
   @override
   String get fixedSubscriptions => 'Suscripciones';
@@ -4028,20 +4132,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get instalPaymentRemove => 'Quitar este pago';
 
   @override
-  String get instalPaymentRemoveTitle => '¿Quitar este pago?';
-
-  @override
-  String instalPaymentRemoveBody(String amount) {
-    return 'Lo que falta pagar vuelve a subir $amount.';
+  String paymentRemoved(String amount) {
+    return 'Se quitó el pago de $amount.';
   }
 
   @override
-  String instalPaymentRemoveEntry(String amount, String account) {
-    return 'También se borra su movimiento de $amount en $account.';
+  String paymentRemovedEntry(String amount, String account) {
+    return 'Se quitó el pago de $amount y su movimiento en $account.';
   }
-
-  @override
-  String get instalPaymentRemoveGo => 'Quitar pago';
 
   @override
   String get instalSchedule => 'Calendario de cuotas';
@@ -4126,6 +4224,11 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get instalDeleteBody =>
       'Se borran sus datos y pagos aquí. Tus movimientos no se tocan.';
+
+  @override
+  String instalDeleteOwed(String amount) {
+    return 'Todavía te falta pagar $amount, y deja de contarse al borrarla.';
+  }
 
   @override
   String get instalSheetBody =>
@@ -4286,6 +4389,12 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get detectiveDismiss => 'Descartar';
+
+  @override
+  String get alertDismissed => 'Alerta descartada.';
+
+  @override
+  String get alertExpected => 'Marcada como esperada.';
 
   @override
   String get detectiveShowAgain => 'Volver a mostrar';
@@ -4567,6 +4676,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get splitRemove => 'Quitar la división';
 
   @override
+  String get splitRemoved =>
+      'División quitada: este gasto ya no cuenta en el grupo.';
+
+  @override
   String get splitThis => 'Dividir este gasto';
 
   @override
@@ -4644,6 +4757,20 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get sharedDeleteBody =>
       'Se borran el grupo, sus gastos y sus pagos aquí. Tus movimientos no se tocan.';
+
+  @override
+  String sharedDeleteOwed(String amount) {
+    return 'En este grupo te deben $amount: deja de contar al borrarlo.';
+  }
+
+  @override
+  String sharedDeleteOwing(String amount) {
+    return 'En este grupo debes $amount: deja de contar al borrarlo.';
+  }
+
+  @override
+  String get sharedDeletePending =>
+      'Todavía hay cuentas pendientes entre ellos: dejan de contar al borrarlo.';
 
   @override
   String get sharedAddExpense => 'Agregar gasto';
@@ -4978,6 +5105,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get freelanceDelete => 'Borrar cobro';
 
   @override
+  String incomeDeleted(String client) {
+    return 'Se borró el cobro a $client.';
+  }
+
+  @override
   String get tripsTitle => 'Viajes';
 
   @override
@@ -4995,15 +5127,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get tripDelete => 'Borrar viaje';
-
-  @override
-  String tripDeleteTitle(String name) {
-    return '¿Borrar $name?';
-  }
-
-  @override
-  String get tripDeleteBody =>
-      'Se borra el viaje aquí. Sus gastos siguen en tus cuentas.';
 
   @override
   String tripLeftShort(String amount) {
@@ -5089,6 +5212,17 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get tripExclude => 'No es del viaje';
+
+  @override
+  String tripLeftOut(String payee) {
+    return '$payee ya no cuenta en el viaje.';
+  }
+
+  @override
+  String get tripLeftOutSection => 'Gastos que sacaste';
+
+  @override
+  String get tripPutBack => 'Es del viaje';
 
   @override
   String tripForeign(

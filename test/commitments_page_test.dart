@@ -100,8 +100,25 @@ void main() {
       // Paused, nothing reminds: no bell.
       expect(find.byIcon(Glyph.bell), findsNothing);
 
+      // Deleting it asks nothing: it says what changed, with a way back
+      // that brings it back with what the person told about it.
       await tapText(tester, 'Netflix');
       await tapText(tester, 'Borrar pago fijo');
+      expect(await tester.runAsync(own.store.recurring), isEmpty);
+      expect(
+        find.text('Se borró Netflix: deja de contarse como comprometido.'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Deshacer'));
+      await settle(tester);
+      final RecurringCharge back = (await tester.runAsync(
+        own.store.recurring,
+      ))!.single;
+      expect(back.id, netflix.id);
+      expect(back.active, isFalse);
+      expect(own.memoryOf(netflix.id).remindDays, 3);
+
+      await tapText(tester, 'Netflix');
       await tapText(tester, 'Borrar pago fijo');
       expect(await tester.runAsync(own.store.recurring), isEmpty);
       expect(own.memoryOf(netflix.id).remindDays, isNull);

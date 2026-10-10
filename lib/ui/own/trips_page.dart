@@ -12,13 +12,16 @@ import '../../money/asset.dart';
 import '../../money/money.dart';
 import '../../money/rates.dart';
 import '../../own/own_controller.dart';
+import '../../own/undo.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import '../messages.dart';
 import 'amount_input.dart';
 import 'coming_days_page.dart' show listOf;
 import 'entry_sheet.dart';
 import 'look.dart';
+import 'put_away_page.dart' show PutAwayRow;
 import 'shared_page.dart';
 import 'split_sheet.dart' show memberName, showSplitSheet;
 
@@ -125,29 +128,14 @@ class TripPage extends StatelessWidget {
   final OwnController own;
   final String id;
 
+  /// Deletes the trip, whose expenses stay in the accounts, with a way
+  /// back for a few seconds.
   Future<void> _delete(BuildContext context, Trip trip) async {
-    final AppLocalizations l = context.l10n;
     final NavigatorState navigator = Navigator.of(context);
-    final bool? sure = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text(l.tripDeleteTitle(trip.name)),
-        content: Text(l.tripDeleteBody),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l.tripDelete),
-          ),
-        ],
-      ),
-    );
-    if (sure != true) return;
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final String said = context.l10n.deletedNamed(trip.name);
     navigator.pop();
-    await own.deleteTrip(trip.id);
+    showUndo(messenger, said, await own.removeTrip(trip));
   }
 
   @override
@@ -303,6 +291,7 @@ class TripPage extends StatelessWidget {
                     child: Text(l.tripIncludeEarlier),
                   ),
                 ),
+                ..._leftOut(context, trip),
                 const SizedBox(height: 8),
                 Text(l.tripSameMovements, style: context.type.bodySmall),
               ],
@@ -312,6 +301,50 @@ class TripPage extends StatelessWidget {
       );
     },
   );
+
+  /// The expenses the person said are not the trip's, newest first, each
+  /// with the way back into it.
+  List<Widget> _leftOut(BuildContext context, Trip trip) {
+    final AppLocalizations l = context.l10n;
+    final Asset? base = own.profile?.base;
+    final List<Entry> out = <Entry>[
+      for (final String id in trip.excluded)
+        if (own.entryById(id) case final Entry e
+            when e.kind == EntryKind.expense)
+          e,
+    ]..sort((Entry a, Entry b) => b.date.compareTo(a.date));
+    if (out.isEmpty) return const <Widget>[];
+    return <Widget>[
+      const SizedBox(height: 16),
+      SectionLabel(l.tripLeftOutSection),
+      Panel(
+        indent: 16,
+        children: <Widget>[
+          for (final Entry e in out)
+            PutAwayRow(
+              title: e.payee.isEmpty
+                  ? categoryNameFor(
+                      context,
+                      e.category ?? 'other',
+                      own.categories,
+                    )
+                  : e.payee,
+              subtitle: dayShortMonth(e.date),
+              amount: switch (own.snapshot?.account(e.accountId)) {
+                final Account a => moneyText(
+                  Money(e.amount, a.asset),
+                  base: base,
+                  signed: true,
+                ),
+                null => null,
+              },
+              action: l.tripPutBack,
+              onPressed: () => own.backInTrip(trip, e),
+            ),
+        ],
+      ),
+    ];
+  }
 
   /// Lets the person add expenses from before the trip, a flight or a
   /// hotel paid ahead.
@@ -337,6 +370,18 @@ class _TripLineRow extends StatelessWidget {
   final OwnController own;
   final Trip trip;
   final TripLine line;
+
+  /// Takes the expense out of the trip, with a way back for a few seconds.
+  Future<void> _leaveOut(BuildContext context) async {
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final Entry e = line.entry;
+    final String said = context.l10n.tripLeftOut(
+      e.payee.isEmpty
+          ? categoryNameFor(context, e.category ?? 'other', own.categories)
+          : e.payee,
+    );
+    showUndo(messenger, said, await own.leaveOutOfTrip(trip, e));
+  }
 
   Future<void> _adjust(BuildContext context) async {
     final ForeignCharge? foreign = line.foreign;
@@ -461,15 +506,7 @@ class _TripLineRow extends StatelessWidget {
                 }, style: context.type.titleSmall),
                 IconButton(
                   tooltip: l.tripExclude,
-                  onPressed: () => own.saveTrip(
-                    trip.copyWith(
-                      excluded: <String>{...trip.excluded, e.id},
-                      included: <String>{
-                        for (final String id in trip.included)
-                          if (id != e.id) id,
-                      },
-                    ),
-                  ),
+                  onPressed: () => _leaveOut(context),
                   icon: Icon(
                     Glyph.minusCircle,
                     size: 18,

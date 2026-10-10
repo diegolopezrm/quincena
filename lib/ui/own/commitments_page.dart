@@ -10,9 +10,11 @@ import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
 import '../../own/own_controller.dart';
+import '../../own/undo.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import '../messages.dart';
 import 'charge_sheet.dart';
 import 'look.dart';
 
@@ -416,7 +418,13 @@ class _GuessCard extends StatelessWidget {
             alignment: WrapAlignment.end,
             children: <Widget>[
               TextButton(
-                onPressed: () => own.notRecurring(guess.name),
+                onPressed: () async {
+                  final ScaffoldMessengerState messenger = ScaffoldMessenger.of(
+                    context,
+                  );
+                  final Undo back = await own.sayNotRecurring(guess.name);
+                  showUndo(messenger, l.guessNotDone(guess.name), back);
+                },
                 child: Text(l.guessNot),
               ),
               TextButton.icon(

@@ -6,9 +6,11 @@ import '../../format/dates.dart';
 import '../../l10n/l10n.dart';
 import '../../money/money.dart';
 import '../../own/own_controller.dart';
+import '../../own/undo.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import '../messages.dart';
 import 'example_bar.dart';
 import 'look.dart';
 import 'portfolio_page.dart';
@@ -112,28 +114,14 @@ class _WalletsPageState extends State<WalletsPage> {
     own.wallets.adjustment = context.l10n.walletsAdjustment;
   }
 
+  /// Stops following [w]; the accounts it brought stay as the person's
+  /// own. A way back stays for a few seconds.
   Future<void> _remove(WalletAddress w) async {
-    final AppLocalizations l = context.l10n;
-    final bool? sure = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text(
-          '${l.walletsRemove}: ${w.label.isEmpty ? w.short : w.label}',
-        ),
-        content: Text(l.walletsRemoveBody),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l.walletsRemove),
-          ),
-        ],
-      ),
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final String said = context.l10n.walletUnfollowed(
+      w.label.isEmpty ? w.short : w.label,
     );
-    if (sure == true) await own.wallets.remove(w);
+    showUndo(messenger, said, await own.stopFollowing(w));
   }
 
   @override

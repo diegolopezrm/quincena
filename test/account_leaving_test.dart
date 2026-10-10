@@ -150,7 +150,13 @@ void main() {
     await tester.tap(find.text('Archivar').last);
     await settle(tester);
 
-    // Back on Cuentas, without it, and nothing lost.
+    // Back on Cuentas, without it, and nothing lost. A way back stays a few
+    // seconds.
+    expect(find.text('Se archivó Nequi.'), findsOneWidget);
+    expect(find.text('Deshacer'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 7));
+    await settle(tester);
+    expect(find.text('Deshacer'), findsNothing);
     expect(find.text('Nequi'), findsNothing);
     expect(named(own, 'Nequi'), isNull);
     expect(own.snapshot!.account(nequi.id)!.archived, isTrue);
@@ -353,6 +359,58 @@ void main() {
       find.text('Las cuotas que vienen se cuentan como comprometidas.'),
       findsOneWidget,
     );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a deleted card comes back with «Deshacer»: its movements, the '
+      'payment that reached it from the bank, and what was paid from it', (
+    tester,
+  ) async {
+    final OwnController own = await open(tester);
+    final Account bank = named(own, 'Bancolombia')!;
+    final Account visa = named(own, 'Visa')!;
+    final List<Entry> before = <Entry>[...own.snapshot!.entries];
+    final Money worth = own.netWorth().total;
+
+    await openForm(tester, 'Visa');
+    await tapText(tester, 'Eliminar');
+    await tester.tap(find.text('Sin cuenta'));
+    await settle(tester);
+    await tester.tap(find.text('Bancolombia').last);
+    await settle(tester);
+    await tester.tap(find.text('Eliminar').last);
+    await settle(tester);
+    expect(own.snapshot!.account(visa.id), isNull);
+    // Its purchase and its side of the payment went with it.
+    expect(
+      find.text('Se eliminó Visa, con sus 2 movimientos.'),
+      findsOneWidget,
+    );
+    final Entry paid = own.snapshot!.entries.firstWhere(
+      (Entry e) => e.accountId == bank.id && e.amount == d('-42900'),
+    );
+    expect(paid.transferId, isNull);
+
+    await tester.tap(find.text('Deshacer'));
+    await settle(tester);
+    expect(own.snapshot!.account(visa.id), isNotNull);
+    expect(
+      <String>[for (final Entry e in own.snapshot!.entries) e.id]..sort(),
+      <String>[for (final Entry e in before) e.id]..sort(),
+    );
+    final Entry again = own.snapshot!.entries.firstWhere(
+      (Entry e) => e.id == paid.id,
+    );
+    expect(again.transferId, isNotNull);
+    expect(again.kind, EntryKind.transfer);
+    expect(
+      own.recurring
+          .firstWhere((RecurringCharge r) => r.name == 'Netflix')
+          .accountId,
+      visa.id,
+    );
+    expect(own.instalments.single.accountId, visa.id);
+    expect(own.netWorth().total, worth);
     expect(tester.takeException(), isNull);
   });
 

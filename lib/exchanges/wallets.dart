@@ -428,6 +428,16 @@ class WalletLink extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Follows [wallet] again at [index], without reading it: how stopping
+  /// is taken back. Its accounts stayed, and the next read updates them.
+  Future<void> followAgain(WalletAddress wallet, int index) async {
+    if (_wallets.contains(wallet)) return;
+    _wallets = <WalletAddress>[..._wallets]
+      ..insert(index.clamp(0, _wallets.length), wallet);
+    await _save();
+    notifyListeners();
+  }
+
   /// Reads every wallet again, unless they were read within [age].
   Future<void> syncIfOlder(Duration age) async {
     await load();

@@ -17,9 +17,11 @@ import '../../money/asset.dart';
 import '../../money/money.dart';
 import '../../own/entry_guess.dart';
 import '../../own/own_controller.dart';
+import '../../own/undo.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import '../messages.dart';
 import 'account_sheet.dart';
 import 'amount_input.dart';
 import 'capture_reasons.dart';
@@ -757,40 +759,20 @@ class _EntryFormState extends State<_EntryForm> {
     return ledger.minor(money.amount.toDouble());
   }
 
+  /// Deletes the movement, both legs of a transfer, and its split, and
+  /// offers for a few seconds to put all of it back as it was.
   Future<void> _delete() async {
     final AppLocalizations l = context.l10n;
-    final (Group, SharedExpense)? split = own.splitOf(_editing!.id);
-    final bool? sure = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text(l.deleteMovementTitle),
-        content: _editing!.transferId != null
-            ? Text(l.deleteTransferBody)
-            : split != null
-            ? Text(l.deleteSplitBody)
-            : null,
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: context.colors.negative,
-            ),
-            child: Text(l.delete),
-          ),
-        ],
-      ),
-    );
-    if (sure != true) return;
-    await own.store.deleteEntry(_editing!);
-    // The split goes with what was split: no one owes for a deleted one.
-    if (split case (final Group group, final SharedExpense expense)) {
-      await own.saveGroup(group.withoutExpense(expense.id));
-    }
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final Entry entry = _editing!;
+    final String said = entry.transferId != null
+        ? l.transferDeleted
+        : own.splitOf(entry.id) != null
+        ? l.entrySplitDeleted
+        : l.entryDeleted;
+    final Undo back = await own.deleteMovement(entry);
     if (mounted) Navigator.of(context).pop();
+    showUndo(messenger, said, back);
   }
 
   Future<void> _pickDate() async {

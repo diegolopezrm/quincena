@@ -119,6 +119,7 @@ class OwnController extends ChangeNotifier {
   StreamSubscription<void>? _changes;
   List<InboxItem> _inbox = const <InboxItem>[];
   List<InboxItem> _automatic = const <InboxItem>[];
+  List<InboxItem> _discarded = const <InboxItem>[];
 
   /// The envelopes last saved, of this period or one before.
   EnvelopePlan? _plan;
@@ -160,6 +161,13 @@ class OwnController extends ChangeNotifier {
   /// What was recorded without asking in the last two weeks, newest first,
   /// to undo or correct.
   List<InboxItem> get recentAutomatic => _automatic;
+
+  /// The captures the person discarded among those that arrived in the
+  /// last [discardedFor], newest first, to bring back.
+  List<InboxItem> get discardedInbox => _discarded;
+
+  /// How far back the discarded captures are offered again.
+  static const Duration discardedFor = Duration(days: 30);
 
   /// This period's envelopes, or null when it has none yet.
   EnvelopePlan? get plan {
@@ -383,6 +391,19 @@ class OwnController extends ChangeNotifier {
       if (p.id != id) p,
   ]);
 
+  /// Puts each of [plans] back in place of the one with its id, where it
+  /// stands in the list, and one that is gone at the end: how a purchase
+  /// deleted, or moved with an account, is taken back.
+  Future<void> putBackInstalments(Iterable<Instalments> plans) {
+    final Map<String, Instalments> back = <String, Instalments>{
+      for (final Instalments p in plans) p.id: p,
+    };
+    return _saveInstalments(<Instalments>[
+      for (final Instalments p in _instalments) back.remove(p.id) ?? p,
+      ...back.values,
+    ]);
+  }
+
   Future<void> _saveInstalments(List<Instalments> plans) => store.setSetting(
     _instalmentsKey,
     jsonEncode(<Object?>[for (final Instalments p in plans) p.toJson()]),
@@ -404,6 +425,11 @@ class OwnController extends ChangeNotifier {
   /// Stops offering [name] as a fixed payment.
   Future<void> notRecurring(String name) =>
       _saveDetective(_detective.withNotRecurring(name));
+
+  /// Offers the merchant [key] as a fixed payment again, after the person
+  /// said it was not one.
+  Future<void> recurringAgain(String key) =>
+      _saveDetective(_detective.withoutNotRecurring(key));
 
   Future<void> _saveDetective(DetectiveState state) =>
       store.setSetting(_detectiveKey, jsonEncode(state.toJson()));
@@ -1403,6 +1429,10 @@ class OwnController extends ChangeNotifier {
       ))
         if (i.automatic) i,
     ];
+    _discarded = await store.inbox(
+      statuses: <InboxStatus>{InboxStatus.dismissed},
+      since: _now().subtract(discardedFor),
+    );
     _plan = EnvelopePlan.fromJson(_json(await store.setting(_planKey)));
     _payPending = DateTime.tryParse(await store.setting(_payPendingKey) ?? '');
     _wishes = <Wish>[

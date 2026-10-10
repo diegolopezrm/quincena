@@ -14,9 +14,11 @@ import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
 import '../../own/own_controller.dart';
+import '../../own/undo.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import '../messages.dart';
 import 'amount_input.dart';
 import 'entry_sheet.dart';
 import 'look.dart';
@@ -226,29 +228,29 @@ class InstalmentDetailPage extends StatelessWidget {
   final OwnController own;
   final String id;
 
+  /// Deletes the purchase with a way back for a few seconds. While
+  /// something is left to pay, a debt would stop counting: it asks first.
   Future<void> _delete(BuildContext context, Instalments plan) async {
     final AppLocalizations l = context.l10n;
     final NavigatorState navigator = Navigator.of(context);
-    final bool? sure = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text(l.instalDeleteTitle(plan.name)),
-        content: Text(l.instalDeleteBody),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l.instalDelete),
-          ),
-        ],
-      ),
-    );
-    if (sure != true) return;
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final Ledger? ledger = own.ledger;
+    final int left = plan.remaining ?? plan.principal - plan.paid;
+    if (ledger != null &&
+        left > 0 &&
+        !await confirmDanger(
+          context,
+          title: l.instalDeleteTitle(plan.name),
+          body:
+              '${l.instalDeleteBody} '
+              '${l.instalDeleteOwed(pesos(ledger.major(left)))}',
+          action: l.instalDelete,
+        )) {
+      return;
+    }
+    final String said = l.deletedNamed(plan.name);
     navigator.pop();
-    await own.deleteInstalments(plan.id);
+    showUndo(messenger, said, await own.removeInstalments(plan));
   }
 
   Future<void> _pay(
@@ -295,8 +297,9 @@ class InstalmentDetailPage extends StatelessWidget {
     );
   }
 
-  /// Takes a payment back once the person saw what goes with it: what is
-  /// left to pay goes up again, and the movement the Plan made goes too.
+  /// Takes a payment back, and says what went with it: what is left to
+  /// pay goes up again, and the movement the Plan made goes too. A way back
+  /// stays for a few seconds.
   Future<void> _removePayment(
     BuildContext context,
     Ledger ledger,
@@ -304,8 +307,8 @@ class InstalmentDetailPage extends StatelessWidget {
     int index,
   ) async {
     final AppLocalizations l = context.l10n;
-    String amount(int minor) => pesos(ledger.major(minor));
-    final (DateTime, int) payment = plan.payments[index];
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final String amount = pesos(ledger.major(plan.payments[index].$2));
     final Entry? entry = switch (plan.entryOf(index)) {
       final String id => own.entryById(id),
       null => null,
@@ -314,31 +317,10 @@ class InstalmentDetailPage extends StatelessWidget {
         entry == null || entry.source != OwnController.planSource
         ? null
         : own.snapshot?.account(entry.accountId)?.name;
-    final bool? sure = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text(l.instalPaymentRemoveTitle),
-        content: Text(
-          <String>[
-            l.instalPaymentRemoveBody(amount(payment.$2)),
-            if (where != null)
-              l.instalPaymentRemoveEntry(amount(payment.$2), where),
-          ].join(' '),
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l.instalPaymentRemoveGo),
-          ),
-        ],
-      ),
-    );
-    if (sure != true) return;
-    await own.removeInstalmentPayment(plan, index);
+    final String said = where == null
+        ? l.paymentRemoved(amount)
+        : l.paymentRemovedEntry(amount, where);
+    showUndo(messenger, said, await own.removePayment(plan, index));
   }
 
   @override

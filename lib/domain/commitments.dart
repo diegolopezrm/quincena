@@ -816,6 +816,16 @@ class DetectiveState {
     notRecurring: <String>{...notRecurring, merchantKey(name)},
   );
 
+  /// Without the merchant [key] among those that are not fixed payments.
+  DetectiveState withoutNotRecurring(String key) => DetectiveState(
+    answers: answers,
+    muted: muted,
+    notRecurring: <String>{
+      for (final String k in notRecurring)
+        if (k != key) k,
+    },
+  );
+
   Map<String, Object?> toJson() => <String, Object?>{
     'answers': <String, String>{
       for (final MapEntry<String, AlertAnswer> e in answers.entries)

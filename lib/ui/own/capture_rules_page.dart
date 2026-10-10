@@ -4,9 +4,11 @@ import '../../capture/inbox.dart';
 import '../../domain/records.dart';
 import '../../l10n/l10n.dart';
 import '../../own/own_controller.dart';
+import '../../own/undo.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import '../messages.dart';
 import 'capture_reasons.dart';
 import 'look.dart';
 
@@ -87,6 +89,13 @@ class _RuleRow extends StatelessWidget {
 
   Future<void> _save(CaptureSettings s) => own.store.saveCaptureSettings(s);
 
+  /// Deletes the rule, with a way back for a few seconds.
+  Future<void> _delete(BuildContext context) async {
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final String said = context.l10n.ruleDeleted;
+    showUndo(messenger, said, await own.deleteRule(rule));
+  }
+
   Future<void> _change(BuildContext context) async {
     final AppLocalizations l = context.l10n;
     final List<(String, String)> choices = rule.kind == RuleKind.merchant
@@ -154,7 +163,7 @@ class _RuleRow extends StatelessWidget {
           ),
           IconButton(
             tooltip: l.ruleDelete,
-            onPressed: () => _save(own.captureSettings.withoutRule(rule)),
+            onPressed: () => _delete(context),
             icon: Icon(Glyph.trash, size: 18, color: context.colors.inkFaint),
           ),
         ],

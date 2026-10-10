@@ -21,8 +21,10 @@ import '../icons.dart';
 import '../exit_list.dart';
 import '../kit.dart';
 import 'capture_reasons.dart';
+import 'discard_capture.dart';
 import 'entry_sheet.dart';
 import 'look.dart';
+import 'put_away_page.dart';
 import 'read_images.dart';
 
 /// Captures waiting to be recorded, those one tap records apart from those
@@ -306,6 +308,7 @@ class InboxPage extends StatelessWidget {
                       const SizedBox(height: 12),
                     ],
                   ],
+                  DiscardedLink(own: own),
                 ],
               ),
             ),
@@ -548,9 +551,13 @@ class _InboxCardState extends State<InboxCard> {
     await own.capture.undo(item);
   }
 
+  /// Sets the capture aside with a way back; stopping reading its app asks
+  /// first.
   Future<void> _dismiss({bool mute = false}) async {
     setState(() => _busy = true);
-    await own.capture.dismiss(item, muteApp: mute);
+    if (!await discardCapture(context, own, item, muteApp: mute) && mounted) {
+      setState(() => _busy = false);
+    }
   }
 
   /// Who sent it, as the person knows them; how it arrived when there is

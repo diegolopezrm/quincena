@@ -10,9 +10,11 @@ import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
 import '../../own/own_controller.dart';
+import '../../own/undo.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import '../messages.dart';
 import 'entry_sheet.dart';
 import 'inbox_page.dart' show sourceLabel;
 import 'look.dart';
@@ -166,6 +168,63 @@ class _DetectivePageState extends State<DetectivePage> {
   );
 }
 
+/// What [alert] says: its icon, its title and why it showed.
+(IconData, String, String) alertSaid(
+  BuildContext context,
+  OwnController own,
+  ChargeAlert alert,
+) {
+  final AppLocalizations l = context.l10n;
+  final Asset? base = own.profile?.base;
+  final Entry last = alert.evidence.last;
+  Asset assetOf(Entry e) =>
+      own.snapshot?.account(e.accountId)?.asset ?? base ?? Asset.cop;
+  String money(Decimal amount, Entry e) =>
+      moneyText(Money(amount, assetOf(e)), base: base);
+  return switch (alert.kind) {
+    AlertKind.twice when alert.seenTwice => (
+      Glyph.arrowsDownUp,
+      l.detectiveTwiceSeenTitle,
+      l.detectiveTwiceSeenWhy(
+        entrySourceLabel(l, alert.evidence.first.source),
+        entrySourceLabel(l, last.source),
+      ),
+    ),
+    AlertKind.twice => (
+      Glyph.arrowsDownUp,
+      l.detectiveTwiceTitle,
+      l.detectiveTwiceWhy,
+    ),
+    AlertKind.priceUp => (
+      Glyph.trendUp,
+      l.detectivePriceUpTitle(last.payee),
+      l.detectivePriceUpWhy(
+        money(alert.before ?? Decimal.zero, last),
+        money(-last.amount, last),
+        percent(switch (alert.before) {
+          final Decimal before when before > Decimal.zero =>
+            (((-last.amount).toDouble() / before.toDouble() - 1) * 100).round(),
+          _ => 0,
+        }),
+      ),
+    ),
+    AlertKind.unusual => (
+      Glyph.warningCircle,
+      l.detectiveUnusualTitle(
+        categoryNameFor(context, last.category ?? 'other', own.categories),
+      ),
+      l.detectiveUnusualWhy(
+        formatDecimal(
+          Decimal.parse((alert.times ?? 0).toStringAsFixed(1)),
+          decimals: 1,
+          trim: true,
+        ),
+        categoryNameFor(context, last.category ?? 'other', own.categories),
+      ),
+    ),
+  };
+}
+
 class _AlertCard extends StatelessWidget {
   const _AlertCard({required this.own, required this.alert, this.answer});
 
@@ -173,61 +232,24 @@ class _AlertCard extends StatelessWidget {
   final ChargeAlert alert;
   final AlertAnswer? answer;
 
-  Asset _assetOf(Entry e) =>
-      own.snapshot?.account(e.accountId)?.asset ??
-      own.profile?.base ??
-      Asset.cop;
+  /// Puts the alert away as [put] says, and offers to take it back for a
+  /// few seconds: the card leaves the list.
+  Future<void> _putAway(BuildContext context, AlertAnswer put) async {
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final String said = put == AlertAnswer.dismissed
+        ? context.l10n.alertDismissed
+        : context.l10n.alertExpected;
+    showUndo(messenger, said, await own.putAlertAway(alert.id, put));
+  }
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
-    final Asset? base = own.profile?.base;
-    final Entry last = alert.evidence.last;
-    String money(Decimal amount, Entry e) =>
-        moneyText(Money(amount, _assetOf(e)), base: base);
-    final (IconData icon, String title, String why) = switch (alert.kind) {
-      AlertKind.twice when alert.seenTwice => (
-        Glyph.arrowsDownUp,
-        l.detectiveTwiceSeenTitle,
-        l.detectiveTwiceSeenWhy(
-          entrySourceLabel(l, alert.evidence.first.source),
-          entrySourceLabel(l, last.source),
-        ),
-      ),
-      AlertKind.twice => (
-        Glyph.arrowsDownUp,
-        l.detectiveTwiceTitle,
-        l.detectiveTwiceWhy,
-      ),
-      AlertKind.priceUp => (
-        Glyph.trendUp,
-        l.detectivePriceUpTitle(last.payee),
-        l.detectivePriceUpWhy(
-          money(alert.before ?? Decimal.zero, last),
-          money(-last.amount, last),
-          percent(switch (alert.before) {
-            final Decimal before when before > Decimal.zero =>
-              (((-last.amount).toDouble() / before.toDouble() - 1) * 100)
-                  .round(),
-            _ => 0,
-          }),
-        ),
-      ),
-      AlertKind.unusual => (
-        Glyph.warningCircle,
-        l.detectiveUnusualTitle(
-          categoryNameFor(context, last.category ?? 'other', own.categories),
-        ),
-        l.detectiveUnusualWhy(
-          formatDecimal(
-            Decimal.parse((alert.times ?? 0).toStringAsFixed(1)),
-            decimals: 1,
-            trim: true,
-          ),
-          categoryNameFor(context, last.category ?? 'other', own.categories),
-        ),
-      ),
-    };
+    final (IconData icon, String title, String why) = alertSaid(
+      context,
+      own,
+      alert,
+    );
     // A price going up has every charge as evidence: the latest few say it.
     final List<Entry> evidence = alert.evidence.length > 4
         ? alert.evidence.sublist(alert.evidence.length - 4)
@@ -261,8 +283,7 @@ class _AlertCard extends StatelessWidget {
                 ),
               if (answer != AlertAnswer.expected)
                 TextButton(
-                  onPressed: () =>
-                      own.answerAlert(alert.id, AlertAnswer.expected),
+                  onPressed: () => _putAway(context, AlertAnswer.expected),
                   child: Text(l.detectiveExpected),
                 ),
               if (answer == null)
@@ -273,8 +294,7 @@ class _AlertCard extends StatelessWidget {
                 ),
               if (answer != AlertAnswer.dismissed)
                 TextButton(
-                  onPressed: () =>
-                      own.answerAlert(alert.id, AlertAnswer.dismissed),
+                  onPressed: () => _putAway(context, AlertAnswer.dismissed),
                   child: Text(l.detectiveDismiss),
                 ),
             ],
