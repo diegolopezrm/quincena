@@ -145,7 +145,9 @@ class _CryptoPerformanceRowState extends State<CryptoPerformanceRow> {
     listenable: _controller,
     builder: (BuildContext context, _) {
       final AppLocalizations l = context.l10n;
-      final double? gain = _controller.portfolio?.gainRatio;
+      final Portfolio? p = _controller.portfolio;
+      final Pair? gain = p?.gain;
+      final double? ratio = p?.gainRatio;
       return InkWell(
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute<void>(
@@ -180,12 +182,14 @@ class _CryptoPerformanceRowState extends State<CryptoPerformanceRow> {
                       l.cryptoPerformanceRow,
                       style: context.type.titleSmall,
                     ),
-                    if (gain != null)
+                    // How much, in money and against what it cost.
+                    if (p != null && gain != null)
                       Text(
-                        '${gain >= 0 ? l.portfolioGain : l.portfolioLoss} '
-                        '${percentText(gain)}',
+                        '${gain.base >= Decimal.zero ? l.portfolioGain : l.portfolioLoss} '
+                        '${moneyText(Money(gain.base, p.base), base: p.base, signed: true)}'
+                        '${ratio == null ? '' : ' · ${percentText(ratio)}'}',
                         style: context.type.bodySmall?.copyWith(
-                          color: changeColor(context, gain),
+                          color: changeColor(context, gain.base.toDouble()),
                         ),
                       ),
                   ],

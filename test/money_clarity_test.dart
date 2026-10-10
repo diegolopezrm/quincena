@@ -774,9 +774,13 @@ void main() {
       // from; the row of how it did repeats neither.
       expect(text, contains('En cripto\n\$6.000.000'));
       expect(find.text(r'$6.000.000'), findsNWidgets(2));
+      // What it gained, in pesos and against what it cost.
       expect(
         text,
-        contains('Rendimiento y ganancia\nGanancia no realizada +33,3 %'),
+        contains(
+          'Rendimiento y ganancia\nGanancia no realizada +\$1.000.000 · '
+          '+33,3 %',
+        ),
       );
       // The way to add an account sits after the sections, in the list.
       expect(

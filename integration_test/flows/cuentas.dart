@@ -2187,7 +2187,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.reveal(find.text('Rendimiento y ganancia'));
       await f.step(
         'En Cuentas, «Cripto» suma sus monedas y la última fila, «Rendimiento '
-        'y ganancia», dice cuánto ganas en porcentaje.',
+        'y ganancia», dice cuánto ganas en plata y en porcentaje.',
       );
       var coins = Money.zero(Asset.cop);
       for (final Account a in own.accounts) {
@@ -2196,6 +2196,21 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.check(
         'El total de Cripto, ${_cop(coins)}, es la suma de sus filas',
         () => expect(_sectionTotal(f, 'CRIPTO'), _cop(coins)),
+      );
+      final Portfolio held = own.portfolio.portfolio!;
+      final Money gained = Money(held.gain!.base, Asset.cop);
+      await f.check(
+        '«Rendimiento y ganancia» dice la ganancia en plata, '
+        '${_signed(gained)}, y en porcentaje, ${percentText(held.gainRatio!)}',
+        () => expect(
+          _said(f),
+          contains(
+            _plainText(
+              'Ganancia no realizada ${_signed(gained)} · '
+              '${percentText(held.gainRatio!)}',
+            ),
+          ),
+        ),
       );
       await f.tap('Rendimiento y ganancia');
       await f.page(
@@ -3465,13 +3480,14 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.back();
       await f.reveal(find.text('Rendimiento y ganancia'));
       final double ratio = own.portfolio.portfolio!.gainRatio!;
+      final Money lost = Money(own.portfolio.portfolio!.gain!.base, Asset.cop);
       await f.step(
         'De vuelta en Cuentas, «Rendimiento y ganancia» dice en rojo «Pérdida '
-        'no realizada» con su porcentaje.',
+        'no realizada» con cuánta plata es y su porcentaje.',
       );
       await f.check(
-        'La fila dice «Pérdida no realizada ${percentText(ratio)}», la de lo '
-        'que vale frente a los \$700.000',
+        'La fila dice «Pérdida no realizada ${_signed(lost)} · '
+        '${percentText(ratio)}», la de lo que vale frente a los \$700.000',
         () {
           final Holding h = _holdingIn(own, coin);
           expect(ratio, lessThan(0));
@@ -3482,9 +3498,14 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
               1e-9,
             ),
           );
+          expect(lost.amount, h.value!.base - Decimal.parse('700000'));
           expect(
             _said(f),
-            contains(_plainText('Pérdida no realizada ${percentText(ratio)}')),
+            contains(
+              _plainText(
+                'Pérdida no realizada ${_signed(lost)} · ${percentText(ratio)}',
+              ),
+            ),
           );
         },
       );

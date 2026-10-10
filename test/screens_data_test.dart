@@ -73,7 +73,10 @@ void main() {
 
     // Every coin has what it cost: the gain is a gain, and nothing is left
     // out of it for coming in with no purchase price.
-    expect(accountsEs, contains('Ganancia no realizada +6,95 %'));
+    expect(
+      accountsEs,
+      matches(RegExp(r'Ganancia no realizada \+\$[\d.]+ · \+6,95 %')),
+    );
     expect(cryptoEs, isNot(contains('sin precio de compra')));
 
     // The card says how much of its limit is left.
