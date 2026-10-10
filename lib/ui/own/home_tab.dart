@@ -134,7 +134,9 @@ class OwnHomeTab extends StatelessWidget {
               // Used up, the questions show put away, with when they come
               // back, instead of being offered and then turned down.
               final bool out = day != null && day.left == 0;
+              // The line between questions starts where their words do.
               return Panel(
+                indent: 56,
                 children: <Widget>[
                   if (day != null && (out || day.few))
                     _AskLeft(
