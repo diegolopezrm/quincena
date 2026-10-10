@@ -1467,7 +1467,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.step(
         'En «Fecha» se elige el 10 de octubre, más adelante que hoy.',
       );
-      await f.tap('ACEPTAR');
+      await f.tap('Aceptar');
       await f.tap('Guardar');
       await f.top();
       await f.step(
@@ -2575,9 +2575,17 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         '\$360.000.000.',
       );
       await f.tap('Hoy');
-      await f.step('Tocar la fecha abre el calendario para elegir el día.');
+      await f.step(
+        'Tocar la fecha abre el calendario para elegir el día, con '
+        '«Cancelar» y «Aceptar» escritos igual.',
+      );
+      await f.check('El calendario dice «Aceptar», no «ACEPTAR»', () {
+        expect(f.shows('Aceptar'), isTrue);
+        expect(f.shows('Cancelar'), isTrue);
+        expect(f.shows('ACEPTAR'), isFalse);
+      });
       await f.tap('2');
-      await f.tap('ACEPTAR');
+      await f.tap('Aceptar');
       await f.tap('Ayer');
       await f.tap('Cancelar');
       await f.step(

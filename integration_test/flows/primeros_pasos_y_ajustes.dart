@@ -217,7 +217,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         'paga el arriendo.',
       );
       await f.tapFound(find.text('5').last);
-      await f.tap('ACEPTAR');
+      await f.tap('Aceptar');
       await f.tap('Guardar');
       for (final String chip in _otherFixed) {
         await f.tap(chip);
@@ -523,7 +523,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       });
       await f.tapContaining('Tu último pago');
       await f.tapFound(find.text('1').last);
-      await f.tap('ACEPTAR');
+      await f.tap('Aceptar');
       await f.step(
         'Con el 1 de octubre elegido, la opción dice «Cada 14 días, contando '
         'desde el 1 oct 2026».',

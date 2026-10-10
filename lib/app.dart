@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'app_mode.dart';
 import 'data/example_account.dart';
 import 'l10n/l10n.dart';
+import 'l10n/material_es.dart';
 import 'money/rate_sources.dart';
 import 'own/own_controller.dart';
 import 'own/own_tools.dart';
@@ -276,7 +277,7 @@ class _QuincenaAppState extends State<QuincenaApp> {
         themeMode: _settings.themeMode,
         locale: _settings.locale,
         supportedLocales: appLocales,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         // Spanish when the device speaks neither language: the app is
         // Colombian before it is anything else.
         localeResolutionCallback:
