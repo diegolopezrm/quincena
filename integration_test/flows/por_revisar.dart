@@ -240,20 +240,12 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
           );
         },
       );
-      await f.back();
-      await f.step(
-        'De vuelta en Inicio: ${_headline(own)}, con los \$85.000 de Laura, '
-        'y el aviso con «Deshacer» sigue abajo.',
-      );
-      final int up = free + own.ledger!.minor(85000);
-      await f.check('Lo que puedes gastar subió a ${_cop(own, up)}', () {
-        expect(own.ledger!.freeUntilPayday, up);
-        expect(f.shows(_cop(own, up)), isTrue);
-      });
+      // Its way back lasts a few seconds, as it would for the person.
       await _undoFromNotice(f);
       await f.step(
-        '«Deshacer» desde Inicio: el ingreso se borra, vuelve '
-        '${_headline(own)} y la bandeja otra vez dice 2.',
+        '«Deshacer», mientras el aviso sigue abajo, trae la tarjeta de vuelta '
+        'a «Listos para registrar»: el ingreso se borra y lo aprendido '
+        'también.',
       );
       await f.check('Lo que puedes gastar volvió a ${_cop(own, free)}', () {
         expect(own.ledger!.freeUntilPayday, free);
@@ -272,11 +264,18 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         expect(s.institutionAccounts.containsKey('Nequi'), isFalse);
         expect(s.rules.length, rules);
       });
-      await f.tapTip('Por revisar');
+      await _tapOn(f, 'Laura Gómez', 'Registrar ingreso');
+      await _hideNotice(f);
+      await f.back();
+      final int up = free + own.ledger!.minor(85000);
       await f.step(
-        'Laura Gómez espera otra vez en «Listos para registrar», como si '
-        'nada hubiera pasado.',
+        'Registrado otra vez y pasado el aviso, en Inicio: '
+        '${_headline(own)}, con los \$85.000 de Laura.',
       );
+      await f.check('Lo que puedes gastar subió a ${_cop(own, up)}', () {
+        expect(own.ledger!.freeUntilPayday, up);
+        expect(f.shows(_cop(own, up)), isTrue);
+      });
     },
   ),
   AppFlow(
