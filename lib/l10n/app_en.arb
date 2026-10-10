@@ -872,6 +872,8 @@
   "binanceManualAccounts": "You also have Binance accounts you kept by hand: {names}. Archive them so the same money is not counted twice.",
   "binanceArchive": "Archive them",
   "binanceArchiveWhy": "Binance already brings these balances: archiving them keeps them from counting twice.",
+  "binanceTwiceTitle": "Some balances count twice",
+  "binanceTwiceBody": "Binance already brings what you kept by hand in {names}.",
   "binanceLabelP2p": "Binance P2P",
   "binanceLabelConversion": "Binance conversion",
   "binanceLabelDeposit": "Deposit to Binance",

@@ -3421,6 +3421,14 @@ class AppLocalizationsEs extends AppLocalizations {
       'Binance ya trae estos saldos: archivarlas evita contarlos dos veces.';
 
   @override
+  String get binanceTwiceTitle => 'Hay saldos contados dos veces';
+
+  @override
+  String binanceTwiceBody(String names) {
+    return 'Binance ya trae lo que llevabas a mano en $names.';
+  }
+
+  @override
   String get binanceLabelP2p => 'Binance P2P';
 
   @override

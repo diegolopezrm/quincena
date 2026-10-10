@@ -33,6 +33,85 @@ List<Account> manualBinanceAccounts(OwnController own) => <Account>[
       a,
 ];
 
+/// Crypto accounts kept by hand at Binance once Binance brought its own:
+/// the same balances, counted twice. None before it brought any, when
+/// archiving them would only take them off the totals.
+List<Account> twiceCountedBinance(OwnController own) {
+  final bool brought = own.accounts.any(
+    (Account a) => a.syncRef?.startsWith(BinanceSync.prefix) ?? false,
+  );
+  return brought ? manualBinanceAccounts(own) : const <Account>[];
+}
+
+/// Archives [accounts], kept by hand at Binance, once the person saw what it
+/// does: they leave the totals, keep their movements and wait in «Cuentas
+/// archivadas».
+Future<void> archiveTwiceCounted(
+  BuildContext context,
+  OwnController own,
+  List<Account> accounts,
+) =>
+    confirmLeaving(context, own, accounts, why: context.l10n.binanceArchiveWhy);
+
+/// That what Binance brought counts a second time beside the balances kept
+/// by hand there, with the way to archive those right where it is said:
+/// [compact], under the Binance row among the crypto's sources; otherwise a
+/// row of its own, as among the accounts. Nothing while nothing counts
+/// twice.
+class BinanceTwice extends StatelessWidget {
+  const BinanceTwice({super.key, required this.own, this.compact = false});
+
+  final OwnController own;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<Account> twice = twiceCountedBinance(own);
+    if (twice.isEmpty) return const SizedBox.shrink();
+    final AppLocalizations l = context.l10n;
+    final Widget words = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          l.binanceTwiceTitle,
+          style: (compact ? context.type.bodySmall : context.type.titleSmall)
+              ?.copyWith(color: context.colors.caution),
+        ),
+        Text(
+          l.binanceTwiceBody(twice.map((Account a) => a.name).join(', ')),
+          style: context.type.bodySmall,
+        ),
+        TextButton(
+          onPressed: () => archiveTwiceCounted(context, own, twice),
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+          ),
+          child: Text(l.binanceArchive),
+        ),
+      ],
+    );
+    if (compact) return words;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          SizedBox.square(
+            dimension: 40,
+            child: Icon(
+              Glyph.warningCircle,
+              size: 22,
+              color: context.colors.caution,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: words),
+        ],
+      ),
+    );
+  }
+}
+
 /// An invitation to connect Binance, or how the connection is doing: a
 /// card of its own where there is no crypto yet, or, [compact], a row
 /// among the crypto page's sources.
@@ -104,6 +183,7 @@ class BinanceCard extends StatelessWidget {
                       children: <Widget>[
                         Text(l.binanceTitle, style: context.type.titleSmall),
                         Text(body, style: bodyStyle),
+                        BinanceTwice(own: own, compact: true),
                       ],
                     ),
                   ),
@@ -334,19 +414,6 @@ class _BinancePageState extends State<BinancePage> {
     if (sure == true) await link.disconnect();
   }
 
-  /// Accounts the person kept by hand at Binance, which the synced ones
-  /// now count too.
-  List<Account> get _manual => manualBinanceAccounts(widget.own);
-
-  /// Archives them once the person saw what it does: they leave the
-  /// totals, keep their movements and wait in «Cuentas archivadas».
-  Future<void> _archiveManual() => confirmLeaving(
-    context,
-    widget.own,
-    _manual,
-    why: context.l10n.binanceArchiveWhy,
-  );
-
   String? _message(AppLocalizations l) => switch (_outcome) {
     ConnectOutcome.notReadOnly => l.binanceNotReadOnly(
       link.refused.map(_permission).join(', '),
@@ -420,12 +487,7 @@ class _BinancePageState extends State<BinancePage> {
         link.keyInDoubt && link.problem == SyncProblem.failed
         ? l.binanceKeyInDoubt(link.failures)
         : _syncMessage(l);
-    // Kept by hand, they count twice only once Binance brought its own:
-    // before that, archiving them would only take them off the totals.
-    final bool brought = widget.own.accounts.any(
-      (Account a) => a.syncRef?.startsWith(BinanceSync.prefix) ?? false,
-    );
-    final List<Account> manual = brought ? _manual : const <Account>[];
+    final List<Account> manual = twiceCountedBinance(widget.own);
     return <Widget>[
       Row(
         children: <Widget>[
@@ -486,7 +548,7 @@ class _BinancePageState extends State<BinancePage> {
         Align(
           alignment: Alignment.centerLeft,
           child: TextButton(
-            onPressed: _archiveManual,
+            onPressed: () => archiveTwiceCounted(context, widget.own, manual),
             child: Text(l.binanceArchive),
           ),
         ),

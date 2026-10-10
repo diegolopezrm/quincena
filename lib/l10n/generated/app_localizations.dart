@@ -5264,6 +5264,18 @@ abstract class AppLocalizations {
   /// **'Binance ya trae estos saldos: archivarlas evita contarlos dos veces.'**
   String get binanceArchiveWhy;
 
+  /// No description provided for @binanceTwiceTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Hay saldos contados dos veces'**
+  String get binanceTwiceTitle;
+
+  /// No description provided for @binanceTwiceBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Binance ya trae lo que llevabas a mano en {names}.'**
+  String binanceTwiceBody(String names);
+
   /// No description provided for @binanceLabelP2p.
   ///
   /// In es, this message translates to:

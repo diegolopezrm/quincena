@@ -353,6 +353,8 @@ class AccountsTab extends StatelessWidget {
           Panel(
             children: <Widget>[
               for (final Account a in coins) AccountRow(own: own, account: a),
+              // Under the coins it is about, what counts twice.
+              if (twiceCountedBinance(own).isNotEmpty) BinanceTwice(own: own),
               CryptoPerformanceRow(own: own),
             ],
           ),

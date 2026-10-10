@@ -22,7 +22,8 @@ import 'package:quincena/portfolio/portfolio.dart';
 import 'package:quincena/store/store.dart';
 import 'package:quincena/ui/kit.dart' show Block, Figures;
 import 'package:quincena/ui/own/balance_explained.dart' show AccountExplained;
-import 'package:quincena/ui/own/binance_page.dart' show BinancePage;
+import 'package:quincena/ui/own/binance_page.dart'
+    show BinanceCard, BinancePage;
 import 'package:quincena/ui/own/look.dart' show Headline, moneyText;
 import 'package:quincena/ui/own/movement_list.dart' show MovementRow;
 import 'package:quincena/ui/own/portfolio_chart.dart';
@@ -3603,11 +3604,12 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
           const Duration(minutes: 20),
         );
         await f.tap('Cuentas');
-        await f.reveal(find.text('Tether (USDT)'));
+        await f.reveal(find.text('Hay saldos contados dos veces'));
         await f.step(
           'En «Cripto» están juntos lo que trajo Binance, «Tether (USDT)», y '
           'lo que llevabas a mano, «Binance»: el mismo USDT, contado dos '
-          'veces.',
+          'veces. Debajo lo dice, «Hay saldos contados dos veces», con '
+          '«Archivarlas» a la mano.',
         );
         final Money twice = own.partOfTotal(synced)!;
         await f.check(
@@ -3617,13 +3619,37 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
             expect(own.partOfTotal(manualTether), twice);
           },
         );
+        await f.check(
+          'Cuentas avisa que hay saldos contados dos veces y cuáles',
+          () {
+            expect(f.shows('Hay saldos contados dos veces'), isTrue);
+            expect(
+              f.shows(
+                'Binance ya trae lo que llevabas a mano en Binance, Bitcoin.',
+              ),
+              isTrue,
+            );
+            expect(f.shows('Archivarlas'), isTrue);
+          },
+        );
         await f.tap('Rendimiento y ganancia');
         await _binanceIdle(f, own);
         await f.reveal(find.text('Billeteras propias'));
         await f.step(
           'Cada moneda dice de dónde sale, «Conectada a Binance · leída…» o '
           '«Anotado a mano», y en «Gestionar fuentes» Binance dice cuándo se '
-          'leyó: hace 20 minutos, así que abrir la cripto no la lee otra vez.',
+          'leyó, hace 20 minutos, así que abrir la cripto no la lee otra vez; '
+          'debajo, también que hay saldos contados dos veces.',
+        );
+        await f.check(
+          'La fila de Binance en «Gestionar fuentes» avisa lo contado dos veces',
+          () => expect(
+            find.descendant(
+              of: find.byType(BinanceCard),
+              matching: find.text('Hay saldos contados dos veces'),
+            ),
+            findsOneWidget,
+          ),
         );
         await f.check(
           'Binance está conectada y leída hace 20 minutos, por el reloj de la '
@@ -3753,6 +3779,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
             );
             expect(own.snapshot!.entries.length, entries);
             expect(f.shows('Archivarlas'), isFalse);
+            expect(f.shows('Hay saldos contados dos veces'), isFalse);
           },
         );
         await f.check(

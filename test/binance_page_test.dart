@@ -18,6 +18,7 @@ import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
 import 'package:quincena/theme/theme.dart';
+import 'package:quincena/ui/own/accounts_tab.dart';
 import 'package:quincena/ui/own/binance_page.dart';
 
 class MemoryVault implements KeyVault {
@@ -339,6 +340,65 @@ void main() {
     await tester.runAsync(() => own.restoreAccount(manual()!.id));
     await settle(tester);
     expect(manual()!.archived, isFalse);
+  });
+
+  testWidgets('Cuentas and the sources say what counts twice, and archive it '
+      'from there', (tester) async {
+    Future<void> both(QuincenaStore store) async {
+      await store.addAccount(
+        name: 'Mi USDT',
+        kind: AccountKind.exchange,
+        asset: Asset.usdt,
+        opening: Decimal.fromInt(500),
+        institution: 'Binance',
+        spendable: false,
+      );
+      await store.addAccount(
+        name: 'Tether (USDT)',
+        kind: AccountKind.exchange,
+        asset: Asset.usdt,
+        opening: Decimal.fromInt(500),
+        institution: 'Binance',
+        spendable: false,
+        syncRef: 'binance:USDT',
+      );
+    }
+
+    final (OwnController own, MemoryVault _) = await open(
+      tester,
+      keys: ('key', 'secret'),
+      data: both,
+      page: (OwnController own) => Scaffold(
+        body: ListenableBuilder(
+          listenable: own,
+          builder: (BuildContext context, _) => SingleChildScrollView(
+            child: Column(
+              children: <Widget>[
+                AccountsTab(own: own),
+                BinanceCard(own: own, compact: true),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    // Among the accounts and under Binance among the sources.
+    expect(find.text('Hay saldos contados dos veces'), findsNWidgets(2));
+    expect(
+      find.text('Binance ya trae lo que llevabas a mano en Mi USDT.'),
+      findsNWidgets(2),
+    );
+
+    await tester.ensureVisible(find.text('Archivarlas').first);
+    await tester.tap(find.text('Archivarlas').first);
+    await settle(tester);
+    expect(find.text('¿Archivar Mi USDT?'), findsOneWidget);
+    await tester.tap(find.text('Archivar').last);
+    await settle(tester);
+    expect(own.archivedAccounts.map((Account a) => a.name), <String>[
+      'Mi USDT',
+    ]);
+    expect(find.text('Hay saldos contados dos veces'), findsNothing);
   });
 
   testWidgets('a key Binance stopped taking offers to change it, and a new '
