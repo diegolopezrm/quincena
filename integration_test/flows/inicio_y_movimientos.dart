@@ -506,16 +506,17 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       });
       await f.tap('Ver');
       await f.step(
-        'De vuelta en Inicio el precio se borró; «Ver» sin precio abre la '
-        'misma página, esperando que lo escribas.',
+        'De vuelta en Inicio el precio se borró; «Ver» sin precio no abre '
+        'nada: debajo del campo dice «Escribe el precio para saber si te '
+        'alcanza.» y deja el cursor ahí.',
       );
-      await f.check('Sin precio no hay veredicto', () {
-        expect(f.shows('¿Cuánto cuesta?'), isTrue);
+      await f.check('Sin precio se queda en Inicio y lo pide', () {
+        expect(f.shows('Escribe el precio para saber si te alcanza.'), isTrue);
+        expect(f.shows('¿Cuánto cuesta?'), isFalse);
         for (final PurchaseVerdict v in PurchaseVerdict.values) {
           expect(f.shows(_verdict(v)), isFalse);
         }
       });
-      await f.back();
       // The keyboard's own key does what «Ver» does.
       await f.reveal(find.widgetWithText(TextField, 'Precio'));
       await enterTextIn(

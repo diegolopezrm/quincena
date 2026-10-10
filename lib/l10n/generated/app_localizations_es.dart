@@ -6430,6 +6430,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get buyAskGo => 'Ver';
 
   @override
+  String get buyAskMissing => 'Escribe el precio para saber si te alcanza.';
+
+  @override
   String get fabMovement => 'Movimiento';
 
   @override

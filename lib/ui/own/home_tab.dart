@@ -775,10 +775,15 @@ class _CanIBuy extends StatefulWidget {
 
 class _CanIBuyState extends State<_CanIBuy> {
   final TextEditingController _price = TextEditingController();
+  final FocusNode _focus = FocusNode();
+
+  /// What is missing to answer, said under the price until it is typed.
+  String? _missing;
 
   @override
   void dispose() {
     _price.dispose();
+    _focus.dispose();
     super.dispose();
   }
 
@@ -787,6 +792,12 @@ class _CanIBuyState extends State<_CanIBuy> {
     final int? price = typed == null || typed <= Decimal.zero
         ? null
         : widget.ledger.minor(typed.toDouble());
+    // With no price there is nothing to weigh: it is asked for here.
+    if (price == null) {
+      setState(() => _missing = context.l10n.buyAskMissing);
+      _focus.requestFocus();
+      return;
+    }
     FocusScope.of(context).unfocus();
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -802,6 +813,10 @@ class _CanIBuyState extends State<_CanIBuy> {
     final AppLocalizations l = context.l10n;
     final Widget field = TextField(
       controller: _price,
+      focusNode: _focus,
+      onChanged: (_) {
+        if (_missing != null) setState(() => _missing = null);
+      },
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: <TextInputFormatter>[
         AmountInputFormatter(maxDecimals: widget.ledger.currency.decimals),
@@ -821,6 +836,8 @@ class _CanIBuyState extends State<_CanIBuy> {
       decoration: InputDecoration(
         hintText: l.buyAskHint,
         prefixText: amountPrefix(widget.ledger.currency),
+        errorText: _missing,
+        errorMaxLines: 2,
         isDense: true,
       ),
     );

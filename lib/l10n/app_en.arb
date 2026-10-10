@@ -1610,6 +1610,7 @@
   "buyAskBody": "Enter a price to see if you can afford it without touching money that's already due.",
   "buyAskHint": "Price",
   "buyAskGo": "Check",
+  "buyAskMissing": "Type the price to see if you can afford it.",
   "fabMovement": "Transaction",
   "goalSoFar": "{saved} saved",
   "goalMissing": "{missing} to go",

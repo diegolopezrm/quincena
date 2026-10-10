@@ -9703,6 +9703,12 @@ abstract class AppLocalizations {
   /// **'Ver'**
   String get buyAskGo;
 
+  /// No description provided for @buyAskMissing.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe el precio para saber si te alcanza.'**
+  String get buyAskMissing;
+
   /// No description provided for @fabMovement.
   ///
   /// In es, this message translates to:

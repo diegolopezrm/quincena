@@ -2030,6 +2030,7 @@
   "buyAskBody": "Escribe el precio y te digo si te alcanza sin tocar lo comprometido.",
   "buyAskHint": "Precio",
   "buyAskGo": "Ver",
+  "buyAskMissing": "Escribe el precio para saber si te alcanza.",
   "fabMovement": "Movimiento",
   "goalSoFar": "Llevas {saved}",
   "@goalSoFar": {"placeholders": {"saved": {"type": "String"}}},

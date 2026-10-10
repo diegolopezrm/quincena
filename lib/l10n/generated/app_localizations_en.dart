@@ -6431,6 +6431,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get buyAskGo => 'Check';
 
   @override
+  String get buyAskMissing => 'Type the price to see if you can afford it.';
+
+  @override
   String get fabMovement => 'Transaction';
 
   @override
