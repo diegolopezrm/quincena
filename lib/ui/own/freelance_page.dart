@@ -122,12 +122,11 @@ class FreelancePage extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           title: Text(l.freelanceTitle, style: context.type.titleLarge),
         ),
-        floatingActionButton: ScrollAwareFab(
-          child: FloatingActionButton.extended(
-            onPressed: () => showIncomeSheet(context, own: own),
-            icon: const Icon(Glyph.plus),
-            label: Text(l.freelanceAdd),
-          ),
+        floatingActionButton: ScrollAwareFab.extended(
+          tooltip: l.freelanceAdd,
+          onPressed: () => showIncomeSheet(context, own: own),
+          icon: const Icon(Glyph.plus),
+          label: Text(l.freelanceAdd),
         ),
         body: Center(
           child: ConstrainedBox(

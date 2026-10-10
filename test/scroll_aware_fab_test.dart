@@ -52,6 +52,55 @@ void main() {
     await initializeDateFormatting('es');
   });
 
+  group('with its label', () {
+    Future<void> open(WidgetTester tester, {required int rows}) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            floatingActionButton: ScrollAwareFab.extended(
+              tooltip: 'Agregar',
+              onPressed: () {},
+              icon: const Icon(Glyph.plus),
+              label: const Text('Agregar'),
+            ),
+            body: ListView(
+              padding: const EdgeInsets.only(bottom: 96),
+              children: <Widget>[
+                for (var i = 0; i < rows; i++)
+                  SizedBox(height: 56, child: Text('Fila $i')),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('over rows it keeps to its icon, named by its tooltip, and '
+        'says its label at the end', (tester) async {
+      await open(tester, rows: 60);
+      expect(find.text('Agregar'), findsNothing);
+      expect(find.byTooltip('Agregar'), findsOneWidget);
+
+      final ScrollPosition position = tester
+          .state<ScrollableState>(find.byType(Scrollable).first)
+          .position;
+      position.jumpTo(position.maxScrollExtent);
+      await tester.pumpAndSettle();
+      expect(find.text('Agregar'), findsOneWidget);
+      // Beside its label it says nothing more.
+      expect(find.byTooltip('Agregar'), findsNothing);
+    });
+
+    testWidgets('with nothing under it, it says its label', (tester) async {
+      await open(tester, rows: 3);
+      expect(find.text('Agregar'), findsOneWidget);
+    });
+  });
+
   group('on a page of its own', () {
     late int taps;
 

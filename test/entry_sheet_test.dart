@@ -6,6 +6,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/app.dart';
 import 'package:quincena/app_mode.dart';
+import 'package:quincena/domain/categories.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/l10n/l10n.dart';
@@ -15,9 +16,11 @@ import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
 import 'package:quincena/theme/theme.dart';
+import 'package:quincena/ui/icons.dart';
 import 'package:quincena/ui/messages.dart';
 import 'package:quincena/ui/own/account_page.dart';
 import 'package:quincena/ui/own/entry_sheet.dart';
+import 'package:quincena/ui/own/look.dart' show categoryIconFor;
 import 'package:quincena/ui/own/own_shell.dart';
 
 import 'own_flow_test.dart' show settle;
@@ -258,6 +261,34 @@ void main() {
           .selected,
       isTrue,
     );
+  });
+
+  testWidgets('a new category takes the icon and the color chosen for it', (
+    tester,
+  ) async {
+    final OwnController own = await open(tester);
+    await tapText(tester, 'Cambiar');
+    await tapText(tester, 'Nueva categoría');
+    await tester.enterText(find.byType(TextField).last, 'Colegio');
+    await tester.tap(find.bySemanticsLabel('Estudio'));
+    await tester.pump();
+    await tester.tap(find.bySemanticsLabel('Color 3'));
+    await tester.pump();
+    await tester.tap(find.text('Guardar').last);
+    await settle(tester);
+
+    final CategoryItem school = own.categories.singleWhere(
+      (CategoryItem c) => c.name == 'Colegio',
+    );
+    expect(categoryLooks[school.key]?.icon, 'graduationCap');
+    expect(categoryIconFor(school.key), Glyph.graduationCap);
+    final Icon avatar = tester.widget<Icon>(
+      find.descendant(
+        of: find.widgetWithText(ChoiceChip, 'Colegio'),
+        matching: find.byType(Icon),
+      ),
+    );
+    expect(avatar.icon, Glyph.graduationCap);
   });
 
   testWidgets('what saving said goes once the field is put right', (

@@ -59,12 +59,11 @@ class InstalmentsPage extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           title: Text(l.instalTitle, style: context.type.titleLarge),
         ),
-        floatingActionButton: ScrollAwareFab(
-          child: FloatingActionButton.extended(
-            onPressed: () => showInstalmentSheet(context, own: own),
-            icon: const Icon(Glyph.plus),
-            label: Text(l.instalAdd),
-          ),
+        floatingActionButton: ScrollAwareFab.extended(
+          tooltip: l.instalAdd,
+          onPressed: () => showInstalmentSheet(context, own: own),
+          icon: const Icon(Glyph.plus),
+          label: Text(l.instalAdd),
         ),
         body: Center(
           child: ConstrainedBox(

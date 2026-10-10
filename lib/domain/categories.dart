@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show immutable;
+
 import '../data/category.dart';
 
 /// The categories income goes into. The demo never needed them: its only
@@ -58,3 +60,30 @@ List<String> get builtInCategoryKeys => <String>[
   for (final Category c in Category.values) c.name,
   ...incomeCategoryKeys,
 ];
+
+/// What the person chose for a category of their own: an icon, by its
+/// name, and the color of a built-in category, by that category's key.
+@immutable
+class OwnCategoryLook {
+  const OwnCategoryLook({required this.icon, required this.color});
+
+  final String icon;
+  final String color;
+
+  Map<String, Object?> toJson() => <String, Object?>{
+    'icon': icon,
+    'color': color,
+  };
+
+  static OwnCategoryLook? fromJson(Object? json) => switch (json) {
+    {'icon': final String icon, 'color': final String color} => OwnCategoryLook(
+      icon: icon,
+      color: color,
+    ),
+    _ => null,
+  };
+}
+
+/// The looks the person chose, by category key, as their accounts last
+/// loaded: what every list draws a category of theirs with.
+Map<String, OwnCategoryLook> categoryLooks = const <String, OwnCategoryLook>{};

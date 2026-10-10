@@ -68,12 +68,11 @@ class SharedPage extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           title: Text(l.sharedTitle, style: context.type.titleLarge),
         ),
-        floatingActionButton: ScrollAwareFab(
-          child: FloatingActionButton.extended(
-            onPressed: () => showGroupSheet(context, own: own),
-            icon: const Icon(Glyph.plus),
-            label: Text(l.sharedNewGroup),
-          ),
+        floatingActionButton: ScrollAwareFab.extended(
+          tooltip: l.sharedNewGroup,
+          onPressed: () => showGroupSheet(context, own: own),
+          icon: const Icon(Glyph.plus),
+          label: Text(l.sharedNewGroup),
         ),
         body: Center(
           child: ConstrainedBox(
@@ -276,12 +275,11 @@ class GroupPage extends StatelessWidget {
             ),
           ],
         ),
-        floatingActionButton: ScrollAwareFab(
-          child: FloatingActionButton.extended(
-            onPressed: () => showSplitSheet(context, own: own, group: group),
-            icon: const Icon(Glyph.plus),
-            label: Text(l.sharedAddExpense),
-          ),
+        floatingActionButton: ScrollAwareFab.extended(
+          tooltip: l.sharedAddExpense,
+          onPressed: () => showSplitSheet(context, own: own, group: group),
+          icon: const Icon(Glyph.plus),
+          label: Text(l.sharedAddExpense),
         ),
         body: Center(
           child: ConstrainedBox(

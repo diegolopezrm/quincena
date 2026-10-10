@@ -41,20 +41,54 @@ const Map<String, IconData> _incomeIcons = <String, IconData>{
   'other_income': Glyph.coins,
 };
 
+/// The icons a category of the person's own can take, by name.
+const Map<String, IconData> categoryIconChoices = <String, IconData>{
+  'tag': Glyph.tag,
+  'graduationCap': Glyph.graduationCap,
+  'heartbeat': Glyph.heartbeat,
+  'house': Glyph.house,
+  'gift': Glyph.gift,
+  'airplaneTilt': Glyph.airplaneTilt,
+  'ticket': Glyph.ticket,
+  'shoppingBag': Glyph.shoppingBag,
+  'forkKnife': Glyph.forkKnife,
+  'train': Glyph.train,
+  'deviceMobile': Glyph.deviceMobile,
+  'usersThree': Glyph.usersThree,
+  'piggyBank': Glyph.piggyBank,
+  'briefcase': Glyph.briefcase,
+  'camera': Glyph.camera,
+  'handshake': Glyph.handshake,
+};
+
 /// The icon of the category with [key]; a transfer when there is none.
 IconData categoryIconFor(String? key) {
   if (key == null) return Glyph.arrowsLeftRight;
+  if (categoryLooks[key] case final OwnCategoryLook look) {
+    return categoryIconChoices[look.icon] ?? Glyph.tag;
+  }
   return expenseCategory(key)?.icon ?? _incomeIcons[key] ?? Glyph.tag;
 }
 
 /// The color of the category with [key]: its own for a built-in expense,
-/// the brand's for income, one of the palette's for the person's own.
+/// the brand's for income, and for the person's own the one they chose,
+/// or one of the palette's.
 Color categoryColorFor(BuildContext context, String? key) {
   final QuincenaColors c = context.colors;
   if (key == null) return c.inkSoft;
   if (expenseCategory(key) != null) return c.category(key);
   if (isIncomeCategory(key)) return c.positive;
-  final List<Color> palette = c.categories.values.toList();
+  if (categoryLooks[key] case final OwnCategoryLook look
+      when c.categories.containsKey(look.color)) {
+    return c.categories[look.color]!;
+  }
+  return c.categories[defaultCategoryColor(key, c)]!;
+}
+
+/// The palette color a category of the person's own takes until they
+/// choose one: the same for the same key.
+String defaultCategoryColor(String key, QuincenaColors c) {
+  final List<String> palette = c.categories.keys.toList();
   return palette[key.hashCode.abs() % palette.length];
 }
 
@@ -216,10 +250,43 @@ class Panel extends StatelessWidget {
 /// its Scaffold, a jump included. With a screen reader on it stays, and
 /// with reduced motion it goes and comes without moving.
 class ScrollAwareFab extends StatefulWidget {
-  const ScrollAwareFab({super.key, required this.child});
+  const ScrollAwareFab({super.key, required Widget this.child})
+    : icon = null,
+      label = null,
+      onPressed = null,
+      tooltip = null,
+      buttonKey = null,
+      describes = false;
+
+  /// A button with an [icon] and a [label] that keeps to its icon while
+  /// there is more of the list under it, so it sits over no amount, and
+  /// says its label at the list's end, or where nothing is under it.
+  const ScrollAwareFab.extended({
+    super.key,
+    required Widget this.icon,
+    required Widget this.label,
+    required VoidCallback this.onPressed,
+    required String this.tooltip,
+    this.buttonKey,
+    this.describes = false,
+  }) : child = null;
 
   /// The button; one with another key, as on another tab, starts in sight.
-  final Widget child;
+  final Widget? child;
+
+  final Widget? icon;
+  final Widget? label;
+  final VoidCallback? onPressed;
+
+  /// What the button is called when it shows only its icon.
+  final String? tooltip;
+
+  /// Whether [tooltip] says more than the label, and stays beside it.
+  final bool describes;
+
+  /// The extended button's key: one with another, as on another tab,
+  /// starts in sight.
+  final Key? buttonKey;
 
   @override
   State<ScrollAwareFab> createState() => _ScrollAwareFabState();
@@ -228,6 +295,10 @@ class ScrollAwareFab extends StatefulWidget {
 class _ScrollAwareFabState extends State<ScrollAwareFab> {
   ScrollNotificationObserverState? _observer;
   bool _shown = true;
+
+  /// Whether nothing of the list is under the button: then it says its
+  /// label.
+  bool _wide = true;
 
   /// How far the list has gone in its latest direction, down positive.
   double _run = 0;
@@ -243,7 +314,8 @@ class _ScrollAwareFabState extends State<ScrollAwareFab> {
   @override
   void didUpdateWidget(ScrollAwareFab oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.child.key != oldWidget.child.key) {
+    if (widget.child?.key != oldWidget.child?.key ||
+        widget.buttonKey != oldWidget.buttonKey) {
       _shown = true;
       _run = 0;
     }
@@ -263,6 +335,9 @@ class _ScrollAwareFabState extends State<ScrollAwareFab> {
     }
     final ScrollMetrics m = notification.metrics;
     final double delta = notification.scrollDelta ?? 0;
+    // Laid out or moved: more of the list under it keeps it to its icon.
+    final bool wide = m.extentAfter < 24;
+    if (wide != _wide) setState(() => _wide = wide);
     _run = delta.sign == _run.sign ? _run + delta : delta;
     // A few points of slack, so a finger at rest does not flicker it.
     final bool shown = switch (_run) {
@@ -297,7 +372,20 @@ class _ScrollAwareFabState extends State<ScrollAwareFab> {
               child: AnimatedOpacity(
                 opacity: shown ? 1 : 0,
                 duration: duration,
-                child: widget.child,
+                child:
+                    widget.child ??
+                    FloatingActionButton.extended(
+                      key: widget.buttonKey,
+                      // Beside the label, the same words would be said
+                      // twice.
+                      tooltip: _wide && !widget.describes
+                          ? null
+                          : widget.tooltip,
+                      onPressed: widget.onPressed,
+                      icon: widget.icon,
+                      label: widget.label!,
+                      isExtended: _wide,
+                    ),
               ),
             ),
           ),

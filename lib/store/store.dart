@@ -1250,6 +1250,7 @@ class QuincenaStore {
   static const Set<String> mapSettings = <String>{
     'commitments.memories',
     'movements.notRepeated',
+    'categories.look',
   };
 
   /// Every record that syncs between the person's devices, as stored.
@@ -1573,6 +1574,8 @@ class QuincenaStore {
     'freelance',
     'trips',
     'setup.noFixed',
+    // How the person's own categories look, beside the categories.
+    'categories.look',
   ];
 
   /// Replaces everything with what [exportJson] wrote, or throws an

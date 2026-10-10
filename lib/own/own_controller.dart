@@ -16,6 +16,7 @@ import '../data/clock.dart';
 import '../data/example_account.dart' show exampleLastUsed;
 import '../data/example_prices.dart';
 import '../data/ledger.dart';
+import '../domain/categories.dart';
 import '../domain/commitments.dart';
 import '../domain/freelance.dart';
 import '../domain/ledger_builder.dart';
@@ -843,6 +844,20 @@ class OwnController extends ChangeNotifier {
 
   static const String _noFixedKey = 'setup.noFixed';
 
+  /// Keeps how the category with [key], one of the person's own, looks.
+  Future<void> saveCategoryLook(String key, OwnCategoryLook look) async {
+    final Map<String, Object?> looks = <String, Object?>{
+      if (_json(await store.setting(_looksKey))
+          case final Map<Object?, Object?> m)
+        for (final MapEntry<Object?, Object?> e in m.entries)
+          '${e.key}': e.value,
+      key: look.toJson(),
+    };
+    await store.setSetting(_looksKey, jsonEncode(looks));
+  }
+
+  static const String _looksKey = 'categories.look';
+
   /// Whether Inicio offers to finish setting up: from the end of the three
   /// questions until it is all done or the person hides it. It stays on
   /// this device: someone who brings a backup in is not starting.
@@ -1485,6 +1500,14 @@ class OwnController extends ChangeNotifier {
     _widgetHides = await store.setting(_widgetHideKey) == 'yes';
     _noFixed = await store.setting(_noFixedKey) == 'yes';
     _setupOpen = await store.setting(_setupKey) == 'open';
+    categoryLooks = switch (_json(await store.setting(_looksKey))) {
+      final Map<Object?, Object?> m => <String, OwnCategoryLook>{
+        for (final MapEntry<Object?, Object?> e in m.entries)
+          if (OwnCategoryLook.fromJson(e.value) case final OwnCategoryLook look)
+            '${e.key}': look,
+      },
+      _ => const <String, OwnCategoryLook>{},
+    };
     if (_disposed) return;
     _configureListener();
     unawaited(_remind());

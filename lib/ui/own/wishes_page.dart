@@ -45,12 +45,11 @@ class WishesPage extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           title: Text(l.wishesTitle, style: context.type.titleLarge),
         ),
-        floatingActionButton: ScrollAwareFab(
-          child: FloatingActionButton.extended(
-            onPressed: () => _add(context),
-            icon: const Icon(Glyph.plus),
-            label: Text(l.wishAdd),
-          ),
+        floatingActionButton: ScrollAwareFab.extended(
+          tooltip: l.wishAdd,
+          onPressed: () => _add(context),
+          icon: const Icon(Glyph.plus),
+          label: Text(l.wishAdd),
         ),
         body: Center(
           child: ConstrainedBox(

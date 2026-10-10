@@ -1676,6 +1676,30 @@ abstract class AppLocalizations {
   /// **'Nueva categoría'**
   String get newCategory;
 
+  /// No description provided for @categoryIcon.
+  ///
+  /// In es, this message translates to:
+  /// **'Ícono'**
+  String get categoryIcon;
+
+  /// No description provided for @categoryColor.
+  ///
+  /// In es, this message translates to:
+  /// **'Color'**
+  String get categoryColor;
+
+  /// No description provided for @categoryIconName.
+  ///
+  /// In es, this message translates to:
+  /// **'{name, select, tag{Etiqueta} graduationCap{Estudio} heartbeat{Salud} house{Casa} gift{Regalo} airplaneTilt{Viaje} ticket{Entradas} shoppingBag{Compras} forkKnife{Comida} train{Transporte} deviceMobile{Celular} usersThree{Familia} piggyBank{Ahorro} briefcase{Trabajo} camera{Fotos} handshake{Acuerdos} other{Ícono}}'**
+  String categoryIconName(String name);
+
+  /// No description provided for @categoryColorNumber.
+  ///
+  /// In es, this message translates to:
+  /// **'Color {number}'**
+  String categoryColorNumber(int number);
+
   /// No description provided for @payee.
   ///
   /// In es, this message translates to:

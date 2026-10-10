@@ -289,15 +289,14 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
     // floats over the amounts there.
     final Widget? fab = _tab >= 2
         ? null
-        : ScrollAwareFab(
-            child: FloatingActionButton.extended(
-              // Each tab starts with it in sight.
-              key: ValueKey<int>(_tab),
-              tooltip: l.addMovement,
-              onPressed: () => showEntrySheet(context, own: own),
-              icon: const Icon(Glyph.plus),
-              label: Text(l.fabMovement),
-            ),
+        : ScrollAwareFab.extended(
+            // Each tab starts with it in sight.
+            buttonKey: ValueKey<int>(_tab),
+            tooltip: l.addMovement,
+            describes: true,
+            onPressed: () => showEntrySheet(context, own: own),
+            icon: const Icon(Glyph.plus),
+            label: Text(l.fabMovement),
           );
     return Scaffold(
       appBar: AppBar(

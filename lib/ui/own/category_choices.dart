@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../domain/categories.dart';
 import '../../domain/records.dart';
 import '../../l10n/l10n.dart';
 import '../../own/own_controller.dart';
+import '../../theme/tokens.dart';
 import '../icons.dart';
 import 'look.dart';
 
@@ -23,15 +25,17 @@ class CategoryChoices extends StatelessWidget {
   final ValueChanged<String?> onChanged;
 
   Future<void> _newCategory(BuildContext context) async {
-    final String? typed = await showDialog<String>(
-      context: context,
-      builder: (BuildContext context) => const _NewCategoryDialog(),
-    );
-    if (typed == null || typed.trim().isEmpty) return;
+    final (String, OwnCategoryLook)? typed =
+        await showDialog<(String, OwnCategoryLook)>(
+          context: context,
+          builder: (BuildContext context) => const _NewCategoryDialog(),
+        );
+    if (typed == null || typed.$1.trim().isEmpty) return;
     final CategoryItem created = await own.store.addCategory(
-      typed.trim(),
+      typed.$1.trim(),
       income: income,
     );
+    await own.saveCategoryLook(created.key, typed.$2);
     onChanged(created.key);
   }
 
@@ -67,7 +71,8 @@ class CategoryChoices extends StatelessWidget {
   }
 }
 
-/// Asks the name of a new category. It keeps its own field: the field is
+/// Asks the name of a new category, and its icon and color, so it reads
+/// apart from the rest in every list. It keeps its own field: the field is
 /// still on screen while the dialog closes, after its answer is back.
 class _NewCategoryDialog extends StatefulWidget {
   const _NewCategoryDialog();
@@ -78,6 +83,8 @@ class _NewCategoryDialog extends StatefulWidget {
 
 class _NewCategoryDialogState extends State<_NewCategoryDialog> {
   final TextEditingController _name = TextEditingController();
+  String _icon = 'tag';
+  String? _color;
 
   @override
   void dispose() {
@@ -85,28 +92,107 @@ class _NewCategoryDialogState extends State<_NewCategoryDialog> {
     super.dispose();
   }
 
+  void _done() => Navigator.of(context).pop((
+    _name.text,
+    OwnCategoryLook(
+      icon: _icon,
+      color: _color ?? defaultCategoryColor(_name.text, context.colors),
+    ),
+  ));
+
+  /// One choice in a row of them: a round button, ringed when chosen.
+  Widget _choice({
+    required bool chosen,
+    required String label,
+    required VoidCallback onTap,
+    required Widget child,
+    Color? fill,
+  }) => Semantics(
+    button: true,
+    selected: chosen,
+    label: label,
+    child: InkWell(
+      onTap: onTap,
+      customBorder: const CircleBorder(),
+      child: Container(
+        width: 44,
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: fill ?? (chosen ? context.colors.brandSoft : null),
+          border: Border.all(
+            color: chosen ? context.colors.ink : context.colors.line,
+            width: chosen ? 2.5 : 1,
+          ),
+        ),
+        child: ExcludeSemantics(child: child),
+      ),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
+    final QuincenaColors c = context.colors;
+    final String color = _color ?? defaultCategoryColor(_name.text, c);
     return AlertDialog(
       scrollable: true,
       title: Text(l.newCategory),
-      content: TextField(
-        controller: _name,
-        autofocus: true,
-        textCapitalization: TextCapitalization.sentences,
-        decoration: InputDecoration(labelText: l.accountName),
-        onSubmitted: (String v) => Navigator.of(context).pop(v),
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          TextField(
+            controller: _name,
+            autofocus: true,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(labelText: l.accountName),
+            onChanged: (_) => setState(() {}),
+            onSubmitted: (_) => _done(),
+          ),
+          const SizedBox(height: 16),
+          Text(l.categoryIcon, style: context.type.labelMedium),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: <Widget>[
+              for (final MapEntry<String, IconData> e
+                  in categoryIconChoices.entries)
+                _choice(
+                  chosen: _icon == e.key,
+                  label: l.categoryIconName(e.key),
+                  onTap: () => setState(() => _icon = e.key),
+                  child: Icon(e.value, size: 20, color: c.categories[color]),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(l.categoryColor, style: context.type.labelMedium),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: <Widget>[
+              for (final (int i, String key) in c.categories.keys.indexed)
+                _choice(
+                  chosen: color == key,
+                  label: l.categoryColorNumber(i + 1),
+                  onTap: () => setState(() => _color = key),
+                  fill: c.categories[key],
+                  child: const SizedBox.shrink(),
+                ),
+            ],
+          ),
+        ],
       ),
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(l.cancel),
         ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(_name.text),
-          child: Text(l.save),
-        ),
+        TextButton(onPressed: _done, child: Text(l.save)),
       ],
     );
   }

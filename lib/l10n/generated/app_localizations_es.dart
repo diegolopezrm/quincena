@@ -1046,6 +1046,41 @@ class AppLocalizationsEs extends AppLocalizations {
   String get newCategory => 'Nueva categoría';
 
   @override
+  String get categoryIcon => 'Ícono';
+
+  @override
+  String get categoryColor => 'Color';
+
+  @override
+  String categoryIconName(String name) {
+    String _temp0 = intl.Intl.selectLogic(name, {
+      'tag': 'Etiqueta',
+      'graduationCap': 'Estudio',
+      'heartbeat': 'Salud',
+      'house': 'Casa',
+      'gift': 'Regalo',
+      'airplaneTilt': 'Viaje',
+      'ticket': 'Entradas',
+      'shoppingBag': 'Compras',
+      'forkKnife': 'Comida',
+      'train': 'Transporte',
+      'deviceMobile': 'Celular',
+      'usersThree': 'Familia',
+      'piggyBank': 'Ahorro',
+      'briefcase': 'Trabajo',
+      'camera': 'Fotos',
+      'handshake': 'Acuerdos',
+      'other': 'Ícono',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String categoryColorNumber(int number) {
+    return 'Color $number';
+  }
+
+  @override
   String get payee => '¿Dónde o a quién?';
 
   @override

@@ -2381,7 +2381,12 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       await f.tap('Nueva categoría');
       await enterTextIn(f.tester, find.byType(TextField).last, 'Mascotas');
       await settle(f.tester);
-      await f.step('Escribe «Mascotas» y toca «Guardar».');
+      await f.tapFound(find.bySemanticsLabel('Familia'));
+      await f.tapFound(find.bySemanticsLabel('Color 5'));
+      await f.step(
+        'Escribe «Mascotas» y le escoge ícono y color, para distinguirla en '
+        'las listas; luego toca «Guardar».',
+      );
       await f.tap('Guardar');
       await f.step(
         'La categoría nueva aparece entre las demás, ya elegida para este '
@@ -2390,10 +2395,11 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       final CategoryItem? pets = own.categories
           .where((CategoryItem c) => c.name == 'Mascotas')
           .firstOrNull;
-      await f.check('Quedó creada como categoría de gasto', () {
+      await f.check('Quedó creada como categoría de gasto, con su ícono', () {
         expect(pets, isNotNull);
         expect(pets!.income, isFalse);
         expect(own.categories.length, categories + 1);
+        expect(categoryLooks[pets.key]?.icon, 'usersThree');
       });
       await f.check('El chip de Mascotas quedó elegido', () {
         final ChoiceChip chip = f.tester.widget<ChoiceChip>(
