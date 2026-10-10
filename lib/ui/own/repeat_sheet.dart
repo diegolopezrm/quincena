@@ -101,7 +101,9 @@ class _RepeatSheetState extends State<_RepeatSheet> {
           const SizedBox(height: 8),
           Text(l.repeatBody(account), style: context.type.bodyMedium),
           const SizedBox(height: 16),
+          // The two side by side, to decide which goes.
           Panel(
+            boxed: true,
             indent: 16,
             children: <Widget>[
               _Side(own: own, entry: pair.kept),

@@ -187,7 +187,7 @@ class _Found extends StatelessWidget {
     final bool transfers =
         totals.isNotEmpty && found.any((Entry e) => e.isTransfer);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 4, 4, 16),
+      padding: const EdgeInsets.fromLTRB(0, 4, 0, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[

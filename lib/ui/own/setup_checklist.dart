@@ -170,6 +170,7 @@ class SetupChecklist extends StatelessWidget {
           ),
         ),
         Panel(
+          boxed: true,
           children: <Widget>[
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),

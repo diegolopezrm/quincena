@@ -91,7 +91,7 @@ class PutAwayPage extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
               children: <Widget>[
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(4, 0, 4, 20),
+                  padding: const EdgeInsets.only(bottom: 20),
                   child: Text(
                     shown.isEmpty ? l.putAwayEmpty : l.putAwayBody,
                     style: context.type.bodyMedium,
@@ -120,7 +120,7 @@ class PutAwayPage extends StatelessWidget {
           SectionLabel(title),
           if (note != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+              padding: const EdgeInsets.only(bottom: 10),
               child: Text(note, style: context.type.bodySmall),
             ),
           Panel(indent: indent, children: rows),

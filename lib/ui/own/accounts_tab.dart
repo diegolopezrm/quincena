@@ -181,7 +181,7 @@ class _SpendLine extends StatelessWidget {
     );
     return MergeSemantics(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        padding: const EdgeInsets.symmetric(vertical: 2),
         // With large text the amount goes under what it is: beside it, the
         // words would have no room.
         child: largeText(context)

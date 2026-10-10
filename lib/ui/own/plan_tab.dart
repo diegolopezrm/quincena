@@ -72,8 +72,9 @@ class PlanTab extends StatelessWidget {
             label: Text(l.goalAdd),
           ),
         ),
+        // No goal yet is a line, not a box: the button above adds one.
         if (goals.isEmpty)
-          Block(child: Text(l.planNoGoals, style: context.type.bodyMedium))
+          Text(l.planNoGoals, style: context.type.bodyMedium)
         else
           Panel(
             indent: 16,

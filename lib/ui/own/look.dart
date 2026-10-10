@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import '../../domain/categories.dart';
 import '../../domain/records.dart';
@@ -158,7 +161,8 @@ class SectionLabel extends StatelessWidget {
       child: Text(text.toUpperCase(), style: context.type.labelSmall),
     );
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+      // At the margin, where a list's rows and a card's edge start.
+      padding: const EdgeInsets.only(bottom: 10),
       // With large text the button goes under the title when the two do
       // not fit side by side.
       child: trailing != null && largeText(context)
@@ -180,13 +184,20 @@ class SectionLabel extends StatelessWidget {
   }
 }
 
-/// A rounded group of rows on the surface color.
+/// A group of rows with a line between them.
+///
+/// A list or a group of settings goes without a box: its rows sit on the
+/// screen, reach past the margin so a row lights up across its width, and
+/// keep their text in line with the text around the list. [boxed] puts the
+/// rows on a rounded card instead, for what asks a decision or warns, as
+/// the things to do on Inicio.
 class Panel extends StatelessWidget {
   const Panel({
     super.key,
     required this.children,
     this.padding,
     this.indent = 68,
+    this.boxed = false,
   });
 
   final List<Widget> children;
@@ -196,28 +207,134 @@ class Panel extends StatelessWidget {
   /// one, at the text of a row that does not.
   final double indent;
 
+  /// Whether the rows sit on a card, for a decision or a warning.
+  final bool boxed;
+
+  /// How far rows without a box reach past the margin on each side: the
+  /// room each row keeps at its sides, so its text starts at the margin.
+  static const double reach = 16;
+
   @override
-  Widget build(BuildContext context) => Material(
-    color: context.colors.surface,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(20),
-      side: BorderSide(color: context.colors.line),
-    ),
-    clipBehavior: Clip.antiAlias,
-    child: Padding(
+  Widget build(BuildContext context) {
+    final Widget rows = Padding(
       padding: padding ?? EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           for (var i = 0; i < children.length; i++) ...<Widget>[
             if (i > 0)
-              Divider(height: 1, indent: indent, color: context.colors.line),
+              Divider(
+                height: 1,
+                indent: indent,
+                // Without a box the line ends where the text does.
+                endIndent: boxed ? 0 : reach,
+                color: context.colors.line,
+              ),
             children[i],
           ],
         ],
       ),
-    ),
-  );
+    );
+    if (!boxed) {
+      return _Reach(
+        by: reach,
+        child: Material(type: MaterialType.transparency, child: rows),
+      );
+    }
+    return Material(
+      color: context.colors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: context.colors.line),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: rows,
+    );
+  }
+}
+
+/// Lays [child] out [by] wider on each side than the room it is given and
+/// centered on it, so rows without a box reach past the margin the text
+/// around them keeps. Where the room has no edge, it takes the room as it
+/// is.
+class _Reach extends SingleChildRenderObjectWidget {
+  const _Reach({required this.by, super.child});
+
+  final double by;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) => _RenderReach(by);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderReach renderObject) {
+    renderObject.by = by;
+  }
+}
+
+class _RenderReach extends RenderShiftedBox {
+  _RenderReach(this._by) : super(null);
+
+  double _by;
+  set by(double value) {
+    if (value == _by) return;
+    _by = value;
+    markNeedsLayout();
+  }
+
+  /// How much wider the child is than this, both sides together.
+  double _extra(BoxConstraints constraints) =>
+      constraints.hasBoundedWidth ? 2 * _by : 0;
+
+  BoxConstraints _inner(BoxConstraints constraints) {
+    final double extra = _extra(constraints);
+    return BoxConstraints(
+      minWidth: constraints.minWidth + extra,
+      maxWidth: constraints.maxWidth + extra,
+      minHeight: constraints.minHeight,
+      maxHeight: constraints.maxHeight,
+    );
+  }
+
+  @override
+  double computeMinIntrinsicWidth(double height) =>
+      math.max(0, super.computeMinIntrinsicWidth(height) - 2 * _by);
+
+  @override
+  double computeMaxIntrinsicWidth(double height) =>
+      math.max(0, super.computeMaxIntrinsicWidth(height) - 2 * _by);
+
+  @override
+  double computeMinIntrinsicHeight(double width) =>
+      super.computeMinIntrinsicHeight(width + 2 * _by);
+
+  @override
+  double computeMaxIntrinsicHeight(double width) =>
+      super.computeMaxIntrinsicHeight(width + 2 * _by);
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) {
+    final RenderBox? child = this.child;
+    if (child == null) return constraints.smallest;
+    final Size inner = child.getDryLayout(_inner(constraints));
+    return constraints.constrain(
+      Size(inner.width - _extra(constraints), inner.height),
+    );
+  }
+
+  @override
+  void performLayout() {
+    final RenderBox? child = this.child;
+    if (child == null) {
+      size = constraints.smallest;
+      return;
+    }
+    final double extra = _extra(constraints);
+    child.layout(_inner(constraints), parentUsesSize: true);
+    size = constraints.constrain(
+      Size(child.size.width - extra, child.size.height),
+    );
+    (child.parentData! as BoxParentData).offset = Offset(-extra / 2, 0);
+  }
 }
 
 /// A screen's floating button, out of the way while the list under it

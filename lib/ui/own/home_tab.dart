@@ -108,7 +108,9 @@ class OwnHomeTab extends StatelessWidget {
         if (todos.isNotEmpty) ...<Widget>[
           const SizedBox(height: 24),
           SectionLabel(l.homeTodo),
+          // What needs the person, on a card: lists below go without one.
           Panel(
+            boxed: true,
             children: <Widget>[
               _TodoRow(todo: todos.first, first: true),
               for (final _Todo todo in todos.skip(1)) _TodoRow(todo: todo),

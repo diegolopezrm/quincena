@@ -465,12 +465,9 @@ class OwnSettingsPage extends StatelessWidget {
     final AppLocalizations l = context.l10n;
     return <Widget>[
       SectionLabel(l.exampleSection),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: Text(
-          l.exampleAboutBody(own.profile?.name ?? ''),
-          style: context.type.bodySmall,
-        ),
+      Text(
+        l.exampleAboutBody(own.profile?.name ?? ''),
+        style: context.type.bodySmall,
       ),
       // Where the build keeps no accounts of the person's, there is
       // nowhere else to go.
@@ -875,10 +872,7 @@ class OwnSettingsPage extends StatelessWidget {
     final AppLocalizations l = context.l10n;
     return <Widget>[
       SectionLabel(l.settingsHelp),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: Text(l.privacyBody, style: context.type.bodyMedium),
-      ),
+      Text(l.privacyBody, style: context.type.bodyMedium),
       const SizedBox(height: 12),
       Panel(
         children: <Widget>[

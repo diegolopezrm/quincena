@@ -337,7 +337,7 @@ class ArchivedAccountsPage extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
               children: <Widget>[
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(4, 0, 4, 20),
+                  padding: const EdgeInsets.only(bottom: 20),
                   child: Text(
                     archived.isEmpty
                         ? l.archivedAccountsNone

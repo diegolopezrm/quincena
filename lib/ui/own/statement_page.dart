@@ -745,6 +745,7 @@ class _StatementPageState extends State<StatementPage> {
   Widget _olderBlock(AppLocalizations l, Account account, int older) => Padding(
     padding: const EdgeInsets.only(top: 12),
     child: Panel(
+      boxed: true,
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
       children: <Widget>[
         Column(
@@ -798,6 +799,7 @@ class _StatementPageState extends State<StatementPage> {
     return Padding(
       padding: const EdgeInsets.only(top: 12),
       child: Panel(
+        boxed: true,
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
         children: <Widget>[
           Column(

@@ -175,7 +175,7 @@ class _WalletsPageState extends State<WalletsPage> {
                     Text(l.walletsEmpty, style: context.type.titleSmall),
                   for (final WalletAddress w in link.wallets) ...<Widget>[
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(4, 0, 0, 6),
+                      padding: const EdgeInsets.only(bottom: 6),
                       child: Row(
                         children: <Widget>[
                           Expanded(

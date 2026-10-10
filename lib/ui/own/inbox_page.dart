@@ -241,7 +241,7 @@ class InboxPage extends StatelessWidget {
                     )
                   else if (compact)
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(4, 0, 4, 16),
+                      padding: const EdgeInsets.only(bottom: 16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
@@ -346,7 +346,7 @@ class InboxPage extends StatelessWidget {
                     const SizedBox(height: 16),
                     SectionLabel(l.recordedAutomatically),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+                      padding: const EdgeInsets.only(bottom: 10),
                       child: Text(
                         l.autoRecordedBody,
                         style: context.type.bodySmall,
