@@ -9,6 +9,7 @@ import '../domain/records.dart';
 import '../money/asset.dart';
 import '../money/money.dart';
 import '../store/store.dart';
+import 'address_checks.dart';
 
 /// The blockchains whose addresses Quincena reads.
 enum Chain {
@@ -38,6 +39,72 @@ enum Chain {
       Chain.tron => RegExp(r'^T[1-9A-HJ-NP-Za-km-z]{33}$').hasMatch(a),
     };
   }
+
+  /// Whether [address], of this chain's shape, also carries its checksum:
+  /// a character changed or left out in copying it breaks it. An Ethereum
+  /// address in one case has none to check.
+  bool intact(String address) {
+    final String a = address.trim();
+    return switch (this) {
+      Chain.bitcoin =>
+        a.toLowerCase().startsWith('bc1')
+            ? bech32Intact(a)
+            : switch (base58Check(a)) {
+                final List<int> p => p.length == 21 && (p[0] == 0 || p[0] == 5),
+                null => false,
+              },
+      Chain.ethereum => eip55Intact(a),
+      Chain.tron => switch (base58Check(a)) {
+        final List<int> p => p.length == 21 && p[0] == 0x41,
+        null => false,
+      },
+    };
+  }
+
+  /// The chain [address] is on by how it starts: `bc1`, `1` or `3` for
+  /// Bitcoin, `0x` for Ethereum, `T` for TRON. Null while it says none.
+  static Chain? guess(String address) {
+    final String a = address.trim();
+    if (a.startsWith('0x') || a.startsWith('0X')) return Chain.ethereum;
+    if (a.startsWith('T')) return Chain.tron;
+    if (a.toLowerCase().startsWith('bc1') ||
+        a.startsWith('1') ||
+        a.startsWith('3')) {
+      return Chain.bitcoin;
+    }
+    return null;
+  }
+}
+
+/// What became of following a wallet.
+enum Follow {
+  /// It was read, and is followed from now on.
+  done,
+
+  /// Its chain's service said there is no such address.
+  unknownAddress,
+
+  /// Its chain's service could not be reached: no connection, or no answer
+  /// in time.
+  offline,
+
+  /// Its chain's service answered with an error of its own.
+  failed,
+}
+
+/// A chain's service answered, and said no.
+class ChainRefused implements Exception {
+  const ChainRefused(this.status, this.uri);
+
+  /// The HTTP status; 400 too for a node that found the address invalid.
+  final int status;
+  final Uri uri;
+
+  /// The address itself was refused: there is no such one on the chain.
+  bool get address => status == 400 || status == 422;
+
+  @override
+  String toString() => 'Refused, $status: $uri';
 }
 
 /// A wallet the person holds the keys to, read by its public address.
@@ -179,12 +246,14 @@ class ChainReader {
         )
         .timeout(timeout);
     if (response.statusCode != 200) {
-      throw http.ClientException('HTTP ${response.statusCode}', _ethereum);
+      throw ChainRefused(response.statusCode, _ethereum);
     }
     final Object? body = jsonDecode(response.body);
     if (body is! Map || body['error'] != null) {
-      throw http.ClientException(
-        '${body is Map ? body['error'] : body}',
+      // Invalid params: the node found the address wrong.
+      final Object? error = body is Map ? body['error'] : null;
+      throw ChainRefused(
+        error is Map && error['code'] == -32602 ? 400 : 502,
         _ethereum,
       );
     }
@@ -231,7 +300,7 @@ class ChainReader {
   Future<Object?> _get(Uri uri) async {
     final http.Response response = await _client.get(uri).timeout(timeout);
     if (response.statusCode != 200) {
-      throw http.ClientException('HTTP ${response.statusCode}', uri);
+      throw ChainRefused(response.statusCode, uri);
     }
     return jsonDecode(response.body);
   }
@@ -387,11 +456,12 @@ class WalletLink extends ChangeNotifier {
     }),
   );
 
-  /// Follows [wallet] and reads it now. False when it could not be read,
-  /// and then it is not followed.
-  Future<bool> add(WalletAddress wallet) async {
+  /// Follows [wallet] and reads it now. When it could not be read it is not
+  /// followed, and what is returned says why: the address, the connection
+  /// or the service.
+  Future<Follow> add(WalletAddress wallet) async {
     await load();
-    if (_wallets.contains(wallet)) return true;
+    if (_wallets.contains(wallet)) return Follow.done;
     final ChainReader reader = _readerFor();
     try {
       final Map<String, Decimal> held = await reader.balances(wallet);
@@ -404,14 +474,19 @@ class WalletLink extends ChangeNotifier {
       // An error can quote what it failed on; a release build keeps it
       // out of the device's logs.
       if (kDebugMode) debugPrint('Wallet could not be read: $e');
-      return false;
+      return switch (e) {
+        ChainRefused(address: true) => Follow.unknownAddress,
+        ChainRefused() => Follow.failed,
+        TimeoutException() || http.ClientException() => Follow.offline,
+        _ => Follow.failed,
+      };
     } finally {
       reader.close();
     }
     _wallets = <WalletAddress>[..._wallets, wallet];
     await _save();
     notifyListeners();
-    return true;
+    return Follow.done;
   }
 
   /// Stops following [wallet]. Its accounts stay, as the person's own.

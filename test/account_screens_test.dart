@@ -8,10 +8,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/domain/records.dart';
+import 'package:quincena/exchanges/wallets.dart';
 import 'package:quincena/money/asset.dart';
 import 'package:quincena/money/money.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/store/store.dart';
+import 'package:quincena/ui/icons.dart';
 import 'package:quincena/ui/own/account_page.dart';
 import 'package:quincena/ui/own/account_sheet.dart';
 import 'package:quincena/ui/own/portfolio_page.dart';
@@ -133,6 +135,16 @@ void main() {
     );
     await tester.tap(find.text('Otra cripto').last);
     await settle(tester);
+    // A crypto from the moment it is picked: no pesos beside its balance,
+    // which takes decimals, and its cost asked for.
+    expect(field(tester, '¿Cuánto tiene hoy?').suffixText, isNull);
+    expect(find.text('¿Cuánto te costó?'), findsOneWidget);
+    await tester.enterText(
+      find.widgetWithText(TextField, '¿Cuánto tiene hoy?'),
+      '1500,25',
+    );
+    await settle(tester);
+    expect(find.text('1.500,25'), findsOneWidget);
     await tester.enterText(
       find.widgetWithText(TextField, '¿Cuánto tiene hoy?'),
       '1500',
@@ -141,13 +153,13 @@ void main() {
     await tester.tap(find.text('Guardar'));
     await settle(tester);
     expect(own.accounts, hasLength(count));
-    // The label says what is missing, and so does the error under it.
+    // The error says what to type, not the label again.
     final Finder ticker = find
         .widgetWithText(TextField, 'Símbolo, por ejemplo ADA')
         .first;
     expect(
       tester.widget<TextField>(ticker).decoration!.errorText,
-      'Símbolo, por ejemplo ADA',
+      'Escribe el símbolo de la moneda, por ejemplo ADA',
     );
 
     await tester.enterText(
@@ -156,12 +168,58 @@ void main() {
     );
     await settle(tester);
     expect(field(tester, 'Símbolo, por ejemplo ADA').errorText, isNull);
+    expect(field(tester, '¿Cuánto tiene hoy?').suffixText, 'ADA');
     await tester.ensureVisible(find.text('Guardar'));
     await tester.tap(find.text('Guardar'));
     await settle(tester);
     final Account ada = named(own, 'Cardano');
     expect(ada.asset.code, 'ADA');
     expect(balance(own, ada).amount, Decimal.fromInt(1500));
+    // Crypto is kept, not spent.
+    expect(ada.spendable, isFalse);
+  });
+
+  testWidgets('a crypto turns the day to day off by itself, unless it was '
+      'set by hand', (tester) async {
+    final OwnController own = await open(tester);
+    unawaited(
+      showAccountSheet(tester.element(find.byType(PortfolioPage)), own: own),
+    );
+    await settle(tester);
+    bool spendable() =>
+        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value;
+    Future<void> pick(String asset) async {
+      await tester.tap(find.byType(DropdownButtonFormField<String>));
+      await settle(tester);
+      await tester.scrollUntilVisible(
+        find.text(asset).last,
+        200,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.tap(find.text(asset).last);
+      await settle(tester);
+    }
+
+    // A bank in pesos counts in the day to day; in ether it does not, nor
+    // as a wallet, and back in pesos it does again.
+    expect(spendable(), isTrue);
+    await pick('ETH · Ether');
+    expect(spendable(), isFalse);
+    await tester.tap(find.text('Billetera digital'));
+    await settle(tester);
+    expect(spendable(), isFalse);
+    await pick('COP · Peso colombiano');
+    expect(spendable(), isTrue);
+
+    // Set by hand, it stays as the person left it.
+    await tester.ensureVisible(find.byType(SwitchListTile));
+    await tester.tap(find.byType(SwitchListTile));
+    await settle(tester);
+    expect(spendable(), isFalse);
+    await tester.tap(find.byType(SwitchListTile));
+    await settle(tester);
+    await pick('BTC · Bitcoin');
+    expect(spendable(), isTrue);
   });
 
   testWidgets('a card in its holder\'s favor stays so when its limit changes', (
@@ -309,6 +367,69 @@ void main() {
     expect(own.wallets.wallets, isEmpty);
   });
 
+  testWidgets('an address picks its chain as it is pasted, and one copied '
+      'wrong is said so before anyone is asked', (tester) async {
+    final OwnController own = await open(tester);
+    await push(tester, WalletsPage(own: own));
+    await tester.tap(find.text('Agregar billetera'));
+    await settle(tester);
+    final Finder address = find.widgetWithText(TextField, 'Dirección pública');
+    String? error() => tester.widget<TextField>(address).decoration!.errorText;
+    Chain chain() => tester
+        .widget<SegmentedButton<Chain>>(find.byType(SegmentedButton<Chain>))
+        .selected
+        .single;
+    Future<void> add() async {
+      await tester.tap(find.text('Agregar billetera').last);
+      await tester.pump();
+    }
+
+    expect(
+      find.text('La red se elige sola por cómo empieza la dirección.'),
+      findsOneWidget,
+    );
+    await tester.enterText(address, 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t');
+    await tester.pump();
+    expect(chain(), Chain.tron);
+    await tester.enterText(
+      address,
+      '0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed',
+    );
+    await tester.pump();
+    expect(chain(), Chain.ethereum);
+
+    // A character changed: its checksum says so at once, with no read under
+    // way and nothing about the connection.
+    await tester.enterText(
+      address,
+      'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t5',
+    );
+    await tester.pump();
+    expect(chain(), Chain.bitcoin);
+    await add();
+    expect(error(), 'Revisa que la dirección esté completa y bien copiada.');
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.widgetWithText(FilledButton, 'Agregar billetera'),
+          )
+          .onPressed,
+      isNotNull,
+    );
+
+    // Corrected by hand to another chain, the address says whose it is.
+    await tester.enterText(
+      address,
+      'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4',
+    );
+    await tester.pump();
+    await tester.tap(find.text('TRON'));
+    await tester.pump();
+    await add();
+    expect(error(), 'Esa dirección es de Bitcoin, no de TRON.');
+    expect(own.wallets.wallets, isEmpty);
+  });
+
   testWidgets('the wallets page reads the wallets again, and says so', (
     tester,
   ) async {
@@ -316,5 +437,13 @@ void main() {
     await push(tester, WalletsPage(own: own));
     expect(find.byTooltip('Actualizar'), findsOneWidget);
     expect(find.byTooltip('Actualizar tasas'), findsNothing);
+    // Two arrows in a circle: reading again, not undoing.
+    expect(
+      find.descendant(
+        of: find.byTooltip('Actualizar'),
+        matching: find.byIcon(Glyph.arrowsClockwise),
+      ),
+      findsOneWidget,
+    );
   });
 }

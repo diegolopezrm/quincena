@@ -1022,6 +1022,12 @@ abstract class AppLocalizations {
   /// **'Símbolo, por ejemplo ADA'**
   String get assetOtherHint;
 
+  /// No description provided for @assetOtherMissing.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe el símbolo de la moneda, por ejemplo ADA'**
+  String get assetOtherMissing;
+
   /// No description provided for @accountInstitution.
   ///
   /// In es, this message translates to:
@@ -5198,6 +5204,18 @@ abstract class AppLocalizations {
   /// **'Aún no tienes cripto. Agrega una billetera o conecta Binance.'**
   String get portfolioEmpty;
 
+  /// No description provided for @portfolioEmptyAccounts.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Tu cuenta de cripto está en 0} other{Tus cuentas de cripto están en 0}}: registra una compra y aquí verás lo que vale y cuánto ganas.'**
+  String portfolioEmptyAccounts(int count);
+
+  /// No description provided for @portfolioFirstPurchase.
+  ///
+  /// In es, this message translates to:
+  /// **'Registrar tu primera compra'**
+  String get portfolioFirstPurchase;
+
   /// No description provided for @holdingPrice.
   ///
   /// In es, this message translates to:
@@ -5300,6 +5318,24 @@ abstract class AppLocalizations {
   /// **'En Binance P2P, en otro exchange o en efectivo. Si sale de una de tus cuentas, elígela y su saldo también cambia.'**
   String get tradeOutsideHelp;
 
+  /// No description provided for @tradeFromAccountHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'El total sale de esa cuenta y su saldo baja. Si lo pagaste por fuera, elige «Fuera de Quincena».'**
+  String get tradeFromAccountHelp;
+
+  /// No description provided for @tradeToAccountHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'El total entra a esa cuenta y su saldo sube. Si lo recibiste por fuera, elige «Fuera de Quincena».'**
+  String get tradeToAccountHelp;
+
+  /// No description provided for @tradeTotalInAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'El total va en la moneda de esa cuenta ({code}).'**
+  String tradeTotalInAccount(String code);
+
   /// No description provided for @tradePriceEach.
   ///
   /// In es, this message translates to:
@@ -5311,6 +5347,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Esa cuenta tiene {amount}.'**
   String tradeNotEnough(String amount);
+
+  /// No description provided for @tradeAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Todo'**
+  String get tradeAll;
+
+  /// No description provided for @tradeSellAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Vender todo: {amount}'**
+  String tradeSellAll(String amount);
 
   /// No description provided for @accountOpeningCost.
   ///
@@ -5414,6 +5462,18 @@ abstract class AppLocalizations {
   /// **'Escribe tu Secret Key'**
   String get binanceNeedSecret;
 
+  /// No description provided for @binanceShowSecret.
+  ///
+  /// In es, this message translates to:
+  /// **'Mostrar la Secret Key'**
+  String get binanceShowSecret;
+
+  /// No description provided for @binanceHideSecret.
+  ///
+  /// In es, this message translates to:
+  /// **'Ocultar la Secret Key'**
+  String get binanceHideSecret;
+
   /// No description provided for @binanceConnect.
   ///
   /// In es, this message translates to:
@@ -5455,6 +5515,30 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Algo salió mal al leer Binance. Intenta de nuevo.'**
   String get binanceFailed;
+
+  /// No description provided for @binanceKeyInDoubt.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo leer Binance {count} veces seguidas. Revisa tu llave o pégala de nuevo.'**
+  String binanceKeyInDoubt(int count);
+
+  /// No description provided for @binanceChangeKey.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar la llave'**
+  String get binanceChangeKey;
+
+  /// No description provided for @binanceChangeKeyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar la llave de Binance'**
+  String get binanceChangeKeyTitle;
+
+  /// No description provided for @binanceChangeKeyBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Pega la API Key y la Secret Key nuevas. Reemplazan la llave que tienes solo si Binance las acepta y solo pueden leer; lo que ya trajo se queda.'**
+  String get binanceChangeKeyBody;
 
   /// No description provided for @binanceConnected.
   ///
@@ -5545,6 +5629,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Binance ya trae estos saldos: archivarlas evita contarlos dos veces.'**
   String get binanceArchiveWhy;
+
+  /// No description provided for @binanceTwiceTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Hay saldos contados dos veces'**
+  String get binanceTwiceTitle;
+
+  /// No description provided for @binanceTwiceBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Binance ya trae lo que llevabas a mano en {names}.'**
+  String binanceTwiceBody(String names);
 
   /// No description provided for @binanceLabelP2p.
   ///
@@ -5762,6 +5858,12 @@ abstract class AppLocalizations {
   /// **'Dirección pública'**
   String get walletsAddress;
 
+  /// No description provided for @walletsAddressHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'La red se elige sola por cómo empieza la dirección.'**
+  String get walletsAddressHelp;
+
   /// No description provided for @walletsLabel.
   ///
   /// In es, this message translates to:
@@ -5774,11 +5876,29 @@ abstract class AppLocalizations {
   /// **'Esa no parece una dirección de {chain}.'**
   String walletsBadAddress(String chain);
 
+  /// No description provided for @walletsOtherChain.
+  ///
+  /// In es, this message translates to:
+  /// **'Esa dirección es de {other}, no de {chain}.'**
+  String walletsOtherChain(String other, String chain);
+
+  /// No description provided for @walletsMiscopied.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisa que la dirección esté completa y bien copiada.'**
+  String get walletsMiscopied;
+
   /// No description provided for @walletsUnreadable.
   ///
   /// In es, this message translates to:
   /// **'No se pudo leer esa dirección. Revisa tu conexión e intenta de nuevo.'**
   String get walletsUnreadable;
+
+  /// No description provided for @walletsServiceFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'El servicio que lee {chain} no respondió bien. Intenta más tarde.'**
+  String walletsServiceFailed(String chain);
 
   /// No description provided for @walletsRemove.
   ///
@@ -5816,11 +5936,17 @@ abstract class AppLocalizations {
   /// **'Una billetera no se pudo leer; se muestran sus últimos saldos.'**
   String get walletsFailed;
 
-  /// No description provided for @chartWithoutTrades.
+  /// No description provided for @chartValueByPrice.
   ///
   /// In es, this message translates to:
-  /// **'Por el precio, sin contar lo que compraste o vendiste en esos días.'**
-  String get chartWithoutTrades;
+  /// **'Por el precio: {amount}'**
+  String chartValueByPrice(String amount);
+
+  /// No description provided for @chartValueSpoken.
+  ///
+  /// In es, this message translates to:
+  /// **'De {from} a {to} {range}'**
+  String chartValueSpoken(String from, String to, String range);
 
   /// No description provided for @privacyPolicy.
   ///
@@ -9925,6 +10051,18 @@ abstract class AppLocalizations {
   /// **'La automática hoy: {value}'**
   String rateAutomaticNow(String value);
 
+  /// No description provided for @rateAutomaticUnknown.
+  ///
+  /// In es, this message translates to:
+  /// **'Para volver a la automática, actualiza las tasas.'**
+  String get rateAutomaticUnknown;
+
+  /// No description provided for @rateAutomaticNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Hoy no hay tasa automática para {asset}: se usa la tuya.'**
+  String rateAutomaticNone(String asset);
+
   /// No description provided for @rateUseFetchedShort.
   ///
   /// In es, this message translates to:
@@ -9960,6 +10098,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'1 {asset} = {value} · escrita a mano'**
   String rateStepManual(String asset, String value);
+
+  /// No description provided for @rateSourceOn.
+  ///
+  /// In es, this message translates to:
+  /// **'{source} del {date}'**
+  String rateSourceOn(String source, String date);
 
   /// No description provided for @ratesIntro.
   ///
@@ -10060,7 +10204,7 @@ abstract class AppLocalizations {
   /// No description provided for @cardSpendableHelp.
   ///
   /// In es, this message translates to:
-  /// **'Si está encendido, lo que debes en esta tarjeta se resta de lo que puedes gastar, porque lo pagas con tus cuentas de uso diario.'**
+  /// **'Si está encendido, lo que debes en esta tarjeta y lo que se cobra en ella se restan de lo que puedes gastar, porque los pagas con tus cuentas de uso diario.'**
   String get cardSpendableHelp;
 
   /// No description provided for @freeExplainAssumePending.

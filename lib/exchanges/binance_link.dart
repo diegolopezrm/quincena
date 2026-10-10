@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show SocketException;
+import 'dart:math' show min;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -111,6 +112,8 @@ class BinanceLink extends ChangeNotifier {
   double _progress = 0;
   DateTime? _syncedAt;
   SyncProblem? _problem;
+  int _failures = 0;
+  DateTime? _failedAt;
   SyncReport? _report;
   List<String> _refused = const <String>[];
 
@@ -127,6 +130,17 @@ class BinanceLink extends ChangeNotifier {
   DateTime? get syncedAt => _syncedAt;
   SyncProblem? get problem => _problem;
   SyncReport? get report => _report;
+
+  /// How many reads in a row failed, the last one included; none since the
+  /// last good one, or since the key was put.
+  int get failures => _failures;
+
+  /// Whether the key is the likely trouble: Binance said it does not take
+  /// it, or reads failed twice or more in a row for no reason it gave. Not
+  /// a connection or a limit, which pass by themselves.
+  bool get keyInDoubt =>
+      _problem == SyncProblem.badKey ||
+      (_problem == SyncProblem.failed && _failures >= 2);
 
   /// What a refused key could do besides reading.
   List<String> get refused => _refused;
@@ -145,10 +159,40 @@ class BinanceLink extends ChangeNotifier {
       final Object? json = jsonDecode(saved);
       if (json is Map) {
         _syncedAt = DateTime.tryParse('${json['syncedAt']}');
+        _failures = (json['failures'] as num?)?.toInt() ?? 0;
+        _failedAt = DateTime.tryParse('${json['failedAt']}');
+        _problem = SyncProblem.values.asNameMap()['${json['problem']}'];
       }
     }
     _read = true;
     notifyListeners();
+  }
+
+  /// When it was last read well and, while reads keep failing, how many in
+  /// a row did, the last one when and why: kept, so the next start does not
+  /// try again at once to fail the same way.
+  Future<void> _save() => store.setSetting(
+    _setting,
+    jsonEncode(<String, Object?>{
+      'syncedAt': ?_syncedAt?.toIso8601String(),
+      if (_failures > 0) ...<String, Object?>{
+        'failures': _failures,
+        'failedAt': ?_failedAt?.toIso8601String(),
+        'problem': ?_problem?.name,
+      },
+    }),
+  );
+
+  /// One more read in a row that failed, for [problem], at [at].
+  Future<void> _fail(SyncProblem problem, DateTime at) async {
+    _problem = problem;
+    _failures++;
+    _failedAt = at;
+    try {
+      await _save();
+    } on Object catch (e) {
+      if (kDebugMode) debugPrint('Binance read not kept: $e');
+    }
   }
 
   /// Checks [key] with Binance, keeps it only if it can do nothing but
@@ -167,6 +211,10 @@ class BinanceLink extends ChangeNotifier {
       _refused = const <String>[];
       await _vault.write(k, s);
       _connected = true;
+      // A new key starts over: what failed with the last one is not its.
+      _problem = null;
+      _failures = 0;
+      _failedAt = null;
       notifyListeners();
     } on BinanceException catch (e) {
       return e.badKey
@@ -183,12 +231,24 @@ class BinanceLink extends ChangeNotifier {
     return ConnectOutcome.connected;
   }
 
-  /// Reads Binance again, unless it was read within [age].
+  /// Reads Binance again, unless it was read within [age]. While reads keep
+  /// failing, each one it starts by itself waits twice as long as the one
+  /// before, a day at most: a key that stopped working is not tried, nor
+  /// its error shown again, every time the crypto opens.
   Future<void> syncIfOlder(Duration age) async {
     await load();
     final DateTime? at = _syncedAt;
     if (!_connected || (at != null && _now().difference(at) < age)) return;
+    final DateTime? failed = _failedAt;
+    if (failed != null && _now().difference(failed) < retryAfter(age)) return;
     await sync();
+  }
+
+  /// How long a read by itself waits after the last one failed, for reads
+  /// every [age].
+  Duration retryAfter(Duration age) {
+    final Duration wait = age * (1 << min(_failures, 6));
+    return wait < const Duration(days: 1) ? wait : const Duration(days: 1);
   }
 
   /// Reads what changed since the last sync, or the last [firstYears]
@@ -229,18 +289,23 @@ class BinanceLink extends ChangeNotifier {
       // A P2P order and the bank's payment for it become one transfer.
       await linkP2pPayments(store);
       _syncedAt = started;
-      await store.setSetting(
-        _setting,
-        jsonEncode(<String, Object?>{'syncedAt': started.toIso8601String()}),
-      );
+      _failures = 0;
+      _failedAt = null;
+      await _save();
     } on BinanceException catch (e) {
-      _problem = e.badKey
-          ? SyncProblem.badKey
-          : e.limited
-          ? SyncProblem.limited
-          : SyncProblem.failed;
+      await _fail(
+        e.badKey
+            ? SyncProblem.badKey
+            : e.limited
+            ? SyncProblem.limited
+            : SyncProblem.failed,
+        started,
+      );
     } on Object catch (e) {
-      _problem = _offline(e) ? SyncProblem.offline : SyncProblem.failed;
+      await _fail(
+        _offline(e) ? SyncProblem.offline : SyncProblem.failed,
+        started,
+      );
       // An error can quote what it failed on; a release build keeps it
       // out of the device's logs.
       if (kDebugMode) debugPrint('Binance sync failed: $e');
@@ -260,6 +325,8 @@ class BinanceLink extends ChangeNotifier {
     _syncedAt = null;
     _report = null;
     _problem = null;
+    _failures = 0;
+    _failedAt = null;
     notifyListeners();
   }
 

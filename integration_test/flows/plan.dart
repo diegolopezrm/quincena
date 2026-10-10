@@ -4524,7 +4524,7 @@ Future<void> _tapInDialog(FlowRun f, String day) async {
 /// Picks [day] of the month the calendar shows, and accepts it.
 Future<void> _pickDay(FlowRun f, String day) async {
   await _tapInDialog(f, day);
-  await f.tap('ACEPTAR');
+  await f.tap('Aceptar');
 }
 
 /// Taps the button with [tooltip] closest to [text]: the one in its row

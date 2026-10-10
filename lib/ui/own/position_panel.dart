@@ -56,8 +56,15 @@ class _PositionPanelState extends State<PositionPanel> {
       final Asset base = p?.base ?? widget.own.profile?.base ?? Asset.cop;
       final Holding? h = holding;
       final Position? position = h?.position;
-      final Pair? price = h?.price;
-      final Pair? value = h?.value;
+      // A coin's price is known whether the account holds any or not, and
+      // nothing held is worth nothing at it.
+      final Pair? price = h?.price ?? p?.priceOf(widget.account.asset);
+      final bool empty =
+          (widget.own.balances[widget.account.id] ??
+                  widget.account.openingMoney)
+              .isZero;
+      final Pair? value =
+          h?.value ?? (empty && price != null ? Pair.zero : null);
       final Pair? gain = h?.gain;
       final double? ratio = h?.gainRatio;
       final double? day = h?.change24h;

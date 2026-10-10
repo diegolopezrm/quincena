@@ -94,9 +94,18 @@ class Portfolio {
     required this.holdings,
     required this.pricedAt,
     required this.realized,
+    this.prices = const <String, Pair>{},
   });
 
   final Asset base;
+
+  /// One unit of each coin an account is in, by its code, held or not: an
+  /// account at zero still says what the coin is worth.
+  final Map<String, Pair> prices;
+
+  /// What one unit of [asset] is worth, in the base currency and in
+  /// dollars; null without a price.
+  Pair? priceOf(Asset asset) => prices[asset.code];
 
   /// Every investment account that holds something, largest first; those
   /// without a price last.
@@ -323,6 +332,11 @@ Portfolio buildPortfolio(
     holdings: holdings,
     pricedAt: pricedAt,
     realized: all.fold(Pair.zero, (Pair sum, Position p) => sum + p.realized),
+    prices: <String, Pair>{
+      for (final Account a in s.accounts)
+        if (!a.archived && a.asset.isCrypto)
+          if (priceOf(a.asset) case final Pair price) a.asset.code: price,
+    },
   );
 }
 

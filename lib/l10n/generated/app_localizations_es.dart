@@ -564,6 +564,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get assetOtherHint => 'Símbolo, por ejemplo ADA';
 
   @override
+  String get assetOtherMissing =>
+      'Escribe el símbolo de la moneda, por ejemplo ADA';
+
+  @override
   String get accountInstitution => 'Entidad (opcional)';
 
   @override
@@ -3397,6 +3401,20 @@ class AppLocalizationsEs extends AppLocalizations {
       'Aún no tienes cripto. Agrega una billetera o conecta Binance.';
 
   @override
+  String portfolioEmptyAccounts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Tus cuentas de cripto están en 0',
+      one: 'Tu cuenta de cripto está en 0',
+    );
+    return '$_temp0: registra una compra y aquí verás lo que vale y cuánto ganas.';
+  }
+
+  @override
+  String get portfolioFirstPurchase => 'Registrar tu primera compra';
+
+  @override
   String get holdingPrice => 'Precio';
 
   @override
@@ -3452,6 +3470,19 @@ class AppLocalizationsEs extends AppLocalizations {
       'En Binance P2P, en otro exchange o en efectivo. Si sale de una de tus cuentas, elígela y su saldo también cambia.';
 
   @override
+  String get tradeFromAccountHelp =>
+      'El total sale de esa cuenta y su saldo baja. Si lo pagaste por fuera, elige «Fuera de Quincena».';
+
+  @override
+  String get tradeToAccountHelp =>
+      'El total entra a esa cuenta y su saldo sube. Si lo recibiste por fuera, elige «Fuera de Quincena».';
+
+  @override
+  String tradeTotalInAccount(String code) {
+    return 'El total va en la moneda de esa cuenta ($code).';
+  }
+
+  @override
   String tradePriceEach(String price) {
     return 'Precio por unidad: $price';
   }
@@ -3459,6 +3490,14 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String tradeNotEnough(String amount) {
     return 'Esa cuenta tiene $amount.';
+  }
+
+  @override
+  String get tradeAll => 'Todo';
+
+  @override
+  String tradeSellAll(String amount) {
+    return 'Vender todo: $amount';
   }
 
   @override
@@ -3519,6 +3558,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get binanceNeedSecret => 'Escribe tu Secret Key';
 
   @override
+  String get binanceShowSecret => 'Mostrar la Secret Key';
+
+  @override
+  String get binanceHideSecret => 'Ocultar la Secret Key';
+
+  @override
   String get binanceConnect => 'Conectar';
 
   @override
@@ -3544,6 +3589,21 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get binanceFailed =>
       'Algo salió mal al leer Binance. Intenta de nuevo.';
+
+  @override
+  String binanceKeyInDoubt(int count) {
+    return 'No se pudo leer Binance $count veces seguidas. Revisa tu llave o pégala de nuevo.';
+  }
+
+  @override
+  String get binanceChangeKey => 'Cambiar la llave';
+
+  @override
+  String get binanceChangeKeyTitle => 'Cambiar la llave de Binance';
+
+  @override
+  String get binanceChangeKeyBody =>
+      'Pega la API Key y la Secret Key nuevas. Reemplazan la llave que tienes solo si Binance las acepta y solo pueden leer; lo que ya trajo se queda.';
 
   @override
   String get binanceConnected => 'Conectada con una llave de solo lectura';
@@ -3607,6 +3667,14 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get binanceArchiveWhy =>
       'Binance ya trae estos saldos: archivarlas evita contarlos dos veces.';
+
+  @override
+  String get binanceTwiceTitle => 'Hay saldos contados dos veces';
+
+  @override
+  String binanceTwiceBody(String names) {
+    return 'Binance ya trae lo que llevabas a mano en $names.';
+  }
 
   @override
   String get binanceLabelP2p => 'Binance P2P';
@@ -3773,6 +3841,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get walletsAddress => 'Dirección pública';
 
   @override
+  String get walletsAddressHelp =>
+      'La red se elige sola por cómo empieza la dirección.';
+
+  @override
   String get walletsLabel => 'Nombre: Ledger, MetaMask…';
 
   @override
@@ -3781,8 +3853,22 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String walletsOtherChain(String other, String chain) {
+    return 'Esa dirección es de $other, no de $chain.';
+  }
+
+  @override
+  String get walletsMiscopied =>
+      'Revisa que la dirección esté completa y bien copiada.';
+
+  @override
   String get walletsUnreadable =>
       'No se pudo leer esa dirección. Revisa tu conexión e intenta de nuevo.';
+
+  @override
+  String walletsServiceFailed(String chain) {
+    return 'El servicio que lee $chain no respondió bien. Intenta más tarde.';
+  }
 
   @override
   String get walletsRemove => 'Dejar de seguir';
@@ -3808,8 +3894,14 @@ class AppLocalizationsEs extends AppLocalizations {
       'Una billetera no se pudo leer; se muestran sus últimos saldos.';
 
   @override
-  String get chartWithoutTrades =>
-      'Por el precio, sin contar lo que compraste o vendiste en esos días.';
+  String chartValueByPrice(String amount) {
+    return 'Por el precio: $amount';
+  }
+
+  @override
+  String chartValueSpoken(String from, String to, String range) {
+    return 'De $from a $to $range';
+  }
 
   @override
   String get privacyPolicy => 'Política de privacidad';
@@ -6510,6 +6602,15 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get rateAutomaticUnknown =>
+      'Para volver a la automática, actualiza las tasas.';
+
+  @override
+  String rateAutomaticNone(String asset) {
+    return 'Hoy no hay tasa automática para $asset: se usa la tuya.';
+  }
+
+  @override
   String get rateUseFetchedShort => 'Usar la automática';
 
   @override
@@ -6535,6 +6636,11 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String rateStepManual(String asset, String value) {
     return '1 $asset = $value · escrita a mano';
+  }
+
+  @override
+  String rateSourceOn(String source, String date) {
+    return '$source del $date';
   }
 
   @override
@@ -6607,7 +6713,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get cardSpendableHelp =>
-      'Si está encendido, lo que debes en esta tarjeta se resta de lo que puedes gastar, porque lo pagas con tus cuentas de uso diario.';
+      'Si está encendido, lo que debes en esta tarjeta y lo que se cobra en ella se restan de lo que puedes gastar, porque los pagas con tus cuentas de uso diario.';
 
   @override
   String freeExplainAssumePending(int count) {

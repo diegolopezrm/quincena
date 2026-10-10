@@ -1980,7 +1980,7 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
           matching: find.text('2'),
         ),
       );
-      await f.tap('ACEPTAR');
+      await f.tap('Aceptar');
       await f.tapFound(find.byType(DropdownButtonFormField<String>));
       await f.tapFound(find.text('Efectivo').last);
       await f.step(

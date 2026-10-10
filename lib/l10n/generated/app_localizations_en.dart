@@ -564,6 +564,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assetOtherHint => 'Ticker, for example ADA';
 
   @override
+  String get assetOtherMissing => 'Type the coin\'s ticker, for example ADA';
+
+  @override
   String get accountInstitution => 'Institution (optional)';
 
   @override
@@ -3399,6 +3402,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'No crypto yet. Add a wallet or connect Binance.';
 
   @override
+  String portfolioEmptyAccounts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Your crypto accounts are at 0',
+      one: 'Your crypto account is at 0',
+    );
+    return '$_temp0: record a purchase and you\'ll see here what it\'s worth and what you gain.';
+  }
+
+  @override
+  String get portfolioFirstPurchase => 'Record your first purchase';
+
+  @override
   String get holdingPrice => 'Price';
 
   @override
@@ -3454,6 +3471,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'On Binance P2P, another exchange or in cash. If it comes out of one of your accounts, pick it and its balance changes too.';
 
   @override
+  String get tradeFromAccountHelp =>
+      'The total comes out of that account and its balance goes down. If you paid it elsewhere, pick \"Outside Quincena\".';
+
+  @override
+  String get tradeToAccountHelp =>
+      'The total goes into that account and its balance goes up. If you got it elsewhere, pick \"Outside Quincena\".';
+
+  @override
+  String tradeTotalInAccount(String code) {
+    return 'The total is in that account\'s currency ($code).';
+  }
+
+  @override
   String tradePriceEach(String price) {
     return 'Price per unit: $price';
   }
@@ -3461,6 +3491,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String tradeNotEnough(String amount) {
     return 'That account holds $amount.';
+  }
+
+  @override
+  String get tradeAll => 'All';
+
+  @override
+  String tradeSellAll(String amount) {
+    return 'Sell all of it: $amount';
   }
 
   @override
@@ -3521,6 +3559,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get binanceNeedSecret => 'Type your Secret Key';
 
   @override
+  String get binanceShowSecret => 'Show the Secret Key';
+
+  @override
+  String get binanceHideSecret => 'Hide the Secret Key';
+
+  @override
   String get binanceConnect => 'Connect';
 
   @override
@@ -3546,6 +3590,21 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get binanceFailed =>
       'Something went wrong reading Binance. Try again.';
+
+  @override
+  String binanceKeyInDoubt(int count) {
+    return 'Binance could not be read $count times in a row. Check your key or paste it again.';
+  }
+
+  @override
+  String get binanceChangeKey => 'Change the key';
+
+  @override
+  String get binanceChangeKeyTitle => 'Change your Binance key';
+
+  @override
+  String get binanceChangeKeyBody =>
+      'Paste the new API Key and Secret Key. They replace the key you have only if Binance accepts them and they can only read; what it brought stays.';
 
   @override
   String get binanceConnected => 'Connected with a read-only key';
@@ -3609,6 +3668,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get binanceArchiveWhy =>
       'Binance already brings these balances: archiving them keeps them from counting twice.';
+
+  @override
+  String get binanceTwiceTitle => 'Some balances count twice';
+
+  @override
+  String binanceTwiceBody(String names) {
+    return 'Binance already brings what you kept by hand in $names.';
+  }
 
   @override
   String get binanceLabelP2p => 'Binance P2P';
@@ -3775,6 +3842,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get walletsAddress => 'Public address';
 
   @override
+  String get walletsAddressHelp =>
+      'The network is picked by how the address starts.';
+
+  @override
   String get walletsLabel => 'Name: Ledger, MetaMask…';
 
   @override
@@ -3783,8 +3854,22 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String walletsOtherChain(String other, String chain) {
+    return 'That address is on $other, not $chain.';
+  }
+
+  @override
+  String get walletsMiscopied =>
+      'Check that the address is complete and copied right.';
+
+  @override
   String get walletsUnreadable =>
       'That address could not be read. Check your connection and try again.';
+
+  @override
+  String walletsServiceFailed(String chain) {
+    return 'The service that reads $chain did not answer well. Try again later.';
+  }
 
   @override
   String get walletsRemove => 'Stop following';
@@ -3810,8 +3895,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'A wallet could not be read; its last balances are shown.';
 
   @override
-  String get chartWithoutTrades =>
-      'From prices, not counting what you bought or sold in those days.';
+  String chartValueByPrice(String amount) {
+    return 'From prices: $amount';
+  }
+
+  @override
+  String chartValueSpoken(String from, String to, String range) {
+    return 'From $from to $to $range';
+  }
 
   @override
   String get privacyPolicy => 'Privacy policy';
@@ -6511,6 +6602,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get rateAutomaticUnknown =>
+      'To go back to the automatic rate, refresh the rates.';
+
+  @override
+  String rateAutomaticNone(String asset) {
+    return 'There is no automatic rate for $asset today: yours is used.';
+  }
+
+  @override
   String get rateUseFetchedShort => 'Use automatic rate';
 
   @override
@@ -6536,6 +6636,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String rateStepManual(String asset, String value) {
     return '1 $asset = $value · typed by hand';
+  }
+
+  @override
+  String rateSourceOn(String source, String date) {
+    return '$source, $date';
   }
 
   @override
@@ -6608,7 +6713,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cardSpendableHelp =>
-      'When it\'s on, what you owe on this card comes off what you can spend, since you pay it from your everyday accounts.';
+      'When it\'s on, what you owe on this card and what is charged to it come off what you can spend, since you pay them from your everyday accounts.';
 
   @override
   String freeExplainAssumePending(int count) {

@@ -10,6 +10,7 @@ import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/domain/shared.dart';
 import 'package:quincena/exchanges/binance_link.dart' show SecureKeyVault;
+import 'package:quincena/exchanges/wallets.dart' show Chain;
 import 'package:quincena/format/money.dart';
 import 'package:quincena/money/asset.dart';
 import 'package:quincena/money/money.dart';
@@ -21,7 +22,8 @@ import 'package:quincena/portfolio/portfolio.dart';
 import 'package:quincena/store/store.dart';
 import 'package:quincena/ui/kit.dart' show Block, Figures;
 import 'package:quincena/ui/own/balance_explained.dart' show AccountExplained;
-import 'package:quincena/ui/own/binance_page.dart' show BinancePage;
+import 'package:quincena/ui/own/binance_page.dart'
+    show BinanceCard, BinancePage;
 import 'package:quincena/ui/own/look.dart' show Headline, moneyText;
 import 'package:quincena/ui/own/movement_list.dart' show MovementRow;
 import 'package:quincena/ui/own/portfolio_chart.dart';
@@ -189,17 +191,13 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       );
       await f.back();
       await f.tapTip('Agregar movimiento');
-      await f.tap('Gasté plata');
-      await f.type('Monto', '45000');
-      await f.type('¿Dónde o a quién?', 'D1 Laureles');
       await f.step(
-        'El «+» de la cuenta pregunta qué pasó. Con «Gasté plata», 45.000 y '
-        '«D1 Laureles», la línea dice «Mercado · Bancolombia · Hoy»: la '
-        'cuenta es la de esta página.',
+        'El «+» de la cuenta abre un movimiento nuevo con Bancolombia ya '
+        'elegida como la cuenta de donde sale.',
       );
-      await f.check('El gasto sale de la cuenta de la página', () {
-        expect(f.shows('Mercado · Bancolombia · Hoy'), isTrue);
-      });
+      await f.type('Monto', '45000');
+      await f.tap('Mercado');
+      await f.type('¿Dónde o a quién?', 'D1 Laureles');
       await f.tap('Guardar');
       await f.top();
       await f.step(
@@ -895,7 +893,19 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tapFound(find.byType(SwitchListTile));
       await f.step(
         'Apaga «Cuenta de uso diario»: como dice su ayuda, lo que debes en '
-        'esta tarjeta deja de restarse de lo que puedes gastar.',
+        'esta tarjeta y lo que se cobra en ella dejan de restarse de lo que '
+        'puedes gastar.',
+      );
+      await f.check(
+        'La ayuda dice que también cuenta lo que se cobra en la tarjeta',
+        () => expect(
+          f.shows(
+            'Si está encendido, lo que debes en esta tarjeta y lo que se '
+            'cobra en ella se restan de lo que puedes gastar, porque los '
+            'pagas con tus cuentas de uso diario.',
+          ),
+          isTrue,
+        ),
       );
       await f.tap('Guardar');
       await f.back();
@@ -970,9 +980,9 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Eliminar');
       await f.step(
         '«Eliminar», al final del formulario, pide confirmar: cuántos '
-        'movimientos se borran, que lo que tiene deja de contar en el '
-        'patrimonio y en lo que puedes gastar, y ofrece «Archivar» en su '
-        'lugar.',
+        'movimientos se borran y que no se puede deshacer, que lo que tiene '
+        'deja de contar en el patrimonio y en lo que puedes gastar, y ofrece '
+        '«Archivar» en su lugar.',
       );
       await f.check('El aviso cuenta los $inNequi movimientos de Nequi', () {
         expect(
@@ -1026,18 +1036,12 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Eliminar');
       await f.step(
         'Al confirmar, el formulario y la página de Nequi se cierran solos: '
-        'vuelves a Cuentas, donde Nequi ya no aparece, y abajo «Se eliminó '
-        'Nequi, con sus $inNequi movimientos.» ofrece «Deshacer» por unos '
-        'segundos.',
+        'vuelves a Cuentas, donde Nequi ya no aparece.',
       );
       await f.check('Nequi y sus $inNequi movimientos ya no están', () {
         expect(own.snapshot!.account(nequi.id), isNull);
         expect(own.snapshot!.entries.length, entries - inNequi);
         expect(f.shows('Nequi'), isFalse);
-        expect(
-          f.shows('Se eliminó Nequi, con sus $inNequi movimientos.'),
-          isTrue,
-        );
       });
       await f.check('Se vuelve solo a Cuentas, no a una página vacía', () {
         expect(f.shows('Agregar cuenta'), isTrue);
@@ -1051,29 +1055,6 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
           expect(_headline(f), _cop(now));
         },
       );
-      await f.tap('Deshacer');
-      await f.step(
-        '«Deshacer» trae de vuelta a Nequi con sus $inNequi movimientos: el '
-        'patrimonio vuelve a ${_cop(worth)}.',
-      );
-      await f.check(
-        'Volvieron Nequi y todos sus movimientos, como estaban',
-        () {
-          expect(own.snapshot!.account(nequi.id), isNotNull);
-          expect(own.snapshot!.entries.length, entries);
-          expect(own.netWorth().total, worth);
-        },
-      );
-      await f.tap('Billetera digital · Nequi');
-      await f.tapTip('Editar cuenta');
-      await f.tap('Eliminar');
-      await f.tap('Eliminar');
-      await _hideNotice(f);
-      await f.step('Eliminada otra vez y pasado el aviso, Nequi no vuelve.');
-      await f.check('Pasado el aviso, Nequi sigue eliminada', () {
-        expect(own.snapshot!.account(nequi.id), isNull);
-        expect(own.netWorth().total, now);
-      });
     },
   ),
   AppFlow(
@@ -1107,13 +1088,24 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
           expect(btc, Decimal.parse('84616.92') * trm);
         },
       );
+      await f.check(
+        'El dólar no dice su tasa dos veces: debajo de «1 USD = \$3.312,84» '
+        'va solo de dónde sale y de qué día',
+        () => expect(
+          _said(f),
+          contains('1 USD = \$3.312,84 | TRM oficial del 3 oct'),
+        ),
+      );
       await f.tapContaining('1 USD =');
+      await f.step(
+        'Tocar la línea del dólar abre «Escribir una tasa» con la de hoy ya '
+        'escrita en «1 USD en», con COP al lado, y «Cancelar» y «Guardar».',
+      );
       await enterTextIn(f.tester, find.byType(TextField).last, '0');
       await f.tap('Guardar');
       await f.step(
-        'Tocar la línea del dólar abre «Escribir una tasa» con «Cancelar» y '
-        '«Guardar». Una tasa de 0 no se guarda: el cuadro sigue abierto y '
-        'dice «Escribe una tasa mayor que cero.»',
+        'Guardar una tasa de 0 no cierra el cuadro: debajo del campo dice '
+        '«Escribe una tasa mayor que cero.».',
       );
       await f.check(
         'Guardar una tasa de 0 no cambia nada y dice qué falta',
@@ -1121,20 +1113,22 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
           expect(own.rates.rate(Asset.usd, Asset.cop), trm);
           expect(_typedRate(own, Asset.usd), isFalse);
           expect(f.shows('Escribe una tasa mayor que cero.'), isTrue);
+          expect(_field(f, '1 USD en').decoration!.suffixText, 'COP');
         },
       );
       await f.tap('Cancelar');
       await f.check('«Cancelar» cierra el cuadro y deja la TRM', () {
+        expect(find.byType(AlertDialog), findsNothing);
         expect(own.rates.rate(Asset.usd, Asset.cop), trm);
         expect(_typedRate(own, Asset.usd), isFalse);
-        expect(f.shows('Escribe una tasa mayor que cero.'), isFalse);
       });
       await f.tapContaining('1 USD =');
       await enterTextIn(f.tester, find.byType(TextField).last, '4100');
       await f.tap('Guardar');
       await f.step(
-        'Con 4.100 guardado, la línea dice «Manual», cuándo se escribió y '
-        'ofrece «Usar la automática».',
+        'Con 4.100 guardado, la línea dice «Manual» y cuándo se escribió; '
+        'para volver a la automática pide actualizar las tasas, porque hoy '
+        'aún no se han traído.',
       );
       final Money at4100 = _pesos('${(held * Decimal.fromInt(4100)).round()}');
       await f.check(
@@ -1146,19 +1140,32 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
           expect(f.screenText, contains('1 tasa escrita a mano'));
         },
       );
+      await f.check(
+        'Sin la automática de hoy no ofrece volver a ella: dice cómo traerla',
+        () {
+          expect(
+            f.shows('Para volver a la automática, actualiza las tasas.'),
+            isTrue,
+          );
+          expect(f.shows('Usar la automática'), isFalse);
+        },
+      );
       await f.tapTip('Actualizar tasas');
       await f.step(
-        '«Actualizar tasas» trae las automáticas, pero la escrita a mano se '
-        'queda; ahora se ve debajo la automática de hoy.',
+        '«Actualizar tasas», con sus flechas en círculo, trae las '
+        'automáticas, pero la escrita a mano se queda; ahora se ve debajo la '
+        'automática de hoy y «Usar la automática».',
       );
       await f.check('Actualizar no reemplaza la tasa escrita', () {
         expect(own.rates.rate(Asset.usd, Asset.cop), Decimal.fromInt(4100));
         expect(f.screenText, contains('La automática hoy: \$4.000'));
+        expect(f.shows('Usar la automática'), isTrue);
       });
+      final Decimal bitcoin = own.rates.rate(Asset.btc, Asset.usdt)!;
       await f.tap('Usar la automática');
       await f.step(
-        '«Usar la automática» vuelve a la TRM: se va «Manual» y la línea '
-        'dice de nuevo de dónde viene la tasa.',
+        '«Usar la automática» vuelve a la TRM de hoy, la que decía debajo: '
+        'se va «Manual» y la línea dice de nuevo de dónde viene la tasa.',
       );
       final Money at4000 = _pesos('${(held * Decimal.fromInt(4000)).round()}');
       await f.check(
@@ -1169,6 +1176,9 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
           expect(own.partOfTotal(usd), at4000);
         },
       );
+      await f.check('Volver a la TRM no cambió el precio del bitcoin', () {
+        expect(own.rates.rate(Asset.btc, Asset.usdt), bitcoin);
+      });
       await f.back();
       await f.reveal(find.text('Cuenta en dólares'));
       await f.step(
@@ -1228,7 +1238,10 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       );
       await enterTextIn(f.tester, find.byType(TextField).last, '4350');
       await f.tap('Guardar');
-      await f.step('Con 4.350 guardado, el euro tiene tasa, marcada «Manual».');
+      await f.step(
+        'Con 4.350 guardado, el euro tiene tasa, marcada «Manual»; para '
+        'volver a la automática, la línea pide actualizar las tasas.',
+      );
       final Money euros = _pesos('1305000');
       await f.check(
         'Los €300 a \$4.350 suman ${_cop(euros)} al patrimonio',
@@ -1239,23 +1252,32 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       );
       await f.tapContaining('1 EUR =');
       await f.step(
-        'Con una tasa escrita, el cuadro ofrece además «Volver a la tasa '
-        'automática».',
+        'El cuadro del euro no ofrece «Volver a la tasa automática»: no hay '
+        'una automática de hoy a la cual volver.',
       );
-      await f.tap('Volver a la tasa automática');
+      await f.check('Sin automática, el cuadro solo deja cambiar la tuya', () {
+        expect(f.shows('Volver a la tasa automática'), isFalse);
+        expect(f.shows('Cancelar'), isTrue);
+      });
+      await f.tap('Cancelar');
+      await f.tapTip('Actualizar tasas');
       await f.step(
-        'Sin conseguir la del euro, la app avisa que sigue la tuya: la tasa '
-        'escrita no se pierde.',
+        '«Actualizar tasas» tampoco consigue la del euro: la línea dice que '
+        'hoy no hay tasa automática para EUR y que se usa la tuya.',
       );
       await f.check('La tasa escrita de \$4.350 sigue en uso', () {
         expect(own.rates.rate(Asset.eur, Asset.cop), Decimal.fromInt(4350));
         expect(_typedRate(own, Asset.eur), isTrue);
-        expect(f.screenText, contains('No se pudo traer la tasa automática'));
+        expect(
+          f.shows('Hoy no hay tasa automática para EUR: se usa la tuya.'),
+          isTrue,
+        );
+        expect(f.shows('Usar la automática'), isFalse);
       });
     },
     manual: <String>[
-      'En modo avión, «Usar la automática» en la línea del dólar: la tasa '
-          'escrita debe quedarse y salir el aviso.',
+      'En modo avión, «Actualizar tasas» con un dólar escrito a mano: la '
+          'tasa escrita debe quedarse y no ofrecer «Usar la automática».',
     ],
   ),
   AppFlow(
@@ -1277,24 +1299,13 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Cuentas');
       await f.tap('Visa');
       await f.tapTip('Agregar movimiento');
-      await f.tap('Moví plata entre mis cuentas');
+      await f.tap('Transferencia');
       await f.step(
-        'En la Visa, «+» y «Moví plata entre mis cuentas»: «Hacia» ya es la '
-        'Visa, y «Desde» la cuenta del último gasto, Nequi.',
-      );
-      await f.check(
-        'Desde la página de la tarjeta, mover plata es pagarla',
-        () {
-          expect(
-            find.descendant(
-              of: find.byType(DropdownButtonFormField<String>).last,
-              matching: find.text('Visa'),
-            ),
-            findsOneWidget,
-          );
-        },
+        'En la Visa, «+» y «Transferencia»: «Desde» y «Hacia» son tus '
+        'cuentas; hay que decir de cuál salió la plata y a cuál llegó.',
       );
       await _pickAccount(f, 0, 'Bancolombia');
+      await _pickAccount(f, 1, 'Visa');
       await f.type('Monto', _plain(owed));
       await f.step(
         'Desde Bancolombia hacia la Visa, por ${_cop(owed)}: todo lo que '
@@ -1374,7 +1385,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Cuentas');
       await f.tap('Visa');
       await f.tapTip('Agregar movimiento');
-      await f.tap('Moví plata entre mis cuentas');
+      await f.tap('Transferencia');
       await _pickAccount(f, 0, 'Bancolombia');
       await _pickAccount(f, 1, 'Visa');
       await f.type('Monto', '900000');
@@ -1448,9 +1459,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Cuentas');
       await f.tap('Banco · Bancolombia');
       await f.tapTip('Agregar movimiento');
-      await f.tap('Gasté plata');
       await f.type('Monto', '280000');
-      await f.tap('Cambiar');
       await f.tap('Servicios');
       await f.type('¿Dónde o a quién?', 'Administración');
       await f.tapFound(find.text('Hoy').last);
@@ -1458,7 +1467,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.step(
         'En «Fecha» se elige el 10 de octubre, más adelante que hoy.',
       );
-      await f.tap('ACEPTAR');
+      await f.tap('Aceptar');
       await f.tap('Guardar');
       await f.top();
       await f.step(
@@ -1558,16 +1567,43 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       );
       await f.back();
       await f.tap('Ver tasas usadas');
+      await f.reveal(find.textContaining('1 BTC ='));
+      await f.step(
+        'Con un precio escrito, la línea del bitcoin dice «Manual» y, como '
+        'hoy aún no se traen las tasas, que para volver a la automática hay '
+        'que actualizarlas.',
+      );
+      await f.check('Sin la automática de hoy, no ofrece volver a ella', () {
+        expect(
+          f.shows('Para volver a la automática, actualiza las tasas.'),
+          isTrue,
+        );
+        expect(f.shows('Usar la automática'), isFalse);
+      });
+      await f.tapTip('Actualizar tasas');
+      await f.step(
+        '«Actualizar tasas» trae el dólar y los precios de hoy; tu precio del '
+        'bitcoin se queda, y debajo sale el de Binance con «Usar la '
+        'automática».',
+      );
+      await f.check('Debajo del precio escrito sale el de Binance de hoy', () {
+        expect(f.shows('La automática hoy: US\$80.000'), isTrue);
+        expect(own.rates.rate(Asset.btc, Asset.usd), Decimal.fromInt(90000));
+      });
+      final Decimal dollarBefore = own.rates.rate(Asset.usd, Asset.cop)!;
       await f.tapContaining('1 BTC =');
       await f.step(
-        'Con un precio escrito, el cuadro del bitcoin ofrece también «Volver '
-        'a la tasa automática».',
+        'Con la automática de hoy a la mano, el cuadro del bitcoin ofrece '
+        'también «Volver a la tasa automática».',
       );
       await f.tap('Volver a la tasa automática');
       await f.step(
-        '«Volver a la tasa automática» trae otra vez los precios: el bitcoin '
-        'vuelve al de Binance, el dólar a la TRM del día y se va «Manual».',
+        '«Volver a la tasa automática» deja el bitcoin en el precio de '
+        'Binance de hoy y se va «Manual»; el dólar no cambia.',
       );
+      await f.check('Volver al precio del bitcoin no movió el dólar', () {
+        expect(own.rates.rate(Asset.usd, Asset.cop), dollarBefore);
+      });
       await f.check(
         'El bitcoin vuelve al precio de Binance, 80.000 USDT, y vale eso en '
         'pesos',
@@ -1782,7 +1818,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Cuentas');
       await f.tap('Visa');
       await f.tapTip('Agregar movimiento');
-      await f.tap('Moví plata entre mis cuentas');
+      await f.tap('Transferencia');
       await _pickAccount(f, 0, 'Bancolombia');
       await _pickAccount(f, 1, 'Visa');
       await f.type('Monto', _plain(owed));
@@ -1871,8 +1907,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.top();
       await f.step(
         'Eliminada, vuelves a Cuentas: sin «Tarjetas de crédito», Bancolombia '
-        'con el pago hecho y el «Patrimonio» con la baja que anunció el aviso. '
-        'Abajo, «Deshacer» por unos segundos.',
+        'con el pago hecho y el «Patrimonio» con la baja que anunció el aviso.',
       );
       await f.check('La Visa y sus movimientos ya no están', () {
         expect(own.snapshot!.account(visa.id), isNull);
@@ -2028,13 +2063,8 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.top();
       await f.step(
         'Archivada, vuelves a Cuentas: Nequi ya no está entre las de uso '
-        'diario, abajo aparece «Cuentas archivadas», y el aviso «Se archivó '
-        'Nequi.» ofrece «Deshacer» por unos segundos.',
+        'diario, y abajo aparece «Cuentas archivadas».',
       );
-      await f.check('El aviso dice que se archivó', () {
-        expect(f.shows('Se archivó Nequi.'), isTrue);
-      });
-      await _hideNotice(f);
       await f.check('Nequi quedó archivada, con sus $inNequi movimientos', () {
         expect(own.accounts.where((Account a) => a.id == nequi.id), isEmpty);
         expect(own.snapshot!.account(nequi.id)!.archived, isTrue);
@@ -2081,11 +2111,9 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       });
       await f.top();
       await f.tapTip('Agregar movimiento');
-      await f.tap('Gasté plata');
-      await f.tap('Cambiar');
       await f.tapFound(find.byType(DropdownButtonFormField<String>).first);
       await f.step(
-        'Al anotar un gasto, la lista de cuentas ya no ofrece Nequi.',
+        'Al anotar un movimiento, la lista de cuentas ya no ofrece Nequi.',
       );
       await f.check('Nequi no está entre las cuentas para elegir', () {
         expect(f.shows('Bancolombia'), isTrue);
@@ -2161,7 +2189,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.reveal(find.text('Rendimiento y ganancia'));
       await f.step(
         'En Cuentas, «Cripto» suma sus monedas y la última fila, «Rendimiento '
-        'y ganancia», dice cuánto ganas en porcentaje.',
+        'y ganancia», dice cuánto ganas en plata y en porcentaje.',
       );
       var coins = Money.zero(Asset.cop);
       for (final Account a in own.accounts) {
@@ -2170,6 +2198,21 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.check(
         'El total de Cripto, ${_cop(coins)}, es la suma de sus filas',
         () => expect(_sectionTotal(f, 'CRIPTO'), _cop(coins)),
+      );
+      final Portfolio held = own.portfolio.portfolio!;
+      final Money gained = Money(held.gain!.base, Asset.cop);
+      await f.check(
+        '«Rendimiento y ganancia» dice la ganancia en plata, '
+        '${_signed(gained)}, y en porcentaje, ${percentText(held.gainRatio!)}',
+        () => expect(
+          _said(f),
+          contains(
+            _plainText(
+              'Ganancia no realizada ${_signed(gained)} · '
+              '${percentText(held.gainRatio!)}',
+            ),
+          ),
+        ),
       );
       await f.tap('Rendimiento y ganancia');
       await f.page(
@@ -2290,9 +2333,10 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Valor');
       await _showChart(f);
       await f.step(
-        'Con «Valor» la línea es lo que valía la cripto en cada momento: la '
-        'plata que entró el 1 de octubre la sube de golpe, y las notas lo '
-        'dicen.',
+        'Con «Valor», arriba dice lo que valía la cripto al empezar los 7 '
+        'días y lo que vale ahora, y debajo lo que hizo el precio; la línea '
+        'sube de golpe el 1 de octubre con la plata que entró, y la nota lo '
+        'dice.',
       );
       await f.check('Con Valor la nota explica que cuenta las compras', () {
         expect(
@@ -2304,14 +2348,31 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         );
       });
       await f.check(
-        'Arriba se aclara que la cifra es por el precio, sin lo que entró',
-        () => expect(
-          f.shows(
-            'Por el precio, sin contar lo que compraste o vendiste en esos '
-            'días.',
-          ),
-          isTrue,
-        ),
+        'Arriba, de cuánto a cuánto fue el valor en los 7 días; debajo, lo '
+        'ganado por precio, aparte de la plata que entró',
+        () {
+          final List<ValuePoint> points = own.portfolio.chart(ChartRange.week)!;
+          final Portfolio p = own.portfolio.portfolio!;
+          final Decimal end = p.unpriced.isEmpty
+              ? p.value.base
+              : points.last.value.base;
+          final Money from = Money(points.first.value.base.round(), Asset.cop);
+          final Money to = Money(end.round(), Asset.cop);
+          final Money made = Money(points.last.gain.base.round(), Asset.cop);
+          final String said = _said(f);
+          expect(
+            said,
+            contains(
+              '${_plainText(_cop(from))} → ${_plainText(_cop(to))} en 7 días',
+            ),
+          );
+          expect(said, contains('Por el precio: ${_plainSigned(made)} ('));
+          // The money that came in is the rest of the change.
+          expect(
+            (to.amount - from.amount - made.amount).abs(),
+            greaterThan(Decimal.fromInt(1000)),
+          );
+        },
       );
       await f.tap('Rendimiento');
       await _showChart(f);
@@ -2514,9 +2575,17 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         '\$360.000.000.',
       );
       await f.tap('Hoy');
-      await f.step('Tocar la fecha abre el calendario para elegir el día.');
+      await f.step(
+        'Tocar la fecha abre el calendario para elegir el día, con '
+        '«Cancelar» y «Aceptar» escritos igual.',
+      );
+      await f.check('El calendario dice «Aceptar», no «ACEPTAR»', () {
+        expect(f.shows('Aceptar'), isTrue);
+        expect(f.shows('Cancelar'), isTrue);
+        expect(f.shows('ACEPTAR'), isFalse);
+      });
       await f.tap('2');
-      await f.tap('ACEPTAR');
+      await f.tap('Aceptar');
       await f.tap('Ayer');
       await f.tap('Cancelar');
       await f.step(
@@ -2602,16 +2671,32 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Bancolombia · COP');
       await f.type('Total recibido', '1650000');
       await f.step(
-        'Con Bancolombia elegida, el total va en pesos y la app calcula el '
-        'precio: \$330.000.000 por bitcoin.',
+        'Con Bancolombia elegida, debajo dice que el total entra a esa cuenta '
+        'y cómo volver a «Fuera de Quincena»; bajo el total, que va en la '
+        'moneda de esa cuenta, COP, y el precio: \$330.000.000 por bitcoin.',
       );
       await f.check(
-        'Con una cuenta elegida, la moneda es la de esa cuenta',
+        'Con una cuenta elegida, la moneda es la de esa cuenta y lo dice',
         () {
           expect(find.byType(SegmentedButton<String>), findsNothing);
           expect(_field(f, 'Total recibido').decoration!.suffixText, 'COP');
+          expect(
+            _said(f),
+            contains('El total va en la moneda de esa cuenta (COP).'),
+          );
           expect(_said(f), contains('Precio por unidad: \$330.000.000'));
         },
+      );
+      await f.check(
+        '«Recibido en» dice qué le pasa a la cuenta y cómo volver a «Fuera '
+        'de Quincena»',
+        () => expect(
+          f.shows(
+            'El total entra a esa cuenta y su saldo sube. Si lo recibiste por '
+            'fuera, elige «Fuera de Quincena».',
+          ),
+          isTrue,
+        ),
       );
       await f.tap('Guardar');
       await f.step(
@@ -2709,17 +2794,19 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.reveal(find.text('¿Cuánto te costó?'));
       await f.step(
         'Con una cripto como moneda aparece «¿Cuánto te costó?», en pesos o '
-        'dólares, para calcular la ganancia.',
+        'dólares, para calcular la ganancia, y «Cuenta de uso diario» se '
+        'apaga sola: la cripto se guarda, no se gasta.',
       );
-      await f.check('Al elegir una cripto no se apaga el uso diario solo', () {
-        expect(_switchOn(f), isTrue);
-      });
-      await f.tapFound(find.byType(SwitchListTile));
+      await f.check(
+        'Al elegir una cripto se apaga sola «Cuenta de uso diario», también '
+        'como billetera digital',
+        () => expect(_switchOn(f), isFalse),
+      );
       await f.type('¿Cuánto tiene hoy?', '0,5');
       await f.tap('USD');
       await f.type('¿Cuánto te costó?', '1200');
       await f.step(
-        'Con 0,5 ETH, apagado el uso diario y un costo de US\$1.200, todo '
+        'Con 0,5 ETH, el uso diario apagado y un costo de US\$1.200, todo '
         'listo para guardar.',
       );
       await f.tap('Guardar');
@@ -2737,6 +2824,26 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.type('Nombre', 'Cardano');
       await f.tapFound(find.byType(DropdownButtonFormField<String>));
       await f.tap('Otra cripto');
+      await f.type('¿Cuánto tiene hoy?', '1500,5');
+      await f.reveal(find.text('¿Cuánto te costó?'));
+      await f.step(
+        '«Otra cripto» es cripto desde que se elige: el saldo ya no dice COP '
+        'y acepta decimales, aparece «¿Cuánto te costó?» y el uso diario se '
+        'apaga solo.',
+      );
+      await f.check(
+        'Sin símbolo todavía, el saldo no dice COP, acepta decimales y se '
+        'pregunta lo que costó',
+        () {
+          expect(
+            _field(f, '¿Cuánto tiene hoy?').decoration!.suffixText,
+            isNull,
+          );
+          expect(_fieldText(f, '¿Cuánto tiene hoy?'), '1.500,5');
+          expect(f.shows('¿Cuánto te costó?'), isTrue);
+          expect(_switchOn(f), isFalse);
+        },
+      );
       await f.type('¿Cuánto tiene hoy?', '1500');
       final int before = own.accounts.length;
       await f.tap('Guardar');
@@ -2744,26 +2851,27 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         find.widgetWithText(TextField, 'Símbolo, por ejemplo ADA'),
       );
       await f.step(
-        'Con «Otra cripto» y el símbolo vacío, «Guardar» no deja seguir: el '
-        'símbolo se pone en rojo, en vez de crear una cuenta en pesos.',
+        'Con el símbolo vacío, «Guardar» no deja seguir: debajo del símbolo '
+        'dice en rojo qué escribir, en vez de crear una cuenta en pesos.',
       );
       await f.check('Sin símbolo no se crea ninguna cuenta', () {
         expect(own.accounts.length, before);
         expect(own.accounts.where((Account a) => a.name == 'Cardano'), isEmpty);
         expect(
           _errorOf(f, 'Símbolo, por ejemplo ADA'),
-          'Símbolo, por ejemplo ADA',
+          'Escribe el símbolo de la moneda, por ejemplo ADA',
         );
       });
       await f.type('Símbolo, por ejemplo ADA', 'ada');
-      await f.check('Al escribir el símbolo se quita el rojo', () {
+      await f.check('Al escribir el símbolo se quita el rojo y el saldo lo '
+          'dice', () {
         expect(_errorOf(f, 'Símbolo, por ejemplo ADA'), isNull);
+        expect(_field(f, '¿Cuánto tiene hoy?').decoration!.suffixText, 'ADA');
       });
       await f.tap('Exchange de cripto');
-      await f.type('¿Cuánto tiene hoy?', '1500');
       await f.step(
-        '«Otra cripto» deja escribir el símbolo, ADA; con «Exchange de '
-        'cripto» el uso diario se apaga solo.',
+        'Con el símbolo, ADA, al lado del saldo y «Exchange de cripto» como '
+        'tipo, todo listo para guardar.',
       );
       await f.tap('Guardar');
       await f.reveal(find.text('Cardano'));
@@ -2852,25 +2960,29 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       });
       await f.type('Secret Key', 'secreto');
       await f.step(
-        'La Secret Key se escribe oculta, con un candado al lado, y su aviso '
-        'se va.',
+        'La Secret Key se escribe oculta, con un ojo al lado, y su aviso se '
+        'va.',
       );
       await f.check('Con las dos llaves escritas no queda ningún aviso', () {
         expect(f.shows('Escribe tu API Key'), isFalse);
         expect(f.shows('Escribe tu Secret Key'), isFalse);
       });
-      await f.tapFound(
-        find.descendant(
-          of: find.widgetWithText(TextField, 'Secret Key'),
-          matching: find.byType(IconButton),
-        ),
+      await f.check(
+        'El ojo dice lo que hace, «Mostrar la Secret Key», también al lector '
+        'de pantalla',
+        () => expect(find.byTooltip('Mostrar la Secret Key'), findsOneWidget),
       );
-      await f.step('Tocar el candado muestra la Secret Key para revisarla.');
-      await f.check('El candado muestra el secreto', () {
+      await f.tapTip('Mostrar la Secret Key');
+      await f.step(
+        'Tocar el ojo muestra la Secret Key para revisarla; ahora está '
+        'tachado y dice «Ocultar la Secret Key».',
+      );
+      await f.check('El ojo muestra el secreto y ofrece ocultarlo', () {
         final TextField secret = f.tester.widget<TextField>(
           find.widgetWithText(TextField, 'Secret Key'),
         );
         expect(secret.obscureText, isFalse);
+        expect(find.byTooltip('Ocultar la Secret Key'), findsOneWidget);
       });
       await f.tap('Conectar');
       await f.waitFor(find.text('Conectar'));
@@ -2922,8 +3034,9 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       );
       await f.tap('Agregar billetera');
       await f.step(
-        '«Agregar billetera»: la red (Bitcoin, Ethereum o TRON), la dirección '
-        'y un nombre para reconocerla.',
+        '«Agregar billetera»: la red (Bitcoin, Ethereum o TRON), que se elige '
+        'sola por cómo empieza la dirección, la dirección y un nombre para '
+        'reconocerla.',
       );
       await f.type('Dirección pública', 'mi-ledger');
       await f.tap('Agregar billetera');
@@ -2931,37 +3044,50 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         'Algo que no parece una dirección de Bitcoin se rechaza en el '
         'momento, sin consultar nada.',
       );
-      await f.type('Dirección pública', _badChecksum);
-      await f.check('Al escribir otra dirección se quita el aviso en rojo', () {
+      await f.type('Dirección pública', 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t');
+      await f.step(
+        'Al pegar una dirección que empieza por T, la red pasa sola a TRON y '
+        'se quita el aviso en rojo.',
+      );
+      await f.check('La dirección de TRON elige TRON, sin aviso', () {
+        expect(_chainPicked(f), Chain.tron);
         expect(_errorOf(f, 'Dirección pública'), isNull);
+      });
+      await f.type('Dirección pública', _badChecksum);
+      await f.check('Una que empieza por bc1 elige Bitcoin', () {
+        expect(_chainPicked(f), Chain.bitcoin);
       });
       await f.tap('TRON');
       await f.tap('Agregar billetera');
       await f.step(
-        'Con «TRON» elegido, la misma dirección de Bitcoin se rechaza: cada '
-        'red tiene su forma.',
+        'Con «TRON» elegido a mano, la dirección de Bitcoin se rechaza '
+        'diciendo de qué red es.',
       );
-      await f.check('Las direcciones con forma de otra red se rechazan', () {
-        expect(f.shows('Esa no parece una dirección de TRON.'), isTrue);
-      });
-      await f.tap('Ethereum');
-      await f.tap('Agregar billetera');
-      await f.check('En Ethereum tampoco pasa una dirección de Bitcoin', () {
-        expect(f.shows('Esa no parece una dirección de Ethereum.'), isTrue);
+      await f.check('Una dirección de otra red dice de cuál es', () {
+        expect(f.shows('Esa dirección es de Bitcoin, no de TRON.'), isTrue);
         expect(own.wallets.wallets, isEmpty);
       });
       await f.tap('Bitcoin');
       await f.type('Nombre: Ledger, MetaMask…', 'Ledger');
       await f.tap('Agregar billetera');
       await f.step(
-        'Con la forma correcta pero sin poder leerla, la app avisa y no la '
-        'sigue; el aviso culpa a la conexión.',
+        'Con la forma de Bitcoin pero mal copiada, la app lo nota sin '
+        'consultar nada: pide revisar que la dirección esté completa y bien '
+        'copiada, sin culpar a la conexión.',
       );
-      await f.check('Una dirección que no se pudo leer no se sigue', () {
-        expect(own.wallets.wallets, isEmpty);
-        expect(own.accounts.length, count);
-        expect(f.screenText, contains('No se pudo leer esa dirección'));
-      });
+      await f.check(
+        'Una dirección mal copiada no se sigue, y el aviso no habla de la '
+        'conexión',
+        () {
+          expect(own.wallets.wallets, isEmpty);
+          expect(own.accounts.length, count);
+          expect(
+            f.shows('Revisa que la dirección esté completa y bien copiada.'),
+            isTrue,
+          );
+          expect(f.screenText, isNot(contains('Revisa tu conexión')));
+        },
+      );
       await f.back();
       await f.tapTip('Actualizar');
       await f.step(
@@ -3028,13 +3154,19 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       );
       await f.tapTip('Dejar de seguir');
       await f.step(
-        'La papelera no pregunta: ya no hay billeteras seguidas, ni aviso de '
-        'una que no se pudo leer, y abajo dice que lo que trajo se queda como '
-        'tuyo, con «Deshacer».',
+        'La papelera pregunta antes: deja de leerse, y lo que trajo se queda '
+        'como tuyo.',
       );
-      await f.check('El aviso dice que sus cuentas se quedan', () {
-        expect(f.screenText, contains('sus cuentas se quedan como tuyas.'));
+      await f.tap('Cancelar');
+      await f.check('Cancelar la deja seguida', () {
+        expect(own.wallets.wallets, hasLength(1));
       });
+      await f.tapTip('Dejar de seguir');
+      await f.tap('Dejar de seguir');
+      await f.step(
+        'Confirmado, ya no hay billeteras seguidas, ni aviso de una que no se '
+        'pudo leer.',
+      );
       await f.check('Ya no se sigue, pero la cuenta de 0,05 BTC sigue', () {
         expect(own.wallets.wallets, isEmpty);
         expect(own.snapshot!.account(ledger.id), isNotNull);
@@ -3043,15 +3175,6 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.check('Sin billeteras, no queda el aviso de la que fallaba', () {
         expect(own.wallets.failed, isNull);
         expect(f.screenText, isNot(contains('no se pudo leer')));
-      });
-      await f.tap('Deshacer');
-      await f.check('Con «Deshacer» se sigue otra vez', () {
-        expect(own.wallets.wallets, hasLength(1));
-      });
-      await f.tapTip('Dejar de seguir');
-      await _hideNotice(f);
-      await f.check('Pasado el aviso, ya no se sigue', () {
-        expect(own.wallets.wallets, isEmpty);
       });
       await f.back();
       await f.reveal(find.text('LEDGER'));
@@ -3110,13 +3233,26 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.type('Total pagado', '100');
       await f.step(
         'Con Binance elegida, el total va en USDT y ya no hay que elegir '
-        'moneda; debajo, el precio por unidad en USDT.',
+        'moneda: lo dice debajo del total, con el precio por unidad en USDT.',
       );
-      await f.check('El total va en USDT y no se ofrece otra moneda', () {
-        expect(find.byType(SegmentedButton<String>), findsNothing);
-        expect(_said(f), contains('Precio por unidad'));
-        expect(_said(f), contains('USDT'));
-      });
+      await f.check(
+        'El total va en USDT, lo dice, y no se ofrece otra moneda',
+        () {
+          expect(find.byType(SegmentedButton<String>), findsNothing);
+          expect(_said(f), contains('Precio por unidad'));
+          expect(
+            _said(f),
+            contains('El total va en la moneda de esa cuenta (USDT).'),
+          );
+          expect(
+            f.shows(
+              'El total sale de esa cuenta y su saldo baja. Si lo pagaste por '
+              'fuera, elige «Fuera de Quincena».',
+            ),
+            isTrue,
+          );
+        },
+      );
       await f.tap('Guardar');
       await f.step(
         'Al guardar, Bitcoin sube a 0,0134 BTC y el cambio aparece como una '
@@ -3232,11 +3368,15 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Cuentas');
       await f.tap('Bitcoin');
       await f.tap('Venta');
-      await f.type('Cantidad de BTC', '0,0123');
+      await f.tap('Todo');
+      await f.check('«Todo» escribe lo que tiene la cuenta, 0,0123 BTC', () {
+        expect(_fieldText(f, 'Cantidad de BTC'), '0,0123');
+      });
       await f.type('Total recibido', '2500000');
       await f.step(
-        'Toda la cantidad, 0,0123 BTC, por \$2.500.000 recibidos fuera de '
-        'Quincena, en pesos.',
+        '«Todo», al lado de la cantidad, escribe lo que tiene la cuenta, '
+        '0,0123 BTC, sin teclearlo: se vende por \$2.500.000 recibidos fuera '
+        'de Quincena, en pesos.',
       );
       await f.tap('Guardar');
       await f.step(
@@ -3318,34 +3458,23 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         'La cuenta nueva, en 0 BTC, abre la sección «Cripto» con su fila '
         '«Rendimiento y ganancia».',
       );
-      await f.tap('Rendimiento y ganancia');
-      await f.step(
-        'Sin nada comprado todavía, la página de cripto dice que aún no '
-        'tienes cripto y, debajo, ofrece «Binance» y «Billeteras propias» '
-        'para traerla.',
-      );
-      await f.check('La página de cripto está vacía', () {
-        expect(own.portfolio.portfolio!.isEmpty, isTrue);
-        expect(
-          f.shows(
-            'Aún no tienes cripto. Agrega una billetera o conecta '
-            'Binance.',
-          ),
-          isTrue,
-        );
-      });
-      await f.check(
-        'La página vacía ofrece cómo traerla: Binance y Billeteras propias',
-        () {
-          expect(f.shows('Billeteras propias'), isTrue);
-          expect(f.shows('Binance'), isTrue);
-        },
-      );
-      await f.back();
       await f.tap('Bitcoin en Binance');
       await f.step(
-        'La cuenta en 0 BTC: «Compra» está lista y «Venta» apagada, porque '
-        'no hay qué vender.',
+        'La cuenta en 0 BTC ya dice el precio del bitcoin y que vale \$0; '
+        '«Compra» está lista y «Venta» apagada, porque no hay qué vender.',
+      );
+      await f.check(
+        'Con 0 BTC se ve el precio del bitcoin, no «Precio —», y vale \$0',
+        () {
+          final Pair price = own.portfolio.portfolio!.priceOf(Asset.btc)!;
+          final String said = _said(f);
+          expect(
+            said,
+            contains(_plainText(_cop(_pesos('${price.base.round()}')))),
+          );
+          expect(said, contains('Vale | \$0'));
+          expect(f.shows('—'), isFalse);
+        },
       );
       await f.check('Venta está apagada con 0 BTC', () {
         expect(
@@ -3362,20 +3491,54 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
           isNull,
         );
       });
-      await f.tap('Compra');
+      await f.back();
+      await f.tap('Rendimiento y ganancia');
+      await f.step(
+        'La página de cripto dice que tu cuenta está en 0, con el precio del '
+        'bitcoin, y ofrece «Registrar tu primera compra» en ella; debajo, '
+        '«Binance» y «Billeteras propias» para traerla de allá.',
+      );
+      await f.check(
+        'La página vacía ofrece la primera compra en la cuenta en 0',
+        () {
+          expect(own.portfolio.portfolio!.isEmpty, isTrue);
+          expect(
+            f.shows(
+              'Tu cuenta de cripto está en 0: registra una compra y aquí '
+              'verás lo que vale y cuánto ganas.',
+            ),
+            isTrue,
+          );
+          expect(f.shows('Bitcoin en Binance'), isTrue);
+          expect(f.shows('Registrar tu primera compra'), isTrue);
+        },
+      );
+      await f.check(
+        'Debajo sigue cómo traerla: Binance y Billeteras propias',
+        () {
+          expect(f.shows('Billeteras propias'), isTrue);
+          expect(f.shows('Binance'), isTrue);
+        },
+      );
+      await f.tap('Registrar tu primera compra');
       await f.type('Cantidad de BTC', '0,002');
       await f.tapFound(find.byType(DropdownButtonFormField<String?>));
       await f.tap('Bancolombia · COP');
       await f.type('Total pagado', '700000');
       await f.step(
-        'Compra de 0,002 BTC pagada desde Bancolombia, \$700.000: a '
-        '\$350.000.000 cada bitcoin.',
+        '«Registrar tu primera compra» abre la compra de esa cuenta: 0,002 '
+        'BTC pagados desde Bancolombia, \$700.000, a \$350.000.000 cada '
+        'bitcoin.',
       );
       await f.tap('Guardar');
       await f.step(
-        'Al guardar, la cuenta tiene 0,002 BTC, te costó \$700.000 y ya '
-        'muestra lo que vale y la ganancia.',
+        'Al guardar, la página de cripto ya muestra lo que vale tu bitcoin y '
+        'lo que ganas o pierdes frente a los \$700.000.',
       );
+      await f.check('La página ya no está vacía', () {
+        expect(own.portfolio.portfolio!.isEmpty, isFalse);
+        expect(f.shows('Tu cripto vale'), isTrue);
+      });
       final Account coin = _named(own, 'Bitcoin en Binance');
       await f.check('La cuenta tiene 0,002 BTC que costaron \$700.000', () {
         expect(_balance(own, coin).amount, Decimal.parse('0.002'));
@@ -3390,25 +3553,16 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         () => expect(_balance(own, bank), bankNow),
       );
       await f.back();
-      await f.tap('Rendimiento y ganancia');
-      await f.step(
-        'Ahora la página de cripto muestra lo que vale tu bitcoin y lo que '
-        'ganas o pierdes frente a los \$700.000.',
-      );
-      await f.check('La página ya no está vacía', () {
-        expect(own.portfolio.portfolio!.isEmpty, isFalse);
-        expect(f.shows('Tu cripto vale'), isTrue);
-      });
-      await f.back();
       await f.reveal(find.text('Rendimiento y ganancia'));
       final double ratio = own.portfolio.portfolio!.gainRatio!;
+      final Money lost = Money(own.portfolio.portfolio!.gain!.base, Asset.cop);
       await f.step(
         'De vuelta en Cuentas, «Rendimiento y ganancia» dice en rojo «Pérdida '
-        'no realizada» con su porcentaje.',
+        'no realizada» con cuánta plata es y su porcentaje.',
       );
       await f.check(
-        'La fila dice «Pérdida no realizada ${percentText(ratio)}», la de lo '
-        'que vale frente a los \$700.000',
+        'La fila dice «Pérdida no realizada ${_signed(lost)} · '
+        '${percentText(ratio)}», la de lo que vale frente a los \$700.000',
         () {
           final Holding h = _holdingIn(own, coin);
           expect(ratio, lessThan(0));
@@ -3419,9 +3573,14 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
               1e-9,
             ),
           );
+          expect(lost.amount, h.value!.base - Decimal.parse('700000'));
           expect(
             _said(f),
-            contains(_plainText('Pérdida no realizada ${percentText(ratio)}')),
+            contains(
+              _plainText(
+                'Pérdida no realizada ${_signed(lost)} · ${percentText(ratio)}',
+              ),
+            ),
           );
         },
       );
@@ -3453,11 +3612,12 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
           const Duration(minutes: 20),
         );
         await f.tap('Cuentas');
-        await f.reveal(find.text('Tether (USDT)'));
+        await f.reveal(find.text('Hay saldos contados dos veces'));
         await f.step(
           'En «Cripto» están juntos lo que trajo Binance, «Tether (USDT)», y '
           'lo que llevabas a mano, «Binance»: el mismo USDT, contado dos '
-          'veces.',
+          'veces. Debajo lo dice, «Hay saldos contados dos veces», con '
+          '«Archivarlas» a la mano.',
         );
         final Money twice = own.partOfTotal(synced)!;
         await f.check(
@@ -3467,13 +3627,37 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
             expect(own.partOfTotal(manualTether), twice);
           },
         );
+        await f.check(
+          'Cuentas avisa que hay saldos contados dos veces y cuáles',
+          () {
+            expect(f.shows('Hay saldos contados dos veces'), isTrue);
+            expect(
+              f.shows(
+                'Binance ya trae lo que llevabas a mano en Binance, Bitcoin.',
+              ),
+              isTrue,
+            );
+            expect(f.shows('Archivarlas'), isTrue);
+          },
+        );
         await f.tap('Rendimiento y ganancia');
         await _binanceIdle(f, own);
         await f.reveal(find.text('Billeteras propias'));
         await f.step(
           'Cada moneda dice de dónde sale, «Conectada a Binance · leída…» o '
           '«Anotado a mano», y en «Gestionar fuentes» Binance dice cuándo se '
-          'leyó: hace 20 minutos, así que abrir la cripto no la lee otra vez.',
+          'leyó, hace 20 minutos, así que abrir la cripto no la lee otra vez; '
+          'debajo, también que hay saldos contados dos veces.',
+        );
+        await f.check(
+          'La fila de Binance en «Gestionar fuentes» avisa lo contado dos veces',
+          () => expect(
+            find.descendant(
+              of: find.byType(BinanceCard),
+              matching: find.text('Hay saldos contados dos veces'),
+            ),
+            findsOneWidget,
+          ),
         );
         await f.check(
           'Binance está conectada y leída hace 20 minutos, por el reloj de la '
@@ -3603,6 +3787,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
             );
             expect(own.snapshot!.entries.length, entries);
             expect(f.shows('Archivarlas'), isFalse);
+            expect(f.shows('Hay saldos contados dos veces'), isFalse);
           },
         );
         await f.check(
@@ -3717,6 +3902,26 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
           expect(f.shows('No se ha podido leer todavía'), isTrue);
           expect(f.shows('Aún sin leer'), isFalse);
         });
+        await f.back();
+        await f.tap('Rendimiento y ganancia');
+        await _binanceIdle(f, own);
+        await f.reveal(find.text('Billeteras propias'));
+        await f.step(
+          'Al abrir la cripto otra vez enseguida, Binance no se intenta leer '
+          'de nuevo: tras una lectura que falla, la siguiente que hace sola '
+          'espera una hora, y el doble cada vez que vuelve a fallar.',
+        );
+        await f.check(
+          'Volver a abrir la cripto no repite la lectura que acaba de fallar',
+          () {
+            expect(own.binance.failures, 1);
+            expect(
+              own.binance.retryAfter(const Duration(minutes: 30)),
+              const Duration(hours: 1),
+            );
+            expect(f.shows('No se ha podido leer todavía'), isTrue);
+          },
+        );
         await f.tap('Binance');
         await f.page(
           'La página dice «Aún sin leer» y por qué; no ofrece archivar lo que '
@@ -3755,6 +3960,131 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       }
     },
   ),
+  AppFlow(
+    '05-16-cambiar-la-llave-de-binance',
+    'Cambiar la llave de Binance que no lee',
+    area: 'Cripto',
+    goal:
+        'Binance dejó de leerse y sospecho de la llave: quiero pegar una '
+        'nueva sin desconectarla ni perder lo que trajo.',
+    data: _binanceRead,
+    manual: <String>[
+      'Con una llave real borrada en Binance, «Leer ahora» debe decir que '
+          'Binance no reconoce la llave y ofrecer «Cambiar la llave»; con '
+          'una llave nueva de solo lectura, debe leer y quedar al día.',
+    ],
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      try {
+        await _keepBinanceKey(f);
+        await f.tap('Cuentas');
+        await f.tap('Rendimiento y ganancia');
+        await _binanceIdle(f, own);
+        await f.tap('Binance');
+        await f.tap('Leer ahora');
+        await _binanceIdle(f, own);
+        await f.step(
+          '«Leer ahora» falla una vez: el aviso rojo dice que algo salió mal '
+          'y que se intente de nuevo.',
+        );
+        await f.check('Con una sola falla no se culpa a la llave', () {
+          expect(own.binance.failures, 1);
+          expect(f.shows('Cambiar la llave'), isFalse);
+        });
+        await f.tap('Leer ahora');
+        await _binanceIdle(f, own);
+        await f.reveal(find.text('Cambiar la llave'));
+        await f.step(
+          'Al fallar otra vez, el aviso dice cuántas veces van seguidas y '
+          'que revises tu llave o la pegues de nuevo, con «Cambiar la llave» '
+          'debajo.',
+        );
+        await f.check(
+          'Dos fallas seguidas piden revisar la llave y ofrecen cambiarla',
+          () {
+            expect(own.binance.failures, 2);
+            expect(
+              f.shows(
+                'No se pudo leer Binance 2 veces seguidas. Revisa tu llave o '
+                'pégala de nuevo.',
+              ),
+              isTrue,
+            );
+            expect(f.shows('Cambiar la llave'), isTrue);
+          },
+        );
+        await f.tap('Cambiar la llave');
+        await f.page(
+          '«Cambiar la llave» abre el formulario de la llave: la nueva '
+          'reemplaza la que hay solo si Binance la acepta, y «Cancelar» deja '
+          'la de antes.',
+        );
+        await f.check('El formulario dice que cambia la llave', () {
+          expect(f.shows('Cambiar la llave de Binance'), isTrue);
+        });
+        await f.reveal(find.text('Cancelar'));
+        await f.check('Empieza con los campos vacíos, y deja volver', () {
+          expect(_fieldText(f, 'API Key'), isEmpty);
+          expect(f.shows('Cancelar'), isTrue);
+        });
+        await f.type('API Key', 'llave-nueva');
+        await f.type('Secret Key', 'secreto-nuevo');
+        await f.tap('Conectar');
+        await f.waitFor(find.text('Conectar'));
+        await _binanceIdle(f, own);
+        await f.step(
+          'Si Binance no acepta la llave nueva, la página dice qué pasó y la '
+          'de antes se queda: nada se desconecta.',
+        );
+        await f.check(
+          'Una llave que no sirve no reemplaza la que había',
+          () async {
+            expect(own.binance.connected, isTrue);
+            expect(await f.tester.runAsync(() => SecureKeyVault().read()), (
+              'llave-de-prueba',
+              'secreto',
+            ));
+            expect(f.screenText, anyOf(_binanceTrouble));
+          },
+        );
+        await f.tap('Cancelar');
+        await f.top();
+        await f.step(
+          '«Cancelar» vuelve a Binance conectada, con la llave de antes.',
+        );
+        await f.check('«Cancelar» vuelve a la conexión de antes', () {
+          expect(f.shows('Conectada con una llave de solo lectura'), isTrue);
+          expect(f.shows('Cambiar la llave'), isTrue);
+        });
+        await f.back();
+        await f.back();
+        await f.tap('Rendimiento y ganancia');
+        await _binanceIdle(f, own);
+        await f.reveal(find.text('Billeteras propias'));
+        await f.step(
+          'Al abrir la cripto otra vez, Binance no se lee sola enseguida: '
+          'tras dos fallas espera dos horas, y la fila dice que no se pudo '
+          'leer y de cuándo es la última lectura buena.',
+        );
+        await f.check(
+          'La cripto no vuelve a leer Binance sola tras dos fallas seguidas',
+          () {
+            expect(own.binance.failures, 2);
+            expect(
+              own.binance.retryAfter(const Duration(minutes: 30)),
+              const Duration(hours: 2),
+            );
+            expect(
+              f.screenText,
+              contains('No se pudo leer. Última lectura: 3 oct · 9:40'),
+            );
+          },
+        );
+      } finally {
+        await f.tester.runAsync(() => SecureKeyVault().delete());
+      }
+    },
+  ),
 ];
 
 /// What Binance says when it could not be read: a key it does not accept
@@ -3778,6 +4108,12 @@ const List<(String, ChartRange, String)> _ranges =
 /// A Bitcoin address with the shape of one and a checksum that is wrong:
 /// no service reads it, with a connection or without one.
 const String _badChecksum = 'bc1qexampleexampleexampleexample0lmg5w';
+
+/// The chain picked in the form that follows a wallet.
+Chain _chainPicked(FlowRun f) => f.tester
+    .widget<SegmentedButton<Chain>>(find.byType(SegmentedButton<Chain>))
+    .selected
+    .single;
 
 /// Diego, before adding any account.
 Future<QuincenaStore> _withoutAccounts() async {
@@ -3971,16 +4307,6 @@ void _expectEnglish(FlowRun f) {
 
 /// Pesos as the app writes them.
 String _cop(Money m) => moneyText(m, base: Asset.cop);
-
-/// Takes the notice at the bottom away, as its time running out would.
-Future<void> _hideNotice(FlowRun f) async {
-  for (final ScaffoldMessengerState m in f.tester.stateList(
-    find.byWidgetPredicate((Widget w) => w is ScaffoldMessenger),
-  )) {
-    m.removeCurrentSnackBar();
-  }
-  await settle(f.tester);
-}
 
 /// The line under the movement titled [title]: what it was.
 String? _movementDetail(FlowRun f, String title) {

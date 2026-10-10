@@ -137,7 +137,7 @@ class _WalletsPageState extends State<WalletsPage> {
             // It reads the wallets again, not the rates.
             tooltip: l.portfolioRefresh,
             onPressed: own.wallets.syncing ? null : own.wallets.sync,
-            icon: const Icon(Glyph.arrowCounterClockwise),
+            icon: const Icon(Glyph.arrowsClockwise),
           ),
         ],
       ),
@@ -303,29 +303,56 @@ class _AddWalletState extends State<_AddWallet> {
     super.dispose();
   }
 
+  /// The chain the address says it is on, as it is typed or pasted: the
+  /// picker above is left to correct it.
+  void _addressChanged(String text) {
+    final Chain? said = Chain.guess(text);
+    setState(() {
+      _error = null;
+      if (said != null) _chain = said;
+    });
+  }
+
   Future<void> _save() async {
     final AppLocalizations l = context.l10n;
     final String address = _address.text.trim();
+    // What is wrong with the address is said before anyone is asked about
+    // it: another chain's, not an address at all, or one copied wrong.
     if (!_chain.accepts(address)) {
-      setState(() => _error = l.walletsBadAddress(_chain.label));
+      final Chain? other = Chain.guess(address);
+      setState(
+        () =>
+            _error = other != null && other != _chain && other.accepts(address)
+            ? l.walletsOtherChain(other.label, _chain.label)
+            : l.walletsBadAddress(_chain.label),
+      );
+      return;
+    }
+    if (!_chain.intact(address)) {
+      setState(() => _error = l.walletsMiscopied);
       return;
     }
     setState(() {
       _saving = true;
       _error = null;
     });
-    final bool ok = await widget.own.wallets.add(
+    final Follow done = await widget.own.wallets.add(
       WalletAddress(chain: _chain, address: address, label: _label.text.trim()),
     );
     if (!mounted) return;
-    if (ok) {
+    if (done == Follow.done) {
       Navigator.of(context).pop();
-    } else {
-      setState(() {
-        _saving = false;
-        _error = l.walletsUnreadable;
-      });
+      return;
     }
+    // The connection only when it was the connection.
+    setState(() {
+      _saving = false;
+      _error = switch (done) {
+        Follow.unknownAddress => l.walletsMiscopied,
+        Follow.offline => l.walletsUnreadable,
+        _ => l.walletsServiceFailed(_chain.label),
+      };
+    });
   }
 
   @override
@@ -360,11 +387,11 @@ class _AddWalletState extends State<_AddWallet> {
               controller: _address,
               autocorrect: false,
               enableSuggestions: false,
-              onChanged: (_) {
-                if (_error != null) setState(() => _error = null);
-              },
+              onChanged: _addressChanged,
               decoration: InputDecoration(
                 labelText: l.walletsAddress,
+                helperText: l.walletsAddressHelp,
+                helperMaxLines: 2,
                 errorText: _error,
                 errorMaxLines: 3,
               ),

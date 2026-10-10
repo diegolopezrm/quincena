@@ -25,6 +25,7 @@ import 'account_page.dart';
 import 'binance_page.dart';
 import 'look.dart';
 import 'portfolio_chart.dart';
+import 'trade_sheet.dart';
 import 'wallets_page.dart';
 
 /// [fraction] as a percentage: `+1,2 %` in Spanish, `+1.2%` in English.
@@ -144,7 +145,9 @@ class _CryptoPerformanceRowState extends State<CryptoPerformanceRow> {
     listenable: _controller,
     builder: (BuildContext context, _) {
       final AppLocalizations l = context.l10n;
-      final double? gain = _controller.portfolio?.gainRatio;
+      final Portfolio? p = _controller.portfolio;
+      final Pair? gain = p?.gain;
+      final double? ratio = p?.gainRatio;
       return InkWell(
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute<void>(
@@ -179,12 +182,14 @@ class _CryptoPerformanceRowState extends State<CryptoPerformanceRow> {
                       l.cryptoPerformanceRow,
                       style: context.type.titleSmall,
                     ),
-                    if (gain != null)
+                    // How much, in money and against what it cost.
+                    if (p != null && gain != null)
                       Text(
-                        '${gain >= 0 ? l.portfolioGain : l.portfolioLoss} '
-                        '${percentText(gain)}',
+                        '${gain.base >= Decimal.zero ? l.portfolioGain : l.portfolioLoss} '
+                        '${moneyText(Money(gain.base, p.base), base: p.base, signed: true)}'
+                        '${ratio == null ? '' : ' · ${percentText(ratio)}'}',
                         style: context.type.bodySmall?.copyWith(
-                          color: changeColor(context, gain),
+                          color: changeColor(context, gain.base.toDouble()),
                         ),
                       ),
                   ],
@@ -288,6 +293,13 @@ class _PortfolioPageState extends State<PortfolioPage> {
             ],
           );
           if (p.isEmpty) {
+            // Crypto accounts at zero are where a purchase goes: each with
+            // what its coin is worth and the way to record one, before the
+            // sources that would bring it in.
+            final List<Account> empty = <Account>[
+              for (final Account a in widget.own.accounts)
+                if (a.asset.isCrypto) a,
+            ];
             return Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 760),
@@ -297,10 +309,26 @@ class _PortfolioPageState extends State<PortfolioPage> {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(4, 0, 4, 24),
                       child: Text(
-                        l.portfolioEmpty,
+                        empty.isEmpty
+                            ? l.portfolioEmpty
+                            : l.portfolioEmptyAccounts(empty.length),
                         style: context.type.bodyMedium,
                       ),
                     ),
+                    if (empty.isNotEmpty) ...<Widget>[
+                      Panel(
+                        children: <Widget>[
+                          for (final Account a in empty)
+                            _EmptyAccount(
+                              own: widget.own,
+                              account: a,
+                              price: p.priceOf(a.asset),
+                              base: p.base,
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                    ],
                     sources,
                   ],
                 ),
@@ -353,6 +381,69 @@ class _PortfolioPageState extends State<PortfolioPage> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// A crypto account at zero: its coin, what one is worth now, and the way
+/// to record its first purchase, or the next one once it was sold out.
+class _EmptyAccount extends StatelessWidget {
+  const _EmptyAccount({
+    required this.own,
+    required this.account,
+    required this.price,
+    required this.base,
+  });
+
+  final OwnController own;
+  final Account account;
+  final Pair? price;
+  final Asset base;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    final Pair? one = price;
+    final bool first = !(own.snapshot?.entries ?? const <Entry>[]).any(
+      (Entry e) => e.accountId == account.id,
+    );
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              CoinMark(account.asset),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(account.name, style: context.type.titleSmall),
+                    Figures(
+                      one == null
+                          ? '${moneyText(Money.zero(account.asset))} · '
+                                '${l.portfolioNoPrice}'
+                          : '${moneyText(Money.zero(account.asset))} · 1 '
+                                '${account.asset.code} = '
+                                '${moneyText(Money(one.base, base), base: base)}',
+                      style: context.type.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          FilledButton.tonalIcon(
+            onPressed: () =>
+                showTradeSheet(context, own: own, account: account),
+            icon: const Icon(Glyph.plus, size: 18),
+            label: Text(first ? l.portfolioFirstPurchase : l.tradeBuy),
+          ),
+        ],
       ),
     );
   }
@@ -681,16 +772,17 @@ class _ChartCardState extends State<_ChartCard> {
     final List<double> values = performance
         ? <double>[for (final ValuePoint v in points) v.gain.base.toDouble()]
         : worth;
-    // Each moment's own amount, as the header says it.
-    Money amountAt(int i) => Money(
-      (performance
-              ? points[i].gain.base
-              : i < points.length
-              ? points[i].value.base
-              : portfolio.value.base)
-          .round(scale: base.decimals),
+    // What it was worth at each moment, the last one now when there is one.
+    Money worthAt(int i) => Money(
+      (i < points.length ? points[i].value.base : portfolio.value.base).round(
+        scale: base.decimals,
+      ),
       base,
     );
+    // Each moment's own amount, as the header says it.
+    Money amountAt(int i) => performance
+        ? Money(points[i].gain.base.round(scale: base.decimals), base)
+        : worthAt(i);
     DateTime timeAt(int i) =>
         i < points.length ? points[i].at : controller.own.now();
     String describe(int i) => performance
@@ -702,7 +794,6 @@ class _ChartCardState extends State<_ChartCard> {
             _when(timeAt(i)),
             moneyText(amountAt(i), base: base),
           );
-    final double? first = worth.isEmpty ? null : worth.first;
     // What prices made over the range on what was held, not what was
     // bought or sold in it; as a fraction, step by step, so money put in
     // along the way does not read as a return.
@@ -715,11 +806,14 @@ class _ChartCardState extends State<_ChartCard> {
       base: base,
       signed: true,
     );
-    final double changed = worth.isEmpty ? 0 : worth.last - worth.first;
-    final bool flows =
-        !performance &&
-        first != null &&
-        (changed - moved).abs() > (first.abs() * 0.01 + 1);
+    // Where the value starts and ends: what was bought or sold moves it
+    // too, so its own figure is from where to where, not a gain.
+    final String? fromText = worth.isEmpty
+        ? null
+        : moneyText(worthAt(0), base: base);
+    final String? toText = worth.isEmpty
+        ? null
+        : moneyText(worthAt(worth.length - 1), base: base);
     final Color color = changeColor(context, moved);
     final int? touched = _touched != null && _touched! < values.length
         ? _touched
@@ -731,6 +825,26 @@ class _ChartCardState extends State<_ChartCard> {
         children: <Widget>[
           if (touched != null)
             Text(describe(touched), style: context.type.titleSmall)
+          else if (!performance && fromText != null && toText != null)
+            Text.rich(
+              TextSpan(
+                children: <InlineSpan>[
+                  TextSpan(
+                    text: '$fromText → $toText ',
+                    style: context.type.titleSmall,
+                  ),
+                  TextSpan(
+                    text: _long(l, range),
+                    style: context.type.bodySmall,
+                  ),
+                ],
+              ),
+              semanticsLabel: l.chartValueSpoken(
+                fromText,
+                toText,
+                _long(l, range),
+              ),
+            )
           else if (last != null)
             Text.rich(
               TextSpan(
@@ -746,7 +860,13 @@ class _ChartCardState extends State<_ChartCard> {
                 ],
               ),
             ),
-          if (flows) Text(l.chartWithoutTrades, style: context.type.bodySmall),
+          // Under the value, what prices made in it, apart from what was put
+          // in or taken out.
+          if (!performance && touched == null && last != null)
+            Text(
+              l.chartValueByPrice('$madeText (${percentText(ratio)})'),
+              style: context.type.bodySmall?.copyWith(color: color),
+            ),
           const SizedBox(height: 10),
           Align(
             alignment: Alignment.centerLeft,
@@ -803,8 +923,11 @@ class _ChartCardState extends State<_ChartCard> {
                             madeText,
                             percentText(ratio),
                           )
-                        : '${l.portfolioWorth} ${_long(l, range)}: '
-                              '${percentText(ratio)}',
+                        : l.chartValueSpoken(
+                            fromText ?? '',
+                            toText ?? '',
+                            _long(l, range),
+                          ),
                     zero: performance,
                     zeroLabel: l.chartZero,
                     startLabel: switch (range) {

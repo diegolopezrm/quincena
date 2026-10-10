@@ -18,6 +18,7 @@ import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
 import 'package:quincena/theme/theme.dart';
+import 'package:quincena/ui/own/accounts_tab.dart';
 import 'package:quincena/ui/own/binance_page.dart';
 
 class MemoryVault implements KeyVault {
@@ -35,9 +36,18 @@ class MemoryVault implements KeyVault {
   Future<void> delete() async => keys = null;
 }
 
-/// Binance with nothing in it, behind a key that may trade.
-http.Client binance({bool trading = false}) =>
+/// Binance with nothing in it, behind a key that may trade; the key
+/// [refused], if any, it no longer takes.
+http.Client binance({bool trading = false, String? refused}) =>
     MockClient((http.Request request) async {
+      if (refused != null &&
+          request.headers['X-MBX-APIKEY'] == refused &&
+          request.url.path != '/api/v3/time') {
+        return http.Response(
+          '{"code":-2015,"msg":"Invalid API-key, IP, or permissions."}',
+          401,
+        );
+      }
       final Object body = switch (request.url.path) {
         '/api/v3/time' => <String, Object?>{'serverTime': 1790960000000},
         '/sapi/v1/account/apiRestrictions' => <String, Object?>{
@@ -161,6 +171,31 @@ void main() {
     await tester.pump();
     expect(find.text('Escribe tu Secret Key'), findsNothing);
     expect(vault.keys, isNull);
+  });
+
+  testWidgets('the Secret Key shows and hides with an eye that says which '
+      'it does', (tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    await open(tester);
+    await reach(tester, find.text('Conectar'));
+    bool hidden() => tester
+        .widget<TextField>(find.widgetWithText(TextField, 'Secret Key'))
+        .obscureText;
+
+    expect(hidden(), isTrue);
+    // A screen reader says it too, as the eye's own button.
+    expect(
+      tester.getSemantics(find.byTooltip('Mostrar la Secret Key')),
+      isSemantics(tooltip: 'Mostrar la Secret Key', isButton: true),
+    );
+    await tester.tap(find.byTooltip('Mostrar la Secret Key'));
+    await tester.pump();
+    expect(hidden(), isFalse);
+    expect(find.byTooltip('Ocultar la Secret Key'), findsOneWidget);
+    await tester.tap(find.byTooltip('Ocultar la Secret Key'));
+    await tester.pump();
+    expect(hidden(), isTrue);
+    semantics.dispose();
   });
 
   testWidgets('a key that can trade is turned away, and said why', (
@@ -305,6 +340,161 @@ void main() {
     await tester.runAsync(() => own.restoreAccount(manual()!.id));
     await settle(tester);
     expect(manual()!.archived, isFalse);
+  });
+
+  testWidgets('Cuentas and the sources say what counts twice, and archive it '
+      'from there', (tester) async {
+    Future<void> both(QuincenaStore store) async {
+      await store.addAccount(
+        name: 'Mi USDT',
+        kind: AccountKind.exchange,
+        asset: Asset.usdt,
+        opening: Decimal.fromInt(500),
+        institution: 'Binance',
+        spendable: false,
+      );
+      await store.addAccount(
+        name: 'Tether (USDT)',
+        kind: AccountKind.exchange,
+        asset: Asset.usdt,
+        opening: Decimal.fromInt(500),
+        institution: 'Binance',
+        spendable: false,
+        syncRef: 'binance:USDT',
+      );
+    }
+
+    final (OwnController own, MemoryVault _) = await open(
+      tester,
+      keys: ('key', 'secret'),
+      data: both,
+      page: (OwnController own) => Scaffold(
+        body: ListenableBuilder(
+          listenable: own,
+          builder: (BuildContext context, _) => SingleChildScrollView(
+            child: Column(
+              children: <Widget>[
+                AccountsTab(own: own),
+                BinanceCard(own: own, compact: true),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    // Among the accounts and under Binance among the sources.
+    expect(find.text('Hay saldos contados dos veces'), findsNWidgets(2));
+    expect(
+      find.text('Binance ya trae lo que llevabas a mano en Mi USDT.'),
+      findsNWidgets(2),
+    );
+
+    await tester.ensureVisible(find.text('Archivarlas').first);
+    await tester.tap(find.text('Archivarlas').first);
+    await settle(tester);
+    expect(find.text('¿Archivar Mi USDT?'), findsOneWidget);
+    await tester.tap(find.text('Archivar').last);
+    await settle(tester);
+    expect(own.archivedAccounts.map((Account a) => a.name), <String>[
+      'Mi USDT',
+    ]);
+    expect(find.text('Hay saldos contados dos veces'), findsNothing);
+  });
+
+  testWidgets('a key Binance stopped taking offers to change it, and a new '
+      'one takes its place only once Binance takes it', (tester) async {
+    final (OwnController own, MemoryVault vault) = await open(
+      tester,
+      keys: ('old', 'secret'),
+      client: binance(refused: 'old'),
+    );
+    await tester.runAsync(own.binance.sync);
+    await settle(tester);
+    expect(own.binance.keyInDoubt, isTrue);
+    expect(
+      find.textContaining('Binance no reconoce esa llave'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Cambiar la llave'));
+    await settle(tester);
+    expect(find.text('Cambiar la llave de Binance'), findsOneWidget);
+    await reach(tester, find.text('Cancelar'));
+    await tester.tap(find.text('Cancelar'));
+    await settle(tester);
+    expect(
+      find.text('Conectada con una llave de solo lectura'),
+      findsOneWidget,
+    );
+
+    Future<void> put(String key, String secret) async {
+      await reach(tester, find.text('Conectar'));
+      await tester.enterText(find.widgetWithText(TextField, 'API Key'), key);
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Secret Key'),
+        secret,
+      );
+      await tester.ensureVisible(find.text('Conectar'));
+      await tester.tap(find.text('Conectar'));
+      await settle(tester);
+      for (var i = 0; i < 100 && own.binance.syncing; i++) {
+        await settle(tester);
+      }
+    }
+
+    // One Binance does not take either leaves the one there was.
+    await tester.tap(find.text('Cambiar la llave'));
+    await settle(tester);
+    await put('old', 'secret');
+    expect(vault.keys, ('old', 'secret'));
+    expect(
+      find.textContaining('Binance no reconoce esa llave'),
+      findsOneWidget,
+    );
+    // Still in the form, to try another.
+    expect(
+      find.widgetWithText(TextField, 'API Key', skipOffstage: false),
+      findsOneWidget,
+    );
+    expect(find.text('Cancelar', skipOffstage: false), findsOneWidget);
+
+    // One it takes is kept, read, and starts over.
+    await put('new', 'secret 2');
+    expect(vault.keys, ('new', 'secret 2'));
+    expect(own.binance.problem, isNull);
+    expect(own.binance.failures, 0);
+    expect(
+      find.text('Conectada con una llave de solo lectura'),
+      findsOneWidget,
+    );
+    expect(find.text('Cambiar la llave'), findsNothing);
+  });
+
+  testWidgets('reads that fail twice in a row for no reason given say to '
+      'look at the key', (tester) async {
+    final (OwnController own, MemoryVault _) = await open(
+      tester,
+      keys: ('key', 'secret'),
+      client: MockClient((_) async => http.Response('', 500)),
+    );
+    await tester.runAsync(own.binance.sync);
+    await settle(tester);
+    expect(
+      find.text('Algo salió mal al leer Binance. Intenta de nuevo.'),
+      findsOneWidget,
+    );
+    expect(find.text('Cambiar la llave'), findsNothing);
+
+    await tester.tap(find.text('Leer ahora'));
+    await settle(tester);
+    expect(
+      find.text(
+        'No se pudo leer Binance 2 veces seguidas. Revisa tu llave o pégala '
+        'de nuevo.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Cambiar la llave'), findsOneWidget);
   });
 
   testWidgets('the row among the sources says a read failed, not only the '

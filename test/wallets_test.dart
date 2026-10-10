@@ -136,7 +136,7 @@ void main() {
         readerFor: () => ChainReader(client: chains()),
         now: () => DateTime(2026, 10, 2),
       );
-      expect(await link.add(eth), isTrue);
+      expect(await link.add(eth), Follow.done);
       final List<Account> accounts = await store.accounts();
       expect(accounts.map((Account a) => a.asset.code).toSet(), <String>{
         'ETH',
@@ -178,17 +178,63 @@ void main() {
       expect((await store.entries()).length, 1);
     });
 
-    test('a wallet that cannot be read is not followed', () async {
-      final WalletLink link = WalletLink(
-        store,
-        readerFor: () => ChainReader(
-          client: MockClient((_) async => http.Response('down', 503)),
-        ),
-      );
-      expect(await link.add(btc), isFalse);
-      expect(link.wallets, isEmpty);
-      expect(await store.accounts(), isEmpty);
-    });
+    test(
+      'a wallet that cannot be read is not followed, and it says why',
+      () async {
+        Future<Follow> follow(http.Client client) => WalletLink(
+          store,
+          readerFor: () => ChainReader(client: client),
+        ).add(btc);
+
+        // The service is down: its own error, not the address's.
+        expect(
+          await follow(MockClient((_) async => http.Response('down', 503))),
+          Follow.failed,
+        );
+        // It says there is no such address.
+        expect(
+          await follow(
+            MockClient((_) async => http.Response('Invalid address', 400)),
+          ),
+          Follow.unknownAddress,
+        );
+        // It cannot be reached.
+        expect(
+          await follow(
+            MockClient((http.Request r) async {
+              throw http.ClientException('Failed host lookup', r.url);
+            }),
+          ),
+          Follow.offline,
+        );
+        // An Ethereum node that finds the address wrong says so its way.
+        expect(
+          await WalletLink(
+            store,
+            readerFor: () => ChainReader(
+              client: MockClient(
+                (_) async => http.Response(
+                  jsonEncode(<String, Object?>{
+                    'jsonrpc': '2.0',
+                    'id': 1,
+                    'error': <String, Object?>{
+                      'code': -32602,
+                      'message': 'invalid argument 0',
+                    },
+                  }),
+                  200,
+                ),
+              ),
+            ),
+          ).add(eth),
+          Follow.unknownAddress,
+        );
+        expect(await store.accounts(), isEmpty);
+        final WalletLink again = WalletLink(store);
+        await again.load();
+        expect(again.wallets, isEmpty);
+      },
+    );
 
     test(
       'a read that fails says so, and keeps the time of the last good one',
