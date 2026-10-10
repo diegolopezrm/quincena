@@ -8851,6 +8851,12 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{Uno espera en «Para revisar».} other{{count} esperan en «Para revisar».}}'**
   String syncWaitingCount(int count);
 
+  /// No description provided for @syncJoinedCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Un cambio hecho en los dos dispositivos se unió solo: cada uno tocó algo distinto.} other{{count} cambios hechos en los dos dispositivos se unieron solos: cada uno tocó algo distinto.}}'**
+  String syncJoinedCount(int count);
+
   /// No description provided for @syncNotSync.
   ///
   /// In es, this message translates to:

@@ -149,8 +149,9 @@ void main() {
   });
 
   /// The page over a phone where a lunch was renamed while the other
-  /// device, an hour ahead, added it a note: the other's version shows and
-  /// this one waits. [other] is the other device's store, closed after.
+  /// device, an hour ahead, named it otherwise and added it a note: the
+  /// name changed on both, so the other's version shows whole and this one
+  /// waits. [other] is the other device's store, closed after.
   Future<(OwnController, QuincenaStore, SyncService)> lunchChangedOnBoth(
     WidgetTester tester,
     MemoryKeyStore keys,
@@ -191,7 +192,9 @@ void main() {
         final Entry theirs = (await other.entries()).firstWhere(
           (Entry e) => e.id == lunch.id,
         );
-        await other.updateEntry(theirs.copyWith(note: 'Con factura'));
+        await other.updateEntry(
+          theirs.copyWith(payee: 'Almuerzo de trabajo', note: 'Con factura'),
+        );
         await here.import(await there.export());
       },
     );
@@ -212,7 +215,10 @@ void main() {
     expect(find.text('PARA REVISAR'), findsOneWidget);
     await reveal(tester, find.text('Traer de vuelta'));
     // Named as it shows now, with both versions side by side.
-    expect(find.text('Almuerzo · −$signJoiner\$30.000'), findsOneWidget);
+    expect(
+      find.text('Almuerzo de trabajo · −$signJoiner\$30.000'),
+      findsOneWidget,
+    );
     expect(find.text('Lo que quedó'), findsOneWidget);
     expect(find.text('Lo que espera'), findsOneWidget);
     final Table table = tester.widget<Table>(find.byType(Table));
@@ -220,7 +226,11 @@ void main() {
       for (final Widget cell in table.children[i].children)
         if (cell is Padding) (cell.child! as Text).data!,
     ];
-    expect(row(1), <String>['Nombre', 'Almuerzo', 'Almuerzo con Juan']);
+    expect(row(1), <String>[
+      'Nombre',
+      'Almuerzo de trabajo',
+      'Almuerzo con Juan',
+    ]);
     expect(row(5), <String>['Nota', 'Con factura', '—']);
     expect(row(3), <String>['Categoría', 'Restaurantes', 'Restaurantes']);
     // What differs is marked; what is the same is not.
@@ -231,7 +241,7 @@ void main() {
       <bool>[true, false, false, false, true],
     );
     expect(find.text('Combinar'), findsOneWidget);
-    expect(lunchOf(own).payee, 'Almuerzo');
+    expect(lunchOf(own).payee, 'Almuerzo de trabajo');
 
     await tapText(tester, 'Traer de vuelta');
     await settle(tester);
@@ -270,7 +280,7 @@ void main() {
       return group.groupValue == tester.widget<RadioListTile<bool>>(tile).value;
     }
 
-    expect(chosen('Almuerzo'), isTrue);
+    expect(chosen('Almuerzo de trabajo'), isTrue);
     expect(chosen('Con factura'), isTrue);
     await tapText(tester, 'Almuerzo con Juan');
     expect(chosen('Almuerzo con Juan'), isTrue);
@@ -307,7 +317,7 @@ void main() {
     await lunchChangedOnBoth(tester, MemoryKeyStore());
     await reveal(tester, find.text('Lo que espera: Almuerzo con Juan'));
     expect(find.byType(Table), findsNothing);
-    expect(find.text('Lo que quedó: Almuerzo'), findsOneWidget);
+    expect(find.text('Lo que quedó: Almuerzo de trabajo'), findsOneWidget);
     expect(find.text('Lo que quedó: Con factura'), findsOneWidget);
     expect(find.text('Lo que espera: \u2014'), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -325,6 +335,6 @@ void main() {
     await settle(tester);
     expect(find.text('PARA REVISAR'), findsOneWidget);
     expect(find.text('Almuerzo con Juan'), findsOneWidget);
-    expect(lunchOf(own).payee, 'Almuerzo');
+    expect(lunchOf(own).payee, 'Almuerzo de trabajo');
   });
 }

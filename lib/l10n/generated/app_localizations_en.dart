@@ -5836,6 +5836,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String syncJoinedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count changes made on both devices were joined on their own: each touched something different.',
+      one:
+          'One change made on both devices was joined on its own: each touched something different.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get syncNotSync => 'That isn\'t a Quincena sync file.';
 
   @override

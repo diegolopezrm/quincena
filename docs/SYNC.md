@@ -190,80 +190,77 @@ device), which orders any two versions the same way on every device.
 - The merge, the new versions and "Para revisar" are written in one
   database transaction. Tombstones are kept for good.
 
-## Whole records, not fields
+## Field by field
 
-A version is a version of the whole record. Two edits to different fields
-of the same record, made on two devices before either saw the other's
-file, are two concurrent versions, and only one of them can stay.
-
-What happens today, with a movement «Almuerzo» on both devices:
+Two edits to different fields of the same record, made on two devices
+before either saw the other's file, are joined: both stay, and nothing
+waits. With a movement «Almuerzo» on both devices:
 
 1. On the phone its name becomes «Almuerzo con Juan». On the computer,
    before the phone's file arrives, it gets the note «Pagó la mitad».
-2. When the files cross, each version has a change the other never saw.
-   The later stamp wins whole, say the computer's: both devices show
-   «Almuerzo» with the note. The phone's version waits in "Para revisar"
-   as it was, «Almuerzo con Juan» with no note.
-3. "Para revisar" shows the two versions side by side, field by field,
-   the one that stayed and the one that waits, with the name and the note
-   marked as different.
-4. «Combinar» asks, for each field that differs, which version keeps it,
-   starting from the one that says something: the person keeps the
-   phone's name and the computer's note. The result is written on this
-   device as an edit of the version that stayed, so the next file carries
-   it like any other edit, and nothing waits any more. «Traer de vuelta»
-   still writes the waiting version whole, and what it replaced waits in
-   its turn; «Descartar» lets it go, with «Deshacer» for a few seconds.
-   Nothing is counted twice: an amount is taken with its kind and its
-   account, and one leg of a transfer cannot take its amount or date
+2. When the files cross, each device finds the version it got and its own
+   both came from the same one, and each changed a different field. Both
+   write «Almuerzo con Juan» with the note, and the arrival notice says
+   that a change made on both devices was joined on its own.
+
+How a device knows which fields changed, without keeping old contents:
+
+- **A base per record.** After merging a file, a device keeps, in each
+  record's sync metadata, the version it has: its version vector and a
+  short hash of each field. That is the base. A file carries each record's
+  base next to its version.
+- **A base both had.** Two concurrent versions can be joined only from a
+  base both had seen: its vector is behind or equal to both. Of the two
+  bases, the device's and the sender's, the one that fits is used, the
+  later when both do, and between two neither of which came first, the
+  same one on both devices. Without one, nothing is joined.
+- **Joining.** For each field, a field only one side changed takes that
+  side's value, and one changed alike on both stays. When the edit time
+  differs, the later one stays. The result is a new change of the device
+  that joined, with both vectors joined, so it travels like any edit and
+  the other device takes it, or arrives at the same contents on its own.
+- **Fields that move together.** Some fields join as one: a movement's
+  amount with its kind, its account and what it cost; a fixed payment's
+  amount with its currency and account, and its cadence with its next
+  date; a goal's figures with its date; an account's money with its kind
+  and currency. Changed apart, they are a clash.
+- **What stays whole.** The legs of a transfer, whose amounts must stay
+  the same; settings known by name; and the items of a list. They merge
+  as before.
+
+When something changed on both sides to different values, or there is no
+base both had, the record is two versions as before: the later stamp wins
+whole and the other waits in "Para revisar":
+
+1. "Para revisar" shows the two versions side by side, field by field,
+   the one that stayed and the one that waits, with what differs marked.
+2. «Combinar» asks, for each field that differs, which version keeps it,
+   starting from the one that says something. The result is written on
+   this device as an edit of the version that stayed, so the next file
+   carries it like any other edit, and nothing waits any more. «Traer de
+   vuelta» still writes the waiting version whole, and what it replaced
+   waits in its turn; «Descartar» lets it go, with «Deshacer» for a few
+   seconds. Nothing is counted twice: an amount is taken with its kind and
+   its account, and one leg of a transfer cannot take its amount or date
    alone.
 
-The merge itself is still of whole records: `test/sync_test.dart` holds
-it in "a name changed on one and a note added on the other are two
-versions", and `test/sync_page_test.dart` holds the combining.
+Order still does not matter for what is joined: two devices joining the
+same pair from the same base write the same record, and a file merged
+again changes nothing. Two devices that join the same pair from different
+bases can write different records; the next exchange then finds two
+concurrent versions with no base both had, and one of them waits in
+"Para revisar", as any clash does. Nothing is lost without the person
+seeing it.
 
-### What a merge field by field would take
+The file format does not change: a base is a field older versions do not
+read. A device on an older version never sends one, so a change it made
+apart is joined only with the base of the device that has the newer
+version, or waits as before.
 
-- **Versions per field, in the file.** Any merge has to end the same on
-  every device whatever order files arrive in, as the two rules above do.
-  A three-way merge against the last version each device saw does not:
-  devices have seen different versions, so two of them merging the same
-  pair can write different records. Each field that merges on its own
-  needs its own version vector and stamp, and merges as records do now:
-  the later wins, and a concurrent loser waits, as a field.
-- **A new sync format.** Records would carry those per-field versions
-  next to `c` and `s`, under `"format": 2` in the body. A device on the
-  new format reads format 1 files by giving every field the record's
-  vector and stamp. A device on the old format refuses format 2 as newer,
-  so a device cannot start writing format 2 until every device of the
-  vault reads it. Today a device does not know the others, so that needs
-  either a record of each device and the format it reads, or the person
-  updating every device first.
-- **Hashes per field.** A device notices its own changes by a hash of the
-  whole record. It would keep one per field in its sync metadata, which
-  is stored in the device's settings, so no user table changes. Every
-  device would version each field once, the first time it writes the new
-  format.
-- **Fields that move together.** Amount, kind and account are one field,
-  since an amount means nothing without its account's currency, and a
-  goal's target goes with its date. The two legs of a transfer are two
-  records whose amounts must still merge as one, or each leg could keep a
-  different amount. Settings known by name and the items of lists stay
-  whole.
-- **"Para revisar" by field.** It would show the field and both values,
-  «Nombre: Almuerzo con Juan», and bringing it back would write that field
-  only.
-- **Tests and review.** The three-device test and the simulation of
-  random histories run per field, the test above turns around, and the
-  merge gets a review pass like the two before, since the format changes.
-
-The cheaper step, which needs no new format, is the one built: "Para
-revisar" shows what differs between the waiting version and the one shown,
-and «Combinar» takes only the fields the person picks. The result is a new
-whole version that syncs as any edit does. The person does the merging, but
-nothing they see is lost without them choosing it. Movements, accounts,
-fixed payments and goals are compared this way; settings and the items of a
-list still come back whole.
+`test/sync_test.dart` holds the joining ("a name changed on one and a
+note added on the other are joined", "two changes made apart") and the
+clash ("the same field changed on both"); `test/sync_page_test.dart`
+holds the combining.
 
 ## Revoking, deleting and keeping
 

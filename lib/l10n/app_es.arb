@@ -1852,6 +1852,8 @@
   "@syncItemSettings": {"placeholders": {"count": {"type": "int"}}},
   "syncWaitingCount": "{count, plural, =1{Uno espera en «Para revisar».} other{{count} esperan en «Para revisar».}}",
   "@syncWaitingCount": {"placeholders": {"count": {"type": "int"}}},
+  "syncJoinedCount": "{count, plural, =1{Un cambio hecho en los dos dispositivos se unió solo: cada uno tocó algo distinto.} other{{count} cambios hechos en los dos dispositivos se unieron solos: cada uno tocó algo distinto.}}",
+  "@syncJoinedCount": {"placeholders": {"count": {"type": "int"}}},
   "syncNotSync": "Ese no es un archivo de sincronización de Quincena.",
   "syncIsBackup": "Ese es un respaldo, no un archivo de sincronizar: se abre en Ajustes, «Restaurar un respaldo». No cambió nada.",
   "syncOtherVault": "Ese archivo se hizo con otro código. Abre uno de un dispositivo unido con este código.",

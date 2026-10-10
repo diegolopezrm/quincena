@@ -1468,6 +1468,7 @@
   "syncItemPlan": "{count, plural, =1{one Plan change} other{{count} Plan changes}}",
   "syncItemSettings": "{count, plural, =1{one setting} other{{count} settings}}",
   "syncWaitingCount": "{count, plural, =1{One is waiting in \"Changes to review\".} other{{count} are waiting in \"Changes to review\".}}",
+  "syncJoinedCount": "{count, plural, =1{One change made on both devices was joined on its own: each touched something different.} other{{count} changes made on both devices were joined on their own: each touched something different.}}",
   "syncNotSync": "That isn't a Quincena sync file.",
   "syncIsBackup": "That's a backup, not a sync file: it opens in Settings, \"Restore a backup\". Nothing changed.",
   "syncOtherVault": "That file was made with another code. Open one from a device joined with this code.",

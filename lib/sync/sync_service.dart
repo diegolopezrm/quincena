@@ -123,6 +123,7 @@ class SyncReport {
     required this.applied,
     required this.conflicts,
     this.changes = const SyncChanges(),
+    this.joined = 0,
   });
 
   /// Records changed on this device.
@@ -130,6 +131,9 @@ class SyncReport {
 
   /// Versions that lost and wait for the person.
   final int conflicts;
+
+  /// Records changed on both devices, joined field by field.
+  final int joined;
 
   /// What changed here, by what the person calls it.
   final SyncChanges changes;
@@ -354,6 +358,7 @@ class SyncService {
                 : here[e.key] ?? _tombstone(e.key),
             clocks: e.value.clocks,
             stamp: e.value.stamp,
+            base: e.value.base,
           ).toJson(),
       ],
     });
@@ -424,6 +429,12 @@ class SyncService {
     };
     final _State merged = (await _stored())!;
     final Map<String, SyncRecord> stored = await _here();
+    // Each record as it is now is what the next change here, and the next
+    // one on another device that had this, both come from.
+    RecordBase? base(String key, RecordMeta m) => switch (stored[key]) {
+      final SyncRecord r when !m.deleted => RecordBase.of(m.clocks, r.data!),
+      _ => null,
+    };
     await _save(
       merged.copyWith(
         joining: false,
@@ -436,8 +447,8 @@ class SyncService {
                   clocks: e.value.clocks,
                   stamp: e.value.stamp,
                   hash: contentHash(r.data!),
-                ),
-              _ => e.value,
+                ).withBase(base(e.key, e.value)),
+              _ => e.value.withBase(base(e.key, e.value)),
             },
         },
       ),
@@ -452,6 +463,7 @@ class SyncService {
       applied: result.applied + twice,
       conflicts: result.conflicts.length,
       changes: SyncChanges.between(here, await _here()),
+      joined: result.joined,
     );
   }
 

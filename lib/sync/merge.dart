@@ -135,14 +135,21 @@ Map<String, int> _join(Map<String, int> a, Map<String, int> b) => <String, int>{
 };
 
 /// What a device knows of one record: its version clocks, when it last
-/// changed, and a hash of its contents, null once deleted.
+/// changed, a hash of its contents, null once deleted, and the version it
+/// had right after its last merge, to tell later which fields changed.
 @immutable
 class RecordMeta {
-  const RecordMeta({required this.clocks, required this.stamp, this.hash});
+  const RecordMeta({
+    required this.clocks,
+    required this.stamp,
+    this.hash,
+    this.base,
+  });
 
   final Map<String, int> clocks;
   final Stamp stamp;
   final String? hash;
+  final RecordBase? base;
 
   bool get deleted => hash == null;
 
@@ -151,12 +158,17 @@ class RecordMeta {
     clocks: <String, int>{...clocks, device: (clocks[device] ?? 0) + 1},
     stamp: stamp,
     hash: hash,
+    base: base,
   );
+
+  RecordMeta withBase(RecordBase? base) =>
+      RecordMeta(clocks: clocks, stamp: stamp, hash: hash, base: base);
 
   Map<String, Object?> toJson() => <String, Object?>{
     'c': clocks,
     's': '$stamp',
     if (hash != null) 'h': hash,
+    if (base != null) 'b': base!.toJson(),
   };
 
   static RecordMeta? fromJson(Object? json) {
@@ -165,14 +177,179 @@ class RecordMeta {
     final Stamp? stamp = Stamp.parse(json['s']);
     if (clocks is! Map || stamp == null) return null;
     return RecordMeta(
-      clocks: <String, int>{
-        for (final MapEntry<Object?, Object?> e in clocks.entries)
-          if (e.value is int) '${e.key}': e.value! as int,
-      },
+      clocks: _clocks(clocks),
       stamp: stamp,
       hash: json['h'] as String?,
+      base: RecordBase.fromJson(json['b']),
     );
   }
+}
+
+Map<String, int> _clocks(Map<Object?, Object?> json) => <String, int>{
+  for (final MapEntry<Object?, Object?> e in json.entries)
+    if (e.value is int) '${e.key}': e.value! as int,
+};
+
+/// A version of a record as a device had it right after merging: its
+/// clocks, and a short hash of each field. Two devices whose changes both
+/// came from it can be joined field by field: a field only one of them
+/// changed takes that one's value. Its contents are not kept, only enough
+/// to tell which fields moved.
+@immutable
+class RecordBase {
+  const RecordBase(this.clocks, this.fields);
+
+  /// [data] as it is under [clocks].
+  factory RecordBase.of(Map<String, int> clocks, Map<String, Object?> data) =>
+      RecordBase(clocks, fieldHashes(data));
+
+  final Map<String, int> clocks;
+  final Map<String, String> fields;
+
+  Map<String, Object?> toJson() => <String, Object?>{'c': clocks, 'f': fields};
+
+  static RecordBase? fromJson(Object? json) {
+    if (json is! Map) return null;
+    final Object? clocks = json['c'];
+    final Object? fields = json['f'];
+    if (clocks is! Map || fields is! Map) return null;
+    return RecordBase(_clocks(clocks), <String, String>{
+      for (final MapEntry<Object?, Object?> e in fields.entries)
+        if (e.value is String) '${e.key}': e.value! as String,
+    });
+  }
+}
+
+/// A short hash of each field of [data], the same on every device.
+Map<String, String> fieldHashes(Map<String, Object?> data) => <String, String>{
+  for (final MapEntry<String, Object?> e in data.entries)
+    e.key: _fieldHash(e.value),
+};
+
+String _fieldHash(Object? value) => hash.sha256
+    .convert(utf8.encode(jsonEncode(_canonical(value))))
+    .toString()
+    .substring(0, 12);
+
+/// The fields of a table that only mean something together, and so join
+/// as one: an amount with its kind, its account and what it cost; a fixed
+/// payment's amount with its currency and account, and its cadence with its
+/// next date; a goal's figures with its date; an account's money with its
+/// kind and currency.
+const Map<String, List<Set<String>>> _together = <String, List<Set<String>>>{
+  'entries': <Set<String>>[
+    <String>{'amount', 'kind', 'accountId', 'cost', 'costAsset'},
+  ],
+  'recurring': <Set<String>>[
+    <String>{'amount', 'asset', 'accountId'},
+    <String>{'cadence', 'nextDate'},
+  ],
+  'goals': <Set<String>>[
+    <String>{'asset', 'target', 'saved', 'monthly', 'deadline'},
+  ],
+  'accounts': <Set<String>>[
+    <String>{'kind', 'asset', 'opening', 'creditLimit'},
+  ],
+};
+
+/// [ours] and [theirs], two versions of a record of [table] changed apart
+/// from [base], joined field by field: a field only one of them changed
+/// takes its value, and one both changed alike stays. Fields that mean
+/// something together join as one. Null when something changed on both
+/// sides to different values, or for what stays whole: settings, the
+/// items of a list, and the legs of a transfer, whose amounts must stay
+/// the same. Then they are two versions, as before.
+Map<String, Object?>? joinFields(
+  String table,
+  Map<String, Object?> ours,
+  Map<String, Object?> theirs,
+  RecordBase base,
+) {
+  final List<Set<String>>? groups = _together[table];
+  if (groups == null) return null;
+  bool transfer(Map<String, Object?> data) => switch (data['transferId']) {
+    final String t => t.isNotEmpty,
+    _ => false,
+  };
+  if (transfer(ours) || transfer(theirs)) return null;
+  final Set<String> fields = <String>{
+    ...ours.keys,
+    ...theirs.keys,
+    ...base.fields.keys,
+  };
+  // Each group, then each field left, as one unit.
+  final List<List<String>> units = <List<String>>[
+    for (final Set<String> g in groups) g.toList()..sort(),
+    for (final String f in fields.toList()..sort())
+      if (!groups.any((Set<String> g) => g.contains(f))) <String>[f],
+  ];
+  String? hashOf(Map<String, Object?> data, List<String> unit) =>
+      unit.every((String f) => !data.containsKey(f))
+      ? null
+      : <String>[
+          for (final String f in unit)
+            data.containsKey(f) ? _fieldHash(data[f]) : '-',
+        ].join('/');
+  String? baseOf(List<String> unit) =>
+      unit.every((String f) => !base.fields.containsKey(f))
+      ? null
+      : <String>[for (final String f in unit) base.fields[f] ?? '-'].join('/');
+  final Map<String, Object?> out = <String, Object?>{};
+  for (final List<String> unit in units) {
+    // When it was last changed says nothing of what changed: the later.
+    if (unit.length == 1 && unit.single == 'updatedAt') {
+      out['updatedAt'] = _latest(ours['updatedAt'], theirs['updatedAt']);
+      continue;
+    }
+    final String? o = hashOf(ours, unit);
+    final String? t = hashOf(theirs, unit);
+    final String? b = baseOf(unit);
+    // Alike, or changed only here: ours. Changed only there: theirs.
+    final Map<String, Object?>? from = o == t || t == b
+        ? ours
+        : o == b
+        ? theirs
+        : null;
+    if (from == null) return null;
+    for (final String f in unit) {
+      if (from.containsKey(f)) out[f] = from[f];
+    }
+  }
+  return out;
+}
+
+Object? _latest(Object? a, Object? b) => switch ((a, b)) {
+  (final num x, final num y) => x > y ? x : y,
+  (final String x, final String y) => x.compareTo(y) > 0 ? x : y,
+  _ => a ?? b,
+};
+
+/// The version both [ours] and [theirs] came from, of the two bases the
+/// devices kept: one each has seen all of, the later when both have.
+RecordBase? commonBase(
+  RecordBase? a,
+  RecordBase? b, {
+  required Map<String, int> ours,
+  required Map<String, int> theirs,
+}) {
+  bool fits(RecordBase? x) =>
+      x != null && _sawAll(ours, x.clocks) && _sawAll(theirs, x.clocks);
+  final RecordBase? first = fits(a) ? a : null;
+  final RecordBase? second = fits(b) ? b : null;
+  if (first == null || second == null) return first ?? second;
+  // The later; between two neither of which came first, the same one on
+  // both devices, which each hold the pair the other way round.
+  return switch (compareClocks(first.clocks, second.clocks)) {
+    Order.before => second,
+    Order.after => first,
+    _ =>
+      jsonEncode(
+                _canonical(first.toJson()),
+              ).compareTo(jsonEncode(_canonical(second.toJson()))) <=
+              0
+          ? first
+          : second,
+  };
 }
 
 /// A hash of [data] that two devices agree on: the same contents give the
@@ -281,16 +458,23 @@ class IncomingRecord {
     required this.record,
     required this.clocks,
     required this.stamp,
+    this.base,
   });
 
   final SyncRecord record;
   final Map<String, int> clocks;
   final Stamp stamp;
 
+  /// The version the sending device had after its last merge, when it
+  /// kept one: what a change made here and one made there may both come
+  /// from.
+  final RecordBase? base;
+
   Map<String, Object?> toJson() => <String, Object?>{
     'k': record.toJson(),
     'c': clocks,
     's': '$stamp',
+    if (base != null) 'b': base!.toJson(),
   };
 
   static IncomingRecord? fromJson(Object? json) {
@@ -301,11 +485,9 @@ class IncomingRecord {
     if (record == null || clocks is! Map || stamp == null) return null;
     return IncomingRecord(
       record: record,
-      clocks: <String, int>{
-        for (final MapEntry<Object?, Object?> e in clocks.entries)
-          if (e.value is int) '${e.key}': e.value! as int,
-      },
+      clocks: _clocks(clocks),
       stamp: stamp,
+      base: RecordBase.fromJson(json['b']),
     );
   }
 }
@@ -350,6 +532,7 @@ class MergeResult {
     required this.upserts,
     required this.deletes,
     required this.conflicts,
+    this.joined = 0,
   });
 
   final Map<String, RecordMeta> metas;
@@ -362,6 +545,10 @@ class MergeResult {
 
   /// Versions that lost, to show the person.
   final List<SyncConflict> conflicts;
+
+  /// Records changed on both devices that were joined field by field,
+  /// with nothing left to show.
+  final int joined;
 
   /// How many records change here.
   int get applied => upserts.length + deletes.length;
@@ -390,6 +577,8 @@ bool _sawAll(Map<String, int> winner, Map<String, int> loser) =>
 /// in, and a file merged again changes nothing:
 ///
 /// - a record with a random id that either side deleted stays deleted;
+/// - a record changed on both sides from a version both had is joined
+///   field by field, when no field changed on both to different values;
 /// - otherwise the later version wins, by its stamp, which the clocks keep
 ///   after anything a device had seen when it made the change;
 /// - clocks are joined, to tell what each side had seen.
@@ -409,6 +598,7 @@ MergeResult merge({
   final Map<String, SyncRecord> upserts = <String, SyncRecord>{};
   final Map<String, SyncRecord> deletes = <String, SyncRecord>{};
   final List<SyncConflict> conflicts = <SyncConflict>[];
+  var joined = 0;
   final Map<String, SyncRecord> sent = <String, SyncRecord>{
     for (final IncomingRecord i in incoming) i.record.key: i.record,
   };
@@ -444,6 +634,36 @@ MergeResult merge({
         lost(theirs, ConflictReason.deletedHere);
       }
       continue;
+    }
+    // Changed on both sides from a version both had: joined field by
+    // field, as a change of this device's, when no field changed on both.
+    final SyncRecord? mine = here[key];
+    if (!theirs.deleted &&
+        !local.deleted &&
+        mine != null &&
+        theirHash != local.hash &&
+        compareClocks(local.clocks, i.clocks) == Order.concurrent) {
+      final RecordBase? base = commonBase(
+        local.base,
+        i.base,
+        ours: local.clocks,
+        theirs: i.clocks,
+      );
+      final Map<String, Object?>? both = base == null
+          ? null
+          : joinFields(theirs.table, mine.data!, theirs.data!, base);
+      if (both != null) {
+        final SyncRecord record = SyncRecord(theirs.table, theirs.id, both);
+        final String h = contentHash(both);
+        out[key] = RecordMeta(
+          clocks: clocks,
+          stamp: local.stamp,
+          hash: local.hash,
+        ).changed(device, tick(), h);
+        if (h != local.hash) upserts[key] = record;
+        joined++;
+        continue;
+      }
     }
     final bool theyWin = _later(i.stamp, theirHash, local.stamp, local.hash);
     final bool same = theirHash == local.hash;
@@ -522,5 +742,6 @@ MergeResult merge({
     upserts: upserts.values.toList(),
     deletes: deletes.values.toList(),
     conflicts: conflicts,
+    joined: joined,
   );
 }

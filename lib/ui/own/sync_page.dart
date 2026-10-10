@@ -182,6 +182,7 @@ class _SyncPageState extends State<SyncPage> {
             : l.syncArrivedMany(said(came)),
       if (gone.isNotEmpty)
         one(gone) ? l.syncGoneOne(said(gone)) : l.syncGoneMany(said(gone)),
+      if (report.joined > 0) l.syncJoinedCount(report.joined),
       if (report.conflicts > 0) l.syncWaitingCount(report.conflicts),
     ];
     return sentences.isEmpty ? l.syncUpToDate : sentences.join(' ');

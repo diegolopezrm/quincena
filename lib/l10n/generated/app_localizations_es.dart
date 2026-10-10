@@ -5833,6 +5833,19 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String syncJoinedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count cambios hechos en los dos dispositivos se unieron solos: cada uno tocó algo distinto.',
+      one:
+          'Un cambio hecho en los dos dispositivos se unió solo: cada uno tocó algo distinto.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get syncNotSync =>
       'Ese no es un archivo de sincronización de Quincena.';
 
