@@ -376,6 +376,33 @@ void main() {
     );
     expect(later.latePay, DateTime(2026, 10, 15));
   });
+
+  test('a payday before the balances, whose pay had not come then, is '
+      'waited for', () async {
+    // Set up on the 3rd, three days after the 30th, saying it had not come.
+    await bank('50000');
+    await profile(pay: '2400000');
+    final Projection p = Projection.of(
+      buildLedger(
+        (await store.snapshot())!,
+        today: today,
+        payPending: DateTime(2026, 9, 30),
+      ).ledger,
+    );
+    expect(p.latePay, DateTime(2026, 9, 30));
+    expect(p.days[1].likely, 50000 + 2400000);
+    // Said about another payday, it says nothing of this one.
+    expect(
+      Projection.of(
+        buildLedger(
+          (await store.snapshot())!,
+          today: today,
+          payPending: DateTime(2026, 9, 15),
+        ).ledger,
+      ).latePay,
+      isNull,
+    );
+  });
   test(
     'the cushion is left out of the free amount and marks tight days',
     () async {

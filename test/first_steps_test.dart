@@ -138,6 +138,27 @@ void main() {
     );
   });
 
+  testWidgets('a payday a few days back asks whether its pay came, and one '
+      'that did not is waited for', (tester) async {
+    final QuincenaStore store = await setup(tester, () {});
+    await tester.enterText(find.byType(TextField).first, 'Ana');
+    await tapText(tester, 'Siguiente');
+    // The 3rd: the 30th was three days ago.
+    expect(
+      find.text('¿Ya te llegó el pago del 30 de septiembre?'),
+      findsOneWidget,
+    );
+    await tapText(tester, 'Todavía no');
+    expect(find.textContaining('Quincena lo espera'), findsOneWidget);
+    await tapText(tester, 'Siguiente');
+    expect(
+      DateTime.parse(
+        (await tester.runAsync<String?>(() => store.setting('pay.pending')))!,
+      ),
+      DateTime(2026, 9, 30),
+    );
+  });
+
   testWidgets('Inicio lists what setting up left, each opening where it is '
       'done, and lets it go for good once all of it is', (tester) async {
     final OwnController own = await home(

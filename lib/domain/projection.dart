@@ -324,8 +324,11 @@ DateTime? _latePay(Ledger ledger) {
   if (!last.isBefore(today)) return null;
   // A payday more than a pay period back is not late, it is history.
   if (today.difference(last).inDays > 10) return null;
+  // Written down after the payday, the balances have the pay in them,
+  // unless the person said it had not come yet.
   if (ledger.since case final DateTime since when last.isBefore(_day(since))) {
-    return null;
+    final DateTime? pending = ledger.payPending;
+    if (pending == null || _day(pending) != last) return null;
   }
   final DateTime from = last.subtract(const Duration(days: 3));
   final bool arrived = ledger.movements.any(

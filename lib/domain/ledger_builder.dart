@@ -38,6 +38,7 @@ LedgerBuild buildLedger(
   List<Movement> expected = const <Movement>[],
   int reserved = 0,
   Map<String, DateTime> lastUsed = const <String, DateTime>{},
+  DateTime? payPending,
 }) {
   final Asset base = s.profile.base;
   final RateTable rates = RateTable(s.rates);
@@ -229,6 +230,7 @@ LedgerBuild buildLedger(
       _ => null,
     },
     since: since,
+    payPending: payPending,
   );
   // What each spendable account adds to the balance, worked out with the
   // ledger's own arithmetic, so the parts always add up to the whole.

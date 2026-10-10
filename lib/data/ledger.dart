@@ -135,6 +135,7 @@ class Ledger {
     this.pay,
     List<Movement> expected = const <Movement>[],
     this.since,
+    this.payPending,
   }) : movements = List<Movement>.of(movements)
          ..sort((Movement a, Movement b) => a.date.compareTo(b.date)),
        upcoming = List<Movement>.unmodifiable(upcoming),
@@ -183,6 +184,10 @@ class Ledger {
   /// When the person first wrote down what their accounts held, when it is
   /// known: what came in before it was already in [openingBalance].
   final DateTime? since;
+
+  /// The payday whose pay had not come when those balances were written,
+  /// as the person said: it is waited for, not taken as already in them.
+  final DateTime? payPending;
 
   /// [amount] in whole units of [currency]: pesos stay as they are, cents
   /// become dollars. What the agent's tools and the catalog read.

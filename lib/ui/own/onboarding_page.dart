@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import '../../domain/pay_schedule.dart';
 import '../../domain/records.dart';
+import '../../format/dates.dart';
 import '../../l10n/l10n.dart';
 import '../../money/asset.dart';
 import '../../money/money.dart';
@@ -76,6 +77,19 @@ class _OnboardingPageState extends State<OnboardingPage> {
   /// says so above the button, where nothing covers it.
   bool _needAccount = false;
 
+  /// Whether the pay of a payday a few days back had come, when the person
+  /// said; unsaid, the balances they write are taken to have it.
+  bool? _arrived;
+
+  /// The payday a few days back whose pay may not have come yet, or null
+  /// when payday is today or long enough ago to be history.
+  DateTime? get _recentPayday {
+    final DateTime last = _schedule.lastOnOrBefore(_today);
+    final DateTime day = DateTime(last.year, last.month, last.day);
+    final int days = _today.difference(day).inDays;
+    return days >= 1 && days <= 10 ? day : null;
+  }
+
   /// Created on the accounts step, once there is a profile to hang accounts
   /// on.
   OwnController? _own;
@@ -137,6 +151,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
         _own = own;
         await own.start();
       }
+      // Said not to have come, that pay is waited for instead of taken as
+      // already in the balances written next.
+      await _own!.setPayPending(_arrived == false ? _recentPayday : null);
     }
     if (!mounted) return;
     if (_step == _accountsStep) {
@@ -291,6 +308,37 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 suffixText: _base.code,
               ),
             ),
+            if (_recentPayday case final DateTime payday) ...<Widget>[
+              const SizedBox(height: 28),
+              Text(
+                l.onboardingPayArrived(dayMonth(payday)),
+                style: context.type.titleSmall,
+              ),
+              const SizedBox(height: 10),
+              SegmentedButton<bool>(
+                segments: <ButtonSegment<bool>>[
+                  ButtonSegment<bool>(
+                    value: true,
+                    label: Text(l.onboardingPayArrivedYes),
+                  ),
+                  ButtonSegment<bool>(
+                    value: false,
+                    label: Text(l.onboardingPayArrivedNo),
+                  ),
+                ],
+                emptySelectionAllowed: true,
+                selected: <bool>{?_arrived},
+                onSelectionChanged: (Set<bool> picked) =>
+                    setState(() => _arrived = picked.firstOrNull),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                _arrived == false
+                    ? l.onboardingPayArrivedNoHelp
+                    : l.onboardingPayArrivedHelp,
+                style: context.type.bodySmall,
+              ),
+            ],
           ],
         );
       default:

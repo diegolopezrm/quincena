@@ -10248,6 +10248,36 @@ abstract class AppLocalizations {
   /// **'Opcional. No cuenta como plata hasta que llega; sirve para ver los días que vienen.'**
   String get onboardingPayAmountHelp;
 
+  /// No description provided for @onboardingPayArrived.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Ya te llegó el pago del {date}?'**
+  String onboardingPayArrived(String date);
+
+  /// No description provided for @onboardingPayArrivedYes.
+  ///
+  /// In es, this message translates to:
+  /// **'Sí, ya llegó'**
+  String get onboardingPayArrivedYes;
+
+  /// No description provided for @onboardingPayArrivedNo.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no'**
+  String get onboardingPayArrivedNo;
+
+  /// No description provided for @onboardingPayArrivedHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Si ya llegó, va incluido en los saldos que escribas ahora.'**
+  String get onboardingPayArrivedHelp;
+
+  /// No description provided for @onboardingPayArrivedNoHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Quincena lo espera: lo cuenta cuando llegue, no en los saldos que escribas ahora.'**
+  String get onboardingPayArrivedNoHelp;
+
   /// No description provided for @onboardingFixedTitle.
   ///
   /// In es, this message translates to:

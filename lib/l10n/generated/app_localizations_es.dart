@@ -6732,6 +6732,25 @@ class AppLocalizationsEs extends AppLocalizations {
       'Opcional. No cuenta como plata hasta que llega; sirve para ver los días que vienen.';
 
   @override
+  String onboardingPayArrived(String date) {
+    return '¿Ya te llegó el pago del $date?';
+  }
+
+  @override
+  String get onboardingPayArrivedYes => 'Sí, ya llegó';
+
+  @override
+  String get onboardingPayArrivedNo => 'Todavía no';
+
+  @override
+  String get onboardingPayArrivedHelp =>
+      'Si ya llegó, va incluido en los saldos que escribas ahora.';
+
+  @override
+  String get onboardingPayArrivedNoHelp =>
+      'Quincena lo espera: lo cuenta cuando llegue, no en los saldos que escribas ahora.';
+
+  @override
   String get onboardingFixedTitle => '¿Qué pagas fijo?';
 
   @override

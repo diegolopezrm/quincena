@@ -6738,6 +6738,25 @@ class AppLocalizationsEn extends AppLocalizations {
       'Optional. It doesn\'t count as money until it arrives; it\'s used to show the days ahead.';
 
   @override
+  String onboardingPayArrived(String date) {
+    return 'Has the pay of $date come in yet?';
+  }
+
+  @override
+  String get onboardingPayArrivedYes => 'Yes, it came';
+
+  @override
+  String get onboardingPayArrivedNo => 'Not yet';
+
+  @override
+  String get onboardingPayArrivedHelp =>
+      'If it came, it is in the balances you write next.';
+
+  @override
+  String get onboardingPayArrivedNoHelp =>
+      'Quincena waits for it: it counts it when it comes, not in the balances you write next.';
+
+  @override
   String get onboardingFixedTitle => 'What do you pay regularly?';
 
   @override

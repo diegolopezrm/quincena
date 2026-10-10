@@ -292,6 +292,19 @@ class OwnController extends ChangeNotifier {
       store.setSetting(_cushionKey, jsonEncode(settings.toJson()));
 
   static const String _planKey = 'plan.envelopes';
+
+  /// The payday whose pay had not come when the balances were written.
+  static const String _payPendingKey = 'pay.pending';
+  DateTime? _payPending;
+
+  /// Says the pay of [payday] had not come when the balances were written,
+  /// so it is waited for; null says nothing is pending.
+  Future<void> setPayPending(DateTime? payday) => store.setSetting(
+    _payPendingKey,
+    payday == null
+        ? ''
+        : DateTime(payday.year, payday.month, payday.day).toIso8601String(),
+  );
   static const String _wishesKey = 'plan.wishes';
   static const String _scenariosKey = 'plan.scenarios';
   static const String _cushionKey = 'plan.cushion';
@@ -1391,6 +1404,7 @@ class OwnController extends ChangeNotifier {
         if (i.automatic) i,
     ];
     _plan = EnvelopePlan.fromJson(_json(await store.setting(_planKey)));
+    _payPending = DateTime.tryParse(await store.setting(_payPendingKey) ?? '');
     _wishes = <Wish>[
       for (final Object? w in _list(await store.setting(_wishesKey)))
         ?Wish.fromJson(w),
@@ -1474,6 +1488,7 @@ class OwnController extends ChangeNotifier {
         // What the example's story tells of each subscription's use, for
         // its conversation; nothing tells it of the person's own.
         lastUsed: example ? exampleLastUsed : const <String, DateTime>{},
+        payPending: _payPending,
       );
       _balances = balancesOf(s.accounts, s.entries, day);
     } else {
