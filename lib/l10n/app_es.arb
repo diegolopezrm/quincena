@@ -1964,6 +1964,8 @@
   "@joinedDeparture": {"placeholders": {"from": {"type": "String"}, "to": {"type": "String"}}},
   "transferJoined": "El otro aviso de esa misma plata también quedó registrado.",
   "moreActions": "Más acciones",
+  "actionOn": "{action}, {what}",
+  "@actionOn": {"placeholders": {"action": {"type": "String"}, "what": {"type": "String"}}},
   "statementNew": "{count, plural, =0{Ninguno nuevo} =1{1 nuevo} other{{count} nuevos}}",
   "@statementNew": {"placeholders": {"count": {"type": "int"}}},
   "statementAlready": "{count, plural, =0{ninguno repetido} =1{1 ya estaba} other{{count} ya estaban}}",

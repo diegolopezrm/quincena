@@ -766,28 +766,32 @@ class _CanIBuyState extends State<_CanIBuy> {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
-    final Widget field = TextField(
+    final Widget field = NamedField(
+      name: l.buyAskHint,
       controller: _price,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      inputFormatters: <TextInputFormatter>[
-        AmountInputFormatter(maxDecimals: widget.ledger.currency.decimals),
-      ],
-      textInputAction: TextInputAction.go,
-      onSubmitted: (_) => _check(),
-      // With large text the button is under it: it comes above the
-      // keyboard with the field.
-      scrollPadding: largeText(context)
-          ? EdgeInsets.fromLTRB(
-              20,
-              20,
-              20,
-              30 + MediaQuery.textScalerOf(context).scale(48),
-            )
-          : const EdgeInsets.all(20),
-      decoration: InputDecoration(
-        hintText: l.buyAskHint,
-        prefixText: amountPrefix(widget.ledger.currency),
-        isDense: true,
+      child: TextField(
+        controller: _price,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: <TextInputFormatter>[
+          AmountInputFormatter(maxDecimals: widget.ledger.currency.decimals),
+        ],
+        textInputAction: TextInputAction.go,
+        onSubmitted: (_) => _check(),
+        // With large text the button is under it: it comes above the
+        // keyboard with the field.
+        scrollPadding: largeText(context)
+            ? EdgeInsets.fromLTRB(
+                20,
+                20,
+                20,
+                30 + MediaQuery.textScalerOf(context).scale(48),
+              )
+            : const EdgeInsets.all(20),
+        decoration: InputDecoration(
+          hintText: l.buyAskHint,
+          prefixText: amountPrefix(widget.ledger.currency),
+          isDense: true,
+        ),
       ),
     );
     // Light green: Inicio's one main action is the movement to record.

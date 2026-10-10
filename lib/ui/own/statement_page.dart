@@ -1529,7 +1529,10 @@ class _LineSheetState extends State<_LineSheet> {
             const SizedBox(height: 4),
             Text(shortDate(c.line.date), style: context.type.bodySmall),
             const SizedBox(height: 16),
-            Text(l.statementOriginal, style: context.type.labelMedium),
+            // Read once, as the name of the text under it.
+            ExcludeSemantics(
+              child: Text(l.statementOriginal, style: context.type.labelMedium),
+            ),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(12),
@@ -1537,9 +1540,12 @@ class _LineSheetState extends State<_LineSheet> {
                 color: context.colors.sunken,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: SelectableText(
-                c.line.description,
-                style: context.type.bodyMedium,
+              child: Semantics(
+                label: l.statementOriginal,
+                child: SelectableText(
+                  c.line.description,
+                  style: context.type.bodyMedium,
+                ),
               ),
             ),
             // What it was taken for, to check before leaving it out.

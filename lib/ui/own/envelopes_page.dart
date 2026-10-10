@@ -361,6 +361,7 @@ class _EnvelopesPageState extends State<EnvelopesPage> {
                             Glyph.trash,
                             size: 18,
                             color: context.colors.inkFaint,
+                            semanticLabel: l.actionOn(l.envelopeRemove, e.name),
                           ),
                         ),
                     ],

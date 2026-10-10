@@ -9433,6 +9433,12 @@ abstract class AppLocalizations {
   /// **'Más acciones'**
   String get moreActions;
 
+  /// No description provided for @actionOn.
+  ///
+  /// In es, this message translates to:
+  /// **'{action}, {what}'**
+  String actionOn(String action, String what);
+
   /// No description provided for @statementNew.
   ///
   /// In es, this message translates to:

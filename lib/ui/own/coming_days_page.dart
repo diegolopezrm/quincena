@@ -826,6 +826,8 @@ class _DayDetail extends StatelessWidget {
                       Glyph.calendarBlank,
                       size: 18,
                       color: context.colors.inkSoft,
+                      // Each charge has one: heard, it says which.
+                      semanticLabel: l.actionOn(l.comingMove, _label(l, e)),
                     ),
                   )
                 else

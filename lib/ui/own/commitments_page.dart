@@ -491,7 +491,10 @@ class _GuessCard extends StatelessWidget {
                   final Undo back = await own.sayNotRecurring(guess.name);
                   showUndo(messenger, l.guessNotDone(guess.name), back);
                 },
-                child: Text(l.guessNot),
+                child: Text(
+                  l.guessNot,
+                  semanticsLabel: l.actionOn(l.guessNot, guess.name),
+                ),
               ),
               TextButton.icon(
                 onPressed: () => showChargeForm(
@@ -500,7 +503,10 @@ class _GuessCard extends StatelessWidget {
                   draft: _draftOf(guess, ledger, base),
                 ),
                 icon: const Icon(Glyph.plus, size: 18),
-                label: Text(l.guessAdd),
+                label: Text(
+                  l.guessAdd,
+                  semanticsLabel: l.actionOn(l.guessAdd, guess.name),
+                ),
               ),
             ],
           ),

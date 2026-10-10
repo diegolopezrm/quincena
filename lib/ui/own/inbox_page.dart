@@ -1219,6 +1219,12 @@ class _InboxCardState extends State<InboxCard> {
     // keeps the room to be read.
     final bool large = MediaQuery.textScalerOf(context).scale(10) > 13;
 
+    // Each button says, to a screen reader, which capture it acts on:
+    // every card has an «Editar», and heard one after another they would
+    // be the same.
+    Text said(String action) =>
+        Text(action, semanticsLabel: l.actionOn(action, payee));
+
     final Widget body;
     if (widget.compact && !_open) {
       final Widget figures = Figures(
@@ -1276,7 +1282,14 @@ class _InboxCardState extends State<InboxCard> {
                 IconButton(
                   tooltip: _recordLabel(l, move: move, paid: paid),
                   onPressed: _busy ? null : _confirm,
-                  icon: Icon(Glyph.check, color: context.colors.brand),
+                  icon: Icon(
+                    Glyph.check,
+                    color: context.colors.brand,
+                    semanticLabel: l.actionOn(
+                      _recordLabel(l, move: move, paid: paid),
+                      payee,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -1412,7 +1425,7 @@ class _InboxCardState extends State<InboxCard> {
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                     ),
                     icon: const Icon(Glyph.plus, size: 16),
-                    label: Text(l.addAccountAt(bank)),
+                    label: said(l.addAccountAt(bank)),
                   ),
                 ),
             // Every automatic record says why it went in without asking: a
@@ -1454,7 +1467,7 @@ class _InboxCardState extends State<InboxCard> {
                     foregroundColor: context.colors.inkSoft,
                   ),
                   icon: const Icon(Glyph.arrowsLeftRight, size: 16),
-                  label: Text(income ? l.fromOwnAccount : l.fromOwnAccountOut),
+                  label: said(income ? l.fromOwnAccount : l.fromOwnAccountOut),
                 ),
               ),
             if (_details) _detection(context),
@@ -1469,21 +1482,21 @@ class _InboxCardState extends State<InboxCard> {
                       if (recorded) ...<Widget>[
                         OutlinedButton(
                           onPressed: _busy ? null : _undo,
-                          child: Text(l.undo),
+                          child: said(l.undo),
                         ),
                         TextButton(
                           onPressed: _busy ? null : _fix,
                           style: TextButton.styleFrom(
                             foregroundColor: context.colors.ink,
                           ),
-                          child: Text(l.fixMovement),
+                          child: said(l.fixMovement),
                         ),
                       ] else if (repeat) ...<Widget>[
                         // What arrived twice is most often a repeat: taking
                         // it out comes first.
                         _answer(
                           onPressed: _busy ? null : _dismiss,
-                          child: Text(l.removeRepeat),
+                          child: said(l.removeRepeat),
                         ),
                         TextButton(
                           onPressed: _busy
@@ -1492,14 +1505,14 @@ class _InboxCardState extends State<InboxCard> {
                           style: TextButton.styleFrom(
                             foregroundColor: context.colors.ink,
                           ),
-                          child: Text(l.notDuplicate),
+                          child: said(l.notDuplicate),
                         ),
                       ] else if (move != null) ...<Widget>[
                         _answer(
                           onPressed: _busy || amount == null
                               ? null
                               : () => _recordMove(move),
-                          child: Text(l.recordTransfer),
+                          child: said(l.recordTransfer),
                         ),
                         TextButton(
                           onPressed: _busy
@@ -1508,19 +1521,19 @@ class _InboxCardState extends State<InboxCard> {
                           style: TextButton.styleFrom(
                             foregroundColor: context.colors.ink,
                           ),
-                          child: Text(l.notMove),
+                          child: said(l.notMove),
                         ),
                       ]
                       // Which way the money went is the form's to ask.
                       else if (kind == null)
                         _answer(
                           onPressed: _busy ? null : _edit,
-                          child: Text(l.reviewMovement),
+                          child: said(l.reviewMovement),
                         )
                       else ...<Widget>[
                         _answer(
                           onPressed: _busy || amount == null ? null : _confirm,
-                          child: Text(
+                          child: said(
                             account == null
                                 ? l.chooseAccount
                                 : _recordLabel(l, paid: paid),
@@ -1531,7 +1544,7 @@ class _InboxCardState extends State<InboxCard> {
                           style: TextButton.styleFrom(
                             foregroundColor: context.colors.ink,
                           ),
-                          child: Text(l.edit),
+                          child: said(l.edit),
                         ),
                       ],
                     ],
@@ -1542,6 +1555,7 @@ class _InboxCardState extends State<InboxCard> {
                   icon: Icon(
                     Glyph.dotsThreeVertical,
                     color: context.colors.inkSoft,
+                    semanticLabel: l.actionOn(l.moreActions, payee),
                   ),
                   onSelected: _more,
                   itemBuilder: (BuildContext context) =>
@@ -1580,24 +1594,33 @@ class _InboxCardState extends State<InboxCard> {
       );
     }
 
+    // One element for a screen reader, its words and then its buttons:
+    // without it the words of every card in a section ran together, and
+    // their buttons came after all of them.
     if (widget.compact) {
-      return AnimatedSize(
-        duration: MediaQuery.disableAnimationsOf(context)
-            ? Duration.zero
-            : const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
-        alignment: Alignment.topCenter,
-        child: body,
+      return Semantics(
+        container: true,
+        child: AnimatedSize(
+          duration: MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.topCenter,
+          child: body,
+        ),
       );
     }
-    return Material(
-      color: context.colors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: context.colors.line),
+    return Semantics(
+      container: true,
+      child: Material(
+        color: context.colors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: context.colors.line),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: body,
       ),
-      clipBehavior: Clip.antiAlias,
-      child: body,
     );
   }
 }
@@ -1738,15 +1761,19 @@ class _PasteDialogState extends State<_PasteDialog> {
     return AlertDialog(
       scrollable: true,
       title: Text(l.pasteMessage),
-      content: TextField(
+      content: NamedField(
+        name: l.detectionMessage,
         controller: _text,
-        autofocus: true,
-        minLines: 3,
-        maxLines: 6,
-        decoration: InputDecoration(
-          hintText: l.pasteHint,
-          helperText: widget.note,
-          helperMaxLines: 3,
+        child: TextField(
+          controller: _text,
+          autofocus: true,
+          minLines: 3,
+          maxLines: 6,
+          decoration: InputDecoration(
+            hintText: l.pasteHint,
+            helperText: widget.note,
+            helperMaxLines: 3,
+          ),
         ),
       ),
       actions: <Widget>[

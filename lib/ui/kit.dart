@@ -302,3 +302,32 @@ class LoadingShapes extends StatelessWidget {
     ),
   );
 }
+
+/// A field that says what it asks only as its hint, named for a screen
+/// reader once something is typed: the hint goes then, and without this the
+/// field would be read as its value alone. While it is empty the hint
+/// names it, and the name is not said twice.
+class NamedField extends StatelessWidget {
+  const NamedField({
+    super.key,
+    required this.name,
+    required this.controller,
+    required this.child,
+  });
+
+  final String name;
+  final TextEditingController controller;
+
+  /// The field, a [TextField] on [controller].
+  final Widget child;
+
+  @override
+  Widget build(
+    BuildContext context,
+  ) => ValueListenableBuilder<TextEditingValue>(
+    valueListenable: controller,
+    builder: (BuildContext context, TextEditingValue value, Widget? field) =>
+        Semantics(label: value.text.isEmpty ? null : name, child: field),
+    child: child,
+  );
+}

@@ -143,6 +143,7 @@ class MovementRow extends StatelessWidget {
       if (markRepeats ? own.repeats[entry.id] : null
           case final PossibleRepeat pair)
         _RepeatMark(
+          about: title,
           onPressed: () => showRepeatSheet(context, own: own, pair: pair),
         ),
     ];
@@ -267,15 +268,21 @@ class _Tag extends StatelessWidget {
 /// Says a movement may repeat another, in caution's soft amber: a chip
 /// that opens both, to take the repeat away or say they are two.
 class _RepeatMark extends StatelessWidget {
-  const _RepeatMark({required this.onPressed});
+  const _RepeatMark({required this.about, required this.onPressed});
 
+  /// The movement's name, said with the mark to a screen reader: two rows
+  /// may carry one.
+  final String about;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) => ActionChip(
     onPressed: onPressed,
     avatar: Icon(Glyph.copy, size: 16, color: context.colors.caution),
-    label: Text(context.l10n.repeatMark),
+    label: Text(
+      context.l10n.repeatMark,
+      semanticsLabel: context.l10n.actionOn(context.l10n.repeatMark, about),
+    ),
     labelStyle: context.type.labelMedium?.copyWith(color: context.colors.ink),
     backgroundColor: context.colors.cautionSoft,
     side: BorderSide.none,

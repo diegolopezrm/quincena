@@ -77,22 +77,26 @@ class _MovementsTabState extends State<MovementsTab> {
     final List<Entry> shown = !narrowed || finder == null
         ? all
         : finder.find(all, query: _search.text, filter: _filter);
-    final Widget field = TextField(
+    final Widget field = NamedField(
+      name: l.searchMovements,
       controller: _search,
-      onChanged: (_) => setState(() {}),
-      textInputAction: TextInputAction.search,
-      decoration: InputDecoration(
-        hintText: l.searchMovements,
-        // Whole with large text too.
-        hintMaxLines: largeText(context) ? 3 : null,
-        prefixIcon: const Icon(Glyph.magnifyingGlass, size: 20),
-        suffixIcon: _search.text.isEmpty
-            ? null
-            : IconButton(
-                tooltip: l.searchClear,
-                onPressed: () => setState(_search.clear),
-                icon: const Icon(Glyph.x, size: 18),
-              ),
+      child: TextField(
+        controller: _search,
+        onChanged: (_) => setState(() {}),
+        textInputAction: TextInputAction.search,
+        decoration: InputDecoration(
+          hintText: l.searchMovements,
+          // Whole with large text too.
+          hintMaxLines: largeText(context) ? 3 : null,
+          prefixIcon: const Icon(Glyph.magnifyingGlass, size: 20),
+          suffixIcon: _search.text.isEmpty
+              ? null
+              : IconButton(
+                  tooltip: l.searchClear,
+                  onPressed: () => setState(_search.clear),
+                  icon: const Icon(Glyph.x, size: 18),
+                ),
+        ),
       ),
     );
     final Widget filters = IconButton(

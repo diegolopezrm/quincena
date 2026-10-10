@@ -707,7 +707,11 @@ class OwnSettingsPage extends StatelessWidget {
               segments: <ButtonSegment<ThemeMode>>[
                 ButtonSegment<ThemeMode>(
                   value: ThemeMode.system,
-                  label: Text(l.themeSystem),
+                  // Heard apart from the language's «Sistema».
+                  label: Text(
+                    l.themeSystem,
+                    semanticsLabel: l.actionOn(l.themeTitle, l.themeSystem),
+                  ),
                 ),
                 ButtonSegment<ThemeMode>(
                   value: ThemeMode.light,
@@ -730,7 +734,13 @@ class OwnSettingsPage extends StatelessWidget {
             l.language,
             SegmentedButton<String>(
               segments: <ButtonSegment<String>>[
-                ButtonSegment<String>(value: '', label: Text(l.languageSystem)),
+                ButtonSegment<String>(
+                  value: '',
+                  label: Text(
+                    l.languageSystem,
+                    semanticsLabel: l.actionOn(l.language, l.languageSystem),
+                  ),
+                ),
                 const ButtonSegment<String>(
                   value: 'es',
                   label: Text('Español'),

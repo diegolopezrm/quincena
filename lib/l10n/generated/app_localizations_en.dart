@@ -6183,6 +6183,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moreActions => 'More actions';
 
   @override
+  String actionOn(String action, String what) {
+    return '$action, $what';
+  }
+
+  @override
   String statementNew(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
