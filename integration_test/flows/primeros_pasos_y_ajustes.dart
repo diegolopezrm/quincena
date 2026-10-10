@@ -1454,7 +1454,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         );
       });
       final Finder exito = find.bySemanticsLabel(
-        'Usar esta regla: Exito Laureles',
+        'Usar esta regla: Éxito Laureles',
       );
       await f.tapFound(
         find.descendant(
@@ -1463,10 +1463,10 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         ),
       );
       await f.step(
-        'Con el interruptor de Exito Laureles apagado, su destino se ve '
+        'Con el interruptor de Éxito Laureles apagado, su destino se ve '
         'tachado: la regla se guarda pero no se usa.',
       );
-      await f.check('La regla de Exito Laureles se guarda pero no se usa', () {
+      await f.check('La regla de Éxito Laureles se guarda pero no se usa', () {
         final CaptureSettings s = _own(f).captureSettings;
         expect(s.merchantCategories['exito laureles'], 'groceries');
         expect(s.use(RuleKind.merchant, 'exito laureles'), isNull);
@@ -1522,7 +1522,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         ),
       );
       await f.check(
-        'Encendida otra vez, la regla de Exito Laureles se usa',
+        'Encendida otra vez, la regla de Éxito Laureles se usa',
         () {
           expect(
             _own(f).captureSettings.use(RuleKind.merchant, 'exito laureles'),

@@ -296,8 +296,9 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       );
       await f.tapTip('Por revisar');
       await f.step(
-        'La compra en Éxito Laureles dice «Falta la cuenta»: Bancolombia '
-        'avisó con la tarjeta *1234, que aún no es de ninguna cuenta.',
+        'La compra en Éxito Laureles dice «Falta elegir la cuenta»: '
+        'Bancolombia avisó con la tarjeta *1234, que aún no es de ninguna '
+        'cuenta.',
       );
       await _tapOn(f, 'Éxito Laureles', 'Elegir la cuenta');
       await f.step(
@@ -1492,10 +1493,10 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         'billeteras. La tarjeta *1234, que es débito de Bancolombia, quedó '
         'mal: dice «→ Visa».',
       );
-      await f.tap('Exito Laureles');
+      await f.tap('Éxito Laureles');
       await f.step(
-        'Tocar «Exito Laureles» pregunta «¿A qué categoría va?», con un '
-        'chulo en Mercado, la de ahora.',
+        'Tocar «Éxito Laureles», con su tilde, pregunta «¿A qué categoría '
+        'va?», con un chulo en Mercado, la de ahora.',
       );
       await f.tap('Restaurantes');
       await f.step(
@@ -1600,7 +1601,7 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.check('La regla de Nequi se borró', () async {
         expect((await saved()).institutionAccounts, isEmpty);
       });
-      await f.tapFound(_ruleTrash('Exito Laureles'));
+      await f.tapFound(_ruleTrash('Éxito Laureles'));
       await f.tapFound(_ruleTrash('Tarjeta *1234'));
       await f.step(
         'Sin reglas, y con movimientos ya anotados: «No tienes reglas ahora. '

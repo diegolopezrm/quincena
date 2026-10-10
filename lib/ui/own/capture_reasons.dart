@@ -105,17 +105,47 @@ String ruleTarget(BuildContext context, OwnController own, CaptureRule rule) =>
     : _accountName(context.l10n, own, rule.target);
 
 /// What a rule matches, the way the person would say it: a merchant as
-/// the card showed it, accents and all, when the app kept that name.
+/// the card showed it, accents and all, when the app kept that name, or
+/// else as it was recorded.
 String ruleSubject(BuildContext context, OwnController own, CaptureRule rule) =>
     switch (rule.kind) {
       RuleKind.merchant =>
-        own.captureSettings.merchantNames[rule.key] ?? merchantShown(rule.key),
+        own.captureSettings.merchantNames[rule.key] ??
+            _recordedNames(own)[rule.key] ??
+            merchantShown(rule.key),
       RuleKind.card => context.l10n.ruleCardKey(rule.key),
       RuleKind.account => context.l10n.ruleAccountKey(rule.key),
       RuleKind.institution when rule.key == CaptureService.noBank =>
         context.l10n.ruleNoBank,
       RuleKind.institution => rule.key,
     };
+
+final Expando<Map<String, String>> _names = Expando<Map<String, String>>();
+
+/// Each merchant the person recorded, by the key rules use, as it was
+/// written, the one with accents first: rules learned before the app kept
+/// names then read «Éxito Laureles», not «Exito Laureles». Built once per
+/// list of entries, as the rules page asks for every rule.
+Map<String, String> _recordedNames(OwnController own) {
+  final List<Entry>? entries = own.snapshot?.entries;
+  if (entries == null) return const <String, String>{};
+  return _names[entries] ??= () {
+    final RegExp accented = RegExp('[áéíóúüñÁÉÍÓÚÜÑ]');
+    final Map<String, String> names = <String, String>{};
+    for (final Entry e in entries) {
+      final String payee = e.payee.trim();
+      if (payee.isEmpty) continue;
+      final String key = merchantKey(payee);
+      if (key.isEmpty) continue;
+      final String? kept = names[key];
+      if (kept == null ||
+          (!accented.hasMatch(kept) && accented.hasMatch(payee))) {
+        names[key] = payee;
+      }
+    }
+    return names;
+  }();
+}
 
 /// What a confirmation taught, for the message that offers to undo it:
 /// every rule, each by its name.
