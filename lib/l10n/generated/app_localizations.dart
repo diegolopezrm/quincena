@@ -5420,6 +5420,12 @@ abstract class AppLocalizations {
   /// **'Dirección pública'**
   String get walletsAddress;
 
+  /// No description provided for @walletsAddressHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'La red se elige sola por cómo empieza la dirección.'**
+  String get walletsAddressHelp;
+
   /// No description provided for @walletsLabel.
   ///
   /// In es, this message translates to:
@@ -5432,11 +5438,29 @@ abstract class AppLocalizations {
   /// **'Esa no parece una dirección de {chain}.'**
   String walletsBadAddress(String chain);
 
+  /// No description provided for @walletsOtherChain.
+  ///
+  /// In es, this message translates to:
+  /// **'Esa dirección es de {other}, no de {chain}.'**
+  String walletsOtherChain(String other, String chain);
+
+  /// No description provided for @walletsMiscopied.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisa que la dirección esté completa y bien copiada.'**
+  String get walletsMiscopied;
+
   /// No description provided for @walletsUnreadable.
   ///
   /// In es, this message translates to:
   /// **'No se pudo leer esa dirección. Revisa tu conexión e intenta de nuevo.'**
   String get walletsUnreadable;
+
+  /// No description provided for @walletsServiceFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'El servicio que lee {chain} no respondió bien. Intenta más tarde.'**
+  String walletsServiceFailed(String chain);
 
   /// No description provided for @walletsRemove.
   ///

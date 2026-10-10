@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:quincena/domain/records.dart';
+import 'package:quincena/exchanges/wallets.dart';
 import 'package:quincena/money/asset.dart';
 import 'package:quincena/money/money.dart';
 import 'package:quincena/own/own_controller.dart';
@@ -362,6 +363,69 @@ void main() {
     await tester.tap(find.text('TRON'));
     await settle(tester);
     expect(error(), isNull);
+    expect(own.wallets.wallets, isEmpty);
+  });
+
+  testWidgets('an address picks its chain as it is pasted, and one copied '
+      'wrong is said so before anyone is asked', (tester) async {
+    final OwnController own = await open(tester);
+    await push(tester, WalletsPage(own: own));
+    await tester.tap(find.text('Agregar billetera'));
+    await settle(tester);
+    final Finder address = find.widgetWithText(TextField, 'Dirección pública');
+    String? error() => tester.widget<TextField>(address).decoration!.errorText;
+    Chain chain() => tester
+        .widget<SegmentedButton<Chain>>(find.byType(SegmentedButton<Chain>))
+        .selected
+        .single;
+    Future<void> add() async {
+      await tester.tap(find.text('Agregar billetera').last);
+      await tester.pump();
+    }
+
+    expect(
+      find.text('La red se elige sola por cómo empieza la dirección.'),
+      findsOneWidget,
+    );
+    await tester.enterText(address, 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t');
+    await tester.pump();
+    expect(chain(), Chain.tron);
+    await tester.enterText(
+      address,
+      '0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed',
+    );
+    await tester.pump();
+    expect(chain(), Chain.ethereum);
+
+    // A character changed: its checksum says so at once, with no read under
+    // way and nothing about the connection.
+    await tester.enterText(
+      address,
+      'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t5',
+    );
+    await tester.pump();
+    expect(chain(), Chain.bitcoin);
+    await add();
+    expect(error(), 'Revisa que la dirección esté completa y bien copiada.');
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.widgetWithText(FilledButton, 'Agregar billetera'),
+          )
+          .onPressed,
+      isNotNull,
+    );
+
+    // Corrected by hand to another chain, the address says whose it is.
+    await tester.enterText(
+      address,
+      'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4',
+    );
+    await tester.pump();
+    await tester.tap(find.text('TRON'));
+    await tester.pump();
+    await add();
+    expect(error(), 'Esa dirección es de Bitcoin, no de TRON.');
     expect(own.wallets.wallets, isEmpty);
   });
 

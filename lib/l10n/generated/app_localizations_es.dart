@@ -3530,6 +3530,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get walletsAddress => 'Dirección pública';
 
   @override
+  String get walletsAddressHelp =>
+      'La red se elige sola por cómo empieza la dirección.';
+
+  @override
   String get walletsLabel => 'Nombre: Ledger, MetaMask…';
 
   @override
@@ -3538,8 +3542,22 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String walletsOtherChain(String other, String chain) {
+    return 'Esa dirección es de $other, no de $chain.';
+  }
+
+  @override
+  String get walletsMiscopied =>
+      'Revisa que la dirección esté completa y bien copiada.';
+
+  @override
   String get walletsUnreadable =>
       'No se pudo leer esa dirección. Revisa tu conexión e intenta de nuevo.';
+
+  @override
+  String walletsServiceFailed(String chain) {
+    return 'El servicio que lee $chain no respondió bien. Intenta más tarde.';
+  }
 
   @override
   String get walletsRemove => 'Dejar de seguir';

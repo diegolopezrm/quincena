@@ -10,6 +10,7 @@ import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
 import 'package:quincena/domain/shared.dart';
 import 'package:quincena/exchanges/binance_link.dart' show SecureKeyVault;
+import 'package:quincena/exchanges/wallets.dart' show Chain;
 import 'package:quincena/format/money.dart';
 import 'package:quincena/money/asset.dart';
 import 'package:quincena/money/money.dart';
@@ -3024,8 +3025,9 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       );
       await f.tap('Agregar billetera');
       await f.step(
-        '«Agregar billetera»: la red (Bitcoin, Ethereum o TRON), la dirección '
-        'y un nombre para reconocerla.',
+        '«Agregar billetera»: la red (Bitcoin, Ethereum o TRON), que se elige '
+        'sola por cómo empieza la dirección, la dirección y un nombre para '
+        'reconocerla.',
       );
       await f.type('Dirección pública', 'mi-ledger');
       await f.tap('Agregar billetera');
@@ -3033,37 +3035,50 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         'Algo que no parece una dirección de Bitcoin se rechaza en el '
         'momento, sin consultar nada.',
       );
-      await f.type('Dirección pública', _badChecksum);
-      await f.check('Al escribir otra dirección se quita el aviso en rojo', () {
+      await f.type('Dirección pública', 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t');
+      await f.step(
+        'Al pegar una dirección que empieza por T, la red pasa sola a TRON y '
+        'se quita el aviso en rojo.',
+      );
+      await f.check('La dirección de TRON elige TRON, sin aviso', () {
+        expect(_chainPicked(f), Chain.tron);
         expect(_errorOf(f, 'Dirección pública'), isNull);
+      });
+      await f.type('Dirección pública', _badChecksum);
+      await f.check('Una que empieza por bc1 elige Bitcoin', () {
+        expect(_chainPicked(f), Chain.bitcoin);
       });
       await f.tap('TRON');
       await f.tap('Agregar billetera');
       await f.step(
-        'Con «TRON» elegido, la misma dirección de Bitcoin se rechaza: cada '
-        'red tiene su forma.',
+        'Con «TRON» elegido a mano, la dirección de Bitcoin se rechaza '
+        'diciendo de qué red es.',
       );
-      await f.check('Las direcciones con forma de otra red se rechazan', () {
-        expect(f.shows('Esa no parece una dirección de TRON.'), isTrue);
-      });
-      await f.tap('Ethereum');
-      await f.tap('Agregar billetera');
-      await f.check('En Ethereum tampoco pasa una dirección de Bitcoin', () {
-        expect(f.shows('Esa no parece una dirección de Ethereum.'), isTrue);
+      await f.check('Una dirección de otra red dice de cuál es', () {
+        expect(f.shows('Esa dirección es de Bitcoin, no de TRON.'), isTrue);
         expect(own.wallets.wallets, isEmpty);
       });
       await f.tap('Bitcoin');
       await f.type('Nombre: Ledger, MetaMask…', 'Ledger');
       await f.tap('Agregar billetera');
       await f.step(
-        'Con la forma correcta pero sin poder leerla, la app avisa y no la '
-        'sigue; el aviso culpa a la conexión.',
+        'Con la forma de Bitcoin pero mal copiada, la app lo nota sin '
+        'consultar nada: pide revisar que la dirección esté completa y bien '
+        'copiada, sin culpar a la conexión.',
       );
-      await f.check('Una dirección que no se pudo leer no se sigue', () {
-        expect(own.wallets.wallets, isEmpty);
-        expect(own.accounts.length, count);
-        expect(f.screenText, contains('No se pudo leer esa dirección'));
-      });
+      await f.check(
+        'Una dirección mal copiada no se sigue, y el aviso no habla de la '
+        'conexión',
+        () {
+          expect(own.wallets.wallets, isEmpty);
+          expect(own.accounts.length, count);
+          expect(
+            f.shows('Revisa que la dirección esté completa y bien copiada.'),
+            isTrue,
+          );
+          expect(f.screenText, isNot(contains('Revisa tu conexión')));
+        },
+      );
       await f.back();
       await f.tapTip('Actualizar');
       await f.step(
@@ -3913,6 +3928,12 @@ const List<(String, ChartRange, String)> _ranges =
 /// A Bitcoin address with the shape of one and a checksum that is wrong:
 /// no service reads it, with a connection or without one.
 const String _badChecksum = 'bc1qexampleexampleexampleexample0lmg5w';
+
+/// The chain picked in the form that follows a wallet.
+Chain _chainPicked(FlowRun f) => f.tester
+    .widget<SegmentedButton<Chain>>(find.byType(SegmentedButton<Chain>))
+    .selected
+    .single;
 
 /// Diego, before adding any account.
 Future<QuincenaStore> _withoutAccounts() async {
