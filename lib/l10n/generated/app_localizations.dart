@@ -1388,6 +1388,12 @@ abstract class AppLocalizations {
   /// **'Tus cuentas'**
   String get yourAccounts;
 
+  /// No description provided for @homeAccountsApart.
+  ///
+  /// In es, this message translates to:
+  /// **'Estas no cuentan en lo que puedes gastar.'**
+  String get homeAccountsApart;
+
   /// No description provided for @firstAccountTitle.
   ///
   /// In es, this message translates to:

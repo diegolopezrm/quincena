@@ -878,6 +878,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get yourAccounts => 'Your accounts';
 
   @override
+  String get homeAccountsApart => 'These do not count in what you can spend.';
+
+  @override
   String get firstAccountTitle => 'Add where you keep your money';
 
   @override

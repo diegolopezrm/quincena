@@ -269,6 +269,7 @@
   "netWorth": "Patrimonio",
   "noAccounts": "Aún no tienes cuentas. Agrega la de tu banco, tu billetera o el efectivo con «Agregar cuenta».",
   "yourAccounts": "Tus cuentas",
+  "homeAccountsApart": "Estas no cuentan en lo que puedes gastar.",
   "firstAccountTitle": "Agrega dónde tienes tu plata",
   "firstAccountBody": "Con tus cuentas y lo que tienen hoy, Quincena te dice cuánto puedes gastar hasta tu próximo pago.",
   "firstAccountAction": "Agregar mi primera cuenta",

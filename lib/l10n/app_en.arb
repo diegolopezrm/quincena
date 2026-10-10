@@ -222,6 +222,7 @@
   "netWorth": "Net worth",
   "noAccounts": "No accounts yet. Add your bank's, your wallet or cash with \"Add account\".",
   "yourAccounts": "Your accounts",
+  "homeAccountsApart": "These do not count in what you can spend.",
   "firstAccountTitle": "Add where you keep your money",
   "firstAccountBody": "With your accounts and what they hold today, Quincena tells you how much you can spend until your next payday.",
   "firstAccountAction": "Add my first account",

@@ -170,7 +170,7 @@ class OwnHomeTab extends StatelessWidget {
         Panel(
           children: <Widget>[
             for (final Account a in own.accounts)
-              AccountRow(own: own, account: a),
+              if (a.spendable) AccountRow(own: own, account: a),
             if (!accounts)
               ListTile(
                 onTap: () => showAccountSheet(context, own: own),
@@ -184,6 +184,19 @@ class OwnHomeTab extends StatelessWidget {
               ),
           ],
         ),
+        // Savings, dollars and crypto apart: they are not in the figure.
+        if (own.accounts.any((Account a) => !a.spendable)) ...<Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
+            child: Text(l.homeAccountsApart, style: context.type.bodySmall),
+          ),
+          Panel(
+            children: <Widget>[
+              for (final Account a in own.accounts)
+                if (!a.spendable) AccountRow(own: own, account: a),
+            ],
+          ),
+        ],
         const SizedBox(height: 24),
         SectionLabel(
           l.recentMovements,
