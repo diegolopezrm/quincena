@@ -4041,36 +4041,52 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         await f.tap('Binance');
         await f.tap('Leer ahora');
         await _binanceIdle(f, own);
-        await f.step(
-          '«Leer ahora» falla una vez: el aviso rojo dice que algo salió mal '
-          'y que se intente de nuevo.',
-        );
-        await f.check('Con una sola falla no se culpa a la llave', () {
-          expect(own.binance.failures, 1);
-          expect(f.shows('Cambiar la llave'), isFalse);
-        });
-        await f.tap('Leer ahora');
-        await _binanceIdle(f, own);
-        await f.reveal(find.text('Cambiar la llave'));
-        await f.step(
-          'Al fallar otra vez, el aviso dice cuántas veces van seguidas y '
-          'que revises tu llave o la pegues de nuevo, con «Cambiar la llave» '
-          'debajo.',
-        );
-        await f.check(
-          'Dos fallas seguidas piden revisar la llave y ofrecen cambiarla',
-          () {
-            expect(own.binance.failures, 2);
-            expect(
-              f.shows(
-                'No se pudo leer Binance 2 veces seguidas. Revisa tu llave o '
-                'pégala de nuevo.',
-              ),
-              isTrue,
-            );
+        // With a network, Binance itself turns the test key down; without
+        // one, the read fails with no cause.
+        final bool rejected = _said(
+          f,
+        ).contains('Binance no reconoce esa llave');
+        if (rejected) {
+          await f.reveal(find.text('Cambiar la llave'));
+          await f.step(
+            '«Leer ahora» con una llave que Binance no reconoce: el aviso lo '
+            'dice de una vez y ofrece «Cambiar la llave».',
+          );
+          await f.check('Una llave rechazada lo dice y ofrece cambiarla', () {
             expect(f.shows('Cambiar la llave'), isTrue);
-          },
-        );
+          });
+        } else {
+          await f.step(
+            '«Leer ahora» falla una vez: el aviso rojo dice que algo salió '
+            'mal y que se intente de nuevo.',
+          );
+          await f.check('Con una sola falla no se culpa a la llave', () {
+            expect(own.binance.failures, 1);
+            expect(f.shows('Cambiar la llave'), isFalse);
+          });
+          await f.tap('Leer ahora');
+          await _binanceIdle(f, own);
+          await f.reveal(find.text('Cambiar la llave'));
+          await f.step(
+            'Al fallar otra vez, el aviso dice cuántas veces van seguidas y '
+            'que revises tu llave o la pegues de nuevo, con «Cambiar la '
+            'llave» debajo.',
+          );
+          await f.check(
+            'Dos fallas seguidas piden revisar la llave y ofrecen cambiarla',
+            () {
+              expect(own.binance.failures, 2);
+              expect(
+                f.shows(
+                  'No se pudo leer Binance 2 veces seguidas. Revisa tu llave o '
+                  'pégala de nuevo.',
+                ),
+                isTrue,
+              );
+              expect(f.shows('Cambiar la llave'), isTrue);
+            },
+          );
+        }
         await f.tap('Cambiar la llave');
         await f.page(
           '«Cambiar la llave» abre el formulario de la llave: la nueva '

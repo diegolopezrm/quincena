@@ -1073,6 +1073,7 @@ final List<AppFlow> planFlows = <AppFlow>[
         'el Éxito, el Metro, el gimnasio, el Uber.',
         most: 3,
       );
+      await f.reveal(find.textContaining('se pagaron en COP, no en USD'));
       await f.check('Lo pagado en pesos en esas fechas no cuenta hasta '
           'decirlo, y se pregunta junto', () {
         expect(first.asked, hasLength(9));
