@@ -1,9 +1,9 @@
 # Revisión flujo por flujo, 9 de octubre de 2026
 
 Cada cosa que una persona puede hacer en Quincena se jugó en un iPhone 17
-Pro simulado, con la versión 1.1.0 (build 20): 181 flujos, 1.187 pasos con
-su foto y 1.210 comprobaciones sobre los datos, de las que se cumplen
-1.208. Cada flujo quedó en una sola imagen, con su objetivo, cada paso y
+Pro simulado, con la versión 1.1.0 (build 20): 188 flujos, 1.243 pasos con
+su foto y 1.301 comprobaciones sobre los datos, de las que se cumplen
+1.300. Cada flujo quedó en una sola imagen, con su objetivo, cada paso y
 lo que se comprobó.
 
 Las imágenes están en una página para que expertos digan, flujo por flujo,
@@ -24,137 +24,38 @@ entonces la app cambió: la cuenta de ejemplo abre toda la app, y muchos de
 esos errores se corrigieron.
 
 El 9 de octubre se revisó cada una contra el código de la versión 1.1.0
-(build 20): 169 siguen, del todo o en parte, y 50 ya se resolvieron o ya
-no aplican. En esa revisión salieron 21 más.
+(build 20): 169 seguían, del todo o en parte, y 50 ya se habían resuelto o
+ya no aplicaban. En esa revisión salieron 21 más.
 
 Esta lista es lo que ya sabemos. Lo que más nos sirve de ti es lo que no
 está aquí, y saber si estas propuestas van en la dirección correcta.
 
+Actualizado el 9 de octubre por la noche, después de la revisión del
+experto: con las fases 27 a 29 y 31 a 34, y otros arreglos, se resolvieron
+100 y 10 más en parte. Cada una dice qué hace ahora y en qué fase cambió;
+para verlas, marca «Mostrar también lo que ya se resolvió». Las fotos de
+los flujos son las de esta versión.
+
 - 219 observaciones revisadas contra el código de hoy.
-- 169 siguen, del todo o en parte.
-- 50 ya resueltas o que ya no aplican.
+- 81 siguen, del todo o en parte.
+- 138 ya resueltas o que ya no aplican.
 - 21 nuevas, encontradas en esa revisión.
-- 9 pendientes de importancia alta.
+- 3 pendientes de importancia alta.
 
 Lo que sigue pendiente, por parte de la app, de mayor a menor importancia.
 Entre paréntesis, los flujos donde se ve.
 
 ### Primeros pasos, Ajustes y respaldos
 
-- **Media.** *Ajustes › Apariencia.* Son dos filas de botones sin título;
-  las dos empiezan con «Sistema», así que no se sabe cuál es el idioma.
-  Propuesta: Poner «Tema» e «Idioma» encima de cada fila, como ya hace la
-  hoja de ajustes de la conversación.
-- **Media.** *Ajustes › Avisarme el día de pago.* Sin permiso de
-  notificaciones, el aviso dice que hay que ir a los ajustes del teléfono
-  pero no da un botón (el de la ubicación sí tiene «Abrir ajustes»).
-  Propuesta: Agregar «Abrir ajustes» a ese aviso. En Android sirve lo que
-  ya abre los ajustes para la ubicación; en iPhone falta abrir la página
-  de Quincena en Ajustes.
-- **Media.** *Inicio con moneda USD.* Los montos en dólares se escriben
-  con «$» igual que los pesos ($89,96, Te llegó la quincena: $600,00).
-  Propuesta: Cuando la app está en español y la moneda de los totales no
-  es el peso, escribir los dólares como «US$» también en los totales.
-- **Media.** *Configuración paso 4 › Agregar pago fijo.* Un pago fijo
-  escrito a mano llega en la categoría Suscripciones, con preguntas de
-  prueba gratis y uso; un gimnasio o un crédito quedan como suscripción
-  sin que la persona lo note. Propuesta: Dejar la categoría sin elegir y
-  pedirla antes de guardar, o adivinarla por el nombre (arriendo,
-  gimnasio, crédito), y mostrar las preguntas de suscripción solo si se
-  elige esa categoría.
-- **Media.** *Configuración paso 2.* Si el día de pago fue hace pocos
-  días, la app ahora asume que el pago ya está en los saldos; si no ha
-  llegado, nadie se lo pregunta. Propuesta: En el paso 2, si hubo un día
-  de pago en los últimos 10 días, preguntar «¿Ya te llegó el pago del 30
-  de septiembre?» y, si no, tratarlo como pago atrasado.
 - **Media.** *Reglas aprendidas.* «Borrar regla» la quita al instante, sin
   preguntar ni ofrecer deshacer; los comercios salen sin tilde («Exito
   Laureles»). Propuesta: Al borrar, mostrar abajo «Regla borrada» con
   «Deshacer», y guardar con la regla el nombre del comercio como llegó la
   última vez para mostrarlo con sus tildes.
-- **Media.** *Varios dispositivos › Abrir un archivo.* «Listo: 19
-  cambios.» no dice qué llegó. Propuesta: Resumir por tipo: «Llegaron 7
-  cuentas y 10 movimientos».
-- **Media.** *Varios dispositivos › Para revisar.* Cada cambio que espera
-  muestra solo la versión que perdió (Crepes con Laura · −$23.500); no se
-  ve qué quedó ni en qué se diferencian. Propuesta: Mostrar lado a lado lo
-  que quedó y lo que espera, con el campo distinto resaltado, por ejemplo
-  «Nombre: Crepes & Waffles / Crepes con Laura».
-- **Media.** *Varios dispositivos y Exportar.* Hay dos códigos distintos
-  de 54 caracteres (el de sincronizar y el de respaldo) que se escriben a
-  mano; el aviso de código equivocado tiene que explicar que «el de
-  respaldo es otro». Propuesta: Ofrecer un QR para unir el otro
-  dispositivo y el botón de compartir para guardar el código, y pensar si
-  un solo código puede servir para las dos cosas.
-- **Media.** *Importar un archivo.* «¿Reemplazar todo con este archivo?»
-  no dice qué trae el archivo (fecha, cuentas, movimientos) ni ofrece
-  guardar antes lo de ahora. Propuesta: Mostrar lo que trae el archivo,
-  que ya está leído en ese momento («Respaldo del 3 oct: 7 cuentas, 10
-  movimientos»), y un botón «Exportar lo de ahora primero».
-- **Media.** *Ajustes > Tus datos.* En «Tus datos» siguen «Importar
-  extracto» e «Importar un archivo»; el segundo no tiene subtítulo y
-  reemplaza todo. Propuesta: Llamarlo «Restaurar un respaldo», con el
-  subtítulo «Reemplaza todo lo de ahora», y ponerlo junto a «Exportar mis
-  datos» bajo un título «Respaldo».
-- **Media.** *Exportar mis datos > Sin cifrar (JSON).* «Exportar mis
-  datos» ofrece solo cifrado o JSON; el JSON dice que sirve para otra
-  herramienta, pero una hoja de cálculo no lo abre bien. Propuesta:
-  Agregar una tercera opción «Movimientos en CSV», con fecha, cuenta,
-  comercio, categoría, monto y moneda.
-- **Media.** *Ajustes > Borrar todo.* «Borrar todo» también borra del
-  teléfono el código de respaldo y el diálogo no lo dice; después ya no se
-  puede ver con «Ver mi código de respaldo». Propuesta: Si hay código de
-  respaldo, agregar al diálogo «Si tienes respaldos cifrados, guarda antes
-  tu código de respaldo», con un botón «Ver mi código».
-- **Media.** *Varios dispositivos > Para revisar.* Si en un dispositivo se
-  cambia el nombre de un movimiento y en otro se le agrega una nota, queda
-  una sola versión y la otra espera en «Para revisar»; al elegir, una de
-  las dos ediciones se pierde. Propuesta: Como paso corto, que «Para
-  revisar» muestre qué campos difieren y que «Traer de vuelta» deje elegir
-  cuáles traer; después, mezclar campo por campo como describe
-  docs/SYNC.md.
-- **Media.** Un nombre cambiado en el teléfono y una nota agregada en el
-  computador al mismo movimiento chocan; tras «Traer de vuelta» y
-  «Descartar», la nota del computador se pierde. Propuesta: Como paso
-  corto, mostrar en «Para revisar» qué campos difieren y dejar traer solo
-  los elegidos; después, mezclar campo por campo como describe
-  docs/SYNC.md. (Archivos que no sirven y cambios que quedaron esperando)
-- **Media.** *Ajustes › Moneda de los totales.* Sin conexión y sin una
-  tasa guardada entre las dos monedas, el pago y el colchón conservan el
-  número y cambian de moneda: 2.400.000 pesos pasan a ser 2.400.000
-  dólares, sin aviso (own_settings_page.dart:145-156; rateBetween devuelve
-  null en own_controller.dart:886-897). (Nuevo.) Propuesta: Si no hay
-  tasa, avisarlo y no cambiar la moneda, o pedir de nuevo el pago y el
-  colchón en la moneda nueva.
-- **Baja.** *Ajustes › Captura automática.* Bajo el título «Captura
-  automática» están también «Billeteras propias» y «Binance», que no
-  capturan pagos. Propuesta: Pasar «Billeteras propias» y «Binance» a una
-  sección propia, por ejemplo «Cuentas conectadas», o a la pestaña
-  Cuentas.
-- **Baja.** *Configuración paso 1.* El error del nombre vacío repite la
-  pista «Tu nombre» en rojo, sin decir qué falta. Propuesta: Decir
-  «Escribe tu nombre para seguir».
-- **Baja.** *Ajustes › Borrar todo.* El diálogo aconseja exportar primero,
-  pero hay que cancelar y buscar «Exportar mis datos». Propuesta: Agregar
-  «Exportar primero» en el mismo diálogo, que abra la hoja de exportar y
-  después vuelva a preguntar.
-- **Baja.** *Licencias › OpenStreetMap.* La licencia de OpenStreetMap solo
-  está en inglés, en una app en español. Propuesta: Agregar el párrafo en
-  español antes del inglés en la entrada de OpenStreetMap; los enlaces y
-  el nombre de la licencia pueden quedar igual.
 - **Baja.** *Configuración paso 2 › calendario.* El calendario muestra
   «Cancelar» y «ACEPTAR» con mayúsculas distintas (textos de Flutter).
   Propuesta: Dar a todos los calendarios sus propios botones, «Cancelar» y
   «Aceptar», desde una función común.
-- **Baja.** *Configuración paso 3.* El aviso «Agrega al menos una cuenta
-  para empezar» tapa el botón «Siguiente». Propuesta: Mostrar la frase en
-  la pantalla, bajo las sugerencias o justo encima de los botones, en vez
-  de un aviso que tapa «Siguiente».
-- **Baja.** *Ajustes > Moneda de los totales.* Al cambiar la moneda de los
-  totales, «Lo que te pagan» y «Colchón» se convierten con la tasa del
-  día, pero nada en la pantalla lo dice. Propuesta: Agregar bajo la lista:
-  «Lo que te pagan y el colchón pasan a la nueva moneda con la tasa del
-  día.».
 - **Baja.** *Captura automatica.* «Ya reconoce 2 comercios.» sigue debajo
   del panel, separado de la fila «Reglas aprendidas: 4 reglas», y repite
   parte de lo mismo. Propuesta: Dejar un solo texto como subtítulo de la
@@ -165,11 +66,6 @@ Entre paréntesis, los flujos donde se ve.
   explica lo mismo. Propuesta: Dejar una línea corta, como «Sugiere el
   comercio cuando la alerta no dice dónde fue», y mover el resto a «Más
   información», ya que el aviso al encenderla lo explica completo.
-- **Baja.** *Primera pantalla en ingles.* En inglés, la primera pantalla
-  sigue diciendo «in pesos, dollars or crypto»; el ejemplo sigue
-  presentando a Valentina en Medellín, ahora aclarando que es inventada.
-  Propuesta: En inglés decir «in your currency, dollars or crypto»; lo de
-  Medellín puede quedarse porque describe el ejemplo.
 - **Baja.** *Licencias.* La página de licencias muestra «Powered by
   Flutter» en inglés, debajo del texto legal en español. Propuesta:
   Aceptarlo como texto de Flutter, o hacer una página de licencias propia
@@ -185,20 +81,28 @@ Entre paréntesis, los flujos donde se ve.
   guardar; si la persona cierra ese selector, no queda archivo, el código
   ya quedó guardado y nada lo dice. Propuesta: Pedir primero dónde guardar
   y mostrar el código después, con el nombre del archivo guardado.
-- **Baja.** *Ajustes › Nombre.* Guardar el nombre en blanco cierra el
-  cuadro sin guardar y sin decir por qué; el cuadro de montos ya explica
-  su error (own_settings_page.dart:67-78, el diálogo del nombre no tiene
-  comprobación). (Nuevo.) Propuesta: Dejar el cuadro abierto con «Escribe
-  tu nombre», como hacen los montos.
-- **Baja.** *Configuracion paso 1 y formulario de cuenta.* En el
-  formulario de cuenta el error se va al escribir; en el paso 1 de la
-  configuración, «Tu nombre» en rojo sigue aunque el nombre ya esté
-  escrito, hasta tocar «Siguiente» otra vez. Hoy: En el formulario de
-  cuenta el error se va al escribir; en el paso 1 de la configuración, «Tu
-  nombre» en rojo sigue aunque el nombre ya esté escrito, hasta tocar
-  «Siguiente» otra vez. Propuesta: En el paso 1, quitar el error del
-  nombre apenas se escriba algo, como ya hacen el formulario de cuenta y
-  el cuadro de montos de Ajustes.
+- **Media.** *Configuración paso 4 › Agregar pago fijo.* Un pago fijo
+  escrito a mano llega en la categoría Suscripciones, con preguntas de
+  prueba gratis y uso; un gimnasio o un crédito quedan como suscripción
+  sin que la persona lo note. Hoy: Ahora configurar ya no pasa por los
+  pagos fijos. «Agregar pago fijo» sigue abriendo en Suscripciones.
+  Propuesta: Dejar la categoría sin elegir y pedirla antes de guardar, o
+  adivinarla por el nombre (arriendo, gimnasio, crédito), y mostrar las
+  preguntas de suscripción solo si se elige esa categoría.
+- **Media.** *Varios dispositivos y Exportar.* Hay dos códigos distintos
+  de 54 caracteres (el de sincronizar y el de respaldo) que se escriben a
+  mano; el aviso de código equivocado tiene que explicar que «el de
+  respaldo es otro». Hoy: Ahora el código se comparte, se pega y se nombra
+  cuando es el otro. No hay QR y siguen siendo dos códigos. Propuesta:
+  Ofrecer un QR para unir el otro dispositivo y el botón de compartir para
+  guardar el código, y pensar si un solo código puede servir para las dos
+  cosas.
+- **Baja.** *Licencias › OpenStreetMap.* La licencia de OpenStreetMap solo
+  está en inglés, en una app en español. Hoy: Ahora la nota de
+  OpenStreetMap también está en español. El texto de la licencia sigue en
+  inglés, como se publica. Propuesta: Agregar el párrafo en español antes
+  del inglés en la entrada de OpenStreetMap; los enlaces y el nombre de la
+  licencia pueden quedar igual.
 - **Baja.** *Hoja de Ajustes del ejemplo > Tu key.* En el teléfono ese
   campo ya no existe. En la demo web, «Conectar» con la key vacía sigue
   sin hacer ni decir nada. Hoy: En el teléfono ese campo ya no existe. En
@@ -208,113 +112,37 @@ Entre paréntesis, los flujos donde se ve.
 
 ### Inicio y Movimientos
 
-- **Alta.** *Inicio sin cuentas (Por hacer, Tus cuentas, Movimientos
-  vacío).* Sin cuentas, «Por hacer» solo pide pagos fijos y no pide la
-  primera cuenta. «Tus cuentas» queda como un título vacío, sin botón.
-  «Últimos movimientos» dice que se registra con «Movimiento», pero ese
-  botón solo responde «Primero agrega una cuenta.», en un aviso sin
-  acción. Propuesta: Poner primero la tarea «Agrega tu primera cuenta» con
-  su botón, un «Agregar cuenta» dentro de «Tus cuentas» vacío y la acción
-  «Agregar» en el aviso.
 - **Alta.** *Inicio > «Registra tu pago del 30 de septiembre» >
   «Registrar».* El formulario abre en «Ingreso», pero vacío, aunque la app
   ya sabe el monto (el pago del perfil), la categoría (Salario) y la fecha
   (el día de pago que pasó). Hay que llenar tres cosas y retroceder el
   calendario un mes. Propuesta: Abrirlo con el pago del perfil, Salario y
   la fecha del día de pago que pasó, para confirmar con un toque.
-- **Alta.** *Formulario de movimiento (pago de la tarjeta).* El error
-  natural es anotar «Pago Visa» como gasto, o en «Créditos». Eso cuenta
-  dos veces la misma plata, y nada en el formulario lo advierte.
-  Propuesta: Si el nombre dice tarjeta, Visa o el nombre de una tarjeta, o
-  se elige «Créditos» desde una cuenta de banco, proponer «Transferencia
-  hacia Visa» con un toque.
 - **Media.** *«¿De dónde sale?» y «¿Me alcanza?» (Después del pago).* La
   app muestra «Te llegó la quincena: $2.400.000» por la Nómina del 30,
   pero en otras partes dice «No sabe cuánto te pagan» y «No sé cuánto te
   pagan, así que no lo cuento». Propuesta: Junto a «Te llegó la quincena»,
   preguntar «¿Te pagan $2.400.000 cada quincena?» y guardarlo con un
   toque.
-- **Media.** *Movimientos, filas.* Las marcas importantes se cortan por la
-  cuenta en la misma línea: «Servicios · Bancolombia · Progra…» y «Mercado
-  · Bancolombia · Dividid…». No se lee ni «Programado» ni cuánto es tu
-  parte. Propuesta: Mostrar «Programado» y «Tu parte $X» como etiqueta o
-  en su propia línea, antes de la cuenta.
-- **Media.** *Movimientos, buscador.* Solo se puede buscar con texto: no
-  hay filtros por cuenta, categoría, tipo, fechas ni monto. Buscar
-  «187400» no encuentra el gasto de $187.400. Propuesta: Buscar también
-  por monto (187400 o 187.400) y agregar filtros por cuenta, categoría,
-  tipo y fechas.
-- **Media.** *Formulario nuevo movimiento.* La cuenta que viene elegida es
-  siempre la primera (Bancolombia), no la más usada ni la última. Para
-  pagos en efectivo o con Nequi hay que abrir el menú cada vez. Propuesta:
-  Elegir de entrada la última cuenta usada, o la más usada en los últimos
-  días.
 - **Media.** *Editar movimiento, «Eliminar».* Al confirmar, el movimiento
   se borra sin forma de deshacerlo, aunque la cifra de Inicio cambie.
   Propuesta: Después de borrar, mostrar unos segundos un aviso con
   «Deshacer».
-- **Media.** *Editar movimiento, «Cuenta».* Al pasar un gasto de una
-  cuenta en pesos a una en dólares, el número se queda igual y solo cambia
-  la moneda: 15.600 COP pasan a ser 15.600 USD, sin aviso. Propuesta: Al
-  cambiar de moneda, convertir el monto con la tasa o avisar «Cambiaste de
-  COP a USD: revisa el monto».
-- **Media.** *Movimientos, transferencia entre monedas.* La fila
-  «Bancolombia → Cuenta en dólares» muestra solo lo que salió ($331.284),
-  no lo que llegó (US$98,50), y el título se corta. Propuesta: Agregar
-  debajo «Llegaron US$98,50» y dejar que el título use dos líneas o acorte
-  el nombre de la cuenta.
 - **Media.** *Inicio, «Tus cuentas».* La cuenta en dólares, Binance y
   Bitcoin aparecen en la misma lista que Bancolombia y Nequi, sin decir
   que no cuentan en «Puedes gastar». Propuesta: En Inicio, separar «De uso
   diario» de «Ahorro e inversión» como en Cuentas, o marcar las que no
   cuentan.
-- **Media.** *Movimientos.* «Éxito Laureles» y «EXITO LAURELES», por
-  $63.200 a la misma hora, salen como dos gastos, sin aviso de que pueden
-  ser uno repetido. Propuesta: Marcar los posibles repetidos con
-  «¿Repetido?» y dejar unirlos o borrar uno ahí mismo.
 - **Media.** *Pagos fijos (desde «Por hacer»).* Propone Rappi como pago
   fijo, pero no el Arriendo de $1.200.000. «No tengo pagos fijos» se
   acepta con un toque aunque haya un arriendo en el historial, y la cifra
   deja de ser provisional. Propuesta: Proponer también los gastos de
   Arriendo, Servicios y Créditos aunque haya uno solo, y antes de aceptar
   «No tengo pagos fijos» preguntar por ese arriendo.
-- **Media.** *Próximos 30 días con algo movido en la simulación.* Con la
-  matrícula movida al 16, el encabezado sigue diciendo «El 8 oct te
-  quedarías sin plata». Solo la línea punteada muestra la prueba.
-  Propuesta: Agregar debajo del aviso «Con lo que pruebas: no te quedas
-  sin plata», o el nuevo día sin plata si lo hay.
-- **Media.** *Formulario de movimiento, categoría.* Un gasto sin categoría
-  se guarda como «Otros» sin decirlo. La app ya aprende comercio →
-  categoría en las capturas, pero no lo usa al escribir a mano. Propuesta:
-  Proponer la categoría según «¿Dónde o a quién?», como hace Por revisar,
-  y decir «Quedará en Otros» si no se elige.
-- **Media.** *Editar movimiento, un gasto dividido que pasa a «Ingreso» o
-  «Transferencia».* Al cambiar el tipo y guardar, la división se borra sin
-  aviso y lo que te deben deja de contar. «Eliminar» sí avisa de eso;
-  cambiar el tipo no. (Nuevo.) Propuesta: Antes de guardar, avisar
-  «También se quita su división: lo que te deben por este gasto deja de
-  contar», como al eliminar.
-- **Baja.** *Hoja «¿De dónde sale?» sin cuentas.* El título «Tus cuentas
-  de uso diario» queda sin nada debajo. Propuesta: Decir «Aún no tienes
-  cuentas de uso diario» con un enlace para agregar una.
-- **Baja.** *Cierre de la quincena, «Una acción posible».* Propone llevar
-  a una meta los $7.961 que quedan, aunque hay tareas pendientes y la
-  cifra está casi en cero. Propuesta: Proponerlo solo cuando lo libre
-  supere un mínimo, por ejemplo el 10 % del pago, y no haya tareas
-  pendientes en Inicio.
-- **Baja.** *Cierre de la quincena, «Qué cambió».* Los pagos mensuales
-  hechos en la otra quincena encabezan la comparación («Arriendo $0
-  −$1.650.000») y tapan los cambios reales del día a día. Propuesta:
-  Marcar los pagos mensuales y compararlos mes contra mes, y dejar la
-  comparación por quincena para el gasto del día a día.
 - **Baja.** *Inicio, «¿Me alcanza para…?».* «Ver» sin precio abre una
   página vacía en vez de pedir el precio ahí mismo. Propuesta: Sin precio,
   que «Ver» se quede en Inicio y ponga el foco en el campo, o que no se
   pueda tocar.
-- **Baja.** *¿Me alcanza? (página).* Arriba a la derecha aparece el ícono
-  de «Cierre de la quincena», que nada tiene que ver con probar una
-  compra. Propuesta: Mostrar ese ícono solo en «Próximos 30 días», no al
-  probar una compra.
 - **Baja.** *Dividir un gasto.* «Quitar la división» es un botón de texto
   común, sin color de peligro ni confirmación. El grupo nuevo toma el
   nombre del comercio («Crepes & Waffles») en vez del de las personas.
@@ -328,67 +156,11 @@ Entre paréntesis, los flujos donde se ve.
   «Movimiento» tapa el monto de la última fila visible. Propuesta: Hacerlo
   compacto, solo con el +, mientras haya filas debajo, o correrlo para que
   no quede sobre los montos.
-- **Baja.** *Cierre de la quincena.* Hay dos botones «Ver los próximos 30
-  días» iguales en la misma pantalla. «Mira qué cobro podrías mover de
-  fecha» lleva a una simulación que no cambia la fecha de verdad.
-  Propuesta: Dejar un solo botón y, para los movimientos anotados a
-  futuro, ofrecer «Cambiar la fecha» de verdad.
-- **Baja.** *Movimientos, buscador.* No hay botón para borrar la búsqueda,
-  ni cuenta de resultados, ni total. Tampoco hay total por día en la
-  lista. Propuesta: Agregar una «x» en el campo, una línea «2 movimientos
-  · −$33.300» al buscar y el total de cada día junto a su fecha.
-- **Baja.** *Pregúntale a tu plata, respuesta fallida.* Dice «Prueba de
-  nuevo», pero no tiene botón para reintentar: hay que volver a escribir o
-  tocar la pregunta. Propuesta: Un botón «Reintentar» en la misma tarjeta
-  del error que vuelva a hacer la pregunta.
-- **Baja.** *Dividir un gasto.* Juan, desmarcado, queda como miembro del
-  grupo nuevo aunque no tuvo parte. «Valor total» sigue diciendo «El del
-  movimiento: no se cambia.», que se lee como si nunca pudiera cambiar.
-  Propuesta: No crear miembros para los nombres desmarcados y decir «Sigue
-  al monto del movimiento».
-- **Baja.** *Formulario de movimiento, editar.* No dice de dónde vino el
-  movimiento (a mano, notificación, extracto). Eso ayuda a decidir si es
-  un repetido. Propuesta: Una línea pequeña bajo el título, como «Llegó
-  por notificación de Bancolombia el 2 oct».
-- **Baja.** *Cierre de la quincena, «Una acción posible» con meta.* Cuando
-  propone que una parte vaya a la meta, no hay botón para hacerlo; las
-  otras acciones sí traen el suyo («Ver los pagos», «Ver los próximos 30
-  días»). (Nuevo.) Propuesta: Agregar un botón «Llevar a la meta» que abra
-  «Reparte tu quincena» o la meta.
-- **Baja.** *Tasas > «Escribir una tasa».* «Guardar» con el campo vacío o
-  en cero cierra el diálogo sin guardar y sin decir nada. (Nuevo.)
-  Propuesta: Desactivar «Guardar» mientras no haya una tasa mayor que
-  cero, o avisar «Escribe una tasa».
 - **Baja.** *Inicio, «¿Me alcanza para…?» y la página «¿Me alcanza?».* El
   campo del precio siempre muestra «$», aunque la moneda de los totales
   sea euros, libras o reales; el resto de la app usa el símbolo de esa
   moneda. (Nuevo.) Propuesta: Usar en los dos campos el símbolo de la
   moneda de los totales, como ya hace «Dividir un gasto».
-- **Alta.** *Inicio: «Próximos días» y «¿Me alcanza?».* Dos cifras se
-  contradicen: «Puedes gastar $7.961» y, justo debajo, «Tu saldo mínimo
-  estimado será $157.961 el 12 de octubre». En 03-11 aparece «Te faltan
-  $112.039» junto a un «saldo mínimo» de $37.961. La diferencia es la
-  reserva y los sobres, pero la pantalla no lo explica. Hoy: «¿Me
-  alcanza?» ya dice «usarías $X de tu reserva de ingresos variables». En
-  Inicio, «Próximos días» sigue dando un saldo mínimo que incluye la
-  reserva y los sobres, sin decirlo, junto a un «Puedes gastar» mucho
-  menor. Propuesta: En «Próximos días» y «Próximos 30 días», agregar «de
-  los cuales $X son tu reserva y tus sobres», o mostrar el mínimo de lo
-  libre para gastar. (Anotar un pago que viene)
-- **Media.** *Reparte tu quincena (desde «Repartir»).* Propone $150.000
-  para la meta cuando hay $7.961 para repartir. Abajo dice «Te pasas por
-  −$142.039», con un signo de sobra. Y «Para repartir» no menciona los
-  $150.000 de reserva que explican la diferencia. Hoy: La primera
-  propuesta no reparte más de lo que hay, la suma nombra la reserva y «Te
-  pasas por» va sin signo. Desde la segunda quincena repite el reparto
-  anterior tal cual, aunque ahora haya menos. Propuesta: Al repetir el
-  reparto anterior, recortarlo a lo que hay para repartir y decir que se
-  ajustó.
-- **Baja.** *Tasas > «Escribir una tasa» (abierta desde Por hacer).* El
-  diálogo no tiene «Cancelar» y el campo no dice la moneda (COP). Hoy: El
-  diálogo dice «Cuánto vale 1 EUR en COP» y el campo muestra COP al
-  escribir, pero sigue sin «Cancelar»: solo se cierra tocando afuera.
-  Propuesta: Agregar «Cancelar» junto a «Guardar».
 - **Baja.** *Pregúntale a tu plata.* El título se corta («Pregúntale a tu
   p…») por «Nueva» y el ícono de información. Sin conexión, el error es
   genérico («No pude responder esta vez»), aunque la app distingue el caso
@@ -419,39 +191,16 @@ Entre paréntesis, los flujos donde se ve.
 
 ### Cuentas y Cripto
 
-- **Media.** *Editar cuenta de una tarjeta.* Con saldo a favor, «¿Cuánto
-  debes hoy?» muestra «-55.200»: una deuda negativa no se entiende.
-  Propuesta: Cambiar el campo por un selector «Debes / A favor» con el
-  monto siempre en positivo, y guardar según lo elegido; así tampoco se
-  pierde el saldo a favor al corregirlo.
 - **Media.** *Agregar cuenta.* Al elegir una cripto (ETH, BTC) como
   moneda, «Cuenta de uso diario» sigue encendida aunque su propia ayuda
   dice «Apágalo para … cripto»; hay que apagarla a mano. Propuesta: Apagar
   el interruptor solo al elegir una moneda cripto (también «Otra cripto»),
   salvo que la persona ya lo haya tocado, igual que pasa con Exchange y
   Ahorro.
-- **Media.** *Binance (conectar).* «Conectar» con los campos vacíos o con
-  solo la API Key no hace nada ni dice qué falta. Propuesta: Dejar
-  «Conectar» apagado hasta que estén las dos llaves, o al tocarlo marcar
-  en rojo el campo vacío: «Pega la Secret Key».
 - **Media.** *Binance (conectar).* El botón para ver la Secret Key es un
   candado que cambia a un chulo, sin tooltip: un lector de pantalla no
   dice qué hace. Propuesta: Usar un ojo y un ojo tachado, con la etiqueta
   «Mostrar» / «Ocultar» para el lector de pantalla.
-- **Media.** *Cuentas (resumen arriba).* El «Patrimonio» no cuadra con lo
-  que se ve. En 04-21 dice $9.376.827, pero las filas visibles suman unos
-  $13,4M: el préstamo, lo que se debe a otros y las cuotas solo aparecen
-  dentro de «¿De dónde sale?». Propuesta: Cuando existan, agregar en
-  Cuentas, bajo las cuentas, las filas «Te deben», «Les debes a otras
-  personas» y «Compras a cuotas», como ya hace el detalle. (Ver lo que me
-  deben y las cuotas en el patrimonio)
-- **Media.** *Editar cuenta de una tarjeta con saldo a favor.* Al corregir
-  «¿Cuánto debes hoy?» en una tarjeta con saldo a favor, el campo borra el
-  signo menos y al guardar el saldo a favor queda como deuda: en el
-  formulario no hay forma de escribir un saldo a favor. Lo mismo pasa con
-  una cuenta en sobregiro, que no acepta un saldo negativo. (Nuevo.)
-  Propuesta: Un selector «Debes / A favor» en las tarjetas (y una forma de
-  poner saldo negativo en las demás cuentas), y guardar según lo elegido.
 - **Media.** *Binance conectada, con cuentas llevadas a mano.* Si al
   conectar no se toca «Archivarlas», lo de Binance queda contado dos veces
   en el patrimonio y solo la página de Binance lo dice; ni Cuentas ni la
@@ -465,10 +214,6 @@ Entre paréntesis, los flujos donde se ve.
   precio de la moneda aunque el saldo sea 0 y, si ya hay una cuenta cripto
   vacía, ofrecer en la página vacía «Registrar tu primera compra» en esa
   cuenta.
-- **Baja.** *Escribir una tasa (cuadro).* Solo hay «Guardar» (sin
-  «Cancelar»), y guardar 0 o vacío no hace nada ni avisa. Propuesta:
-  Agregar «Cancelar» y, con 0 o vacío, no cerrar: mostrar «Escribe una
-  tasa mayor que cero» bajo el campo.
 - **Baja.** *Agregar billetera.* Hay que elegir la red aunque la dirección
   la delata (bc1/1/3 Bitcoin, 0x Ethereum, T TRON); con la red equivocada
   solo sale un error. Propuesta: Elegir la red sola al pegar la dirección
@@ -538,197 +283,41 @@ Entre paréntesis, los flujos donde se ve.
 
 ### Plan
 
-- **Alta.** *Plan › Metas.* La fecha límite se pide pero no se usa. La
-  Moto con fecha del 30 de abril dice «llega en julio de 2027» y el viaje
-  con fecha del 20 de diciembre dice «llega en enero de 2027», sin ninguna
-  advertencia. Propuesta: En la fila y en la hoja de la meta, decir «A
-  este ritmo llegas en julio: para el 30 de abril necesitas $X al mes» y
-  ofrecer «Usar $X al mes», como ya hace la conversación.
-- **Alta.** *Compras a cuotas › Registrar un pago.* Registrar un pago no
-  pregunta de qué cuenta salió la plata ni crea el movimiento: «Puedes
-  gastar» sube por el pago aunque la plata salió de una cuenta, y solo
-  cuadra si la persona también anota el gasto aparte. Propuesta: Preguntar
-  «¿De qué cuenta salió?» (como «Le presté») y crear el gasto ligado; si
-  no salió de una cuenta de Quincena, decir que hay que anotarlo aparte.
-- **Alta.** *¿Y si…?* «Al 17 nov» sigue sumando cada pago sin restar el
-  gasto del día a día, así que da cifras muy altas, y «Pago tarde» casi
-  nunca mueve el saldo mínimo. Propuesta: Restar lo que suele gastarse por
-  día (lo que una quincena suele llevar) o, al menos, decir junto a la
-  cifra «sin contar el día a día».
-- **Media.** *Gastos compartidos › Registrar pago / Me prestaron.* «Le
-  pagaste a Camilo» y «Alguien me prestó plata» no preguntan cuenta: la
-  plata sale o llega sin quedar en ninguna cuenta. Propuesta: Preguntar
-  «¿De qué cuenta salió?» o «¿A qué cuenta llegó?», con la opción «No pasó
-  por mis cuentas», y crear el movimiento ligado como ya hace «Le presté».
-- **Media.** *Plan › Colchón en días y Ajustes › Colchón.* Dos cosas
-  distintas se llaman «Colchón»: el fondo de emergencia medido en días,
-  que no toca «Puedes gastar», y la plata guardada sin tocar de Ajustes,
-  que sí lo baja. Elegir cuentas en «Colchón en días» no mueve nada en
-  Inicio. Propuesta: Llamarla «Fondo de emergencia en días» (y la sección
-  «Dónde está tu fondo») y agregar una línea: «La plata que no quieres
-  contar en lo que puedes gastar se fija en Ajustes › Colchón».
 - **Media.** *Viajes › página del viaje.* Todo gasto entre las fechas del
   viaje cuenta, aunque sea en Medellín y en pesos (Éxito, Metro de
   Medellín, gimnasio): hay que sacarlos uno por uno con «No es del viaje».
   Propuesta: En un viaje en otra moneda, contar por defecto los cobros en
   esa moneda o de la tarjeta usada afuera, y preguntar por el resto en
   bloque («Estos 6 gastos en pesos, ¿son del viaje?»).
-- **Media.** *Plan › Metas y Reparte tu quincena.* No hay forma de abonar
-  a una meta: hay que reescribir el total en «¿Cuánto llevas?» haciendo la
-  suma de cabeza, y lo que el sobre de la meta aparta cada quincena nunca
-  se suma a lo ahorrado. Propuesta: Botón «Abonar» que sume un monto, y al
-  empezar una quincena nueva ofrecer «Pasar los $250.000 del sobre a la
-  meta».
-- **Media.** *Lo quiero, pero después.* No hay «Lo compré»: comprar un
-  deseo es ir a Movimientos y luego borrarlo a mano. La caneca lo borra
-  sin confirmar ni deshacer. Propuesta: «Lo compré» que abra el gasto ya
-  lleno con el nombre y el precio y quite el deseo; al quitarlo, mostrar
-  un aviso con «Deshacer».
 - **Media.** *Ingresos variables › Cobro.* «Borrar cobro» borra de una
   vez, sin confirmar ni deshacer; y sin hoja de compartir el aviso de
   «Mensaje copiado» queda tapado por el formulario. Propuesta: Pedir
   confirmación o mostrar «Deshacer» al borrar, y mostrar el aviso de
   mensaje copiado dentro de la hoja (o cerrar la hoja antes).
-- **Media.** *Compras a cuotas › hoja.* Con una tarjeta de Quincena dice
-  «La compra ya está en esa cuenta», pero si la compra no se anotó en la
-  tarjeta no cuenta en ningún lado. Propuesta: Buscar en la tarjeta un
-  gasto parecido (valor y fecha); si no hay, decir «No encuentro esta
-  compra en la Visa» y ofrecer anotarla desde la misma hoja.
-- **Media.** *Plan › Reparte tu quincena.* Con poca plata, la propuesta le
-  da todo a la meta y deja el día a día en $0, aunque falten 12 días para
-  el pago. Propuesta: Cubrir primero el día a día (lo usual o un mínimo
-  por día) y decir «Esta quincena tu meta recibe menos». (Repartir más de
-  lo que hay)
-- **Media.** *Plan › Reparte tu quincena.* Repartir una quincena nueva
-  copia los montos de la anterior aunque haya menos plata, y abre diciendo
-  «Te pasas por $X». Solo quita los sobres de metas borradas. Propuesta:
-  Copiar metas y apartados, ajustar el día a día a lo que queda y decir
-  qué cambió («El día a día bajó de $300.000 a $200.000»). (Repartir como
-  la quincena pasada)
-- **Media.** *Próximos 30 días e Inicio.* «Saldo mínimo estimado» sigue
-  contando la reserva y lo apartado en sobres, mientras «Puedes gastar»
-  los resta; ni Inicio ni «Próximos 30 días» explican la diferencia. Solo
-  «¿Me alcanza?» avisa cuando una compra toca lo apartado. Propuesta:
-  Agregar debajo «De eso, $150.000 son de la reserva y $140.000 están en
-  sobres», o dibujar en la gráfica la línea de lo apartado. (Saber si me
-  alcanza sin tocar la reserva; Repartir la quincena en sobres)
 - **Media.** *Viajes › página del viaje.* «No es del viaje» saca el gasto
   de una vez, sin «Deshacer», y no hay dónde ver ni devolver lo que se
   sacó. Propuesta: Mostrar un aviso con «Deshacer» y una sección «Gastos
   que sacaste» para devolverlos. (Cuadrar los gastos de un viaje)
-- **Media.** *Viajes › Dividir gastos del viaje con alguien.* Crea un
-  grupo vacío ligado al viaje; los gastos del viaje hay que dividirlos uno
-  por uno desde Movimientos. Propuesta: Al crear el grupo, ofrecer marcar
-  los gastos del viaje que se dividen, o poner «Dividir» en cada línea del
-  viaje. (Cuadrar los gastos de un viaje)
 - **Media.** *Ingresos variables › Cobro.* La primera opción de «¿Con qué
   movimiento llegó?» sigue siendo «No, o no está en Quincena», y no
   propone el ingreso de $700.000 de Agencia Uno aunque coinciden nombre y
   valor. Propuesta: Decir «Ninguno, o no está en Quincena» y dejar elegido
   el ingreso que coincide. Mejor aún: cuando llegue ese ingreso, ofrecer
   marcar el cobro como cobrado. (Anotar lo que me deben mis clientes)
-- **Media.** *Ingresos variables › Usé de la reserva.* Anota el uso de la
-  reserva pero no crea ningún gasto: «Puedes gastar» sube 50.000 aunque la
-  plata se fue en impuestos, salvo que se anote aparte. Propuesta:
-  Preguntar de qué cuenta salió y crear el gasto ligado; si no, al menos
-  decir «Anota también el pago en Movimientos». (Reservar una parte de
-  cada cobro)
-- **Media.** *Plan › Metas.* Una meta con la fecha vencida no avisa nada
-  en la fila, y una vez puesta la fecha no se puede quitar; solo se puede
-  mover. Propuesta: Avisar «La fecha ya pasó: ¿la mueves?» y agregar un
-  botón para quitar la fecha, como el de la prueba gratis. (Poner al día
-  una meta y una prueba gratis vencidas)
-- **Media.** *Gastos compartidos › Agregar gasto.* Cuando pagaste tú, no
-  pregunta la cuenta ni deja ligar un movimiento: los 100.000 del mercado
-  no salen de ninguna cuenta y «Puedes gastar» no cambia. Propuesta:
-  Preguntar de qué cuenta salió (y contar como gasto solo tu parte) o
-  dejar elegir el movimiento ya anotado. (Dividir gastos en un grupo)
-- **Baja.** *¿Y si…?* Después de «Aplicar», el escenario de Netflix sigue
-  guardado y ahora se calcula sobre el precio nuevo, como si fuera a subir
-  otra vez. Propuesta: Al aplicar, quitar el escenario de la lista (o
-  marcarlo «Aplicado») y desactivar «Aplicar» para ese mismo cambio.
-- **Baja.** *Formularios de Plan (meta, deseo, pago fijo, cuotas,
-  préstamo, dividir).* El aviso rojo de datos faltantes sigue a la vista
-  después de llenar los campos, hasta volver a guardar. Propuesta: Borrar
-  el aviso en cuanto se escribe en un campo, como ya hace «Dividir un
-  gasto».
-- **Baja.** *Hoja de la meta.* «Para el 30 de abril» no dice el año, y el
-  calendario abre seis meses adelante, en otro año. Propuesta: Mostrar el
-  año cuando no es el actual: «Para el 30 de abril de 2027».
 - **Baja.** *Cargos para revisar.* Para el pago visto dos veces dice
   «ábrelo y bórralo tú»: hay que tocar el movimiento, buscar «Eliminar» y
   confirmar. Propuesta: Botón «Borrar el repetido» en la tarjeta, que pida
   confirmar y deje deshacer. Si la app no debe borrar sola, al menos
   «Abrir el repetido», que lleve directo al movimiento que sobra.
-- **Baja.** *Ajustes › Colchón.* El campo del diálogo no tiene etiqueta ni
-  borde: sin el teclado arriba no se ve dónde escribir. Además acepta un
-  colchón mayor que lo que hay y «Puedes gastar» pasa a «Te faltan» sin
-  aviso. Propuesta: Poner una pista en el campo («Por ejemplo, 500.000»)
-  y, antes de guardar, decir cómo queda: «Podrías gastar $X hasta el 15 de
-  octubre» o «Te faltarían $X».
-- **Baja.** *¿Y si…? › Pago tarde y Le presté.* Las flechas abajo/arriba
-  significan menos/más días; en «Monto» de Le presté el signo va pegado
-  («$80.000») y en las demás hojas con espacio («$ 80.000»). Propuesta:
-  Usar − y + para los días, y un solo prefijo en todos los formularios
-  tomado de la moneda de la cuenta (hoy tres pantallas ponen «$ » fijo).
-- **Baja.** *Compras a cuotas › compra sin tasa.* Con valor financiado y
-  cuota conocidos, la tasa sigue diciendo «No la sabes». Propuesta:
-  Calcular la tasa que implica la cuota y mostrarla como estimado: «Unos
-  1,9 % al mes, calculada con la cuota». (Pagar una compra a cuotas sin
-  saber la tasa)
-- **Baja.** *Ingresos variables › Reserva.* Cambiar el porcentaje lo
-  aplica a todo lo cobrado desde que empezó la reserva: pasar de 15 % a 30
-  % la duplica de una vez, sin decirlo. Propuesta: Decirlo junto al
-  selector («Cuenta para todo lo cobrado desde el 1 de octubre») o
-  preguntar si aplica desde hoy. (Reservar una parte de cada cobro)
-- **Baja.** *Pagos fijos.* Un pago fijo en pausa sigue mostrando la
-  campana aunque no tenga aviso programado. Propuesta: Ocultar o tachar la
-  campana mientras está en pausa, y también cuando la prueba gratis ya
-  terminó y no hay aviso. (Cambiar, pausar y borrar un pago fijo)
-- **Baja.** *Pagos fijos › Se paga desde.* «Se paga desde» sigue
-  ofreciendo todas las cuentas, Binance y Bitcoin incluidas. Propuesta:
-  Ofrecer solo cuentas de uso diario y tarjetas, y dejar las demás bajo
-  «Otra cuenta». (Cambiar, pausar y borrar un pago fijo)
-- **Baja.** *Pagos fijos (lista).* Cuando la prueba gratis termina,
-  desaparece de la fila sin decir nada y el próximo cobro se queda en la
-  fecha vieja. Propuesta: Al terminar la prueba, preguntar en la fila «¿Ya
-  te cobraron Max?» y mover el próximo cobro según la respuesta. (Poner al
-  día una meta y una prueba gratis vencidas)
-- **Baja.** *Gastos compartidos › Recordar.* Para un préstamo, el mensaje
-  sigue diciendo «por los $50.000 de Pedro»: repite el nombre de la
-  persona. Propuesta: En préstamos, decir «por los $50.000 que te presté».
-  (Quedar a paz y salvo)
 - **Baja.** *Gastos compartidos › Registrar pago.* «Registrar pago» no
   deja elegido «Pedro te envió · $50.000» aunque coinciden nombre y valor;
   hay que buscarlo en la lista. Propuesta: Dejar elegido el ingreso que
   coincide en nombre y valor. (Quedar a paz y salvo)
-- **Baja.** *Movimientos › gasto dividido.* La fila del gasto dividido
-  sigue diciendo «Dividido: tu…» y se corta antes del monto de tu parte.
-  Propuesta: Poner «Tu parte $11.750» en una línea propia, o quitar la
-  categoría de la fila cuando el gasto está dividido. (Dividir un gasto
-  que ya anoté)
-- **Baja.** *Dividir un gasto (desde Movimientos).* «Grupo» siempre
-  empieza en «Un grupo nuevo» aunque ya exista el de siempre, y el grupo
-  nuevo toma el nombre del comercio («Falabella»). Propuesta: Empezar en
-  el último grupo usado y, para uno nuevo, dejar el nombre vacío o usar
-  los nombres de las personas. (Dividir un gasto que ya anoté)
 - **Baja.** *Viajes › Incluir un gasto de antes.* «Incluir un gasto de
   antes» sigue listando todos los gastos de 120 días, arriendo y
   suscripciones incluidos, sin buscador. Propuesta: Mostrar primero
   transporte, alojamiento y gastos grandes, y permitir buscar. (Cuadrar
   los gastos de un viaje)
-- **Baja.** *Colchón en días.* Sigue ofreciendo la Visa con deuda y las
-  cuentas de cripto como lugar para el fondo de emergencia. Propuesta:
-  Dejar fuera las tarjetas de crédito y avisar que la cripto cambia de
-  valor. (Medir el colchón en días)
-- **Baja.** *Cargos para revisar.* El texto sigue diciendo «mira tus
-  movimientos de los últimos 60 días», pero las subidas de precio usan
-  seis meses de evidencia. Propuesta: Decir «60 días, y seis meses para
-  las subidas de precio». (Revisar los cargos raros)
-- **Baja.** *Cierre de la quincena (desde Próximos 30 días).* Con $7.961
-  para 12 días sigue sugiriendo «una parte puede ir a tu meta». Propuesta:
-  Sugerir la meta solo cuando sobre más de lo que suele gastarse en el día
-  a día hasta el pago. (Ver los próximos 30 días)
 - **Baja.** *Lo quiero, pero después.* Un deseo no se puede cambiar: tocar
   la tarjeta no abre nada y la hoja solo sirve para agregar. Para corregir
   el precio, la prioridad o la espera hay que borrarlo y crearlo otra vez.
@@ -739,38 +328,40 @@ Entre paréntesis, los flujos donde se ve.
   confirmar ni deshacer: un toque de más cambia lo que falta pagar o lo
   que te deben. (Nuevo.) Propuesta: Mostrar un aviso con «Deshacer» al
   quitar un pago.
-- **Baja.** *Plan › Metas.* Una meta ya cumplida dice «llega en» el mes
-  actual (por ejemplo «llega en octubre de 2026») en vez de decir que se
-  cumplió; «Meta cumplida» solo aparece en la conversación. (Nuevo.)
-  Propuesta: Cuando lo ahorrado llega al total, decir «Meta cumplida» en
-  la fila.
-- **Baja.** *Reparte tu quincena › Apartar para algo, e Ingresos variables
-  › Usé de la reserva.* Con el campo vacío o en cero, «Guardar» cierra el
-  diálogo sin decir nada: parece guardado, pero no se creó el sobre ni se
-  anotó el uso. (Nuevo.) Propuesta: Dejar el diálogo abierto y decir qué
-  falta («Ponle un nombre», «Escribe cuánto usaste»).
-- **Baja.** *¿Y si…? › Ahorro más.* Solo «Sube un gasto» tiene «Aplicar».
-  Si convence ahorrar 100.000 más por pago, hay que ir a la meta y
-  calcular a mano el aporte al mes (200.000 si te pagan dos veces).
-  (Nuevo.) Propuesta: Ofrecer «Aplicar» también aquí: elegir la meta y
-  subirle el aporte al mes con la cuenta ya hecha.
-- **Media.** *Próximos 30 días.* Cada día dice «con lo que pruebas, $X» y
-  la leyenda «Con tu pago y lo que pruebas» aunque no se esté probando
-  nada (es lo que esperas cobrar). Al mover Netflix en la simulación, el
-  12 muestra «Netflix −26.900» y «Netflix +26.900» y el saldo mínimo de
-  arriba no cambia. Hoy: Cada día ya dice «si llega lo que esperas, $X»
-  cuando no se prueba nada. Pero la leyenda sigue diciendo «Con tu pago y
-  lo que pruebas», Netflix movido sale dos veces el día 12 (−26.900 y
-  +26.900) y el saldo mínimo de arriba no cambia con lo que se prueba.
-  Propuesta: Decir «Con tu pago» en la leyenda cuando no hay simulación;
-  mostrar el cobro movido una sola vez en su día nuevo («Netflix, movido
-  del 12») y decir el saldo mínimo con lo que se prueba.
-- **Baja.** *Plan y Gastos compartidos.* Cifras en cero que no dicen nada:
-  «Te deben $0 · debes $170.000», «y $0 de colchón». Hoy: Ya no sale «$0
-  de colchón» al repartir. Pero la fila de Gastos compartidos en Plan
-  sigue diciendo «Te deben $0 · debes $170.000». Propuesta: Omitir la
-  parte en cero en la fila de Plan: «Debes $170.000» o «Te deben $50.000»,
-  y «A paz y salvo» si las dos son cero.
+- **Media.** *Plan › Colchón en días y Ajustes › Colchón.* Dos cosas
+  distintas se llaman «Colchón»: el fondo de emergencia medido en días,
+  que no toca «Puedes gastar», y la plata guardada sin tocar de Ajustes,
+  que sí lo baja. Elegir cuentas en «Colchón en días» no mueve nada en
+  Inicio. Hoy: Ahora la herramienta del Plan se llama «Fondo de emergencia
+  en días». El colchón de Ajustes conserva su nombre. Propuesta: Llamarla
+  «Fondo de emergencia en días» (y la sección «Dónde está tu fondo») y
+  agregar una línea: «La plata que no quieres contar en lo que puedes
+  gastar se fija en Ajustes › Colchón».
+- **Media.** *Lo quiero, pero después.* No hay «Lo compré»: comprar un
+  deseo es ir a Movimientos y luego borrarlo a mano. La caneca lo borra
+  sin confirmar ni deshacer. Hoy: Ahora «Lo compré» abre el gasto ya lleno
+  y quita el deseo al guardarlo. Borrar un deseo sin poder deshacerlo es
+  de la fase 35. Propuesta: «Lo compré» que abra el gasto ya lleno con el
+  nombre y el precio y quite el deseo; al quitarlo, mostrar un aviso con
+  «Deshacer».
+- **Media.** *Plan › Metas.* Una meta con la fecha vencida no avisa nada
+  en la fila, y una vez puesta la fecha no se puede quitar; solo se puede
+  mover. Hoy: Ahora una meta con la fecha vencida lo dice en la fila. La
+  fecha todavía no se puede quitar. Propuesta: Avisar «La fecha ya pasó:
+  ¿la mueves?» y agregar un botón para quitar la fecha, como el de la
+  prueba gratis. (Poner al día una meta y una prueba gratis vencidas)
+- **Baja.** *Hoja de la meta.* «Para el 30 de abril» no dice el año, y el
+  calendario abre seis meses adelante, en otro año. Hoy: Ahora la fecha de
+  la meta dice el año. El calendario sigue abriendo seis meses adelante.
+  Propuesta: Mostrar el año cuando no es el actual: «Para el 30 de abril
+  de 2027».
+- **Baja.** *¿Y si…? › Pago tarde y Le presté.* Las flechas abajo/arriba
+  significan menos/más días; en «Monto» de Le presté el signo va pegado
+  («$80.000») y en las demás hojas con espacio («$ 80.000»). Hoy: Ahora
+  los días de «Pago tarde» bajan y suben con menos y más. El signo pegado
+  en «Le presté» sigue igual. Propuesta: Usar − y + para los días, y un
+  solo prefijo en todos los formularios tomado de la moneda de la cuenta
+  (hoy tres pantallas ponen «$ » fijo).
 
 ### Por revisar e Importar extracto
 
@@ -880,11 +471,6 @@ Entre paréntesis, los flujos donde se ve.
   «Cajero», «Nomina DL Soft», «Tarjeta Credito». Propuesta: Traducir
   frases conocidas: «Pago recibido», «Pago de la Visa», «Retiro en
   cajero», «Nómina».
-- **Baja.** *Importar extracto, resultado.* El resultado dice cómo quedó
-  el saldo de la cuenta, pero no cómo cambió lo que se puede gastar: en
-  08-03 Inicio pasó a «Te faltan $311.939» sin aviso. Propuesta: Agregar
-  al resultado el cambio de lo que se puede gastar («Puedes gastar: $7.961
-  → te faltan $311.939»). (Sumar al saldo lo que trae el extracto)
 - **Baja.** *Importar extracto desde Ajustes.* Si el archivo no nombra el
   banco, el extracto se asigna a la primera cuenta (Bancolombia) y solo el
   menú de arriba lo muestra. Propuesta: Preguntar la cuenta antes de la
@@ -968,111 +554,16 @@ Entre paréntesis, los flujos donde se ve.
 - **Media.** *Pregúntale a tu plata (avisos de error).* Los avisos «Sin
   conexión…», «El modelo está recibiendo demasiadas preguntas…» y «No pude
   responder esta vez» piden volver a intentar, pero no hay botón: hay que
-  escribir la pregunta otra vez. Propuesta: Poner «Volver a preguntar»
-  dentro del aviso, que repita la misma pregunta; sin red, que se active
-  solo cuando vuelva la conexión.
-- **Media.** *Inicio con mis cuentas y Pregúntale a tu plata, sin
-  preguntas del día.* Con las 30 usadas, Inicio y la página siguen
-  ofreciendo las preguntas como activas; el límite solo aparece después de
-  tocar, en rojo como si fuera un error. Propuesta: En el panel de Inicio
-  decir «Ya no te quedan preguntas hoy; vuelven mañana», atenuar las
-  preguntas y la barra con el cupo en cero, y mostrar el límite en tono
-  neutro, no rojo.
-- **Media.** *Conversación (demo y propia), al editar lo guardado.* Al
-  corregir un gasto, un plan o una cancelación, la respuesta anterior se
-  queda arriba con cifras viejas (por ejemplo «Ahora puedes gastar» del
-  primer guardado), y confirmar otra vez repite la misma respuesta.
-  Propuesta: Atenuar la respuesta anterior y ponerle «Corregido» con «Ver
-  la nueva», como ya se hace con la revisión reemplazada («Reemplazada por
-  tu nueva selección»).
-- **Media.** *Ajustes de la demo, Idioma.* Cambiar el idioma borra la
-  conversación sin aviso ni «Deshacer». Propuesta: Avisar antes de borrar
-  u ofrecer el mismo «Deshacer» de «Nueva»; o dejar las respuestas viejas
-  como están y responder las nuevas en el idioma nuevo.
-- **Media.** *Respuesta del gasto guardado (BudgetMeter).* Compara el mes
-  en curso (un día) contra todo septiembre: «Septiembre: $615.500 ·
-  $570.500 menos» parece un ahorro. Propuesta: Comparar contra los mismos
-  días de septiembre, o rotular «En lo que va de octubre» frente a
-  «Septiembre completo» y no pintar la diferencia como ahorro.
-- **Media.** *Pregúntale a tu plata, anotar un gasto.* Con tus cuentas,
-  anotar un gasto usa dos preguntas (pedir el formulario y guardarlo) y
-  cada corrección otra; con una sola, el formulario llega y «Guardar
-  gasto» responde «Ya usaste las preguntas de hoy». En el ejemplo no se
-  gastan preguntas. Propuesta: No descontar del día las acciones sobre una
-  respuesta («Guardar gasto», «Guardar este plan», «Editar»), o avisar
-  antes de guardar que usa una pregunta; con la última, no ofrecer un
-  formulario que no se podrá guardar. (Anotar un gasto con la última
-  pregunta del día)
-- **Media.** *Pregúntale a tu plata, gasto guardado.* El gasto queda en la
-  cuenta principal para gastar (en el ejemplo, «Cuenta de nómina») sin
-  decirlo, y el formulario no deja escoger otra. Propuesta: Agregar la
-  cuenta al formulario con la principal ya puesta, o decir en la respuesta
-  «Quedó en Cuenta de nómina» con una forma de cambiarla.
-- **Media.** *Pregúntale a tu plata con tus cuentas, al volver a Inicio.*
-  Al tocar «Atrás», la conversación se pierde sin aviso: al volver empieza
-  vacía, aunque esas respuestas ya gastaron preguntas del día. En el
-  ejemplo, en cambio, la conversación se conserva entre visitas. (Nuevo.)
-  Propuesta: Conservar la conversación mientras la app esté abierta, como
-  en el ejemplo, o avisar antes de salir que se va a perder.
-- **Baja.** *Inicio de la demo, pregunta propia.* «¿Cuánto gasté en el
-  Éxito?» recibe el resumen de septiembre sin decir que la demo no busca
-  por comercio. Propuesta: Si la pregunta nombra un comercio u otra cosa
-  que el guion no responde, decirlo antes del resumen: «En el ejemplo no
-  busco por comercio; esto es todo septiembre».
-- **Baja.** *Barra de preguntas (demo y propia).* La pista de ejemplo se
-  corta («Por ejemplo: ¿Llego a mi meta de Vi…»), así que no se alcanza a
-  leer la pregunta que enseña. Propuesta: Permitir dos líneas en la pista
-  o usar ejemplos más cortos que quepan en el ancho de un teléfono.
-- **Baja.** *Pregúntale a tu plata, barra superior.* Con «Nueva» visible
-  el título se corta en «Pregúntale a tu p…», y además repite el rótulo
-  «PREGÚNTALE A TU PLATA» de debajo. Propuesta: Título más corto
-  («Preguntar») o «Nueva» solo con ícono, y quitar el rótulo repetido bajo
-  el título.
+  escribir la pregunta otra vez. Hoy: Ahora el aviso trae «Volver a
+  preguntar». No se reintenta solo al volver la red. Propuesta: Poner
+  «Volver a preguntar» dentro del aviso, que repita la misma pregunta; sin
+  red, que se active solo cuando vuelva la conexión.
 - **Baja.** *Inicio con mis cuentas y Pregúntale a tu plata.* Las mismas
   preguntas se ven con chevrón en Inicio y con flecha en la página, y en
-  Inicio solo tres de las cinco. Propuesta: Un solo estilo de fila para
-  las preguntas en las dos pantallas.
-- **Baja.** *Hoja «Reportar esta respuesta».* Si se cierra «Reportar» sin
-  enviar, aunque sea con un deslizamiento sin querer, se pierden el motivo
-  y el comentario sin preguntar. Propuesta: Guardar el borrador de cada
-  respuesta hasta enviarlo, o preguntar antes de descartar un comentario
-  escrito.
-- **Baja.** *Cómo se calculó, después de guardar un gasto.* Tras guardar
-  un gasto, la respuesta dice «Ahora puedes gastar …», pero «Cómo se
-  calculó» solo dice «El gasto que se registró» y no ofrece ver el
-  cálculo. Propuesta: Ofrecer «Ver cómo se calcula lo que puedes gastar»
-  siempre que la respuesta muestre esa cifra, también después de guardar
-  un gasto.
-- **Baja.** *Conversation, failed save.* Si guardar falla, la conversación
-  muestra «Tocaste una acción» y el aviso del problema, sin decir que el
-  gasto no se guardó. Propuesta: Usar una nota específica, como «No se
-  guardó el gasto» (y su par para el plan y las cancelaciones), en español
-  e inglés.
-- **Baja.** *Pregúntale a tu plata, «Nueva» después de errores.* Tras
-  intentos fallidos, «Nueva» ofrece «Deshacer», que solo trae de vuelta
-  los avisos de error. Propuesta: Si ninguna pregunta tuvo respuesta,
-  empezar de cero sin ofrecer «Deshacer».
-- **Baja.** *Pregúntale a tu plata, guardar un gasto sin preguntas del
-  día.* Con el cupo en cero, cada toque en «Guardar gasto» agrega otra
-  línea «Tocaste una acción» con el aviso rojo del límite, y el formulario
-  sigue ofreciendo guardar. (Nuevo.) Propuesta: Con el cupo en cero,
-  apagar «Guardar gasto» con una nota «Podrás guardarlo mañana», en vez de
-  sumar un aviso por cada toque.
-- **Baja.** *Conversación del ejemplo, engranaje de Ajustes.* En el
-  teléfono, esa hoja solo repite Idioma y Apariencia, que ya están en los
-  Ajustes de la app, más un «Empezar de nuevo» que hace lo mismo que
-  «Nueva» pero sin «Deshacer». Son dos «Ajustes» distintos para lo mismo.
-  (Nuevo.) Propuesta: Quitar el engranaje de la conversación en el
-  teléfono y dejar Idioma y Apariencia solo en los Ajustes de la app.
-- **Media.** *Ajustes de la demo, «Empezar de nuevo».* «Empezar de nuevo»
-  borra la conversación al instante, sin confirmar ni «Deshacer». Ya no
-  deshace los gastos, que siguen en la cuenta de ejemplo, y ya no está
-  bajo «Usar con mis cuentas». Hoy: «Empezar de nuevo» borra la
-  conversación al instante, sin confirmar ni «Deshacer». Ya no deshace los
-  gastos, que siguen en la cuenta de ejemplo, y ya no está bajo «Usar con
-  mis cuentas». Propuesta: Que haga lo mismo que «Nueva», con su
-  «Deshacer», o quitarlo de la hoja: hoy repite «Nueva» sin forma de
-  volver. Si se queda, decir que los gastos siguen en el ejemplo.
+  Inicio solo tres de las cinco. Hoy: Ahora las preguntas llevan el mismo
+  chevrón en su página y en Inicio. Inicio sigue mostrando tres, con «Otra
+  pregunta». Propuesta: Un solo estilo de fila para las preguntas en las
+  dos pantallas.
 
 ## Lo que dijo el primer experto
 
@@ -1220,6 +711,16 @@ orden.
 
 ### 27. Una sola verdad sobre la plata
 
+**Estado:** Hecha. Inicio, «Próximos días» y «¿Me alcanza?» dicen lo
+mismo: lo mínimo que tendrás libre, con lo apartado dicho aparte. El
+patrimonio muestra cada parte y suma lo que se ve. Una tarjeta se marca
+«Debes» o «A favor», sin signo menos. Sin tasa, cambiar la moneda de los
+totales pide la tasa o la deja como estaba; con tasa, dice con cuál
+convirtió, y en español los totales en dólares dicen US$. El mes se
+compara con el mismo día del mes anterior, el cierre compara los pagos de
+cada mes aparte del día a día, y después de importar un extracto dice cómo
+cambió «Puedes gastar».
+
 Tamaño: grande. «Puedes gastar $7.961» y «Tu saldo mínimo estimado será
 $157.961» salen en la misma pantalla y las dos son ciertas: la diferencia
 es la reserva, y no se dice. El patrimonio no suma lo que se ve en
@@ -1253,6 +754,15 @@ reconstruir con lo que está en pantalla, y los flujos lo comprueben.
 
 ### 28. La plata siempre queda en una cuenta
 
+**Estado:** Hecha. Pagar una cuota, saldar un grupo, un préstamo o un
+gasto compartido pregunta de qué cuenta sale o a cuál llega, con la más
+probable escogida, y dice antes qué va a pasar. «Pago Visa» anotado como
+gasto pregunta si es el pago de la tarjeta. Las metas tienen «Abonar», y
+el cierre ofrece pasar a lo ahorrado lo que el sobre de cada meta apartó,
+sin contarlo dos veces. Los deseos tienen «Lo compré», una compra a cuotas
+con tarjeta ofrece anotar la compra si no está, y los gastos de un viaje
+se dividen desde el viaje.
+
 Tamaño: mediana. Pagar una cuota, saldar un gasto compartido o recibir un
 préstamo no toca ninguna cuenta: la deuda baja y «Puedes gastar» sube como
 si la plata no hubiera salido. Las metas no tienen «Abonar»: se reescribe
@@ -1280,6 +790,14 @@ enseguida.
 
 ### 29. Metas y simulaciones en las que se puede confiar
 
+**Estado:** Hecha. Cada meta con fecha dice si llega a tiempo y, si no,
+cuánto hace falta al mes, con «Usar … al mes», y una meta cumplida lo
+dice. El reparto pone primero el día a día y dice qué meta tendrá que
+esperar; copiar el reparto anterior lo ajusta a lo que hay. «¿Y si…?»
+cuenta lo que sueles gastar al día, o dice que no lo cuenta, y «Ahorro
+más» se aplica a una meta. El cierre ofrece a una meta solo lo que el día
+a día no va a necesitar hasta el pago.
+
 Tamaño: pequeña. Una meta para el 30 de abril dice «llega en julio de
 2027» y no avisa que no se llega ni cuánto hace falta; eso solo lo hace la
 conversación. «¿Y si…?» no resta el gasto del día a día ni dice que lo
@@ -1301,6 +819,8 @@ llega, y los flujos del reparto comprueben que el día a día nunca queda en
 cero sin aviso.
 
 ### 30. Que la app haga el trabajo
+
+**Estado:** En curso.
 
 Tamaño: grande. La app ya sabe mucho de lo que todavía pregunta: cuánto te
 pagan y cuándo, la categoría de un comercio que ya vio, que «a tu Nequi»
@@ -1335,6 +855,15 @@ experto.
 
 ### 31. Empezar sin aprender Quincena
 
+**Estado:** Hecha. Configurar son tres preguntas, cómo te llamas, cuándo
+te pagan y dónde tienes tu plata, y llevan a Inicio con la cifra: 7
+toques, 6 sin el monto. Bajo la cifra, «Termina de preparar Quincena»
+lista lo que falta y se va al completarse. Sin cuentas, Inicio y
+«Movimiento» llevan a agregar la primera. El formulario empieza por lo que
+pasó, «Gasté plata», «Me entró plata» o «Moví plata entre mis cuentas», y
+un gasto normal toma 4 toques: la cuenta y la categoría salen del comercio
+o de la última vez.
+
 Tamaño: mediana. Configurar exige poco, un nombre y una cuenta, pero
 muestra en el camino todo lo opcional cuando la persona aún no ha visto
 para qué sirve la app. Quien se queda sin cuentas ve $0 y secciones
@@ -1359,6 +888,14 @@ los flujos.
 
 ### 32. Encontrar lo registrado
 
+**Estado:** Hecha en parte. Movimientos busca por monto y filtra por
+cuenta, categoría, tipo, fechas y monto, con el total de lo encontrado y
+el de cada día. «Programado», «Tu parte» y lo que llegó en otra moneda van
+en etiquetas enteras; los posibles repetidos se marcan y se quitan desde
+la lista, con «Deshacer»; y el formulario dice de dónde vino cada
+movimiento. Falta lo de los viajes: contar por defecto solo lo cobrado en
+la moneda del viaje.
+
 Tamaño: mediana. Movimientos tiene un solo campo de búsqueda, sin filtros
 por cuenta, categoría, tipo, fechas ni monto, y buscar «187400» no
 encuentra el gasto de $187.400. Las filas cortan justo lo que importa,
@@ -1378,6 +915,13 @@ Sabremos que funcionó cuando cualquier movimiento se encuentre con dos
 acciones, y los flujos de Movimientos lo comprueben.
 
 ### 33. Plan, Ajustes y respaldos en orden
+
+**Estado:** Hecha en parte. Plan se ordena por intención y Ajustes por
+secciones. «Restaurar un respaldo» dice qué trae y ofrece guardar lo de
+ahora; borrar todo recuerda el código. Los códigos se comparten y se
+pegan, hay CSV de los movimientos, un cambio en dos teléfonos se ve lado a
+lado y se combina, y los errores dicen qué falta. Falta el QR y unir los
+cambios campo por campo sin preguntar.
 
 Tamaño: mediana. Plan junta doce bloques en cinco grupos, uno sin título;
 Ajustes mezcla perfil, avisos, widget, captura, apariencia y datos, y
@@ -1411,6 +955,13 @@ menos 8 de cada 10 flujos de Plan y Ajustes.
 
 ### 34. Pregúntale a tu plata sin castigo
 
+**Estado:** Hecha. Solo preguntar gasta del día: guardar, confirmar o
+corregir no. La conversación sigue ahí al volver, dice antes cuántas
+preguntas quedan y en cero se apaga con calma. El gasto dice de qué cuenta
+sale y deja cambiarla, una pregunta sin respuesta trae «Volver a
+preguntar», y una respuesta corregida dice que sus cifras son de antes.
+Falta reintentar solo cuando vuelve la red.
+
 Tamaño: pequeña. Con tus cuentas, cada acción sobre una respuesta gasta
 otra pregunta, y con la última el formulario llega pero no se puede
 guardar. Salir de la conversación la pierde aunque las preguntas ya se
@@ -1430,6 +981,8 @@ solo preguntar descuenta y que nada se pierde al ir y volver.
 
 ### 35. Todo se puede deshacer
 
+**Estado:** En curso.
+
 Tamaño: pequeña. Borrar una regla, descartar una captura, «No es del
 viaje», borrar un deseo o un cobro pasan con un toque y sin vuelta atrás,
 y borrar un movimiento pregunta pero después no se puede deshacer.
@@ -1448,6 +1001,8 @@ Sabremos que funcionó cuando ninguna acción que quita datos quede sin
 «Deshacer» o sin confirmación, y un flujo lo compruebe en cada pantalla.
 
 ### 36. Que se sienta liviana
+
+**Estado:** Pendiente.
 
 Tamaño: mediana. El verde hace de marca, de botón, de selección, de
 ingreso y de éxito a la vez; casi todo va en tarjetas con borde, y algunas
@@ -1475,6 +1030,12 @@ hoy.
 
 ### 37. Prueba en teléfonos de verdad, también pequeños
 
+**Estado:** Hecha en parte. Los flujos se desplazan hasta lo que van a
+tocar, incluso lo que una lista aún no dibuja, y lo dejan en el centro de
+la pantalla: con eso, los cuatro flujos que se detenían en un iPhone SE
+llegan al final. Un flujo roto dice en qué línea se detuvo. Falta la
+sesión con un iPhone y un Android de verdad.
+
 Tamaño: pequeña. Los flujos corren en un simulador. Hay cosas que solo se
 prueban en un teléfono: avisos del banco con la app cerrada, el widget,
 compartir un comprobante, los permisos de Android y sincronizar entre dos
@@ -1497,13 +1058,25 @@ también en un iPhone SE.
 
 ## Lo que hay que probar en un teléfono de verdad
 
-Cada flujo trae su lista de lo que el simulador no puede probar: 68 puntos
+Cada flujo trae su lista de lo que el simulador no puede probar: 73 puntos
 en total, como avisos del banco con la app cerrada, el widget, compartir
 un comprobante, los permisos de Android y sincronizar entre dos
 dispositivos. Están en la página, flujo por flujo, en «Lo que hay que
 probar en un teléfono de verdad».
 
 ## Notas de la corrida
+
+Actualización del 9 de octubre por la noche: los 188 flujos se volvieron a
+jugar en el simulador con la versión que trae las fases 27 a 29 y 32 a 34,
+y los que cambiaron después, otra vez con la última versión. Los flujos
+ahora se desplazan hasta lo que van a tocar y lo dejan en el centro de la
+pantalla; con eso, los cuatro que se detenían en un iPhone SE llegan al
+final. En el simulador, «Conectar Binance» (05-07) se detiene al escribir
+la API Key, después de comprobar que sin llaves dice qué falta; sin
+simulador, en un iPhone 17 Pro y en un SE, el flujo llega al final. Los
+flujos de primeros pasos y del formulario de movimientos que cambió la
+fase 31 todavía muestran la versión anterior: se vuelven a jugar en la
+próxima actualización, con las fases 30 y 35.
 
 En el simulador, escribir y pegar fallaba de formas que sin simulador no
 se ven: a veces el texto no llegaba al campo, la tecla de enviar se
