@@ -818,7 +818,16 @@ plan completo, con el porqué de cada fase, está en
   - «¿Y si…?» cuenta lo que sueles gastar al día, y «Ahorro más» se aplica
     a una meta.
   - El cierre ofrece a una meta solo lo que el día a día no va a necesitar.
-- **30. Que la app haga el trabajo.** En curso.
+- **30. Que la app haga el trabajo.** Hecha.
+  - Lo aprendido se dice regla por regla, y una regla de un banco no toma
+    tarjetas ni bancos que no conoce.
+  - Las transferencias propias se reconocen en un toque, y el segundo aviso
+    de la misma se une solo.
+  - «Registrar el pago del 30» abre lleno: un toque.
+  - Cada tarjeta de Por revisar dice qué le falta; en los repetidos
+    «Quitar repetido» va primero y dice con qué choca.
+  - El extracto se resume antes de entrar, y los pagos fijos y los cobros
+    de clientes y amigos se reconocen al llegar.
 - **31. Empezar sin aprender Quincena.** Hecha.
   - Configurar son tres preguntas y llevan a Inicio con la cifra en 7
     toques.
@@ -828,23 +837,31 @@ plan completo, con el porqué de cada fase, está en
   - El formulario empieza por lo que pasó, y un gasto normal toma 4
     toques: la cuenta y la categoría salen del comercio o de la última
     vez.
-- **32. Encontrar lo registrado.** Hecha en parte.
+- **32. Encontrar lo registrado.** Hecha.
   - Búsqueda por monto, filtros con total y etiquetas enteras.
   - Los repetidos se quitan desde la lista, y se ve de dónde vino cada
-    movimiento.
-  - Falta: contar en los viajes solo lo cobrado en su moneda.
-- **33. Plan, Ajustes y respaldos en orden.** Hecha en parte.
+    movimiento y a qué hora.
+  - Un viaje en otra moneda cuenta lo pagado en ella o afuera y pregunta
+    por el resto de una vez; «Incluir un gasto de antes» trae buscador.
+- **33. Plan, Ajustes y respaldos en orden.** Hecha.
   - Plan por intención y Ajustes por secciones.
-  - Respaldos que dicen qué traen; códigos que se comparten y se pegan.
-  - CSV, y los cambios de dos teléfonos se combinan viéndolos lado a lado.
-  - Falta: el QR y unir los cambios sin preguntar.
+  - Respaldos que dicen qué traen; el primero pide dónde guardar antes de
+    mostrar su código.
+  - El código para unir otro teléfono va en un QR que el otro escanea; se
+    comparte y se pega también.
+  - CSV. Dos cambios distintos del mismo movimiento hechos en dos teléfonos
+    se unen solos; solo un choque se ve lado a lado, con «Combinar».
 - **34. Pregúntale a tu plata sin castigo.** Hecha.
   - Solo preguntar gasta del día, y la conversación se queda.
   - El gasto dice de qué cuenta sale.
   - «Volver a preguntar».
   - Una respuesta corregida dice que sus cifras son de antes.
   - Un reporte cerrado sin enviar guarda lo escrito.
-- **35. Todo se puede deshacer.** En curso.
+  - Sin red, la pregunta se hace sola cuando vuelve la conexión.
+- **35. Todo se puede deshacer.** Hecha.
+  - Todo lo que borra, descarta o archiva ofrece «Deshacer» con el mismo
+    aviso, y dejar de leer una app pregunta antes.
+  - «Archivado y descartado» deja ver y traer de vuelta lo guardado.
 - **36. Que se sienta liviana.** Pendiente.
 - **37. Prueba en teléfonos de verdad.** En parte.
   - Los flujos se desplazan hasta lo que van a tocar y lo dejan en el
