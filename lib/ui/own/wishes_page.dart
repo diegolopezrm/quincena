@@ -29,15 +29,7 @@ class WishesPage extends StatelessWidget {
 
   final OwnController own;
 
-  Future<void> _add(BuildContext context) => showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
-    useSafeArea: true,
-    backgroundColor: context.colors.surface,
-    constraints: const BoxConstraints(maxWidth: 560),
-    builder: (BuildContext context) => _WishSheet(own: own),
-  );
+  Future<void> _add(BuildContext context) => showWishSheet(context, own: own);
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -86,6 +78,21 @@ class WishesPage extends StatelessWidget {
   );
 }
 
+/// Adds a wish, or changes [wish].
+Future<void> showWishSheet(
+  BuildContext context, {
+  required OwnController own,
+  Wish? wish,
+}) => showModalBottomSheet<void>(
+  context: context,
+  isScrollControlled: true,
+  showDragHandle: true,
+  useSafeArea: true,
+  backgroundColor: context.colors.surface,
+  constraints: const BoxConstraints(maxWidth: 560),
+  builder: (BuildContext context) => _WishSheet(own: own, wish: wish),
+);
+
 class _WishCard extends StatelessWidget {
   const _WishCard({
     required this.own,
@@ -111,17 +118,26 @@ class _WishCard extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
+              // Its name opens it, as a goal or a fixed payment does.
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(wish.name, style: context.type.titleSmall),
-                    Text(switch (wish.priority) {
-                      1 => l.wishPriorityHigh,
-                      3 => l.wishPriorityLow,
-                      _ => l.wishPriorityMedium,
-                    }, style: context.type.bodySmall),
-                  ],
+                child: InkWell(
+                  onTap: () => showWishSheet(context, own: own, wish: wish),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Semantics(
+                    button: true,
+                    hint: l.wishEdit,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(wish.name, style: context.type.titleSmall),
+                        Text(switch (wish.priority) {
+                          1 => l.wishPriorityHigh,
+                          3 => l.wishPriorityLow,
+                          _ => l.wishPriorityMedium,
+                        }, style: context.type.bodySmall),
+                      ],
+                    ),
+                  ),
                 ),
               ),
               Figures(amount(wish.price), style: context.type.titleSmall),
@@ -215,19 +231,34 @@ class _WishCard extends StatelessWidget {
 }
 
 class _WishSheet extends StatefulWidget {
-  const _WishSheet({required this.own});
+  const _WishSheet({required this.own, this.wish});
 
   final OwnController own;
+  final Wish? wish;
 
   @override
   State<_WishSheet> createState() => _WishSheetState();
 }
 
 class _WishSheetState extends State<_WishSheet> {
-  final TextEditingController _name = TextEditingController();
-  final TextEditingController _price = TextEditingController();
-  int _priority = 2;
-  bool _wait = false;
+  late final TextEditingController _name = TextEditingController(
+    text: widget.wish?.name ?? '',
+  );
+  late final TextEditingController _price = TextEditingController(
+    text: switch ((widget.wish, widget.own.ledger)) {
+      (final Wish w, final Ledger ledger) => formatDecimal(
+        Decimal.parse('${ledger.major(w.price)}'),
+        decimals: ledger.currency.decimals,
+        trim: true,
+      ),
+      _ => '',
+    },
+  );
+  late int _priority = widget.wish?.priority ?? 2;
+  late bool _wait = switch (widget.wish?.waitUntil) {
+    final DateTime until => until.isAfter(widget.own.today),
+    null => false,
+  };
   String? _error;
 
   @override
@@ -265,17 +296,25 @@ class _WishSheetState extends State<_WishSheet> {
       return;
     }
     final DateTime today = widget.own.today;
+    final Wish? old = widget.wish;
+    // A wait already under way keeps its day; one turned on now is a
+    // month.
+    final DateTime? until = !_wait
+        ? null
+        : old?.waitUntil != null && old!.waitUntil!.isAfter(today)
+        ? old.waitUntil
+        : DateTime(today.year, today.month, today.day + 30);
+    final Wish wish = Wish(
+      id: old?.id ?? 'wish-${DateTime.now().microsecondsSinceEpoch}',
+      name: _name.text.trim(),
+      price: ledger.minor(price.toDouble()),
+      priority: _priority,
+      waitUntil: until,
+    );
     await widget.own.saveWishes(<Wish>[
-      ...widget.own.wishes,
-      Wish(
-        id: 'wish-${DateTime.now().microsecondsSinceEpoch}',
-        name: _name.text.trim(),
-        price: ledger.minor(price.toDouble()),
-        priority: _priority,
-        waitUntil: _wait
-            ? DateTime(today.year, today.month, today.day + 30)
-            : null,
-      ),
+      for (final Wish w in widget.own.wishes)
+        if (w.id != wish.id) w,
+      wish,
     ]);
     if (mounted) Navigator.of(context).pop();
   }
@@ -291,11 +330,14 @@ class _WishSheetState extends State<_WishSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text(l.wishAdd, style: context.type.headlineMedium),
+            Text(
+              widget.wish == null ? l.wishAdd : l.wishEdit,
+              style: context.type.headlineMedium,
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: _name,
-              autofocus: true,
+              autofocus: widget.wish == null,
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(labelText: l.wishName),
             ),

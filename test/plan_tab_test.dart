@@ -441,6 +441,47 @@ void main() {
     );
   });
 
+  testWidgets('a wish opens with what it has, and changes in its place', (
+    tester,
+  ) async {
+    final OwnController own = await open(
+      tester,
+      (OwnController own) => WishesPage(own: own),
+    );
+    await tester.tap(find.text('Agregar deseo'));
+    await settle(tester);
+    await tester.enterText(
+      find.widgetWithText(TextField, '¿Qué quieres?'),
+      'Audífonos',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, '¿Cuánto cuesta?'),
+      '600.000',
+    );
+    await tester.tap(find.text('Esperar 30 días antes de decidir'));
+    await tester.tap(find.text('Guardar'));
+    await settle(tester);
+    final Wish first = own.wishes.single;
+
+    await tester.tap(find.text('Audífonos'));
+    await settle(tester);
+    expect(find.text('Editar deseo'), findsOneWidget);
+    expect(find.widgetWithText(TextField, '600.000'), findsOneWidget);
+    await tester.enterText(
+      find.widgetWithText(TextField, '¿Cuánto cuesta?'),
+      '550.000',
+    );
+    await tester.tap(find.text('Muy deseado'));
+    await tester.tap(find.text('Guardar'));
+    await settle(tester);
+    final Wish changed = own.wishes.single;
+    expect(changed.id, first.id);
+    expect(changed.price, 550000);
+    expect(changed.priority, 1);
+    // The wait already under way keeps its day.
+    expect(changed.waitUntil, first.waitUntil);
+  });
+
   testWidgets('a wish bought opens as the expense, and goes once saved', (
     tester,
   ) async {

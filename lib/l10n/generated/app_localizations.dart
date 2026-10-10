@@ -3536,6 +3536,12 @@ abstract class AppLocalizations {
   /// **'Agregar deseo'**
   String get wishAdd;
 
+  /// No description provided for @wishEdit.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar deseo'**
+  String get wishEdit;
+
   /// No description provided for @wishesBody.
   ///
   /// In es, this message translates to:

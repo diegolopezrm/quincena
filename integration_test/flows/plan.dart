@@ -1842,6 +1842,31 @@ final List<AppFlow> planFlows = <AppFlow>[
         expect(w.priority, 1);
         expect(w.waitUntil, DateTime(2026, 11, 2));
       });
+      await _hideNotice(f);
+      await f.tap('Audífonos');
+      await f.step(
+        'Tocar los audífonos abre «Editar deseo» con lo guardado: nombre, '
+        'precio, prioridad y la espera.',
+      );
+      await f.check('La hoja abre con lo que tenía', () {
+        expect(f.shows('Editar deseo'), isTrue);
+        expect(_fieldText(f, '¿Qué quieres?'), 'Audífonos');
+      });
+      await f.type('¿Cuánto cuesta?', '550000');
+      await f.tap('Guardar');
+      await f.step(
+        'Con el precio en \$550.000 y «Guardar», el deseo cambia en su lugar '
+        'y conserva su espera.',
+      );
+      await f.check(
+        'El mismo deseo, con el precio nuevo y la misma espera',
+        () {
+          final Wish w = own.wishes.single;
+          expect(w.name, 'Audífonos');
+          expect(w.price, 550000);
+          expect(w.waitUntil, DateTime(2026, 11, 2));
+        },
+      );
       await f.back();
       await f.reveal(find.text('Lo quiero, pero después'));
       await f.step('En Plan, la fila de deseos dice «Un deseo».');

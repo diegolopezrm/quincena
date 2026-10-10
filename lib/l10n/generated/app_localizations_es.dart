@@ -2292,6 +2292,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wishAdd => 'Agregar deseo';
 
   @override
+  String get wishEdit => 'Editar deseo';
+
+  @override
   String get wishesBody =>
       'Lo que quieres comprar más adelante, con el precio que tú pones. Nada se compra ni se sigue en ninguna tienda.';
 

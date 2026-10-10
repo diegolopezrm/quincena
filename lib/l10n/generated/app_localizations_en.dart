@@ -2290,6 +2290,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wishAdd => 'Add a wish';
 
   @override
+  String get wishEdit => 'Edit wish';
+
+  @override
   String get wishesBody =>
       'What you want to buy later, at the price you set. Nothing is bought, and no shop is watched.';
 

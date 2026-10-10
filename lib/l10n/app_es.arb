@@ -734,6 +734,7 @@
   "cushionDaysTargetNote": "No hay una cifra correcta para todos: elige la que te dé tranquilidad.",
   "wishesTitle": "Lo quiero, pero después",
   "wishAdd": "Agregar deseo",
+  "wishEdit": "Editar deseo",
   "wishesBody": "Lo que quieres comprar más adelante, con el precio que tú pones. Nada se compra ni se sigue en ninguna tienda.",
   "wishesEmpty": "Todavía no hay deseos.",
   "wishPriorityHigh": "Muy deseado",
