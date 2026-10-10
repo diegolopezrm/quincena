@@ -191,13 +191,17 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       );
       await f.back();
       await f.tapTip('Agregar movimiento');
-      await f.step(
-        'El «+» de la cuenta abre un movimiento nuevo con Bancolombia ya '
-        'elegida como la cuenta de donde sale.',
-      );
+      await f.tap('Gasté plata');
       await f.type('Monto', '45000');
-      await f.tap('Mercado');
       await f.type('¿Dónde o a quién?', 'D1 Laureles');
+      await f.step(
+        'El «+» de la cuenta pregunta qué pasó. Con «Gasté plata», 45.000 y '
+        '«D1 Laureles», la línea dice «Mercado · Bancolombia · Hoy»: la '
+        'cuenta es la de esta página.',
+      );
+      await f.check('El gasto sale de la cuenta de la página', () {
+        expect(f.shows('Mercado · Bancolombia · Hoy'), isTrue);
+      });
       await f.tap('Guardar');
       await f.top();
       await f.step(
@@ -980,9 +984,9 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Eliminar');
       await f.step(
         '«Eliminar», al final del formulario, pide confirmar: cuántos '
-        'movimientos se borran y que no se puede deshacer, que lo que tiene '
-        'deja de contar en el patrimonio y en lo que puedes gastar, y ofrece '
-        '«Archivar» en su lugar.',
+        'movimientos se borran, que lo que tiene deja de contar en el '
+        'patrimonio y en lo que puedes gastar, y ofrece «Archivar» en su '
+        'lugar.',
       );
       await f.check('El aviso cuenta los $inNequi movimientos de Nequi', () {
         expect(
@@ -1036,12 +1040,18 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Eliminar');
       await f.step(
         'Al confirmar, el formulario y la página de Nequi se cierran solos: '
-        'vuelves a Cuentas, donde Nequi ya no aparece.',
+        'vuelves a Cuentas, donde Nequi ya no aparece, y abajo «Se eliminó '
+        'Nequi, con sus $inNequi movimientos.» ofrece «Deshacer» por unos '
+        'segundos.',
       );
       await f.check('Nequi y sus $inNequi movimientos ya no están', () {
         expect(own.snapshot!.account(nequi.id), isNull);
         expect(own.snapshot!.entries.length, entries - inNequi);
         expect(f.shows('Nequi'), isFalse);
+        expect(
+          f.shows('Se eliminó Nequi, con sus $inNequi movimientos.'),
+          isTrue,
+        );
       });
       await f.check('Se vuelve solo a Cuentas, no a una página vacía', () {
         expect(f.shows('Agregar cuenta'), isTrue);
@@ -1055,6 +1065,29 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
           expect(_headline(f), _cop(now));
         },
       );
+      await f.tap('Deshacer');
+      await f.step(
+        '«Deshacer» trae de vuelta a Nequi con sus $inNequi movimientos: el '
+        'patrimonio vuelve a ${_cop(worth)}.',
+      );
+      await f.check(
+        'Volvieron Nequi y todos sus movimientos, como estaban',
+        () {
+          expect(own.snapshot!.account(nequi.id), isNotNull);
+          expect(own.snapshot!.entries.length, entries);
+          expect(own.netWorth().total, worth);
+        },
+      );
+      await f.tap('Billetera digital · Nequi');
+      await f.tapTip('Editar cuenta');
+      await f.tap('Eliminar');
+      await f.tap('Eliminar');
+      await _hideNotice(f);
+      await f.step('Eliminada otra vez y pasado el aviso, Nequi no vuelve.');
+      await f.check('Pasado el aviso, Nequi sigue eliminada', () {
+        expect(own.snapshot!.account(nequi.id), isNull);
+        expect(own.netWorth().total, now);
+      });
     },
   ),
   AppFlow(
@@ -1121,6 +1154,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         expect(find.byType(AlertDialog), findsNothing);
         expect(own.rates.rate(Asset.usd, Asset.cop), trm);
         expect(_typedRate(own, Asset.usd), isFalse);
+        expect(f.shows('Escribe una tasa mayor que cero.'), isFalse);
       });
       await f.tapContaining('1 USD =');
       await enterTextIn(f.tester, find.byType(TextField).last, '4100');
@@ -1299,13 +1333,24 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Cuentas');
       await f.tap('Visa');
       await f.tapTip('Agregar movimiento');
-      await f.tap('Transferencia');
+      await f.tap('Moví plata entre mis cuentas');
       await f.step(
-        'En la Visa, «+» y «Transferencia»: «Desde» y «Hacia» son tus '
-        'cuentas; hay que decir de cuál salió la plata y a cuál llegó.',
+        'En la Visa, «+» y «Moví plata entre mis cuentas»: «Hacia» ya es la '
+        'Visa, y «Desde» la cuenta del último gasto, Nequi.',
+      );
+      await f.check(
+        'Desde la página de la tarjeta, mover plata es pagarla',
+        () {
+          expect(
+            find.descendant(
+              of: find.byType(DropdownButtonFormField<String>).last,
+              matching: find.text('Visa'),
+            ),
+            findsOneWidget,
+          );
+        },
       );
       await _pickAccount(f, 0, 'Bancolombia');
-      await _pickAccount(f, 1, 'Visa');
       await f.type('Monto', _plain(owed));
       await f.step(
         'Desde Bancolombia hacia la Visa, por ${_cop(owed)}: todo lo que '
@@ -1385,7 +1430,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Cuentas');
       await f.tap('Visa');
       await f.tapTip('Agregar movimiento');
-      await f.tap('Transferencia');
+      await f.tap('Moví plata entre mis cuentas');
       await _pickAccount(f, 0, 'Bancolombia');
       await _pickAccount(f, 1, 'Visa');
       await f.type('Monto', '900000');
@@ -1459,7 +1504,9 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Cuentas');
       await f.tap('Banco · Bancolombia');
       await f.tapTip('Agregar movimiento');
+      await f.tap('Gasté plata');
       await f.type('Monto', '280000');
+      await f.tap('Cambiar');
       await f.tap('Servicios');
       await f.type('¿Dónde o a quién?', 'Administración');
       await f.tapFound(find.text('Hoy').last);
@@ -1818,7 +1865,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Cuentas');
       await f.tap('Visa');
       await f.tapTip('Agregar movimiento');
-      await f.tap('Transferencia');
+      await f.tap('Moví plata entre mis cuentas');
       await _pickAccount(f, 0, 'Bancolombia');
       await _pickAccount(f, 1, 'Visa');
       await f.type('Monto', _plain(owed));
@@ -1907,7 +1954,8 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.top();
       await f.step(
         'Eliminada, vuelves a Cuentas: sin «Tarjetas de crédito», Bancolombia '
-        'con el pago hecho y el «Patrimonio» con la baja que anunció el aviso.',
+        'con el pago hecho y el «Patrimonio» con la baja que anunció el aviso. '
+        'Abajo, «Deshacer» por unos segundos.',
       );
       await f.check('La Visa y sus movimientos ya no están', () {
         expect(own.snapshot!.account(visa.id), isNull);
@@ -2063,8 +2111,13 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.top();
       await f.step(
         'Archivada, vuelves a Cuentas: Nequi ya no está entre las de uso '
-        'diario, y abajo aparece «Cuentas archivadas».',
+        'diario, abajo aparece «Cuentas archivadas», y el aviso «Se archivó '
+        'Nequi.» ofrece «Deshacer» por unos segundos.',
       );
+      await f.check('El aviso dice que se archivó', () {
+        expect(f.shows('Se archivó Nequi.'), isTrue);
+      });
+      await _hideNotice(f);
       await f.check('Nequi quedó archivada, con sus $inNequi movimientos', () {
         expect(own.accounts.where((Account a) => a.id == nequi.id), isEmpty);
         expect(own.snapshot!.account(nequi.id)!.archived, isTrue);
@@ -2111,9 +2164,11 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       });
       await f.top();
       await f.tapTip('Agregar movimiento');
+      await f.tap('Gasté plata');
+      await f.tap('Cambiar');
       await f.tapFound(find.byType(DropdownButtonFormField<String>).first);
       await f.step(
-        'Al anotar un movimiento, la lista de cuentas ya no ofrece Nequi.',
+        'Al anotar un gasto, la lista de cuentas ya no ofrece Nequi.',
       );
       await f.check('Nequi no está entre las cuentas para elegir', () {
         expect(f.shows('Bancolombia'), isTrue);
@@ -3154,19 +3209,13 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       );
       await f.tapTip('Dejar de seguir');
       await f.step(
-        'La papelera pregunta antes: deja de leerse, y lo que trajo se queda '
-        'como tuyo.',
+        'La papelera no pregunta: ya no hay billeteras seguidas, ni aviso de '
+        'una que no se pudo leer, y abajo dice que lo que trajo se queda como '
+        'tuyo, con «Deshacer».',
       );
-      await f.tap('Cancelar');
-      await f.check('Cancelar la deja seguida', () {
-        expect(own.wallets.wallets, hasLength(1));
+      await f.check('El aviso dice que sus cuentas se quedan', () {
+        expect(f.screenText, contains('sus cuentas se quedan como tuyas.'));
       });
-      await f.tapTip('Dejar de seguir');
-      await f.tap('Dejar de seguir');
-      await f.step(
-        'Confirmado, ya no hay billeteras seguidas, ni aviso de una que no se '
-        'pudo leer.',
-      );
       await f.check('Ya no se sigue, pero la cuenta de 0,05 BTC sigue', () {
         expect(own.wallets.wallets, isEmpty);
         expect(own.snapshot!.account(ledger.id), isNotNull);
@@ -3175,6 +3224,15 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.check('Sin billeteras, no queda el aviso de la que fallaba', () {
         expect(own.wallets.failed, isNull);
         expect(f.screenText, isNot(contains('no se pudo leer')));
+      });
+      await f.tap('Deshacer');
+      await f.check('Con «Deshacer» se sigue otra vez', () {
+        expect(own.wallets.wallets, hasLength(1));
+      });
+      await f.tapTip('Dejar de seguir');
+      await _hideNotice(f);
+      await f.check('Pasado el aviso, ya no se sigue', () {
+        expect(own.wallets.wallets, isEmpty);
       });
       await f.back();
       await f.reveal(find.text('LEDGER'));
@@ -4307,6 +4365,16 @@ void _expectEnglish(FlowRun f) {
 
 /// Pesos as the app writes them.
 String _cop(Money m) => moneyText(m, base: Asset.cop);
+
+/// Takes the notice at the bottom away, as its time running out would.
+Future<void> _hideNotice(FlowRun f) async {
+  for (final ScaffoldMessengerState m in f.tester.stateList(
+    find.byWidgetPredicate((Widget w) => w is ScaffoldMessenger),
+  )) {
+    m.removeCurrentSnackBar();
+  }
+  await settle(f.tester);
+}
 
 /// The line under the movement titled [title]: what it was.
 String? _movementDetail(FlowRun f, String title) {
