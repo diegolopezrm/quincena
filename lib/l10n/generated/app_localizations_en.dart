@@ -3144,6 +3144,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Payments that arrive by themselves from your notifications and messages';
 
   @override
+  String get captureSubtitleComputer =>
+      'On the computer: paste the bank’s message or read a screenshot';
+
+  @override
+  String get captureSubtitleBrowser =>
+      'In the browser: paste the bank’s message or read a screenshot';
+
+  @override
   String get captureAuto => 'Record what is clear on its own';
 
   @override
@@ -3336,7 +3344,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get captureAndroidGrant => 'Allow notification access';
 
   @override
-  String get captureOtherTitle => 'On this device';
+  String get captureOtherTitle => 'On this computer';
+
+  @override
+  String get captureOtherTitleBrowser => 'In this browser';
 
   @override
   String get captureOtherBody =>

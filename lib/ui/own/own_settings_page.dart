@@ -1,4 +1,5 @@
 import 'package:decimal/decimal.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -600,7 +601,12 @@ class OwnSettingsPage extends StatelessWidget {
             context,
             icon: Glyph.bell,
             title: l.captureTitle,
-            value: l.captureSubtitle,
+            // What is caught on its own is the phone's: elsewhere, pasted.
+            value: switch (defaultTargetPlatform) {
+              _ when kIsWeb => l.captureSubtitleBrowser,
+              TargetPlatform.iOS || TargetPlatform.android => l.captureSubtitle,
+              _ => l.captureSubtitleComputer,
+            },
             onTap: () => _open(
               context,
               l.captureTitle,

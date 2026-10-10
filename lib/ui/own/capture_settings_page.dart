@@ -281,7 +281,10 @@ class _CaptureSettingsPageState extends State<CaptureSettingsPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(l.captureOtherTitle, style: context.type.titleSmall),
+          Text(
+            kIsWeb ? l.captureOtherTitleBrowser : l.captureOtherTitle,
+            style: context.type.titleSmall,
+          ),
           const SizedBox(height: 8),
           Text(l.captureOtherBody, style: context.type.bodyMedium),
           const SizedBox(height: 14),

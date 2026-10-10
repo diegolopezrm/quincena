@@ -2708,13 +2708,20 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
         await f.tapTip('Ajustes');
         await f.step(
           'En el computador, Ajustes no tiene el aviso del día de pago ni el '
-          'widget: «Automatización» trae «Captura automática» y «Reglas '
-          'aprendidas».',
+          'widget: «Automatización» trae «Captura automática», que dice «En el '
+          'computador: pega el mensaje del banco o lee un pantallazo», y '
+          '«Reglas aprendidas».',
         );
         await f.check('Sin avisos ni widget en el computador', () async {
           expect(f.shows('Avisarme el día de pago'), isFalse);
           expect(f.shows('AUTOMATIZACIÓN'), isTrue);
           expect(f.shows('Captura automática'), isTrue);
+          expect(
+            f.shows(
+              'En el computador: pega el mensaje del banco o lee un pantallazo',
+            ),
+            isTrue,
+          );
           await f.reveal(find.text('APARIENCIA'));
           expect(f.shows('Widget de inicio'), isFalse);
         });
@@ -2725,7 +2732,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           'y ofrece «Pegar un mensaje»; no pide la ubicación.',
         );
         await f.check('Ofrece pegar y no pide ubicación', () {
-          expect(f.shows('En este dispositivo'), isTrue);
+          expect(f.shows('En este computador'), isTrue);
           expect(f.shows('Usar la ubicación del pago'), isFalse);
         });
         phone.clipboard =

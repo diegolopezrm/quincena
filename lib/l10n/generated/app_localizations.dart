@@ -4724,6 +4724,18 @@ abstract class AppLocalizations {
   /// **'Pagos que llegan solos desde tus notificaciones y mensajes'**
   String get captureSubtitle;
 
+  /// No description provided for @captureSubtitleComputer.
+  ///
+  /// In es, this message translates to:
+  /// **'En el computador: pega el mensaje del banco o lee un pantallazo'**
+  String get captureSubtitleComputer;
+
+  /// No description provided for @captureSubtitleBrowser.
+  ///
+  /// In es, this message translates to:
+  /// **'En el navegador: pega el mensaje del banco o lee un pantallazo'**
+  String get captureSubtitleBrowser;
+
   /// No description provided for @captureAuto.
   ///
   /// In es, this message translates to:
@@ -5057,8 +5069,14 @@ abstract class AppLocalizations {
   /// No description provided for @captureOtherTitle.
   ///
   /// In es, this message translates to:
-  /// **'En este dispositivo'**
+  /// **'En este computador'**
   String get captureOtherTitle;
+
+  /// No description provided for @captureOtherTitleBrowser.
+  ///
+  /// In es, this message translates to:
+  /// **'En este navegador'**
+  String get captureOtherTitleBrowser;
 
   /// No description provided for @captureOtherBody.
   ///

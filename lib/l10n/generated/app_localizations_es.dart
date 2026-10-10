@@ -3145,6 +3145,14 @@ class AppLocalizationsEs extends AppLocalizations {
       'Pagos que llegan solos desde tus notificaciones y mensajes';
 
   @override
+  String get captureSubtitleComputer =>
+      'En el computador: pega el mensaje del banco o lee un pantallazo';
+
+  @override
+  String get captureSubtitleBrowser =>
+      'En el navegador: pega el mensaje del banco o lee un pantallazo';
+
+  @override
   String get captureAuto => 'Registrar solo lo que esté claro';
 
   @override
@@ -3336,7 +3344,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get captureAndroidGrant => 'Permitir acceso a notificaciones';
 
   @override
-  String get captureOtherTitle => 'En este dispositivo';
+  String get captureOtherTitle => 'En este computador';
+
+  @override
+  String get captureOtherTitleBrowser => 'En este navegador';
 
   @override
   String get captureOtherBody =>
