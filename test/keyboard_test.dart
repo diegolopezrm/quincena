@@ -237,11 +237,11 @@ void main() {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               TextButton(
-                onPressed: () => showGoalSheet(context, own: own),
+                onPressed: () => showGoalForm(context, own: own),
                 child: const Text('meta'),
               ),
               TextButton(
-                onPressed: () => showChargeSheet(context, own: own),
+                onPressed: () => showChargeForm(context, own: own),
                 child: const Text('pago'),
               ),
             ],
@@ -249,11 +249,12 @@ void main() {
         ),
       ),
     );
-    final Finder save = _inSheet(find.widgetWithText(FilledButton, l.save));
+    // Each opens on a page of its own, over the one with the buttons.
+    final Finder save = find.widgetWithText(FilledButton, l.save);
     await tester.tap(find.text('meta'));
     await settle(tester);
     await _typesIn(tester, _field(l.goalName), go: save, scroll: true);
-    Navigator.of(tester.element(find.byType(BottomSheet))).pop();
+    Navigator.of(tester.element(save)).pop();
     await settle(tester);
 
     await tester.tap(find.text('pago'));

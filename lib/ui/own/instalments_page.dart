@@ -61,7 +61,7 @@ class InstalmentsPage extends StatelessWidget {
         ),
         floatingActionButton: ScrollAwareFab(
           child: FloatingActionButton.extended(
-            onPressed: () => showInstalmentSheet(context, own: own),
+            onPressed: () => showInstalmentForm(context, own: own),
             icon: const Icon(Glyph.plus),
             label: Text(l.instalAdd),
           ),
@@ -354,7 +354,7 @@ class InstalmentDetailPage extends StatelessWidget {
             IconButton(
               tooltip: l.instalEdit,
               onPressed: () =>
-                  showInstalmentSheet(context, own: own, plan: plan),
+                  showInstalmentForm(context, own: own, plan: plan),
               icon: const Icon(Glyph.pencilSimple),
             ),
             IconButton(
@@ -859,31 +859,27 @@ Future<void> offerCardPurchase(
   );
 }
 
-Future<void> showInstalmentSheet(
+/// Adds a purchase in instalments, or changes [plan], on a page of its own.
+Future<void> showInstalmentForm(
   BuildContext context, {
   required OwnController own,
   Instalments? plan,
-}) => showModalBottomSheet<void>(
-  context: context,
-  isScrollControlled: true,
-  showDragHandle: true,
-  useSafeArea: true,
-  backgroundColor: context.colors.surface,
-  constraints: const BoxConstraints(maxWidth: 560),
-  builder: (BuildContext context) => _InstalmentSheet(own: own, plan: plan),
+}) => showFormPage<void>(
+  context,
+  (BuildContext context) => _InstalmentForm(own: own, plan: plan),
 );
 
-class _InstalmentSheet extends StatefulWidget {
-  const _InstalmentSheet({required this.own, this.plan});
+class _InstalmentForm extends StatefulWidget {
+  const _InstalmentForm({required this.own, this.plan});
 
   final OwnController own;
   final Instalments? plan;
 
   @override
-  State<_InstalmentSheet> createState() => _InstalmentSheetState();
+  State<_InstalmentForm> createState() => _InstalmentFormState();
 }
 
-class _InstalmentSheetState extends State<_InstalmentSheet> {
+class _InstalmentFormState extends State<_InstalmentForm> {
   OwnController get own => widget.own;
   late final Asset _asset = own.profile?.base ?? Asset.cop;
   late final Ledger? _ledger = own.ledger;
@@ -1087,10 +1083,7 @@ class _InstalmentSheetState extends State<_InstalmentSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text(
-              widget.plan == null ? l.instalAdd : l.instalEdit,
-              style: context.type.headlineMedium,
-            ),
+            FormTitle(widget.plan == null ? l.instalAdd : l.instalEdit),
             const SizedBox(height: 4),
             Text(l.instalSheetBody, style: context.type.bodySmall),
             const SizedBox(height: 16),

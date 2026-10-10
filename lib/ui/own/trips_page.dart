@@ -56,7 +56,7 @@ class TripsPage extends StatelessWidget {
         ),
         floatingActionButton: ScrollAwareFab(
           child: FloatingActionButton.extended(
-            onPressed: () => showTripSheet(context, own: own),
+            onPressed: () => showTripForm(context, own: own),
             icon: const Icon(Glyph.plus),
             label: Text(l.tripsNew),
           ),
@@ -165,7 +165,7 @@ class TripPage extends StatelessWidget {
           actions: <Widget>[
             IconButton(
               tooltip: l.tripEdit,
-              onPressed: () => showTripSheet(context, own: own, trip: trip),
+              onPressed: () => showTripForm(context, own: own, trip: trip),
               icon: const Icon(Glyph.pencilSimple),
             ),
             IconButton(
@@ -968,32 +968,27 @@ class _EarlierSheetState extends State<_EarlierSheet> {
   );
 }
 
-/// Adds a trip, or changes [trip].
-Future<void> showTripSheet(
+/// Adds a trip, or changes [trip], on a page of its own.
+Future<void> showTripForm(
   BuildContext context, {
   required OwnController own,
   Trip? trip,
-}) => showModalBottomSheet<void>(
-  context: context,
-  isScrollControlled: true,
-  showDragHandle: true,
-  useSafeArea: true,
-  backgroundColor: context.colors.surface,
-  constraints: const BoxConstraints(maxWidth: 560),
-  builder: (BuildContext context) => _TripSheet(own: own, trip: trip),
+}) => showFormPage<void>(
+  context,
+  (BuildContext context) => _TripForm(own: own, trip: trip),
 );
 
-class _TripSheet extends StatefulWidget {
-  const _TripSheet({required this.own, this.trip});
+class _TripForm extends StatefulWidget {
+  const _TripForm({required this.own, this.trip});
 
   final OwnController own;
   final Trip? trip;
 
   @override
-  State<_TripSheet> createState() => _TripSheetState();
+  State<_TripForm> createState() => _TripFormState();
 }
 
-class _TripSheetState extends State<_TripSheet> {
+class _TripFormState extends State<_TripForm> {
   OwnController get own => widget.own;
   late final TextEditingController _name = TextEditingController(
     text: widget.trip?.name ?? '',
@@ -1104,10 +1099,7 @@ class _TripSheetState extends State<_TripSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text(
-              widget.trip == null ? l.tripsNew : l.tripEdit,
-              style: context.type.headlineMedium,
-            ),
+            FormTitle(widget.trip == null ? l.tripsNew : l.tripEdit),
             const SizedBox(height: 16),
             TextField(
               controller: _name,

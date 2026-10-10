@@ -348,7 +348,7 @@ void main() {
       isNotEmpty,
     );
     unawaited(
-      showInstalmentSheet(
+      showInstalmentForm(
         tester.element(find.byType(AccountsTab)),
         own: own,
         plan: own.instalments.single,
@@ -428,14 +428,14 @@ void main() {
     expect(netflix.accountId, isNull);
     expect(own.instalments.single.accountId, isNull);
     final BuildContext context = tester.element(find.byType(AccountsTab));
-    unawaited(showChargeSheet(context, own: own, charge: netflix));
+    unawaited(showChargeForm(context, own: own, charge: netflix));
     await settle(tester);
     expect(tester.takeException(), isNull);
     expect(find.text('Ninguna cuenta en particular'), findsOneWidget);
     Navigator.of(tester.element(find.text('Netflix').last)).pop();
     await settle(tester);
     unawaited(
-      showInstalmentSheet(context, own: own, plan: own.instalments.single),
+      showInstalmentForm(context, own: own, plan: own.instalments.single),
     );
     await settle(tester);
     expect(tester.takeException(), isNull);
@@ -457,14 +457,14 @@ void main() {
     final RecurringCharge netflix = own.recurring.firstWhere(
       (RecurringCharge r) => r.name == 'Netflix',
     );
-    unawaited(showChargeSheet(context, own: own, charge: netflix));
+    unawaited(showChargeForm(context, own: own, charge: netflix));
     await settle(tester);
     expect(tester.takeException(), isNull);
     expect(find.text('Ninguna cuenta en particular'), findsOneWidget);
     Navigator.of(tester.element(find.text('Netflix').last)).pop();
     await settle(tester);
     unawaited(
-      showInstalmentSheet(context, own: own, plan: own.instalments.single),
+      showInstalmentForm(context, own: own, plan: own.instalments.single),
     );
     await settle(tester);
     expect(tester.takeException(), isNull);

@@ -15,6 +15,7 @@ import '../../own/own_controller.dart';
 import '../../own/undo.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
+import '../kit.dart';
 import '../messages.dart';
 import 'amount_input.dart';
 import 'look.dart';
@@ -43,35 +44,30 @@ class ChargeDraft {
   final String? category;
 }
 
-/// Adds a fixed payment, or changes, pauses or deletes [charge].
-Future<void> showChargeSheet(
+/// Adds a fixed payment, or changes, pauses or deletes [charge], on a page
+/// of its own.
+Future<void> showChargeForm(
   BuildContext context, {
   required OwnController own,
   RecurringCharge? charge,
   ChargeDraft? draft,
-}) => showModalBottomSheet<void>(
-  context: context,
-  isScrollControlled: true,
-  showDragHandle: true,
-  useSafeArea: true,
-  backgroundColor: context.colors.surface,
-  constraints: const BoxConstraints(maxWidth: 560),
-  builder: (BuildContext context) =>
-      _ChargeSheet(own: own, charge: charge, draft: draft),
+}) => showFormPage<void>(
+  context,
+  (BuildContext context) => _ChargeForm(own: own, charge: charge, draft: draft),
 );
 
-class _ChargeSheet extends StatefulWidget {
-  const _ChargeSheet({required this.own, this.charge, this.draft});
+class _ChargeForm extends StatefulWidget {
+  const _ChargeForm({required this.own, this.charge, this.draft});
 
   final OwnController own;
   final RecurringCharge? charge;
   final ChargeDraft? draft;
 
   @override
-  State<_ChargeSheet> createState() => _ChargeSheetState();
+  State<_ChargeForm> createState() => _ChargeFormState();
 }
 
-class _ChargeSheetState extends State<_ChargeSheet> {
+class _ChargeFormState extends State<_ChargeForm> {
   OwnController get own => widget.own;
 
   late final Asset _asset =
@@ -306,10 +302,7 @@ class _ChargeSheetState extends State<_ChargeSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text(
-              widget.charge == null ? l.chargeAdd : l.chargeEdit,
-              style: context.type.headlineMedium,
-            ),
+            FormTitle(widget.charge == null ? l.chargeAdd : l.chargeEdit),
             if (widget.charge?.active == false)
               Padding(
                 padding: const EdgeInsets.only(top: 4),

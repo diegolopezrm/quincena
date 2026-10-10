@@ -11,35 +11,31 @@ import '../../own/own_controller.dart';
 import '../../own/undo.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
+import '../kit.dart';
 import '../messages.dart';
 import 'amount_input.dart';
 
-/// Adds a savings goal, or changes or deletes [goal].
-Future<void> showGoalSheet(
+/// Adds a savings goal, or changes or deletes [goal], on a page of its own.
+Future<void> showGoalForm(
   BuildContext context, {
   required OwnController own,
   SavingsGoal? goal,
-}) => showModalBottomSheet<void>(
-  context: context,
-  isScrollControlled: true,
-  showDragHandle: true,
-  useSafeArea: true,
-  backgroundColor: context.colors.surface,
-  constraints: const BoxConstraints(maxWidth: 560),
-  builder: (BuildContext context) => _GoalSheet(own: own, goal: goal),
+}) => showFormPage<void>(
+  context,
+  (BuildContext context) => _GoalForm(own: own, goal: goal),
 );
 
-class _GoalSheet extends StatefulWidget {
-  const _GoalSheet({required this.own, this.goal});
+class _GoalForm extends StatefulWidget {
+  const _GoalForm({required this.own, this.goal});
 
   final OwnController own;
   final SavingsGoal? goal;
 
   @override
-  State<_GoalSheet> createState() => _GoalSheetState();
+  State<_GoalForm> createState() => _GoalFormState();
 }
 
-class _GoalSheetState extends State<_GoalSheet> {
+class _GoalFormState extends State<_GoalForm> {
   late final Asset _asset =
       widget.goal?.target.asset ?? widget.own.profile?.base ?? Asset.cop;
   late final TextEditingController _name = TextEditingController(
@@ -174,10 +170,7 @@ class _GoalSheetState extends State<_GoalSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text(
-              widget.goal == null ? l.goalAdd : l.goalEdit,
-              style: context.type.headlineMedium,
-            ),
+            FormTitle(widget.goal == null ? l.goalAdd : l.goalEdit),
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.only(bottom: 12),

@@ -358,7 +358,7 @@ class FixedSetupPage extends StatelessWidget {
                                 _FixedRow(
                                   charge: r,
                                   base: base,
-                                  onTap: () => showChargeSheet(
+                                  onTap: () => showChargeForm(
                                     context,
                                     own: own,
                                     charge: r,
@@ -369,7 +369,7 @@ class FixedSetupPage extends StatelessWidget {
                           const SizedBox(height: 16),
                         ],
                         OutlinedButton.icon(
-                          onPressed: () => showChargeSheet(context, own: own),
+                          onPressed: () => showChargeForm(context, own: own),
                           icon: const Icon(Glyph.plus, size: 18),
                           label: Text(l.chargeAdd),
                         ),
@@ -394,11 +394,8 @@ class FixedSetupPage extends StatelessWidget {
                                       ? l.fixedSuggestSubscription
                                       : d.name,
                                 ),
-                                onPressed: () => showChargeSheet(
-                                  context,
-                                  own: own,
-                                  draft: d,
-                                ),
+                                onPressed: () =>
+                                    showChargeForm(context, own: own, draft: d),
                               ),
                           ],
                         ),

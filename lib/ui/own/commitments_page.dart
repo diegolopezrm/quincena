@@ -66,7 +66,7 @@ class CommitmentsPage extends StatelessWidget {
         ),
         floatingActionButton: ScrollAwareFab(
           child: FloatingActionButton.extended(
-            onPressed: () => showChargeSheet(context, own: own),
+            onPressed: () => showChargeForm(context, own: own),
             icon: const Icon(Glyph.plus),
             label: Text(l.chargeAdd),
           ),
@@ -170,7 +170,7 @@ Future<void> _noneAtAll(
     );
     if (none == null || !context.mounted) return;
     if (!none) {
-      await showChargeSheet(
+      await showChargeForm(
         context,
         own: own,
         draft: _draftOf(first, ledger, own.profile?.base ?? Asset.cop),
@@ -271,7 +271,7 @@ class _ChargeRow extends StatelessWidget {
     );
     final TextStyle? note = context.type.bodySmall;
     return InkWell(
-      onTap: () => showChargeSheet(context, own: own, charge: charge),
+      onTap: () => showChargeForm(context, own: own, charge: charge),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         child: Row(
@@ -494,7 +494,7 @@ class _GuessCard extends StatelessWidget {
                 child: Text(l.guessNot),
               ),
               TextButton.icon(
-                onPressed: () => showChargeSheet(
+                onPressed: () => showChargeForm(
                   context,
                   own: own,
                   draft: _draftOf(guess, ledger, base),

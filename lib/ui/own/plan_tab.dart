@@ -67,7 +67,7 @@ class PlanTab extends StatelessWidget {
         SectionLabel(
           l.planAchieve,
           trailing: TextButton.icon(
-            onPressed: () => showGoalSheet(context, own: own),
+            onPressed: () => showGoalForm(context, own: own),
             icon: const Icon(Glyph.plus, size: 18),
             label: Text(l.goalAdd),
           ),
@@ -498,7 +498,7 @@ class _GoalRow extends StatelessWidget {
     final bool late = deadline != null && !reached && !onTime;
     final TextStyle? small = context.type.bodySmall;
     return InkWell(
-      onTap: () => showGoalSheet(context, own: own, goal: goal),
+      onTap: () => showGoalForm(context, own: own, goal: goal),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 10, 8, 2),
         child: Column(

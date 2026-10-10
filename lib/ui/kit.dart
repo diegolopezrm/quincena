@@ -117,6 +117,60 @@ class Block extends StatelessWidget {
   );
 }
 
+/// Opens [form], for creating or changing something big, as a goal or a
+/// purchase in instalments, as a page of its own that slides over the
+/// screen, with the whole height for its fields and an X that closes it
+/// without saving. A sheet stays for a quick decision.
+///
+/// The form brings its title, its fields and its button, as it would in a
+/// sheet; the page keeps it above the keyboard and clear of the phone's
+/// edges, no wider than a sheet on a wide screen. A message about the
+/// screen it covers goes: on the page it would sit over the form's button.
+Future<T?> showFormPage<T>(BuildContext context, WidgetBuilder form) {
+  ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar();
+  return Navigator.of(context).push<T>(
+    MaterialPageRoute<T>(
+      fullscreenDialog: true,
+      builder: (BuildContext context) => Scaffold(
+        backgroundColor: context.colors.surface,
+        appBar: AppBar(
+          backgroundColor: context.colors.surface,
+          surfaceTintColor: Colors.transparent,
+        ),
+        body: SafeArea(
+          top: false,
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Builder(builder: form),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// The title of a form that [showFormPage] opens, at the top of its page:
+/// a heading, and on Android the name a screen reader gives the page, as an
+/// app bar's title would be.
+class FormTitle extends StatelessWidget {
+  const FormTitle(this.text, {super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    header: true,
+    namesRoute: switch (Theme.of(context).platform) {
+      TargetPlatform.iOS || TargetPlatform.macOS => null,
+      _ => true,
+    },
+    child: Text(text, style: context.type.headlineMedium),
+  );
+}
+
 /// Where something is still loading: a soft shape that breathes, in the
 /// place the content will take, instead of a spinner in an empty space.
 /// With animations turned down it stays still.
