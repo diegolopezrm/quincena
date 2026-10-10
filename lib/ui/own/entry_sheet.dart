@@ -303,15 +303,20 @@ class _EntryFormState extends State<_EntryForm> {
       widget.draft?.date ??
       own.today;
 
-  /// The hour it happened, when it is known, as a notice's or a saved
-  /// movement's, or the person set it. Null otherwise: then today is now
-  /// and another day noon.
-  late TimeOfDay? _time = switch (_editing?.date ??
-      _capture?.parsed.when ??
-      _capture?.event.at) {
+  /// When it happened as it came, a notice's or a saved movement's.
+  late final DateTime? _had =
+      _editing?.date ?? _capture?.parsed.when ?? _capture?.event.at;
+
+  /// The hour it happened: the one it came with while its day stays, or
+  /// one the person set. Null otherwise: then today is now and another day
+  /// noon.
+  late TimeOfDay? _time = switch (_had) {
     final DateTime had => TimeOfDay.fromDateTime(had),
     null => null,
   };
+
+  /// Whether the person set the hour, which then stays with any day.
+  bool _timeSet = false;
   String? _amountError;
   String? _receivedError;
   String? _fromError;
@@ -796,7 +801,19 @@ class _EntryFormState extends State<_EntryForm> {
       firstDate: DateTime(2000),
       lastDate: DateTime(own.today.year + 2, 12, 31),
     );
-    if (picked != null) setState(() => _date = picked);
+    if (picked == null) return;
+    setState(() {
+      _date = picked;
+      // The hour a notice came with is that day's: another day goes by
+      // its own, unless the person set it.
+      if (!_timeSet) {
+        _time = switch (_had) {
+          final DateTime had when DateUtils.isSameDay(had, picked) =>
+            TimeOfDay.fromDateTime(had),
+          _ => null,
+        };
+      }
+    });
   }
 
   Future<void> _pickTime() async {
@@ -807,7 +824,11 @@ class _EntryFormState extends State<_EntryForm> {
           _time ??
           (today ? TimeOfDay.now() : const TimeOfDay(hour: 12, minute: 0)),
     );
-    if (picked != null) setState(() => _time = picked);
+    if (picked == null) return;
+    setState(() {
+      _time = picked;
+      _timeSet = true;
+    });
   }
 
   /// The hour as it will be saved: the one it has, «Ahora» for one of

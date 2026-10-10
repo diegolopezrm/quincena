@@ -690,8 +690,9 @@ void main() {
     expect(find.textContaining('Gasto registrado en Visa.'), findsOneWidget);
   });
 
-  testWidgets('a notice\'s hour shows beside its day, stays when the day '
-      'changes, and can be changed', (tester) async {
+  testWidgets('a notice\'s hour shows beside its day, and can be changed', (
+    tester,
+  ) async {
     final OwnController own = await open(tester, withCaptures);
     await tester.tap(find.text('Editar').last);
     await settle(tester);
