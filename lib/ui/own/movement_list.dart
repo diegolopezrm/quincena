@@ -216,7 +216,7 @@ class MovementRow extends StatelessWidget {
     return InkWell(
       onTap: () => showEntrySheet(context, own: own, entry: entry),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: large
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -361,7 +361,7 @@ class MovementGroups extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 8),
         ],
       ),
     );

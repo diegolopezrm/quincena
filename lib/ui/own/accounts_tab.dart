@@ -129,7 +129,7 @@ class AccountRow extends StatelessWidget {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Column(
           crossAxisAlignment: large
               ? CrossAxisAlignment.start
@@ -181,7 +181,7 @@ class _SpendLine extends StatelessWidget {
     );
     return MergeSemantics(
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
+        padding: const EdgeInsets.symmetric(vertical: 1),
         // With large text the amount goes under what it is: beside it, the
         // words would have no room.
         child: largeText(context)
@@ -310,7 +310,7 @@ class AccountsTab extends StatelessWidget {
             value: -worth.instalments,
             base: base,
           ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
         if (own.accounts.isEmpty)
           Text(l.noAccounts, style: context.type.bodyMedium),
         if (spend.isNotEmpty) ...<Widget>[
@@ -320,7 +320,7 @@ class AccountsTab extends StatelessWidget {
               for (final Account a in spend) AccountRow(own: own, account: a),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
         ],
         if (cards.isNotEmpty) ...<Widget>[
           SectionLabel(l.groupCards),
@@ -329,7 +329,7 @@ class AccountsTab extends StatelessWidget {
               for (final Account a in cards) AccountRow(own: own, account: a),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
         ],
         if (kept.isNotEmpty) ...<Widget>[
           SectionLabel(l.groupSaved),
@@ -338,7 +338,7 @@ class AccountsTab extends StatelessWidget {
               for (final Account a in kept) AccountRow(own: own, account: a),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
         ],
         if (crypto) ...<Widget>[
           SectionLabel(
@@ -358,20 +358,20 @@ class AccountsTab extends StatelessWidget {
               CryptoPerformanceRow(own: own),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
         ] else if (BinanceLink.available) ...<Widget>[
           BinanceCard(own: own),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
         ],
         OutlinedButton.icon(
           onPressed: () => showAccountSheet(context, own: own),
           icon: const Icon(Glyph.plus, size: 18),
           label: Text(l.addAccount),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
         if (own.archivedAccounts.isNotEmpty) ...<Widget>[
           ArchivedAccountsRow(own: own),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
         ],
         RatesSummary(own: own),
       ],
@@ -401,45 +401,19 @@ class RatesSummary extends StatelessWidget {
       for (final Asset a in held)
         if (table.rate(a, base) == null) a,
     ];
-    final Widget mark = Icon(
-      Glyph.arrowsLeftRight,
-      color: context.colors.inkSoft,
-    );
-    final Widget name = Text(l.ratesSeeAll, style: context.type.titleSmall);
     return Panel(
       children: <Widget>[
-        ListTile(
+        LinkRow(
+          icon: Glyph.arrowsLeftRight,
+          title: l.ratesSeeAll,
+          detail: ratesStatus(l, own),
+          warning: missing.isEmpty
+              ? null
+              : l.ratesMissing(missing.map((Asset a) => a.code).join(', ')),
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute<void>(
               builder: (BuildContext context) => RatesPage(own: own),
             ),
-          ),
-          // With large text the icon goes above the title, as in Plan.
-          leading: largeText(context) ? null : mark,
-          title: largeText(context)
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[mark, const SizedBox(height: 4), name],
-                )
-              : name,
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(ratesStatus(l, own), style: context.type.bodySmall),
-              // In the panel: caution text is too faint on the canvas.
-              if (missing.isNotEmpty)
-                Text(
-                  l.ratesMissing(missing.map((Asset a) => a.code).join(', ')),
-                  style: context.type.bodySmall?.copyWith(
-                    color: context.colors.caution,
-                  ),
-                ),
-            ],
-          ),
-          trailing: Icon(
-            Glyph.caretRight,
-            size: 18,
-            color: context.colors.inkFaint,
           ),
         ),
       ],

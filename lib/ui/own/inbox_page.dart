@@ -241,7 +241,7 @@ class InboxPage extends StatelessWidget {
                     )
                   else if (compact)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.only(bottom: 12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
@@ -302,7 +302,7 @@ class InboxPage extends StatelessWidget {
                               ),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
                     ] else
                       ExitList<InboxItem>(
                         key: const ValueKey<String>('ready'),
@@ -317,6 +317,7 @@ class InboxPage extends StatelessWidget {
                       ),
                   ],
                   if (needs.isNotEmpty) ...<Widget>[
+                    if (ready.isNotEmpty) const SizedBox(height: 8),
                     SectionLabel(l.inboxNeedsInfoSection),
                     ExitList<InboxItem>(
                       key: const ValueKey<String>('needs'),
@@ -330,8 +331,10 @@ class InboxPage extends StatelessWidget {
                           ),
                     ),
                   ],
+                  // Each section starts 16 under the card above it, which
+                  // keeps 8 of them.
                   if (repeats.isNotEmpty) ...<Widget>[
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 8),
                     SectionLabel(l.possibleDuplicates),
                     for (final InboxItem item in repeats) ...<Widget>[
                       InboxCard(
@@ -339,14 +342,14 @@ class InboxPage extends StatelessWidget {
                         item: item,
                         lead: item.id == lead?.id,
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
                     ],
                   ],
                   if (own.recentAutomatic.isNotEmpty) ...<Widget>[
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 8),
                     SectionLabel(l.recordedAutomatically),
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.only(bottom: 8),
                       child: Text(
                         l.autoRecordedBody,
                         style: context.type.bodySmall,
@@ -355,7 +358,7 @@ class InboxPage extends StatelessWidget {
                     for (final InboxItem item
                         in own.recentAutomatic) ...<Widget>[
                       InboxCard(own: own, item: item),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
                     ],
                   ],
                   DiscardedLink(own: own),
@@ -1301,7 +1304,7 @@ class _InboxCardState extends State<InboxCard> {
       );
 
       body = Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
@@ -1397,7 +1400,7 @@ class _InboxCardState extends State<InboxCard> {
                 ),
               ),
             if (_details) _detection(context),
-            const SizedBox(height: 8),
+            const SizedBox(height: 2),
             Row(
               children: <Widget>[
                 Expanded(
@@ -1564,7 +1567,7 @@ class _StateLine extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color color = tone.color(context);
     final Widget line = Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -1594,7 +1597,7 @@ class _StateLine extends StatelessWidget {
       ),
     );
     return Padding(
-      padding: const EdgeInsets.only(top: 6),
+      padding: const EdgeInsets.only(top: 4),
       child: onTap == null
           ? line
           : InkWell(

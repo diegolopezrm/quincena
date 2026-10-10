@@ -344,7 +344,7 @@ class OwnSettingsPage extends StatelessWidget {
   }) => InkWell(
     onTap: onTap,
     child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
       child: Row(
         children: <Widget>[
           SizedBox(
@@ -374,12 +374,12 @@ class OwnSettingsPage extends StatelessWidget {
   /// A row of choices, or a few lines, under a title of its own: two rows
   /// of buttons that both start with «Sistema» read apart by their titles.
   Widget _titled(BuildContext context, String title, Widget child) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+    padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Text(title, style: context.type.titleSmall),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         child,
       ],
     ),
@@ -494,7 +494,7 @@ class OwnSettingsPage extends StatelessWidget {
           ],
         ),
       ],
-      const SizedBox(height: 24),
+      const SizedBox(height: 16),
     ];
   }
 
@@ -581,7 +581,7 @@ class OwnSettingsPage extends StatelessWidget {
           ),
         ],
       ),
-      const SizedBox(height: 24),
+      const SizedBox(height: 16),
     ];
   }
 
@@ -633,6 +633,7 @@ class OwnSettingsPage extends StatelessWidget {
                     ),
               minLeadingWidth: 40,
               horizontalTitleGap: 12,
+              visualDensity: VisualDensity.compact,
               title: Text(l.remindersClose, style: context.type.titleSmall),
               subtitle: Text(
                 l.remindersCloseHelp,
@@ -641,7 +642,7 @@ class OwnSettingsPage extends StatelessWidget {
             ),
         ],
       ),
-      const SizedBox(height: 24),
+      const SizedBox(height: 16),
     ];
   }
 
@@ -682,7 +683,7 @@ class OwnSettingsPage extends StatelessWidget {
           ),
         ],
       ),
-      const SizedBox(height: 24),
+      const SizedBox(height: 16),
     ];
   }
 
@@ -783,7 +784,7 @@ class OwnSettingsPage extends StatelessWidget {
           ],
         ],
       ),
-      const SizedBox(height: 24),
+      const SizedBox(height: 16),
     ];
   }
 
@@ -862,7 +863,7 @@ class OwnSettingsPage extends StatelessWidget {
             ),
         ],
       ),
-      const SizedBox(height: 24),
+      const SizedBox(height: 16),
     ];
   }
 
@@ -873,7 +874,7 @@ class OwnSettingsPage extends StatelessWidget {
     return <Widget>[
       SectionLabel(l.settingsHelp),
       Text(l.privacyBody, style: context.type.bodyMedium),
-      const SizedBox(height: 12),
+      const SizedBox(height: 8),
       Panel(
         children: <Widget>[
           _row(
@@ -916,7 +917,7 @@ class OwnSettingsPage extends StatelessWidget {
           ),
         ],
       ),
-      const SizedBox(height: 24),
+      const SizedBox(height: 16),
     ];
   }
 }

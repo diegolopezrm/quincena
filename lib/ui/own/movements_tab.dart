@@ -126,7 +126,7 @@ class _MovementsTabState extends State<MovementsTab> {
       slivers: <Widget>[
         SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsets.only(bottom: _filter.isEmpty ? 20 : 8),
+            padding: const EdgeInsets.only(bottom: 8),
             child: Row(
               children: <Widget>[
                 Expanded(child: field),
@@ -187,7 +187,7 @@ class _Found extends StatelessWidget {
     final bool transfers =
         totals.isNotEmpty && found.any((Entry e) => e.isTransfer);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 4, 0, 16),
+      padding: const EdgeInsets.fromLTRB(0, 4, 0, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[

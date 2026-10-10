@@ -61,9 +61,9 @@ class PlanTab extends StatelessWidget {
       children: <Widget>[
         SectionLabel(l.planOrganize),
         _EnvelopesCard(own: own, ledger: ledger),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         _BudgetExtras(own: own, ledger: ledger, open: _open),
-        const SizedBox(height: 28),
+        const SizedBox(height: 20),
         SectionLabel(
           l.planAchieve,
           trailing: TextButton.icon(
@@ -83,7 +83,7 @@ class PlanTab extends StatelessWidget {
                 _GoalRow(own: own, ledger: ledger, goal: g),
             ],
           ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Panel(
           children: <Widget>[
             _TripsRow(own: own, open: _open),
@@ -97,10 +97,10 @@ class PlanTab extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 20),
         SectionLabel(l.planPaying),
         _PaymentsPanel(own: own, ledger: ledger, open: _open),
-        const SizedBox(height: 28),
+        const SizedBox(height: 20),
         SectionLabel(l.planTools),
         Panel(
           children: <Widget>[
@@ -321,29 +321,8 @@ class _ToolRow extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    final Widget mark = Icon(icon, color: context.colors.inkSoft);
-    final Widget name = Text(title, style: context.type.titleSmall);
-    // With large text the icon goes above the title, as iOS lays out its
-    // own rows at those sizes, and the words have the whole width.
-    final bool large = largeText(context);
-    return ListTile(
-      onTap: onTap,
-      leading: large ? null : mark,
-      title: large
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[mark, const SizedBox(height: 4), name],
-            )
-          : name,
-      subtitle: Text(detail, style: context.type.bodySmall),
-      trailing: Icon(
-        Glyph.caretRight,
-        size: 18,
-        color: context.colors.inkFaint,
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      LinkRow(icon: icon, title: title, detail: detail, onTap: onTap);
 }
 
 /// This period's envelopes, or the way to make them.
@@ -370,6 +349,7 @@ class _EnvelopesCard extends StatelessWidget {
     );
     if (plan == null) {
       return Block(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -399,7 +379,7 @@ class _EnvelopesCard extends StatelessWidget {
     final bool over = daily > 0 && spent > daily;
     final int left = unassigned(ledger, plan, spent: spent);
     return Block(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -520,7 +500,7 @@ class _GoalRow extends StatelessWidget {
     return InkWell(
       onTap: () => showGoalSheet(context, own: own, goal: goal),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
+        padding: const EdgeInsets.fromLTRB(16, 10, 8, 2),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[

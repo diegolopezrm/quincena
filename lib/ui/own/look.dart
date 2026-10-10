@@ -162,7 +162,7 @@ class SectionLabel extends StatelessWidget {
     );
     return Padding(
       // At the margin, where a list's rows and a card's edge start.
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 8),
       // With large text the button goes under the title when the two do
       // not fit side by side.
       child: trailing != null && largeText(context)
@@ -180,6 +180,72 @@ class SectionLabel extends StatelessWidget {
                 ?trailing,
               ],
             ),
+    );
+  }
+}
+
+/// A row that opens what it names, read as one button: its icon in ink in
+/// a column of its own, the name with a line under it, and a caret. With
+/// large text the icon goes above the name, as iOS lays out its own rows at
+/// those sizes, and the words have the whole width.
+class LinkRow extends StatelessWidget {
+  const LinkRow({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.detail,
+    this.warning,
+  });
+
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+  final String? detail;
+
+  /// A line under [detail] in amber, for what the row is missing.
+  final String? warning;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool large = largeText(context);
+    final Widget mark = Icon(icon, color: context.colors.inkSoft);
+    return InkWell(
+      onTap: onTap,
+      child: Semantics(
+        button: true,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+          child: Row(
+            children: <Widget>[
+              if (!large) ...<Widget>[
+                SizedBox(width: 40, child: mark),
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    if (large) ...<Widget>[mark, const SizedBox(height: 4)],
+                    Text(title, style: context.type.titleSmall),
+                    if (detail case final String text)
+                      Text(text, style: context.type.bodySmall),
+                    if (warning case final String text)
+                      Text(
+                        text,
+                        style: context.type.bodySmall?.copyWith(
+                          color: context.colors.caution,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(Glyph.caretRight, size: 18, color: context.colors.inkFaint),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

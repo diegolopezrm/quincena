@@ -12,7 +12,7 @@ class ExitList<T> extends StatefulWidget {
     required this.items,
     required this.keyOf,
     required this.builder,
-    this.gap = 12,
+    this.gap = 8,
   });
 
   final List<T> items;

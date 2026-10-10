@@ -260,6 +260,9 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
       (Glyph.bank, l.tabAccounts),
       (Glyph.piggyBank, l.tabPlan),
     ];
+    // Accounts and goals are added in place, on their own tabs: nothing
+    // floats over the amounts there, and the list needs no room for it.
+    final bool floats = _tab < 2;
     final Widget content = ListenableBuilder(
       listenable: own,
       builder: (BuildContext context, _) {
@@ -276,7 +279,12 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
               key: PageStorageKey<int>(_tab),
               slivers: <Widget>[
                 SliverPadding(
-                  padding: EdgeInsets.fromLTRB(side, 8, side, 112),
+                  padding: EdgeInsets.fromLTRB(
+                    side,
+                    8,
+                    side,
+                    floats ? 112 : 32,
+                  ),
                   sliver: _tabBody(),
                 ),
               ],
@@ -285,9 +293,7 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
         );
       },
     );
-    // Accounts and goals are added in place, on their own tabs: nothing
-    // floats over the amounts there.
-    final Widget? fab = _tab >= 2
+    final Widget? fab = !floats
         ? null
         : ScrollAwareFab(
             child: FloatingActionButton.extended(
