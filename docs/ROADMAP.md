@@ -862,7 +862,15 @@ plan completo, con el porqué de cada fase, está en
   - Todo lo que borra, descarta o archiva ofrece «Deshacer» con el mismo
     aviso, y dejar de leer una app pregunta antes.
   - «Archivado y descartado» deja ver y traer de vuelta lo guardado.
-- **36. Que se sienta liviana.** Pendiente.
+- **36. Que se sienta liviana.** Hecha.
+  - Un color, un sentido, y un solo botón verde fuerte por pantalla.
+  - Listas y ajustes sin caja; tarjetas solo para lo que pide algo.
+  - Movimientos, Cuentas, Plan y Ajustes 15 a 20 % más bajos; Por revisar
+    10 %, por los botones de 48 puntos.
+  - La meta, el viaje, el pago fijo y la compra a cuotas en página
+    completa.
+  - Vibración suave al guardar, resultado al instante, cifras que cuentan y
+    formas mientras carga; «Empieza aquí» revisado con VoiceOver y TalkBack.
 - **37. Prueba en teléfonos de verdad.** En parte.
   - Los flujos se desplazan hasta lo que van a tocar y lo dejan en el
     centro de la pantalla. Con eso, los cuatro que se detenían en un iPhone
