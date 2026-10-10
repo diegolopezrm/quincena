@@ -376,8 +376,33 @@ class _CaptureSettingsPageState extends State<CaptureSettingsPage>
                                 style: context.type.titleSmall,
                               ),
                               subtitle: Text(
-                                l.captureLocationHelp,
+                                l.captureLocationShort,
                                 style: context.type.bodySmall,
+                              ),
+                            ),
+                            // The whole of it, with OpenStreetMap's credit,
+                            // a tap away rather than over the other options.
+                            Padding(
+                              padding: const EdgeInsets.only(left: 4),
+                              child: TextButton(
+                                onPressed: () => showDialog<void>(
+                                  context: context,
+                                  builder: (BuildContext context) =>
+                                      AlertDialog(
+                                        title: Text(l.captureLocationHow),
+                                        content: Text(l.captureLocationHelp),
+                                        actions: <Widget>[
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.of(context).pop(),
+                                            child: Text(
+                                              l.captureLocationHowClose,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                ),
+                                child: Text(l.captureLocationHow),
                               ),
                             ),
                             if (s.useLocation &&

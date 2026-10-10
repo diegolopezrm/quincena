@@ -179,6 +179,38 @@ void main() {
       });
     });
 
+    testWidgets('the switch says it in a line, and the rest is a tap away', (
+      WidgetTester tester,
+    ) async {
+      await _as(TargetPlatform.android, () async {
+        _FakePhone(tester);
+        await _open(tester);
+        await reveal(tester, _locationSwitch);
+        expect(
+          find.text(
+            'Sugiere el comercio por dónde estabas cuando llegó el pago.',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.textContaining('colaboradores de OpenStreetMap'),
+          findsNothing,
+        );
+        await _tap(tester, find.text('Cómo se usa la ubicación'));
+        expect(
+          find.textContaining(
+            'colaboradores de OpenStreetMap, con licencia ODbL',
+          ),
+          findsOneWidget,
+        );
+        await _tap(tester, find.text('Entendido'));
+        expect(
+          find.textContaining('colaboradores de OpenStreetMap'),
+          findsNothing,
+        );
+      });
+    });
+
     testWidgets('«Ahora no» asks for nothing and leaves it off', (
       WidgetTester tester,
     ) async {

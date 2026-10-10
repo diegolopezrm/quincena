@@ -2845,6 +2845,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get captureLocation => 'Usar la ubicación del pago';
 
   @override
+  String get captureLocationShort =>
+      'Sugiere el comercio por dónde estabas cuando llegó el pago.';
+
+  @override
+  String get captureLocationHow => 'Cómo se usa la ubicación';
+
+  @override
+  String get captureLocationHowClose => 'Entendido';
+
+  @override
   String get captureLocationHelp =>
       'Cuando la alerta no dice dónde fue, Quincena busca los comercios a unos metros de donde estaba el teléfono. La ubicación se guarda solo aquí; para buscar los comercios se envían únicamente las coordenadas a OpenStreetMap, a través de Photon. Los datos de los comercios son © colaboradores de OpenStreetMap, con licencia ODbL.';
 

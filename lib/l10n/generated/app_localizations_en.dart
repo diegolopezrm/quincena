@@ -2845,6 +2845,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get captureLocation => 'Use where the payment happened';
 
   @override
+  String get captureLocationShort =>
+      'Suggests the shop from where you were when the payment came.';
+
+  @override
+  String get captureLocationHow => 'How the location is used';
+
+  @override
+  String get captureLocationHowClose => 'Got it';
+
+  @override
   String get captureLocationHelp =>
       'When the alert doesn\'t say where, Quincena looks up the shops a few meters from where the phone was. The location stays here; only the coordinates go to OpenStreetMap, through Photon, to find the shops. Shop data is © OpenStreetMap contributors, under the ODbL.';
 

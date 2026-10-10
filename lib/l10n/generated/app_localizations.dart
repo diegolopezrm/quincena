@@ -4310,6 +4310,24 @@ abstract class AppLocalizations {
   /// **'Usar la ubicación del pago'**
   String get captureLocation;
 
+  /// No description provided for @captureLocationShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Sugiere el comercio por dónde estabas cuando llegó el pago.'**
+  String get captureLocationShort;
+
+  /// No description provided for @captureLocationHow.
+  ///
+  /// In es, this message translates to:
+  /// **'Cómo se usa la ubicación'**
+  String get captureLocationHow;
+
+  /// No description provided for @captureLocationHowClose.
+  ///
+  /// In es, this message translates to:
+  /// **'Entendido'**
+  String get captureLocationHowClose;
+
   /// No description provided for @captureLocationHelp.
   ///
   /// In es, this message translates to:
