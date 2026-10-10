@@ -478,6 +478,89 @@ void main() {
       expect(await store.entries(), hasLength(entries.length));
       expect(Trip.fromJson(trip.toJson())!.adjusted[dinner.id], d('213740'));
     });
+
+    test('abroad, what was paid at home waits to be asked about; at home, '
+        'every expense of its days counts', () async {
+      final Account dollars = await store.addAccount(
+        name: 'Global66',
+        kind: AccountKind.bank,
+        asset: Asset.usd,
+        opening: d('500'),
+      );
+      final Entry museum = await store.addEntry(
+        accountId: dollars.id,
+        amount: d('25'),
+        kind: EntryKind.expense,
+        date: DateTime(2026, 10, 2),
+        category: 'leisure',
+        payee: 'MoMA',
+      );
+      final Entry dinner = await store.addEntry(
+        accountId: bank.id,
+        amount: d('213740'),
+        kind: EntryKind.expense,
+        date: DateTime(2026, 10, 2),
+        category: 'restaurants',
+        payee: 'Joe\'s',
+      );
+      final Entry gym = await store.addEntry(
+        accountId: bank.id,
+        amount: d('95000'),
+        kind: EntryKind.expense,
+        date: DateTime(2026, 10, 3),
+        category: 'health',
+        payee: 'Fit24',
+      );
+      final Trip abroad = Trip(
+        id: 't',
+        name: 'Nueva York',
+        from: DateTime(2026, 10, 1),
+        to: DateTime(2026, 10, 7),
+        currency: 'USD',
+        foreign: <String, ForeignCharge>{
+          dinner.id: ForeignCharge(
+            amount: d('50'),
+            rate: d('4150.30'),
+            rateOn: DateTime(2026, 10, 2),
+            rateSource: 'trm',
+          ),
+        },
+      );
+      final List<Entry> entries = await store.entries();
+      TripSummary of(Trip t) => TripSummary.of(
+        t,
+        entries: entries,
+        assetOf: (String id) => id == dollars.id ? Asset.usd : Asset.cop,
+        rates: RateTable(const <Rate>[]),
+        today: today,
+        home: Asset.cop,
+      );
+      Iterable<String> counted(TripSummary s) =>
+          s.lines.map((TripLine l) => l.entry.id);
+
+      // Paid in dollars, or with the card abroad: the trip's. The gym, in
+      // pesos at home, is asked about and counts in nothing yet.
+      final TripSummary first = of(abroad);
+      expect(counted(first), unorderedEquals(<String>[museum.id, dinner.id]));
+      expect(first.asked.map((Entry e) => e.id), <String>[gym.id]);
+      expect(first.spent, d('75'));
+
+      // Said to be the trip's, it counts; said not to be, it goes.
+      final TripSummary yes = of(abroad.copyWith(included: <String>{gym.id}));
+      expect(counted(yes), contains(gym.id));
+      expect(yes.asked, isEmpty);
+      final TripSummary no = of(abroad.copyWith(excluded: <String>{gym.id}));
+      expect(counted(no), isNot(contains(gym.id)));
+      expect(no.asked, isEmpty);
+
+      // A trip in the person's own currency cannot tell: all of it counts.
+      final TripSummary home = of(abroad.copyWith(currency: 'COP'));
+      expect(
+        counted(home),
+        unorderedEquals(<String>[museum.id, dinner.id, gym.id]),
+      );
+      expect(home.asked, isEmpty);
+    });
   });
 
   test('modules not used change nothing', () async {

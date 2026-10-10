@@ -1048,11 +1048,29 @@ final List<AppFlow> planFlows = <AppFlow>[
       await _openPlan(f);
       await f.tap('Viajes');
       await f.tap('Nueva York');
+      final TripSummary first = own.tripSummary(ny());
       await f.page(
-        'Nueva York: lo que queda en dólares y cada gasto de esas fechas, '
-        'también los de Medellín como el Metro y el Éxito, con su conversión.',
+        'Nueva York: lo que queda en dólares y lo pagado en dólares o con la '
+        'tarjeta afuera, con su conversión. Debajo pregunta por los '
+        '${first.asked.length} gastos de esas fechas que se pagaron en COP: '
+        'el Éxito, el Metro, el gimnasio, el Uber.',
         most: 3,
       );
+      await f.check('Lo pagado en pesos en esas fechas no cuenta hasta '
+          'decirlo, y se pregunta junto', () {
+        expect(first.asked, hasLength(9));
+        expect(
+          first.lines.map((TripLine t) => t.entry.payee),
+          isNot(contains('Fit24 gimnasio')),
+        );
+        expect(
+          f.shows(
+            '9 gastos de esas fechas se pagaron en COP, no en USD: ¿son del '
+            'viaje?',
+          ),
+          isTrue,
+        );
+      });
       await f.reveal(find.text('Ajustar al cargo real'));
       await f.tap('Ajustar al cargo real');
       await f.step(
@@ -1085,59 +1103,88 @@ final List<AppFlow> planFlows = <AppFlow>[
           'dólares', () {
         expect(own.tripSummary(ny()).left, left);
       });
-      final List<TripLine> gyms = <TripLine>[
-        for (final TripLine t in own.tripSummary(ny()).lines)
-          if (t.entry.payee.startsWith('Fit24')) t,
-      ];
-      final Decimal gym = gyms.fold(
-        Decimal.zero,
-        (Decimal s, TripLine t) => s + t.local!,
-      );
-      await _tapTipBy(f, 'Fit24 gimnasio', 'No es del viaje');
+      await f.tap('Ninguno es del viaje');
       await f.step(
-        'El cobro de Fit24 es del gimnasio en Medellín: «No es del viaje» lo '
-        'saca sin preguntar, y abajo dice «Fit24 gimnasio ya no cuenta en el '
+        '«Ninguno es del viaje» saca los 9 de una vez, sin preguntar, y abajo '
+        'dice «Los 9 gastos quedaron fuera del viaje.» con «Deshacer».',
+      );
+      await f.check('Los 9 quedaron fuera y lo que queda no cambió', () {
+        expect(ny().excluded, hasLength(9));
+        expect(own.tripSummary(ny()).left, left);
+        expect(f.shows('Los 9 gastos quedaron fuera del viaje.'), isTrue);
+      });
+      await f.tap('Deshacer');
+      await f.check('Con «Deshacer» la pregunta vuelve', () {
+        expect(ny().excluded, isEmpty);
+        expect(own.tripSummary(ny()).asked, hasLength(9));
+      });
+      await f.tap('Elegir uno por uno');
+      await f.tapFound(
+        find.ancestor(
+          of: find.text('Uber'),
+          matching: find.byType(CheckboxListTile),
+        ),
+      );
+      await f.step(
+        '«Elegir uno por uno» lista los 9; se marca solo el Uber, el del '
+        'aeropuerto.',
+      );
+      await f.tap('Guardar');
+      final Entry uber = _entry(own, 'Uber');
+      final Decimal uberUsd = own
+          .tripSummary(ny())
+          .lines
+          .firstWhere((TripLine t) => t.entry.id == uber.id)
+          .local!;
+      await f.step(
+        'Al guardar, el Uber cuenta en el viaje y los otros 8 esperan abajo, '
+        'en «Gastos que sacaste», cada uno con «Es del viaje».',
+      );
+      await f.check('El Uber cuenta y los otros 8 quedaron fuera', () {
+        expect(ny().included, contains(uber.id));
+        expect(ny().excluded, hasLength(8));
+        expect(own.tripSummary(ny()).asked, isEmpty);
+        final Decimal moved = own.tripSummary(ny()).left! - (left - uberUsd);
+        expect(moved.abs(), lessThanOrEqualTo(Decimal.parse('0.01')));
+      });
+      final Decimal spotify = own
+          .tripSummary(ny())
+          .lines
+          .firstWhere((TripLine t) => t.entry.payee == 'Spotify')
+          .local!;
+      await _tapTipBy(f, 'Spotify', 'No es del viaje');
+      await f.step(
+        'Spotify se cobró en dólares, pero no es del viaje: «No es del viaje» '
+        'lo saca sin preguntar, y abajo dice «Spotify ya no cuenta en el '
         'viaje.» con «Deshacer».',
       );
       await f.check('El aviso nombra el gasto y ofrece deshacerlo', () {
-        expect(f.shows('Fit24 gimnasio ya no cuenta en el viaje.'), isTrue);
+        expect(f.shows('Spotify ya no cuenta en el viaje.'), isTrue);
         expect(f.shows('Deshacer'), isTrue);
       });
-      await f.tap('Deshacer');
-      await f.check(
-        'Con «Deshacer» el gimnasio vuelve a contar en el viaje',
-        () {
-          expect(ny().excluded, isEmpty);
-          expect(own.tripSummary(ny()).left, left);
-        },
-      );
-      await _tapTipBy(f, 'Fit24 gimnasio', 'No es del viaje');
-      await _tapTipBy(f, 'Fit24', 'No es del viaje');
       await _hideNotice(f);
-      await f.reveal(find.text('GASTOS QUE SACASTE'));
-      await f.step(
-        'Los dos cobros de Fit24 salen de la lista y esperan abajo, en '
-        '«Gastos que sacaste», cada uno con «Es del viaje» para devolverlo.',
-      );
-      await f.check('Los dos están en «Gastos que sacaste»', () {
-        expect(f.shows('GASTOS QUE SACASTE'), isTrue);
-        expect(find.text('Es del viaje'), findsNWidgets(2));
-      });
-      await f.check('Sin el gimnasio, al viaje le quedan '
-          '${left + gym} dólares', () {
-        expect(
-          ny().excluded,
-          containsAll(gyms.map((TripLine t) => t.entry.id)),
-        );
-        final Decimal moved = own.tripSummary(ny()).left! - (left + gym);
+      final Decimal before = left - uberUsd + spotify;
+      await f.check('Sin Spotify, al viaje le quedan $before dólares', () {
+        final Decimal moved = own.tripSummary(ny()).left! - before;
         expect(moved.abs(), lessThanOrEqualTo(Decimal.parse('0.01')));
       });
       await f.tap('Incluir un gasto de antes');
       await f.step(
-        '«Incluir un gasto de antes» lista todos los gastos de los 120 días '
-        'antes del viaje, también el arriendo: el tiquete de Avianca es el '
-        'segundo.',
+        '«Incluir un gasto de antes» trae un buscador y pone primero «Lo más '
+        'probable»: el transporte, el alojamiento y los gastos más grandes. '
+        'El tiquete de Avianca va de primero; el arriendo, al final.',
       );
+      await f.check('El tiquete es el primero de la lista', () {
+        final CheckboxListTile top = f.tester.widget<CheckboxListTile>(
+          find.byType(CheckboxListTile).first,
+        );
+        expect((top.title! as Text).data, 'Avianca');
+      });
+      await enterTextIn(f.tester, find.byType(TextField).last, 'avianca');
+      await f.step('Buscar «avianca» deja solo el tiquete.');
+      await f.check('El buscador deja solo el tiquete', () {
+        expect(find.byType(CheckboxListTile), findsOneWidget);
+      });
       await f.tapFound(
         find.ancestor(
           of: find.text('Avianca'),
@@ -1163,7 +1210,7 @@ final List<AppFlow> planFlows = <AppFlow>[
               .firstWhere((TripLine t) => t.entry.id == flight.id);
           // Each line rounds to the cent; the total does not.
           final Decimal moved =
-              own.tripSummary(ny()).left! - (left + gym - line.local!);
+              own.tripSummary(ny()).left! - (before - line.local!);
           expect(moved.abs(), lessThanOrEqualTo(Decimal.parse('0.01')));
         },
       );

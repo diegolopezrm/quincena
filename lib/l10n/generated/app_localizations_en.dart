@@ -5223,6 +5223,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'No expenses in the 120 days before the trip.';
 
   @override
+  String get tripEarlierSearch => 'Search by name or amount';
+
+  @override
+  String get tripEarlierNone => 'No earlier expense looks like that.';
+
+  @override
+  String get tripEarlierLikely => 'Most likely';
+
+  @override
+  String get tripEarlierRest => 'The rest';
+
+  @override
   String get tripSameMovements =>
       'A trip uses your own transactions: changing one here changes it in your account.';
 
@@ -5239,6 +5251,82 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripLeftOutSection => 'Expenses you took out';
+
+  @override
+  String tripAskedTitle(int count, String home, String trip) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count expenses from those days were paid in $home, not $trip: are they part of the trip?',
+      one:
+          'One expense from those days was paid in $home, not $trip: is it part of the trip?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String tripAskedMore(String names, int count) {
+    return '$names and $count more';
+  }
+
+  @override
+  String get tripAskedWhy =>
+      'They count in nothing until you say: what was paid in the trip’s currency or abroad counts on its own.';
+
+  @override
+  String tripAskedYes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Yes, all of them',
+      one: 'Yes, it is',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String tripAskedNo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'None of them',
+      one: 'No, it is not',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tripAskedPick => 'Choose one by one';
+
+  @override
+  String get tripAskedPickTitle => 'Which are part of the trip?';
+
+  @override
+  String get tripAskedPickBody =>
+      'Tick the ones that were part of the trip; the rest stay out, under «Expenses you took out».';
+
+  @override
+  String tripAskedCounted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'The $count expenses now count in the trip.',
+      one: 'The expense now counts in the trip.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String tripAskedLeftOut(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'The $count expenses were left out of the trip.',
+      one: 'The expense was left out of the trip.',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get tripPutBack => 'Part of the trip';

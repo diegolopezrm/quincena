@@ -778,6 +778,7 @@ class OwnController extends ChangeNotifier {
         _snapshot?.account(id)?.asset ?? profile?.base ?? Asset.cop,
     rates: rates,
     today: today,
+    home: profile?.base ?? Asset.cop,
   );
 
   static const String _groupsKey = 'shared.groups';

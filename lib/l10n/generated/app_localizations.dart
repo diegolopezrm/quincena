@@ -8048,6 +8048,30 @@ abstract class AppLocalizations {
   /// **'No hay gastos en los 120 días antes del viaje.'**
   String get tripNothingEarlier;
 
+  /// No description provided for @tripEarlierSearch.
+  ///
+  /// In es, this message translates to:
+  /// **'Buscar por nombre o valor'**
+  String get tripEarlierSearch;
+
+  /// No description provided for @tripEarlierNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Ningún gasto de antes se parece a eso.'**
+  String get tripEarlierNone;
+
+  /// No description provided for @tripEarlierLikely.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo más probable'**
+  String get tripEarlierLikely;
+
+  /// No description provided for @tripEarlierRest.
+  ///
+  /// In es, this message translates to:
+  /// **'Los demás'**
+  String get tripEarlierRest;
+
   /// No description provided for @tripSameMovements.
   ///
   /// In es, this message translates to:
@@ -8077,6 +8101,66 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Gastos que sacaste'**
   String get tripLeftOutSection;
+
+  /// No description provided for @tripAskedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Un gasto de esas fechas se pagó en {home}, no en {trip}: ¿es del viaje?} other{{count} gastos de esas fechas se pagaron en {home}, no en {trip}: ¿son del viaje?}}'**
+  String tripAskedTitle(int count, String home, String trip);
+
+  /// No description provided for @tripAskedMore.
+  ///
+  /// In es, this message translates to:
+  /// **'{names} y {count} más'**
+  String tripAskedMore(String names, int count);
+
+  /// No description provided for @tripAskedWhy.
+  ///
+  /// In es, this message translates to:
+  /// **'No cuentan en el viaje hasta que digas: lo pagado en la moneda del viaje o afuera sí cuenta solo.'**
+  String get tripAskedWhy;
+
+  /// No description provided for @tripAskedYes.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Sí, es del viaje} other{Sí, todos son del viaje}}'**
+  String tripAskedYes(int count);
+
+  /// No description provided for @tripAskedNo.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{No es del viaje} other{Ninguno es del viaje}}'**
+  String tripAskedNo(int count);
+
+  /// No description provided for @tripAskedPick.
+  ///
+  /// In es, this message translates to:
+  /// **'Elegir uno por uno'**
+  String get tripAskedPick;
+
+  /// No description provided for @tripAskedPickTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuáles son del viaje?'**
+  String get tripAskedPickTitle;
+
+  /// No description provided for @tripAskedPickBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Marca los que fueron del viaje; los demás quedan fuera, en «Gastos que sacaste».'**
+  String get tripAskedPickBody;
+
+  /// No description provided for @tripAskedCounted.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{El gasto ahora cuenta en el viaje.} other{Los {count} gastos ahora cuentan en el viaje.}}'**
+  String tripAskedCounted(int count);
+
+  /// No description provided for @tripAskedLeftOut.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{El gasto quedó fuera del viaje.} other{Los {count} gastos quedaron fuera del viaje.}}'**
+  String tripAskedLeftOut(int count);
 
   /// No description provided for @tripPutBack.
   ///

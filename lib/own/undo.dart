@@ -7,6 +7,7 @@ import '../domain/records.dart';
 import '../domain/shared.dart';
 import '../domain/trips.dart';
 import '../exchanges/wallets.dart';
+import '../money/asset.dart';
 import '../store/store.dart';
 import 'own_controller.dart';
 
@@ -173,9 +174,67 @@ extension TakeBack on OwnController {
   }
 
   /// Counts [entry] among [trip]'s expenses again, after the person said it
-  /// was not one: one from outside its days, as one of them.
-  Future<void> backInTrip(Trip trip, Entry entry) =>
-      _countInTrip(trip.id, entry, included: !trip.within(entry.date));
+  /// was not one. One of its days counts again on its own; one from
+  /// outside them, or one paid at home in a trip abroad, which the trip
+  /// would ask about again, is kept as one of the trip's.
+  Future<void> backInTrip(Trip trip, Entry entry) {
+    final Trip out = trip.copyWith(
+      excluded: trip.excluded.difference(<String>{entry.id}),
+    );
+    final bool alone = out.covers(
+      entry,
+      account: snapshot?.account(entry.accountId)?.asset,
+      home: profile?.base ?? Asset.cop,
+    );
+    return _countInTrip(trip.id, entry, included: !alone);
+  }
+
+  /// Says of every one of [entries], expenses [trip] asked about, whether
+  /// it [belongs] to it, at once.
+  Future<Undo> answerTrip(
+    Trip trip,
+    Iterable<Entry> entries, {
+    required bool belongs,
+  }) async {
+    final Set<String> ids = <String>{for (final Entry e in entries) e.id};
+    await saveTrip(
+      trip.copyWith(
+        included: belongs ? <String>{...trip.included, ...ids} : null,
+        excluded: belongs ? null : <String>{...trip.excluded, ...ids},
+      ),
+    );
+    return () async {
+      final Trip? now = this.trip(trip.id);
+      if (now == null) return;
+      await saveTrip(
+        now.copyWith(
+          included: now.included.difference(ids),
+          excluded: now.excluded.difference(ids),
+        ),
+      );
+    };
+  }
+
+  /// Counts in [trip] the ones of [entries] in [belong], and leaves the
+  /// rest out, as the person picked them one by one.
+  Future<void> sortTrip(
+    Trip trip,
+    Iterable<Entry> entries, {
+    required Set<String> belong,
+  }) => saveTrip(
+    trip.copyWith(
+      included: <String>{
+        ...trip.included,
+        for (final Entry e in entries)
+          if (belong.contains(e.id)) e.id,
+      },
+      excluded: <String>{
+        ...trip.excluded,
+        for (final Entry e in entries)
+          if (!belong.contains(e.id)) e.id,
+      },
+    ),
+  );
 
   Future<void> _countInTrip(
     String id,

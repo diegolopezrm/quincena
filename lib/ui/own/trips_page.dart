@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../capture/merchants.dart' show normalize;
 import '../../domain/records.dart';
 import '../../domain/shared.dart';
 import '../../domain/trips.dart';
@@ -284,6 +285,10 @@ class TripPage extends StatelessWidget {
                         _TripLineRow(own: own, trip: trip, line: line),
                     ],
                   ),
+                if (s.asked.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: 12),
+                  _Asked(own: own, trip: trip, asked: s.asked),
+                ],
                 Align(
                   alignment: Alignment.centerLeft,
                   child: TextButton(
@@ -358,6 +363,159 @@ class TripPage extends StatelessWidget {
         constraints: const BoxConstraints(maxWidth: 560),
         builder: (BuildContext context) => _EarlierSheet(own: own, id: trip.id),
       );
+}
+
+/// The expenses of the trip's days paid at home, asked about at once: a
+/// trip in another currency counts only what was paid in it or abroad.
+class _Asked extends StatelessWidget {
+  const _Asked({required this.own, required this.trip, required this.asked});
+
+  final OwnController own;
+  final Trip trip;
+  final List<Entry> asked;
+
+  String _name(BuildContext context, Entry e) => e.payee.isEmpty
+      ? categoryNameFor(context, e.category ?? 'other', own.categories)
+      : e.payee;
+
+  Future<void> _answer(BuildContext context, {required bool belongs}) async {
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final AppLocalizations l = context.l10n;
+    final String said = belongs
+        ? l.tripAskedCounted(asked.length)
+        : l.tripAskedLeftOut(asked.length);
+    showUndo(
+      messenger,
+      said,
+      await own.answerTrip(trip, asked, belongs: belongs),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    final Asset home = own.profile?.base ?? Asset.cop;
+    final List<String> names = <String>[
+      for (final Entry e in asked.take(3)) _name(context, e),
+    ];
+    return Block(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            l.tripAskedTitle(asked.length, home.code, trip.currency),
+            style: context.type.titleSmall,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            asked.length > names.length
+                ? l.tripAskedMore(names.join(', '), asked.length - names.length)
+                : names.join(', '),
+            style: context.type.bodySmall,
+          ),
+          const SizedBox(height: 4),
+          Text(l.tripAskedWhy, style: context.type.bodySmall),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: <Widget>[
+              FilledButton.tonal(
+                onPressed: () => _answer(context, belongs: true),
+                child: Text(l.tripAskedYes(asked.length)),
+              ),
+              TextButton(
+                onPressed: () => _answer(context, belongs: false),
+                child: Text(l.tripAskedNo(asked.length)),
+              ),
+              if (asked.length > 1)
+                TextButton(
+                  onPressed: () => showModalBottomSheet<void>(
+                    context: context,
+                    isScrollControlled: true,
+                    showDragHandle: true,
+                    useSafeArea: true,
+                    backgroundColor: context.colors.surface,
+                    constraints: const BoxConstraints(maxWidth: 560),
+                    builder: (BuildContext context) =>
+                        _PickSheet(own: own, trip: trip, asked: asked),
+                  ),
+                  child: Text(l.tripAskedPick),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The expenses a trip asked about, one by one: the ones ticked count in
+/// it, the rest stay out.
+class _PickSheet extends StatefulWidget {
+  const _PickSheet({
+    required this.own,
+    required this.trip,
+    required this.asked,
+  });
+
+  final OwnController own;
+  final Trip trip;
+  final List<Entry> asked;
+
+  @override
+  State<_PickSheet> createState() => _PickSheetState();
+}
+
+class _PickSheetState extends State<_PickSheet> {
+  final Set<String> _belong = <String>{};
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = context.l10n;
+    final OwnController own = widget.own;
+    return ListView(
+      shrinkWrap: true,
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      children: <Widget>[
+        Text(l.tripAskedPickTitle, style: context.type.headlineMedium),
+        const SizedBox(height: 4),
+        Text(l.tripAskedPickBody, style: context.type.bodySmall),
+        const SizedBox(height: 8),
+        for (final Entry e in widget.asked)
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            value: _belong.contains(e.id),
+            onChanged: (bool? on) => setState(
+              () => (on ?? false) ? _belong.add(e.id) : _belong.remove(e.id),
+            ),
+            title: Text(
+              e.payee.isEmpty
+                  ? categoryNameFor(
+                      context,
+                      e.category ?? 'other',
+                      own.categories,
+                    )
+                  : e.payee,
+              style: context.type.bodyMedium,
+            ),
+            subtitle: Text(
+              '${dayShortMonth(e.date)} · ${moneyText(Money(-e.amount, own.snapshot?.account(e.accountId)?.asset ?? Asset.cop), base: own.profile?.base)}',
+              style: context.type.bodySmall,
+            ),
+          ),
+        const SizedBox(height: 12),
+        FilledButton(
+          onPressed: () async {
+            final NavigatorState navigator = Navigator.of(context);
+            await own.sortTrip(widget.trip, widget.asked, belong: _belong);
+            navigator.pop();
+          },
+          child: Text(l.save),
+        ),
+      ],
+    );
+  }
 }
 
 class _TripLineRow extends StatelessWidget {
@@ -632,21 +790,66 @@ class _AdjustDialogState extends State<_AdjustDialog> {
   }
 }
 
-/// Expenses from before the trip, to count in it or not.
-class _EarlierSheet extends StatelessWidget {
+/// Expenses from before the trip, to count in it or not: what a trip is
+/// usually paid ahead with first, the transport, the lodging and the
+/// biggest expenses, and a way to look for the rest.
+class _EarlierSheet extends StatefulWidget {
   const _EarlierSheet({required this.own, required this.id});
 
   final OwnController own;
   final String id;
 
   @override
+  State<_EarlierSheet> createState() => _EarlierSheetState();
+}
+
+class _EarlierSheetState extends State<_EarlierSheet> {
+  final TextEditingController _search = TextEditingController();
+
+  /// The month's own payments, which a trip is seldom paid with.
+  static const Set<String> _monthly = <String>{
+    'housing',
+    'subscriptions',
+    'utilities',
+    'debt',
+  };
+
+  /// Names that give a trip's lodging or tickets away.
+  static final RegExp _travel = RegExp(
+    r'\b(hotel|hostal|hostel|airbnb|booking|despegar|expedia|avianca|latam|'
+    r'wingo|jetsmart|aerolinea|vuelo|tiquete|tiquetes)\b',
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _search.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: own,
+    listenable: widget.own,
     builder: (BuildContext context, _) {
       final AppLocalizations l = context.l10n;
-      final Trip? trip = own.trip(id);
+      final OwnController own = widget.own;
+      final Trip? trip = own.trip(widget.id);
       if (trip == null) return const SizedBox.shrink();
       final DateTime since = trip.from.subtract(const Duration(days: 120));
+      Asset assetOf(Entry e) =>
+          own.snapshot?.account(e.accountId)?.asset ??
+          own.profile?.base ??
+          Asset.cop;
+      String amount(Entry e) =>
+          moneyText(Money(-e.amount, assetOf(e)), base: own.profile?.base);
+      // Compared in the person's own currency, where a rate allows.
+      Decimal value(Entry e) =>
+          own.inBase(Money(-e.amount, assetOf(e)))?.amount ?? -e.amount;
       final List<Entry> before = <Entry>[
         for (final Entry e in own.snapshot?.entries ?? const <Entry>[])
           if (e.kind == EntryKind.expense &&
@@ -656,38 +859,109 @@ class _EarlierSheet extends StatelessWidget {
               !e.date.isBefore(since))
             e,
       ]..sort((Entry a, Entry b) => b.date.compareTo(a.date));
+      final List<Decimal> values = <Decimal>[
+        for (final Entry e in before) value(e),
+      ]..sort();
+      final Decimal middle = values.isEmpty
+          ? Decimal.zero
+          : values[values.length ~/ 2];
+      final Set<Entry> biggest =
+          (<Entry>[
+                for (final Entry e in before)
+                  if (!_monthly.contains(e.category)) e,
+              ]..sort((Entry a, Entry b) => value(b).compareTo(value(a))))
+              .take(5)
+              .toSet();
+      bool likely(Entry e) =>
+          trip.included.contains(e.id) ||
+          biggest.contains(e) ||
+          ((e.category == 'transport' ||
+                  _travel.hasMatch(normalize(e.payee))) &&
+              value(e) >= middle);
+      final String query = normalize(_search.text);
+      final String digits = _search.text.replaceAll(RegExp(r'[^0-9]'), '');
+      bool found(Entry e) =>
+          query.isEmpty ||
+          normalize(
+            '${e.payee} ${categoryNameFor(context, e.category ?? 'other', own.categories)}',
+          ).contains(query) ||
+          (digits.isNotEmpty &&
+              amount(e).replaceAll(RegExp(r'[^0-9]'), '').contains(digits));
+      final List<Entry> shown = <Entry>[
+        for (final Entry e in before)
+          if (found(e)) e,
+      ];
+      final List<Entry> first = <Entry>[
+        for (final Entry e in shown)
+          if (likely(e)) e,
+      ]..sort((Entry a, Entry b) => value(b).compareTo(value(a)));
+      final List<Entry> rest = <Entry>[
+        for (final Entry e in shown)
+          if (!likely(e) && !_monthly.contains(e.category)) e,
+        for (final Entry e in shown)
+          if (!likely(e) && _monthly.contains(e.category)) e,
+      ];
+      Widget row(Entry e) => CheckboxListTile(
+        contentPadding: EdgeInsets.zero,
+        value: trip.included.contains(e.id),
+        onChanged: (bool? on) => own.saveTrip(
+          trip.copyWith(
+            included: <String>{
+              for (final String x in trip.included)
+                if (x != e.id) x,
+              if (on ?? false) e.id,
+            },
+          ),
+        ),
+        title: Text(
+          e.payee.isEmpty ? l.kindExpense : e.payee,
+          style: context.type.bodyMedium,
+        ),
+        subtitle: Text(
+          '${dayShortMonth(e.date)} · ${amount(e)}',
+          style: context.type.bodySmall,
+        ),
+      );
       return ListView(
         shrinkWrap: true,
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        padding: EdgeInsets.fromLTRB(
+          24,
+          0,
+          24,
+          24 + MediaQuery.viewInsetsOf(context).bottom,
+        ),
         children: <Widget>[
           Text(l.tripIncludeEarlier, style: context.type.headlineMedium),
           const SizedBox(height: 4),
           Text(l.tripIncludeEarlierBody, style: context.type.bodySmall),
           const SizedBox(height: 12),
           if (before.isEmpty)
-            Text(l.tripNothingEarlier, style: context.type.bodyMedium),
-          for (final Entry e in before)
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              value: trip.included.contains(e.id),
-              onChanged: (bool? on) => own.saveTrip(
-                trip.copyWith(
-                  included: <String>{
-                    for (final String x in trip.included)
-                      if (x != e.id) x,
-                    if (on ?? false) e.id,
-                  },
-                ),
-              ),
-              title: Text(
-                e.payee.isEmpty ? l.kindExpense : e.payee,
-                style: context.type.bodyMedium,
-              ),
-              subtitle: Text(
-                '${dayShortMonth(e.date)} · ${moneyText(Money(-e.amount, own.snapshot?.account(e.accountId)?.asset ?? Asset.cop), base: own.profile?.base)}',
-                style: context.type.bodySmall,
+            Text(l.tripNothingEarlier, style: context.type.bodyMedium)
+          else ...<Widget>[
+            TextField(
+              controller: _search,
+              decoration: InputDecoration(
+                hintText: l.tripEarlierSearch,
+                prefixIcon: const Icon(Glyph.magnifyingGlass, size: 20),
+                isDense: true,
               ),
             ),
+            if (shown.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(l.tripEarlierNone, style: context.type.bodyMedium),
+              ),
+            if (first.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 12),
+              SectionLabel(l.tripEarlierLikely),
+              for (final Entry e in first) row(e),
+            ],
+            if (rest.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 12),
+              SectionLabel(l.tripEarlierRest),
+              for (final Entry e in rest) row(e),
+            ],
+          ],
         ],
       );
     },

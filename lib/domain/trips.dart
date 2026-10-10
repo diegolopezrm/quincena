@@ -126,13 +126,35 @@ class Trip {
   bool within(DateTime date) =>
       !_day(date).isBefore(_day(from)) && !_day(date).isAfter(_day(to));
 
-  /// Whether [e] is one of its expenses.
-  bool covers(Entry e) =>
-      e.kind == EntryKind.expense &&
-      !e.isTrade &&
-      e.amount < Decimal.zero &&
+  /// Whether [e] is one of its expenses: one the person counted in it, or
+  /// one of its days that needs no asking. [account] is the currency [e]
+  /// was paid in and [home] the person's own; see [asks].
+  bool covers(Entry e, {Asset? account, Asset? home}) =>
+      _spent(e) &&
       !excluded.contains(e.id) &&
-      (included.contains(e.id) || within(e.date));
+      (included.contains(e.id) ||
+          (within(e.date) && !_athome(e, account, home)));
+
+  /// Whether [e], one of its days that nobody decided on, waits for the
+  /// person to say whether it is the trip's: in a trip in another currency,
+  /// one paid in the person's own currency and not abroad, as the gym at
+  /// home. In a trip at home every expense of its days counts.
+  bool asks(Entry e, {required Asset account, required Asset home}) =>
+      _spent(e) &&
+      within(e.date) &&
+      !excluded.contains(e.id) &&
+      !included.contains(e.id) &&
+      _athome(e, account, home);
+
+  static bool _spent(Entry e) =>
+      e.kind == EntryKind.expense && !e.isTrade && e.amount < Decimal.zero;
+
+  bool _athome(Entry e, Asset? account, Asset? home) =>
+      home != null &&
+      account != null &&
+      asset != home &&
+      account == home &&
+      !foreign.containsKey(e.id);
 
   Trip copyWith({
     String? name,
@@ -268,12 +290,18 @@ class TripSummary {
     required this.lines,
     required this.spent,
     required this.today,
+    this.asked = const <Entry>[],
   });
 
   final Trip trip;
 
   /// Newest first.
   final List<TripLine> lines;
+
+  /// Expenses of its days paid at home that wait for the person to say
+  /// whether they are the trip's, newest first; they count in nothing
+  /// until then.
+  final List<Entry> asked;
 
   /// In the trip's currency, of the lines a rate could convert.
   final Decimal spent;
@@ -314,13 +342,19 @@ class TripSummary {
     required Asset Function(String accountId) assetOf,
     required RateTable rates,
     required DateTime today,
+    Asset? home,
   }) {
     final Asset local = trip.asset;
     final List<TripLine> lines = <TripLine>[];
+    final List<Entry> asked = <Entry>[];
     var spent = Decimal.zero;
     for (final Entry e in entries) {
-      if (!trip.covers(e)) continue;
       final Asset account = assetOf(e.accountId);
+      if (home != null && trip.asks(e, account: account, home: home)) {
+        asked.add(e);
+        continue;
+      }
+      if (!trip.covers(e, account: account, home: home)) continue;
       final Decimal paid = -e.amount;
       final ForeignCharge? foreign = trip.foreign[e.id];
       final Decimal? amount;
@@ -350,11 +384,13 @@ class TripSummary {
     lines.sort(
       (TripLine a, TripLine b) => b.entry.date.compareTo(a.entry.date),
     );
+    asked.sort((Entry a, Entry b) => b.date.compareTo(a.date));
     return TripSummary(
       trip: trip,
       lines: lines,
       spent: spent.round(scale: local.decimals),
       today: today,
+      asked: asked,
     );
   }
 }
