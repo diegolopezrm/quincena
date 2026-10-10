@@ -67,6 +67,10 @@ class _TradeFormState extends State<_TradeForm> {
   String? _totalError;
   bool _saving = false;
 
+  /// What «Todo» wrote in the quantity: while it is left as it is, the sale
+  /// is the whole balance to its last digit, past the ones the field shows.
+  String? _allText;
+
   List<Account> get _others => <Account>[
     for (final Account a in own.accounts)
       if (a.id != account.id) a,
@@ -117,9 +121,21 @@ class _TradeFormState extends State<_TradeForm> {
     return shortDate(day);
   }
 
+  /// Sells everything the account holds, without typing it.
+  void _sellAll() {
+    final String text = formatDecimal(_held.amount, decimals: 8, trim: true);
+    setState(() {
+      _quantity.text = text;
+      _allText = text;
+      _quantityError = null;
+    });
+  }
+
   Future<void> _save() async {
     final AppLocalizations l = context.l10n;
-    final Decimal? quantity = parseAmount(_quantity.text);
+    final Decimal? quantity = _quantity.text == _allText
+        ? _held.amount
+        : parseAmount(_quantity.text);
     final Decimal? total = parseAmount(_total.text);
     // Crypto paid from one of the person's coins cannot be more than that
     // coin holds: an exchange or a wallet does not lend.
@@ -193,6 +209,13 @@ class _TradeFormState extends State<_TradeForm> {
             base: base,
           )
         : null;
+    // Under the total: the price per unit once it can be worked out and,
+    // from one of the accounts, that the total is in that account's
+    // currency; outside the app the currency is picked below it.
+    final List<String> totalHelp = <String>[
+      if (each != null) l.tradePriceEach(each),
+      if (_other != null) l.tradeTotalInAccount(_totalAsset.code),
+    ];
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SingleChildScrollView(
@@ -235,6 +258,20 @@ class _TradeFormState extends State<_TradeForm> {
               decoration: InputDecoration(
                 labelText: l.tradeQuantity(account.asset.code),
                 suffixText: account.asset.code,
+                // Selling all of it is one tap, not its exact digits.
+                suffixIcon: sell
+                    ? TextButton(
+                        onPressed: _held.amount > Decimal.zero
+                            ? _sellAll
+                            : null,
+                        child: Text(
+                          l.tradeAll,
+                          semanticsLabel: l.tradeSellAll(
+                            moneyText(_held, base: base),
+                          ),
+                        ),
+                      )
+                    : null,
                 errorText: _quantityError,
                 helperText: sell
                     ? l.tradeNotEnough(moneyText(_held, base: base))
@@ -246,9 +283,14 @@ class _TradeFormState extends State<_TradeForm> {
               icon: const Icon(Glyph.caretDown, size: 18),
               initialValue: _other,
               isExpanded: true,
+              // What picking one of the accounts does, and the way back.
               decoration: InputDecoration(
                 labelText: sell ? l.tradeReceivedIn : l.tradePaidFrom,
-                helperText: _other == null ? l.tradeOutsideHelp : null,
+                helperText: _other == null
+                    ? l.tradeOutsideHelp
+                    : sell
+                    ? l.tradeToAccountHelp
+                    : l.tradeFromAccountHelp,
                 helperMaxLines: 5,
               ),
               items: <DropdownMenuItem<String?>>[
@@ -278,8 +320,8 @@ class _TradeFormState extends State<_TradeForm> {
                 labelText: sell ? l.tradeReceived : l.tradePaid,
                 suffixText: _totalAsset.code,
                 errorText: _totalError,
-                helperText: each == null ? null : l.tradePriceEach(each),
-                helperMaxLines: 2,
+                helperText: totalHelp.isEmpty ? null : totalHelp.join('\n'),
+                helperMaxLines: 4,
               ),
             ),
             if (_other == null) ...<Widget>[

@@ -3223,6 +3223,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'On Binance P2P, another exchange or in cash. If it comes out of one of your accounts, pick it and its balance changes too.';
 
   @override
+  String get tradeFromAccountHelp =>
+      'The total comes out of that account and its balance goes down. If you paid it elsewhere, pick \"Outside Quincena\".';
+
+  @override
+  String get tradeToAccountHelp =>
+      'The total goes into that account and its balance goes up. If you got it elsewhere, pick \"Outside Quincena\".';
+
+  @override
+  String tradeTotalInAccount(String code) {
+    return 'The total is in that account\'s currency ($code).';
+  }
+
+  @override
   String tradePriceEach(String price) {
     return 'Price per unit: $price';
   }
@@ -3230,6 +3243,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String tradeNotEnough(String amount) {
     return 'That account holds $amount.';
+  }
+
+  @override
+  String get tradeAll => 'All';
+
+  @override
+  String tradeSellAll(String amount) {
+    return 'Sell all of it: $amount';
   }
 
   @override

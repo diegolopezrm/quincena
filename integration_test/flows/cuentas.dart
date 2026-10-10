@@ -2661,16 +2661,32 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Bancolombia · COP');
       await f.type('Total recibido', '1650000');
       await f.step(
-        'Con Bancolombia elegida, el total va en pesos y la app calcula el '
-        'precio: \$330.000.000 por bitcoin.',
+        'Con Bancolombia elegida, debajo dice que el total entra a esa cuenta '
+        'y cómo volver a «Fuera de Quincena»; bajo el total, que va en la '
+        'moneda de esa cuenta, COP, y el precio: \$330.000.000 por bitcoin.',
       );
       await f.check(
-        'Con una cuenta elegida, la moneda es la de esa cuenta',
+        'Con una cuenta elegida, la moneda es la de esa cuenta y lo dice',
         () {
           expect(find.byType(SegmentedButton<String>), findsNothing);
           expect(_field(f, 'Total recibido').decoration!.suffixText, 'COP');
+          expect(
+            _said(f),
+            contains('El total va en la moneda de esa cuenta (COP).'),
+          );
           expect(_said(f), contains('Precio por unidad: \$330.000.000'));
         },
+      );
+      await f.check(
+        '«Recibido en» dice qué le pasa a la cuenta y cómo volver a «Fuera '
+        'de Quincena»',
+        () => expect(
+          f.shows(
+            'El total entra a esa cuenta y su saldo sube. Si lo recibiste por '
+            'fuera, elige «Fuera de Quincena».',
+          ),
+          isTrue,
+        ),
       );
       await f.tap('Guardar');
       await f.step(
@@ -3193,13 +3209,26 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.type('Total pagado', '100');
       await f.step(
         'Con Binance elegida, el total va en USDT y ya no hay que elegir '
-        'moneda; debajo, el precio por unidad en USDT.',
+        'moneda: lo dice debajo del total, con el precio por unidad en USDT.',
       );
-      await f.check('El total va en USDT y no se ofrece otra moneda', () {
-        expect(find.byType(SegmentedButton<String>), findsNothing);
-        expect(_said(f), contains('Precio por unidad'));
-        expect(_said(f), contains('USDT'));
-      });
+      await f.check(
+        'El total va en USDT, lo dice, y no se ofrece otra moneda',
+        () {
+          expect(find.byType(SegmentedButton<String>), findsNothing);
+          expect(_said(f), contains('Precio por unidad'));
+          expect(
+            _said(f),
+            contains('El total va en la moneda de esa cuenta (USDT).'),
+          );
+          expect(
+            f.shows(
+              'El total sale de esa cuenta y su saldo baja. Si lo pagaste por '
+              'fuera, elige «Fuera de Quincena».',
+            ),
+            isTrue,
+          );
+        },
+      );
       await f.tap('Guardar');
       await f.step(
         'Al guardar, Bitcoin sube a 0,0134 BTC y el cambio aparece como una '
@@ -3315,11 +3344,15 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Cuentas');
       await f.tap('Bitcoin');
       await f.tap('Venta');
-      await f.type('Cantidad de BTC', '0,0123');
+      await f.tap('Todo');
+      await f.check('«Todo» escribe lo que tiene la cuenta, 0,0123 BTC', () {
+        expect(_fieldText(f, 'Cantidad de BTC'), '0,0123');
+      });
       await f.type('Total recibido', '2500000');
       await f.step(
-        'Toda la cantidad, 0,0123 BTC, por \$2.500.000 recibidos fuera de '
-        'Quincena, en pesos.',
+        '«Todo», al lado de la cantidad, escribe lo que tiene la cuenta, '
+        '0,0123 BTC, sin teclearlo: se vende por \$2.500.000 recibidos fuera '
+        'de Quincena, en pesos.',
       );
       await f.tap('Guardar');
       await f.step(

@@ -4952,6 +4952,24 @@ abstract class AppLocalizations {
   /// **'En Binance P2P, en otro exchange o en efectivo. Si sale de una de tus cuentas, elígela y su saldo también cambia.'**
   String get tradeOutsideHelp;
 
+  /// No description provided for @tradeFromAccountHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'El total sale de esa cuenta y su saldo baja. Si lo pagaste por fuera, elige «Fuera de Quincena».'**
+  String get tradeFromAccountHelp;
+
+  /// No description provided for @tradeToAccountHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'El total entra a esa cuenta y su saldo sube. Si lo recibiste por fuera, elige «Fuera de Quincena».'**
+  String get tradeToAccountHelp;
+
+  /// No description provided for @tradeTotalInAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'El total va en la moneda de esa cuenta ({code}).'**
+  String tradeTotalInAccount(String code);
+
   /// No description provided for @tradePriceEach.
   ///
   /// In es, this message translates to:
@@ -4963,6 +4981,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Esa cuenta tiene {amount}.'**
   String tradeNotEnough(String amount);
+
+  /// No description provided for @tradeAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Todo'**
+  String get tradeAll;
+
+  /// No description provided for @tradeSellAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Vender todo: {amount}'**
+  String tradeSellAll(String amount);
 
   /// No description provided for @accountOpeningCost.
   ///
