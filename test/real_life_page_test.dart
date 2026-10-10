@@ -447,6 +447,17 @@ void main() {
       calls.lastWhere((MethodCall c) => c.method == 'text').arguments,
       contains('Hola, Agencia Uno. Te escribo por el pago de ${pesos(700000)}'),
     );
+    // Without a share sheet the message is copied, and the sheet says so:
+    // a notice at the bottom would sit under it.
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('dev.dlsoft.quincena/share'),
+      (MethodCall call) async => false,
+    );
+    await tapText(tester, 'Recordar al cliente');
+    expect(
+      find.text('Mensaje copiado: pégalo donde quieras enviarlo.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('what was used from the reserve leaves it, and the dialog '

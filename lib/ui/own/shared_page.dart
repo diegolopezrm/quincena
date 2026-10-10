@@ -30,13 +30,19 @@ String paidLine(AppLocalizations l, Group group, String from, String to) {
   return l.sharedPaid(name(from), name(to));
 }
 
-/// Hands [message] to the share sheet, or says it was copied.
-Future<void> shareMessage(BuildContext context, String message) async {
+/// Hands [message] to the share sheet, or copies it and says so, unless
+/// [quiet], where what asked says it itself, as a sheet that would cover
+/// the notice. True when the sheet opened.
+Future<bool> shareMessage(
+  BuildContext context,
+  String message, {
+  bool quiet = false,
+}) async {
   final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
   final String copied = context.l10n.messageCopied;
-  if (!await ShareText.share(message)) {
-    messenger.showSnackBar(SnackBar(content: Text(copied)));
-  }
+  if (await ShareText.share(message)) return true;
+  if (!quiet) messenger.showSnackBar(SnackBar(content: Text(copied)));
+  return false;
 }
 
 /// Expenses shared with others, and what they owe. Nobody else needs the

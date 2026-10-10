@@ -502,6 +502,9 @@ class _IncomeSheet extends StatefulWidget {
 }
 
 class _IncomeSheetState extends State<_IncomeSheet> {
+  /// Whether the reminder was copied, with no share sheet to take it.
+  bool _copied = false;
+
   OwnController get own => widget.own;
   late final Asset _base = own.profile?.base ?? Asset.cop;
   late final TextEditingController _client = TextEditingController(
@@ -757,16 +760,27 @@ class _IncomeSheetState extends State<_IncomeSheet> {
                 income.status == IncomeStatus.pending &&
                 own.ledger != null)
               TextButton.icon(
-                onPressed: () => shareMessage(
-                  context,
-                  l.freelanceReminderMessage(
-                    income.client,
-                    pesos(own.ledger!.major(income.amount)),
-                    dayMonth(income.expected),
-                  ),
-                ),
+                onPressed: () async {
+                  final bool shared = await shareMessage(
+                    context,
+                    l.freelanceReminderMessage(
+                      income.client,
+                      pesos(own.ledger!.major(income.amount)),
+                      dayMonth(income.expected),
+                    ),
+                    quiet: true,
+                  );
+                  if (!shared && mounted) setState(() => _copied = true);
+                },
                 icon: const Icon(Glyph.shareNetwork, size: 18),
                 label: Text(l.freelanceRemind),
+              ),
+            // Said here: a notice at the bottom would sit under the sheet.
+            if (_copied)
+              Text(
+                l.messageCopied,
+                textAlign: TextAlign.center,
+                style: context.type.bodySmall,
               ),
             if (income != null)
               TextButton(onPressed: _delete, child: Text(l.freelanceDelete)),
