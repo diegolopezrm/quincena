@@ -1048,6 +1048,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get date => 'Date';
 
   @override
+  String get entryTime => 'Time';
+
+  @override
+  String get entryTimeNow => 'Now';
+
+  @override
   String get note => 'Note (optional)';
 
   @override

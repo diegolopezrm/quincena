@@ -302,6 +302,16 @@ class _EntryFormState extends State<_EntryForm> {
       _capture?.event.at ??
       widget.draft?.date ??
       own.today;
+
+  /// The hour it happened, when it is known, as a notice's or a saved
+  /// movement's, or the person set it. Null otherwise: then today is now
+  /// and another day noon.
+  late TimeOfDay? _time = switch (_editing?.date ??
+      _capture?.parsed.when ??
+      _capture?.event.at) {
+    final DateTime had => TimeOfDay.fromDateTime(had),
+    null => null,
+  };
   String? _amountError;
   String? _receivedError;
   String? _fromError;
@@ -516,14 +526,18 @@ class _EntryFormState extends State<_EntryForm> {
         : DateTime(day.year, day.month, day.day, 12);
   }
 
-  /// When the movement happened: the hour it already had while its day
-  /// stays the same, or else what [_stamp] gives the day picked.
-  DateTime _when() {
-    final DateTime? had =
-        _editing?.date ?? _capture?.parsed.when ?? _capture?.event.at;
-    if (had != null && DateUtils.isSameDay(had, _date)) return had;
-    return _stamp(_date);
-  }
+  /// When the movement happened: its day at the hour it has, or else what
+  /// [_stamp] gives the day picked.
+  DateTime _when() => switch (_time) {
+    final TimeOfDay t => DateTime(
+      _date.year,
+      _date.month,
+      _date.day,
+      t.hour,
+      t.minute,
+    ),
+    null => _stamp(_date),
+  };
 
   Future<void> _save() async {
     final AppLocalizations l = context.l10n;
@@ -784,6 +798,25 @@ class _EntryFormState extends State<_EntryForm> {
     );
     if (picked != null) setState(() => _date = picked);
   }
+
+  Future<void> _pickTime() async {
+    final bool today = DateUtils.isSameDay(_date, DateTime.now());
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime:
+          _time ??
+          (today ? TimeOfDay.now() : const TimeOfDay(hour: 12, minute: 0)),
+    );
+    if (picked != null) setState(() => _time = picked);
+  }
+
+  /// The hour as it will be saved: the one it has, «Ahora» for one of
+  /// today without one, or noon.
+  String _timeLabel(AppLocalizations l) => switch (_time) {
+    final TimeOfDay t => timeOfDay(DateTime(2000, 1, 1, t.hour, t.minute)),
+    null when DateUtils.isSameDay(_date, own.today) => l.entryTimeNow,
+    null => timeOfDay(DateTime(2000, 1, 1, 12)),
+  };
 
   String _dateLabel(AppLocalizations l) {
     final DateTime today = own.today;
@@ -1150,9 +1183,8 @@ class _EntryFormState extends State<_EntryForm> {
     );
   }
 
-  List<Widget> _dayAndNote(AppLocalizations l, double scale) => <Widget>[
-    const SizedBox(height: 12),
-    InkWell(
+  List<Widget> _dayAndNote(AppLocalizations l, double scale) {
+    final Widget day = InkWell(
       onTap: _pickDate,
       borderRadius: BorderRadius.circular(12),
       child: InputDecorator(
@@ -1162,7 +1194,38 @@ class _EntryFormState extends State<_EntryForm> {
         ),
         child: Text(_dateLabel(l)),
       ),
-    ),
+    );
+    final Widget hour = InkWell(
+      onTap: _pickTime,
+      borderRadius: BorderRadius.circular(12),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: l.entryTime,
+          suffixIcon: const Icon(Glyph.clock, size: 20),
+        ),
+        child: Text(_timeLabel(l)),
+      ),
+    );
+    return <Widget>[
+      const SizedBox(height: 12),
+      // With large text the hour goes under the day.
+      if (largeText(context)) ...<Widget>[
+        day,
+        const SizedBox(height: 12),
+        hour,
+      ] else
+        Row(
+          children: <Widget>[
+            Expanded(flex: 3, child: day),
+            const SizedBox(width: 12),
+            Expanded(flex: 2, child: hour),
+          ],
+        ),
+      ..._noteField(l, scale),
+    ];
+  }
+
+  List<Widget> _noteField(AppLocalizations l, double scale) => <Widget>[
     const SizedBox(height: 12),
     TextField(
       controller: _note,

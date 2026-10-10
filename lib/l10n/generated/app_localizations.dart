@@ -1682,6 +1682,18 @@ abstract class AppLocalizations {
   /// **'Fecha'**
   String get date;
 
+  /// No description provided for @entryTime.
+  ///
+  /// In es, this message translates to:
+  /// **'Hora'**
+  String get entryTime;
+
+  /// No description provided for @entryTimeNow.
+  ///
+  /// In es, this message translates to:
+  /// **'Ahora'**
+  String get entryTimeNow;
+
   /// No description provided for @note.
   ///
   /// In es, this message translates to:

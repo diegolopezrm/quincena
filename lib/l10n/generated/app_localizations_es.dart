@@ -1049,6 +1049,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get date => 'Fecha';
 
   @override
+  String get entryTime => 'Hora';
+
+  @override
+  String get entryTimeNow => 'Ahora';
+
+  @override
   String get note => 'Nota (opcional)';
 
   @override

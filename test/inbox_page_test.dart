@@ -690,6 +690,40 @@ void main() {
     expect(find.textContaining('Gasto registrado en Visa.'), findsOneWidget);
   });
 
+  testWidgets('a notice\'s hour shows beside its day, stays when the day '
+      'changes, and can be changed', (tester) async {
+    final OwnController own = await open(tester, withCaptures);
+    await tester.tap(find.text('Editar').last);
+    await settle(tester);
+    expect(find.text('Revisar movimiento'), findsOneWidget);
+    // The Éxito's notice came at 9:40 today.
+    expect(find.text('Hoy'), findsOneWidget);
+    expect(find.text('9:40\u00a0a.\u202fm.'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Hora'));
+    await tester.tap(find.text('Hora'));
+    await settle(tester);
+    expect(find.byType(TimePickerDialog), findsOneWidget);
+    Navigator.of(
+      tester.element(find.byType(TimePickerDialog)),
+    ).pop(const TimeOfDay(hour: 8, minute: 15));
+    await settle(tester);
+    expect(find.text('8:15\u00a0a.\u202fm.'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Cuenta'));
+    await tester.tap(find.text('Cuenta'));
+    await settle(tester);
+    await tester.tap(find.text('Visa').last);
+    await settle(tester);
+    await tester.ensureVisible(find.text('Registrar gasto'));
+    await tester.tap(find.text('Registrar gasto'));
+    await settle(tester);
+    final Entry exito = (await tester.runAsync(own.store.entries))!.singleWhere(
+      (Entry e) => e.payee == 'Éxito Laureles' && e.source != 'manual',
+    );
+    expect(exito.date, DateTime(2026, 10, 3, 8, 15));
+  });
+
   testWidgets('the payment to read is a picture or a copied message', (
     tester,
   ) async {

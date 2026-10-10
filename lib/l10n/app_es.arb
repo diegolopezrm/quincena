@@ -326,6 +326,8 @@
   "payee": "¿Dónde o a quién?",
   "payeeIncome": "¿De dónde?",
   "date": "Fecha",
+  "entryTime": "Hora",
+  "entryTimeNow": "Ahora",
   "note": "Nota (opcional)",
   "today": "Hoy",
   "yesterday": "Ayer",

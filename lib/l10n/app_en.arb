@@ -271,6 +271,8 @@
   "payee": "Where or to whom?",
   "payeeIncome": "From where?",
   "date": "Date",
+  "entryTime": "Time",
+  "entryTimeNow": "Now",
   "note": "Note (optional)",
   "today": "Today",
   "yesterday": "Yesterday",
