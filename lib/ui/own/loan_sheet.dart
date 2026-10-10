@@ -12,6 +12,7 @@ import '../../money/money.dart';
 import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
+import '../kit.dart';
 import 'amount_input.dart';
 
 /// Records money lent to someone, or borrowed from them, as what it is: a
@@ -86,6 +87,7 @@ class _LoanSheetState extends State<_LoanSheet> {
       return;
     }
     setState(() => _saving = true);
+    feelSaved();
     final NavigatorState navigator = Navigator.of(context);
     final int minor = ledger.minor(amount.toDouble());
     final String label = _what.text.trim().isEmpty

@@ -10,6 +10,7 @@ import '../../money/money.dart';
 import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
+import '../kit.dart';
 import 'account_sheet.dart';
 import 'amount_input.dart';
 import 'look.dart';
@@ -157,6 +158,7 @@ class _TradeFormState extends State<_TradeForm> {
     });
     if (_quantityError != null || _totalError != null || _saving) return;
     setState(() => _saving = true);
+    feelSaved();
     // A purchase today is dated now, by the app's clock, so it sorts after
     // what came before it.
     final DateTime now = own.now();

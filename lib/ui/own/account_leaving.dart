@@ -275,7 +275,7 @@ class ArchivedAccountsRow extends StatelessWidget {
     final AppLocalizations l = context.l10n;
     final int count = own.archivedAccounts.length;
     if (count == 0) return const SizedBox.shrink();
-    final Widget mark = Icon(Glyph.archive, color: context.colors.brand);
+    final Widget mark = Icon(Glyph.archive, color: context.colors.inkSoft);
     final Widget name = Text(
       l.archivedAccountsTitle,
       style: context.type.titleSmall,
@@ -337,7 +337,7 @@ class ArchivedAccountsPage extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
               children: <Widget>[
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(4, 0, 4, 20),
+                  padding: const EdgeInsets.only(bottom: 20),
                   child: Text(
                     archived.isEmpty
                         ? l.archivedAccountsNone

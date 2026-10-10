@@ -191,7 +191,8 @@ class OwnSettingsPage extends StatelessWidget {
     await own.store.saveProfile(
       p.copyWith(base: picked, pay: same(p.pay), cushion: same(p.cushion)),
     );
-    await own.refreshRates(force: true);
+    // Said at once, with the rate it converted with: the other rates for
+    // the new currency come in behind it, from the network.
     final Decimal shown = asset == p.base ? by : _inverse(by);
     messenger.showSnackBar(
       SnackBar(
@@ -205,6 +206,7 @@ class OwnSettingsPage extends StatelessWidget {
         ),
       ),
     );
+    await own.refreshRates(force: true);
   }
 
   static Decimal _inverse(Decimal d) =>
@@ -346,7 +348,7 @@ class OwnSettingsPage extends StatelessWidget {
   }) => InkWell(
     onTap: onTap,
     child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
       child: Row(
         children: <Widget>[
           SizedBox(
@@ -376,12 +378,12 @@ class OwnSettingsPage extends StatelessWidget {
   /// A row of choices, or a few lines, under a title of its own: two rows
   /// of buttons that both start with «Sistema» read apart by their titles.
   Widget _titled(BuildContext context, String title, Widget child) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+    padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Text(title, style: context.type.titleSmall),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         child,
       ],
     ),
@@ -467,12 +469,9 @@ class OwnSettingsPage extends StatelessWidget {
     final AppLocalizations l = context.l10n;
     return <Widget>[
       SectionLabel(l.exampleSection),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: Text(
-          l.exampleAboutBody(own.profile?.name ?? ''),
-          style: context.type.bodySmall,
-        ),
+      Text(
+        l.exampleAboutBody(own.profile?.name ?? ''),
+        style: context.type.bodySmall,
       ),
       // Where the build keeps no accounts of the person's, there is
       // nowhere else to go.
@@ -499,7 +498,7 @@ class OwnSettingsPage extends StatelessWidget {
           ],
         ),
       ],
-      const SizedBox(height: 24),
+      const SizedBox(height: 16),
     ];
   }
 
@@ -586,7 +585,7 @@ class OwnSettingsPage extends StatelessWidget {
           ),
         ],
       ),
-      const SizedBox(height: 24),
+      const SizedBox(height: 16),
     ];
   }
 
@@ -643,6 +642,7 @@ class OwnSettingsPage extends StatelessWidget {
                     ),
               minLeadingWidth: 40,
               horizontalTitleGap: 12,
+              visualDensity: VisualDensity.compact,
               title: Text(l.remindersClose, style: context.type.titleSmall),
               subtitle: Text(
                 l.remindersCloseHelp,
@@ -651,7 +651,7 @@ class OwnSettingsPage extends StatelessWidget {
             ),
         ],
       ),
-      const SizedBox(height: 24),
+      const SizedBox(height: 16),
     ];
   }
 
@@ -692,7 +692,7 @@ class OwnSettingsPage extends StatelessWidget {
           ),
         ],
       ),
-      const SizedBox(height: 24),
+      const SizedBox(height: 16),
     ];
   }
 
@@ -714,7 +714,11 @@ class OwnSettingsPage extends StatelessWidget {
               segments: <ButtonSegment<ThemeMode>>[
                 ButtonSegment<ThemeMode>(
                   value: ThemeMode.system,
-                  label: Text(l.themeSystem),
+                  // Heard apart from the language's «Sistema».
+                  label: Text(
+                    l.themeSystem,
+                    semanticsLabel: l.actionOn(l.themeTitle, l.themeSystem),
+                  ),
                 ),
                 ButtonSegment<ThemeMode>(
                   value: ThemeMode.light,
@@ -737,7 +741,13 @@ class OwnSettingsPage extends StatelessWidget {
             l.language,
             SegmentedButton<String>(
               segments: <ButtonSegment<String>>[
-                ButtonSegment<String>(value: '', label: Text(l.languageSystem)),
+                ButtonSegment<String>(
+                  value: '',
+                  label: Text(
+                    l.languageSystem,
+                    semanticsLabel: l.actionOn(l.language, l.languageSystem),
+                  ),
+                ),
                 const ButtonSegment<String>(
                   value: 'es',
                   label: Text('Español'),
@@ -793,7 +803,7 @@ class OwnSettingsPage extends StatelessWidget {
           ],
         ],
       ),
-      const SizedBox(height: 24),
+      const SizedBox(height: 16),
     ];
   }
 
@@ -872,7 +882,7 @@ class OwnSettingsPage extends StatelessWidget {
             ),
         ],
       ),
-      const SizedBox(height: 24),
+      const SizedBox(height: 16),
     ];
   }
 
@@ -882,11 +892,8 @@ class OwnSettingsPage extends StatelessWidget {
     final AppLocalizations l = context.l10n;
     return <Widget>[
       SectionLabel(l.settingsHelp),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: Text(l.privacyBody, style: context.type.bodyMedium),
-      ),
-      const SizedBox(height: 12),
+      Text(l.privacyBody, style: context.type.bodyMedium),
+      const SizedBox(height: 8),
       Panel(
         children: <Widget>[
           _row(
@@ -929,7 +936,7 @@ class OwnSettingsPage extends StatelessWidget {
           ),
         ],
       ),
-      const SizedBox(height: 24),
+      const SizedBox(height: 16),
     ];
   }
 }

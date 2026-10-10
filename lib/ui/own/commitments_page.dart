@@ -66,7 +66,7 @@ class CommitmentsPage extends StatelessWidget {
         ),
         floatingActionButton: ScrollAwareFab.extended(
           tooltip: l.chargeAdd,
-          onPressed: () => showChargeSheet(context, own: own),
+          onPressed: () => showChargeForm(context, own: own),
           icon: const Icon(Glyph.plus),
           label: Text(l.chargeAdd),
         ),
@@ -169,7 +169,7 @@ Future<void> _noneAtAll(
     );
     if (none == null || !context.mounted) return;
     if (!none) {
-      await showChargeSheet(
+      await showChargeForm(
         context,
         own: own,
         draft: _draftOf(first, ledger, own.profile?.base ?? Asset.cop),
@@ -270,7 +270,7 @@ class _ChargeRow extends StatelessWidget {
     );
     final TextStyle? note = context.type.bodySmall;
     return InkWell(
-      onTap: () => showChargeSheet(context, own: own, charge: charge),
+      onTap: () => showChargeForm(context, own: own, charge: charge),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         child: Row(
@@ -490,16 +490,22 @@ class _GuessCard extends StatelessWidget {
                   final Undo back = await own.sayNotRecurring(guess.name);
                   showUndo(messenger, l.guessNotDone(guess.name), back);
                 },
-                child: Text(l.guessNot),
+                child: Text(
+                  l.guessNot,
+                  semanticsLabel: l.actionOn(l.guessNot, guess.name),
+                ),
               ),
               TextButton.icon(
-                onPressed: () => showChargeSheet(
+                onPressed: () => showChargeForm(
                   context,
                   own: own,
                   draft: _draftOf(guess, ledger, base),
                 ),
                 icon: const Icon(Glyph.plus, size: 18),
-                label: Text(l.guessAdd),
+                label: Text(
+                  l.guessAdd,
+                  semanticsLabel: l.actionOn(l.guessAdd, guess.name),
+                ),
               ),
             ],
           ),

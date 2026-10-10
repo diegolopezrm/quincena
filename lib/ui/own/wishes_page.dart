@@ -294,6 +294,7 @@ class _WishSheetState extends State<_WishSheet> {
       setState(() => _error = l.wishIncomplete);
       return;
     }
+    feelSaved();
     final DateTime today = widget.own.today;
     final Wish? old = widget.wish;
     // A wait already under way keeps its day; one turned on now is a

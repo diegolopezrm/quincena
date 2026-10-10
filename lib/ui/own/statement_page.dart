@@ -671,7 +671,7 @@ class _StatementPageState extends State<StatementPage> {
       children: <Widget>[
         Row(
           children: <Widget>[
-            Icon(Glyph.checkCircle, color: context.colors.brand, size: 28),
+            Icon(Glyph.checkCircle, color: context.colors.positive, size: 28),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -745,6 +745,7 @@ class _StatementPageState extends State<StatementPage> {
   Widget _olderBlock(AppLocalizations l, Account account, int older) => Padding(
     padding: const EdgeInsets.only(top: 12),
     child: Panel(
+      boxed: true,
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
       children: <Widget>[
         Column(
@@ -798,6 +799,7 @@ class _StatementPageState extends State<StatementPage> {
     return Padding(
       padding: const EdgeInsets.only(top: 12),
       child: Panel(
+        boxed: true,
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
         children: <Widget>[
           Column(
@@ -1527,7 +1529,10 @@ class _LineSheetState extends State<_LineSheet> {
             const SizedBox(height: 4),
             Text(shortDate(c.line.date), style: context.type.bodySmall),
             const SizedBox(height: 16),
-            Text(l.statementOriginal, style: context.type.labelMedium),
+            // Read once, as the name of the text under it.
+            ExcludeSemantics(
+              child: Text(l.statementOriginal, style: context.type.labelMedium),
+            ),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(12),
@@ -1535,9 +1540,12 @@ class _LineSheetState extends State<_LineSheet> {
                 color: context.colors.sunken,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: SelectableText(
-                c.line.description,
-                style: context.type.bodyMedium,
+              child: Semantics(
+                label: l.statementOriginal,
+                child: SelectableText(
+                  c.line.description,
+                  style: context.type.bodyMedium,
+                ),
               ),
             ),
             // What it was taken for, to check before leaving it out.

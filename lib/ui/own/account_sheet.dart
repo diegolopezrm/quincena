@@ -11,6 +11,7 @@ import '../../money/money.dart';
 import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
+import '../kit.dart';
 import 'account_leaving.dart';
 import 'amount_input.dart';
 import 'look.dart';
@@ -214,6 +215,7 @@ class _AccountFormState extends State<_AccountForm> {
     }
     final Money? openingCost = cost == null ? null : Money(cost, _costAsset);
     setState(() => _saving = true);
+    feelSaved();
     // The amount is typed without a sign; the side it is on was chosen
     // apart. A card owes unless it is in the person's favor, and any other
     // account has money unless it is overdrawn.
@@ -328,7 +330,7 @@ class _AccountFormState extends State<_AccountForm> {
                     avatar: Icon(
                       accountIcon(k),
                       size: 18,
-                      color: context.colors.brand,
+                      color: context.colors.inkSoft,
                     ),
                     label: Text(accountKindLabel(context, k)),
                     selected: _kind == k,

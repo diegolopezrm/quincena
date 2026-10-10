@@ -6328,6 +6328,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moreActions => 'More actions';
 
   @override
+  String actionOn(String action, String what) {
+    return '$action, $what';
+  }
+
+  @override
   String statementNew(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -6592,6 +6597,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chartLoading => 'Updating the chart…';
+
+  @override
+  String get accountsLoading => 'Loading your accounts';
 
   @override
   String get loanLentAction => 'I lent';

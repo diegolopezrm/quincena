@@ -261,6 +261,10 @@ class _AlertCard extends StatelessWidget {
       own,
       alert,
     );
+    // Each answer says, to a screen reader, which charge it is about: every
+    // card has the same three.
+    Text said(String answer) =>
+        Text(answer, semanticsLabel: l.actionOn(answer, title));
     // A price going up has every charge as evidence: the latest few say it.
     final List<Entry> evidence = alert.evidence.length > 4
         ? alert.evidence.sublist(alert.evidence.length - 4)
@@ -296,23 +300,23 @@ class _AlertCard extends StatelessWidget {
                   answer == AlertAnswer.dismissed)
                 TextButton(
                   onPressed: () => own.answerAlert(alert.id, null),
-                  child: Text(l.detectiveShowAgain),
+                  child: said(l.detectiveShowAgain),
                 ),
               if (answer != AlertAnswer.expected)
                 TextButton(
                   onPressed: () => _putAway(context, AlertAnswer.expected),
-                  child: Text(l.detectiveExpected),
+                  child: said(l.detectiveExpected),
                 ),
               if (answer == null)
                 TextButton(
                   onPressed: () =>
                       own.answerAlert(alert.id, AlertAnswer.review),
-                  child: Text(l.detectiveReview),
+                  child: said(l.detectiveReview),
                 ),
               if (answer != AlertAnswer.dismissed)
                 TextButton(
                   onPressed: () => _putAway(context, AlertAnswer.dismissed),
-                  child: Text(l.detectiveDismiss),
+                  child: said(l.detectiveDismiss),
                 ),
             ],
           ),

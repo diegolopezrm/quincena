@@ -639,12 +639,12 @@ void main() {
     ),
     'a new goal': (
       (OwnController own) =>
-          opener((BuildContext context) => showGoalSheet(context, own: own)),
+          opener((BuildContext context) => showGoalForm(context, own: own)),
       openIt,
     ),
     'a new fixed payment': (
       (OwnController own) =>
-          opener((BuildContext context) => showChargeSheet(context, own: own)),
+          opener((BuildContext context) => showChargeForm(context, own: own)),
       openIt,
     ),
   };

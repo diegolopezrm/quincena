@@ -159,7 +159,7 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
       if (ledger == null) {
         return Scaffold(
           appBar: AppBar(),
-          body: const Center(child: CircularProgressIndicator()),
+          body: LoadingShapes(label: l.accountsLoading),
         );
       }
       String amount(int minor) => pesos(ledger.major(minor));
@@ -826,6 +826,8 @@ class _DayDetail extends StatelessWidget {
                       Glyph.calendarBlank,
                       size: 18,
                       color: context.colors.inkSoft,
+                      // Each charge has one: heard, it says which.
+                      semanticLabel: l.actionOn(l.comingMove, _label(l, e)),
                     ),
                   )
                 else

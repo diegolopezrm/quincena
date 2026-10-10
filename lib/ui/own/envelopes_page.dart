@@ -198,6 +198,7 @@ class _EnvelopesPageState extends State<EnvelopesPage> {
       if (sure != true) return;
     }
     setState(() => _saving = true);
+    feelSaved();
     // Changed, a plan keeps what it had counted when it was made.
     await own.savePlan(
       own.plan?.copyWith(envelopes: envelopes) ??
@@ -319,7 +320,7 @@ class _EnvelopesPageState extends State<EnvelopesPage> {
                         EnvelopeKind.daily => Glyph.wallet,
                         EnvelopeKind.goal => Glyph.piggyBank,
                         EnvelopeKind.aside => Glyph.handCoins,
-                      }, color: context.colors.brand),
+                      }, color: context.colors.inkSoft),
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextField(
@@ -360,6 +361,7 @@ class _EnvelopesPageState extends State<EnvelopesPage> {
                             Glyph.trash,
                             size: 18,
                             color: context.colors.inkFaint,
+                            semanticLabel: l.actionOn(l.envelopeRemove, e.name),
                           ),
                         ),
                     ],

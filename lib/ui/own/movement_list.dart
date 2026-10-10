@@ -128,10 +128,7 @@ class MovementRow extends StatelessWidget {
         _,
         final SharedExpense split,
       ) when own.ledger != null)
-        _Tag(
-          l.splitYours(pesos(own.ledger!.major(split.shares[meId] ?? 0))),
-          brand: true,
-        ),
+        _Tag(l.splitYours(pesos(own.ledger!.major(split.shares[meId] ?? 0)))),
       // Between currencies the other side is another amount: what arrived
       // for the money that left, what left for the money that arrived.
       if (otherLeg != null && there != null && there.asset != account.asset)
@@ -146,6 +143,7 @@ class MovementRow extends StatelessWidget {
       if (markRepeats ? own.repeats[entry.id] : null
           case final PossibleRepeat pair)
         _RepeatMark(
+          about: title,
           onPressed: () => showRepeatSheet(context, own: own, pair: pair),
         ),
     ];
@@ -219,7 +217,7 @@ class MovementRow extends StatelessWidget {
     return InkWell(
       onTap: () => showEntrySheet(context, own: own, entry: entry),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: large
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -245,28 +243,24 @@ class MovementRow extends StatelessWidget {
   }
 }
 
-/// A mark on a row, such as «Programado», in a soft pill of its own: never
-/// cut, and with large text it wraps like the rest.
+/// A mark on a row, such as «Programado» or the person's part of a shared
+/// expense, in a soft pill of its own: never cut, and with large text it
+/// wraps like the rest. In ink: it says what a row is, it asks nothing.
 class _Tag extends StatelessWidget {
-  const _Tag(this.text, {this.brand = false});
+  const _Tag(this.text);
 
   final String text;
-
-  /// In the brand's green, for the person's own part of a shared expense.
-  final bool brand;
 
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
     decoration: BoxDecoration(
-      color: brand ? context.colors.brandSoft : context.colors.sunken,
+      color: context.colors.sunken,
       borderRadius: BorderRadius.circular(99),
     ),
     child: Text(
       text,
-      style: context.type.labelMedium?.copyWith(
-        color: brand ? context.colors.brand : context.colors.inkSoft,
-      ),
+      style: context.type.labelMedium?.copyWith(color: context.colors.inkSoft),
     ),
   );
 }
@@ -274,15 +268,21 @@ class _Tag extends StatelessWidget {
 /// Says a movement may repeat another, in caution's soft amber: a chip
 /// that opens both, to take the repeat away or say they are two.
 class _RepeatMark extends StatelessWidget {
-  const _RepeatMark({required this.onPressed});
+  const _RepeatMark({required this.about, required this.onPressed});
 
+  /// The movement's name, said with the mark to a screen reader: two rows
+  /// may carry one.
+  final String about;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) => ActionChip(
     onPressed: onPressed,
     avatar: Icon(Glyph.copy, size: 16, color: context.colors.caution),
-    label: Text(context.l10n.repeatMark),
+    label: Text(
+      context.l10n.repeatMark,
+      semanticsLabel: context.l10n.actionOn(context.l10n.repeatMark, about),
+    ),
     labelStyle: context.type.labelMedium?.copyWith(color: context.colors.ink),
     backgroundColor: context.colors.cautionSoft,
     side: BorderSide.none,
@@ -368,7 +368,7 @@ class MovementGroups extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 8),
         ],
       ),
     );

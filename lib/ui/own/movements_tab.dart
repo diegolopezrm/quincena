@@ -77,22 +77,26 @@ class _MovementsTabState extends State<MovementsTab> {
     final List<Entry> shown = !narrowed || finder == null
         ? all
         : finder.find(all, query: _search.text, filter: _filter);
-    final Widget field = TextField(
+    final Widget field = NamedField(
+      name: l.searchMovements,
       controller: _search,
-      onChanged: (_) => setState(() {}),
-      textInputAction: TextInputAction.search,
-      decoration: InputDecoration(
-        hintText: l.searchMovements,
-        // Whole with large text too.
-        hintMaxLines: largeText(context) ? 3 : null,
-        prefixIcon: const Icon(Glyph.magnifyingGlass, size: 20),
-        suffixIcon: _search.text.isEmpty
-            ? null
-            : IconButton(
-                tooltip: l.searchClear,
-                onPressed: () => setState(_search.clear),
-                icon: const Icon(Glyph.x, size: 18),
-              ),
+      child: TextField(
+        controller: _search,
+        onChanged: (_) => setState(() {}),
+        textInputAction: TextInputAction.search,
+        decoration: InputDecoration(
+          hintText: l.searchMovements,
+          // Whole with large text too.
+          hintMaxLines: largeText(context) ? 3 : null,
+          prefixIcon: const Icon(Glyph.magnifyingGlass, size: 20),
+          suffixIcon: _search.text.isEmpty
+              ? null
+              : IconButton(
+                  tooltip: l.searchClear,
+                  onPressed: () => setState(_search.clear),
+                  icon: const Icon(Glyph.x, size: 18),
+                ),
+        ),
       ),
     );
     final Widget filters = IconButton(
@@ -112,10 +116,13 @@ class _MovementsTabState extends State<MovementsTab> {
                   finder.find(all, query: _search.text, filter: filter).length,
               onChanged: _setFilter,
             ),
+      // How many filters are on, said in ink on the selected button: a
+      // count of what was chosen, not something that waits.
       icon: Badge(
         isLabelVisible: !_filter.isEmpty,
         label: Text('${_filter.active}'),
-        backgroundColor: context.colors.brand,
+        backgroundColor: context.colors.ink,
+        textColor: context.colors.surface,
         child: const Icon(Glyph.funnel),
       ),
     );
@@ -123,7 +130,7 @@ class _MovementsTabState extends State<MovementsTab> {
       slivers: <Widget>[
         SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsets.only(bottom: _filter.isEmpty ? 20 : 8),
+            padding: const EdgeInsets.only(bottom: 8),
             child: Row(
               children: <Widget>[
                 Expanded(child: field),
@@ -184,7 +191,7 @@ class _Found extends StatelessWidget {
     final bool transfers =
         totals.isNotEmpty && found.any((Entry e) => e.isTransfer);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 4, 4, 16),
+      padding: const EdgeInsets.fromLTRB(0, 4, 0, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[

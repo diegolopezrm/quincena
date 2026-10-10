@@ -158,21 +158,7 @@ class _CryptoPerformanceRowState extends State<CryptoPerformanceRow> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: <Widget>[
-              ExcludeSemantics(
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: context.colors.brandSoft,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Glyph.chartLineUp,
-                    size: 20,
-                    color: context.colors.brand,
-                  ),
-                ),
-              ),
+              const IconTile(Glyph.chartLineUp),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -307,7 +293,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
                   children: <Widget>[
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(4, 0, 4, 24),
+                      padding: const EdgeInsets.only(bottom: 24),
                       child: Text(
                         empty.isEmpty
                             ? l.portfolioEmpty
@@ -1201,7 +1187,7 @@ class _Place extends StatelessWidget {
         SectionLabel(name),
         if (shared != null)
           Padding(
-            padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+            padding: const EdgeInsets.only(bottom: 10),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[

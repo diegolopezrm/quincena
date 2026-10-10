@@ -245,7 +245,7 @@ class BinanceCard extends StatelessWidget {
                                   Icon(
                                     Glyph.check,
                                     size: 14,
-                                    color: context.colors.brand,
+                                    color: context.colors.positive,
                                   ),
                                   const SizedBox(width: 6),
                                   Expanded(
@@ -674,7 +674,7 @@ class _Point extends StatelessWidget {
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Icon(icon, size: 20, color: context.colors.brand),
+        Icon(icon, size: 20, color: context.colors.inkSoft),
         const SizedBox(width: 12),
         Expanded(
           child: Column(

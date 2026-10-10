@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../catalog/tone.dart';
 import '../data/category.dart';
@@ -96,6 +99,33 @@ class Figures extends StatelessWidget {
   );
 }
 
+/// [value], written by [format], that counts its way from the value it
+/// had to a new one, so a change reads as a change; at once with
+/// animations turned down. The first value shows as it is.
+class CountingFigures extends StatelessWidget {
+  const CountingFigures({
+    super.key,
+    required this.value,
+    required this.format,
+    this.style,
+  });
+
+  final double value;
+  final String Function(double value) format;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+    tween: Tween<double>(end: value),
+    duration: MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 450),
+    curve: Curves.easeOutCubic,
+    builder: (BuildContext context, double shown, _) =>
+        Figures(format(shown), style: style),
+  );
+}
+
 /// A block inside an answer: the surface it sits on, with room to breathe.
 class Block extends StatelessWidget {
   const Block({super.key, required this.child, this.padding, this.color});
@@ -114,6 +144,64 @@ class Block extends StatelessWidget {
       border: Border.all(color: context.colors.line),
     ),
     child: child,
+  );
+}
+
+/// A light tap in the hand as something is saved or recorded: the app took
+/// it, felt before the screen changes.
+void feelSaved() => unawaited(HapticFeedback.lightImpact());
+
+/// Opens [form], for creating or changing something big, as a goal or a
+/// purchase in instalments, as a page of its own that slides over the
+/// screen, with the whole height for its fields and an X that closes it
+/// without saving. A sheet stays for a quick decision.
+///
+/// The form brings its title, its fields and its button, as it would in a
+/// sheet; the page keeps it above the keyboard and clear of the phone's
+/// edges, no wider than a sheet on a wide screen. A message about the
+/// screen it covers goes: on the page it would sit over the form's button.
+Future<T?> showFormPage<T>(BuildContext context, WidgetBuilder form) {
+  ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar();
+  return Navigator.of(context).push<T>(
+    MaterialPageRoute<T>(
+      fullscreenDialog: true,
+      builder: (BuildContext context) => Scaffold(
+        backgroundColor: context.colors.surface,
+        appBar: AppBar(
+          backgroundColor: context.colors.surface,
+          surfaceTintColor: Colors.transparent,
+        ),
+        body: SafeArea(
+          top: false,
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Builder(builder: form),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// The title of a form that [showFormPage] opens, at the top of its page:
+/// a heading, and on Android the name a screen reader gives the page, as an
+/// app bar's title would be.
+class FormTitle extends StatelessWidget {
+  const FormTitle(this.text, {super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    header: true,
+    namesRoute: switch (Theme.of(context).platform) {
+      TargetPlatform.iOS || TargetPlatform.macOS => null,
+      _ => true,
+    },
+    child: Text(text, style: context.type.headlineMedium),
   );
 }
 
@@ -167,5 +255,79 @@ class _SkeletonState extends State<Skeleton>
         ),
       ),
     ),
+  );
+}
+
+/// What a screen shows while the accounts load: the shape of the figure at
+/// its top and of a few rows, breathing where they will be, read as
+/// [label] by a screen reader.
+class LoadingShapes extends StatelessWidget {
+  const LoadingShapes({super.key, required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: label,
+    child: ListView(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      children: <Widget>[
+        const Skeleton(height: 180, radius: 24),
+        const SizedBox(height: 28),
+        const Skeleton(height: 10, width: 120),
+        const SizedBox(height: 16),
+        for (var i = 0; i < 4; i++) ...<Widget>[
+          const Row(
+            children: <Widget>[
+              Skeleton(height: 40, width: 40, radius: 12),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Skeleton(height: 12, width: 140),
+                    SizedBox(height: 8),
+                    Skeleton(height: 10, width: 90),
+                  ],
+                ),
+              ),
+              SizedBox(width: 12),
+              Skeleton(height: 12, width: 64),
+            ],
+          ),
+          const SizedBox(height: 16),
+        ],
+      ],
+    ),
+  );
+}
+
+/// A field that says what it asks only as its hint, named for a screen
+/// reader once something is typed: the hint goes then, and without this the
+/// field would be read as its value alone. While it is empty the hint
+/// names it, and the name is not said twice.
+class NamedField extends StatelessWidget {
+  const NamedField({
+    super.key,
+    required this.name,
+    required this.controller,
+    required this.child,
+  });
+
+  final String name;
+  final TextEditingController controller;
+
+  /// The field, a [TextField] on [controller].
+  final Widget child;
+
+  @override
+  Widget build(
+    BuildContext context,
+  ) => ValueListenableBuilder<TextEditingValue>(
+    valueListenable: controller,
+    builder: (BuildContext context, TextEditingValue value, Widget? field) =>
+        Semantics(label: value.text.isEmpty ? null : name, child: field),
+    child: child,
   );
 }

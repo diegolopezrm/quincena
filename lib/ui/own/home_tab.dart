@@ -108,7 +108,9 @@ class OwnHomeTab extends StatelessWidget {
         if (todos.isNotEmpty) ...<Widget>[
           const SizedBox(height: 24),
           SectionLabel(l.homeTodo),
+          // What needs the person, on a card: lists below go without one.
           Panel(
+            boxed: true,
             children: <Widget>[
               _TodoRow(todo: todos.first, first: true),
               for (final _Todo todo in todos.skip(1)) _TodoRow(todo: todo),
@@ -132,7 +134,9 @@ class OwnHomeTab extends StatelessWidget {
               // Used up, the questions show put away, with when they come
               // back, instead of being offered and then turned down.
               final bool out = day != null && day.left == 0;
+              // The line between questions starts where their words do.
               return Panel(
+                indent: 56,
                 children: <Widget>[
                   if (day != null && (out || day.few))
                     _AskLeft(
@@ -418,7 +422,7 @@ class _AskRow extends StatelessWidget {
     final Widget row = ListTile(
       onTap: onTap,
       enabled: onTap != null,
-      leading: Icon(icon, color: context.colors.brand),
+      leading: Icon(icon, color: context.colors.inkSoft),
       title: Text(text, style: context.type.bodyMedium),
       trailing: Icon(
         Glyph.caretRight,
@@ -486,7 +490,7 @@ class _TodoRow extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
         child: Row(
           children: <Widget>[
-            Icon(todo.icon, size: 24, color: context.colors.brand),
+            Icon(todo.icon, size: 24, color: context.colors.inkSoft),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -824,37 +828,45 @@ class _CanIBuyState extends State<_CanIBuy> {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
-    final Widget field = TextField(
+    final Widget field = NamedField(
+      name: l.buyAskHint,
       controller: _price,
-      focusNode: _focus,
-      onChanged: (_) {
-        if (_missing != null) setState(() => _missing = null);
-      },
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      inputFormatters: <TextInputFormatter>[
-        AmountInputFormatter(maxDecimals: widget.ledger.currency.decimals),
-      ],
-      textInputAction: TextInputAction.go,
-      onSubmitted: (_) => _check(),
-      // With large text the button is under it: it comes above the
-      // keyboard with the field.
-      scrollPadding: largeText(context)
-          ? EdgeInsets.fromLTRB(
-              20,
-              20,
-              20,
-              30 + MediaQuery.textScalerOf(context).scale(48),
-            )
-          : const EdgeInsets.all(20),
-      decoration: InputDecoration(
-        hintText: l.buyAskHint,
-        prefixText: amountPrefix(widget.ledger.currency),
-        errorText: _missing,
-        errorMaxLines: 2,
-        isDense: true,
+      child: TextField(
+        controller: _price,
+        focusNode: _focus,
+        onChanged: (_) {
+          if (_missing != null) setState(() => _missing = null);
+        },
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: <TextInputFormatter>[
+          AmountInputFormatter(maxDecimals: widget.ledger.currency.decimals),
+        ],
+        textInputAction: TextInputAction.go,
+        onSubmitted: (_) => _check(),
+        // With large text the button is under it: it comes above the
+        // keyboard with the field.
+        scrollPadding: largeText(context)
+            ? EdgeInsets.fromLTRB(
+                20,
+                20,
+                20,
+                30 + MediaQuery.textScalerOf(context).scale(48),
+              )
+            : const EdgeInsets.all(20),
+        decoration: InputDecoration(
+          hintText: l.buyAskHint,
+          prefixText: amountPrefix(widget.ledger.currency),
+          errorText: _missing,
+          errorMaxLines: 2,
+          isDense: true,
+        ),
       ),
     );
-    final Widget go = FilledButton(onPressed: _check, child: Text(l.buyAskGo));
+    // Light green: Inicio's one main action is the movement to record.
+    final Widget go = FilledButton.tonal(
+      onPressed: _check,
+      child: Text(l.buyAskGo),
+    );
     return Block(
       padding: const EdgeInsets.fromLTRB(18, 14, 14, 14),
       child: Column(

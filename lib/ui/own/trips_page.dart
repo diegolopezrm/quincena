@@ -56,7 +56,7 @@ class TripsPage extends StatelessWidget {
         ),
         floatingActionButton: ScrollAwareFab.extended(
           tooltip: l.tripsNew,
-          onPressed: () => showTripSheet(context, own: own),
+          onPressed: () => showTripForm(context, own: own),
           icon: const Icon(Glyph.plus),
           label: Text(l.tripsNew),
         ),
@@ -106,7 +106,7 @@ class _TripRow extends StatelessWidget {
           builder: (BuildContext context) => TripPage(own: own, id: trip.id),
         ),
       ),
-      leading: Icon(Glyph.suitcaseRolling, color: context.colors.brand),
+      leading: Icon(Glyph.suitcaseRolling, color: context.colors.inkSoft),
       title: Text(trip.name, style: context.type.titleSmall),
       subtitle: Text(
         '${dayShortMonth(trip.from)} – ${dayShortMonth(trip.to)}',
@@ -164,7 +164,7 @@ class TripPage extends StatelessWidget {
           actions: <Widget>[
             IconButton(
               tooltip: l.tripEdit,
-              onPressed: () => showTripSheet(context, own: own, trip: trip),
+              onPressed: () => showTripForm(context, own: own, trip: trip),
               icon: const Icon(Glyph.pencilSimple),
             ),
             IconButton(
@@ -234,7 +234,7 @@ class TripPage extends StatelessWidget {
                     contentPadding: EdgeInsets.zero,
                     leading: Icon(
                       Glyph.usersThree,
-                      color: context.colors.brand,
+                      color: context.colors.inkSoft,
                     ),
                     title: Text(l.tripShared, style: context.type.titleSmall),
                     subtitle: Text(
@@ -965,32 +965,27 @@ class _EarlierSheetState extends State<_EarlierSheet> {
   );
 }
 
-/// Adds a trip, or changes [trip].
-Future<void> showTripSheet(
+/// Adds a trip, or changes [trip], on a page of its own.
+Future<void> showTripForm(
   BuildContext context, {
   required OwnController own,
   Trip? trip,
-}) => showModalBottomSheet<void>(
-  context: context,
-  isScrollControlled: true,
-  showDragHandle: true,
-  useSafeArea: true,
-  backgroundColor: context.colors.surface,
-  constraints: const BoxConstraints(maxWidth: 560),
-  builder: (BuildContext context) => _TripSheet(own: own, trip: trip),
+}) => showFormPage<void>(
+  context,
+  (BuildContext context) => _TripForm(own: own, trip: trip),
 );
 
-class _TripSheet extends StatefulWidget {
-  const _TripSheet({required this.own, this.trip});
+class _TripForm extends StatefulWidget {
+  const _TripForm({required this.own, this.trip});
 
   final OwnController own;
   final Trip? trip;
 
   @override
-  State<_TripSheet> createState() => _TripSheetState();
+  State<_TripForm> createState() => _TripFormState();
 }
 
-class _TripSheetState extends State<_TripSheet> {
+class _TripFormState extends State<_TripForm> {
   OwnController get own => widget.own;
   late final TextEditingController _name = TextEditingController(
     text: widget.trip?.name ?? '',
@@ -1056,6 +1051,7 @@ class _TripSheetState extends State<_TripSheet> {
       setState(() => _error = l.tripIncomplete);
       return;
     }
+    feelSaved();
     final NavigatorState navigator = Navigator.of(context);
     final Decimal? budget = switch (parseAmount(_budget.text)) {
       final Decimal b when b > Decimal.zero => b,
@@ -1063,6 +1059,8 @@ class _TripSheetState extends State<_TripSheet> {
     };
     final double fee = parseAmount(_fee.text)?.toDouble() ?? 0;
     final Trip? old = widget.trip;
+    // The page goes as the trip is saved, without the wait in between.
+    navigator.pop();
     await own.saveTrip(
       (old ??
               Trip(
@@ -1082,7 +1080,6 @@ class _TripSheetState extends State<_TripSheet> {
             fee: fee,
           ),
     );
-    navigator.pop();
   }
 
   @override
@@ -1101,10 +1098,7 @@ class _TripSheetState extends State<_TripSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text(
-              widget.trip == null ? l.tripsNew : l.tripEdit,
-              style: context.type.headlineMedium,
-            ),
+            FormTitle(widget.trip == null ? l.tripsNew : l.tripEdit),
             const SizedBox(height: 16),
             TextField(
               controller: _name,
@@ -1331,6 +1325,7 @@ class _TripExpenseSheetState extends State<_TripExpenseSheet> {
       setState(() => _error = l.tripExpenseIncomplete);
       return;
     }
+    feelSaved();
     final NavigatorState navigator = Navigator.of(context);
     final Entry entry = await own.store.addEntry(
       accountId: _accountId,

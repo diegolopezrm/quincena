@@ -170,6 +170,7 @@ class SetupChecklist extends StatelessWidget {
           ),
         ),
         Panel(
+          boxed: true,
           children: <Widget>[
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
@@ -260,7 +261,9 @@ class _StepRow extends StatelessWidget {
             Icon(
               step.done ? Glyph.checkCircle : step.icon,
               size: 24,
-              color: step.done ? context.colors.positive : context.colors.brand,
+              color: step.done
+                  ? context.colors.positive
+                  : context.colors.inkSoft,
             ),
             const SizedBox(width: 14),
             Expanded(child: words),
@@ -355,7 +358,7 @@ class FixedSetupPage extends StatelessWidget {
                                 _FixedRow(
                                   charge: r,
                                   base: base,
-                                  onTap: () => showChargeSheet(
+                                  onTap: () => showChargeForm(
                                     context,
                                     own: own,
                                     charge: r,
@@ -366,7 +369,7 @@ class FixedSetupPage extends StatelessWidget {
                           const SizedBox(height: 16),
                         ],
                         OutlinedButton.icon(
-                          onPressed: () => showChargeSheet(context, own: own),
+                          onPressed: () => showChargeForm(context, own: own),
                           icon: const Icon(Glyph.plus, size: 18),
                           label: Text(l.chargeAdd),
                         ),
@@ -391,11 +394,8 @@ class FixedSetupPage extends StatelessWidget {
                                       ? l.fixedSuggestSubscription
                                       : d.name,
                                 ),
-                                onPressed: () => showChargeSheet(
-                                  context,
-                                  own: own,
-                                  draft: d,
-                                ),
+                                onPressed: () =>
+                                    showChargeForm(context, own: own, draft: d),
                               ),
                           ],
                         ),

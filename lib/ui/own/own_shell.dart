@@ -20,6 +20,7 @@ import '../../theme/tokens.dart';
 import '../../widget/home_widget.dart';
 import '../home_page.dart';
 import '../icons.dart';
+import '../kit.dart';
 import '../mark.dart';
 import 'accounts_tab.dart';
 import 'ask_page.dart';
@@ -260,12 +261,14 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
       (Glyph.bank, l.tabAccounts),
       (Glyph.piggyBank, l.tabPlan),
     ];
+    // Accounts and goals are added in place, on their own tabs: nothing
+    // floats over the amounts there, and the list needs no room for it.
+    final bool floats = _tab < 2;
     final Widget content = ListenableBuilder(
       listenable: own,
       builder: (BuildContext context, _) {
-        if (own.ledger == null) {
-          return const Center(child: CircularProgressIndicator());
-        }
+        // While the accounts load, the shapes of what will show.
+        if (own.ledger == null) return LoadingShapes(label: l.accountsLoading);
         // No wider than 760 points, in the middle of a wide screen.
         return LayoutBuilder(
           builder: (BuildContext context, BoxConstraints box) {
@@ -276,7 +279,12 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
               key: PageStorageKey<int>(_tab),
               slivers: <Widget>[
                 SliverPadding(
-                  padding: EdgeInsets.fromLTRB(side, 8, side, 112),
+                  padding: EdgeInsets.fromLTRB(
+                    side,
+                    8,
+                    side,
+                    floats ? 112 : 32,
+                  ),
                   sliver: _tabBody(),
                 ),
               ],
@@ -285,9 +293,7 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
         );
       },
     );
-    // Accounts and goals are added in place, on their own tabs: nothing
-    // floats over the amounts there.
-    final Widget? fab = _tab >= 2
+    final Widget? fab = !floats
         ? null
         : ScrollAwareFab.extended(
             // Each tab starts with it in sight.
@@ -322,7 +328,6 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
                       context,
                     ).clamp(maxScaleFactor: 1.3),
                   ),
-                  backgroundColor: context.colors.brand,
                   child: const Icon(Glyph.tray),
                 ),
               );

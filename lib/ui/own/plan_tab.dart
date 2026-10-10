@@ -61,19 +61,20 @@ class PlanTab extends StatelessWidget {
       children: <Widget>[
         SectionLabel(l.planOrganize),
         _EnvelopesCard(own: own, ledger: ledger),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         _BudgetExtras(own: own, ledger: ledger, open: _open),
-        const SizedBox(height: 28),
+        const SizedBox(height: 20),
         SectionLabel(
           l.planAchieve,
           trailing: TextButton.icon(
-            onPressed: () => showGoalSheet(context, own: own),
+            onPressed: () => showGoalForm(context, own: own),
             icon: const Icon(Glyph.plus, size: 18),
             label: Text(l.goalAdd),
           ),
         ),
+        // No goal yet is a line, not a box: the button above adds one.
         if (goals.isEmpty)
-          Block(child: Text(l.planNoGoals, style: context.type.bodyMedium))
+          Text(l.planNoGoals, style: context.type.bodyMedium)
         else
           Panel(
             indent: 16,
@@ -82,7 +83,7 @@ class PlanTab extends StatelessWidget {
                 _GoalRow(own: own, ledger: ledger, goal: g),
             ],
           ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Panel(
           children: <Widget>[
             _TripsRow(own: own, open: _open),
@@ -96,10 +97,10 @@ class PlanTab extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 20),
         SectionLabel(l.planPaying),
         _PaymentsPanel(own: own, ledger: ledger, open: _open),
-        const SizedBox(height: 28),
+        const SizedBox(height: 20),
         SectionLabel(l.planTools),
         Panel(
           children: <Widget>[
@@ -320,29 +321,8 @@ class _ToolRow extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    final Widget mark = Icon(icon, color: context.colors.brand);
-    final Widget name = Text(title, style: context.type.titleSmall);
-    // With large text the icon goes above the title, as iOS lays out its
-    // own rows at those sizes, and the words have the whole width.
-    final bool large = largeText(context);
-    return ListTile(
-      onTap: onTap,
-      leading: large ? null : mark,
-      title: large
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[mark, const SizedBox(height: 4), name],
-            )
-          : name,
-      subtitle: Text(detail, style: context.type.bodySmall),
-      trailing: Icon(
-        Glyph.caretRight,
-        size: 18,
-        color: context.colors.inkFaint,
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      LinkRow(icon: icon, title: title, detail: detail, onTap: onTap);
 }
 
 /// This period's envelopes, or the way to make them.
@@ -369,6 +349,7 @@ class _EnvelopesCard extends StatelessWidget {
     );
     if (plan == null) {
       return Block(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -381,7 +362,8 @@ class _EnvelopesCard extends StatelessWidget {
               style: context.type.bodyMedium,
             ),
             const SizedBox(height: 10),
-            FilledButton.tonalIcon(
+            // Plan's main action, while the pay has no split.
+            FilledButton.icon(
               onPressed: open,
               icon: const Icon(Glyph.wallet, size: 18),
               label: Text(l.planSplit),
@@ -397,7 +379,7 @@ class _EnvelopesCard extends StatelessWidget {
     final bool over = daily > 0 && spent > daily;
     final int left = unassigned(ledger, plan, spent: spent);
     return Block(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -416,7 +398,7 @@ class _EnvelopesCard extends StatelessWidget {
               value: daily <= 0 ? 0 : (spent / daily).clamp(0, 1).toDouble(),
               minHeight: 8,
               backgroundColor: context.colors.sunken,
-              color: over ? context.colors.caution : context.colors.brand,
+              color: over ? context.colors.caution : context.colors.positive,
             ),
           ),
           if (over)
@@ -516,9 +498,9 @@ class _GoalRow extends StatelessWidget {
     final bool late = deadline != null && !reached && !onTime;
     final TextStyle? small = context.type.bodySmall;
     return InkWell(
-      onTap: () => showGoalSheet(context, own: own, goal: goal),
+      onTap: () => showGoalForm(context, own: own, goal: goal),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
+        padding: const EdgeInsets.fromLTRB(16, 10, 8, 2),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
@@ -542,7 +524,7 @@ class _GoalRow extends StatelessWidget {
                   value: done,
                   minHeight: 6,
                   backgroundColor: context.colors.sunken,
-                  color: context.colors.brand,
+                  color: context.colors.positive,
                 ),
               ),
             ),

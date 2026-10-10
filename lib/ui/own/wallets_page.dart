@@ -43,15 +43,7 @@ class WalletsRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: <Widget>[
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: context.colors.brandSoft,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Glyph.vault, size: 20, color: context.colors.brand),
-              ),
+              const IconTile(Glyph.vault),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -182,7 +174,7 @@ class _WalletsPageState extends State<WalletsPage> {
                     Text(l.walletsEmpty, style: context.type.titleSmall),
                   for (final WalletAddress w in link.wallets) ...<Widget>[
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(4, 0, 0, 6),
+                      padding: const EdgeInsets.only(bottom: 6),
                       child: Row(
                         children: <Widget>[
                           Expanded(

@@ -102,7 +102,7 @@ Future<String?> _firstAccount(BuildContext context, OwnController own) async {
     context: context,
     builder: (BuildContext context) => AlertDialog(
       scrollable: true,
-      icon: Icon(Glyph.wallet, color: context.colors.brand),
+      icon: Icon(Glyph.wallet, color: context.colors.inkSoft),
       title: Text(l.entryNeedsAccountTitle),
       content: Text(l.entryNeedsAccountBody),
       actions: <Widget>[
@@ -583,6 +583,7 @@ class _EntryFormState extends State<_EntryForm> {
       if (toCard == null || !mounted) return;
       if (toCard) {
         setState(() => _saving = true);
+        feelSaved();
         await own.store.addTransfer(
           fromAccountId: from,
           toAccountId: _cardPaid!.id,
@@ -595,6 +596,7 @@ class _EntryFormState extends State<_EntryForm> {
       }
     }
     setState(() => _saving = true);
+    feelSaved();
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     final DateTime when = _when();
     final String? category = _kind == EntryKind.transfer
@@ -1358,16 +1360,7 @@ class _Answer extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
           child: Row(
             children: <Widget>[
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: context.colors.brandSoft,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                alignment: Alignment.center,
-                child: Icon(icon, size: 20, color: context.colors.brand),
-              ),
+              IconTile(icon),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
