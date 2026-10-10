@@ -191,11 +191,13 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       );
       await f.back();
       await f.tapTip('Agregar movimiento');
+      await f.tap('Gasté plata');
       await f.step(
-        'El «+» de la cuenta abre un movimiento nuevo con Bancolombia ya '
-        'elegida como la cuenta de donde sale.',
+        'El «+» de la cuenta pregunta qué pasó; con «Gasté plata» el gasto '
+        'se abre con Bancolombia ya elegida como la cuenta de donde sale.',
       );
       await f.type('Monto', '45000');
+      await f.tap('Cambiar');
       await f.tap('Mercado');
       await f.type('¿Dónde o a quién?', 'D1 Laureles');
       await f.tap('Guardar');
@@ -1299,10 +1301,11 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Cuentas');
       await f.tap('Visa');
       await f.tapTip('Agregar movimiento');
-      await f.tap('Transferencia');
+      await f.tap('Moví plata entre mis cuentas');
       await f.step(
-        'En la Visa, «+» y «Transferencia»: «Desde» y «Hacia» son tus '
-        'cuentas; hay que decir de cuál salió la plata y a cuál llegó.',
+        'En la Visa, «+» y «Moví plata entre mis cuentas»: «Desde» y «Hacia» '
+        'son tus cuentas; hay que decir de cuál salió la plata y a cuál '
+        'llegó.',
       );
       await _pickAccount(f, 0, 'Bancolombia');
       await _pickAccount(f, 1, 'Visa');
@@ -1385,7 +1388,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Cuentas');
       await f.tap('Visa');
       await f.tapTip('Agregar movimiento');
-      await f.tap('Transferencia');
+      await f.tap('Moví plata entre mis cuentas');
       await _pickAccount(f, 0, 'Bancolombia');
       await _pickAccount(f, 1, 'Visa');
       await f.type('Monto', '900000');
@@ -1459,7 +1462,9 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Cuentas');
       await f.tap('Banco · Bancolombia');
       await f.tapTip('Agregar movimiento');
+      await f.tap('Gasté plata');
       await f.type('Monto', '280000');
+      await f.tap('Cambiar');
       await f.tap('Servicios');
       await f.type('¿Dónde o a quién?', 'Administración');
       await f.tapFound(find.text('Hoy').last);
@@ -1818,7 +1823,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tap('Cuentas');
       await f.tap('Visa');
       await f.tapTip('Agregar movimiento');
-      await f.tap('Transferencia');
+      await f.tap('Moví plata entre mis cuentas');
       await _pickAccount(f, 0, 'Bancolombia');
       await _pickAccount(f, 1, 'Visa');
       await f.type('Monto', _plain(owed));
@@ -2111,6 +2116,8 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       });
       await f.top();
       await f.tapTip('Agregar movimiento');
+      await f.tap('Gasté plata');
+      await f.tap('Cambiar');
       await f.tapFound(find.byType(DropdownButtonFormField<String>).first);
       await f.step(
         'Al anotar un movimiento, la lista de cuentas ya no ofrece Nequi.',
@@ -3154,18 +3161,21 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       );
       await f.tapTip('Dejar de seguir');
       await f.step(
-        'La papelera pregunta antes: deja de leerse, y lo que trajo se queda '
-        'como tuyo.',
+        'La papelera la deja de seguir al instante, con «Deshacer» unos '
+        'segundos: deja de leerse, y lo que trajo se queda como tuyo.',
       );
-      await f.tap('Cancelar');
-      await f.check('Cancelar la deja seguida', () {
+      await f.check('Dejó de seguirse, con la forma de volver', () {
+        expect(own.wallets.wallets, isEmpty);
+        expect(f.shows('Deshacer'), isTrue);
+      });
+      await f.tap('Deshacer');
+      await f.check('«Deshacer» la vuelve a seguir', () {
         expect(own.wallets.wallets, hasLength(1));
       });
       await f.tapTip('Dejar de seguir');
-      await f.tap('Dejar de seguir');
       await f.step(
-        'Confirmado, ya no hay billeteras seguidas, ni aviso de una que no se '
-        'pudo leer.',
+        'Otra vez la papelera, y ya no hay billeteras seguidas, ni aviso de '
+        'una que no se pudo leer.',
       );
       await f.check('Ya no se sigue, pero la cuenta de 0,05 BTC sigue', () {
         expect(own.wallets.wallets, isEmpty);
