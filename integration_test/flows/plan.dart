@@ -671,6 +671,9 @@ final List<AppFlow> planFlows = <AppFlow>[
           expect(i.note, 'Logo y papelería');
         },
       );
+      // «Agregar cobro» says its name at the end of the list, where it
+      // was found: the total is back at the top.
+      await f.top();
       await f.check(
         '«Por cobrar» muestra ${_pesos(l, pending + l.minor(1200000))}',
         () => expect(_says(f, _pesos(l, pending + l.minor(1200000))), isTrue),
