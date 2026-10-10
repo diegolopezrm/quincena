@@ -2662,6 +2662,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get whyWords => 'el mensaje dice de qué es';
 
   @override
+  String whyUnnamed(String account) {
+    return 'lo que no dice el banco va a $account';
+  }
+
+  @override
   String ruleLearned(String rules) {
     return 'Desde ahora, $rules.';
   }
@@ -2685,6 +2690,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String ruleGoesInstitution(String institution, String account) {
     return 'lo de $institution va a $account';
   }
+
+  @override
+  String ruleGoesUnnamed(String account) {
+    return 'lo que no dice el banco va a $account';
+  }
+
+  @override
+  String get ruleNoBank => 'Pagos que no dicen el banco';
 
   @override
   String ruleResolved(int count) {

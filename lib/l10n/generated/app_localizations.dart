@@ -4040,6 +4040,12 @@ abstract class AppLocalizations {
   /// **'el mensaje dice de qué es'**
   String get whyWords;
 
+  /// No description provided for @whyUnnamed.
+  ///
+  /// In es, this message translates to:
+  /// **'lo que no dice el banco va a {account}'**
+  String whyUnnamed(String account);
+
   /// No description provided for @ruleLearned.
   ///
   /// In es, this message translates to:
@@ -4069,6 +4075,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'lo de {institution} va a {account}'**
   String ruleGoesInstitution(String institution, String account);
+
+  /// No description provided for @ruleGoesUnnamed.
+  ///
+  /// In es, this message translates to:
+  /// **'lo que no dice el banco va a {account}'**
+  String ruleGoesUnnamed(String account);
+
+  /// No description provided for @ruleNoBank.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagos que no dicen el banco'**
+  String get ruleNoBank;
 
   /// No description provided for @ruleResolved.
   ///

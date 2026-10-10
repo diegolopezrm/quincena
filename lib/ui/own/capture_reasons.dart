@@ -65,6 +65,7 @@ List<String> reasonList(
         'learned' when merchant != null => l.whyLearned(merchant),
         'merchant' when merchant != null => l.whyMerchant(merchant),
         'words' => l.whyWords,
+        'unnamed' => l.whyUnnamed(account),
         _ => null,
       },
   ];
@@ -111,6 +112,8 @@ String ruleSubject(BuildContext context, OwnController own, CaptureRule rule) =>
         own.captureSettings.merchantNames[rule.key] ?? merchantShown(rule.key),
       RuleKind.card => context.l10n.ruleCardKey(rule.key),
       RuleKind.account => context.l10n.ruleAccountKey(rule.key),
+      RuleKind.institution when rule.key == CaptureService.noBank =>
+        context.l10n.ruleNoBank,
       RuleKind.institution => rule.key,
     };
 
@@ -137,6 +140,8 @@ String learnedText(
           c.rule.key,
           ruleTarget(context, own, c.rule),
         ),
+        RuleKind.institution when c.rule.key == CaptureService.noBank =>
+          l.ruleGoesUnnamed(ruleTarget(context, own, c.rule)),
         RuleKind.institution => l.ruleGoesInstitution(
           c.rule.key,
           ruleTarget(context, own, c.rule),

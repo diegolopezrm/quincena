@@ -1718,7 +1718,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await _tapOn(f, 'Farmatodo', 'Registrar gasto');
       await f.step(
         'Con «Registrar gasto» queda en Bancolombia, en Salud, y la lista '
-        'vuelve a «Todo al día.»',
+        'vuelve a «Todo al día.»; el aviso dice que desde ahora lo que no dice '
+        'el banco va a Bancolombia.',
       );
       await f.check('Quedó un gasto de \$27.500 en Bancolombia, en Salud', () {
         final Entry e = own.snapshot!.entries.firstWhere(
@@ -1730,11 +1731,17 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         expect(own.pendingInbox, isEmpty);
       });
       await f.check(
-        'Solo aprendió el comercio: el mensaje no nombra banco',
+        'Aprendió el comercio y que lo que no dice el banco va a Bancolombia',
         () {
           expect(own.captureSettings.merchantCategories['farmatodo'], 'health');
-          expect(own.captureSettings.institutionAccounts, isEmpty);
+          expect(own.captureSettings.institutionAccounts, <String, String>{
+            CaptureService.noBank: bank.id,
+          });
           expect(own.captureSettings.cardAccounts, isEmpty);
+          expect(
+            f.screenText,
+            contains('lo que no dice el banco va a Bancolombia'),
+          );
         },
       );
       await f.back();
@@ -1800,6 +1807,28 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
           expect(f.shows('NECESITAN INFORMACIÓN'), isFalse);
         },
       );
+      await _hideNotice(f);
+      await _paste(f, r'Compraste $9.500 en OXXO');
+      await _hideNotice(f);
+      await f.top();
+      await f.step(
+        'Otra compra sin banco ni tarjeta, en Oxxo, ya no pide revisar la '
+        'cuenta: llega «Lista para registrar» en Bancolombia, por lo que se '
+        'aprendió con Farmatodo.',
+      );
+      await f.check('Lo que no dice el banco llega listo, de un toque', () {
+        final InboxItem oxxo = waiting('Oxxo');
+        expect(oxxo.suggestion.accountId, bank.id);
+        expect(oxxo.suggestion.why, contains('unnamed'));
+        expect(CaptureService.isReady(oxxo, own.accounts), isTrue);
+        expect(
+          find.descendant(
+            of: _card('Oxxo'),
+            matching: find.text('Registrar gasto'),
+          ),
+          findsOneWidget,
+        );
+      });
     },
   ),
   AppFlow(

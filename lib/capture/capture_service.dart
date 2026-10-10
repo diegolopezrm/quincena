@@ -778,7 +778,12 @@ class CaptureService {
         : _byNumber(settings, number);
     if (byNumber != null) return (accountId: byNumber, why: 'account');
     final String? institution = p.institution;
-    if (institution == null) return null;
+    if (institution == null) {
+      final String? byNone = _unnamed(p)
+          ? settings.use(RuleKind.institution, noBank)
+          : null;
+      return byNone == null ? null : (accountId: byNone, why: 'unnamed');
+    }
     final String? byBank =
         (_bankSpeaksFor(p, institution, accounts)
             ? settings.use(RuleKind.institution, institution)
@@ -801,6 +806,18 @@ class CaptureService {
         institution,
         accounts,
       ).any((Account a) => a.kind == AccountKind.card);
+
+  /// The key of the rule for payments that name no bank, card or account,
+  /// among the banks' rules.
+  static const String noBank = '';
+
+  /// Whether [p] names no bank, card or account, nor a currency of its
+  /// own: nothing but the person's word says where it went.
+  static bool _unnamed(ParsedCapture p) =>
+      p.institution == null &&
+      p.card == null &&
+      p.account == null &&
+      p.asset == null;
 
   /// What [item]'s alert says about money moving between the person's own
   /// accounts.
@@ -885,6 +902,12 @@ class CaptureService {
         accountId = same.single.id;
         why.add('currency');
       }
+    }
+    // What names no bank, card or account goes where the person said such
+    // payments go.
+    if (accountId == null && _unnamed(parsed)) {
+      accountId = settings.use(RuleKind.institution, noBank);
+      if (accountId != null) why.add('unnamed');
     }
     // A bare `$` is pesos in Colombia, or whatever the base is: with a
     // single account in it, that is the likely one. Not when the alert
@@ -1064,6 +1087,13 @@ class CaptureService {
         teachesInstitution(item.parsed, (await store.profile())?.base) &&
         !elsewhere(institution, accounts, accountId)) {
       learn(RuleKind.institution, institution, accountId);
+    }
+    // A payment that named no bank, card or account, confirmed in the one
+    // account it was guessed to be: the next ones go there, ready.
+    if (_unnamed(item.parsed) &&
+        item.suggestion.why.contains('only') &&
+        item.suggestion.accountId == accountId) {
+      learn(RuleKind.institution, noBank, accountId);
     }
     if (changes.isNotEmpty || named) await store.saveCaptureSettings(s);
     return changes;

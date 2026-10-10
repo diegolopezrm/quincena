@@ -716,6 +716,53 @@ Fecha
     expect(back.suggestion.category, isNull);
   });
 
+  test('a payment that names no bank, confirmed in the only account, sends '
+      'the next ones there ready', () async {
+    await store.updateAccount(nequi.copyWith(spendable: false));
+    CaptureEvent pasted(String text, int minute) => CaptureEvent(
+      source: CaptureSource.paste,
+      at: now.add(Duration(minutes: minute)),
+      text: text,
+    );
+    await capture.ingest(<CaptureEvent>[
+      pasted(r'Compraste $27.500 en FARMATODO', 0),
+      pasted(r'Compraste $8.000 en TOSTAO', 5),
+      pasted(r'Compraste $14.000 en CINE COLOMBIA con T.Deb *4321', 10),
+    ]);
+    final List<InboxItem> waiting = await pending();
+    expect(
+      waiting.every((InboxItem i) => i.suggestion.why.contains('only')),
+      isTrue,
+    );
+    final Accepted done = await capture.accept(
+      waiting.firstWhere((InboxItem i) => i.parsed.merchant == 'Farmatodo'),
+      accountId: bancolombia.id,
+    );
+    expect(
+      done.learned.map((RuleChange c) => c.rule),
+      contains(
+        CaptureRule(
+          kind: RuleKind.institution,
+          key: CaptureService.noBank,
+          target: bancolombia.id,
+        ),
+      ),
+    );
+    expect(done.resolved, 1);
+    final List<Account> accounts = await store.accounts();
+    final CaptureSettings s = await store.captureSettings();
+    InboxItem ruled(String merchant) => CaptureService.withRules(
+      waiting.firstWhere((InboxItem i) => i.parsed.merchant == merchant),
+      s,
+      accounts,
+    );
+    expect(ruled('Tostao').suggestion.why, contains('unnamed'));
+    expect(CaptureService.isReady(ruled('Tostao'), accounts), isTrue);
+    // A card the app does not know is still the card's to say.
+    expect(ruled('Cine Colombia').suggestion.why, contains('only'));
+    expect(CaptureService.isReady(ruled('Cine Colombia'), accounts), isFalse);
+  });
+
   test('a rule that names the very account that was only guessed makes the '
       'capture ready', () async {
     await store.updateAccount(nequi.copyWith(spendable: false));
