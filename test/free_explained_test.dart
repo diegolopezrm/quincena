@@ -320,6 +320,15 @@ void main() {
           .selected,
       <EntryKind>{EntryKind.income},
     );
+    // Filled with what the app knows: the pay, on its day, as salary.
+    expect(
+      tester
+          .widget<TextField>(find.widgetWithText(TextField, 'Monto'))
+          .controller!
+          .text,
+      '2.400.000',
+    );
+    expect(find.text('30 sept 2026'), findsOneWidget);
     Navigator.of(tester.element(find.byType(SegmentedButton<EntryKind>))).pop();
     await settle(tester);
 

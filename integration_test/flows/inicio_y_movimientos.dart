@@ -718,26 +718,27 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
       });
       await f.tap('Registrar');
       await f.step(
-        '«Registrar» abre el formulario ya en «Ingreso», pero sin monto ni '
-        'categoría y con la fecha en «Hoy»: hay que llenarlos.',
+        '«Registrar» abre el ingreso ya lleno con lo que la app sabe: '
+        '2.400.000, Salario, «Nómina», Bancolombia y el 30 de septiembre. '
+        'Falta un toque: «Guardar».',
       );
-      await f.check('El formulario abre como ingreso', () {
+      await f.check('El formulario abre lleno con el pago del perfil', () {
+        String field(String label) => f.tester
+            .widget<TextField>(find.widgetWithText(TextField, label))
+            .controller!
+            .text;
         expect(f.shows('Agregar movimiento'), isTrue);
-        expect(f.shows('Salario'), isTrue);
+        expect(field('Monto'), '2.400.000');
+        expect(field('¿De dónde?'), 'Nómina');
+        expect(f.shows('30 sept 2026'), isTrue);
+        expect(
+          find.descendant(
+            of: find.byType(DropdownButtonFormField<String>),
+            matching: find.text('Bancolombia'),
+          ),
+          findsOneWidget,
+        );
       });
-      await f.type('Monto', '2400000');
-      await f.tap('Salario');
-      await f.type('¿De dónde?', 'Nómina');
-      await _openDate(f);
-      await f.tapTip('Mes anterior');
-      await f.step(
-        'Con 2.400.000, «Salario» y «Nómina», toca «Fecha» y vuelve a '
-        'septiembre en el calendario para elegir el 30.',
-      );
-      await _pickDay(f, 30);
-      await f.step(
-        'La fecha queda en el 30 de septiembre; falta tocar «Guardar».',
-      );
       await f.tap('Guardar');
       await f.page(
         'De vuelta en Inicio el pago cuenta: la cifra subió y la tarea '

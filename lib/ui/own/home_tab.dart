@@ -191,8 +191,12 @@ class OwnHomeTab extends StatelessWidget {
           title: l.todoLatePay(dayMonth(late)),
           body: l.todoLatePayBody,
           action: l.todoRecord,
-          open: (BuildContext context) =>
-              showEntrySheet(context, own: own, kind: EntryKind.income),
+          open: (BuildContext context) => showEntrySheet(
+            context,
+            own: own,
+            kind: EntryKind.income,
+            draft: _payDraft(own, late),
+          ),
         ),
       if (own.paidWithoutPlan) _payArrived(l, own, ledger),
       if (own.provisional)
@@ -233,6 +237,39 @@ class _Todo {
   final String body;
   final String action;
   final void Function(BuildContext context) open;
+}
+
+/// The pay of [payday] as the app already knows it, to confirm in one tap:
+/// what the person said they get, filed as salary on that day, in the
+/// account and with the name the last pay came with.
+EntryDraft _payDraft(OwnController own, DateTime payday) {
+  Entry? last;
+  for (final Entry e in own.snapshot?.entries ?? const <Entry>[]) {
+    if (e.kind == EntryKind.income &&
+        e.category == 'salary' &&
+        (last == null || e.date.isAfter(last.date))) {
+      last = e;
+    }
+  }
+  final Asset base = own.profile?.base ?? Asset.cop;
+  bool inBase(Account a) => a.asset == base;
+  final Account? account =
+      own.accounts
+          .where((Account a) => a.id == last?.accountId && inBase(a))
+          .firstOrNull ??
+      own.accounts
+          .where(
+            (Account a) =>
+                a.spendable && inBase(a) && a.kind != AccountKind.card,
+          )
+          .firstOrNull;
+  return EntryDraft(
+    amount: own.profile?.pay,
+    payee: last?.payee,
+    category: 'salary',
+    date: DateTime(payday.year, payday.month, payday.day),
+    accountId: account?.id,
+  );
 }
 
 /// Opens [page] over the home.
