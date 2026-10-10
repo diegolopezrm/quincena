@@ -461,7 +461,7 @@ corregir no. La conversación sigue ahí al volver, dice antes cuántas
 preguntas quedan y en cero se apaga con calma. El gasto dice de qué cuenta
 sale y deja cambiarla, una pregunta sin respuesta trae «Volver a
 preguntar», y una respuesta corregida dice que sus cifras son de antes.
-Falta reintentar solo cuando vuelve la red.
+Sin red, la pregunta se repite sola cuando vuelve la conexión.
 
 Tamaño: pequeña. Con tus cuentas, cada acción sobre una respuesta gasta
 otra pregunta, y con la última el formulario llega pero no se puede
