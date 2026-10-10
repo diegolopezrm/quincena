@@ -5210,6 +5210,24 @@ abstract class AppLocalizations {
   /// **'No encontré movimientos en este archivo.'**
   String get statementNothing;
 
+  /// No description provided for @statementNothingTitles.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo trae la fila de títulos: ningún movimiento con fecha y valor.'**
+  String get statementNothingTitles;
+
+  /// No description provided for @statementNothingRows.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{El archivo no trae filas.} =1{Trae una sola fila, sin fecha y valor.} other{Leí {count} filas, pero ninguna con fecha y valor.}}'**
+  String statementNothingRows(int count);
+
+  /// No description provided for @statementFormats.
+  ///
+  /// In es, this message translates to:
+  /// **'Quincena lee extractos en CSV, Excel (.xlsx) o PDF, con una fila por movimiento: su fecha, su descripción y su valor.'**
+  String get statementFormats;
+
   /// No description provided for @statementFailed.
   ///
   /// In es, this message translates to:
@@ -5240,11 +5258,23 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{Un movimiento} other{{count} movimientos}} · {range}'**
   String statementSummary(int count, String range);
 
+  /// No description provided for @statementAccountGuessed.
+  ///
+  /// In es, this message translates to:
+  /// **'El archivo no dice de qué banco es: revisa que sea esta cuenta.'**
+  String get statementAccountGuessed;
+
   /// No description provided for @statementRecorded.
   ///
   /// In es, this message translates to:
   /// **'Ya registrado'**
   String get statementRecorded;
+
+  /// No description provided for @statementRecordedAs.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya registrado: {what}'**
+  String statementRecordedAs(String what);
 
   /// No description provided for @statementImportedBefore.
   ///
@@ -5263,6 +5293,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{count, plural, =0{Nada para importar} =1{Importar un movimiento} other{Importar {count} movimientos}}'**
   String statementImport(int count);
+
+  /// No description provided for @statementImportNew.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Importar el nuevo} other{Importar {count} nuevos}}'**
+  String statementImportNew(int count);
 
   /// No description provided for @statementDone.
   ///
@@ -8659,6 +8695,12 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 sin categoría} other{{count} sin categoría}}'**
   String statementUnsorted(int count);
 
+  /// No description provided for @statementNeedsReview.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{1 necesita revisión} other{{count} necesitan revisión}}'**
+  String statementNeedsReview(int count);
+
   /// No description provided for @statementAlreadyUnchecked.
   ///
   /// In es, this message translates to:
@@ -9499,10 +9541,22 @@ abstract class AppLocalizations {
   /// **'Como aparece en el extracto'**
   String get statementOriginal;
 
+  /// No description provided for @statementMatches.
+  ///
+  /// In es, this message translates to:
+  /// **'Coincide con lo que ya estaba'**
+  String get statementMatches;
+
+  /// No description provided for @statementSeeEntry.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver movimiento'**
+  String get statementSeeEntry;
+
   /// No description provided for @statementCardPayment.
   ///
   /// In es, this message translates to:
-  /// **'Pago de tu tarjeta {card}'**
+  /// **'Pago de tu {card}'**
   String statementCardPayment(String card);
 
   /// No description provided for @statementOwnTransferTo.
@@ -9535,11 +9589,23 @@ abstract class AppLocalizations {
   /// **'¿Es el pago de una tarjeta tuya?'**
   String get statementIsCardPayment;
 
-  /// No description provided for @statementAddCard.
+  /// No description provided for @statementCardMissing.
   ///
   /// In es, this message translates to:
-  /// **'Parece el pago de una tarjeta. Agrégala en Cuentas para que Quincena no cuente dos veces lo que compraste con ella.'**
-  String get statementAddCard;
+  /// **'Parece el pago de una tarjeta que no tienes en la app: queda sin marcar, para no contar dos veces lo que compraste con ella.'**
+  String get statementCardMissing;
+
+  /// No description provided for @statementCardMissingLine.
+  ///
+  /// In es, this message translates to:
+  /// **'Pago de una tarjeta que no está en la app'**
+  String get statementCardMissingLine;
+
+  /// No description provided for @statementAddCardButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar la tarjeta'**
+  String get statementAddCardButton;
 
   /// No description provided for @statementDoneTransfers.
   ///
@@ -9618,6 +9684,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Lo que debes en {account}: {before} → {after}'**
   String statementDebtEffect(String account, String before, String after);
+
+  /// No description provided for @statementDebtSame.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que debes en {account} sigue en {amount}: ya incluía estos movimientos.'**
+  String statementDebtSame(String account, String amount);
 
   /// No description provided for @statementBalanceSame.
   ///

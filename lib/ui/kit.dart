@@ -23,7 +23,7 @@ const Map<Category, IconData> categoryIcon = <Category, IconData>{
   Category.health: Glyph.heartbeat,
   Category.shopping: Glyph.shoppingBag,
   Category.leisure: Glyph.ticket,
-  Category.debt: Glyph.graduationCap,
+  Category.debt: Glyph.bank,
   Category.other: Glyph.dotsThree,
 };
 

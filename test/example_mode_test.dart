@@ -201,8 +201,8 @@ void main() {
     final String review = screen(tester);
     // September's last pay is already in the account, and left unchecked.
     expect(review, contains('Ya registrado'));
-    expect(review, contains('Pago de tu tarjeta Tarjeta de crédito'));
-    expect(review, contains('Importar 4 movimientos'));
+    expect(review, contains('Pago de tu Tarjeta de crédito'));
+    expect(review, contains('Importar 4 nuevos'));
     await tester.scrollUntilVisible(
       find.text('Mi saldo ya los incluye (recomendado)'),
       200,
@@ -222,7 +222,7 @@ void main() {
       ),
     );
 
-    await tapText(tester, 'Importar 4 movimientos');
+    await tapText(tester, 'Importar 4 nuevos');
     expect(screen(tester), contains('Se importaron 4 movimientos.'));
     // The card payment moved money to the card; the two charges and none
     // of March's, which the balance she wrote already had, left the bank.

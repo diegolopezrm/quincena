@@ -45,6 +45,8 @@ class StatementRead {
     required this.lines,
     required this.source,
     this.institution,
+    this.rows = 0,
+    this.titles = false,
   });
 
   final List<StatementLine> lines;
@@ -52,6 +54,13 @@ class StatementRead {
 
   /// The bank the statement names, when it names one the app knows.
   final String? institution;
+
+  /// How many rows with something written the file had, read or not: what
+  /// a file with no movements is said to hold.
+  final int rows;
+
+  /// Whether one of [rows] was the row of titles over the columns.
+  final bool titles;
 
   bool get isEmpty => lines.isEmpty;
 }

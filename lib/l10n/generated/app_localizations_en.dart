@@ -3380,6 +3380,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statementNothing => 'No transactions were found in this file.';
 
   @override
+  String get statementNothingTitles =>
+      'It only has the row of titles: no transaction with a date and an amount.';
+
+  @override
+  String statementNothingRows(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'I read $count rows, but none with a date and an amount.',
+      one: 'It has a single row, with no date and amount.',
+      zero: 'The file has no rows.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get statementFormats =>
+      'Quincena reads statements in CSV, Excel (.xlsx) or PDF, one row per transaction: its date, its description and its amount.';
+
+  @override
   String get statementFailed =>
       'The file could not be read. Try a CSV, an Excel (.xlsx) or a PDF.';
 
@@ -3406,7 +3426,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get statementAccountGuessed =>
+      'The file doesn\'t say which bank it\'s from: check it\'s this account.';
+
+  @override
   String get statementRecorded => 'Already recorded';
+
+  @override
+  String statementRecordedAs(String what) {
+    return 'Already recorded: $what';
+  }
 
   @override
   String get statementImportedBefore => 'Already imported';
@@ -3422,6 +3451,17 @@ class AppLocalizationsEn extends AppLocalizations {
       other: 'Import $count transactions',
       one: 'Import one transaction',
       zero: 'Nothing to import',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String statementImportNew(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Import $count new ones',
+      one: 'Import the new one',
     );
     return '$_temp0';
   }
@@ -5627,6 +5667,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String statementNeedsReview(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count need a look',
+      one: '1 needs a look',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get statementAlreadyUnchecked =>
       'What was already there is unchecked, so it isn\'t counted twice.';
 
@@ -6196,8 +6247,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statementOriginal => 'As the statement shows it';
 
   @override
+  String get statementMatches => 'Matches what was already there';
+
+  @override
+  String get statementSeeEntry => 'See the transaction';
+
+  @override
   String statementCardPayment(String card) {
-    return 'Payment to your $card card';
+    return 'Payment to your $card';
   }
 
   @override
@@ -6230,8 +6287,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Is this a payment to one of your cards?';
 
   @override
-  String get statementAddCard =>
-      'This looks like a card payment. Add the card in Accounts so Quincena doesn\'t count what you bought with it twice.';
+  String get statementCardMissing =>
+      'It looks like the payment of a card that isn\'t in the app: it stays unchecked, so what you bought with it doesn\'t count twice.';
+
+  @override
+  String get statementCardMissingLine =>
+      'Payment of a card that isn\'t in the app';
+
+  @override
+  String get statementAddCardButton => 'Add the card';
 
   @override
   String statementDoneTransfers(int count) {
@@ -6304,6 +6368,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String statementDebtEffect(String account, String before, String after) {
     return 'What you owe on $account: $before → $after';
+  }
+
+  @override
+  String statementDebtSame(String account, String amount) {
+    return 'What you owe on $account stays at $amount: it already included these transactions.';
   }
 
   @override

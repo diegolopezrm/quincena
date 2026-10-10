@@ -3378,6 +3378,26 @@ class AppLocalizationsEs extends AppLocalizations {
   String get statementNothing => 'No encontré movimientos en este archivo.';
 
   @override
+  String get statementNothingTitles =>
+      'Solo trae la fila de títulos: ningún movimiento con fecha y valor.';
+
+  @override
+  String statementNothingRows(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Leí $count filas, pero ninguna con fecha y valor.',
+      one: 'Trae una sola fila, sin fecha y valor.',
+      zero: 'El archivo no trae filas.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get statementFormats =>
+      'Quincena lee extractos en CSV, Excel (.xlsx) o PDF, con una fila por movimiento: su fecha, su descripción y su valor.';
+
+  @override
   String get statementFailed =>
       'No se pudo leer el archivo. Prueba con un CSV, un Excel (.xlsx) o un PDF.';
 
@@ -3404,7 +3424,16 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get statementAccountGuessed =>
+      'El archivo no dice de qué banco es: revisa que sea esta cuenta.';
+
+  @override
   String get statementRecorded => 'Ya registrado';
+
+  @override
+  String statementRecordedAs(String what) {
+    return 'Ya registrado: $what';
+  }
 
   @override
   String get statementImportedBefore => 'Ya importado';
@@ -3420,6 +3449,17 @@ class AppLocalizationsEs extends AppLocalizations {
       other: 'Importar $count movimientos',
       one: 'Importar un movimiento',
       zero: 'Nada para importar',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String statementImportNew(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Importar $count nuevos',
+      one: 'Importar el nuevo',
     );
     return '$_temp0';
   }
@@ -5625,6 +5665,17 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String statementNeedsReview(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count necesitan revisión',
+      one: '1 necesita revisión',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get statementAlreadyUnchecked =>
       'Lo que ya estaba quedó sin marcar, para no contarlo dos veces.';
 
@@ -6196,8 +6247,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get statementOriginal => 'Como aparece en el extracto';
 
   @override
+  String get statementMatches => 'Coincide con lo que ya estaba';
+
+  @override
+  String get statementSeeEntry => 'Ver movimiento';
+
+  @override
   String statementCardPayment(String card) {
-    return 'Pago de tu tarjeta $card';
+    return 'Pago de tu $card';
   }
 
   @override
@@ -6229,8 +6286,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get statementIsCardPayment => '¿Es el pago de una tarjeta tuya?';
 
   @override
-  String get statementAddCard =>
-      'Parece el pago de una tarjeta. Agrégala en Cuentas para que Quincena no cuente dos veces lo que compraste con ella.';
+  String get statementCardMissing =>
+      'Parece el pago de una tarjeta que no tienes en la app: queda sin marcar, para no contar dos veces lo que compraste con ella.';
+
+  @override
+  String get statementCardMissingLine =>
+      'Pago de una tarjeta que no está en la app';
+
+  @override
+  String get statementAddCardButton => 'Agregar la tarjeta';
 
   @override
   String statementDoneTransfers(int count) {
@@ -6301,6 +6365,11 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String statementDebtEffect(String account, String before, String after) {
     return 'Lo que debes en $account: $before → $after';
+  }
+
+  @override
+  String statementDebtSame(String account, String amount) {
+    return 'Lo que debes en $account sigue en $amount: ya incluía estos movimientos.';
   }
 
   @override

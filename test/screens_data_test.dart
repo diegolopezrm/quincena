@@ -92,19 +92,19 @@ void main() {
 
     final String review = seen['10-importar-extracto-02-revisar-extracto']!;
     expect(review, contains('6 nuevos · ninguno repetido'));
-    expect(review, contains('1 entre tus cuentas'));
+    // The card's payment and the cash taken out at an ATM.
+    expect(review, contains('2 entre tus cuentas'));
     expect(
       review,
       matches(
-        RegExp(
-          r'Tarjeta Visa\n−\W?\$480\.000\n6 sept · Pago de tu tarjeta Visa',
-        ),
+        RegExp(r'Pago de la Visa\n−\W?\$480\.000\n6 sept · Pago de tu Visa'),
       ),
     );
-    expect(review, contains('Importar 6 movimientos'));
+    expect(review, contains('5 sept · Pasa a Efectivo'));
+    expect(review, contains('Importar 6 nuevos'));
     expect(
       seen['10-importar-extracto-04-extracto-importado'],
-      contains('Uno quedó como movimiento entre tus cuentas'),
+      contains('2 quedaron como movimientos entre tus cuentas'),
     );
   });
 }

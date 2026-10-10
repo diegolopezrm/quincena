@@ -22,6 +22,8 @@ class ImportCandidate {
     this.otherAccountId,
     this.otherLeg,
     this.cardPayment = false,
+    this.match,
+    this.cardMissing = false,
   });
 
   /// The line, signed for the account: what the person changes on it
@@ -56,6 +58,15 @@ class ImportCandidate {
   /// It reads like the payment of a credit card.
   final bool cardPayment;
 
+  /// The movement already in the account that it is, when [recorded]: what
+  /// the person checks the match against.
+  final Entry? match;
+
+  /// A card's payment out of an account when the person has no card in the
+  /// app it could go to: recorded as it is, it would count what was bought
+  /// with the card twice.
+  final bool cardMissing;
+
   /// Neither in the account already nor imported before.
   bool get isNew => !recorded && !importedBefore;
 
@@ -73,7 +84,8 @@ class ImportCandidate {
   bool get paidFromNowhere => cardPayment && kind == EntryKind.income;
 
   /// Whether it is checked to import when the review opens.
-  bool get proposed => isNew && !waitsForAccount && !paidFromNowhere;
+  bool get proposed =>
+      isNew && !waitsForAccount && !paidFromNowhere && !cardMissing;
 
   bool get income => line.amount > Decimal.zero;
 
@@ -106,6 +118,8 @@ class ImportCandidate {
     otherAccountId: otherAccountId ?? (clearOther ? null : this.otherAccountId),
     otherLeg: otherLeg ?? (clearOther ? null : this.otherLeg),
     cardPayment: cardPayment ?? this.cardPayment,
+    match: match,
+    cardMissing: (cardPayment ?? this.cardPayment) && cardMissing,
   );
 }
 
@@ -155,9 +169,48 @@ final RegExp _prefix = RegExp(
   caseSensitive: false,
 );
 
+/// Descriptions banks write for what is no merchant, and how a person says
+/// them, matched against the normalized description.
+final List<(RegExp, String)> _plainNames = <(RegExp, String)>[
+  (RegExp(r'^(su )?pago (recibido|gracias)\b|^su pago\b'), 'Pago recibido'),
+  (
+    RegExp(r'^(pago|abono) (a |de )?(tarjeta|tarj|tc|tdc) (de )?credito\b'),
+    'Pago de tarjeta de crédito',
+  ),
+  (RegExp(r'^retiro (en )?(cajero|atm|corresponsal)\b'), 'Retiro en cajero'),
+];
+
+/// Words of a payee written without their accent.
+const Map<String, String> _accented = <String, String>{
+  'nomina': 'Nómina',
+  'credito': 'Crédito',
+};
+
 /// The merchant or the other party in a statement's description: `COMPRA EN
-/// EXITO LAURELES 1234` becomes `Exito Laureles`.
+/// EXITO LAURELES 1234` becomes `Exito Laureles`. What is no merchant reads
+/// the way a person says it: `SU PAGO GRACIAS` is «Pago recibido», `RETIRO
+/// CAJERO` «Retiro en cajero» and `PAGO TARJETA VISA` «Pago de la Visa».
 String payeeOf(String description) {
+  final String plain = normalize(description);
+  for (final (RegExp words, String name) in _plainNames) {
+    if (words.hasMatch(plain)) return name;
+  }
+  final String? card = RegExp(
+    r'^(?:pago|abono) (?:a |de )?(?:tarjeta|tarj|tc|tdc) ([a-z]+)$',
+  ).firstMatch(plain)?.group(1);
+  if (card != null) {
+    return 'Pago de la ${card[0].toUpperCase()}${card.substring(1)}';
+  }
+  return _accents(_payeeOf(description));
+}
+
+/// [name] with the accents of the words banks write without them.
+String _accents(String name) => name
+    .split(' ')
+    .map((String w) => _accented[w.toLowerCase()] ?? w)
+    .join(' ');
+
+String _payeeOf(String description) {
   var s = description.trim();
   for (var i = 0; i < 2; i++) {
     final String before = s;
@@ -299,7 +352,14 @@ class StatementImporter {
           : const <Account>[];
       final Entry? leg = card ? _mirror(l, elsewhere, sides) : null;
       if (leg != null) elsewhere.remove(leg);
-      final String? other = !card ? null : leg?.accountId ?? _named(l, sides);
+      // Cash taken out at an ATM went to the person's cash: a move between
+      // their accounts, not spending.
+      final Account? cash = match == null && !before && _withdrawal(l, account)
+          ? _cashOf(account, accounts)
+          : null;
+      final String? other = !card
+          ? cash?.id
+          : leg?.accountId ?? _named(l, sides);
       // On the card, the payment came from another of the person's
       // accounts: it is a move even when which one is left to the person,
       // when one keeps the card's currency.
@@ -324,11 +384,36 @@ class StatementImporter {
           otherAccountId: other,
           otherLeg: leg,
           cardPayment: card,
+          match: match,
+          // A bank's payment of a card the app does not have.
+          cardMissing:
+              card && account.kind != AccountKind.card && sides.isEmpty,
         ),
       );
     }
     return out;
   }
+
+  /// Whether [l] is cash taken out of [account] at an ATM or a
+  /// correspondent.
+  bool _withdrawal(StatementLine l, Account account) {
+    if (account.kind == AccountKind.card || l.amount >= Decimal.zero) {
+      return false;
+    }
+    final String plain = normalize(l.description);
+    return RegExp(r'\bretiro\b').hasMatch(plain) &&
+        RegExp(r'\b(cajero|atm|corresponsal)\b').hasMatch(plain);
+  }
+
+  /// The person's cash in [account]'s currency, where an ATM's money goes.
+  Account? _cashOf(Account account, List<Account> accounts) => accounts
+      .where(
+        (Account a) =>
+            a.kind == AccountKind.cash &&
+            a.asset == account.asset &&
+            a.id != account.id,
+      )
+      .firstOrNull;
 
   /// The movement already in the account that is this line, if any: the
   /// same amount, the same direction, within [window] days, and when both
