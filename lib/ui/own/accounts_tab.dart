@@ -581,20 +581,18 @@ class RatesPanel extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 4),
-        Block(
-          padding: const EdgeInsets.fromLTRB(18, 8, 8, 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              for (final Asset a in held)
-                _RateLine(
-                  own: own,
-                  asset: a,
-                  base: base,
-                  rate: table.rate(a, base),
-                ),
-            ],
-          ),
+        // A list of the rates, a line between them, without a box.
+        Panel(
+          indent: 16,
+          children: <Widget>[
+            for (final Asset a in held)
+              _RateLine(
+                own: own,
+                asset: a,
+                base: base,
+                rate: table.rate(a, base),
+              ),
+          ],
         ),
       ],
     );
@@ -685,9 +683,8 @@ class _RateLine extends StatelessWidget {
         : '1 ${asset.code} = ${formatAmount(r, base, base: base, decimals: r < Decimal.fromInt(10) ? 4 : 2)}';
     return InkWell(
       onTap: () => _edit(context),
-      borderRadius: BorderRadius.circular(10),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.fromLTRB(16, 8, 6, 8),
         child: Row(
           children: <Widget>[
             Expanded(
