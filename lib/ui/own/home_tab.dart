@@ -274,6 +274,8 @@ class _Todo {
     required this.body,
     required this.action,
     required this.open,
+    this.also,
+    this.doAlso,
   });
 
   final IconData icon;
@@ -281,6 +283,11 @@ class _Todo {
   final String body;
   final String action;
   final void Function(BuildContext context) open;
+
+  /// Something else to do there, smaller, under what it says: what [doAlso]
+  /// does.
+  final String? also;
+  final void Function(BuildContext context)? doAlso;
 }
 
 /// The pay of [payday] as the app already knows it, to confirm in one tap:
@@ -341,7 +348,26 @@ _Todo _payArrived(AppLocalizations l, OwnController own, Ledger ledger) {
         );
   final String from = dayShortMonth(arrivals.first.date);
   final String to = dayShortMonth(arrivals.last.date);
+  // Not knowing the pay, while it just said what came: one tap keeps it.
+  final bool unknown = own.profile?.pay == null && total != null;
   return _Todo(
+    also: unknown
+        ? (fortnight ? l.paydayKeepPay(amount!) : l.paydayKeepPayOther(amount!))
+        : null,
+    doAlso: unknown
+        ? (BuildContext context) async {
+            final ScaffoldMessengerState messenger = ScaffoldMessenger.of(
+              context,
+            );
+            final String said = l.paydayKeptPay(amount!);
+            final Profile? p = own.profile;
+            if (p == null) return;
+            await own.store.saveProfile(
+              p.copyWith(pay: Decimal.parse('${ledger.major(total)}')),
+            );
+            messenger.showSnackBar(SnackBar(content: Text(said)));
+          }
+        : null,
     icon: Glyph.wallet,
     title: amount == null
         ? (fortnight ? l.paydayArrived : l.paydayArrivedPay)
@@ -455,6 +481,16 @@ class _TodoRow extends StatelessWidget {
                 children: <Widget>[
                   Text(todo.title, style: context.type.titleSmall),
                   Text(todo.body, style: context.type.bodySmall),
+                  if (todo.also case final String also)
+                    TextButton(
+                      onPressed: () => todo.doAlso?.call(context),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        visualDensity: VisualDensity.compact,
+                        alignment: Alignment.centerLeft,
+                      ),
+                      child: Text(also, textAlign: TextAlign.start),
+                    ),
                   // With large text what doing it is called goes under
                   // what it is: beside it, the words would have no room.
                   if (large) ...<Widget>[

@@ -6821,6 +6821,21 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String paydayKeepPay(String amount) {
+    return 'Me pagan $amount cada quincena';
+  }
+
+  @override
+  String paydayKeepPayOther(String amount) {
+    return 'Me pagan $amount cada pago';
+  }
+
+  @override
+  String paydayKeptPay(String amount) {
+    return 'Listo: Quincena cuenta con $amount en cada pago. Lo cambias en Ajustes.';
+  }
+
+  @override
   String paydayArrivedDetail(String date, String account) {
     return 'El $date en $account. Ponle a cada parte su sobre antes de gastar.';
   }

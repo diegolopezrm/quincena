@@ -10309,6 +10309,24 @@ abstract class AppLocalizations {
   /// **'Te llegó el pago: {amount}'**
   String paydayArrivedPayAmount(String amount);
 
+  /// No description provided for @paydayKeepPay.
+  ///
+  /// In es, this message translates to:
+  /// **'Me pagan {amount} cada quincena'**
+  String paydayKeepPay(String amount);
+
+  /// No description provided for @paydayKeepPayOther.
+  ///
+  /// In es, this message translates to:
+  /// **'Me pagan {amount} cada pago'**
+  String paydayKeepPayOther(String amount);
+
+  /// No description provided for @paydayKeptPay.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo: Quincena cuenta con {amount} en cada pago. Lo cambias en Ajustes.'**
+  String paydayKeptPay(String amount);
+
   /// No description provided for @paydayArrivedDetail.
   ///
   /// In es, this message translates to:

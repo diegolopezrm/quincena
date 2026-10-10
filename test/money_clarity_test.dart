@@ -185,11 +185,15 @@ void main() {
       'the pay that arrived says how much, when and where, before the '
       'envelopes',
       (tester) async {
-        await openPage(
+        final OwnController own = await openPage(
           tester,
-          (OwnController own) => Scaffold(
-            body: SingleChildScrollView(
-              child: OwnHomeTab(own: own, onSeeAll: () {}),
+          // Redrawn as the accounts change, as the shell does.
+          (OwnController own) => ListenableBuilder(
+            listenable: own,
+            builder: (BuildContext context, _) => Scaffold(
+              body: SingleChildScrollView(
+                child: OwnHomeTab(own: own, onSeeAll: () {}),
+              ),
             ),
           ),
           data: (QuincenaStore store, Account bank, Account card) async {
@@ -215,6 +219,11 @@ void main() {
         expect(text, contains(r'Te llegó la quincena: $2.400.000'));
         expect(text, contains('Del 30 sept al 1 oct en Bancolombia y Nequi.'));
         expect(text, contains('Ponle a cada parte su sobre'));
+        // The app did not know the pay: what came is kept with a tap.
+        expect(own.profile!.pay, isNull);
+        await tapText(tester, r'Me pagan $2.400.000 cada quincena');
+        expect(own.profile!.pay, d('2400000'));
+        expect(find.text(r'Me pagan $2.400.000 cada quincena'), findsNothing);
       },
     );
 
