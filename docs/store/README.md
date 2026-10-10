@@ -584,3 +584,59 @@ and English show the same figures. On 6 October 2026 Google Play turned
 the app down because the screenshots showed screens "Con datos de ejemplo"
 did not open; they were rendered again from the app's own example account,
 which now opens the whole app, with its bar on every screen.
+
+## Version 1.2.0
+
+Build 21 (`1.2.0+21`) was archived on 10 October 2026 with phases 27 to 36
+of the plan in `docs/reviews/2026-10-09-flujo-por-flujo.md`. It goes to
+TestFlight from Xcode's Organizer; it has not been sent to review in
+either store.
+
+**What's new** (es, 469 characters):
+
+> Inicio, Cuentas y Plan dicen lo mismo sobre tu plata, y cada cifra se
+> explica en pantalla. Pagar una cuota o un préstamo y abonar a una meta
+> preguntan de qué cuenta sale la plata, y las metas dicen si llegas a
+> tiempo. Configurar son tres preguntas y un gasto toma cuatro toques.
+> Movimientos tiene filtros y busca por monto. Lo que borras se puede
+> deshacer. Para unir otro teléfono escaneas un QR, y dos cambios al mismo
+> movimiento hechos en dos teléfonos se unen solos.
+
+**What's new** (en, 497 characters):
+
+> Home, Accounts and Plan say the same thing about your money, and every
+> figure explains itself on screen. Paying an installment or a loan and
+> adding to a goal ask which account the money comes from, and goals say
+> if you will make it in time. Setting up is three questions and an
+> expense takes four taps. Transactions has filters and finds amounts.
+> What you delete can be undone. To join another phone you scan a QR code,
+> and two changes to the same transaction made on two phones join on their
+> own.
+
+Both fit Play's 500 characters per language, and the App Store shows them
+from this version on, since 1.1.0 was the first.
+
+**Camera.** Joining another phone can now read the code as a QR with the
+camera (syncing is not on the web). iOS asks with
+`NSCameraUsageDescription` in Spanish and English
+(`ios/Runner/*.lproj/InfoPlist.strings`): "Quincena usa la cámara solo
+para leer el código QR que muestra tu otro teléfono." There the code is
+read on the phone with Apple's Vision framework and nothing leaves it, so
+App Privacy does not change.
+
+On Android, `mobile_scanner` adds `CAMERA` (the camera is not required to
+install the app, and Play has no declaration for it) and reads the code
+with Google's ML Kit through Google Play services. Google's
+[data disclosure](https://developers.google.com/ml-kit/android-data-disclosure)
+says ML Kit sends Google, "for diagnostics and usage analytics", the
+device's model and Android version, the app's package and version, a
+per-installation identifier, performance metrics, the API's settings and
+error codes, never the image or the code. Data safety declares no
+analytics today, and the privacy policy says Quincena does not share data
+for analytics, so before 1.2.0 goes to Play one of these has to happen:
+
+- Read the code on Android with a library that sends nothing, such as
+  zxing on the phone, and leave Data safety and the policy as they are.
+- Or declare it: in Data safety, device or other IDs and app info and
+  performance (diagnostics), optional, for analytics; in the privacy
+  policy, a row for the camera that names ML Kit on Android.
