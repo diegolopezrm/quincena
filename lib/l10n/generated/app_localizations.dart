@@ -4532,6 +4532,36 @@ abstract class AppLocalizations {
   /// **'{count, plural, =0{Ninguna todavía} =1{Una regla} other{{count} reglas}}'**
   String rulesCount(int count);
 
+  /// No description provided for @rulesSummary.
+  ///
+  /// In es, this message translates to:
+  /// **'{rules}: {parts}'**
+  String rulesSummary(String rules, String parts);
+
+  /// No description provided for @rulesCountMerchants.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{1 comercio} other{{count} comercios}}'**
+  String rulesCountMerchants(int count);
+
+  /// No description provided for @rulesCountCards.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{1 tarjeta} other{{count} tarjetas}}'**
+  String rulesCountCards(int count);
+
+  /// No description provided for @rulesCountAccounts.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{1 cuenta} other{{count} cuentas}}'**
+  String rulesCountAccounts(int count);
+
+  /// No description provided for @rulesCountBanks.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{1 banco} other{{count} bancos}}'**
+  String rulesCountBanks(int count);
+
   /// No description provided for @ruleDelete.
   ///
   /// In es, this message translates to:
@@ -5035,12 +5065,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Volver a leer'**
   String get unmute;
-
-  /// No description provided for @learnedCount.
-  ///
-  /// In es, this message translates to:
-  /// **'{count, plural, =0{Aún no ha aprendido comercios.} =1{Ya reconoce un comercio.} other{Ya reconoce {count} comercios.}}'**
-  String learnedCount(int count);
 
   /// No description provided for @portfolioTitle.
   ///

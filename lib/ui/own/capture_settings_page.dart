@@ -41,6 +41,25 @@ class _CaptureSettingsPageState extends State<CaptureSettingsPage>
   /// Only the phone knows where a payment happened.
   bool get _phone => _ios || _android;
 
+  /// How many rules, and of what: «4 reglas: 2 comercios, 1 tarjeta, 1
+  /// banco».
+  static String _rulesLine(AppLocalizations l, CaptureSettings s) {
+    final List<CaptureRule> rules = s.rules;
+    int of(RuleKind kind) =>
+        rules.where((CaptureRule r) => r.kind == kind).length;
+    final List<String> parts = <String>[
+      if (of(RuleKind.merchant) case final int n when n > 0)
+        l.rulesCountMerchants(n),
+      if (of(RuleKind.card) case final int n when n > 0) l.rulesCountCards(n),
+      if (of(RuleKind.account) case final int n when n > 0)
+        l.rulesCountAccounts(n),
+      if (of(RuleKind.institution) case final int n when n > 0)
+        l.rulesCountBanks(n),
+    ];
+    final String count = l.rulesCount(rules.length);
+    return parts.isEmpty ? count : l.rulesSummary(count, parts.join(', '));
+  }
+
   @override
   void initState() {
     super.initState();
@@ -355,7 +374,7 @@ class _CaptureSettingsPageState extends State<CaptureSettingsPage>
                           style: context.type.titleSmall,
                         ),
                         subtitle: Text(
-                          l.rulesCount(s.rules.length),
+                          _rulesLine(l, s),
                           style: context.type.bodySmall,
                         ),
                         trailing: Icon(
@@ -436,14 +455,6 @@ class _CaptureSettingsPageState extends State<CaptureSettingsPage>
                           ],
                         ),
                     ],
-                  ),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Text(
-                      l.learnedCount(s.merchantCategories.length),
-                      style: context.type.bodySmall,
-                    ),
                   ),
                   if (s.mutedApps.isNotEmpty) ...<Widget>[
                     const SizedBox(height: 24),

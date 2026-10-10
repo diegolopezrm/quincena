@@ -1494,13 +1494,12 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.tap('Captura automática');
       await f.reveal(find.text('Reglas aprendidas'));
       await f.step(
-        'En Captura automática, «Reglas aprendidas» dice «3 reglas» y, '
-        'debajo, «Ya reconoce un comercio.»',
+        'En Captura automática, «Reglas aprendidas» dice «3 reglas: 1 '
+        'comercio, 1 tarjeta, 1 banco».',
       );
-      await f.check('Cuenta las 3 reglas y el comercio que reconoce', () {
+      await f.check('Cuenta las 3 reglas y de qué son', () {
         expect(own.captureSettings.rules, hasLength(3));
-        expect(f.shows('3 reglas'), isTrue);
-        expect(f.shows('Ya reconoce un comercio.'), isTrue);
+        expect(f.shows('3 reglas: 1 comercio, 1 tarjeta, 1 banco'), isTrue);
       });
       await f.tap('Reglas aprendidas');
       await f.page(

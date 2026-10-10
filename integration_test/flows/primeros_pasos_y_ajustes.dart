@@ -1703,11 +1703,15 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.reveal(find.text('Volver a leer'));
       await f.step(
         '«Registrar solo lo que esté claro» quedó encendido y la ubicación '
-        'apagada. Abajo: cuántos comercios reconoce y las apps que no se leen.',
+        'apagada. «Reglas aprendidas» dice cuántas hay y de qué, y abajo '
+        'están las apps que no se leen.',
       );
       final int merchants = _own(f).captureSettings.merchantCategories.length;
-      await f.check('Dice que reconoce $merchants comercios', () {
-        expect(f.shows('Ya reconoce $merchants comercios.'), isTrue);
+      await f.check('La fila de reglas cuenta $merchants comercios', () {
+        expect(
+          f.screenText,
+          contains(merchants == 1 ? '1 comercio' : '$merchants comercios'),
+        );
       });
       await f.tap('Volver a leer');
       await f.check('Rappi vuelve a leerse', () async {
@@ -1742,8 +1746,8 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tapTip('Ajustes');
       await f.tap('Captura automática');
       await f.reveal(find.text('Reglas aprendidas'));
-      await f.check('La fila dice $rules reglas', () {
-        expect(f.shows('$rules reglas'), isTrue);
+      await f.check('La fila dice $rules reglas, y de qué', () {
+        expect(f.screenText, contains('$rules reglas: '));
       });
       await f.tap('Reglas aprendidas');
       await f.page(
@@ -1865,7 +1869,7 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       );
       await f.back();
       await f.check('De vuelta, la fila dice ${rules - 1} reglas', () {
-        expect(f.shows('${rules - 1} reglas'), isTrue);
+        expect(f.screenText, contains('${rules - 1} reglas: '));
       });
       phone.toPick.add(Uint8List.fromList(<int>[1]));
       phone.screenshotText =

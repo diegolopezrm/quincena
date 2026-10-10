@@ -3001,6 +3001,55 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String rulesSummary(String rules, String parts) {
+    return '$rules: $parts';
+  }
+
+  @override
+  String rulesCountMerchants(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count merchants',
+      one: '1 merchant',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String rulesCountCards(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cards',
+      one: '1 card',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String rulesCountAccounts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count accounts',
+      one: '1 account',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String rulesCountBanks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count banks',
+      one: '1 bank',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get ruleDelete => 'Delete rule';
 
   @override
@@ -3292,18 +3341,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get unmute => 'Read again';
-
-  @override
-  String learnedCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'It knows $count merchants.',
-      one: 'It knows one merchant.',
-      zero: 'It has not learned any merchants yet.',
-    );
-    return '$_temp0';
-  }
 
   @override
   String get portfolioTitle => 'Crypto';

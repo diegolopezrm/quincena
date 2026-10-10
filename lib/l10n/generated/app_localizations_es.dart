@@ -3003,6 +3003,55 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String rulesSummary(String rules, String parts) {
+    return '$rules: $parts';
+  }
+
+  @override
+  String rulesCountMerchants(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count comercios',
+      one: '1 comercio',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String rulesCountCards(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tarjetas',
+      one: '1 tarjeta',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String rulesCountAccounts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cuentas',
+      one: '1 cuenta',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String rulesCountBanks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count bancos',
+      one: '1 banco',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get ruleDelete => 'Borrar regla';
 
   @override
@@ -3292,18 +3341,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get unmute => 'Volver a leer';
-
-  @override
-  String learnedCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Ya reconoce $count comercios.',
-      one: 'Ya reconoce un comercio.',
-      zero: 'Aún no ha aprendido comercios.',
-    );
-    return '$_temp0';
-  }
 
   @override
   String get portfolioTitle => 'Cripto';
