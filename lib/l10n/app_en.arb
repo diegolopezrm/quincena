@@ -1600,6 +1600,8 @@
   "statementFinish": "Done",
   "licensesTitle": "Licenses and credits",
   "licensesLegalese": "© 2026 DL SOFT TECHNOLOGIES SAS. Nearby shops come from © OpenStreetMap contributors (ODbL).",
+  "licensesVersion": "Version {version}",
+  "licensesCount": "{count, plural, =1{One license} other{{count} licenses}}",
   "comingFreeLine": "The least you'll have free will be {amount} on {date}.",
   "comingFreeLineSure": "The least you'll have free will be {amount} on {date}, not counting money you're still expecting.",
   "comingFreeLineToday": "The least you'll have free before payday is today's: {amount}.",

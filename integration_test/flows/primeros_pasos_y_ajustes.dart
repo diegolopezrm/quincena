@@ -2066,13 +2066,15 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.waitFor(find.text('OpenStreetMap'));
       await f.step(
         '«Licencias y créditos» muestra Quincena con su versión y los créditos '
-        'de OpenStreetMap, y debajo cada fuente, ícono y paquete con su '
-        'licencia.',
+        'de OpenStreetMap, y debajo cada fuente, ícono y paquete con cuántas '
+        'licencias tiene, todo en español.',
       );
-      await f.check('La página nombra la app, su versión y los créditos', () {
+      await f.check('La página nombra la app, su versión y los créditos, sin '
+          'una línea en inglés', () {
         expect(f.shows('Quincena'), isTrue);
-        expect(f.shows(appVersion), isTrue);
+        expect(f.shows('Versión $appVersion'), isTrue);
         expect(f.screenText, contains('© 2026 DL SOFT TECHNOLOGIES SAS'));
+        expect(f.screenText, isNot(contains('Powered by Flutter')));
       });
       await f.tap('OpenStreetMap');
       await f.waitFor(find.textContaining('Open Database License'));

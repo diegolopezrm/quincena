@@ -9643,6 +9643,18 @@ abstract class AppLocalizations {
   /// **'© 2026 DL SOFT TECHNOLOGIES SAS. Los comercios cercanos vienen de © colaboradores de OpenStreetMap (ODbL).'**
   String get licensesLegalese;
 
+  /// No description provided for @licensesVersion.
+  ///
+  /// In es, this message translates to:
+  /// **'Versión {version}'**
+  String licensesVersion(String version);
+
+  /// No description provided for @licensesCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Una licencia} other{{count} licencias}}'**
+  String licensesCount(int count);
+
   /// No description provided for @comingFreeLine.
   ///
   /// In es, this message translates to:

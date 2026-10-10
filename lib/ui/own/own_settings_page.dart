@@ -32,6 +32,7 @@ import 'capture_rules_page.dart';
 import 'capture_settings_page.dart';
 import 'code_dialogs.dart';
 import 'example_bar.dart';
+import 'licenses_page.dart';
 import 'look.dart';
 import 'pay_schedule_editor.dart';
 import 'put_away_page.dart';
@@ -919,11 +920,11 @@ class OwnSettingsPage extends StatelessWidget {
             context,
             icon: Glyph.fileText,
             title: l.licensesTitle,
-            onTap: () => showLicensePage(
-              context: context,
-              applicationName: 'Quincena',
-              applicationVersion: appVersion,
-              applicationLegalese: l.licensesLegalese,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (BuildContext context) =>
+                    LicensesPage(version: appVersion),
+              ),
             ),
           ),
         ],

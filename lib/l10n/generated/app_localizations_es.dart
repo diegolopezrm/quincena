@@ -6375,6 +6375,22 @@ class AppLocalizationsEs extends AppLocalizations {
       '© 2026 DL SOFT TECHNOLOGIES SAS. Los comercios cercanos vienen de © colaboradores de OpenStreetMap (ODbL).';
 
   @override
+  String licensesVersion(String version) {
+    return 'Versión $version';
+  }
+
+  @override
+  String licensesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count licencias',
+      one: 'Una licencia',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String comingFreeLine(String amount, String date) {
     return 'Lo mínimo que tendrás libre será $amount el $date.';
   }
