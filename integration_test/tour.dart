@@ -74,13 +74,14 @@ Future<void> enterTextIn(
     matching: find.byType(EditableText, skipOffstage: finder.skipOffstage),
     matchRoot: true,
   );
-  final String before = tester
-      .state<EditableTextState>(editable)
-      .textEditingValue
-      .text;
+  // Kept from before typing: on a phone the keyboard can scroll the field
+  // out of sight, where it stays while it has the focus but finders that
+  // skip what is off screen no longer see it.
+  final EditableTextState field = tester.state<EditableTextState>(editable);
+  final String before = field.textEditingValue.text;
   await tester.enterText(finder, text);
   await tester.pump();
-  final EditableTextState field = tester.state<EditableTextState>(editable);
+  if (!field.mounted) return;
   if (before != text && field.textEditingValue.text == before) {
     field.updateEditingValue(
       TextEditingValue(
