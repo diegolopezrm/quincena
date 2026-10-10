@@ -264,6 +264,7 @@ class _WishSheetState extends State<_WishSheet> {
       setState(() => _error = l.wishIncomplete);
       return;
     }
+    feelSaved();
     final DateTime today = widget.own.today;
     await widget.own.saveWishes(<Wish>[
       ...widget.own.wishes,

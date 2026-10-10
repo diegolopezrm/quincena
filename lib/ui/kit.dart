@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../catalog/tone.dart';
 import '../data/category.dart';
@@ -96,6 +99,33 @@ class Figures extends StatelessWidget {
   );
 }
 
+/// [value], written by [format], that counts its way from the value it
+/// had to a new one, so a change reads as a change; at once with
+/// animations turned down. The first value shows as it is.
+class CountingFigures extends StatelessWidget {
+  const CountingFigures({
+    super.key,
+    required this.value,
+    required this.format,
+    this.style,
+  });
+
+  final double value;
+  final String Function(double value) format;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+    tween: Tween<double>(end: value),
+    duration: MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 450),
+    curve: Curves.easeOutCubic,
+    builder: (BuildContext context, double shown, _) =>
+        Figures(format(shown), style: style),
+  );
+}
+
 /// A block inside an answer: the surface it sits on, with room to breathe.
 class Block extends StatelessWidget {
   const Block({super.key, required this.child, this.padding, this.color});
@@ -116,6 +146,10 @@ class Block extends StatelessWidget {
     child: child,
   );
 }
+
+/// A light tap in the hand as something is saved or recorded: the app took
+/// it, felt before the screen changes.
+void feelSaved() => unawaited(HapticFeedback.lightImpact());
 
 /// Opens [form], for creating or changing something big, as a goal or a
 /// purchase in instalments, as a page of its own that slides over the
@@ -220,6 +254,51 @@ class _SkeletonState extends State<Skeleton>
           borderRadius: BorderRadius.circular(widget.radius),
         ),
       ),
+    ),
+  );
+}
+
+/// What a screen shows while the accounts load: the shape of the figure at
+/// its top and of a few rows, breathing where they will be, read as
+/// [label] by a screen reader.
+class LoadingShapes extends StatelessWidget {
+  const LoadingShapes({super.key, required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: label,
+    child: ListView(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      children: <Widget>[
+        const Skeleton(height: 180, radius: 24),
+        const SizedBox(height: 28),
+        const Skeleton(height: 10, width: 120),
+        const SizedBox(height: 16),
+        for (var i = 0; i < 4; i++) ...<Widget>[
+          const Row(
+            children: <Widget>[
+              Skeleton(height: 40, width: 40, radius: 12),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Skeleton(height: 12, width: 140),
+                    SizedBox(height: 8),
+                    Skeleton(height: 10, width: 90),
+                  ],
+                ),
+              ),
+              SizedBox(width: 12),
+              Skeleton(height: 12, width: 64),
+            ],
+          ),
+          const SizedBox(height: 16),
+        ],
+      ],
     ),
   );
 }

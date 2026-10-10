@@ -92,6 +92,10 @@ class _GoalFormState extends State<_GoalForm> {
       return;
     }
     setState(() => _saving = true);
+    feelSaved();
+    // The page goes as the goal is saved: Plan shows it a moment later,
+    // without the wait in between.
+    Navigator.of(context).pop();
     final SavingsGoal? old = widget.goal;
     if (old == null) {
       await widget.own.store.addGoal(
@@ -113,7 +117,6 @@ class _GoalFormState extends State<_GoalForm> {
         ),
       );
     }
-    if (mounted) Navigator.of(context).pop();
   }
 
   /// Opens the calendar on the goal's date, or on this month with no day

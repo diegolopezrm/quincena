@@ -1618,6 +1618,7 @@
   "ratesFailedAt": "Couldn't update. Using the ones from {when}.",
   "portfolioPricingFailedAt": "Couldn't read prices. Showing the ones from {when}.",
   "chartLoading": "Updating the chart…",
+  "accountsLoading": "Loading your accounts",
   "loanLentAction": "I lent",
   "loanBorrowedAction": "I borrowed",
   "loanLentTitle": "I lent someone money",

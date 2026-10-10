@@ -20,6 +20,7 @@ import '../../theme/tokens.dart';
 import '../../widget/home_widget.dart';
 import '../home_page.dart';
 import '../icons.dart';
+import '../kit.dart';
 import '../mark.dart';
 import 'accounts_tab.dart';
 import 'ask_page.dart';
@@ -266,9 +267,8 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
     final Widget content = ListenableBuilder(
       listenable: own,
       builder: (BuildContext context, _) {
-        if (own.ledger == null) {
-          return const Center(child: CircularProgressIndicator());
-        }
+        // While the accounts load, the shapes of what will show.
+        if (own.ledger == null) return LoadingShapes(label: l.accountsLoading);
         // No wider than 760 points, in the middle of a wide screen.
         return LayoutBuilder(
           builder: (BuildContext context, BoxConstraints box) {

@@ -8,6 +8,7 @@ import '../../money/money.dart';
 import '../../own/own_controller.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
+import '../kit.dart';
 import 'account_sheet.dart';
 import 'amount_input.dart';
 import 'look.dart';
@@ -123,6 +124,7 @@ class _ContributionState extends State<_Contribution> {
     }
     if (_saving) return;
     setState(() => _saving = true);
+    feelSaved();
     final NavigatorState navigator = Navigator.of(context);
     await own.contributeToGoal(
       widget.goal,

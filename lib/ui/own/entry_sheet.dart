@@ -564,6 +564,7 @@ class _EntryFormState extends State<_EntryForm> {
       if (toCard == null || !mounted) return;
       if (toCard) {
         setState(() => _saving = true);
+        feelSaved();
         await own.store.addTransfer(
           fromAccountId: from,
           toAccountId: _cardPaid!.id,
@@ -576,6 +577,7 @@ class _EntryFormState extends State<_EntryForm> {
       }
     }
     setState(() => _saving = true);
+    feelSaved();
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     final DateTime when = _when();
     final String? category = _kind == EntryKind.transfer

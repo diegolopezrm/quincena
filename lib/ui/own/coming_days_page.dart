@@ -159,7 +159,7 @@ class _ComingDaysPageState extends State<ComingDaysPage> {
       if (ledger == null) {
         return Scaffold(
           appBar: AppBar(),
-          body: const Center(child: CircularProgressIndicator()),
+          body: LoadingShapes(label: l.accountsLoading),
         );
       }
       String amount(int minor) => pesos(ledger.major(minor));

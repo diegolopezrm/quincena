@@ -563,6 +563,7 @@ class _IncomeSheetState extends State<_IncomeSheet> {
       setState(() => _error = l.freelanceIncomplete);
       return;
     }
+    feelSaved();
     final NavigatorState navigator = Navigator.of(context);
     final bool collected = _status == IncomeStatus.collected;
     await own.saveFreelance(

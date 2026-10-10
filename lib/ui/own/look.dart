@@ -509,11 +509,16 @@ class Headline extends StatelessWidget {
     this.detail,
     this.onExplain,
     this.unit,
+    this.counting,
   });
 
   final String caption;
   final String value;
   final String? detail;
+
+  /// [value] as a number and the way to write it, when the figure should
+  /// count its way to a new value, as Inicio's does.
+  final (double, String Function(double value))? counting;
 
   /// Shows where [value] comes from.
   final VoidCallback? onExplain;
@@ -524,51 +529,62 @@ class Headline extends StatelessWidget {
   final Asset? unit;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: <Widget>[
-      Text(caption, style: context.type.labelMedium),
-      const SizedBox(height: 4),
-      FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.centerLeft,
-        child: switch (unit) {
-          null => Figures(value, style: context.type.displayMedium),
-          final Asset unit => MergeSemantics(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: <Widget>[
-                Figures(value, style: context.type.displayMedium),
-                const SizedBox(width: 6),
-                Text(
-                  unit.code,
-                  semanticsLabel: unit.name(
-                    Localizations.localeOf(context).languageCode,
-                  ),
-                  style: context.type.labelLarge?.copyWith(
-                    color: context.colors.inkSoft,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        },
-      ),
-      if (detail != null) ...<Widget>[
-        const SizedBox(height: 4),
-        Text(detail!, style: context.type.bodySmall),
-      ],
-      if (onExplain case final VoidCallback explain)
-        TextButton.icon(
-          onPressed: explain,
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-          ),
-          icon: const Icon(Glyph.info, size: 18),
-          label: Text(context.l10n.freeExplainAction),
+  Widget build(BuildContext context) {
+    final Widget figure = switch (counting) {
+      (final double amount, final String Function(double) format) =>
+        CountingFigures(
+          value: amount,
+          format: format,
+          style: context.type.displayMedium,
         ),
-    ],
-  );
+      null => Figures(value, style: context.type.displayMedium),
+    };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(caption, style: context.type.labelMedium),
+        const SizedBox(height: 4),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: switch (unit) {
+            null => figure,
+            final Asset unit => MergeSemantics(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: <Widget>[
+                  figure,
+                  const SizedBox(width: 6),
+                  Text(
+                    unit.code,
+                    semanticsLabel: unit.name(
+                      Localizations.localeOf(context).languageCode,
+                    ),
+                    style: context.type.labelLarge?.copyWith(
+                      color: context.colors.inkSoft,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          },
+        ),
+        if (detail != null) ...<Widget>[
+          const SizedBox(height: 4),
+          Text(detail!, style: context.type.bodySmall),
+        ],
+        if (onExplain case final VoidCallback explain)
+          TextButton.icon(
+            onPressed: explain,
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+            ),
+            icon: const Icon(Glyph.info, size: 18),
+            label: Text(context.l10n.freeExplainAction),
+          ),
+      ],
+    );
+  }
 }

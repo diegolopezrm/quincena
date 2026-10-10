@@ -198,6 +198,7 @@ class _EnvelopesPageState extends State<EnvelopesPage> {
       if (sure != true) return;
     }
     setState(() => _saving = true);
+    feelSaved();
     // Changed, a plan keeps what it had counted when it was made.
     await own.savePlan(
       own.plan?.copyWith(envelopes: envelopes) ??

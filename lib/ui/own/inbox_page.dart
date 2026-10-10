@@ -35,16 +35,44 @@ import 'look.dart';
 import 'put_away_page.dart';
 import 'read_images.dart';
 
+/// Takes captures off the list at once while [save] records them, and
+/// puts them back if it fails.
+typedef LeaveWhile =
+    Future<T> Function<T>(Iterable<String> ids, Future<T> Function() save);
+
 /// Captures waiting to be recorded, those one tap records apart from those
 /// that need something from the person; the possible repeats; and what was
 /// recorded on its own lately.
-class InboxPage extends StatelessWidget {
+class InboxPage extends StatefulWidget {
   const InboxPage({super.key, required this.own});
 
   final OwnController own;
 
   /// With more than this many waiting, each one that is ready takes a line.
   static const int compactAfter = 5;
+
+  @override
+  State<InboxPage> createState() => _InboxPageState();
+}
+
+class _InboxPageState extends State<InboxPage> {
+  OwnController get own => widget.own;
+
+  /// What was just recorded and is still being saved: it leaves the list
+  /// the moment it is confirmed, without the wait, and comes back only if
+  /// saving fails.
+  final Set<String> _leaving = <String>{};
+
+  Future<T> _leave<T>(Iterable<String> ids, Future<T> Function() save) async {
+    final List<String> going = ids.toList();
+    setState(() => _leaving.addAll(going));
+    try {
+      return await save();
+    } catch (_) {
+      if (mounted) setState(() => _leaving.removeAll(going));
+      rethrow;
+    }
+  }
 
   /// Where the payment to read is: a picture or a PDF, or a message the
   /// person copied.
@@ -120,7 +148,15 @@ class InboxPage extends StatelessWidget {
       listenable: own,
       builder: (BuildContext context, _) {
         final AppLocalizations l = context.l10n;
-        final List<InboxItem> pending = own.pendingInbox;
+        // Once saved, what left no longer waits, and is free to come back
+        // as «Deshacer» brings it.
+        _leaving.removeWhere(
+          (String id) => !own.pendingInbox.any((InboxItem i) => i.id == id),
+        );
+        final List<InboxItem> pending = <InboxItem>[
+          for (final InboxItem i in own.pendingInbox)
+            if (!_leaving.contains(i.id)) i,
+        ];
         final List<Account> accounts = own.accounts;
         final List<InboxItem> ready = <InboxItem>[
           for (final InboxItem i in pending)
@@ -151,7 +187,7 @@ class InboxPage extends StatelessWidget {
           for (final InboxItem i in ready)
             if (!moves.contains(i) && !clear.contains(i)) i,
         ];
-        final bool compact = pending.length > compactAfter;
+        final bool compact = pending.length > InboxPage.compactAfter;
         final List<InboxItem> repeats = <InboxItem>[
           for (final InboxItem i in own.inbox)
             if (i.status == InboxStatus.duplicate) i,
@@ -269,6 +305,7 @@ class InboxPage extends StatelessWidget {
                         own: own,
                         items: clear,
                         leftOut: leftOut,
+                        leave: _leave,
                       ),
                     if (compact) ...<Widget>[
                       Material(
@@ -297,6 +334,7 @@ class InboxPage extends StatelessWidget {
                                     own: own,
                                     item: item,
                                     compact: true,
+                                    leave: _leave,
                                   ),
                                 ],
                               ),
@@ -313,6 +351,7 @@ class InboxPage extends StatelessWidget {
                               own: own,
                               item: item,
                               lead: item.id == lead?.id,
+                              leave: _leave,
                             ),
                       ),
                   ],
@@ -328,6 +367,7 @@ class InboxPage extends StatelessWidget {
                             own: own,
                             item: item,
                             lead: item.id == lead?.id,
+                            leave: _leave,
                           ),
                     ),
                   ],
@@ -380,10 +420,14 @@ class _RecordReady extends StatefulWidget {
     required this.own,
     required this.items,
     required this.leftOut,
+    required this.leave,
   });
 
   final OwnController own;
   final List<InboxItem> items;
+
+  /// Takes what it records off the list at once.
+  final LeaveWhile leave;
 
   /// The others that are ready: a category the app did not recognize, or
   /// a picture's reading, leaves them for the person to record one by one.
@@ -399,10 +443,10 @@ class _RecordReadyState extends State<_RecordReady> {
   Future<void> _record() async {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     setState(() => _busy = true);
-    unawaited(HapticFeedback.lightImpact());
-    final List<Accepted> done = await widget.own.capture.acceptAll(
-      widget.items,
-    );
+    feelSaved();
+    final List<Accepted> done = await widget.leave(<String>[
+      for (final InboxItem i in widget.items) i.id,
+    ], () => widget.own.capture.acceptAll(widget.items));
     showRecordedMany(messenger, widget.own, done);
     if (mounted) setState(() => _busy = false);
   }
@@ -481,10 +525,15 @@ class InboxCard extends StatefulWidget {
     required this.item,
     this.compact = false,
     this.lead = true,
+    this.leave,
   });
 
   final OwnController own;
   final InboxItem item;
+
+  /// Takes the card off the list as soon as it records, while saving goes
+  /// on; without it, the card waits for the saving.
+  final LeaveWhile? leave;
 
   /// Whether its answer is the screen's main action, in strong green; one
   /// that waits after another answers in light green.
@@ -608,15 +657,17 @@ class _InboxCardState extends State<InboxCard> {
     if (converted == null) return _ownTransfer();
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     setState(() => _busy = true);
-    unawaited(HapticFeedback.lightImpact());
+    feelSaved();
     final bool across = said.asset != other.asset;
-    final Accepted done = await own.capture.acceptTransfer(
-      item,
-      fromAccountId: from.id,
-      toAccountId: to.id,
-      sent: out ? amount : converted,
-      received: !across ? null : (out ? converted : amount),
-      date: item.parsed.when ?? item.event.at,
+    final Accepted done = await _leaving(
+      () => own.capture.acceptTransfer(
+        item,
+        fromAccountId: from.id,
+        toAccountId: to.id,
+        sent: out ? amount : converted,
+        received: !across ? null : (out ? converted : amount),
+        date: item.parsed.when ?? item.event.at,
+      ),
     );
     showRecorded(messenger, own, done);
   }
@@ -645,17 +696,19 @@ class _InboxCardState extends State<InboxCard> {
     final PaymentMatch? paid = _paid;
     final String? category = item.suggestion.category;
     setState(() => _busy = true);
-    unawaited(HapticFeedback.lightImpact());
-    final Accepted done = await own.capture.accept(
-      item,
-      accountId: accountId,
-      // A client's payment is variable income, whatever it was taken for.
-      category:
-          paid?.income != null &&
-              (category == null || category == 'other_income')
-          ? 'freelance'
-          : category,
-      payee: item.suggestion.payee,
+    feelSaved();
+    final Accepted done = await _leaving(
+      () => own.capture.accept(
+        item,
+        accountId: accountId,
+        // A client's payment is variable income, whatever it was taken for.
+        category:
+            paid?.income != null &&
+                (category == null || category == 'other_income')
+            ? 'freelance'
+            : category,
+        payee: item.suggestion.payee,
+      ),
     );
     if (paid == null) return showRecorded(messenger, own, done);
     final (String, Future<void> Function()) settled = await _settle(
@@ -880,6 +933,11 @@ class _InboxCardState extends State<InboxCard> {
 
   Future<void> _ownTransfer() =>
       showEntrySheet(context, own: own, fromInbox: item, ownTransfer: true);
+
+  /// [save], with the card already off the list: what it records shows done
+  /// at once.
+  Future<T> _leaving<T>(Future<T> Function() save) =>
+      widget.leave?.call<T>(<String>[item.id], save) ?? save();
 
   /// The answer the card waits for, on a button: strong green when the card
   /// leads, light green when another comes first.

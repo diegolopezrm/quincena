@@ -272,6 +272,14 @@ class AccountsTab extends StatelessWidget {
           caption: l.netWorth,
           onExplain: () => showTotalExplained(context, own),
           value: moneyText(worth.total, base: base),
+          // Counted to a new total, as Inicio's figure is.
+          counting: (
+            worth.total.amount.toDouble(),
+            (double value) => moneyText(
+              Money(Decimal.parse(value.toStringAsFixed(base.decimals)), base),
+              base: base,
+            ),
+          ),
           // The code only where other currencies show beside it.
           unit: own.accounts.any((Account a) => a.asset != base) ? base : null,
           detail: l.netWorthDetail,

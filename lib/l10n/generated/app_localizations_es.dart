@@ -6430,6 +6430,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chartLoading => 'Actualizando la gráfica…';
 
   @override
+  String get accountsLoading => 'Cargando tus cuentas';
+
+  @override
   String get loanLentAction => 'Le presté';
 
   @override

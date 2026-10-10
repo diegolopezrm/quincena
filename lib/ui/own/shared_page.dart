@@ -543,6 +543,7 @@ class _GroupSheetState extends State<_GroupSheet> {
       setState(() => _error = l.sharedGroupIncomplete);
       return;
     }
+    feelSaved();
     final Group group =
         widget.group?.copyWith(name: _name.text.trim(), members: members) ??
         Group(
@@ -753,6 +754,7 @@ class _SettleDialogState extends State<_SettleDialog> {
       setState(() => _error = context.l10n.instalPaymentInvalid);
       return;
     }
+    feelSaved();
     final NavigatorState navigator = Navigator.of(context);
     final String? where = _where;
     await widget.own.settle(

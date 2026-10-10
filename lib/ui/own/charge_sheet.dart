@@ -170,11 +170,14 @@ class _ChargeFormState extends State<_ChargeForm> {
       return;
     }
     setState(() => _saving = true);
+    feelSaved();
     final String denied = own.example
         ? l.exampleNoReminders
         : l.chargeRemindDenied;
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
-    final NavigatorState navigator = Navigator.of(context);
+    // The page goes as the payment is saved: the list it opened from shows
+    // it a moment later, without the wait in between.
+    Navigator.of(context).pop();
     final Money money = Money(amount, _asset);
     final RecurringCharge? old = widget.charge;
     final String id;
@@ -206,7 +209,6 @@ class _ChargeFormState extends State<_ChargeForm> {
     } else {
       await own.saveMemory(id, memory);
     }
-    navigator.pop();
     final bool asked =
         (memory.remindDays != null &&
             memory.remindDays != _memory.remindDays) ||

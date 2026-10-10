@@ -1054,6 +1054,7 @@ class _TripFormState extends State<_TripForm> {
       setState(() => _error = l.tripIncomplete);
       return;
     }
+    feelSaved();
     final NavigatorState navigator = Navigator.of(context);
     final Decimal? budget = switch (parseAmount(_budget.text)) {
       final Decimal b when b > Decimal.zero => b,
@@ -1061,6 +1062,8 @@ class _TripFormState extends State<_TripForm> {
     };
     final double fee = parseAmount(_fee.text)?.toDouble() ?? 0;
     final Trip? old = widget.trip;
+    // The page goes as the trip is saved, without the wait in between.
+    navigator.pop();
     await own.saveTrip(
       (old ??
               Trip(
@@ -1080,7 +1083,6 @@ class _TripFormState extends State<_TripForm> {
             fee: fee,
           ),
     );
-    navigator.pop();
   }
 
   @override
@@ -1326,6 +1328,7 @@ class _TripExpenseSheetState extends State<_TripExpenseSheet> {
       setState(() => _error = l.tripExpenseIncomplete);
       return;
     }
+    feelSaved();
     final NavigatorState navigator = Navigator.of(context);
     final Entry entry = await own.store.addEntry(
       accountId: _accountId,

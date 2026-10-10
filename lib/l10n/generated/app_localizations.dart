@@ -9751,6 +9751,12 @@ abstract class AppLocalizations {
   /// **'Actualizando la gráfica…'**
   String get chartLoading;
 
+  /// No description provided for @accountsLoading.
+  ///
+  /// In es, this message translates to:
+  /// **'Cargando tus cuentas'**
+  String get accountsLoading;
+
   /// No description provided for @loanLentAction.
   ///
   /// In es, this message translates to:

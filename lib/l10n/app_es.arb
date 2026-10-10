@@ -2040,6 +2040,7 @@
   "portfolioPricingFailedAt": "No se pudieron leer los precios. Se muestran los del {when}.",
   "@portfolioPricingFailedAt": {"placeholders": {"when": {"type": "String"}}},
   "chartLoading": "Actualizando la gráfica…",
+  "accountsLoading": "Cargando tus cuentas",
   "loanLentAction": "Le presté",
   "loanBorrowedAction": "Me prestaron",
   "loanLentTitle": "Le presté plata a alguien",

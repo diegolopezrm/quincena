@@ -189,7 +189,8 @@ class OwnSettingsPage extends StatelessWidget {
     await own.store.saveProfile(
       p.copyWith(base: picked, pay: same(p.pay), cushion: same(p.cushion)),
     );
-    await own.refreshRates(force: true);
+    // Said at once, with the rate it converted with: the other rates for
+    // the new currency come in behind it, from the network.
     final Decimal shown = asset == p.base ? by : _inverse(by);
     messenger.showSnackBar(
       SnackBar(
@@ -203,6 +204,7 @@ class OwnSettingsPage extends StatelessWidget {
         ),
       ),
     );
+    await own.refreshRates(force: true);
   }
 
   static Decimal _inverse(Decimal d) =>

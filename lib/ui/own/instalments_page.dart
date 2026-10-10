@@ -289,6 +289,7 @@ class InstalmentDetailPage extends StatelessWidget {
           ),
         );
     if (payment == null) return;
+    feelSaved();
     await own.payInstalment(
       plan,
       payment.$1,
@@ -1007,8 +1008,10 @@ class _InstalmentFormState extends State<_InstalmentForm> {
       payments: old?.payments ?? const <(DateTime, int)>[],
       paymentEntries: old?.paymentEntries ?? const <String?>[],
     );
-    await own.saveInstalments(plan);
+    feelSaved();
+    // The page goes as the purchase is saved, without the wait in between.
     navigator.pop();
+    await own.saveInstalments(plan);
     // On a card the purchase is what the card owes: if it is not written
     // on the card, nothing counts it, so offer to write it.
     final Account? card = own.snapshot?.account(_accountId ?? '');

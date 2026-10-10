@@ -179,21 +179,14 @@ class StandingCard extends StatelessWidget {
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
                         // A new figure counts its way there from the one
-                        // before, so a change reads as a change; at once with
-                        // animations turned down.
-                        child: TweenAnimationBuilder<double>(
-                          tween: Tween<double>(end: free.abs().toDouble()),
-                          duration: MediaQuery.disableAnimationsOf(context)
-                              ? Duration.zero
-                              : const Duration(milliseconds: 450),
-                          curve: Curves.easeOutCubic,
-                          builder: (BuildContext context, double value, _) =>
-                              Figures(
-                                pesos(ledger.major(value.round())),
-                                style: context.type.displayLarge?.copyWith(
-                                  color: short ? context.colors.negative : null,
-                                ),
-                              ),
+                        // before, so a change reads as a change.
+                        child: CountingFigures(
+                          value: free.abs().toDouble(),
+                          format: (double value) =>
+                              pesos(ledger.major(value.round())),
+                          style: context.type.displayLarge?.copyWith(
+                            color: short ? context.colors.negative : null,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 2),
