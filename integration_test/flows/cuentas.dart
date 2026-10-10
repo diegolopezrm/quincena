@@ -1110,19 +1110,24 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
       await f.tapContaining('1 USD =');
       await enterTextIn(f.tester, find.byType(TextField).last, '0');
       await f.tap('Guardar');
-      await f.check('Guardar una tasa de 0 no cambia nada', () {
-        expect(own.rates.rate(Asset.usd, Asset.cop), trm);
-        expect(_typedRate(own, Asset.usd), isFalse);
-      });
-      await f.tapContaining('1 USD =');
       await f.step(
-        'Tocar la línea del dólar abre «Escribir una tasa» con la de hoy ya '
-        'escrita; solo hay «Guardar», sin «Cancelar».',
+        'Tocar la línea del dólar abre «Escribir una tasa» con «Cancelar» y '
+        '«Guardar». Una tasa de 0 no se guarda: el cuadro sigue abierto y '
+        'dice «Escribe una tasa mayor que cero.»',
       );
-      await f.back();
-      await f.check('Cerrar el cuadro sin guardar deja la TRM', () {
+      await f.check(
+        'Guardar una tasa de 0 no cambia nada y dice qué falta',
+        () {
+          expect(own.rates.rate(Asset.usd, Asset.cop), trm);
+          expect(_typedRate(own, Asset.usd), isFalse);
+          expect(f.shows('Escribe una tasa mayor que cero.'), isTrue);
+        },
+      );
+      await f.tap('Cancelar');
+      await f.check('«Cancelar» cierra el cuadro y deja la TRM', () {
         expect(own.rates.rate(Asset.usd, Asset.cop), trm);
         expect(_typedRate(own, Asset.usd), isFalse);
+        expect(f.shows('Escribe una tasa mayor que cero.'), isFalse);
       });
       await f.tapContaining('1 USD =');
       await enterTextIn(f.tester, find.byType(TextField).last, '4100');

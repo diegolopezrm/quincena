@@ -1041,11 +1041,12 @@ final List<AppFlow> inicioYMovimientosFlows = <AppFlow>[
         await f.back();
       }
       await f.tap('Otra pregunta');
-      await f.tap('Nueva');
+      await f.tapTip('Nueva conversación');
       await f.step(
         'Después de tres preguntas sin respuesta, «Otra pregunta» vuelve a '
-        'la misma conversación; «Nueva» la limpia y dice «Te quedan 30 de 30 '
-        'preguntas hoy»: las que no se respondieron no se cuentan.',
+        'la misma conversación; el lápiz de arriba, «Nueva conversación», la '
+        'limpia, ofrece «Deshacer» y dice «Te quedan 30 de 30 preguntas hoy»: '
+        'las que no se respondieron no se cuentan.',
       );
       await f.check(
         'Las preguntas que no se respondieron no gastan las del día: siguen '
