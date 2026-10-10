@@ -5662,6 +5662,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'Con este código unes tus otros dispositivos. Guárdalo donde guardas tus contraseñas: si pierdes todos tus dispositivos y el código, nadie podrá abrir los archivos, ni siquiera Quincena.';
 
   @override
+  String get syncCodeQr =>
+      'En el otro teléfono, toca «Escanear el código» y apunta aquí.';
+
+  @override
   String get syncCopyCode => 'Copiar el código';
 
   @override
@@ -5680,13 +5684,35 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get syncJoinBody =>
-      'Pega el código que copiaste o compartiste desde tu otro dispositivo, en Ajustes, Varios dispositivos, o escríbelo. Los guiones no importan.';
+      'Escanea el código QR de tu otro dispositivo, en Ajustes › Varios dispositivos, o pega el código que copiaste o compartiste desde allí. Escribirlo también sirve; los guiones no importan.';
 
   @override
   String get syncCodeField => 'Código';
 
   @override
   String get codePaste => 'Pegar';
+
+  @override
+  String get codeScan => 'Escanear el código';
+
+  @override
+  String get scanTitle => 'Escanear el código';
+
+  @override
+  String get scanHint =>
+      'Apunta al código QR que muestra tu otro teléfono, en Ajustes › Varios dispositivos.';
+
+  @override
+  String get scanNotACode =>
+      'Ese QR no es un código de Quincena. Apunta al que muestra tu otro teléfono.';
+
+  @override
+  String get scanNoPermission =>
+      'Quincena no tiene permiso para usar la cámara. Puedes darlo en los ajustes del teléfono, o cerrar y pegar el código.';
+
+  @override
+  String get scanNoCamera =>
+      'La cámara no está disponible. Cierra y pega el código.';
 
   @override
   String get codeNothingCopied =>

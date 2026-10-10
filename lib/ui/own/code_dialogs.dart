@@ -7,11 +7,14 @@ import '../../platform/share_text.dart';
 import '../../sync/vault.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
+import 'qr_code.dart';
+import 'scan_code.dart';
 
 /// Shows [code] in groups of four that never break in the middle, what it
 /// is for in [keep], and ways to keep it: copied, or handed to the share
 /// sheet as [share], a line that says which code it is, so a note or a
-/// chat with oneself tells the two codes apart later.
+/// chat with oneself tells the two codes apart later. With [qr], a code
+/// another phone reads with its camera goes first, said by [qr].
 Future<void> showCode(
   BuildContext context, {
   required String code,
@@ -19,6 +22,7 @@ Future<void> showCode(
   required String keep,
   required String share,
   String? done,
+  String? qr,
 }) {
   final ScaffoldMessengerState? messenger = ScaffoldMessenger.maybeOf(context);
   return showDialog<void>(
@@ -37,6 +41,18 @@ Future<void> showCode(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
+            if (qr != null) ...<Widget>[
+              Center(
+                child: Semantics(
+                  image: true,
+                  label: qr,
+                  child: QrCodeView(data: code),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(qr, style: context.type.bodySmall),
+              const SizedBox(height: 12),
+            ],
             Semantics(
               label: code,
               child: ExcludeSemantics(
@@ -116,7 +132,8 @@ Future<bool> codeIsKey(String code, Future<List<int>?> Function() read) async {
 
 /// Asks for a code until [use] takes it, and says whether it did. [use]
 /// answers null when the code worked, or what to tell the person; a code
-/// that is not one is caught here. The code is pasted with «Pegar», or
+/// that is not one is caught here. With [scan], on a phone the code is read
+/// from the other device's QR; otherwise it is pasted with «Pegar», or
 /// typed as a last resort.
 Future<bool> askForCode(
   BuildContext context, {
@@ -124,11 +141,17 @@ Future<bool> askForCode(
   required String body,
   required String action,
   required Future<String?> Function(String code) use,
+  bool scan = false,
 }) async =>
     await showDialog<bool>(
       context: context,
-      builder: (BuildContext context) =>
-          _CodeDialog(title: title, body: body, action: action, use: use),
+      builder: (BuildContext context) => _CodeDialog(
+        title: title,
+        body: body,
+        action: action,
+        use: use,
+        scan: scan && canScanCodes,
+      ),
     ) ??
     false;
 
@@ -138,12 +161,14 @@ class _CodeDialog extends StatefulWidget {
     required this.body,
     required this.action,
     required this.use,
+    this.scan = false,
   });
 
   final String title;
   final String body;
   final String action;
   final Future<String?> Function(String code) use;
+  final bool scan;
 
   @override
   State<_CodeDialog> createState() => _CodeDialogState();
@@ -180,6 +205,18 @@ class _CodeDialogState extends State<_CodeDialog> {
       _code.text = VaultKey.codeIn(copied) ?? copied;
       _error = null;
     });
+  }
+
+  /// What the camera read, used at once: a code read whole needs no
+  /// second look.
+  Future<void> _scan() async {
+    final String? read = await scanCode(context);
+    if (read == null || !mounted) return;
+    setState(() {
+      _code.text = read;
+      _error = null;
+    });
+    await _submit();
   }
 
   Future<void> _submit() async {
@@ -238,16 +275,27 @@ class _CodeDialogState extends State<_CodeDialog> {
               if (_error != null) setState(() => _error = null);
             },
           ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: _busy ? null : _paste,
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
+          Wrap(
+            spacing: 4,
+            children: <Widget>[
+              if (widget.scan)
+                TextButton.icon(
+                  onPressed: _busy ? null : _scan,
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                  ),
+                  icon: const Icon(Glyph.scan, size: 18),
+                  label: Text(l.codeScan),
+                ),
+              TextButton.icon(
+                onPressed: _busy ? null : _paste,
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                ),
+                icon: const Icon(Glyph.clipboardText, size: 18),
+                label: Text(l.codePaste),
               ),
-              icon: const Icon(Glyph.clipboardText, size: 18),
-              label: Text(l.codePaste),
-            ),
+            ],
           ),
         ],
       ),

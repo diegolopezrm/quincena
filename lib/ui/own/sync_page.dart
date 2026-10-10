@@ -77,6 +77,7 @@ class _SyncPageState extends State<SyncPage> {
     title: title,
     keep: context.l10n.syncCodeKeep,
     share: context.l10n.syncCodeShareText(code),
+    qr: context.l10n.syncCodeQr,
   );
 
   Future<void> _start() async {
@@ -93,6 +94,7 @@ class _SyncPageState extends State<SyncPage> {
       title: l.syncJoin,
       body: l.syncJoinBody,
       action: l.syncJoinAction,
+      scan: true,
       use: (String code) async {
         // A backup's code would join a vault no other device is in: say
         // which code it is instead.

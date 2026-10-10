@@ -19,6 +19,8 @@
 		<string>en</string>
 		<string>es</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Quincena uses the camera only to read the QR code your other phone shows.</string>
 	<key>CFBundleName</key>
 	<string>Quincena</string>
 	<key>CFBundlePackageType</key>

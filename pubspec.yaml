@@ -58,6 +58,8 @@ dependencies:
   archive: ^4.3.0
   xml: ^6.5.0
   cryptography: ^2.9.0
+  qr: ^4.0.0
+  mobile_scanner: ^7.4.2
 
 dev_dependencies:
   flutter_test:

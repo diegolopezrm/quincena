@@ -1,0 +1,2 @@
+/* What iOS says when it asks for the camera. */
+"NSCameraUsageDescription" = "Quincena usa la cámara solo para leer el código QR que muestra tu otro teléfono.";

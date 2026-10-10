@@ -15,6 +15,8 @@ import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
 import 'package:quincena/sync/sync_service.dart';
 import 'package:quincena/sync/vault.dart';
+import 'package:quincena/ui/own/qr_code.dart';
+import 'package:quincena/ui/own/scan_code.dart';
 import 'package:quincena/ui/own/sync_page.dart';
 
 import 'own_flow_test.dart' show settle;
@@ -46,6 +48,14 @@ void main() {
     for (final String group in code.split('-')) {
       expect(find.text(group), findsWidgets);
     }
+    // The other phone reads it with its camera.
+    expect(tester.widget<QrCodeView>(find.byType(QrCodeView)).data, code);
+    expect(
+      find.text(
+        'En el otro teléfono, toca «Escanear el código» y apunta aquí.',
+      ),
+      findsOneWidget,
+    );
     expect(find.textContaining('ni siquiera Quincena'), findsOneWidget);
     await tapText(tester, 'Listo');
     expect(find.text('Guardar mis cambios en un archivo'), findsOneWidget);
@@ -74,6 +84,25 @@ void main() {
 
     await tester.enterText(find.byType(TextField), code.toLowerCase());
     await tapText(tester, 'Unir');
+    expect(find.textContaining('Ahora abre un archivo'), findsOneWidget);
+    expect(
+      VaultKey((await tester.runAsync<List<int>?>(keys.read))!).code,
+      code,
+    );
+  });
+
+  testWidgets('joining reads the other phone\'s QR with the camera, and '
+      'uses it at once', (tester) async {
+    final MemoryKeyStore keys = MemoryKeyStore();
+    await openPage(
+      tester,
+      (OwnController own) => SyncPage(own: own, keys: keys),
+    );
+    final String code = VaultKey.generate(Random(5)).code;
+    debugScanCode = () async => code;
+    addTearDown(() => debugScanCode = null);
+    await tapText(tester, 'Unir este dispositivo');
+    await tapText(tester, 'Escanear el código');
     expect(find.textContaining('Ahora abre un archivo'), findsOneWidget);
     expect(
       VaultKey((await tester.runAsync<List<int>?>(keys.read))!).code,

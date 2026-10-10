@@ -39,6 +39,8 @@ import 'package:quincena/ui/own/capture_rules_page.dart';
 import 'package:quincena/ui/own/look.dart' show Panel, SectionLabel, moneyText;
 import 'package:quincena/ui/own/own_settings_page.dart';
 import 'package:quincena/ui/own/own_shell.dart';
+import 'package:quincena/ui/own/qr_code.dart';
+import 'package:quincena/ui/own/scan_code.dart';
 import 'package:quincena/ui/own/statement_page.dart';
 import 'package:quincena/data/example_prices.dart';
 // Links open through it; the fake keeps the app on screen.
@@ -2951,12 +2953,14 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tap('Empezar en este dispositivo');
       final String? code = await _syncCode(f);
       await f.step(
-        '«Empezar en este dispositivo» muestra «Tu código para sincronizar» en '
+        '«Empezar en este dispositivo» muestra «Tu código para sincronizar»: '
+        'un QR para que el otro teléfono lo escanee y, debajo, el código en '
         'grupos de cuatro, con «Copiar el código», «Compartir el código» y '
         '«Listo».',
       );
-      await f.check('El código mostrado es el que guardó el teléfono', () {
+      await f.check('El QR y el código son los que guardó el teléfono', () {
         expect(code, isNotNull);
+        expect(f.tester.widget<QrCodeView>(find.byType(QrCodeView)).data, code);
         for (final String group in code!.split('-')) {
           expect(find.text(group), findsWidgets);
         }
@@ -3041,6 +3045,10 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
     manual: <String>[
       'Mover el archivo .qsync del computador al teléfono por AirDrop, '
           'Archivos o un chat, y elegirlo en el selector del sistema.',
+      'Escanear con la cámara el QR que muestra otro teléfono en «Varios '
+          'dispositivos»: la primera vez el teléfono pide permiso con «Quincena '
+          'usa la cámara solo para leer el código QR que muestra tu otro '
+          'teléfono.»',
     ],
     (FlowRun f) async {
       final _Phone phone = await _Phone.install(f);
@@ -3059,9 +3067,9 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
       await f.tap('Varios dispositivos');
       await f.tap('Unir este dispositivo');
       await f.step(
-        '«Unir este dispositivo» pide pegar el código que copiaste o '
-        'compartiste desde el otro dispositivo, con el botón «Pegar»; '
-        'escribirlo queda de último recurso.',
+        '«Unir este dispositivo» ofrece «Escanear el código», el QR que '
+        'muestra el otro dispositivo, y «Pegar» lo que copiaste o compartiste '
+        'desde allí; escribirlo queda de último recurso.',
       );
       await f.tap('Cancelar');
       await f.check('Con «Cancelar» no se une', () async {
@@ -3149,10 +3157,14 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           );
         },
       );
-      await f.tap('Unir');
+      // What the camera reads from the computer's screen.
+      debugScanCode = () async => code;
+      addTearDown(() => debugScanCode = null);
+      await f.tap('Escanear el código');
       await f.step(
-        'Con el código del computador pegado, une el teléfono: «Listo. Ahora '
-        'abre un archivo de tu otro dispositivo».',
+        '«Escanear el código» abre la cámara; leído el QR del computador, une '
+        'el teléfono sin otro toque: «Listo. Ahora abre un archivo de tu otro '
+        'dispositivo».',
       );
       await f.check('El teléfono quedó con el código del computador', () async {
         expect(await _syncCode(f), code);

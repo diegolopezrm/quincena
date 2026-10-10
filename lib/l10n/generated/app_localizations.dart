@@ -8635,6 +8635,12 @@ abstract class AppLocalizations {
   /// **'Con este código unes tus otros dispositivos. Guárdalo donde guardas tus contraseñas: si pierdes todos tus dispositivos y el código, nadie podrá abrir los archivos, ni siquiera Quincena.'**
   String get syncCodeKeep;
 
+  /// No description provided for @syncCodeQr.
+  ///
+  /// In es, this message translates to:
+  /// **'En el otro teléfono, toca «Escanear el código» y apunta aquí.'**
+  String get syncCodeQr;
+
   /// No description provided for @syncCopyCode.
   ///
   /// In es, this message translates to:
@@ -8668,7 +8674,7 @@ abstract class AppLocalizations {
   /// No description provided for @syncJoinBody.
   ///
   /// In es, this message translates to:
-  /// **'Pega el código que copiaste o compartiste desde tu otro dispositivo, en Ajustes, Varios dispositivos, o escríbelo. Los guiones no importan.'**
+  /// **'Escanea el código QR de tu otro dispositivo, en Ajustes › Varios dispositivos, o pega el código que copiaste o compartiste desde allí. Escribirlo también sirve; los guiones no importan.'**
   String get syncJoinBody;
 
   /// No description provided for @syncCodeField.
@@ -8682,6 +8688,42 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Pegar'**
   String get codePaste;
+
+  /// No description provided for @codeScan.
+  ///
+  /// In es, this message translates to:
+  /// **'Escanear el código'**
+  String get codeScan;
+
+  /// No description provided for @scanTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Escanear el código'**
+  String get scanTitle;
+
+  /// No description provided for @scanHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Apunta al código QR que muestra tu otro teléfono, en Ajustes › Varios dispositivos.'**
+  String get scanHint;
+
+  /// No description provided for @scanNotACode.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese QR no es un código de Quincena. Apunta al que muestra tu otro teléfono.'**
+  String get scanNotACode;
+
+  /// No description provided for @scanNoPermission.
+  ///
+  /// In es, this message translates to:
+  /// **'Quincena no tiene permiso para usar la cámara. Puedes darlo en los ajustes del teléfono, o cerrar y pegar el código.'**
+  String get scanNoPermission;
+
+  /// No description provided for @scanNoCamera.
+  ///
+  /// In es, this message translates to:
+  /// **'La cámara no está disponible. Cierra y pega el código.'**
+  String get scanNoCamera;
 
   /// No description provided for @codeNothingCopied.
   ///
