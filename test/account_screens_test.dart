@@ -13,6 +13,7 @@ import 'package:quincena/money/asset.dart';
 import 'package:quincena/money/money.dart';
 import 'package:quincena/own/own_controller.dart';
 import 'package:quincena/store/store.dart';
+import 'package:quincena/ui/icons.dart';
 import 'package:quincena/ui/own/account_page.dart';
 import 'package:quincena/ui/own/account_sheet.dart';
 import 'package:quincena/ui/own/portfolio_page.dart';
@@ -436,5 +437,13 @@ void main() {
     await push(tester, WalletsPage(own: own));
     expect(find.byTooltip('Actualizar'), findsOneWidget);
     expect(find.byTooltip('Actualizar tasas'), findsNothing);
+    // Two arrows in a circle: reading again, not undoing.
+    expect(
+      find.descendant(
+        of: find.byTooltip('Actualizar'),
+        matching: find.byIcon(Glyph.arrowsClockwise),
+      ),
+      findsOneWidget,
+    );
   });
 }

@@ -149,7 +149,7 @@ class _WalletsPageState extends State<WalletsPage> {
             // It reads the wallets again, not the rates.
             tooltip: l.portfolioRefresh,
             onPressed: own.wallets.syncing ? null : own.wallets.sync,
-            icon: const Icon(Glyph.arrowCounterClockwise),
+            icon: const Icon(Glyph.arrowsClockwise),
           ),
         ],
       ),
