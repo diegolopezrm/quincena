@@ -68,6 +68,7 @@
   "liveNeedsKey": "Con tu key de Gemini puedes preguntar lo que quieras. Se queda en esta pestaña: no se guarda, y solo viaja a Google.",
   "keyLabel": "Key de Gemini",
   "keyHint": "De aistudio.google.com",
+  "keyMissing": "Pega tu key de Gemini para conectar.",
   "connect": "Conectar",
   "appearance": "Apariencia",
   "themeTitle": "Tema",

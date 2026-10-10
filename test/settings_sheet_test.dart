@@ -58,6 +58,36 @@ void main() {
     expect(sheet(), dark);
   });
 
+  testWidgets('in the web demo, «Conectar» with no key says it is missing', (
+    tester,
+  ) async {
+    debugShowcaseOverride = true;
+    addTearDown(() => debugShowcaseOverride = null);
+    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    tester.platformDispatcher.localesTestValue = const <Locale>[Locale('es')];
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+
+    final Session session = Session(thinking: Duration.zero);
+    addTearDown(session.dispose);
+    await tester.pumpWidget(QuincenaApp(session: session));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Ajustes'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tu key'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Conectar'));
+    await tester.tap(find.text('Conectar'));
+    await tester.pumpAndSettle();
+    expect(find.text('Pega tu key de Gemini para conectar.'), findsOneWidget);
+    // The sheet stays, waiting for it.
+    expect(find.byType(BottomSheet), findsOneWidget);
+    await tester.enterText(find.byType(TextField).last, 'x');
+    await tester.pumpAndSettle();
+    expect(find.text('Pega tu key de Gemini para conectar.'), findsNothing);
+  });
+
   testWidgets('in the web demo, picking another language keeps the '
       'conversation, and the next answer comes in it', (tester) async {
     debugShowcaseOverride = true;

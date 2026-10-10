@@ -60,6 +60,7 @@
   "liveNeedsKey": "With your Gemini key you can ask anything. It stays in this tab: it isn't saved, and it only travels to Google.",
   "keyLabel": "Gemini key",
   "keyHint": "From aistudio.google.com",
+  "keyMissing": "Paste your Gemini key to connect.",
   "connect": "Connect",
   "appearance": "Appearance",
   "themeTitle": "Theme",

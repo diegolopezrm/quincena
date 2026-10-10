@@ -61,6 +61,9 @@ class _SettingsState extends State<_Settings> {
   final TextEditingController _key = TextEditingController();
   late AgentMode _mode = widget.session.mode;
 
+  /// What is missing to connect, said under the field until it is typed.
+  String? _missing;
+
   @override
   void dispose() {
     _key.dispose();
@@ -69,7 +72,10 @@ class _SettingsState extends State<_Settings> {
 
   void _connect() {
     final String key = _key.text.trim();
-    if (key.isEmpty) return;
+    if (key.isEmpty) {
+      setState(() => _missing = context.l10n.keyMissing);
+      return;
+    }
     widget.session.use(AgentMode.live, apiKey: key);
     Navigator.of(context).pop();
   }
@@ -172,9 +178,13 @@ class _SettingsState extends State<_Settings> {
                     autocorrect: false,
                     enableSuggestions: false,
                     onSubmitted: (_) => _connect(),
+                    onChanged: (_) {
+                      if (_missing != null) setState(() => _missing = null);
+                    },
                     decoration: InputDecoration(
                       labelText: t.keyLabel,
                       hintText: t.keyHint,
+                      errorText: _missing,
                     ),
                   ),
                   const SizedBox(height: 10),

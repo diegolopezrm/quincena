@@ -215,6 +215,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keyHint => 'From aistudio.google.com';
 
   @override
+  String get keyMissing => 'Paste your Gemini key to connect.';
+
+  @override
   String get connect => 'Connect';
 
   @override

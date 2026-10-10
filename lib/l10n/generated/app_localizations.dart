@@ -434,6 +434,12 @@ abstract class AppLocalizations {
   /// **'De aistudio.google.com'**
   String get keyHint;
 
+  /// No description provided for @keyMissing.
+  ///
+  /// In es, this message translates to:
+  /// **'Pega tu key de Gemini para conectar.'**
+  String get keyMissing;
+
   /// No description provided for @connect.
   ///
   /// In es, this message translates to:
