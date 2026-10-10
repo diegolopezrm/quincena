@@ -296,7 +296,8 @@ void main() {
     await settle(tester);
 
     expect(find.text('Transactions'), findsOneWidget);
-    expect(find.text('Transaction'), findsOneWidget);
+    // Over the rows of Inicio the button keeps to its icon, named.
+    expect(find.byTooltip('Add transaction'), findsOneWidget);
     expect(find.byTooltip('Needs review'), findsOneWidget);
 
     // A goal's share has no space before its sign in English.
