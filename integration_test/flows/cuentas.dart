@@ -3993,6 +3993,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
         });
         await f.tap('Leer ahora');
         await _binanceIdle(f, own);
+        await f.reveal(find.text('Cambiar la llave'));
         await f.step(
           'Al fallar otra vez, el aviso dice cuántas veces van seguidas y '
           'que revises tu llave o la pegues de nuevo, con «Cambiar la llave» '
@@ -4018,13 +4019,14 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
           'reemplaza la que hay solo si Binance la acepta, y «Cancelar» deja '
           'la de antes.',
         );
-        await f.check(
-          'El formulario dice que cambia la llave y deja volver',
-          () {
-            expect(f.shows('Cambiar la llave de Binance'), isTrue);
-            expect(_fieldText(f, 'API Key'), isEmpty);
-          },
-        );
+        await f.check('El formulario dice que cambia la llave', () {
+          expect(f.shows('Cambiar la llave de Binance'), isTrue);
+        });
+        await f.reveal(find.text('Cancelar'));
+        await f.check('Empieza con los campos vacíos, y deja volver', () {
+          expect(_fieldText(f, 'API Key'), isEmpty);
+          expect(f.shows('Cancelar'), isTrue);
+        });
         await f.type('API Key', 'llave-nueva');
         await f.type('Secret Key', 'secreto-nuevo');
         await f.tap('Conectar');
@@ -4046,6 +4048,7 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
           },
         );
         await f.tap('Cancelar');
+        await f.top();
         await f.step(
           '«Cancelar» vuelve a Binance conectada, con la llave de antes.',
         );
