@@ -14,6 +14,7 @@ import '../../capture/native_channel.dart';
 import '../../l10n/l10n.dart';
 import '../../own/own_controller.dart';
 import '../../own/own_tools.dart';
+import '../../platform/network.dart';
 import '../../session/session.dart';
 import '../../theme/tokens.dart';
 import '../../widget/home_widget.dart';
@@ -35,6 +36,12 @@ import 'plan_tab.dart';
 /// gives, with the tools the conversation hands it.
 @visibleForTesting
 ModelClient Function(List<dartantic.Tool> tools)? debugAskClient;
+
+/// Says whether the network is back instead of the phone, for the flows:
+/// with [debugAskClient] and without it, a question that failed for want
+/// of a connection waits for «Volver a preguntar».
+@visibleForTesting
+Future<bool> Function()? debugReachable;
 
 /// The person's own accounts, or the example's: home, movements and
 /// accounts, a tap apart.
@@ -123,6 +130,7 @@ class _OwnShellState extends State<OwnShell> with WidgetsBindingObserver {
   Session _askingIn(String language) => _asking ??= Session(
     mode: AgentMode.gemini,
     clientFor: debugAskClient,
+    reachable: debugAskClient == null ? networkReachable : debugReachable,
     language: language,
     ledgerOf: () => own.ledger!,
     toolsFor: (_) => ownTools(own),

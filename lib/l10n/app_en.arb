@@ -26,6 +26,7 @@
   "problemKey": "The key didn't work. Check it in Settings.",
   "problemBusy": "The model is getting too many questions. Try again in a minute.",
   "problemOffline": "No internet connection. Your accounts and transactions still work; ask again once you're online.",
+  "problemOfflineWaiting": "No internet connection. Your accounts and transactions still work, and once you are back online I will ask again on my own.",
   "problemOther": "I couldn't answer this time. Try again.",
   "problemLimit": "You've used today's questions. They're back tomorrow.",
   "askAgain": "Ask again",

@@ -2270,6 +2270,81 @@ final List<AppFlow> conversacionFlows = <AppFlow>[
       });
     },
   ),
+  AppFlow(
+    '12-10-preguntar-cuando-vuelve-la-red',
+    'Que la pregunta se haga sola cuando vuelve la red',
+    area: _askArea,
+    goal:
+        'Pregunté sin señal y no quiero tener que volver a hacerlo cuando '
+        'tenga red otra vez.',
+    data: fullAccount,
+    manual: <String>[
+      'Con el teléfono en modo avión, preguntar; quitar el modo avión y ver '
+          'que la respuesta llega sola en unos segundos.',
+    ],
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Allowance allowance = _allowance(f);
+      final int left = allowance.left;
+      var online = false;
+      late final _StandIn model;
+      final Session s = await _openAsk(
+        f,
+        clientFor: (List<dartantic.Tool> tools) => model = _StandIn(
+          tools,
+          failures: <Object>[
+            Exception('Failed host lookup: firebasevertexai.googleapis.com'),
+          ],
+        ),
+        reachable: () async => online,
+      );
+      await f.step(
+        'Aquí contesta un modelo de prueba, no Gemini: la primera vez sin '
+        'internet; después la red vuelve.',
+      );
+      await f.tap(_ownStarters[0]);
+      await f.step(
+        'Sin red, el aviso dice «Sin conexión a internet», que sus cuentas y '
+        'movimientos siguen funcionando, y que cuando vuelva la red pregunta '
+        'otra vez sin que haga nada. «Volver a preguntar» sigue ahí.',
+      );
+      await f.check(
+        'El aviso dice que preguntará sola cuando vuelva la red',
+        () {
+          expect(s.turns.single.waitsForNetwork, isTrue);
+          expect(
+            find.textContaining('cuando vuelva la red pregunto otra vez'),
+            findsOne,
+          );
+          expect(find.text('Volver a preguntar'), findsOneWidget);
+          expect(allowance.left, left);
+        },
+      );
+      online = true;
+      final String free = pesos(own.ledger!.major(own.ledger!.freeUntilPayday));
+      // The page looks for the network every second, as the clock goes.
+      for (var i = 0; i < 10 && (s.busy || s.turns.single.error != null); i++) {
+        await f.tester.pump(const Duration(seconds: 1));
+      }
+      await settle(f.tester);
+      await _read(
+        f,
+        'Con la red de vuelta, la misma pregunta va otra vez, sola y en su '
+        'mismo lugar, y llega la respuesta: lo que puede gastar hasta el '
+        'pago.',
+        most: 1,
+      );
+      await f.check('Respondió con $free sin tocar nada, y gastó una sola '
+          'pregunta', () {
+        expect(s.turns, hasLength(1));
+        expect(s.turns.single.error, isNull);
+        expect(s.turns.single.waitsForNetwork, isFalse);
+        expect(_said(f), contains(free));
+        expect(model.asked, 2);
+        expect(allowance.left, left - 1);
+      });
+    },
+  ),
 ];
 
 /// The questions offered for the person's own accounts.
@@ -2461,6 +2536,7 @@ Future<Session> _openAsk(
   FlowRun f, {
   ModelClient? client,
   ModelClient Function(List<dartantic.Tool> tools)? clientFor,
+  Future<bool> Function()? reachable,
 }) async {
   final OwnController own = f.own;
   final Allowance allowance = _allowance(f);
@@ -2468,6 +2544,8 @@ Future<Session> _openAsk(
     mode: AgentMode.gemini,
     client: client,
     clientFor: clientFor,
+    reachable: reachable,
+    networkPoll: const Duration(seconds: 1),
     ledgerOf: () => own.ledger!,
     toolsFor: (_) => ownTools(own),
     own: true,

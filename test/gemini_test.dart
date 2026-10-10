@@ -81,6 +81,27 @@ class UnreachableModel implements ModelClient {
       );
 }
 
+/// A model the phone cannot reach until [online], and that then answers.
+class ComesBackModel implements ModelClient {
+  bool online = false;
+
+  /// How many times something was sent to it, reached or not.
+  int tries = 0;
+
+  @override
+  Stream<String> send(String prompt, {required List<ChatMessage> history}) {
+    tries++;
+    if (!online) {
+      return Stream<String>.error(
+        const SocketException(
+          'Failed host lookup: firebasevertexai.googleapis.com',
+        ),
+      );
+    }
+    return OneSurfaceModel().send(prompt, history: history);
+  }
+}
+
 /// A model whose connection drops after a line break and half a message:
 /// nothing of it reaches the screen.
 class DroppedMidwayModel implements ModelClient {
@@ -552,6 +573,94 @@ void main() {
       expect(session.turns.last.surfaceIds, isEmpty);
       expect(session.turns.last.text.toString().trim(), isEmpty);
       expect(allowance.left, 2);
+    });
+
+    /// Waits until [done], a short while at most.
+    Future<void> until(bool Function() done) async {
+      for (var i = 0; i < 200 && !done(); i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+    }
+
+    test('a question that failed without a connection is asked again on '
+        'its own once the network is back, and counts once', () async {
+      final Allowance allowance = Allowance(store, perDay: 2, now: () => now);
+      await allowance.load();
+      final ComesBackModel model = ComesBackModel();
+      var back = false;
+      final Session session = Session(
+        mode: AgentMode.gemini,
+        client: model,
+        errorWindow: Duration.zero,
+        ledgerOf: () => own.ledger!,
+        toolsFor: (_) => ownTools(own),
+        own: true,
+        allowance: allowance,
+        reachable: () async => back,
+        networkPoll: const Duration(milliseconds: 10),
+      );
+      addTearDown(session.dispose);
+
+      await session.ask('¿Cuánto me queda libre?');
+      final Turn turn = session.turns.single;
+      expect(turn.error, AnswerProblem.offline);
+      expect(turn.waitsForNetwork, isTrue);
+      // While the network is away, nothing more is sent.
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      expect(model.tries, 1);
+
+      back = true;
+      model.online = true;
+      await until(() => turn.surfaceIds.isNotEmpty && !session.busy);
+      expect(turn.error, isNull);
+      expect(turn.waitsForNetwork, isFalse);
+      expect(session.turns, <Turn>[turn]);
+      expect(model.tries, 2);
+      expect(allowance.left, 1);
+    });
+
+    test('a network that says it is back but answers nothing is tried three '
+        'times on its own, then waits for «Volver a preguntar»', () async {
+      final ComesBackModel model = ComesBackModel();
+      final Session session = Session(
+        mode: AgentMode.gemini,
+        client: model,
+        errorWindow: Duration.zero,
+        ledgerOf: () => own.ledger!,
+        toolsFor: (_) => ownTools(own),
+        own: true,
+        reachable: () async => true,
+        networkPoll: const Duration(milliseconds: 10),
+      );
+      addTearDown(session.dispose);
+
+      await session.ask('¿Cuánto me queda libre?');
+      final Turn turn = session.turns.single;
+      await until(
+        () => model.tries == 4 && !turn.waitsForNetwork && !session.busy,
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      expect(model.tries, 4);
+      expect(turn.error, AnswerProblem.offline);
+      expect(turn.waitsForNetwork, isFalse);
+      expect(session.canAskAgain(turn), isTrue);
+    });
+
+    test('without a way to see the network, the question waits for the '
+        'person', () async {
+      final Session session = Session(
+        mode: AgentMode.gemini,
+        client: UnreachableModel(),
+        errorWindow: Duration.zero,
+        ledgerOf: () => own.ledger!,
+        toolsFor: (_) => ownTools(own),
+        own: true,
+      );
+      addTearDown(session.dispose);
+
+      await session.ask('¿Cuánto me queda libre?');
+      expect(session.turns.single.error, AnswerProblem.offline);
+      expect(session.turns.single.waitsForNetwork, isFalse);
     });
   });
   test('can I buy it, what comes and the close, as tools', () async {

@@ -236,6 +236,12 @@ abstract class AppLocalizations {
   /// **'Sin conexión a internet. Tus cuentas y movimientos siguen funcionando; vuelve a preguntar cuando tengas red.'**
   String get problemOffline;
 
+  /// No description provided for @problemOfflineWaiting.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin conexión a internet. Tus cuentas y movimientos siguen funcionando, y cuando vuelva la red pregunto otra vez sin que hagas nada.'**
+  String get problemOfflineWaiting;
+
   /// No description provided for @problemOther.
   ///
   /// In es, this message translates to:

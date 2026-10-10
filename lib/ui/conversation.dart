@@ -476,6 +476,8 @@ class _TurnView extends StatelessWidget {
                 AnswerProblem.key => context.l10n.problemKey,
                 AnswerProblem.busy => context.l10n.problemBusy,
                 AnswerProblem.limit => context.l10n.problemLimit,
+                AnswerProblem.offline when turn.waitsForNetwork =>
+                  context.l10n.problemOfflineWaiting,
                 AnswerProblem.offline => context.l10n.problemOffline,
                 AnswerProblem.other => context.l10n.problemOther,
               },

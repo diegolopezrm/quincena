@@ -29,6 +29,7 @@
   "problemKey": "La key no funcionó. Revísala en Ajustes.",
   "problemBusy": "El modelo está recibiendo demasiadas preguntas. Prueba en un minuto.",
   "problemOffline": "Sin conexión a internet. Tus cuentas y movimientos siguen funcionando; vuelve a preguntar cuando tengas red.",
+  "problemOfflineWaiting": "Sin conexión a internet. Tus cuentas y movimientos siguen funcionando, y cuando vuelva la red pregunto otra vez sin que hagas nada.",
   "problemOther": "No pude responder esta vez. Prueba de nuevo.",
   "problemLimit": "Ya usaste las preguntas de hoy. Vuelven mañana.",
   "askAgain": "Volver a preguntar",

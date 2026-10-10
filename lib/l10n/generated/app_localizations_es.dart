@@ -86,6 +86,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'Sin conexión a internet. Tus cuentas y movimientos siguen funcionando; vuelve a preguntar cuando tengas red.';
 
   @override
+  String get problemOfflineWaiting =>
+      'Sin conexión a internet. Tus cuentas y movimientos siguen funcionando, y cuando vuelva la red pregunto otra vez sin que hagas nada.';
+
+  @override
   String get problemOther => 'No pude responder esta vez. Prueba de nuevo.';
 
   @override

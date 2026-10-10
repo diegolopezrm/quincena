@@ -86,6 +86,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'No internet connection. Your accounts and transactions still work; ask again once you\'re online.';
 
   @override
+  String get problemOfflineWaiting =>
+      'No internet connection. Your accounts and transactions still work, and once you are back online I will ask again on my own.';
+
+  @override
   String get problemOther => 'I couldn\'t answer this time. Try again.';
 
   @override

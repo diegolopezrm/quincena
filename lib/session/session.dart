@@ -75,6 +75,14 @@ class Turn {
 
   /// Whether the person reported the answer to DL SOFT.
   bool reported = false;
+
+  /// Whether it failed for want of a connection and is asked again on its
+  /// own once the network is back.
+  bool get waitsForNetwork => _waits;
+  bool _waits = false;
+
+  /// How many times it was asked again on its own.
+  int _againAlone = 0;
 }
 
 /// A surface whose committing action arrived: what it committed, when, and
@@ -159,6 +167,8 @@ class Session extends ChangeNotifier {
     this.allowance,
     this.keeper,
     this.scripted = false,
+    this.reachable,
+    this.networkPoll = const Duration(seconds: 5),
   }) : _ledgerOf = ledgerOf ?? demoLedger,
        // With a keeper, what a model saves goes where the script's does,
        // into the account every screen reads, not into a copy of it.
@@ -207,6 +217,15 @@ class Session extends ChangeNotifier {
   /// nothing when it finds no problem, so there is no moment that marks
   /// validation as done. A short quiet window is the honest way to wait.
   final Duration errorWindow;
+
+  /// Whether the network can be reached, looked at every [networkPoll]
+  /// after a question failed for want of it, to ask it again on its own.
+  /// Without it, the question waits for «Volver a preguntar».
+  final Future<bool> Function()? reachable;
+
+  /// How often to look for the network after a question failed for want
+  /// of it.
+  final Duration networkPoll;
 
   /// A model to use instead of Gemini, for tests.
   final ModelClient? client;
@@ -643,6 +662,7 @@ class Session extends ChangeNotifier {
   }) async {
     // Once the new conversation has a question, the old one stays gone.
     _forgetPrevious();
+    _stopWaiting();
     if (!again) turns.add(turn);
     turn._here = here;
     _busy = true;
@@ -708,7 +728,8 @@ class Session extends ChangeNotifier {
         }
       }
     }
-    if (!turns.contains(turn)) return;
+    // Gone, or put aside, while the answer was on its way.
+    if (_disposed || !turns.contains(turn)) return;
     // An action the script has no answer for leaves nothing to show.
     if (turn.surfaceIds.isEmpty &&
         turn.text.isEmpty &&
@@ -717,7 +738,62 @@ class Session extends ChangeNotifier {
       turns.remove(turn);
     }
     _busy = false;
+    if (turn.error == AnswerProblem.offline) _waitForNetwork(turn);
     notifyListeners();
+  }
+
+  /// The turn waiting for the network to come back, and how it is watched.
+  Turn? _waiting;
+  Timer? _watch;
+  bool _looking = false;
+
+  /// Times a question is asked again on its own; past them, it waits for
+  /// «Volver a preguntar», as when the network says it is there but
+  /// answers nothing.
+  static const int _maxAgainAlone = 3;
+
+  /// Looks for the network every [networkPoll], for ten minutes at most,
+  /// and asks [turn] again once it is back.
+  void _waitForNetwork(Turn turn) {
+    final Future<bool> Function()? isBack = reachable;
+    if (isBack == null ||
+        turn._againAlone >= _maxAgainAlone ||
+        !canAskAgain(turn)) {
+      return;
+    }
+    turn._waits = true;
+    _waiting = turn;
+    final int most =
+        const Duration(minutes: 10).inMilliseconds ~/
+        networkPoll.inMilliseconds;
+    var looked = 0;
+    _watch = Timer.periodic(networkPoll, (Timer timer) async {
+      if (_looking) return;
+      if (!identical(_waiting, turn) || ++looked > most) {
+        _stopWaiting();
+        notifyListeners();
+        return;
+      }
+      _looking = true;
+      final bool back = await isBack();
+      _looking = false;
+      if (_disposed ||
+          !back ||
+          !identical(_waiting, turn) ||
+          !canAskAgain(turn)) {
+        return;
+      }
+      turn._againAlone++;
+      await askAgain(turn);
+    });
+  }
+
+  void _stopWaiting() {
+    _watch?.cancel();
+    _watch = null;
+    _waiting?._waits = false;
+    _waiting = null;
+    _looking = false;
   }
 
   void _onSubmit(ChatMessage message) {
@@ -1161,6 +1237,7 @@ class Session extends ChangeNotifier {
   }
 
   void _quiet() {
+    _stopWaiting();
     unawaited(_submissions.cancel());
     unawaited(_surfaces.cancel());
   }
@@ -1172,8 +1249,11 @@ class Session extends ChangeNotifier {
     controller.dispose();
   }
 
+  bool _disposed = false;
+
   @override
   void dispose() {
+    _disposed = true;
     _forgetPrevious();
     _teardown();
     super.dispose();
