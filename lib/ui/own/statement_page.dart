@@ -24,7 +24,10 @@ import '../../store/store.dart';
 import '../../theme/tokens.dart';
 import '../icons.dart';
 import '../kit.dart';
+import 'account_sheet.dart';
 import 'category_choices.dart';
+import 'entry_origin.dart';
+import 'entry_sheet.dart';
 import 'example_bar.dart';
 import 'look.dart';
 import 'movement_list.dart';
@@ -68,6 +71,10 @@ class _StatementPageState extends State<StatementPage> {
   String? _pdfText;
   Uint8List? _pdfBytes;
   String? _accountId;
+
+  /// Whether the account is the first one only because the file names no
+  /// bank: the menu asks to check it.
+  bool _guessedAccount = false;
   List<ImportCandidate> _candidates = const <ImportCandidate>[];
   final Set<int> _chosen = <int>{};
 
@@ -226,6 +233,7 @@ class _StatementPageState extends State<StatementPage> {
         }
       }
     }
+    _guessedAccount = _accountId == null;
     _accountId ??= own.accounts.firstOrNull?.id;
     // Another statement: nothing of the last one carries over.
     _read = read;
@@ -254,14 +262,15 @@ class _StatementPageState extends State<StatementPage> {
           fresh[i],
     ];
     // A line that went from new to already there, or the other way, or
-    // that now waits for the account that paid it, takes what is proposed
-    // now.
+    // that now waits for the account that paid it, or got its card, takes
+    // what is proposed now.
     final List<ImportCandidate> before = _candidates;
     bool kept(int i) =>
         before.length == all.length &&
         before[i].isNew == all[i].isNew &&
         before[i].waitsForAccount == all[i].waitsForAccount &&
-        before[i].paidFromNowhere == all[i].paidFromNowhere;
+        before[i].paidFromNowhere == all[i].paidFromNowhere &&
+        before[i].cardMissing == all[i].cardMissing;
     final Set<int> chosen = <int>{
       for (var i = 0; i < all.length; i++)
         if (kept(i) ? _chosen.contains(i) : all[i].proposed) i,
@@ -392,6 +401,12 @@ class _StatementPageState extends State<StatementPage> {
   }) {
     final Asset? base = own.profile?.base;
     if (account.kind == AccountKind.card) {
+      if (before == after && included) {
+        return l.statementDebtSame(
+          account.name,
+          moneyText(-before, base: base),
+        );
+      }
       return l.statementDebtEffect(
         account.name,
         moneyText(-before, base: base),
@@ -421,6 +436,47 @@ class _StatementPageState extends State<StatementPage> {
     return l.statementFreeChange(side(before), side(after));
   }
 
+  /// Adds the card the statement pays, at its bank and in its currency:
+  /// read again, its payment goes to it, as a move and not as spending.
+  Future<void> _addCard() async {
+    final Account? account = _account;
+    if (account == null) return;
+    // Named by the brand its payment says, when it says one.
+    final String said =
+        ' ${normalize(<String>[for (final ImportCandidate c in _candidates)
+          if (c.cardMissing) c.line.description].join(' '))} ';
+    final String? brand = const <String>[
+      'visa',
+      'mastercard',
+      'amex',
+      'diners',
+    ].where((String b) => said.contains(' $b ')).firstOrNull;
+    final Account? card = await showAccountSheet(
+      context,
+      own: own,
+      draft: AccountDraft(
+        name: brand == null
+            ? context.l10n.kindCard
+            : '${brand[0].toUpperCase()}${brand.substring(1)}',
+        kind: AccountKind.card,
+        asset: account.asset,
+        institution: account.institution,
+      ),
+    );
+    if (card == null || !mounted) return;
+    await _prepare();
+    // The lines name the card once the app knows it.
+    if (!own.accounts.any((Account a) => a.id == card.id)) {
+      void known() {
+        if (!own.accounts.any((Account a) => a.id == card.id)) return;
+        own.removeListener(known);
+        if (mounted) setState(() {});
+      }
+
+      own.addListener(known);
+    }
+  }
+
   /// Opens line [i] to change what it is recorded as.
   Future<void> _review(int i) async {
     final Account? account = _account;
@@ -439,7 +495,8 @@ class _StatementPageState extends State<StatementPage> {
     if (changed == null || !mounted) return;
     // A payment that waited for its account is checked once it has one,
     // or once the person said what it is.
-    bool waits(ImportCandidate c) => c.waitsForAccount || c.paidFromNowhere;
+    bool waits(ImportCandidate c) =>
+        c.waitsForAccount || c.paidFromNowhere || c.cardMissing;
     final bool placed =
         waits(_candidates[i]) && !waits(changed) && changed.isNew;
     _edited[i] = changed;
@@ -550,6 +607,19 @@ class _StatementPageState extends State<StatementPage> {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
       children: <Widget>[
         Text(l.statementNothing, style: context.type.titleMedium),
+        // What the file held, and what the app reads.
+        if (_read case final StatementRead read
+            when _problem == null) ...<Widget>[
+          const SizedBox(height: 4),
+          Text(
+            read.titles && read.rows <= 1
+                ? l.statementNothingTitles
+                : l.statementNothingRows(read.rows),
+            style: context.type.bodyMedium,
+          ),
+          const SizedBox(height: 4),
+          Text(l.statementFormats, style: context.type.bodySmall),
+        ],
         if (_problem != null) ...<Widget>[
           const SizedBox(height: 8),
           Text(
@@ -823,14 +893,27 @@ class _StatementPageState extends State<StatementPage> {
           (account?.kind == AccountKind.card ||
               _accountOf(c.otherAccountId)?.kind == AccountKind.card);
     });
-    // Card payments with no card to move them to.
-    final bool cardless =
-        account?.kind != AccountKind.card &&
-        !hasCards &&
-        all.any(
+    // Card payments with no card in the app to move them to.
+    final bool cardless = all.any(
+      (ImportCandidate c) => c.isNew && c.cardMissing,
+    );
+    // What is new and needs the person before it goes in: a payment that
+    // waits for its account or its card, or one that may be a card's.
+    final int review = all
+        .where(
           (ImportCandidate c) =>
-              c.proposed && c.cardPayment && c.kind != EntryKind.transfer,
-        );
+              c.isNew &&
+              (c.waitsForAccount ||
+                  c.paidFromNowhere ||
+                  c.cardMissing ||
+                  (c.cardPayment && c.kind != EntryKind.transfer && askCard)),
+        )
+        .length;
+    // Checked as proposed: the new ones, and nothing else.
+    final bool justNew =
+        _chosen.isNotEmpty &&
+        _chosen.length == newOnes.length &&
+        _chosen.containsAll(newOnes);
     final List<ImportCandidate> chosen = <ImportCandidate>[
       for (final int i in _chosen.toList()..sort()) all[i],
     ];
@@ -924,10 +1007,35 @@ class _StatementPageState extends State<StatementPage> {
                 onChanged: _saving
                     ? null
                     : (String? id) {
-                        setState(() => _accountId = id);
+                        setState(() {
+                          _accountId = id;
+                          _guessedAccount = false;
+                        });
                         _prepare();
                       },
               ),
+              // Taken as the first account only because the file names no
+              // bank: worth a look before anything goes in.
+              if (_guessedAccount) ...<Widget>[
+                const SizedBox(height: 6),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Icon(
+                      Glyph.warningCircle,
+                      size: 16,
+                      color: context.colors.caution,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        l.statementAccountGuessed,
+                        style: context.type.bodySmall,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 16),
               if (dates.isNotEmpty)
                 Text(
@@ -938,15 +1046,24 @@ class _StatementPageState extends State<StatementPage> {
                   style: context.type.titleSmall,
                 ),
               const SizedBox(height: 4),
+              // What the person has to look at first, then what the new
+              // ones are.
               Text(
                 <String>[
                   l.statementNew(fresh),
                   l.statementAlready(recorded),
-                  if (unsorted > 0) l.statementUnsorted(unsorted),
-                  if (between > 0) l.statementBetweenAccounts(between),
+                  if (review > 0) l.statementNeedsReview(review),
                 ].join(' · '),
                 style: context.type.bodyMedium,
               ),
+              if (unsorted > 0 || between > 0)
+                Text(
+                  <String>[
+                    if (unsorted > 0) l.statementUnsorted(unsorted),
+                    if (between > 0) l.statementBetweenAccounts(between),
+                  ].join(' · '),
+                  style: context.type.bodySmall,
+                ),
               if (cardMoves)
                 Text(l.statementTransferNote, style: context.type.bodySmall),
               if (waiting > 0)
@@ -963,13 +1080,23 @@ class _StatementPageState extends State<StatementPage> {
                     color: context.colors.caution,
                   ),
                 ),
-              if (cardless)
+              if (cardless) ...<Widget>[
                 Text(
-                  l.statementAddCard,
+                  l.statementCardMissing,
                   style: context.type.bodySmall?.copyWith(
                     color: context.colors.caution,
                   ),
                 ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: _saving ? null : _addCard,
+                    style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                    icon: const Icon(Glyph.plus, size: 16),
+                    label: Text(l.statementAddCardButton),
+                  ),
+                ),
+              ],
               if (recorded > 0 && repeatsChosen == 0)
                 Text(
                   l.statementAlreadyUnchecked,
@@ -1085,7 +1212,11 @@ class _StatementPageState extends State<StatementPage> {
                             Text(l.statementImporting),
                           ],
                         )
-                      : Text(l.statementImport(_chosen.length)),
+                      : Text(
+                          justNew
+                              ? l.statementImportNew(_chosen.length)
+                              : l.statementImport(_chosen.length),
+                        ),
                 ),
               ],
             ),
@@ -1135,8 +1266,19 @@ class _CandidateRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
     final ImportCandidate c = candidate;
+    final Entry? match = c.match;
+    // What was already there says which movement it is, to check it.
     final String? badge = c.importedBefore
         ? l.statementImportedBefore
+        : match != null
+        ? l.statementRecordedAs(
+            <String>[
+              if (match.payee.isNotEmpty) match.payee,
+              if (!DateUtils.isSameDay(match.date, c.line.date))
+                dayShortMonth(match.date),
+              ?_origin(l, match),
+            ].join(', '),
+          )
         : c.recorded
         ? l.statementRecorded
         : null;
@@ -1211,6 +1353,8 @@ class _CandidateRow extends StatelessWidget {
               TextSpan(text: ' · $move')
             else if (waits)
               TextSpan(text: ' · ${l.statementPaidFrom}', style: caution)
+            else if (c.cardMissing)
+              TextSpan(text: ' · ${l.statementCardMissingLine}', style: caution)
             else if (category != null)
               TextSpan(
                 text:
@@ -1237,6 +1381,14 @@ class _CandidateRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// How [entry] came to be in the account, in lower case to go inside a
+/// line: «anotado a mano», «de una notificación».
+String? _origin(AppLocalizations l, Entry entry) {
+  final String? said = entryOrigin(l, entry)?.$2;
+  if (said == null || said.isEmpty) return null;
+  return '${said[0].toLowerCase()}${said.substring(1)}';
 }
 
 /// What one line of the statement is recorded as: an expense or an income
@@ -1276,23 +1428,37 @@ class _LineSheetState extends State<_LineSheet> {
   /// payment.
   late String? _other =
       c.otherAccountId ??
-      (widget.account.kind != AccountKind.card && c.line.amount < Decimal.zero
-              ? _others
-                    .where((Account a) => a.kind == AccountKind.card)
-                    .firstOrNull
-              : widget.account.kind == AccountKind.card &&
-                    c.line.amount > Decimal.zero
-              ? _others
-                    .where(
-                      (Account a) =>
-                          a.spendable &&
-                          (a.kind == AccountKind.bank ||
-                              a.kind == AccountKind.wallet),
-                    )
-                    .firstOrNull
-              : null)
-          ?.id ??
+      _sameBankFirst(
+        widget.account.kind != AccountKind.card && c.line.amount < Decimal.zero
+            ? <Account>[
+                for (final Account a in _others)
+                  if (a.kind == AccountKind.card) a,
+              ]
+            : widget.account.kind == AccountKind.card &&
+                  c.line.amount > Decimal.zero
+            ? <Account>[
+                for (final Account a in _others)
+                  if (a.spendable &&
+                      (a.kind == AccountKind.bank ||
+                          a.kind == AccountKind.wallet))
+                    a,
+              ]
+            : const <Account>[],
+      )?.id ??
       _others.firstOrNull?.id;
+
+  /// Of [fits], the one at the bank of the statement's account, which most
+  /// likely paid its card or got paid by it; or else the first.
+  Account? _sameBankFirst(List<Account> fits) =>
+      fits
+          .where(
+            (Account a) =>
+                widget.account.institution.trim().isNotEmpty &&
+                normalize(a.institution) ==
+                    normalize(widget.account.institution),
+          )
+          .firstOrNull ??
+      fits.firstOrNull;
 
   /// The line's amount as what it is recorded as: money out for an
   /// expense, money in for an income, as the statement says for a move.
@@ -1374,6 +1540,35 @@ class _LineSheetState extends State<_LineSheet> {
                 style: context.type.bodyMedium,
               ),
             ),
+            // What it was taken for, to check before leaving it out.
+            if (c.match case final Entry match) ...<Widget>[
+              const SizedBox(height: 16),
+              Text(l.statementMatches, style: context.type.labelMedium),
+              const SizedBox(height: 4),
+              Text(
+                <String>[
+                  if (match.payee.isNotEmpty) match.payee,
+                  shortDate(match.date),
+                  ?own.snapshot?.account(match.accountId)?.name,
+                  moneyText(
+                    Money(match.amount, widget.account.asset),
+                    base: own.profile?.base,
+                    signed: true,
+                  ),
+                  ?entryOrigin(l, match)?.$2,
+                ].join(' · '),
+                style: context.type.bodyMedium,
+              ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: () =>
+                      showEntrySheet(context, own: own, entry: match),
+                  style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                  child: Text(l.statementSeeEntry),
+                ),
+              ),
+            ],
             const SizedBox(height: 20),
             SegmentedButton<EntryKind>(
               segments: <ButtonSegment<EntryKind>>[

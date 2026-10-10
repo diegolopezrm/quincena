@@ -303,6 +303,57 @@ void main() {
     });
   });
 
+  group('rent seen once', () {
+    Future<OwnController> open(WidgetTester tester) => openPage(
+      tester,
+      (OwnController own) => CommitmentsPage(own: own),
+      data: (QuincenaStore store, Account bank, _) async {
+        await store.addEntry(
+          accountId: bank.id,
+          amount: d('1200000'),
+          kind: EntryKind.expense,
+          date: DateTime(2026, 9, 16),
+          category: 'housing',
+          payee: 'Arriendo septiembre',
+        );
+      },
+    );
+
+    testWidgets('is offered as a fixed payment, by its name', (tester) async {
+      await open(tester);
+      expect(find.text('PARECEN PAGOS FIJOS'), findsOneWidget);
+      expect(find.text('Arriendo'), findsOneWidget);
+      expect(
+        find.text(
+          'Un pago de ${pesos(1200000)} el 16 de septiembre: suele '
+          'repetirse cada mes.',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('is asked about before saying there are none', (tester) async {
+      final OwnController own = await open(tester);
+      expect(own.provisional, isTrue);
+      await tapText(tester, 'No tengo pagos fijos');
+      expect(find.text('¿Y Arriendo?'), findsOneWidget);
+      // «Agregarlo» opens it to add, already filled.
+      await tapText(tester, 'Agregarlo');
+      expect(find.widgetWithText(TextField, 'Arriendo'), findsOneWidget);
+      Navigator.of(tester.element(find.text('Guardar'))).pop();
+      await settle(tester);
+      expect(own.provisional, isTrue);
+
+      // Said again, and that it is not fixed: it goes, and so does the
+      // provisional figure.
+      await tapText(tester, 'No tengo pagos fijos');
+      await tapText(tester, 'No es fijo');
+      expect(own.provisional, isFalse);
+      expect(own.detective.notRecurring, contains('arriendo'));
+      expect(find.text('PARECEN PAGOS FIJOS'), findsNothing);
+    });
+  });
+
   group('instalments', () {
     Future<void> fill(
       WidgetTester tester, {

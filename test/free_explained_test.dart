@@ -312,9 +312,18 @@ void main() {
     );
     await tester.tap(find.widgetWithText(FilledButton, 'Registrar'));
     await settle(tester);
-    // Money that came in, without asking what happened.
+    // Money that came in, without asking what happened, filled with what
+    // the app knows: the pay, on its day.
     expect(find.text('Me entró plata'), findsOneWidget);
     expect(find.text('¿Qué pasó?'), findsNothing);
+    expect(
+      tester
+          .widget<TextField>(find.widgetWithText(TextField, 'Monto'))
+          .controller!
+          .text,
+      '2.400.000',
+    );
+    expect(find.textContaining('30 sept 2026'), findsOneWidget);
     Navigator.of(tester.element(find.text('Me entró plata'))).pop();
     await settle(tester);
 

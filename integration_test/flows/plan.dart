@@ -698,10 +698,24 @@ final List<AppFlow> planFlows = <AppFlow>[
         },
       );
       await f.tap('Cobrado');
+      await f.check(
+        'Con «Cobrado», el ingreso de Agencia Uno ya viene elegido',
+        () {
+          final DropdownButtonFormField<String?> arrived = f.tester
+              .widget<DropdownButtonFormField<String?>>(
+                find.byType(DropdownButtonFormField<String?>),
+              );
+          final Entry e = own.snapshot!.entries.firstWhere(
+            (Entry e) => e.id == arrived.initialValue,
+          );
+          expect(e.payee, startsWith('Agencia Uno'));
+        },
+      );
       await f.tapFound(find.byType(DropdownButtonFormField<String?>));
       await f.step(
-        'Con «Cobrado» aparece «¿Con qué movimiento llegó?»: se elige entre '
-        'los ingresos de los últimos 90 días.',
+        'Con «Cobrado» aparece «¿Con qué movimiento llegó?», con el ingreso '
+        'de Agencia Uno ya elegido; la lista trae los ingresos de los últimos '
+        '90 días y «Ninguno, o no está en Quincena».',
       );
       await f.tapFound(find.textContaining('Agencia Uno ·').last);
       await f.tapFound(find.textContaining('Cobrado el').last);
@@ -1853,12 +1867,13 @@ final List<AppFlow> planFlows = <AppFlow>[
       await f.tap('Pagos fijos');
       await f.step(
         '«Pagos fijos»: arriba lo que viene en 30 días; «Parecen pagos fijos» '
-        'trae Claro y Spotify, con los cobros que los delatan.',
+        'trae el Arriendo, pagado una vez el 5 de septiembre, y Claro y '
+        'Spotify, con los cobros que los delatan.',
       );
-      await f.check('La app sugiere Claro y Spotify', () {
+      await f.check('La app sugiere el Arriendo, Claro y Spotify', () {
         expect(
           own.recurringGuesses.map((RecurringGuess g) => g.name),
-          containsAll(<String>['Claro', 'Spotify']),
+          containsAll(<String>['Arriendo', 'Claro', 'Spotify']),
         );
       });
       await _tapTextBy(f, 'Claro', 'No es fijo');
@@ -1900,7 +1915,9 @@ final List<AppFlow> planFlows = <AppFlow>[
         expect(r.cadence, Cadence.monthly);
         expect(r.nextDate, DateTime(2026, 10, 5));
         expect(r.category, 'subscriptions');
-        expect(own.recurringGuesses, isEmpty);
+        expect(own.recurringGuesses.map((RecurringGuess g) => g.name), <String>[
+          'Arriendo',
+        ]);
       });
       await f.check(
         'Como cobra antes del pago, lo que puedes gastar baja 16.900: de '
@@ -2238,12 +2255,21 @@ final List<AppFlow> planFlows = <AppFlow>[
       await _openPlan(f);
       await f.tap('Pagos fijos');
       await f.step(
-        '«Pagos fijos» vacío: «Aún no tienes pagos fijos» y el botón «No tengo '
-        'pagos fijos».',
+        '«Pagos fijos» sin ninguno guardado: propone el Arriendo, que pagaste '
+        'el 5 de septiembre, y ofrece el botón «No tengo pagos fijos».',
       );
       await f.tap('No tengo pagos fijos');
       await f.step(
-        'Con un toque el botón desaparece y abajo confirma: «Listo. Lo que '
+        'Antes de aceptarlo, la app pregunta «¿Y Arriendo?»: suele repetirse '
+        'cada mes. Aquí no es fijo.',
+      );
+      await f.check('Pregunta por el arriendo que ve en tus gastos', () {
+        expect(f.shows('¿Y Arriendo?'), isTrue);
+        expect(own.provisional, isTrue);
+      });
+      await f.tap('No es fijo');
+      await f.step(
+        'Con «No es fijo» el botón desaparece y abajo confirma: «Listo. Lo que '
         'puedes gastar ya no es provisional.»',
       );
       await f.check('La respuesta quedó guardada', () {

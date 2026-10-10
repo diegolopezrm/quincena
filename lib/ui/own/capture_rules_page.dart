@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../capture/inbox.dart';
 import '../../domain/records.dart';
 import '../../l10n/l10n.dart';
+import '../../money/asset.dart';
 import '../../own/own_controller.dart';
 import '../../own/undo.dart';
 import '../../theme/tokens.dart';
@@ -98,6 +99,17 @@ class _RuleRow extends StatelessWidget {
 
   Future<void> _change(BuildContext context) async {
     final AppLocalizations l = context.l10n;
+    final Asset base = own.profile?.base ?? Asset.cop;
+    // The everyday accounts in pesos come first; a card only for a card's
+    // digits. The rest, crypto and other currencies, go apart.
+    bool likely(Account a) =>
+        a.spendable &&
+        a.asset == base &&
+        (rule.kind == RuleKind.card || a.kind != AccountKind.card);
+    final List<Account> accounts = <Account>[
+      for (final Account a in own.accounts)
+        if (!a.archived) a,
+    ];
     final List<(String, String)> choices = rule.kind == RuleKind.merchant
         ? <(String, String)>[
             for (final CategoryItem c in own.categories)
@@ -105,9 +117,26 @@ class _RuleRow extends StatelessWidget {
                 (c.key, categoryNameFor(context, c.key, own.categories)),
           ]
         : <(String, String)>[
-            for (final Account a in own.accounts)
-              if (!a.archived) (a.id, a.name),
+            for (final Account a in accounts)
+              if (likely(a)) (a.id, a.name),
           ];
+    final List<(String, String)> others = rule.kind == RuleKind.merchant
+        ? const <(String, String)>[]
+        : <(String, String)>[
+            for (final Account a in accounts)
+              if (!likely(a)) (a.id, a.name),
+          ];
+    Widget option(BuildContext context, (String, String) choice) =>
+        SimpleDialogOption(
+          onPressed: () => Navigator.of(context).pop(choice.$1),
+          child: Row(
+            children: <Widget>[
+              Expanded(child: Text(choice.$2)),
+              if (choice.$1 == rule.target)
+                Icon(Glyph.check, size: 18, color: context.colors.brand),
+            ],
+          ),
+        );
     final String? picked = await showDialog<String>(
       context: context,
       builder: (BuildContext context) => SimpleDialog(
@@ -117,17 +146,14 @@ class _RuleRow extends StatelessWidget {
               : l.ruleChooseAccount,
         ),
         children: <Widget>[
-          for (final (String value, String name) in choices)
-            SimpleDialogOption(
-              onPressed: () => Navigator.of(context).pop(value),
-              child: Row(
-                children: <Widget>[
-                  Expanded(child: Text(name)),
-                  if (value == rule.target)
-                    Icon(Glyph.check, size: 18, color: context.colors.brand),
-                ],
-              ),
+          for (final (String, String) c in choices) option(context, c),
+          if (others.isNotEmpty) ...<Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 4),
+              child: Text(l.pickAccountOthers, style: context.type.labelMedium),
             ),
+            for (final (String, String) c in others) option(context, c),
+          ],
         ],
       ),
     );
@@ -139,10 +165,11 @@ class _RuleRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l = context.l10n;
     final String target = ruleTarget(context, own, rule);
+    final String subject = ruleSubject(context, own, rule);
     return ListTile(
       contentPadding: const EdgeInsets.fromLTRB(16, 4, 4, 4),
       onTap: () => _change(context),
-      title: Text(ruleSubject(context, rule), style: context.type.titleSmall),
+      title: Text(subject, style: context.type.titleSmall),
       subtitle: Text(
         '→ $target',
         style: context.type.bodySmall?.copyWith(
@@ -153,7 +180,7 @@ class _RuleRow extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Semantics(
-            label: '${l.ruleOn}: ${ruleSubject(context, rule)}',
+            label: '${l.ruleOn}: $subject',
             child: Switch(
               value: rule.enabled,
               onChanged: (bool on) => _save(

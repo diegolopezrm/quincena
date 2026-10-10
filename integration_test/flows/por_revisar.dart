@@ -1,5 +1,6 @@
 // Flows of Por revisar y captura (07), Importar extracto (08).
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
@@ -9,8 +10,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quincena/capture/capture_service.dart';
 import 'package:quincena/capture/event.dart';
 import 'package:quincena/capture/inbox.dart';
+import 'package:quincena/domain/freelance.dart';
 import 'package:quincena/domain/pay_schedule.dart';
 import 'package:quincena/domain/records.dart';
+import 'package:quincena/domain/shared.dart';
 import 'package:quincena/format/money.dart';
 import 'package:quincena/money/asset.dart';
 import 'package:quincena/money/money.dart';
@@ -112,6 +115,23 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
           contains('Detectamos Davivienda, pero no tienes una cuenta'),
         );
       });
+      await f.check('Cada tarjeta dice qué es o qué le falta', () async {
+        Future<void> says(String payee, String state) async {
+          await f.reveal(_card(payee));
+          expect(
+            find.descendant(of: _card(payee), matching: find.text(state)),
+            findsOneWidget,
+          );
+        }
+
+        await says('Rappi', 'Lista para registrar');
+        await says('Laura Gómez', 'Lista para registrar');
+        await says('Éxito Laureles', 'Falta elegir la cuenta');
+        await says('Claro', 'Falta elegir la cuenta');
+        await says('Falabella', 'Falta elegir la cuenta');
+        await says('Spotify', 'Posible repetido');
+        await f.top();
+      });
       await f.check('El repetido apunta al Spotify que ya estaba anotado', () {
         final InboxItem spotify = own.inbox.firstWhere(
           (InboxItem i) => i.status == InboxStatus.duplicate,
@@ -204,6 +224,22 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
           expect(s.rules.length, rules + 2);
         },
       );
+      await f.check(
+        'El aviso escribe «Laura Gómez» con tilde y nombra las dos reglas',
+        () {
+          expect(
+            own.captureSettings.merchantNames['laura gomez'],
+            'Laura Gómez',
+          );
+          expect(
+            f.screenText,
+            contains(
+              'Ingreso registrado en Nequi. Desde ahora, «Laura Gómez» va a '
+              'Otros ingresos y lo de Nequi va a Nequi.',
+            ),
+          );
+        },
+      );
       await f.back();
       await f.step(
         'De vuelta en Inicio: ${_headline(own)}, con los \$85.000 de Laura, '
@@ -261,8 +297,9 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       );
       await f.tapTip('Por revisar');
       await f.step(
-        'La compra en Éxito Laureles dice «Falta la cuenta»: Bancolombia '
-        'avisó con la tarjeta *1234, que aún no es de ninguna cuenta.',
+        'La compra en Éxito Laureles dice «Falta elegir la cuenta»: '
+        'Bancolombia avisó con la tarjeta *1234, que aún no es de ninguna '
+        'cuenta.',
       );
       await _tapOn(f, 'Éxito Laureles', 'Elegir la cuenta');
       await f.step(
@@ -294,8 +331,18 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.tap('Bancolombia');
       await f.step(
         'Elegida Bancolombia, el aviso dice «Gasto registrado en Bancolombia» '
-        'y lo que aprendió del comercio, con una regla más.',
+        'y nombra lo que aprendió: «Éxito Laureles» va a Mercado y la tarjeta '
+        '*1234 va a Bancolombia.',
       );
+      await f.check('El aviso nombra las dos reglas, con la tilde de Éxito', () {
+        expect(
+          f.screenText,
+          contains(
+            'Gasto registrado en Bancolombia. Desde ahora, «Éxito Laureles» va '
+            'a Mercado y la tarjeta *1234 va a Bancolombia.',
+          ),
+        );
+      });
       await f.check(
         'Quedó un gasto de \$63.200 en Bancolombia, en Mercado',
         () {
@@ -372,25 +419,29 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       final int rules = own.captureSettings.rules.length;
       await f.tapTip('Por revisar');
       await _paste(f, r'Nequi: Recibiste $200.000 de Diego Lopez');
-      await f.step(
-        'El aviso de Nequi, pegado con «Leer un pago», quedó como ingreso de '
-        '\$200.000 con «¿Viene de otra cuenta tuya?» debajo.',
-      );
       await _hideNotice(f);
-      await _tapOn(f, 'Diego Lopez', '¿Viene de otra cuenta tuya?');
+      await f.top();
       await f.step(
-        'La hoja abre como «Transferencia»: Nequi va en «Hacia» y en «Desde» '
-        'propone Bancolombia. El botón dice «Registrar transferencia».',
+        'El aviso de Nequi, pegado con «Leer un pago», lo envió Diego Lopez, '
+        'que eres tú: la tarjeta dice «Bancolombia → Nequi», «Entre tus '
+        'cuentas» y «La enviaste tú: no es un ingreso.»',
       );
-      await f.check('La hoja propone Bancolombia → Nequi', () {
-        expect(f.shows('Registrar transferencia'), isTrue);
-        expect(_menuShows('Desde', 'Bancolombia'), isTrue);
-        expect(_menuShows('Hacia', 'Nequi'), isTrue);
+      await f.check('Propone la transferencia Bancolombia → Nequi', () {
+        expect(f.shows('Bancolombia → Nequi'), isTrue);
+        expect(f.shows('La enviaste tú: no es un ingreso.'), isTrue);
+        expect(
+          find.descendant(
+            of: _card('Bancolombia → Nequi'),
+            matching: find.text('Registrar transferencia'),
+          ),
+          findsOneWidget,
+        );
       });
-      await f.tap('Registrar transferencia');
+      await _tapOn(f, 'Bancolombia → Nequi', 'Registrar transferencia');
       await f.step(
-        'Registrada: el aviso dice «Transferencia registrada.» y la tarjeta '
-        'salió de Por revisar.',
+        'Un solo toque en «Registrar transferencia»: el aviso dice '
+        '«Transferencia registrada de Bancolombia a Nequi.» y la tarjeta salió '
+        'de Por revisar.',
       );
       await f.check('Salieron \$200.000 de Bancolombia y llegaron a Nequi', () {
         expect(
@@ -408,6 +459,10 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
               e,
         ];
         expect(legs, hasLength(2));
+        expect(
+          f.screenText,
+          contains('Transferencia registrada de Bancolombia a Nequi.'),
+        );
       });
       await f.check(
         'No cuenta como ingreso: lo que puedes gastar no cambió',
@@ -459,9 +514,36 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.tapTip('Por revisar');
       await f.reveal(_card('Spotify'));
       await f.step(
-        'En «Posibles repetidos», Spotify por US\$10,99 dice «El mismo pago ya '
-        'llegó por otra vía.»: el otro lo anotaste a mano, pero no dice cuál.',
+        'En «Posibles repetidos», Spotify por US\$10,99 dice con qué choca: '
+        '«Ya está: Spotify · US\$10,99 · 2 oct · Cuenta en dólares · anotado '
+        'a mano». «Quitar repetido» va primero.',
       );
+      await f.check('La tarjeta dice cuál es el otro, el anotado a mano', () {
+        expect(
+          f.shows(
+            'Ya está: Spotify · US\$10,99 · 2 oct · Cuenta en dólares · '
+            'anotado a mano',
+          ),
+          isTrue,
+        );
+        expect(
+          find.descendant(
+            of: _card('Spotify'),
+            matching: find.widgetWithText(FilledButton, 'Quitar repetido'),
+          ),
+          findsOneWidget,
+        );
+      });
+      await _tapOn(f, 'Spotify', 'Posible repetido');
+      await f.step(
+        'Tocar esa línea abre el Spotify que ya estaba, «Anotado a mano», para '
+        'comprobarlo antes de quitar el repetido.',
+      );
+      await f.check('Se abre el movimiento con el que choca', () {
+        expect(f.shows('Editar movimiento'), isTrue);
+        expect(f.shows('Anotado a mano'), isTrue);
+      });
+      await f.back();
       await _openMenu(f, 'Spotify');
       await f.step(
         'Su menú «⋮» tiene «Detalles de detección» y «Descartar»: un SMS no '
@@ -481,10 +563,11 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         expect(find.textContaining('SMS · Bancolombia'), findsOneWidget);
       });
       await _openMenu(f, 'Spotify');
-      await f.tap('Descartar');
+      await f.back();
+      await _tapOn(f, 'Spotify', 'Quitar repetido');
       await f.step(
-        'Con «Descartar» el repetido sale de la lista y no se anota nada '
-        'nuevo; abajo «Se descartó Spotify.» ofrece «Deshacer».',
+        'Con «Quitar repetido» el repetido sale de la lista y no se anota '
+        'nada nuevo; abajo «Se descartó Spotify.» ofrece «Deshacer».',
       );
       await f.check('La captura quedó descartada', () async {
         final List<InboxItem> all = (await f.tester.runAsync(
@@ -529,8 +612,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.tapTip('Por revisar');
       await f.reveal(_card('Spotify'));
       await f.step(
-        'Spotify espera en «Posibles repetidos» con un solo botón a la vista: '
-        '«No es repetido».',
+        'Spotify espera en «Posibles repetidos»: «Quitar repetido» va primero '
+        'y «No es repetido» al lado, para cuando son dos cobros distintos.',
       );
       await _tapOn(f, 'Spotify', 'No es repetido');
       await f.top();
@@ -602,7 +685,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.tap('Bancolombia');
       await f.step(
         'Con Bancolombia elegida, el aviso dice «Gasto registrado en '
-        'Bancolombia» y lo que aprendió: Claro va a Servicios y una regla más.',
+        'Bancolombia» y lo que aprendió: «Claro» va a Servicios y lo de '
+        'Bancolombia va a Bancolombia.',
       );
       await f.check('Quedó el pago de Claro en Bancolombia', () {
         final Entry e = own.snapshot!.entries.firstWhere(
@@ -621,24 +705,24 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await _hideNotice(f);
       await f.top();
       await f.step(
-        'La compra de Éxito Laureles, que esperaba con la tarjeta *1234, pasa '
-        'sola a «Listos para registrar» con Bancolombia: lo que aprendió del '
-        'banco le llega.',
+        'La compra de Éxito Laureles, con la tarjeta *1234, sigue pidiendo la '
+        'cuenta: lo que aprendió del banco no decide por una tarjeta que la '
+        'app no conoce, porque en Bancolombia también tienes la Visa.',
       );
       await f.check(
-        'Éxito Laureles, que esperaba, ya va a Bancolombia sin preguntar',
+        'La regla del banco no toma la tarjeta *1234, que podría ser la Visa',
         () {
           final InboxItem exito = own.pendingInbox.firstWhere(
             (InboxItem i) => _payee(i) == 'Éxito Laureles',
           );
-          expect(exito.suggestion.accountId, bank.id);
-          expect(exito.suggestion.why.first, 'institution');
-          expect(CaptureService.isReady(exito, own.accounts), isTrue);
-          expect(find.textContaining('falta asociarla'), findsNothing);
+          expect(exito.parsed.card, '1234');
+          expect(exito.suggestion.accountId, isNull);
+          expect(CaptureService.isReady(exito, own.accounts), isFalse);
+          expect(find.textContaining('falta asociarla'), findsOneWidget);
           expect(
             find.descendant(
               of: _card('Éxito Laureles'),
-              matching: find.text('Registrar gasto'),
+              matching: find.text('Elegir la cuenta'),
             ),
             findsOneWidget,
           );
@@ -701,9 +785,9 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       });
       await f.tap('Dejar de leer');
       await f.step(
-        'Con «Dejar de leer» se va la compra: arriba dice «Todo al día.» '
-        'aunque el posible repetido sigue abajo, y el aviso dice que ya no se '
-        'leen las notificaciones de Bancolombia.',
+        'Con «Dejar de leer» se va la compra: arriba dice «Nada por '
+        'registrar.» y que queda un posible repetido por mirar, abajo; el '
+        'aviso dice que ya no se leen las notificaciones de Bancolombia.',
       );
       await f.check('La app de Bancolombia quedó silenciada', () {
         final CaptureSettings s = own.captureSettings;
@@ -798,8 +882,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       );
       await f.tapFound(find.text('Registrar gasto'));
       await f.step(
-        'Registrado: el aviso dice que desde ahora «Exito Laureles» va a '
-        'Restaurantes, y una regla más (la tarjeta *1234).',
+        'Registrado: el aviso dice que desde ahora «Éxito Laureles» va a '
+        'Restaurantes y la tarjeta *1234 va a Bancolombia.',
       );
       await f.check('El gasto quedó como lo corregiste, con la nota', () {
         final Entry e = own.snapshot!.entries.firstWhere(
@@ -991,9 +1075,24 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.top();
       await f.step(
         'Con el chulo de Tienda La Esquina quedan 5: vuelven a ser tarjetas, '
-        'y arriba dice «Registrar 3 de los 4 listos» porque Laura no tiene '
-        'categoría segura.',
+        'y arriba dice «Registrar 3 de los 4 listos» y, debajo, que Laura '
+        'Gómez queda por fuera porque no reconocimos su categoría.',
       );
+      await f.check('Dice cuál de los listos queda por fuera, y por qué', () {
+        expect(
+          f.shows('Queda por fuera Laura Gómez: no reconocimos su categoría.'),
+          isTrue,
+        );
+        expect(
+          find.descendant(
+            of: _card('Laura Gómez'),
+            matching: find.text(
+              'No reconocimos la categoría: quedaría en Otros ingresos.',
+            ),
+          ),
+          findsOneWidget,
+        );
+      });
       await f.check('Tienda La Esquina quedó en Otros, en Nequi', () {
         final Entry e = made().firstWhere(
           (Entry e) => e.payee == 'Tienda La Esquina',
@@ -1040,19 +1139,31 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         () => expect(own.ledger!.freeUntilPayday, free + net),
       );
       await _hideNotice(f);
+      await f.check(
+        'Falabella, de un banco sin cuenta en la app, ofrece agregarla',
+        () {
+          expect(accountsAt('Davivienda', own.accounts), isEmpty);
+          expect(
+            find.descendant(
+              of: _card('Falabella'),
+              matching: find.text('Agregar mi cuenta de Davivienda'),
+            ),
+            findsOneWidget,
+          );
+        },
+      );
       await _tapOn(f, 'Falabella', 'Elegir la cuenta');
       await f.step(
         'Falabella llegó de Davivienda, donde no tienes cuenta: «Elegir la '
-        'cuenta» solo ofrece las que ya tienes y promete mandar ahí todo lo de '
-        'Davivienda.',
+        'cuenta» ofrece las que ya tienes, sin prometer mandar a una de ellas '
+        'todo lo de Davivienda.',
       );
-      await f.check('La hoja promete una regla para un banco sin cuenta', () {
-        expect(
-          f.shows('La próxima vez, lo de Davivienda irá directo a esa cuenta.'),
-          isTrue,
-        );
-        expect(accountsAt('Davivienda', own.accounts), isEmpty);
-      });
+      await f.check(
+        'La hoja no promete una regla para un banco sin cuenta',
+        () {
+          expect(find.textContaining('La próxima vez'), findsNothing);
+        },
+      );
       await f.back();
       await f.check('Cerrar sin elegir no registra Falabella', () {
         expect(own.pendingInbox.map(_payee), <String>['Falabella']);
@@ -1125,7 +1236,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.top();
       await f.step(
         'Un mensaje que no dice si entró o salió: «Quedó en Por revisar.», '
-        'con «No sabemos si es un gasto o un ingreso.» y «Revisar movimiento».',
+        'con «Sin clasificar», «Falta saber si es un gasto o un ingreso» y '
+        '«Revisar movimiento».',
       );
       await f.check('Quedó esperando sin saber si es gasto o ingreso', () {
         final InboxItem i = own.pendingInbox.firstWhere(
@@ -1137,6 +1249,9 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         // «cuenta *5678» is an account's number, not a card's.
         expect(i.parsed.card, isNull);
         expect(i.parsed.account, '5678');
+        // Neither spending nor income yet: no category of either.
+        expect(f.shows('Sin clasificar · Falta la cuenta'), isTrue);
+        expect(f.shows('Falta saber si es un gasto o un ingreso'), isTrue);
       });
       await _hideNotice(f);
       await _tapOn(f, 'Sin comercio', 'Revisar movimiento');
@@ -1181,21 +1296,18 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       );
       await _hideNotice(f);
       await _paste(f, rappi);
-      await f.reveal(find.text('POSIBLES REPETIDOS'));
+      await f.top();
       await f.step(
         'El mismo mensaje pegado otra vez: el aviso dice «Ese pago ya '
-        'estaba.» y la copia queda en «Posibles repetidos», no en los listos.',
+        'estaba.» y no queda una copia por revisar ni por descartar.',
       );
-      await f.check('El mismo mensaje dos veces queda como repetido', () {
+      await f.check('El mismo mensaje dos veces se lee una sola vez', () {
         final List<InboxItem> same = <InboxItem>[
           for (final InboxItem i in own.inbox)
             if (i.event.text == rappi) i,
         ];
-        expect(same, hasLength(2));
-        expect(
-          same.where((InboxItem i) => i.status == InboxStatus.duplicate),
-          hasLength(1),
-        );
+        expect(same, hasLength(1));
+        expect(same.single.status, InboxStatus.pending);
         expect(f.shows('Ese pago ya estaba.'), isTrue);
       });
     },
@@ -1275,7 +1387,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.tap('Guardar');
       await f.step(
         'Guardado: la tarjeta sigue en «Registrado automáticamente», ahora '
-        'con Salidas.',
+        'con Salidas; el aviso dice «Desde ahora, «Rappi» va a Salidas…» y la '
+        'tarjeta ya no dice que reconoció Rappi, sino cómo lo registraste.',
       );
       await f.check('El movimiento quedó en Salidas, a la misma hora', () {
         final Entry e = own.snapshot!.entries.firstWhere(
@@ -1284,6 +1397,18 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         expect(e.category, 'leisure');
         expect(e.date, screensNow);
       });
+      await f.check('Corregir la categoría cambió lo aprendido de Rappi', () {
+        expect(own.captureSettings.merchantCategories['rappi'], 'leisure');
+        expect(f.screenText, contains('Desde ahora, «Rappi» va a Salidas'));
+        expect(
+          f.screenText,
+          contains(
+            'Sugerido porque llegó de tu cuenta de Nequi · así registraste '
+            'Rappi antes.',
+          ),
+        );
+      });
+      await _hideNotice(f);
       await _openMenu(f, 'Rappi');
       await f.step(
         'En lo que ya se registró, el menú «⋮» solo trae «Detalles de '
@@ -1383,10 +1508,10 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         'billeteras. La tarjeta *1234, que es débito de Bancolombia, quedó '
         'mal: dice «→ Visa».',
       );
-      await f.tap('Exito Laureles');
+      await f.tap('Éxito Laureles');
       await f.step(
-        'Tocar «Exito Laureles» pregunta «¿A qué categoría va?», con un '
-        'chulo en Mercado, la de ahora.',
+        'Tocar «Éxito Laureles», con su tilde, pregunta «¿A qué categoría '
+        'va?», con un chulo en Mercado, la de ahora.',
       );
       await f.tap('Restaurantes');
       await f.step(
@@ -1411,9 +1536,19 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.tap('Tarjeta *1234');
       await f.step(
         'Tocar «Tarjeta *1234» pregunta «¿A qué cuenta va?», con un chulo en '
-        'Visa, la de ahora; la lista trae todas las cuentas, también Binance '
-        'y Bitcoin.',
+        'Visa, la de ahora; la cuenta en dólares, Binance y Bitcoin van '
+        'aparte, bajo «Otras cuentas».',
       );
+      await f.check('Las cuentas que no gastan en pesos van aparte', () {
+        expect(f.shows('Otras cuentas'), isTrue);
+        double top(String name) => f.tester
+            .getTopLeft(find.widgetWithText(SimpleDialogOption, name))
+            .dy;
+        expect(
+          f.tester.getTopLeft(find.text('Otras cuentas')).dy,
+          allOf(greaterThan(top('Efectivo')), lessThan(top('Binance'))),
+        );
+      });
       await f.check('El chulo está en la cuenta de la regla', () {
         expect(
           find.descendant(
@@ -1482,7 +1617,7 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         expect((await saved()).institutionAccounts, isEmpty);
         expect(f.shows('Regla borrada.'), isTrue);
       });
-      await f.tapFound(_ruleTrash('Exito Laureles'));
+      await f.tapFound(_ruleTrash('Éxito Laureles'));
       await f.tapFound(_ruleTrash('Tarjeta *1234'));
       await f.step(
         'Sin reglas, y con movimientos ya anotados: «No tienes reglas ahora. '
@@ -1591,18 +1726,17 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         expect(i.suggestion.accountId, bank.id);
         expect(i.suggestion.why, contains('only'));
         expect(CaptureService.isReady(i, own.accounts), isFalse);
+        expect(f.shows('Revisa la cuenta'), isTrue);
         expect(
-          f.shows(
-            'Revisa la cuenta: la elegimos por ser tu única de uso diario '
-            'en COP.',
-          ),
+          f.shows('La elegimos por ser tu única cuenta de uso diario en COP.'),
           isTrue,
         );
       });
       await _tapOn(f, 'Farmatodo', 'Registrar gasto');
       await f.step(
         'Con «Registrar gasto» queda en Bancolombia, en Salud, y la lista '
-        'vuelve a «Todo al día.»',
+        'vuelve a «Todo al día.»; el aviso dice que desde ahora lo que no dice '
+        'el banco va a Bancolombia.',
       );
       await f.check('Quedó un gasto de \$27.500 en Bancolombia, en Salud', () {
         final Entry e = own.snapshot!.entries.firstWhere(
@@ -1614,11 +1748,17 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         expect(own.pendingInbox, isEmpty);
       });
       await f.check(
-        'Solo aprendió el comercio: el mensaje no nombra banco',
+        'Aprendió el comercio y que lo que no dice el banco va a Bancolombia',
         () {
           expect(own.captureSettings.merchantCategories['farmatodo'], 'health');
-          expect(own.captureSettings.institutionAccounts, isEmpty);
+          expect(own.captureSettings.institutionAccounts, <String, String>{
+            CaptureService.noBank: bank.id,
+          });
           expect(own.captureSettings.cardAccounts, isEmpty);
+          expect(
+            f.screenText,
+            contains('lo que no dice el banco va a Bancolombia'),
+          );
         },
       );
       await f.back();
@@ -1684,6 +1824,28 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
           expect(f.shows('NECESITAN INFORMACIÓN'), isFalse);
         },
       );
+      await _hideNotice(f);
+      await _paste(f, r'Compraste $9.500 en OXXO');
+      await _hideNotice(f);
+      await f.top();
+      await f.step(
+        'Otra compra sin banco ni tarjeta, en Oxxo, ya no pide revisar la '
+        'cuenta: llega «Lista para registrar» en Bancolombia, por lo que se '
+        'aprendió con Farmatodo.',
+      );
+      await f.check('Lo que no dice el banco llega listo, de un toque', () {
+        final InboxItem oxxo = waiting('Oxxo');
+        expect(oxxo.suggestion.accountId, bank.id);
+        expect(oxxo.suggestion.why, contains('unnamed'));
+        expect(CaptureService.isReady(oxxo, own.accounts), isTrue);
+        expect(
+          find.descendant(
+            of: _card('Oxxo'),
+            matching: find.text('Registrar gasto'),
+          ),
+          findsOneWidget,
+        );
+      });
     },
   ),
   AppFlow(
@@ -1865,7 +2027,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
     data: _sentToNequi,
     manual: <String>[
       'Con las notificaciones reales de Bancolombia y de Nequi por una misma '
-          'transferencia, que la segunda quede en «Posibles repetidos».',
+          'transferencia, que la segunda quede sola con la primera, en '
+          '«Registrado automáticamente».',
     ],
     (FlowRun f) async {
       final OwnController own = f.own;
@@ -1883,60 +2046,36 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         for (final Entry e in own.snapshot!.entries)
           if (e.sourceRef == sent.id) e,
       ];
-      final Finder from = find.ancestor(
-        of: find.text('Desde'),
-        matching: find.byType(DropdownButtonFormField<String>),
-      );
       await f.tapTip('Por revisar');
       await f.step(
-        'El aviso de Bancolombia, «Transferiste \$150.000 a tu Nequi», espera '
-        'como un gasto «Sin comercio» y sin cuenta; a diferencia de lo que '
-        'llega, no ofrece «¿Viene de otra cuenta tuya?».',
+        'El aviso de Bancolombia, «Transferiste \$150.000 a tu Nequi», ya no '
+        'espera como un gasto «Sin comercio»: la tarjeta dice «Bancolombia → '
+        'Nequi» y «Pasaste plata a tu Nequi: no es un gasto.»',
       );
       await f.check(
-        'Espera como gasto, sin cuenta ni atajo a transferencia',
+        'Se lee como una transferencia de Bancolombia a Nequi, no como gasto',
         () {
           expect(sent.parsed.kind, EntryKind.expense);
-          expect(sent.suggestion.accountId, isNull);
+          // Plata que sale hacia otra cuenta tuya sale de la cuenta del
+          // banco, no de la Visa.
+          expect(sent.suggestion.accountId, bank.id);
           expect(
-            find.descendant(
-              of: _card('Sin comercio'),
-              matching: find.text('¿Viene de otra cuenta tuya?'),
-            ),
-            findsNothing,
+            CaptureService.ownMove(
+              sent,
+              own.accounts,
+              person: own.profile?.name,
+            )?.toId,
+            nequi.id,
           );
+          expect(f.shows('Sin comercio'), isFalse);
+          expect(f.shows('Pasaste plata a tu Nequi: no es un gasto.'), isTrue);
         },
       );
-      await _tapOn(f, 'Sin comercio', 'Editar');
-      await f.tap('Transferencia');
+      await _tapOn(f, 'Bancolombia → Nequi', 'Registrar transferencia');
       await f.step(
-        'En «Revisar movimiento», «Transferencia» cambia la hoja: «Desde» '
-        'queda vacío, «Hacia» propone Nequi y el botón dice «Registrar '
-        'transferencia».',
-      );
-      await f.check('Propone Nequi como destino y deja vacío el origen', () {
-        expect(_menuShows('Hacia', 'Nequi'), isTrue);
-        expect(
-          find.descendant(of: from, matching: find.text('Bancolombia')),
-          findsNothing,
-        );
-      });
-      await f.tapFound(find.text('Registrar transferencia'));
-      await f.reveal(find.text('Elige la cuenta.'));
-      await f.step(
-        'Sin «Desde», «Registrar transferencia» no guarda: el campo se pone '
-        'en rojo con «Elige la cuenta.»',
-      );
-      await f.check('Sin origen no se registró nada', () {
-        expect(legs(), isEmpty);
-        expect(own.pendingInbox.map((InboxItem i) => i.id), contains(sent.id));
-      });
-      await f.tapFound(from);
-      await f.tapFound(find.text('Bancolombia').last);
-      await f.tapFound(find.text('Registrar transferencia'));
-      await f.step(
-        'Con Bancolombia en «Desde»: «Transferencia registrada.», con '
-        '«Deshacer», y el aviso salió de Por revisar.',
+        'Un toque en «Registrar transferencia»: «Transferencia registrada de '
+        'Bancolombia a Nequi.», con «Deshacer», y el aviso salió de Por '
+        'revisar.',
       );
       Future<void> movedOnce() async {
         expect(legs(), hasLength(2));
@@ -1970,11 +2109,7 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         expect(own.balances[nequi.id]!.amount, nequiBefore);
         expect(own.pendingInbox.map((InboxItem i) => i.id), contains(sent.id));
       });
-      await _tapOn(f, 'Sin comercio', 'Editar');
-      await f.tap('Transferencia');
-      await f.tapFound(from);
-      await f.tapFound(find.text('Bancolombia').last);
-      await f.tapFound(find.text('Registrar transferencia'));
+      await _tapOn(f, 'Bancolombia → Nequi', 'Registrar transferencia');
       await _hideNotice(f);
       await f.check('Registrada otra vez, una sola vez', movedOnce);
       // Then Nequi's own alert for the same money arrives.
@@ -1984,27 +2119,30 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         ]),
       );
       await settle(f.tester);
-      await f.reveal(_card('Diego Lopez'));
+      await f.reveal(find.text('REGISTRADO AUTOMÁTICAMENTE'));
       await f.step(
-        'Al rato llega el aviso de Nequi por la misma plata: queda en '
-        '«Posibles repetidos», no como un ingreso de \$150.000 más.',
+        'Al rato llega el aviso de Nequi por la misma plata: no queda por '
+        'revisar ni como repetido; va solo a «Registrado automáticamente» con '
+        '«Llegó a Nequi: era la transferencia desde Bancolombia.»',
       );
-      await f.check('El aviso de Nequi es la llegada que ya está', () {
-        final InboxItem got = own.inbox.firstWhere(
+      await f.check('El aviso de Nequi quedó con la llegada que ya está', () {
+        final InboxItem got = own.recentAutomatic.firstWhere(
           (InboxItem i) => i.event.text.contains('Diego Lopez'),
         );
-        expect(got.status, InboxStatus.duplicate);
+        expect(got.status, InboxStatus.accepted);
         final Entry arrived = legs().firstWhere(
           (Entry e) => e.accountId == nequi.id,
         );
-        expect(got.duplicateOf, arrived.id);
+        expect(got.entryId, arrived.id);
         expect(
-          own.pendingInbox.where((InboxItem i) => i.id == got.id),
+          own.inbox.where((InboxItem i) => i.event.text.contains('Diego')),
           isEmpty,
         );
+        expect(
+          f.shows('Llegó a Nequi: era la transferencia desde Bancolombia.'),
+          isTrue,
+        );
       });
-      await _openMenu(f, 'Diego Lopez');
-      await f.tap('Descartar');
       await f.back();
       await f.step(
         'Inicio: sigue ${_headline(own)}; los \$150.000 pasaron de '
@@ -2023,8 +2161,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         'mis cuentas, no como un ingreso.',
     data: fullAccount,
     manual: <String>[
-      'La tasa del día llega por la red: en el teléfono, revisar que «Monto» '
-          'proponga los dólares que de verdad salieron.',
+      'La tasa del día llega por la red: en el teléfono, revisar que la '
+          'transferencia saque de la cuenta en dólares lo que de verdad salió.',
     ],
     (FlowRun f) async {
       final OwnController own = f.own;
@@ -2040,46 +2178,39 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       final InboxItem arrived = own.pendingInbox.firstWhere(
         (InboxItem i) => i.event.text.contains('GLOBAL66'),
       );
-      final String payee = _payee(arrived);
       await f.step(
-        'Llegaron \$331.284 a Bancolombia desde Global66: la tarjeta lo trata '
-        'como un ingreso, sin cuenta, y ofrece «¿Viene de otra cuenta tuya?».',
+        'Llegaron \$331.284 a Bancolombia desde Global66, donde tienes la '
+        'cuenta en dólares: la tarjeta dice «Cuenta en dólares → '
+        'Bancolombia» y «no es un ingreso».',
       );
-      await _tapOn(f, payee, '¿Viene de otra cuenta tuya?');
-      await f.step(
-        'La hoja abre como «Transferencia» con los \$331.284 en «Monto», pero '
-        'propone Bancolombia → Nequi: no sabe a cuál de las dos de '
-        'Bancolombia llegó.',
-      );
-      final Finder from = find.ancestor(
-        of: find.text('Desde'),
-        matching: find.byType(DropdownButtonFormField<String>),
-      );
-      final Finder to = find.ancestor(
-        of: find.text('Hacia'),
-        matching: find.byType(DropdownButtonFormField<String>),
-      );
-      await f.tapFound(to);
-      await f.tapFound(find.text('Bancolombia').last);
-      await f.tapFound(from);
-      await f.tapFound(find.text('Cuenta en dólares').last);
-      await f.step(
-        'Con «Desde» en la cuenta en dólares y «Hacia» en Bancolombia aparece '
-        '«Llegó»: los \$331.284 del aviso quedan ahí y «Monto» propone '
-        'US\$100 por la tasa del día.',
-      );
-      String field(String label) => f.tester
-          .widget<TextField>(find.widgetWithText(TextField, label))
-          .controller!
-          .text;
-      await f.check('Lo que dice el aviso es lo que llegó a Bancolombia', () {
-        expect(field('Llegó'), '331.284');
-        expect(field('Monto'), '100');
+      await f.check('La plata que llega va a la cuenta, no a la Visa', () {
+        expect(arrived.suggestion.accountId, bank.id);
       });
-      await f.tapFound(find.text('Registrar transferencia'));
+      await f.check('Propone la transferencia desde la cuenta en dólares', () {
+        expect(
+          f.shows(
+            'Viene de Global66, donde tienes Cuenta en dólares: no es un '
+            'ingreso.',
+          ),
+          isTrue,
+        );
+        final OwnMove? move = CaptureService.ownMove(
+          arrived,
+          own.accounts,
+          person: own.profile?.name,
+        );
+        expect(move?.fromId, dollars.id);
+        expect(move?.toId, bank.id);
+      });
+      await _tapOn(
+        f,
+        'Cuenta en dólares → Bancolombia',
+        'Registrar transferencia',
+      );
       await f.step(
-        'Registrada: «Transferencia registrada.» y el aviso salió de Por '
-        'revisar.',
+        'Un toque en «Registrar transferencia»: «Transferencia registrada de '
+        'Cuenta en dólares a Bancolombia.» Lo que dice el aviso es lo que '
+        'llegó, y lo que salió en dólares sale de la tasa del día.',
       );
       await f.check(
         'Salieron US\$100 de la cuenta en dólares y llegaron \$331.284',
@@ -2118,8 +2249,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
     area: 'Por revisar',
     goal:
         'Bancolombia me avisa con el número de mi cuenta de ahorros, no con '
-        'una tarjeta: quiero decirle una vez cuál es y que los próximos '
-        'avisos de esa cuenta lleguen solos.',
+        'una tarjeta: quiero registrarlo una vez y que los próximos avisos de '
+        'esa cuenta lleguen solos.',
     data: fullAccount,
     (FlowRun f) async {
       final OwnController own = f.own;
@@ -2132,9 +2263,9 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await _hideNotice(f);
       await f.top();
       await f.step(
-        'Andres Mejia te pasó \$20.000 a la cuenta *5678: tienes dos cuentas '
-        'de Bancolombia, así que dice «Detectamos Bancolombia y la cuenta '
-        '*5678, pero aún no sabemos cuál de tus cuentas es.»',
+        'Andres Mejia te pasó \$20.000 a la cuenta *5678: en Bancolombia '
+        'tienes la cuenta de ahorros y la Visa, y la plata que llega no va a '
+        'una tarjeta, así que espera lista en Bancolombia.',
       );
       final InboxItem andres = own.pendingInbox.firstWhere(
         (InboxItem i) => _payee(i) == 'Andres Mejia',
@@ -2143,34 +2274,14 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         expect(andres.parsed.account, '5678');
         expect(andres.parsed.card, isNull);
         expect(andres.parsed.kind, EntryKind.income);
-        expect(
-          f.screenText,
-          contains(
-            'Detectamos Bancolombia y la cuenta *5678, pero aún no sabemos '
-            'cuál de tus cuentas es.',
-          ),
-        );
+        expect(andres.suggestion.accountId, bank.id);
+        expect(CaptureService.isReady(andres, own.accounts), isTrue);
       });
-      await _tapOn(f, 'Andres Mejia', 'Elegir la cuenta');
+      await _tapOn(f, 'Andres Mejia', 'Registrar ingreso');
       await f.step(
-        '«¿A qué cuenta llegó?» avisa «La próxima vez, lo de la cuenta *5678 '
-        'irá directo a la que elijas.», con las de Bancolombia primero.',
-      );
-      await f.check('La hoja promete recordar la cuenta, no una tarjeta', () {
-        expect(
-          f.shows(
-            'La próxima vez, lo de la cuenta *5678 irá directo a la que '
-            'elijas.',
-          ),
-          isTrue,
-        );
-        expect(find.textContaining('tarjeta *5678'), findsNothing);
-      });
-      await f.tap('Bancolombia');
-      await f.step(
-        'Elegida Bancolombia: el aviso dice «Ingreso registrado en '
-        'Bancolombia.», que Andres Mejia va a Otros ingresos «y una regla '
-        'más»: la de la cuenta *5678.',
+        'Registrado con un toque: el aviso dice «Ingreso registrado en '
+        'Bancolombia.» y nombra las dos reglas: «Andres Mejia» va a Otros '
+        'ingresos y la cuenta *5678 va a Bancolombia.',
       );
       await f.check('Quedó el ingreso y aprendió la cuenta por su número', () {
         final Entry e = own.snapshot!.entries.firstWhere(
@@ -2183,7 +2294,13 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         // The number says which account: nothing about all of Bancolombia.
         expect(own.captureSettings.institutionAccounts, isEmpty);
         expect(f.screenText, contains('Ingreso registrado en Bancolombia.'));
-        expect(f.screenText, contains('Y una regla más.'));
+        expect(
+          f.screenText,
+          contains(
+            'Desde ahora, «Andres Mejia» va a Otros ingresos y la cuenta *5678 '
+            'va a Bancolombia.',
+          ),
+        );
       });
       await _hideNotice(f);
       await _paste(
@@ -2250,7 +2367,130 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
     },
   ),
   AppFlow(
-    '07-18-recuperar-lo-descartado',
+    '07-18-cobrar-lo-que-me-deben',
+    'Que la app reconozca el pago de un cliente o de un amigo',
+    area: 'Por revisar',
+    goal:
+        'Le facturé a Agencia Uno y le presté a Camilo: cuando me paguen, '
+        'quiero registrarlo y que quede cobrado sin buscarlo en el Plan.',
+    data: _owedByCamilo,
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      final Account bank = _account(own, 'Bancolombia');
+      ExpectedIncome uno() =>
+          own.freelance.incomes.firstWhere((ExpectedIncome i) => i.id == 'uno');
+      Group loan() =>
+          own.groups.firstWhere((Group g) => g.id == 'group-camilo');
+      await f.tapTip('Por revisar');
+      await _paste(f, r'Bancolombia: Recibiste $700.000 de AGENCIA UNO SAS');
+      await _hideNotice(f);
+      await f.top();
+      await f.step(
+        'Llegan \$700.000 de Agencia Uno, el cobro que esperabas desde el 28 '
+        'de septiembre: la tarjeta dice «El pago que esperabas» y el botón '
+        '«Registrar y marcar cobrado».',
+      );
+      final String agency = _payee(
+        own.pendingInbox.firstWhere(
+          (InboxItem i) => i.event.text.contains('AGENCIA'),
+        ),
+      );
+      await f.check('Reconoce el cobro de Agencia Uno', () {
+        expect(uno().status, IncomeStatus.pending);
+        expect(f.shows('El pago que esperabas'), isTrue);
+        expect(
+          f.shows(
+            'De Agencia Uno, por \$700.000: al registrarlo queda como '
+            'cobrado.',
+          ),
+          isTrue,
+        );
+      });
+      await _tapOn(f, agency, 'Registrar y marcar cobrado');
+      await f.step(
+        'Un toque: el aviso dice «Ingreso registrado en Bancolombia. Agencia '
+        'Uno quedó como cobrado.», con «Deshacer».',
+      );
+      await f.check('El cobro quedó cobrado, con el ingreso que llegó', () {
+        final Entry e = own.snapshot!.entries.firstWhere(
+          (Entry e) => e.payee == agency,
+        );
+        expect(e.accountId, bank.id);
+        expect(e.amount, Decimal.parse('700000'));
+        expect(e.category, 'freelance');
+        expect(uno().status, IncomeStatus.collected);
+        expect(uno().entryId, e.id);
+        expect(
+          f.screenText,
+          contains(
+            'Ingreso registrado en Bancolombia. Agencia Uno quedó como '
+            'cobrado.',
+          ),
+        );
+      });
+      await _hideNotice(f);
+      await _paste(f, r'Nequi: Camilo Ruiz te envió $60.000');
+      await _hideNotice(f);
+      await f.top();
+      await f.step(
+        'Camilo Ruiz te envía \$60.000 por Nequi: la tarjeta dice «Pago de '
+        'lo que te deben», que Camilo te debe \$100.000 y el botón «Registrar '
+        'el pago de Camilo».',
+      );
+      await f.check('Reconoce lo que Camilo te debía', () {
+        expect(
+          f.shows(
+            'Camilo te debe \$100.000 en «Camilo»: al registrarlo queda '
+            'anotado.',
+          ),
+          isTrue,
+        );
+      });
+      await _tapOn(f, 'Camilo Ruiz', 'Registrar el pago de Camilo');
+      await f.step(
+        'Un toque: «Ingreso registrado en Nequi. Camilo todavía te debe '
+        '\$40.000.» El préstamo queda con el pago anotado.',
+      );
+      await f.check(
+        'El pago quedó anotado en el préstamo, ligado al ingreso',
+        () {
+          final Entry e = own.snapshot!.entries.firstWhere(
+            (Entry e) => e.payee == 'Camilo Ruiz',
+          );
+          final Settlement paid = loan().settlements.single;
+          expect(paid.from, 'p-camilo');
+          expect(paid.to, meId);
+          expect(paid.amount, own.ledger!.minor(60000));
+          expect(paid.entryId, e.id);
+          expect(loan().balances['p-camilo'], -own.ledger!.minor(40000));
+          expect(
+            f.screenText,
+            contains(
+              'Ingreso registrado en Nequi. Camilo todavía te debe \$40.000.',
+            ),
+          );
+        },
+      );
+      await _undoFromNotice(f);
+      await f.step(
+        '«Deshacer» quita el ingreso y el pago anotado: Camilo vuelve a deberte '
+        '\$100.000 y el aviso espera otra vez.',
+      );
+      await f.check('Deshacer quitó el ingreso y el pago del préstamo', () {
+        expect(loan().settlements, isEmpty);
+        expect(
+          own.snapshot!.entries.where((Entry e) => e.payee == 'Camilo Ruiz'),
+          isEmpty,
+        );
+        expect(
+          own.pendingInbox.where((InboxItem i) => _payee(i) == 'Camilo Ruiz'),
+          hasLength(1),
+        );
+      });
+    },
+  ),
+  AppFlow(
+    '07-19-recuperar-lo-descartado',
     'Recuperar lo que descarté',
     area: 'Por revisar',
     goal:
@@ -2401,18 +2641,21 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.back();
       final StatementRead read = await _openStatement(f, _bankCsv);
       await f.page(
-        'El extracto leído va a Bancolombia, la primera cuenta: 7 '
-        'movimientos, 4 nuevos y marcados, 3 que ya estaban sin marcar.',
+        'El extracto leído va a Bancolombia, la primera cuenta, y arriba pide '
+        'revisarla porque el archivo no dice el banco. Arriba: «4 nuevos · 3 '
+        'ya estaban»; cada uno de esos 3 dice con qué movimiento coincide.',
       );
       final List<ImportCandidate> all = await _prepared(f, bank, read);
       await f.check('La pantalla cuenta lo mismo que halló el importador', () {
         expect(all, hasLength(7));
         expect(all.where((ImportCandidate c) => c.proposed), hasLength(4));
         expect(all.where((ImportCandidate c) => c.recorded), hasLength(3));
+        expect(f.screenText, contains('4 nuevos · 3 ya estaban'));
+        expect(f.screenText, contains('1 sin categoría · 2 entre tus cuentas'));
         expect(
           f.screenText,
           contains(
-            '4 nuevos · 3 ya estaban · 2 sin categoría · 1 entre tus cuentas',
+            'El archivo no dice de qué banco es: revisa que sea esta cuenta.',
           ),
         );
       });
@@ -2425,7 +2668,7 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
                 if (c.recorded) c.payee,
             ],
             unorderedEquals(<String>[
-              'Nomina DL Soft',
+              'Nómina DL Soft',
               'Uber Trip',
               'Exito Laureles',
             ]),
@@ -2434,6 +2677,39 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
           expect(_ticked(f, 'Claro'), isTrue);
         },
       );
+      await f.check(
+        'Cada «Ya registrado» dice con qué movimiento coincide',
+        () {
+          expect(
+            f.screenText,
+            contains('Ya registrado: Éxito Laureles, anotado a mano'),
+          );
+          expect(f.screenText, contains('Ya registrado: Uber, anotado a mano'));
+        },
+      );
+      await f.check('El retiro en cajero pasa solo a Efectivo', () {
+        final ImportCandidate cash = all.firstWhere(
+          (ImportCandidate c) => c.payee == 'Retiro en cajero',
+        );
+        expect(cash.kind, EntryKind.transfer);
+        expect(cash.otherAccountId, _account(own, 'Efectivo').id);
+        expect(f.screenText, contains('Pasa a Efectivo'));
+      });
+      await f.tapFound(find.text('Exito Laureles'));
+      await f.step(
+        'Tocar «Exito Laureles» muestra con qué coincide: «Éxito Laureles · 2 '
+        'oct 2026 · Bancolombia · −\$187.400 · Anotado a mano», con «Ver '
+        'movimiento» para abrirlo.',
+      );
+      await f.check(
+        'La hoja de la línea muestra el movimiento que ya estaba',
+        () {
+          expect(f.shows('Coincide con lo que ya estaba'), isTrue);
+          expect(f.shows('Ver movimiento'), isTrue);
+          expect(f.screenText, contains('Éxito Laureles · 2 oct 2026'));
+        },
+      );
+      await f.back();
       final Decimal out = <Decimal>[
         for (final ImportCandidate c in all)
           if (c.proposed) c.line.amount,
@@ -2451,7 +2727,7 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         );
         expect(c.kind, EntryKind.transfer);
         expect(c.otherAccountId, visa.id);
-        expect(f.screenText, contains('Pago de tu tarjeta Visa'));
+        expect(f.screenText, contains('Pago de tu Visa'));
       });
       await f.reveal(find.text('Sumarlos a mi saldo'));
       await f.check('Como son de antes del 3 oct, tu saldo ya los incluye', () {
@@ -2470,11 +2746,15 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
           ),
         );
       });
-      await f.tap('Importar 4 movimientos');
+      await f.check('El botón importa los 4 nuevos', () {
+        expect(f.shows('Importar 4 nuevos'), isTrue);
+      });
+      await f.tap('Importar 4 nuevos');
       await f.waitFor(find.text('Se importaron 4 movimientos.'));
       await f.page(
         '«Se importaron 4 movimientos.»: el saldo de Bancolombia sigue '
-        'igual, el pago de la Visa no cuenta como gasto y 2 piden categoría.',
+        'igual, el pago de la Visa y el retiro no cuentan como gasto y uno '
+        'pide categoría.',
       );
       await f.check('Quedaron los 4, cada uno como debía', () {
         final List<Entry> made = _imported(own, bank);
@@ -2487,16 +2767,21 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
           made.firstWhere((Entry e) => e.payee == 'Juan Perez').category,
           'other',
         );
-        final Entry card = made.firstWhere((Entry e) => e.transferId != null);
-        expect(card.amount, Decimal.parse('-480000'));
-        expect(
-          own.snapshot!.entries
-              .firstWhere(
-                (Entry e) => e.transferId == card.transferId && e.id != card.id,
-              )
-              .accountId,
-          visa.id,
+        String otherSide(Entry e) => own.snapshot!.entries
+            .firstWhere(
+              (Entry x) => x.transferId == e.transferId && x.id != e.id,
+            )
+            .accountId;
+        final Entry card = made.firstWhere(
+          (Entry e) => e.amount == Decimal.parse('-480000'),
         );
+        expect(card.transferId, isNotNull);
+        expect(otherSide(card), visa.id);
+        final Entry cash = made.firstWhere(
+          (Entry e) => e.amount == Decimal.parse('-200000'),
+        );
+        expect(cash.transferId, isNotNull);
+        expect(otherSide(cash), _account(own, 'Efectivo').id);
       });
       await f.check('Los saldos de Bancolombia y la Visa no se movieron', () {
         expect(own.balances[bank.id]!.amount, bankBefore);
@@ -2510,8 +2795,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       );
       await f.tap('Guardar');
       await f.step(
-        'Guardado: Juan Perez sale de la lista y ahora dice «Uno quedó sin '
-        'categoría: tócalo para ponérsela.»',
+        'Guardado: Juan Perez sale de la lista y ahora dice «Todos quedaron '
+        'con su categoría.»',
       );
       await f.check('Juan Perez quedó en Salidas', () {
         expect(
@@ -2568,7 +2853,7 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
     'Revisar el extracto línea por línea',
     area: 'Importar extracto',
     goal:
-        'Antes de importar quiero corregir lo que el extracto no dice bien: '
+        'Antes de importar quiero revisar lo que el extracto no dice bien: '
         'un retiro que fue a mi efectivo, una categoría que falta y lo que '
         'ya había anotado.',
     data: fullAccount,
@@ -2651,45 +2936,35 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       });
       await f.tap('Marcar los nuevos');
       await f.check('«Marcar los nuevos» marca solo los 4 nuevos', () {
-        expect(f.shows('Importar 4 movimientos'), isTrue);
+        expect(f.shows('Importar 4 nuevos'), isTrue);
         expect(_ticked(f, 'Exito Laureles'), isFalse);
       });
-      await f.tapFound(find.text('Cajero'));
+      await f.tapFound(find.text('Retiro en cajero'));
       await f.step(
-        'Tocar «Cajero» abre «Revisar movimiento»: el retiro por −\$200.000, '
-        '«RETIRO CAJERO» como lo dice el extracto, y Gasto sin categoría.',
+        'Tocar «Retiro en cajero» abre «Revisar movimiento»: «RETIRO CAJERO» '
+        'como lo dice el extracto, y ya es una «Transferencia» hacia '
+        'Efectivo, adonde fue la plata, no un gasto.',
       );
-      await f.tap('Transferencia');
-      await f.step(
-        'Un retiro no es un gasto: con «Transferencia» aparece «Hacia», que '
-        'para este retiro en cajero propone la Visa.',
-      );
-      await f.check('Para el retiro propone la tarjeta, no el efectivo', () {
+      await f.check('Para el retiro propone el efectivo', () {
+        expect(f.shows('RETIRO CAJERO'), isTrue);
         expect(
           find.descendant(
             of: find.byType(DropdownButtonFormField<String>).last,
-            matching: find.text('Visa'),
+            matching: find.text('Efectivo'),
           ),
           findsOneWidget,
         );
       });
-      await f.tapFound(find.byType(DropdownButtonFormField<String>).last);
-      await f.tapFound(find.text('Efectivo').last);
-      await f.step('«Hacia» cambiado a Efectivo, adonde fue la plata.');
       await f.tap('Guardar');
       await f.step(
-        'Guardado: la línea de Cajero dice «Pasa a Efectivo», con el ícono de '
-        'los movimientos entre tus cuentas.',
+        'Guardado como estaba: la línea dice «Pasa a Efectivo», con el ícono '
+        'de los movimientos entre tus cuentas.',
       );
       await f.check('El retiro quedó como paso a Efectivo', () async {
         expect(f.screenText, contains('Pasa a Efectivo'));
         await f.top();
-        expect(
-          f.screenText,
-          contains(
-            '4 nuevos · 3 ya estaban · 1 sin categoría · 2 entre tus cuentas',
-          ),
-        );
+        expect(f.screenText, contains('4 nuevos · 3 ya estaban'));
+        expect(f.screenText, contains('1 sin categoría · 2 entre tus cuentas'));
       });
       await f.tapFound(find.text('Juan Perez'));
       await f.tap('Ingreso');
@@ -2717,19 +2992,21 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       });
       await f.tapTip('Invertir entradas y salidas');
       await f.step(
-        'Volteados los signos después de corregir, lo corregido se queda: '
-        'Cajero ahora «Viene de Efectivo» y Juan Perez sigue en Salidas.',
+        'Volteados los signos después de corregir, lo corregido se queda: el '
+        'retiro ahora «Viene de Efectivo» y Juan Perez sigue en Salidas.',
       );
       await f.check('Voltear no borró lo que se corrigió línea por línea', () {
         expect(f.screenText, contains('Viene de Efectivo'));
         expect(f.screenText, contains('1 oct · Salidas'));
       });
       await f.tapTip('Invertir entradas y salidas');
+      // The lines are read again: «Cuenta» is at the top.
+      await f.top();
       await f.tapFound(find.byType(DropdownButtonFormField<String>));
       await f.tapFound(find.text('Nequi · COP').last);
       await f.step(
-        'Con Nequi en «Cuenta», Cajero sigue pasando a Efectivo y Juan Perez '
-        'en Salidas.',
+        'Con Nequi en «Cuenta», el retiro sigue pasando a Efectivo y Juan '
+        'Perez en Salidas.',
       );
       await f.check('Cambiar la cuenta tampoco borró las correcciones', () {
         expect(f.screenText, contains('Pasa a Efectivo'));
@@ -2740,12 +3017,12 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       await f.check(
         'De vuelta en Bancolombia quedan los mismos 4 marcados',
         () {
-          expect(f.shows('Importar 4 movimientos'), isTrue);
+          expect(f.shows('Importar 4 nuevos'), isTrue);
           expect(f.screenText, contains('Pasa a Efectivo'));
           expect(_ticked(f, 'Exito Laureles'), isFalse);
         },
       );
-      await f.tap('Importar 4 movimientos');
+      await f.tap('Importar 4 nuevos');
       await f.waitFor(find.text('Se importaron 4 movimientos.'));
       await f.step(
         'Importado tal como se revisó: «Todos quedaron con su categoría.» y 2 '
@@ -2793,8 +3070,10 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       final OwnController own = f.own;
       final Account bank = _account(own, 'Bancolombia');
       final Account visa = _account(own, 'Visa');
+      final Account cash = _account(own, 'Efectivo');
       final Decimal bankBefore = own.balances[bank.id]!.amount;
       final Decimal visaBefore = own.balances[visa.id]!.amount;
+      final Decimal cashBefore = own.balances[cash.id]!.amount;
       final int free = own.ledger!.freeUntilPayday;
       await _openStatement(f, _bankCsv, account: 'Bancolombia');
       await f.reveal(find.text('Sumarlos a mi saldo'));
@@ -2830,7 +3109,7 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         },
       );
       await f.tap('Sumarlos a mi saldo');
-      await f.tap('Importar 4 movimientos');
+      await f.tap('Importar 4 nuevos');
       await f.waitFor(find.text('Se importaron 4 movimientos.'));
       await f.step(
         'Importados: el resultado repite «Saldo de Bancolombia: '
@@ -2845,15 +3124,22 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
           visaBefore + Decimal.parse('480000'),
         );
       });
+      await f.check('Los \$200.000 del cajero llegaron al efectivo', () {
+        expect(
+          own.balances[cash.id]!.amount,
+          cashBefore + Decimal.parse('200000'),
+        );
+      });
       await f.tap('Listo');
-      final int spent = own.ledger!.minor(89900 + 30000 + 200000);
+      final int spent = own.ledger!.minor(89900 + 30000);
       await f.step(
-        'Inicio: ahora ${_headline(own)}. El pago de la Visa no cambia eso: '
-        'baja el banco y «Lo que debes en tarjetas» baja a '
-        '${pesos(-_owed(own))}.',
+        'Inicio: ahora ${_headline(own)}. Ni el pago de la Visa ni el retiro '
+        'cambian eso: la plata pasó a la tarjeta y al efectivo, y «Lo que '
+        'debes en tarjetas» baja a ${pesos(-_owed(own))}.',
       );
       await f.check(
-        'Lo que puedes gastar bajó ${_cop(own, spent)}, sin el pago de la Visa',
+        'Lo que puedes gastar bajó ${_cop(own, spent)}, sin el pago de la Visa '
+        'ni el retiro',
         () => expect(own.ledger!.freeUntilPayday, free - spent),
       );
       await f.check(
@@ -2924,7 +3210,7 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         );
       });
       await f.tapFound(adjust);
-      await f.tap('Importar 2 movimientos');
+      await f.tap('Importar 2 nuevos');
       await f.waitFor(find.text('Se importaron 2 movimientos.'));
       await f.step(
         'Importados D1 y Claro: el saldo de Bancolombia pasó a \$865.100, el '
@@ -2996,8 +3282,12 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
           expect(pay.kind, EntryKind.transfer);
           expect(pay.waitsForAccount, isTrue);
           expect(pay.proposed, isFalse);
-          expect(_ticked(f, 'SU Pago Gracias'), isFalse);
-          expect(f.shows('Importar 2 movimientos'), isTrue);
+          expect(_ticked(f, 'Pago recibido'), isFalse);
+          expect(f.shows('Importar 2 nuevos'), isTrue);
+          expect(
+            f.screenText,
+            contains('3 nuevos · 1 ya estaba · 1 necesita revisión'),
+          );
           expect(
             f.screenText,
             contains('¿De cuál de tus cuentas salió este pago?'),
@@ -3011,22 +3301,24 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
           );
         },
       );
-      await f.tapFound(_lineBox('SU Pago Gracias'));
+      await f.tapFound(_lineBox('Pago recibido'));
       await f.step(
-        'Marcar el pago abre su hoja: ya es una «Transferencia» y pide '
-        '«Desde», con Bancolombia propuesta.',
+        'Marcar el pago, «Pago recibido», abre su hoja: ya es una '
+        '«Transferencia» y pide «Desde», con Bancolombia, el banco de la Visa, '
+        'propuesta.',
       );
       await f.check('Marcarlo pregunta la cuenta antes de marcarlo', () {
         expect(f.shows('Revisar movimiento'), isTrue);
         expect(_menuShows('Desde', 'Bancolombia'), isTrue);
       });
       await f.tap('Guardar');
+      await f.top();
       await f.step(
         'Guardado: el pago queda marcado, dice «Viene de Bancolombia» y arriba '
         'explica que un pago de tarjeta no cuenta como gasto.',
       );
       await f.check('El pago quedó como movimiento desde Bancolombia', () {
-        expect(_ticked(f, 'SU Pago Gracias'), isTrue);
+        expect(_ticked(f, 'Pago recibido'), isTrue);
         expect(f.screenText, contains('Viene de Bancolombia'));
         expect(
           f.screenText,
@@ -3036,15 +3328,22 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
           ),
         );
       });
-      await f.tap('Importar 3 movimientos');
+      await f.tap('Importar 3 nuevos');
       await f.waitFor(find.text('Se importaron 3 movimientos.'));
       await f.step(
-        'Importados: «Lo que debes en Visa» va de un valor al mismo, porque '
-        'tu saldo ya los incluía.',
+        'Importados: «Lo que debes en Visa sigue en …: ya incluía estos '
+        'movimientos.»',
       );
       await f.check('Ni la deuda de la Visa ni Bancolombia cambiaron', () {
         expect(own.balances[visa.id]!.amount, visaBefore);
         expect(own.balances[bank.id]!.amount, bankBefore);
+        expect(
+          f.screenText,
+          contains(
+            'Lo que debes en Visa sigue en ${_money(-visaBefore)}: ya incluía '
+            'estos movimientos.',
+          ),
+        );
       });
       await f.check('Netflix y Rappi quedaron como gastos de la Visa', () {
         final List<Entry> made = _imported(own, visa);
@@ -3107,49 +3406,82 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       );
       await f.step(
         'Un archivo sin movimientos: «No encontré movimientos en este '
-        'archivo.» y «Elegir archivo» para probar con otro.',
+        'archivo.», qué trae, solo la fila de títulos, y qué lee Quincena, con '
+        '«Elegir archivo» para probar con otro.',
       );
+      await f.check('Dice qué trae el archivo y qué formatos lee', () {
+        expect(
+          f.shows(
+            'Solo trae la fila de títulos: ningún movimiento con fecha y valor.',
+          ),
+          isTrue,
+        );
+        expect(f.screenText, contains('CSV, Excel (.xlsx) o PDF'));
+      });
       await f.back();
       await _openStatement(f, _noCardCsv, account: 'Bancolombia');
       await f.step(
-        'Arriba, en naranja: «Parece el pago de una tarjeta. Agrégala en '
-        'Cuentas…». La línea «Tarjeta de Credito» va marcada como gasto en '
-        'Créditos.',
+        'Arriba: «Parece el pago de una tarjeta que no tienes en la app…», con '
+        '«Agregar la tarjeta». La línea del pago lo dice y queda sin marcar, '
+        'para no contar como gasto lo que compraste con ella.',
       );
-      await f.check('Avisa que falta la tarjeta', () {
+      await f.check('Avisa qué línea es y la deja sin marcar', () {
         expect(
           f.screenText,
-          contains('Parece el pago de una tarjeta. Agrégala en Cuentas'),
+          contains(
+            'Parece el pago de una tarjeta que no tienes en la app: queda sin '
+            'marcar',
+          ),
         );
-      });
-      await f.tapFound(_lineBox('Tarjeta de Credito'));
-      await f.step(
-        'Desmarcado el pago de la tarjeta, el botón ofrece «Seleccionar '
-        'todos» y abajo quedan «2 seleccionados».',
-      );
-      await f.check('Quedan marcadas solo las 2 compras', () {
-        expect(f.shows('Seleccionar todos'), isTrue);
-        expect(f.shows('Importar 2 movimientos'), isTrue);
-      });
-      await f.tap('Seleccionar todos');
-      await f.check('«Seleccionar todos» vuelve a marcar el pago', () {
-        expect(_ticked(f, 'Tarjeta de Credito'), isTrue);
-        expect(f.shows('Importar 3 movimientos'), isTrue);
-        expect(f.shows('Quitar todos'), isTrue);
-      });
-      await f.tapFound(_lineBox('Tarjeta de Credito'));
-      await f.tap('Importar 2 movimientos');
-      await f.waitFor(find.text('Se importaron 2 movimientos.'));
-      await f.step(
-        'Importadas las 2 compras: el pago de la tarjeta no se guardó, y el '
-        'saldo de Bancolombia sigue igual porque ya las incluía.',
-      );
-      await f.check('Se guardaron las compras y no el pago', () {
-        final List<Entry> made = _imported(own, bank);
-        expect(made, hasLength(2));
         expect(
-          made.where((Entry e) => e.amount == Decimal.parse('-350000')),
-          isEmpty,
+          f.screenText,
+          contains('Pago de una tarjeta que no está en la app'),
+        );
+        expect(_ticked(f, 'Pago de tarjeta de crédito'), isFalse);
+        expect(
+          f.screenText,
+          contains('3 nuevos · ninguno repetido · 1 necesita revisión'),
+        );
+        expect(f.shows('Importar 2 nuevos'), isTrue);
+      });
+      await f.tap('Agregar la tarjeta');
+      await f.step(
+        '«Agregar la tarjeta» abre «Agregar cuenta» como tarjeta de crédito de '
+        'Bancolombia; se guarda como está.',
+      );
+      await f.tapFound(find.text('Guardar'));
+      await f.step(
+        'De vuelta en la revisión, el pago va a la tarjeta que acabas de '
+        'agregar y queda marcado: «Importar 3 nuevos».',
+      );
+      final Account card = _account(own, 'Tarjeta de crédito');
+      await f.check('El pago va hacia la tarjeta nueva, marcado', () {
+        expect(card.kind, AccountKind.card);
+        expect(card.institution, 'Bancolombia');
+        expect(_ticked(f, 'Pago de tarjeta de crédito'), isTrue);
+        expect(f.screenText, contains('Pago de tu Tarjeta de crédito'));
+        expect(f.shows('Importar 3 nuevos'), isTrue);
+      });
+      await f.tap('Importar 3 nuevos');
+      await f.waitFor(find.text('Se importaron 3 movimientos.'));
+      await f.step(
+        'Importadas las 2 compras y el pago, que quedó como movimiento hacia la '
+        'tarjeta: el saldo de Bancolombia sigue igual porque ya las incluía.',
+      );
+      await f.check('El pago quedó en la tarjeta, no como gasto', () {
+        final List<Entry> made = _imported(own, bank);
+        expect(made, hasLength(3));
+        final Entry pay = made.firstWhere(
+          (Entry e) => e.amount == Decimal.parse('-350000'),
+        );
+        expect(pay.transferId, isNotNull);
+        expect(
+          own.snapshot!.entries
+              .firstWhere(
+                (Entry e) => e.transferId == pay.transferId && e.id != pay.id,
+              )
+              .accountId,
+          card.id,
         );
         expect(own.balances[bank.id]!.amount, before);
       });
@@ -3187,27 +3519,27 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         expect(pay.kind, EntryKind.expense);
         expect(f.screenText, contains('¿Es el pago de una tarjeta tuya?'));
       });
-      await f.tapFound(find.text('Tarjeta Credito'));
+      await f.tapFound(find.text('Pago de tarjeta de crédito'));
       await f.tap('Transferencia');
       await f.step(
-        'En su hoja, «Transferencia» propone en «Hacia» la primera tarjeta, '
-        'la Visa.',
+        'En su hoja, «Transferencia» propone en «Hacia» la tarjeta del mismo '
+        'banco, la Visa de Bancolombia.',
       );
       await f.tapFound(find.byType(DropdownButtonFormField<String>).last);
       await f.tapFound(find.text('Mastercard').last);
       await f.tap('Guardar');
       await f.step(
-        'Con Mastercard elegida y guardada, la línea dice «Pago de tu tarjeta '
+        'Con Mastercard elegida y guardada, la línea dice «Pago de tu '
         'Mastercard» y ya no pregunta.',
       );
       await f.check('La línea va hacia la Mastercard', () {
-        expect(f.screenText, contains('Pago de tu tarjeta Mastercard'));
+        expect(f.screenText, contains('Pago de tu Mastercard'));
         expect(
           f.screenText,
           isNot(contains('¿Es el pago de una tarjeta tuya?')),
         );
       });
-      await f.tap('Importar 2 movimientos');
+      await f.tap('Importar 2 nuevos');
       await f.waitFor(find.text('Se importaron 2 movimientos.'));
       await f.step(
         'Importados: «Uno quedó como movimiento entre tus cuentas: no cuenta '
@@ -3258,8 +3590,8 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         account: 'Visa dólares',
       );
       await f.page(
-        'El extracto de la Visa en dólares: las compras quedan como deuda. «SU '
-        'Pago Gracias» queda sin marcar, con «¿De cuál de tus cuentas salió '
+        'El extracto de la Visa en dólares: las compras quedan como deuda. '
+        '«Pago recibido» queda sin marcar, con «¿De cuál de tus cuentas salió '
         'este pago?», y arriba un aviso: ninguna otra cuenta tuya está en '
         'USD, y marcado contaría como ingreso.',
       );
@@ -3271,9 +3603,9 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
         expect(pay.line.amount, Decimal.parse('120'));
         expect(pay.paidFromNowhere, isTrue);
         expect(pay.proposed, isFalse);
-        expect(_ticked(f, 'SU Pago Gracias'), isFalse);
+        expect(_ticked(f, 'Pago recibido'), isFalse);
         expect(_ticked(f, 'Amazon Mktplace'), isTrue);
-        expect(f.shows('Importar 2 movimientos'), isTrue);
+        expect(f.shows('Importar 2 nuevos'), isTrue);
         expect(
           f.screenText,
           contains(
@@ -3284,7 +3616,7 @@ final List<AppFlow> porRevisarFlows = <AppFlow>[
       });
       await f.reveal(find.text('Sumarlos a mi saldo'));
       await f.tap('Sumarlos a mi saldo');
-      await f.tap('Importar 2 movimientos');
+      await f.tap('Importar 2 nuevos');
       await f.waitFor(find.text('Se importaron 2 movimientos.'));
       await f.step(
         'Con «Sumarlos a mi saldo», importadas las 2 compras: «Lo que debes en '
@@ -3315,6 +3647,38 @@ Future<QuincenaStore> _everyKind() async {
     _bancolombia(r'Pago por $89.900 a Claro', 9, 20),
     _davivienda(r'Compra por $120.000 en Falabella', 9, 30),
   ]);
+  return store;
+}
+
+/// Diego's account, where he lent Camilo \$100.000 from Bancolombia.
+Future<QuincenaStore> _owedByCamilo() async {
+  final QuincenaStore store = await fullAccount();
+  final List<Object?> groups =
+      (jsonDecode(await store.setting('shared.groups') ?? '[]')
+          as List<Object?>);
+  await store.setSetting(
+    'shared.groups',
+    jsonEncode(<Object?>[
+      ...groups,
+      Group(
+        id: 'group-camilo',
+        name: 'Camilo',
+        members: const <Member>[
+          Member(id: meId, name: ''),
+          Member(id: 'p-camilo', name: 'Camilo'),
+        ],
+        expenses: <SharedExpense>[
+          SharedExpense(
+            id: 'loan',
+            label: 'Préstamo',
+            date: DateTime(2026, 9, 20),
+            paidBy: meId,
+            shares: const <String, int>{'p-camilo': 100000},
+          ),
+        ],
+      ).toJson(),
+    ]),
+  );
   return store;
 }
 

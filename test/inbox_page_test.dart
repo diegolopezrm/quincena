@@ -123,7 +123,24 @@ void main() {
         ))
           (t.title! as Text).data,
       ];
-      expect(choices.take(2), <String>['Bancolombia', 'Visa']);
+      // The bank's first, then the everyday ones in pesos; dollars and
+      // crypto apart, under their own heading.
+      expect(choices, <String>[
+        'Bancolombia',
+        'Visa',
+        'Nequi',
+        'Efectivo',
+        'Cuenta en dólares',
+        'Binance',
+        'Bitcoin',
+      ]);
+      expect(
+        tester.getTopLeft(find.text('Otras cuentas')).dy,
+        allOf(
+          greaterThan(tester.getTopLeft(find.text('Efectivo').last).dy),
+          lessThan(tester.getTopLeft(find.text('Cuenta en dólares').last).dy),
+        ),
+      );
 
       await tester.tap(find.text('Visa').last);
       await settle(tester);
@@ -144,6 +161,202 @@ void main() {
       expect(find.text('NECESITAN INFORMACIÓN'), findsNothing);
     },
   );
+
+  testWidgets('a possible repeat says what it repeats, opens it, and is '
+      'taken out first', (tester) async {
+    final OwnController own = await open(tester, withCaptures);
+    final Finder card = find.ancestor(
+      of: find.text('Spotify'),
+      matching: find.byType(InboxCard),
+    );
+    Finder on(String text) =>
+        find.descendant(of: card, matching: find.text(text));
+    await tester.scrollUntilVisible(on('Quitar repetido'), 300);
+    expect(on('Posible repetido'), findsOneWidget);
+    expect(
+      on(
+        'Ya está: Spotify · US\$10,99 · 2 oct · Cuenta en dólares · anotado '
+        'a mano',
+      ),
+      findsOneWidget,
+    );
+    // «Quitar repetido» comes first, then «No es repetido».
+    final Offset remove = tester.getTopLeft(on('Quitar repetido'));
+    final Offset keep = tester.getTopLeft(on('No es repetido'));
+    expect(
+      remove.dy < keep.dy || (remove.dy == keep.dy && remove.dx < keep.dx),
+      isTrue,
+    );
+    // What it repeats opens with a tap.
+    await tester.tap(on('Posible repetido'));
+    await settle(tester);
+    expect(find.text('Editar movimiento'), findsOneWidget);
+    expect(find.text('Anotado a mano'), findsOneWidget);
+    Navigator.of(tester.element(find.text('Editar movimiento'))).pop();
+    await settle(tester);
+
+    await tester.ensureVisible(on('Quitar repetido'));
+    await tester.tap(on('Quitar repetido'));
+    await settle(tester);
+    expect(find.text('Spotify'), findsNothing);
+    final InboxItem gone = (await tester.runAsync(
+      own.store.inbox,
+    ))!.firstWhere((InboxItem i) => i.event.text.contains('SPOTIFY'));
+    expect(gone.status, InboxStatus.dismissed);
+  });
+
+  testWidgets('with only a possible repeat left, it does not say all is done', (
+    tester,
+  ) async {
+    final OwnController own = await open(tester, withCaptures);
+    await tester.runAsync(() async {
+      for (final InboxItem i in own.pendingInbox) {
+        await own.capture.dismiss(i);
+      }
+    });
+    await settle(tester);
+    expect(find.text('Todo al día.'), findsNothing);
+    expect(find.text('Nada por registrar.'), findsOneWidget);
+    expect(
+      find.text('Queda un posible repetido por mirar, abajo.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('a bank with no account in the app offers to add it, and '
+      'promises no rule for another bank', (tester) async {
+    final OwnController own = await open(tester, () async {
+      final QuincenaStore store = await withCaptures();
+      await CaptureService(store, now: () => screensNow).ingest(<CaptureEvent>[
+        CaptureEvent(
+          source: CaptureSource.notification,
+          at: DateTime(2026, 10, 3, 9, 30),
+          app: 'com.davivienda.daviviendaapp',
+          appName: 'Davivienda',
+          title: 'Davivienda',
+          text: r'Davivienda · Compra por $120.000 en Falabella',
+        ),
+      ]);
+      return store;
+    });
+    Finder on(String text) => find.descendant(
+      of: find.ancestor(
+        of: find.text('Falabella'),
+        matching: find.byType(InboxCard),
+      ),
+      matching: find.text(text),
+    );
+    expect(on('Agregar mi cuenta de Davivienda'), findsOneWidget);
+    // Choosing one of the others teaches nothing about Davivienda.
+    await tester.ensureVisible(on('Elegir la cuenta'));
+    await tester.tap(on('Elegir la cuenta'));
+    await settle(tester);
+    expect(find.textContaining('La próxima vez'), findsNothing);
+    await tester.tapAt(const Offset(20, 20));
+    await settle(tester);
+
+    await tester.ensureVisible(on('Agregar mi cuenta de Davivienda'));
+    await tester.tap(on('Agregar mi cuenta de Davivienda'));
+    await settle(tester);
+    expect(
+      find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.text('Davivienda'),
+      ),
+      findsWidgets,
+    );
+    await tester.ensureVisible(find.text('Guardar').last);
+    await tester.tap(find.text('Guardar').last);
+    await settle(tester);
+    final Account davivienda = own.accounts.firstWhere(
+      (Account a) => a.name == 'Davivienda',
+    );
+    expect(davivienda.institution, 'Davivienda');
+    // The purchase now waits ready, in the account just added.
+    expect(on('Compras · Davivienda'), findsOneWidget);
+    expect(on('Registrar gasto'), findsOneWidget);
+    expect(on('Agregar mi cuenta de Davivienda'), findsNothing);
+  });
+
+  testWidgets('money sent to another own account is a move, recorded in '
+      'one tap, or an expense if the person says it was not', (tester) async {
+    final OwnController own = await open(tester, () async {
+      final QuincenaStore store = await withCaptures();
+      await CaptureService(store, now: () => screensNow).ingest(<CaptureEvent>[
+        for (final (String text, int minute) in <(String, int)>[
+          (r'Bancolombia · Transferiste $150.000 a tu Nequi', 50),
+          (r'Bancolombia · Retiraste $100.000 en cajero ATM', 55),
+        ])
+          CaptureEvent(
+            source: CaptureSource.notification,
+            at: DateTime(2026, 10, 3, 9, minute),
+            app: 'com.todo1.mobile',
+            appName: 'Bancolombia',
+            title: 'Bancolombia',
+            text: text,
+          ),
+      ]);
+      return store;
+    });
+    Finder card(String title) =>
+        find.ancestor(of: find.text(title), matching: find.byType(InboxCard));
+    Finder on(String title, String text) =>
+        find.descendant(of: card(title), matching: find.text(text));
+    final Account bank = own.accounts.firstWhere(
+      (Account a) => a.name == 'Bancolombia',
+    );
+    final Account nequi = own.accounts.firstWhere(
+      (Account a) => a.name == 'Nequi',
+    );
+    expect(on('Bancolombia → Nequi', 'Entre tus cuentas'), findsOneWidget);
+    expect(
+      on('Bancolombia → Nequi', 'Pasaste plata a tu Nequi: no es un gasto.'),
+      findsOneWidget,
+    );
+    expect(
+      on(
+        'Bancolombia → Efectivo',
+        'Un retiro en cajero pasa la plata a Efectivo: no es un gasto.',
+      ),
+      findsOneWidget,
+    );
+    // Neither goes with what is recorded all at once.
+    expect(find.textContaining('Registrar los'), findsNothing);
+
+    await tester.ensureVisible(
+      on('Bancolombia → Nequi', 'Registrar transferencia'),
+    );
+    await tester.tap(on('Bancolombia → Nequi', 'Registrar transferencia'));
+    await settle(tester);
+    expect(
+      find.text('Transferencia registrada de Bancolombia a Nequi.'),
+      findsOneWidget,
+    );
+    final List<Entry> legs = <Entry>[
+      for (final Entry e in (await tester.runAsync(own.store.entries))!)
+        if (e.transferId != null && e.amount.abs() == Decimal.parse('150000'))
+          e,
+    ];
+    expect(
+      <String, Decimal>{for (final Entry e in legs) e.accountId: e.amount},
+      <String, Decimal>{
+        bank.id: Decimal.parse('-150000'),
+        nequi.id: Decimal.parse('150000'),
+      },
+    );
+
+    // The person says the withdrawal was not one: it waits as spending.
+    ScaffoldMessenger.of(
+      tester.element(find.byType(InboxPage)),
+    ).removeCurrentSnackBar();
+    await settle(tester);
+    await tester.ensureVisible(on('Bancolombia → Efectivo', 'No fue eso'));
+    await settle(tester);
+    await tester.tap(on('Bancolombia → Efectivo', 'No fue eso'));
+    await settle(tester);
+    expect(find.text('Bancolombia → Efectivo'), findsNothing);
+    expect(find.text('Registrar gasto'), findsWidgets);
+  });
 
   testWidgets('what the card taught reaches what waits with the same card, '
       'and goes back with Deshacer', (tester) async {
@@ -171,6 +384,16 @@ void main() {
     await settle(tester);
     await tester.tap(find.text('Bancolombia').last);
     await settle(tester);
+    // The notice names every rule, the shop with its accent, and what they
+    // settled.
+    expect(
+      find.text(
+        'Gasto registrado en Bancolombia. Desde ahora, «Éxito Laureles» va a '
+        'Mercado y la tarjeta *1234 va a Bancolombia. También quedó listo '
+        'otro movimiento.',
+      ),
+      findsOneWidget,
+    );
     // Carulla, paid with the same card, no longer asks.
     expect(on('Carulla', 'Mercado · Bancolombia'), findsOneWidget);
     expect(on('Carulla', 'Registrar gasto'), findsOneWidget);
@@ -307,16 +530,16 @@ void main() {
     );
   });
 
-  testWidgets('pesos that arrived from the dollar account stay what arrived', (
-    tester,
-  ) async {
+  testWidgets('pesos that arrived from the dollar account, said by hand, '
+      'stay what arrived', (tester) async {
     final OwnController own = await open(tester, () async {
       final QuincenaStore store = await withCaptures();
       await CaptureService(store, now: () => screensNow).ingest(<CaptureEvent>[
         CaptureEvent(
           source: CaptureSource.paste,
           at: screensNow,
-          text: r'Bancolombia: Recibiste $331.284 de GLOBAL66 COLOMBIA',
+          // A sender the app does not know as one of the person's banks.
+          text: r'Bancolombia: Recibiste $331.284 de CAMBIOS ANDES',
         ),
       ]);
       return store;
@@ -338,7 +561,7 @@ void main() {
 
     final Finder fromOwn = find.descendant(
       of: find.ancestor(
-        of: find.text('Global66 Colombia'),
+        of: find.text('Cambios Andes'),
         matching: find.byType(InboxCard),
       ),
       matching: find.text('¿Viene de otra cuenta tuya?'),
@@ -377,6 +600,57 @@ void main() {
       dollarsBefore - Decimal.parse('100'),
     );
     expect(own.balances[bank.id]!.amount, bankBefore + Decimal.parse('331284'));
+  });
+
+  testWidgets('pesos from the bank where the dollars are go in one tap, '
+      'the dollars at the day\'s rate', (tester) async {
+    final OwnController own = await open(tester, () async {
+      final QuincenaStore store = await withCaptures();
+      await CaptureService(store, now: () => screensNow).ingest(<CaptureEvent>[
+        CaptureEvent(
+          source: CaptureSource.paste,
+          at: screensNow,
+          text: r'Bancolombia: Recibiste $331.284 de GLOBAL66 COLOMBIA',
+        ),
+      ]);
+      return store;
+    });
+    Account named(String name) =>
+        own.accounts.firstWhere((Account a) => a.name == name);
+    final Account bank = named('Bancolombia');
+    final Account dollars = named('Cuenta en dólares');
+    final Decimal bankBefore = own.balances[bank.id]!.amount;
+    final Decimal dollarsBefore = own.balances[dollars.id]!.amount;
+    final Finder card = find.ancestor(
+      of: find.text('Cuenta en dólares → Bancolombia'),
+      matching: find.byType(InboxCard),
+    );
+    expect(
+      find.descendant(
+        of: card,
+        matching: find.text(
+          'Viene de Global66, donde tienes Cuenta en dólares: no es un '
+          'ingreso.',
+        ),
+      ),
+      findsOneWidget,
+    );
+    final Finder record = find.descendant(
+      of: card,
+      matching: find.text('Registrar transferencia'),
+    );
+    await tester.ensureVisible(record);
+    await tester.tap(record);
+    await settle(tester);
+    expect(
+      own.balances[dollars.id]!.amount,
+      dollarsBefore - Decimal.parse('100'),
+    );
+    expect(own.balances[bank.id]!.amount, bankBefore + Decimal.parse('331284'));
+    expect(
+      find.text('Transferencia registrada de Cuenta en dólares a Bancolombia.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('the form asks for the account instead of guessing one', (
@@ -447,6 +721,7 @@ void main() {
       () => own.ingestText(r'Nequi: Pagaste $32.000 en Rappi'),
     );
     await settle(tester);
+    await tester.scrollUntilVisible(find.text('Restaurantes · Nequi'), 300);
     expect(find.text('Restaurantes · Nequi'), findsOneWidget);
 
     // Corrected in its sheet: another category, a name, an amount.
@@ -480,9 +755,11 @@ void main() {
     );
     await settle(tester);
     expect(
-      find.text('No sabemos si es un gasto o un ingreso.'),
+      find.text('Falta saber si es un gasto o un ingreso'),
       findsOneWidget,
     );
+    // Neither spending nor income yet: no category of either.
+    expect(find.text('Sin clasificar · Falta la cuenta'), findsOneWidget);
     final String shown = tester
         .widget<Text>(find.textContaining('50.000'))
         .data!;
@@ -663,16 +940,22 @@ void main() {
       final double needs = top(tester, find.text('NECESITAN INFORMACIÓN'));
       expect(top(tester, find.text('Tiendas D1')), greaterThan(needs));
       expect(
-        find.text(
-          'Revisa la cuenta: la elegimos por ser tu única de uso diario en '
-          'COP.',
-        ),
+        find.text('La elegimos por ser tu única cuenta de uso diario en COP.'),
         findsOneWidget,
       );
 
       // The shop without a category is ready, but not as clear as the
-      // bakery: the button names the share it takes.
+      // bakery: the button names the share it takes, and the line under it
+      // the one left out and why; the card says it too.
       expect(top(tester, find.text('Tienda X')), lessThan(needs));
+      expect(
+        find.text('Queda por fuera Tienda X: no reconocimos su categoría.'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('No reconocimos la categoría: quedaría en Otros.'),
+        findsOneWidget,
+      );
       await tester.tap(find.text('Registrar 2 de los 3 listos'));
       await settle(tester);
       expect(find.text('2 movimientos registrados.'), findsOneWidget);

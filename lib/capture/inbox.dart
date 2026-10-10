@@ -140,6 +140,7 @@ class CaptureSettings {
     this.mutedApps = const <String>{},
     this.appNames = const <String, String>{},
     this.merchantCategories = const <String, String>{},
+    this.merchantNames = const <String, String>{},
     this.cardAccounts = const <String, String>{},
     this.accountNumbers = const <String, String>{},
     this.institutionAccounts = const <String, String>{},
@@ -163,6 +164,10 @@ class CaptureSettings {
   /// Merchant key to category, learned from what the person confirmed.
   final Map<String, String> merchantCategories;
 
+  /// Merchant key to the name as the person last saw it, with its accents:
+  /// a key is plain lowercase, «Éxito Laureles» reads `exito laureles`.
+  final Map<String, String> merchantNames;
+
   /// A card's last digits to account id. Before the app told cards and
   /// accounts apart, an account's digits were learned here too.
   final Map<String, String> cardAccounts;
@@ -184,6 +189,7 @@ class CaptureSettings {
     'mutedApps': mutedApps.toList()..sort(),
     'appNames': appNames,
     'merchantCategories': merchantCategories,
+    'merchantNames': merchantNames,
     'cardAccounts': cardAccounts,
     'accountNumbers': accountNumbers,
     'institutionAccounts': institutionAccounts,
@@ -206,6 +212,7 @@ class CaptureSettings {
       },
       appNames: map('appNames'),
       merchantCategories: map('merchantCategories'),
+      merchantNames: map('merchantNames'),
       cardAccounts: map('cardAccounts'),
       accountNumbers: map('accountNumbers'),
       institutionAccounts: map('institutionAccounts'),
@@ -223,6 +230,7 @@ class CaptureSettings {
     Set<String>? mutedApps,
     Map<String, String>? appNames,
     Map<String, String>? merchantCategories,
+    Map<String, String>? merchantNames,
     Map<String, String>? cardAccounts,
     Map<String, String>? accountNumbers,
     Map<String, String>? institutionAccounts,
@@ -233,6 +241,7 @@ class CaptureSettings {
     mutedApps: mutedApps ?? this.mutedApps,
     appNames: appNames ?? this.appNames,
     merchantCategories: merchantCategories ?? this.merchantCategories,
+    merchantNames: merchantNames ?? this.merchantNames,
     cardAccounts: cardAccounts ?? this.cardAccounts,
     accountNumbers: accountNumbers ?? this.accountNumbers,
     institutionAccounts: institutionAccounts ?? this.institutionAccounts,
@@ -310,6 +319,10 @@ class CaptureSettings {
     return switch (rule.kind) {
       RuleKind.merchant => copyWith(
         merchantCategories: map,
+        merchantNames: <String, String>{
+          for (final MapEntry<String, String> e in merchantNames.entries)
+            if (e.key != rule.key) e.key: e.value,
+        },
         disabledRules: off,
       ),
       RuleKind.card => copyWith(cardAccounts: map, disabledRules: off),
@@ -320,6 +333,10 @@ class CaptureSettings {
       ),
     };
   }
+
+  /// With [name] as how the merchant with [key] is shown.
+  CaptureSettings withMerchantName(String key, String name) =>
+      copyWith(merchantNames: <String, String>{...merchantNames, key: name});
 }
 
 /// What a rule matches on.
@@ -387,12 +404,15 @@ class CaptureRule {
 /// A rule a confirmation created or changed, and what it said before.
 @immutable
 class RuleChange {
-  const RuleChange(this.rule, {this.previous});
+  const RuleChange(this.rule, {this.previous, this.name});
 
   final CaptureRule rule;
 
   /// The target the rule had before, or null when it is new.
   final String? previous;
+
+  /// A merchant's name as the card showed it, accents and all.
+  final String? name;
 }
 
 /// Reads an inbox row's parsed column back into its parts.

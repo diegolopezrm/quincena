@@ -475,6 +475,65 @@ final RegExp _leadingMarks = RegExp(r'^[^\p{L}\p{N}]*', unicode: true);
   return (amount: amount, payee: payee);
 }
 
+/// What an alert says about money moving between the person's own
+/// accounts, which is neither spending nor income.
+@immutable
+class MoveHint {
+  const MoveHint({this.own, this.withdrawal = false, this.cardPayment = false});
+
+  /// Another bank or wallet the alert names as the person's own, where the
+  /// money went («a tu Nequi») or came from («desde tu Bancolombia»).
+  final String? own;
+
+  /// Cash taken out at an ATM or a correspondent.
+  final bool withdrawal;
+
+  /// The payment of a credit card.
+  final bool cardPayment;
+}
+
+// Matched against the folded text. What follows «a tu», «desde tu» and
+// their kin names the person's other account, when it names a bank.
+final RegExp _yourTo = RegExp(r'\b(?:a|hacia|para)\s+(?:tu|su)\s+');
+final RegExp _yourFrom = RegExp(r'\b(?:desde|de)\s+(?:tu|su)\s+');
+final RegExp _withdrew = RegExp(r'\bretir\w*\b');
+final RegExp _atm = RegExp(r'\b(?:cajero|atm|corresponsal)\b');
+final RegExp _paysCard = RegExp(
+  r'\b(?:pago|pagaste|abono|abonaste)\b.{0,40}?\b(?:a|de|para)\s+'
+  r'(?:la\s+|tu\s+|su\s+)?(?:tarjeta|tc|tdc)\b|\brecibimos tu pago\b',
+);
+
+/// Reads in [text], an alert from [institution] about money of [kind],
+/// what says it moved between the person's own accounts.
+MoveHint readMove(String text, {String? institution, EntryKind? kind}) {
+  final String plain = _fold(text);
+  String? own;
+  final RegExp? your = switch (kind) {
+    EntryKind.expense => _yourTo,
+    EntryKind.income => _yourFrom,
+    _ => null,
+  };
+  for (final RegExpMatch m in your?.allMatches(plain) ?? <RegExpMatch>[]) {
+    final String after = plain.substring(
+      m.end,
+      math.min(plain.length, m.end + 30),
+    );
+    final String? named = findInstitution(<String>[after]);
+    if (named != null && named != institution) {
+      own = named;
+      break;
+    }
+  }
+  return MoveHint(
+    own: own,
+    withdrawal:
+        kind == EntryKind.expense &&
+        _withdrew.hasMatch(plain) &&
+        _atm.hasMatch(plain),
+    cardPayment: kind == EntryKind.expense && _paysCard.hasMatch(plain),
+  );
+}
+
 /// The first amount on a label's line or the two under it, unless a line
 /// about a cost or a balance comes first.
 FoundAmount? _amountNear(List<String> lines, int i) {

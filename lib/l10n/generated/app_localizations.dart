@@ -4214,6 +4214,18 @@ abstract class AppLocalizations {
   /// **'No tienes movimientos pendientes. Cuando llegue un pago de tu banco, aparece aquí para registrarlo.'**
   String get inboxEmptyBody;
 
+  /// No description provided for @inboxOnlyRepeats.
+  ///
+  /// In es, this message translates to:
+  /// **'Nada por registrar.'**
+  String get inboxOnlyRepeats;
+
+  /// No description provided for @inboxOnlyRepeatsBody.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Queda un posible repetido por mirar, abajo.} other{Quedan {count} posibles repetidos por mirar, abajo.}}'**
+  String inboxOnlyRepeatsBody(int count);
+
   /// No description provided for @edit.
   ///
   /// In es, this message translates to:
@@ -4334,12 +4346,6 @@ abstract class AppLocalizations {
   /// **'Posibles repetidos'**
   String get possibleDuplicates;
 
-  /// No description provided for @duplicateLine.
-  ///
-  /// In es, this message translates to:
-  /// **'El mismo pago ya llegó por otra vía.'**
-  String get duplicateLine;
-
   /// No description provided for @notDuplicate.
   ///
   /// In es, this message translates to:
@@ -4400,29 +4406,59 @@ abstract class AppLocalizations {
   /// **'el mensaje dice de qué es'**
   String get whyWords;
 
-  /// No description provided for @ruleLearnedMerchant.
+  /// No description provided for @whyUnnamed.
   ///
   /// In es, this message translates to:
-  /// **'Desde ahora, «{merchant}» va a {category}.'**
-  String ruleLearnedMerchant(String merchant, String category);
+  /// **'lo que no dice el banco va a {account}'**
+  String whyUnnamed(String account);
 
-  /// No description provided for @ruleLearnedCard.
+  /// No description provided for @ruleLearned.
   ///
   /// In es, this message translates to:
-  /// **'Desde ahora, la tarjeta *{digits} va a {account}.'**
-  String ruleLearnedCard(String digits, String account);
+  /// **'Desde ahora, {rules}.'**
+  String ruleLearned(String rules);
 
-  /// No description provided for @ruleLearnedInstitution.
+  /// No description provided for @ruleGoesMerchant.
   ///
   /// In es, this message translates to:
-  /// **'Desde ahora, lo de {institution} va a {account}.'**
-  String ruleLearnedInstitution(String institution, String account);
+  /// **'«{merchant}» va a {category}'**
+  String ruleGoesMerchant(String merchant, String category);
 
-  /// No description provided for @ruleLearnedMore.
+  /// No description provided for @ruleGoesCard.
   ///
   /// In es, this message translates to:
-  /// **'{count, plural, =1{Y una regla más.} other{Y {count} reglas más.}}'**
-  String ruleLearnedMore(int count);
+  /// **'la tarjeta *{digits} va a {account}'**
+  String ruleGoesCard(String digits, String account);
+
+  /// No description provided for @ruleGoesAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'la cuenta *{digits} va a {account}'**
+  String ruleGoesAccount(String digits, String account);
+
+  /// No description provided for @ruleGoesInstitution.
+  ///
+  /// In es, this message translates to:
+  /// **'lo de {institution} va a {account}'**
+  String ruleGoesInstitution(String institution, String account);
+
+  /// No description provided for @ruleGoesUnnamed.
+  ///
+  /// In es, this message translates to:
+  /// **'lo que no dice el banco va a {account}'**
+  String ruleGoesUnnamed(String account);
+
+  /// No description provided for @ruleNoBank.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagos que no dicen el banco'**
+  String get ruleNoBank;
+
+  /// No description provided for @ruleResolved.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{También quedó listo otro movimiento.} other{También quedaron listos otros {count} movimientos.}}'**
+  String ruleResolved(int count);
 
   /// No description provided for @ruleMissingAccount.
   ///
@@ -4574,6 +4610,12 @@ abstract class AppLocalizations {
   /// **'Ese pago ya estaba.'**
   String get pasteDuplicate;
 
+  /// No description provided for @pasteJoined.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese aviso es de una transferencia que ya registraste.'**
+  String get pasteJoined;
+
   /// No description provided for @readScreenshot.
   ///
   /// In es, this message translates to:
@@ -4639,6 +4681,24 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Usar la ubicación del pago'**
   String get captureLocation;
+
+  /// No description provided for @captureLocationShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Sugiere el comercio por dónde estabas cuando llegó el pago.'**
+  String get captureLocationShort;
+
+  /// No description provided for @captureLocationHow.
+  ///
+  /// In es, this message translates to:
+  /// **'Cómo se usa la ubicación'**
+  String get captureLocationHow;
+
+  /// No description provided for @captureLocationHowClose.
+  ///
+  /// In es, this message translates to:
+  /// **'Entendido'**
+  String get captureLocationHowClose;
 
   /// No description provided for @captureLocationHelp.
   ///
@@ -5558,6 +5618,24 @@ abstract class AppLocalizations {
   /// **'No encontré movimientos en este archivo.'**
   String get statementNothing;
 
+  /// No description provided for @statementNothingTitles.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo trae la fila de títulos: ningún movimiento con fecha y valor.'**
+  String get statementNothingTitles;
+
+  /// No description provided for @statementNothingRows.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{El archivo no trae filas.} =1{Trae una sola fila, sin fecha y valor.} other{Leí {count} filas, pero ninguna con fecha y valor.}}'**
+  String statementNothingRows(int count);
+
+  /// No description provided for @statementFormats.
+  ///
+  /// In es, this message translates to:
+  /// **'Quincena lee extractos en CSV, Excel (.xlsx) o PDF, con una fila por movimiento: su fecha, su descripción y su valor.'**
+  String get statementFormats;
+
   /// No description provided for @statementFailed.
   ///
   /// In es, this message translates to:
@@ -5588,11 +5666,23 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{Un movimiento} other{{count} movimientos}} · {range}'**
   String statementSummary(int count, String range);
 
+  /// No description provided for @statementAccountGuessed.
+  ///
+  /// In es, this message translates to:
+  /// **'El archivo no dice de qué banco es: revisa que sea esta cuenta.'**
+  String get statementAccountGuessed;
+
   /// No description provided for @statementRecorded.
   ///
   /// In es, this message translates to:
   /// **'Ya registrado'**
   String get statementRecorded;
+
+  /// No description provided for @statementRecordedAs.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya registrado: {what}'**
+  String statementRecordedAs(String what);
 
   /// No description provided for @statementImportedBefore.
   ///
@@ -5611,6 +5701,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{count, plural, =0{Nada para importar} =1{Importar un movimiento} other{Importar {count} movimientos}}'**
   String statementImport(int count);
+
+  /// No description provided for @statementImportNew.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Importar el nuevo} other{Importar {count} nuevos}}'**
+  String statementImportNew(int count);
 
   /// No description provided for @statementDone.
   ///
@@ -6037,6 +6133,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{count} cobros parecidos, el último de {amount}: {dates}'**
   String guessEvidence(int count, String amount, String dates);
+
+  /// No description provided for @guessOnce.
+  ///
+  /// In es, this message translates to:
+  /// **'Un pago de {amount} el {date}: suele repetirse cada mes.'**
+  String guessOnce(String amount, String date);
 
   /// No description provided for @guessAdd.
   ///
@@ -7880,6 +7982,12 @@ abstract class AppLocalizations {
   /// **'¿Con qué movimiento llegó?'**
   String get freelanceArrivedAs;
 
+  /// No description provided for @freelanceNoEntry.
+  ///
+  /// In es, this message translates to:
+  /// **'Ninguno, o no está en Quincena'**
+  String get freelanceNoEntry;
+
   /// No description provided for @freelanceNote.
   ///
   /// In es, this message translates to:
@@ -9121,6 +9229,78 @@ abstract class AppLocalizations {
   /// **'¿Viene de otra cuenta tuya?'**
   String get fromOwnAccount;
 
+  /// No description provided for @fromOwnAccountOut.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Fue a otra cuenta tuya?'**
+  String get fromOwnAccountOut;
+
+  /// No description provided for @moveBetween.
+  ///
+  /// In es, this message translates to:
+  /// **'Entre tus cuentas'**
+  String get moveBetween;
+
+  /// No description provided for @moveWhyOwnOut.
+  ///
+  /// In es, this message translates to:
+  /// **'Pasaste plata a tu {account}: no es un gasto.'**
+  String moveWhyOwnOut(String account);
+
+  /// No description provided for @moveWhyOwnIn.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegó desde tu {account}: no es un ingreso.'**
+  String moveWhyOwnIn(String account);
+
+  /// No description provided for @moveWhySelf.
+  ///
+  /// In es, this message translates to:
+  /// **'La enviaste tú: no es un ingreso.'**
+  String get moveWhySelf;
+
+  /// No description provided for @moveWhyBank.
+  ///
+  /// In es, this message translates to:
+  /// **'Viene de {bank}, donde tienes {account}: no es un ingreso.'**
+  String moveWhyBank(String bank, String account);
+
+  /// No description provided for @moveWhyCash.
+  ///
+  /// In es, this message translates to:
+  /// **'Un retiro en cajero pasa la plata a {account}: no es un gasto.'**
+  String moveWhyCash(String account);
+
+  /// No description provided for @moveWhyCard.
+  ///
+  /// In es, this message translates to:
+  /// **'Es el pago de tu {account}: lo que compraste con ella ya contó como gasto.'**
+  String moveWhyCard(String account);
+
+  /// No description provided for @notMove.
+  ///
+  /// In es, this message translates to:
+  /// **'No fue eso'**
+  String get notMove;
+
+  /// No description provided for @joinedArrival.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegó a {to}: era la transferencia desde {from}.'**
+  String joinedArrival(String to, String from);
+
+  /// No description provided for @joinedDeparture.
+  ///
+  /// In es, this message translates to:
+  /// **'Salió de {from}: era la transferencia a {to}.'**
+  String joinedDeparture(String from, String to);
+
+  /// No description provided for @transferJoined.
+  ///
+  /// In es, this message translates to:
+  /// **'El otro aviso de esa misma plata también quedó registrado.'**
+  String get transferJoined;
+
   /// No description provided for @moreActions.
   ///
   /// In es, this message translates to:
@@ -9144,6 +9324,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{count, plural, =1{1 sin categoría} other{{count} sin categoría}}'**
   String statementUnsorted(int count);
+
+  /// No description provided for @statementNeedsReview.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{1 necesita revisión} other{{count} necesitan revisión}}'**
+  String statementNeedsReview(int count);
 
   /// No description provided for @statementAlreadyUnchecked.
   ///
@@ -9985,10 +10171,22 @@ abstract class AppLocalizations {
   /// **'Como aparece en el extracto'**
   String get statementOriginal;
 
+  /// No description provided for @statementMatches.
+  ///
+  /// In es, this message translates to:
+  /// **'Coincide con lo que ya estaba'**
+  String get statementMatches;
+
+  /// No description provided for @statementSeeEntry.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver movimiento'**
+  String get statementSeeEntry;
+
   /// No description provided for @statementCardPayment.
   ///
   /// In es, this message translates to:
-  /// **'Pago de tu tarjeta {card}'**
+  /// **'Pago de tu {card}'**
   String statementCardPayment(String card);
 
   /// No description provided for @statementOwnTransferTo.
@@ -10021,11 +10219,23 @@ abstract class AppLocalizations {
   /// **'¿Es el pago de una tarjeta tuya?'**
   String get statementIsCardPayment;
 
-  /// No description provided for @statementAddCard.
+  /// No description provided for @statementCardMissing.
   ///
   /// In es, this message translates to:
-  /// **'Parece el pago de una tarjeta. Agrégala en Cuentas para que Quincena no cuente dos veces lo que compraste con ella.'**
-  String get statementAddCard;
+  /// **'Parece el pago de una tarjeta que no tienes en la app: queda sin marcar, para no contar dos veces lo que compraste con ella.'**
+  String get statementCardMissing;
+
+  /// No description provided for @statementCardMissingLine.
+  ///
+  /// In es, this message translates to:
+  /// **'Pago de una tarjeta que no está en la app'**
+  String get statementCardMissingLine;
+
+  /// No description provided for @statementAddCardButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar la tarjeta'**
+  String get statementAddCardButton;
 
   /// No description provided for @statementDoneTransfers.
   ///
@@ -10104,6 +10314,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Lo que debes en {account}: {before} → {after}'**
   String statementDebtEffect(String account, String before, String after);
+
+  /// No description provided for @statementDebtSame.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que debes en {account} sigue en {amount}: ya incluía estos movimientos.'**
+  String statementDebtSame(String account, String amount);
 
   /// No description provided for @statementBalanceSame.
   ///
@@ -10524,6 +10740,30 @@ abstract class AppLocalizations {
   /// **'Listo. Lo que puedes gastar ya no es provisional.'**
   String get fixedNoneDone;
 
+  /// No description provided for @fixedNoneAskTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Y {name}?'**
+  String fixedNoneAskTitle(String name);
+
+  /// No description provided for @fixedNoneAskBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagaste {amount} el {date}, y eso suele repetirse cada mes. Si es un pago fijo, agrégalo para que lo que puedes gastar lo cuente antes de que llegue.'**
+  String fixedNoneAskBody(String amount, String date);
+
+  /// No description provided for @fixedNoneAskAdd.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregarlo'**
+  String get fixedNoneAskAdd;
+
+  /// No description provided for @fixedNoneAskNo.
+  ///
+  /// In es, this message translates to:
+  /// **'No es fijo'**
+  String get fixedNoneAskNo;
+
   /// No description provided for @freeExplainAssumeNoFixed.
   ///
   /// In es, this message translates to:
@@ -10800,23 +11040,155 @@ abstract class AppLocalizations {
   /// **'Transferencia registrada.'**
   String get recordedTransfer;
 
+  /// No description provided for @recordedTransferBetween.
+  ///
+  /// In es, this message translates to:
+  /// **'Transferencia registrada de {from} a {to}.'**
+  String recordedTransferBetween(String from, String to);
+
   /// No description provided for @accountMissingShort.
   ///
   /// In es, this message translates to:
   /// **'Falta la cuenta'**
   String get accountMissingShort;
 
-  /// No description provided for @kindMissing.
+  /// No description provided for @stateReady.
   ///
   /// In es, this message translates to:
-  /// **'No sabemos si es un gasto o un ingreso.'**
-  String get kindMissing;
+  /// **'Lista para registrar'**
+  String get stateReady;
 
-  /// No description provided for @accountGuessed.
+  /// No description provided for @stateAccount.
   ///
   /// In es, this message translates to:
-  /// **'Revisa la cuenta: la elegimos por ser tu única de uso diario en {asset}.'**
-  String accountGuessed(String asset);
+  /// **'Falta elegir la cuenta'**
+  String get stateAccount;
+
+  /// No description provided for @stateGuessed.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisa la cuenta'**
+  String get stateGuessed;
+
+  /// No description provided for @stateKind.
+  ///
+  /// In es, this message translates to:
+  /// **'Falta saber si es un gasto o un ingreso'**
+  String get stateKind;
+
+  /// No description provided for @stateRepeat.
+  ///
+  /// In es, this message translates to:
+  /// **'Posible repetido'**
+  String get stateRepeat;
+
+  /// No description provided for @stateMove.
+  ///
+  /// In es, this message translates to:
+  /// **'Transferencia entre tus cuentas'**
+  String get stateMove;
+
+  /// No description provided for @stateClientPaid.
+  ///
+  /// In es, this message translates to:
+  /// **'El pago que esperabas'**
+  String get stateClientPaid;
+
+  /// No description provided for @clientPaidDetail.
+  ///
+  /// In es, this message translates to:
+  /// **'De {client}, por {amount}: al registrarlo queda como cobrado.'**
+  String clientPaidDetail(String client, String amount);
+
+  /// No description provided for @stateFriendPaid.
+  ///
+  /// In es, this message translates to:
+  /// **'Pago de lo que te deben'**
+  String get stateFriendPaid;
+
+  /// No description provided for @friendPaidDetail.
+  ///
+  /// In es, this message translates to:
+  /// **'{name} te debe {owed} en «{group}»: al registrarlo queda anotado.'**
+  String friendPaidDetail(String name, String owed, String group);
+
+  /// No description provided for @recordCollected.
+  ///
+  /// In es, this message translates to:
+  /// **'Registrar y marcar cobrado'**
+  String get recordCollected;
+
+  /// No description provided for @recordRepaid.
+  ///
+  /// In es, this message translates to:
+  /// **'Registrar el pago de {name}'**
+  String recordRepaid(String name);
+
+  /// No description provided for @collectedDone.
+  ///
+  /// In es, this message translates to:
+  /// **'{client} quedó como cobrado.'**
+  String collectedDone(String client);
+
+  /// No description provided for @repaidAll.
+  ///
+  /// In es, this message translates to:
+  /// **'{name} ya no te debe nada.'**
+  String repaidAll(String name);
+
+  /// No description provided for @repaidLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'{name} todavía te debe {amount}.'**
+  String repaidLeft(String name, String amount);
+
+  /// No description provided for @stateCheckCategory.
+  ///
+  /// In es, this message translates to:
+  /// **'No reconocimos la categoría: quedaría en {category}.'**
+  String stateCheckCategory(String category);
+
+  /// No description provided for @stateCheckImage.
+  ///
+  /// In es, this message translates to:
+  /// **'La leímos de una imagen: revisa el monto antes.'**
+  String get stateCheckImage;
+
+  /// No description provided for @accountGuessedWhy.
+  ///
+  /// In es, this message translates to:
+  /// **'La elegimos por ser tu única cuenta de uso diario en {asset}.'**
+  String accountGuessedWhy(String asset);
+
+  /// No description provided for @repeatOf.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya está: {what}'**
+  String repeatOf(String what);
+
+  /// No description provided for @repeatOfNotice.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya llegó otro aviso igual: {what}.'**
+  String repeatOfNotice(String what);
+
+  /// No description provided for @removeRepeat.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar repetido'**
+  String get removeRepeat;
+
+  /// No description provided for @unclassified.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin clasificar'**
+  String get unclassified;
+
+  /// No description provided for @categoryToConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'Categoría por confirmar'**
+  String get categoryToConfirm;
 
   /// No description provided for @whichAccountCard.
   ///
@@ -10847,6 +11219,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'¿A qué cuenta llegó?'**
   String get pickAccountIn;
+
+  /// No description provided for @pickAccountOthers.
+  ///
+  /// In es, this message translates to:
+  /// **'Otras cuentas'**
+  String get pickAccountOthers;
+
+  /// No description provided for @addAccountAt.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar mi cuenta de {institution}'**
+  String addAccountAt(String institution);
 
   /// No description provided for @pickAccountCardNote.
   ///
@@ -10949,6 +11333,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{count, plural, =1{Registrar 1 de los {total} listos} other{Registrar {count} de los {total} listos}}'**
   String inboxRecordSome(int count, int total);
+
+  /// No description provided for @inboxLeftOutCategory.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Queda por fuera {names}: no reconocimos su categoría.} other{Quedan por fuera {names}: no reconocimos su categoría.}}'**
+  String inboxLeftOutCategory(int count, String names);
+
+  /// No description provided for @inboxLeftOut.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Queda por fuera {names}: revísalo antes.} other{Quedan por fuera {names}: revísalos uno por uno.}}'**
+  String inboxLeftOut(int count, String names);
 
   /// No description provided for @exampleBarTitle.
   ///
@@ -11123,12 +11519,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'la cuenta *{digits} es {account}'**
   String whyAccount(String digits, String account);
-
-  /// No description provided for @ruleLearnedAccount.
-  ///
-  /// In es, this message translates to:
-  /// **'Desde ahora, la cuenta *{digits} va a {account}.'**
-  String ruleLearnedAccount(String digits, String account);
 
   /// No description provided for @ruleAccountKey.
   ///

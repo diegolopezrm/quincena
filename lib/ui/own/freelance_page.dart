@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../../data/ledger.dart';
 import '../../domain/freelance.dart';
+import '../../domain/payment_match.dart';
 import '../../domain/records.dart';
 import '../../format/dates.dart';
 import '../../format/money.dart';
@@ -583,6 +584,24 @@ class _IncomeSheetState extends State<_IncomeSheet> {
     navigator.pop();
   }
 
+  /// The income among [incomes] that is this client's payment: from
+  /// someone of that name, for about what was billed, as a client may
+  /// withhold part of it.
+  Entry? _matching(List<Entry> incomes) {
+    final Decimal? billed = parseAmount(_amount.text);
+    final String client = _client.text.trim();
+    if (billed == null || billed <= Decimal.zero || client.isEmpty) {
+      return null;
+    }
+    for (final Entry e in incomes) {
+      final double ratio = e.amount.toDouble() / billed.toDouble();
+      if (namesMatch(client, e.payee) && ratio >= 0.8 && ratio <= 1.05) {
+        return e;
+      }
+    }
+    return null;
+  }
+
   /// Deletes the payment, with a way back for a few seconds.
   Future<void> _delete() async {
     final NavigatorState navigator = Navigator.of(context);
@@ -659,8 +678,14 @@ class _IncomeSheetState extends State<_IncomeSheet> {
                 ),
               ],
               selected: <IncomeStatus>{_status},
-              onSelectionChanged: (Set<IncomeStatus> v) =>
-                  setState(() => _status = v.first),
+              onSelectionChanged: (Set<IncomeStatus> v) => setState(() {
+                _status = v.first;
+                // Collected, the income that matches the client and the
+                // amount comes chosen.
+                if (_status == IncomeStatus.collected) {
+                  _entryId ??= _matching(incomes)?.id;
+                }
+              }),
             ),
             const SizedBox(height: 8),
             Text(switch (_status) {
@@ -696,7 +721,7 @@ class _IncomeSheetState extends State<_IncomeSheet> {
                 isExpanded: true,
                 decoration: InputDecoration(labelText: l.freelanceArrivedAs),
                 items: <DropdownMenuItem<String?>>[
-                  DropdownMenuItem<String?>(child: Text(l.sharedNotRecorded)),
+                  DropdownMenuItem<String?>(child: Text(l.freelanceNoEntry)),
                   for (final Entry e in incomes)
                     DropdownMenuItem<String?>(
                       value: e.id,

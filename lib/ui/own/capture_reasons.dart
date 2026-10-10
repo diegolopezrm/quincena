@@ -7,6 +7,7 @@ import '../../capture/merchants.dart';
 import '../../domain/records.dart';
 import '../../l10n/l10n.dart';
 import '../../own/own_controller.dart';
+import '../messages.dart';
 import 'look.dart';
 
 /// A merchant's key the way the app writes merchants: `exito laureles`
@@ -65,6 +66,7 @@ List<String> reasonList(
         'learned' when merchant != null => l.whyLearned(merchant),
         'merchant' when merchant != null => l.whyMerchant(merchant),
         'words' => l.whyWords,
+        'unnamed' => l.whyUnnamed(account),
         _ => null,
       },
   ];
@@ -82,10 +84,14 @@ String missingAccountText(
   final String? card = item.parsed.card;
   final String? number = item.parsed.account;
   if (institution != null) {
-    final int there = accountsAt(institution, own.accounts).length;
-    if (there == 0) return l.whichAccountBankNone(institution);
+    final List<Account> at = accountsAt(institution, own.accounts);
+    if (at.isEmpty) return l.whichAccountBankNone(institution);
     if (card != null) return l.whichAccountCard(institution, card);
     if (number != null) return l.whichAccountNumber(institution, number);
+    // Money that came in reached one of the bank's accounts, not its card.
+    final int there = item.parsed.kind == EntryKind.income
+        ? at.where((Account a) => a.kind != AccountKind.card).length
+        : at.length;
     if (there > 1) return l.whichAccountBankMany(there, institution);
   }
   return item.parsed.kind == EntryKind.income
@@ -99,37 +105,97 @@ String ruleTarget(BuildContext context, OwnController own, CaptureRule rule) =>
     ? categoryNameFor(context, rule.target, own.categories)
     : _accountName(context.l10n, own, rule.target);
 
-/// What a rule matches, the way the person would say it.
-String ruleSubject(BuildContext context, CaptureRule rule) =>
+/// What a rule matches, the way the person would say it: a merchant as
+/// the card showed it, accents and all, when the app kept that name, or
+/// else as it was recorded.
+String ruleSubject(BuildContext context, OwnController own, CaptureRule rule) =>
     switch (rule.kind) {
-      RuleKind.merchant => merchantShown(rule.key),
+      RuleKind.merchant =>
+        own.captureSettings.merchantNames[rule.key] ??
+            _recordedNames(own)[rule.key] ??
+            merchantShown(rule.key),
       RuleKind.card => context.l10n.ruleCardKey(rule.key),
       RuleKind.account => context.l10n.ruleAccountKey(rule.key),
+      RuleKind.institution when rule.key == CaptureService.noBank =>
+        context.l10n.ruleNoBank,
       RuleKind.institution => rule.key,
     };
 
-/// What a confirmation taught, for the message that offers to undo it.
+final Expando<Map<String, String>> _names = Expando<Map<String, String>>();
+
+/// Each merchant the person recorded, by the key rules use, as it was
+/// written, the one with accents first: rules learned before the app kept
+/// names then read «Éxito Laureles», not «Exito Laureles». Built once per
+/// list of entries, as the rules page asks for every rule.
+Map<String, String> _recordedNames(OwnController own) {
+  final List<Entry>? entries = own.snapshot?.entries;
+  if (entries == null) return const <String, String>{};
+  return _names[entries] ??= () {
+    final RegExp accented = RegExp('[áéíóúüñÁÉÍÓÚÜÑ]');
+    final Map<String, String> names = <String, String>{};
+    for (final Entry e in entries) {
+      final String payee = e.payee.trim();
+      if (payee.isEmpty) continue;
+      final String key = merchantKey(payee);
+      if (key.isEmpty) continue;
+      final String? kept = names[key];
+      if (kept == null ||
+          (!accented.hasMatch(kept) && accented.hasMatch(payee))) {
+        names[key] = payee;
+      }
+    }
+    return names;
+  }();
+}
+
+/// What a confirmation taught, for the message that offers to undo it:
+/// every rule, each by its name.
 String learnedText(
   BuildContext context,
   OwnController own,
   List<RuleChange> changes,
 ) {
   final AppLocalizations l = context.l10n;
-  final CaptureRule first = changes.first.rule;
-  final String target = ruleTarget(context, own, first);
-  final String said = switch (first.kind) {
-    RuleKind.merchant => l.ruleLearnedMerchant(
-      merchantShown(first.key),
-      target,
-    ),
-    RuleKind.card => l.ruleLearnedCard(first.key, target),
-    RuleKind.account => l.ruleLearnedAccount(first.key, target),
-    RuleKind.institution => l.ruleLearnedInstitution(first.key, target),
-  };
-  return changes.length == 1
-      ? said
-      : '$said ${l.ruleLearnedMore(changes.length - 1)}';
+  final List<String> rules = <String>[
+    for (final RuleChange c in changes)
+      switch (c.rule.kind) {
+        RuleKind.merchant => l.ruleGoesMerchant(
+          c.name ?? ruleSubject(context, own, c.rule),
+          ruleTarget(context, own, c.rule),
+        ),
+        RuleKind.card => l.ruleGoesCard(
+          c.rule.key,
+          ruleTarget(context, own, c.rule),
+        ),
+        RuleKind.account => l.ruleGoesAccount(
+          c.rule.key,
+          ruleTarget(context, own, c.rule),
+        ),
+        RuleKind.institution when c.rule.key == CaptureService.noBank =>
+          l.ruleGoesUnnamed(ruleTarget(context, own, c.rule)),
+        RuleKind.institution => l.ruleGoesInstitution(
+          c.rule.key,
+          ruleTarget(context, own, c.rule),
+        ),
+      },
+  ];
+  return l.ruleLearned(
+    rules.length < 2
+        ? rules.join()
+        : l.listAnd(
+            rules.take(rules.length - 1).join(', '),
+            rules.last,
+            listSound(rules.last),
+          ),
+  );
 }
+
+/// The sound [words] start with, as listAnd picks its conjunction: Spanish
+/// says «y» before most words and «e» before an «i».
+String listSound(String words) =>
+    RegExp(r'^[«"]?h?[ií](?![aeoáéó])', caseSensitive: false).hasMatch(words)
+    ? 'i'
+    : 'other';
 
 /// Says where [done] was recorded and what it taught, with one way to take
 /// both back: the movement goes, and the capture waits in Por revisar
@@ -138,18 +204,46 @@ String learnedText(
 void showRecorded(
   ScaffoldMessengerState messenger,
   OwnController own,
-  Accepted done,
-) {
+  Accepted done, {
+  String? also,
+  Future<void> Function()? undoAlso,
+}) {
   final BuildContext context = messenger.context;
   final AppLocalizations l = context.l10n;
   final Entry entry = done.entry;
   final String account = _accountName(l, own, entry.accountId);
   final String said = switch (entry.kind) {
+    EntryKind.transfer when done.toAccountId != null =>
+      l.recordedTransferBetween(
+        account,
+        _accountName(l, own, done.toAccountId),
+      ),
     EntryKind.transfer => l.recordedTransfer,
     _ when entry.amount > Decimal.zero => l.recordedIncomeIn(account),
     _ => l.recordedExpenseIn(account),
   };
-  _offerUndo(messenger, own, <Accepted>[done], said);
+  _offerUndo(
+    messenger,
+    own,
+    <Accepted>[done],
+    also == null ? said : '$said $also',
+    undoAlso: undoAlso,
+  );
+}
+
+/// Says what correcting a movement recorded on its own taught, with one
+/// way to take it back: the rules, and the card's why with them, go back
+/// to what they were in [before].
+void showLearned(
+  ScaffoldMessengerState messenger,
+  OwnController own,
+  List<RuleChange> learned,
+  InboxItem before,
+) {
+  showUndo(messenger, learnedText(messenger.context, own, learned), () async {
+    await own.capture.forget(learned);
+    await own.store.saveInboxItem(before);
+  });
 }
 
 /// Says how many of [done] were recorded at once, with one way to take
@@ -168,31 +262,32 @@ void showRecordedMany(
   );
 }
 
-/// [said], then what [done] taught, with a way to take all of it back.
+/// [said], then what [done] taught and the captures waiting that it left
+/// ready, with a way to take all of it back.
 void _offerUndo(
   ScaffoldMessengerState messenger,
   OwnController own,
   List<Accepted> done,
-  String said,
-) {
+  String said, {
+  Future<void> Function()? undoAlso,
+}) {
   final BuildContext context = messenger.context;
   final List<RuleChange> learned = <RuleChange>[
     for (final Accepted a in done) ...a.learned,
   ];
-  messenger
-    ..hideCurrentSnackBar()
-    ..showSnackBar(
-      SnackBar(
-        content: Text(
-          learned.isEmpty
-              ? said
-              : '$said ${learnedText(context, own, learned)}',
-        ),
-        duration: const Duration(seconds: 6),
-        action: SnackBarAction(
-          label: context.l10n.undo,
-          onPressed: () => own.capture.takeBack(done),
-        ),
-      ),
-    );
+  final int resolved = done.fold(0, (int n, Accepted a) => n + a.resolved);
+  final bool joined = done.any((Accepted a) => a.joined.isNotEmpty);
+  showUndo(
+    messenger,
+    <String>[
+      said,
+      if (learned.isNotEmpty) learnedText(context, own, learned),
+      if (resolved > 0) context.l10n.ruleResolved(resolved),
+      if (joined) context.l10n.transferJoined,
+    ].join(' '),
+    () async {
+      await own.capture.takeBack(done);
+      await undoAlso?.call();
+    },
+  );
 }

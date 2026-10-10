@@ -345,8 +345,14 @@ StatementRead readTable(
 }) {
   const List<StatementLine> none = <StatementLine>[];
   if (rows.isEmpty) return StatementRead(lines: none, source: source);
+  // What the file holds, said when nothing in it reads as a movement.
+  final int written = rows
+      .where((List<String> r) => r.any((String c) => c.trim().isNotEmpty))
+      .length;
   final _Layout l = _layout(rows);
-  if (!l.usable) return StatementRead(lines: none, source: source);
+  if (!l.usable) {
+    return StatementRead(lines: none, source: source, rows: written);
+  }
 
   String cell(List<String> row, int c) =>
       c >= 0 && c < row.length ? row[c] : '';
@@ -414,7 +420,12 @@ StatementRead readTable(
       ),
     );
   }
-  return StatementRead(lines: signFromBalance(lines), source: source);
+  return StatementRead(
+    lines: signFromBalance(lines),
+    source: source,
+    rows: written,
+    titles: l.header >= 0,
+  );
 }
 
 /// [lines] with the signs their balances show, when every amount came

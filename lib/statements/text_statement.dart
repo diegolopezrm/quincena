@@ -141,6 +141,10 @@ StatementRead readStatementText(String text, {int? year}) {
     lines: lines,
     source: StatementSource.pdf,
     institution: firstInstitution(text),
+    rows: text
+        .split(RegExp(r'\r?\n'))
+        .where((String l) => l.trim().isNotEmpty)
+        .length,
   );
 }
 

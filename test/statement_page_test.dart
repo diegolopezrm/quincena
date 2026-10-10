@@ -64,16 +64,18 @@ void main() {
     expect(find.text('4 movimientos · 1–4 sept 2026'), findsOneWidget);
     // Before importing: what is new, what was already there, and what
     // comes without a category.
-    expect(
-      find.text('3 nuevos · 1 ya estaba · 1 sin categoría'),
-      findsOneWidget,
-    );
+    expect(find.text('3 nuevos · 1 ya estaba'), findsOneWidget);
+    expect(find.text('1 sin categoría'), findsOneWidget);
     expect(find.text('Exito Laureles'), findsOneWidget);
     // Each new line says what it will be; what was there says so.
     expect(find.text('1 sept · Mercado'), findsOneWidget);
     expect(find.text('4 sept · Sin categoría'), findsOneWidget);
-    expect(find.text('3 sept · Ya registrado'), findsOneWidget);
-    expect(find.text('Importar 3 movimientos'), findsOneWidget);
+    // What was there says which movement it is.
+    expect(
+      find.text('3 sept · Ya registrado: Comcel, anotado a mano'),
+      findsOneWidget,
+    );
+    expect(find.text('Importar 3 nuevos'), findsOneWidget);
     // What the checked lines bring in and take out.
     expect(
       find.text(
@@ -115,7 +117,7 @@ void main() {
     expect(find.text('Nada seleccionado'), findsOneWidget);
     await tester.tap(find.text('Marcar los nuevos'));
     await settle(tester);
-    expect(find.text('Importar 3 movimientos'), findsOneWidget);
+    expect(find.text('Importar 3 nuevos'), findsOneWidget);
     expect(
       find.text(
         'Lo que ya estaba quedó sin marcar, para no contarlo dos veces.',
@@ -152,7 +154,7 @@ void main() {
     );
 
     final int freeBefore = own.ledger!.freeUntilPayday;
-    await tester.tap(find.text('Importar 3 movimientos'));
+    await tester.tap(find.text('Importar 3 nuevos'));
     await settle(tester);
     final List<Entry> entries =
         await tester.runAsync(() => store.entries(accountId: bank.id)) ??
@@ -164,7 +166,7 @@ void main() {
           .map((Entry e) => e.payee),
       unorderedEquals(<String>[
         'Exito Laureles',
-        'Nomina DL Soft',
+        'Nómina DL Soft',
         'Juan Perez',
       ]),
     );
@@ -208,13 +210,13 @@ void main() {
         ),
       ),
     );
-    expect(find.text('Importar 2 movimientos'), findsOneWidget);
+    expect(find.text('Importar 2 nuevos'), findsOneWidget);
     await tester.tap(find.text('Quitar todos'));
     await settle(tester);
     expect(find.text('Marcar los nuevos'), findsNothing);
     await tester.tap(find.text('Seleccionar todos'));
     await settle(tester);
-    expect(find.text('Importar 2 movimientos'), findsOneWidget);
+    expect(find.text('Importar 2 nuevos'), findsOneWidget);
   });
   testWidgets('a line opens to change what it is recorded as', (tester) async {
     final (QuincenaStore store, OwnController own, Account bank) = await world(
@@ -231,10 +233,8 @@ void main() {
         ),
       ),
     );
-    expect(
-      find.text('2 nuevos · ninguno repetido · 1 sin categoría'),
-      findsOneWidget,
-    );
+    expect(find.text('2 nuevos · ninguno repetido'), findsOneWidget);
+    expect(find.text('1 sin categoría'), findsOneWidget);
 
     // The bank's own words, and a category for what came without one.
     await tester.tap(find.text('Juan Perez'));
@@ -246,7 +246,7 @@ void main() {
     await tapOn(tester, find.text('Guardar'));
     await settle(tester);
     expect(find.text('4 sept · Transporte'), findsOneWidget);
-    expect(find.text('2 nuevos · ninguno repetido'), findsOneWidget);
+    expect(find.text('1 sin categoría'), findsNothing);
 
     // A refund the bank wrote as a purchase: its sign follows.
     await tester.tap(find.text('Exito Laureles'));
@@ -265,7 +265,7 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.tap(find.text('Importar 2 movimientos'));
+    await tester.tap(find.text('Importar 2 nuevos'));
     await settle(tester);
     final List<Entry> entries =
         await tester.runAsync(() => store.entries(accountId: bank.id)) ??
@@ -316,11 +316,9 @@ void main() {
         ),
       ),
     );
-    expect(
-      find.text('2 nuevos · ninguno repetido · 1 entre tus cuentas'),
-      findsOneWidget,
-    );
-    expect(find.text('24 sept · Pago de tu tarjeta Visa'), findsOneWidget);
+    expect(find.text('2 nuevos · ninguno repetido'), findsOneWidget);
+    expect(find.text('1 entre tus cuentas'), findsOneWidget);
+    expect(find.text('24 sept · Pago de tu Visa'), findsOneWidget);
     expect(
       find.text(
         'Un pago de tarjeta pasa plata de una cuenta tuya a otra: no cuenta '
@@ -329,14 +327,14 @@ void main() {
       findsOneWidget,
     );
     // The line says where the money went, and can be changed.
-    await tester.tap(find.text('Tarjeta Visa'));
+    await tester.tap(find.text('Pago de la Visa'));
     await settle(tester);
     expect(find.text('Hacia'), findsOneWidget);
     expect(find.text('Visa'), findsOneWidget);
     await tester.tapAt(const Offset(20, 20));
     await settle(tester);
 
-    await tester.tap(find.text('Importar 2 movimientos'));
+    await tester.tap(find.text('Importar 2 nuevos'));
     await settle(tester);
     final List<Entry> onCard =
         await tester.runAsync(() => store.entries(accountId: visa.id)) ??
@@ -356,26 +354,56 @@ void main() {
     expect(find.text('Todos quedaron con su categoría.'), findsOneWidget);
   });
 
-  testWidgets('a card payment without a card asks to add it', (tester) async {
-    final (_, OwnController own, _) = await world(tester);
+  testWidgets('a card payment without a card is left out until it is added', (
+    tester,
+  ) async {
+    final (QuincenaStore store, OwnController own, Account bank) = await world(
+      tester,
+    );
     await open(
       tester,
       own,
       readTable(
         parseCsv(
           'Fecha;Descripción;Valor\n'
+          '20/09/2026;COMPRA EN EXITO LAURELES;-45.900\n'
           '24/09/2026;PAGO TARJETA VISA;-480.000\n',
         ),
       ),
     );
     expect(
       find.text(
-        'Parece el pago de una tarjeta. Agrégala en Cuentas para que '
-        'Quincena no cuente dos veces lo que compraste con ella.',
+        'Parece el pago de una tarjeta que no tienes en la app: queda sin '
+        'marcar, para no contar dos veces lo que compraste con ella.',
       ),
       findsOneWidget,
     );
-    expect(find.text('24 sept · Sin categoría'), findsOneWidget);
+    // The line says it, and stays out of what is imported.
+    expect(
+      find.text('24 sept · Pago de una tarjeta que no está en la app'),
+      findsOneWidget,
+    );
+    expect(tester.widget<Checkbox>(box('Pago de la Visa')).value, isFalse);
+    expect(
+      find.text('2 nuevos · ninguno repetido · 1 necesita revisión'),
+      findsOneWidget,
+    );
+    expect(find.text('Importar el nuevo'), findsOneWidget);
+
+    // Added from here, the card takes the payment as a move to it.
+    await tester.tap(find.text('Agregar la tarjeta'));
+    await settle(tester);
+    await tapOn(tester, find.text('Guardar').last);
+    await settle(tester);
+    final Account card = (await tester.runAsync(
+      store.accounts,
+    ))!.firstWhere((Account a) => a.kind == AccountKind.card);
+    // Named by the brand its payment says.
+    expect(card.name, 'Visa');
+    expect(card.institution, bank.institution);
+    expect(find.text('24 sept · Pago de tu Visa'), findsOneWidget);
+    expect(tester.widget<Checkbox>(box('Pago de la Visa')).value, isTrue);
+    expect(find.textContaining('que no tienes en la app'), findsNothing);
   });
   testWidgets('a statement\'s own balance can set the account\'s', (
     tester,
@@ -410,7 +438,7 @@ void main() {
       find.text('Saldo de Bancolombia: \$0 → \$3.454.100'),
       findsOneWidget,
     );
-    await tester.tap(find.text('Importar 2 movimientos'));
+    await tester.tap(find.text('Importar 2 nuevos'));
     await settle(tester);
     expect(own.balances[bank.id]?.amount, Decimal.parse('3454100'));
     expect(
@@ -437,7 +465,7 @@ void main() {
         ),
       ),
     );
-    await tester.tap(find.text('Importar 2 movimientos'));
+    await tester.tap(find.text('Importar 2 nuevos'));
     await settle(tester);
     expect(
       find.text(
@@ -449,10 +477,10 @@ void main() {
     // What was saved is not offered again, and the balance written on 2
     // October still has it.
     expect(find.text('1 sept · Ya importado'), findsOneWidget);
-    expect(find.text('Importar un movimiento'), findsOneWidget);
+    expect(find.text('Importar el nuevo'), findsOneWidget);
     expect(own.balances[bank.id]?.amount, Decimal.zero);
 
-    await tester.tap(find.text('Importar un movimiento'));
+    await tester.tap(find.text('Importar el nuevo'));
     await settle(tester);
     expect(find.text('Se importó un movimiento.'), findsOneWidget);
     final List<Entry> entries =
@@ -502,13 +530,13 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(tester.widget<Checkbox>(box('Recibido')).value, isFalse);
-    expect(find.text('Importar 2 movimientos'), findsOneWidget);
+    expect(tester.widget<Checkbox>(box('Pago recibido')).value, isFalse);
+    expect(find.text('Importar 2 nuevos'), findsOneWidget);
 
     // Imported without opening it, it is not income on the card: what is
     // owed on it and what can be spent move only by the purchases.
     final int free = own.ledger!.freeUntilPayday;
-    await tester.tap(find.text('Importar 2 movimientos'));
+    await tester.tap(find.text('Importar 2 nuevos'));
     await settle(tester);
     final List<Entry> onCard =
         await tester.runAsync(() => store.entries(accountId: visa.id)) ??
@@ -547,14 +575,15 @@ void main() {
         ),
       ),
     );
-    expect(tester.widget<Checkbox>(box('SU Pago Gracias')).value, isTrue);
+    // A card's payment from Bancolombia, with no card in pesos to go to.
+    expect(tester.widget<Checkbox>(box('Pago recibido')).value, isFalse);
 
     await tester.tap(find.byType(DropdownButtonFormField<String>).first);
     await settle(tester);
     await tester.tap(find.text('Visa dólares · USD').last);
     await settle(tester);
     // On the card it could only be income: nothing in dollars paid it.
-    expect(tester.widget<Checkbox>(box('SU Pago Gracias')).value, isFalse);
+    expect(tester.widget<Checkbox>(box('Pago recibido')).value, isFalse);
     expect(
       find.text(
         'El pago a la tarjeta queda sin marcar: ninguna otra cuenta tuya '
@@ -563,8 +592,8 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.text('Importar 2 movimientos'), findsOneWidget);
-    await tester.tap(find.text('Importar 2 movimientos'));
+    expect(find.text('Importar 2 nuevos'), findsOneWidget);
+    await tester.tap(find.text('Importar 2 nuevos'));
     await settle(tester);
     final List<Entry> onCard =
         await tester.runAsync(() => store.entries(accountId: dollars.id)) ??
@@ -606,7 +635,7 @@ void main() {
       ),
       accountId: visa.id,
     );
-    await tester.tap(box('SU Pago Gracias'));
+    await tester.tap(box('Pago recibido'));
     await settle(tester);
     // The line's sheet, already a move, asks from where.
     expect(find.text('Revisar movimiento'), findsOneWidget);
@@ -614,9 +643,9 @@ void main() {
     // Closed without saying, it stays unchecked.
     await tester.tapAt(const Offset(20, 20));
     await settle(tester);
-    expect(tester.widget<Checkbox>(box('SU Pago Gracias')).value, isFalse);
+    expect(tester.widget<Checkbox>(box('Pago recibido')).value, isFalse);
 
-    await tester.tap(box('SU Pago Gracias'));
+    await tester.tap(box('Pago recibido'));
     await settle(tester);
     await tester.tap(find.byType(DropdownButtonFormField<String>).last);
     await settle(tester);
@@ -625,12 +654,12 @@ void main() {
     await tapOn(tester, find.text('Guardar'));
     await settle(tester);
     expect(find.text('20 oct · Viene de Nequi'), findsOneWidget);
-    expect(tester.widget<Checkbox>(box('SU Pago Gracias')).value, isTrue);
+    expect(tester.widget<Checkbox>(box('Pago recibido')).value, isTrue);
     expect(
       find.textContaining('queda sin marcar hasta que digas'),
       findsNothing,
     );
-    await tester.tap(find.text('Importar 3 movimientos'));
+    await tester.tap(find.text('Importar 3 nuevos'));
     await settle(tester);
     final List<Entry> fromNequi =
         await tester.runAsync(() => store.entries(accountId: nequi.id)) ??
@@ -641,6 +670,51 @@ void main() {
         await tester.runAsync(() => store.entries(accountId: bank.id)) ??
         const <Entry>[];
     expect(onBank, isEmpty);
+  });
+
+  testWidgets('a card\'s payment comes first from the card\'s own bank', (
+    tester,
+  ) async {
+    final (QuincenaStore store, OwnController own, _) = await world(tester);
+    late Account card;
+    await tester.runAsync(() async {
+      await store.addAccount(
+        name: 'Davivienda',
+        kind: AccountKind.bank,
+        asset: Asset.cop,
+        institution: 'Davivienda',
+      );
+      card = await store.addAccount(
+        name: 'Mastercard',
+        kind: AccountKind.card,
+        asset: Asset.cop,
+        institution: 'Davivienda',
+      );
+    });
+    await open(
+      tester,
+      own,
+      readTable(
+        parseCsv(
+          'Fecha;Descripción;Valor\n'
+          '15/10/2026;RAPPI;45.900\n'
+          '16/10/2026;NETFLIX;26.900\n'
+          '20/10/2026;SU PAGO GRACIAS;-480.000\n',
+        ),
+      ),
+      accountId: card.id,
+    );
+    await tester.tap(box('Pago recibido'));
+    await settle(tester);
+    // Bancolombia comes first among the accounts; Davivienda is the card's.
+    final DropdownButtonFormField<String> from = tester
+        .widget<DropdownButtonFormField<String>>(
+          find.byType(DropdownButtonFormField<String>).last,
+        );
+    final Account davivienda = own.accounts.firstWhere(
+      (Account a) => a.name == 'Davivienda',
+    );
+    expect(from.initialValue, davivienda.id);
   });
 
   testWidgets(
@@ -673,16 +747,15 @@ void main() {
           ),
         ),
       );
-      // Juan Perez was transport, the withdrawal went to cash, and Éxito
-      // is left out.
+      // The withdrawal goes to cash on its own, and the person says so
+      // too; Juan Perez was transport, and Éxito is left out.
+      expect(find.text('5 sept · Pasa a Efectivo'), findsOneWidget);
       await tester.tap(find.text('Juan Perez'));
       await settle(tester);
       await tapOn(tester, find.text('Transporte'));
       await tapOn(tester, find.text('Guardar'));
       await settle(tester);
-      await tester.tap(find.text('Cajero'));
-      await settle(tester);
-      await tapOn(tester, find.text('Transferencia'));
+      await tester.tap(find.text('Retiro en cajero'));
       await settle(tester);
       await tester.tap(find.byType(DropdownButtonFormField<String>).last);
       await settle(tester);
@@ -822,7 +895,7 @@ void main() {
       ),
     );
     expect(find.byType(BackButton), findsOneWidget);
-    await tester.tap(find.text('Importar un movimiento'));
+    await tester.tap(find.text('Importar el nuevo'));
     await tester.pump();
     expect(find.text('Importando…'), findsOneWidget);
     // Back does nothing until the import is done.
@@ -916,7 +989,7 @@ void main() {
     // The card payment's sheet, as a move to a card.
     await tester.drag(find.byType(ListView), const Offset(0, 3000));
     await tester.pumpAndSettle();
-    await tapOn(tester, find.text('Tarjeta Credito'));
+    await tapOn(tester, find.text('Pago de tarjeta de crédito'));
     await settle(tester);
     expect(find.text('Revisar movimiento'), findsOneWidget);
     await holds();

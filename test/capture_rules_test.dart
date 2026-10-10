@@ -270,6 +270,8 @@ void main() {
     });
     await settle(tester);
     expect(own.snapshot!.entries, hasLength(3));
+    // A rule learned before the app kept names reads as it was recorded.
+    expect(find.text('Panadería la Espiga'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Borrar regla'));
     await settle(tester);

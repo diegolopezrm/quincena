@@ -269,6 +269,29 @@ void main() {
     expect(payeeOf('NETFLIX.COM'), isNotEmpty);
   });
 
+  test('what is no merchant reads the way a person says it', () {
+    expect(payeeOf('SU PAGO GRACIAS'), 'Pago recibido');
+    expect(payeeOf('PAGO RECIBIDO'), 'Pago recibido');
+    expect(payeeOf('PAGO TARJETA VISA'), 'Pago de la Visa');
+    expect(payeeOf('PAGO TARJETA DE CREDITO'), 'Pago de tarjeta de crédito');
+    expect(payeeOf('PAGO TARJETA CREDITO'), 'Pago de tarjeta de crédito');
+    expect(payeeOf('RETIRO CAJERO'), 'Retiro en cajero');
+    expect(payeeOf('ABONO NOMINA DL SOFT'), 'Nómina DL Soft');
+  });
+
+  test('a file with no movements says what it held', () {
+    final StatementRead titles = readTable(
+      parseCsv('Fecha;Descripción;Valor\n'),
+    );
+    expect(titles.isEmpty, isTrue);
+    expect(titles.rows, 1);
+    expect(titles.titles, isTrue);
+    final StatementRead words = readTable(parseCsv('Hola;Chao\nOtra;Cosa\n'));
+    expect(words.isEmpty, isTrue);
+    expect(words.rows, 2);
+    expect(words.titles, isFalse);
+  });
+
   group('importing', () {
     late QuincenaStore store;
     late Account bank;
@@ -336,6 +359,48 @@ void main() {
         expect(all[0].ref, isNot(all[1].ref));
       },
     );
+
+    test('what was already there says which movement it is', () async {
+      final Entry comcel = await store.addEntry(
+        accountId: bank.id,
+        amount: d('89900'),
+        kind: EntryKind.expense,
+        date: DateTime(2026, 9, 2, 18),
+        payee: 'Comcel',
+      );
+      final List<ImportCandidate> all = await StatementImporter(
+        store,
+      ).prepare(bank, statement());
+      expect(all.last.recorded, isTrue);
+      expect(all.last.match?.id, comcel.id);
+      expect(all.first.match, isNull);
+    });
+
+    test('cash taken out at an ATM goes to the cash', () async {
+      StatementRead withdrawal() => readTable(
+        parseCsv(
+          'Fecha;Descripción;Valor\n'
+          '05/09/2026;RETIRO CAJERO;-200.000\n',
+        ),
+      );
+      // Without cash in the app, it is what it says.
+      final ImportCandidate alone = (await StatementImporter(
+        store,
+      ).prepare(bank, withdrawal())).single;
+      expect(alone.kind, EntryKind.expense);
+      final Account cash = await store.addAccount(
+        name: 'Efectivo',
+        kind: AccountKind.cash,
+        asset: Asset.cop,
+      );
+      final ImportCandidate moved = (await StatementImporter(
+        store,
+      ).prepare(bank, withdrawal())).single;
+      expect(moved.kind, EntryKind.transfer);
+      expect(moved.otherAccountId, cash.id);
+      expect(moved.payee, 'Retiro en cajero');
+      expect(moved.proposed, isTrue);
+    });
 
     test('importing the same statement twice records nothing new', () async {
       final StatementImporter importer = StatementImporter(store);
@@ -525,6 +590,21 @@ void main() {
           '25/09/2026;PAGO RECIBIDO;-480.000\n',
         ),
       );
+
+      test('with no card in the app, waits unchecked for one', () async {
+        await store.updateAccount(card.copyWith(archived: true));
+        final ImportCandidate pay = (await StatementImporter(
+          store,
+        ).prepare(bank, bankStatement())).last;
+        expect(pay.cardPayment, isTrue);
+        expect(pay.cardMissing, isTrue);
+        expect(pay.proposed, isFalse);
+        // Said to be what it is, it is what the person said.
+        expect(
+          pay.copyWith(kind: EntryKind.expense, cardPayment: false).proposed,
+          isTrue,
+        );
+      });
 
       test(
         'is a move to the card, and the card\'s statement finds it',

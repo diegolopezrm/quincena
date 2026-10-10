@@ -2768,6 +2768,20 @@ class AppLocalizationsEs extends AppLocalizations {
       'No tienes movimientos pendientes. Cuando llegue un pago de tu banco, aparece aquí para registrarlo.';
 
   @override
+  String get inboxOnlyRepeats => 'Nada por registrar.';
+
+  @override
+  String inboxOnlyRepeatsBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Quedan $count posibles repetidos por mirar, abajo.',
+      one: 'Queda un posible repetido por mirar, abajo.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get edit => 'Editar';
 
   @override
@@ -2844,9 +2858,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get possibleDuplicates => 'Posibles repetidos';
 
   @override
-  String get duplicateLine => 'El mismo pago ya llegó por otra vía.';
-
-  @override
   String get notDuplicate => 'No es repetido';
 
   @override
@@ -2893,27 +2904,50 @@ class AppLocalizationsEs extends AppLocalizations {
   String get whyWords => 'el mensaje dice de qué es';
 
   @override
-  String ruleLearnedMerchant(String merchant, String category) {
-    return 'Desde ahora, «$merchant» va a $category.';
+  String whyUnnamed(String account) {
+    return 'lo que no dice el banco va a $account';
   }
 
   @override
-  String ruleLearnedCard(String digits, String account) {
-    return 'Desde ahora, la tarjeta *$digits va a $account.';
+  String ruleLearned(String rules) {
+    return 'Desde ahora, $rules.';
   }
 
   @override
-  String ruleLearnedInstitution(String institution, String account) {
-    return 'Desde ahora, lo de $institution va a $account.';
+  String ruleGoesMerchant(String merchant, String category) {
+    return '«$merchant» va a $category';
   }
 
   @override
-  String ruleLearnedMore(int count) {
+  String ruleGoesCard(String digits, String account) {
+    return 'la tarjeta *$digits va a $account';
+  }
+
+  @override
+  String ruleGoesAccount(String digits, String account) {
+    return 'la cuenta *$digits va a $account';
+  }
+
+  @override
+  String ruleGoesInstitution(String institution, String account) {
+    return 'lo de $institution va a $account';
+  }
+
+  @override
+  String ruleGoesUnnamed(String account) {
+    return 'lo que no dice el banco va a $account';
+  }
+
+  @override
+  String get ruleNoBank => 'Pagos que no dicen el banco';
+
+  @override
+  String ruleResolved(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Y $count reglas más.',
-      one: 'Y una regla más.',
+      other: 'También quedaron listos otros $count movimientos.',
+      one: 'También quedó listo otro movimiento.',
     );
     return '$_temp0';
   }
@@ -3008,6 +3042,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get pasteDuplicate => 'Ese pago ya estaba.';
 
   @override
+  String get pasteJoined =>
+      'Ese aviso es de una transferencia que ya registraste.';
+
+  @override
   String get readScreenshot => 'Leer un pantallazo o PDF';
 
   @override
@@ -3050,6 +3088,16 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get captureLocation => 'Usar la ubicación del pago';
+
+  @override
+  String get captureLocationShort =>
+      'Sugiere el comercio por dónde estabas cuando llegó el pago.';
+
+  @override
+  String get captureLocationHow => 'Cómo se usa la ubicación';
+
+  @override
+  String get captureLocationHowClose => 'Entendido';
 
   @override
   String get captureLocationHelp =>
@@ -3598,6 +3646,26 @@ class AppLocalizationsEs extends AppLocalizations {
   String get statementNothing => 'No encontré movimientos en este archivo.';
 
   @override
+  String get statementNothingTitles =>
+      'Solo trae la fila de títulos: ningún movimiento con fecha y valor.';
+
+  @override
+  String statementNothingRows(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Leí $count filas, pero ninguna con fecha y valor.',
+      one: 'Trae una sola fila, sin fecha y valor.',
+      zero: 'El archivo no trae filas.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get statementFormats =>
+      'Quincena lee extractos en CSV, Excel (.xlsx) o PDF, con una fila por movimiento: su fecha, su descripción y su valor.';
+
+  @override
   String get statementFailed =>
       'No se pudo leer el archivo. Prueba con un CSV, un Excel (.xlsx) o un PDF.';
 
@@ -3624,7 +3692,16 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get statementAccountGuessed =>
+      'El archivo no dice de qué banco es: revisa que sea esta cuenta.';
+
+  @override
   String get statementRecorded => 'Ya registrado';
+
+  @override
+  String statementRecordedAs(String what) {
+    return 'Ya registrado: $what';
+  }
 
   @override
   String get statementImportedBefore => 'Ya importado';
@@ -3640,6 +3717,17 @@ class AppLocalizationsEs extends AppLocalizations {
       other: 'Importar $count movimientos',
       one: 'Importar un movimiento',
       zero: 'Nada para importar',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String statementImportNew(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Importar $count nuevos',
+      one: 'Importar el nuevo',
     );
     return '$_temp0';
   }
@@ -3899,6 +3987,11 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String guessEvidence(int count, String amount, String dates) {
     return '$count cobros parecidos, el último de $amount: $dates';
+  }
+
+  @override
+  String guessOnce(String amount, String date) {
+    return 'Un pago de $amount el $date: suele repetirse cada mes.';
   }
 
   @override
@@ -5102,6 +5195,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get freelanceArrivedAs => '¿Con qué movimiento llegó?';
 
   @override
+  String get freelanceNoEntry => 'Ninguno, o no está en Quincena';
+
+  @override
   String get freelanceNote => 'Nota';
 
   @override
@@ -5940,6 +6036,57 @@ class AppLocalizationsEs extends AppLocalizations {
   String get fromOwnAccount => '¿Viene de otra cuenta tuya?';
 
   @override
+  String get fromOwnAccountOut => '¿Fue a otra cuenta tuya?';
+
+  @override
+  String get moveBetween => 'Entre tus cuentas';
+
+  @override
+  String moveWhyOwnOut(String account) {
+    return 'Pasaste plata a tu $account: no es un gasto.';
+  }
+
+  @override
+  String moveWhyOwnIn(String account) {
+    return 'Llegó desde tu $account: no es un ingreso.';
+  }
+
+  @override
+  String get moveWhySelf => 'La enviaste tú: no es un ingreso.';
+
+  @override
+  String moveWhyBank(String bank, String account) {
+    return 'Viene de $bank, donde tienes $account: no es un ingreso.';
+  }
+
+  @override
+  String moveWhyCash(String account) {
+    return 'Un retiro en cajero pasa la plata a $account: no es un gasto.';
+  }
+
+  @override
+  String moveWhyCard(String account) {
+    return 'Es el pago de tu $account: lo que compraste con ella ya contó como gasto.';
+  }
+
+  @override
+  String get notMove => 'No fue eso';
+
+  @override
+  String joinedArrival(String to, String from) {
+    return 'Llegó a $to: era la transferencia desde $from.';
+  }
+
+  @override
+  String joinedDeparture(String from, String to) {
+    return 'Salió de $from: era la transferencia a $to.';
+  }
+
+  @override
+  String get transferJoined =>
+      'El otro aviso de esa misma plata también quedó registrado.';
+
+  @override
   String get moreActions => 'Más acciones';
 
   @override
@@ -5973,6 +6120,17 @@ class AppLocalizationsEs extends AppLocalizations {
       locale: localeName,
       other: '$count sin categoría',
       one: '1 sin categoría',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String statementNeedsReview(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count necesitan revisión',
+      one: '1 necesita revisión',
     );
     return '$_temp0';
   }
@@ -6549,8 +6707,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get statementOriginal => 'Como aparece en el extracto';
 
   @override
+  String get statementMatches => 'Coincide con lo que ya estaba';
+
+  @override
+  String get statementSeeEntry => 'Ver movimiento';
+
+  @override
   String statementCardPayment(String card) {
-    return 'Pago de tu tarjeta $card';
+    return 'Pago de tu $card';
   }
 
   @override
@@ -6582,8 +6746,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get statementIsCardPayment => '¿Es el pago de una tarjeta tuya?';
 
   @override
-  String get statementAddCard =>
-      'Parece el pago de una tarjeta. Agrégala en Cuentas para que Quincena no cuente dos veces lo que compraste con ella.';
+  String get statementCardMissing =>
+      'Parece el pago de una tarjeta que no tienes en la app: queda sin marcar, para no contar dos veces lo que compraste con ella.';
+
+  @override
+  String get statementCardMissingLine =>
+      'Pago de una tarjeta que no está en la app';
+
+  @override
+  String get statementAddCardButton => 'Agregar la tarjeta';
 
   @override
   String statementDoneTransfers(int count) {
@@ -6654,6 +6825,11 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String statementDebtEffect(String account, String before, String after) {
     return 'Lo que debes en $account: $before → $after';
+  }
+
+  @override
+  String statementDebtSame(String account, String amount) {
+    return 'Lo que debes en $account sigue en $amount: ya incluía estos movimientos.';
   }
 
   @override
@@ -6951,6 +7127,22 @@ class AppLocalizationsEs extends AppLocalizations {
       'Listo. Lo que puedes gastar ya no es provisional.';
 
   @override
+  String fixedNoneAskTitle(String name) {
+    return '¿Y $name?';
+  }
+
+  @override
+  String fixedNoneAskBody(String amount, String date) {
+    return 'Pagaste $amount el $date, y eso suele repetirse cada mes. Si es un pago fijo, agrégalo para que lo que puedes gastar lo cuente antes de que llegue.';
+  }
+
+  @override
+  String get fixedNoneAskAdd => 'Agregarlo';
+
+  @override
+  String get fixedNoneAskNo => 'No es fijo';
+
+  @override
   String get freeExplainAssumeNoFixed =>
       'No tiene pagos fijos: si pagas arriendo, servicios o suscripciones, agrégalos en Plan › Pagos fijos y saldrán de esta cifra antes de llegar.';
 
@@ -7143,15 +7335,102 @@ class AppLocalizationsEs extends AppLocalizations {
   String get recordedTransfer => 'Transferencia registrada.';
 
   @override
+  String recordedTransferBetween(String from, String to) {
+    return 'Transferencia registrada de $from a $to.';
+  }
+
+  @override
   String get accountMissingShort => 'Falta la cuenta';
 
   @override
-  String get kindMissing => 'No sabemos si es un gasto o un ingreso.';
+  String get stateReady => 'Lista para registrar';
 
   @override
-  String accountGuessed(String asset) {
-    return 'Revisa la cuenta: la elegimos por ser tu única de uso diario en $asset.';
+  String get stateAccount => 'Falta elegir la cuenta';
+
+  @override
+  String get stateGuessed => 'Revisa la cuenta';
+
+  @override
+  String get stateKind => 'Falta saber si es un gasto o un ingreso';
+
+  @override
+  String get stateRepeat => 'Posible repetido';
+
+  @override
+  String get stateMove => 'Transferencia entre tus cuentas';
+
+  @override
+  String get stateClientPaid => 'El pago que esperabas';
+
+  @override
+  String clientPaidDetail(String client, String amount) {
+    return 'De $client, por $amount: al registrarlo queda como cobrado.';
   }
+
+  @override
+  String get stateFriendPaid => 'Pago de lo que te deben';
+
+  @override
+  String friendPaidDetail(String name, String owed, String group) {
+    return '$name te debe $owed en «$group»: al registrarlo queda anotado.';
+  }
+
+  @override
+  String get recordCollected => 'Registrar y marcar cobrado';
+
+  @override
+  String recordRepaid(String name) {
+    return 'Registrar el pago de $name';
+  }
+
+  @override
+  String collectedDone(String client) {
+    return '$client quedó como cobrado.';
+  }
+
+  @override
+  String repaidAll(String name) {
+    return '$name ya no te debe nada.';
+  }
+
+  @override
+  String repaidLeft(String name, String amount) {
+    return '$name todavía te debe $amount.';
+  }
+
+  @override
+  String stateCheckCategory(String category) {
+    return 'No reconocimos la categoría: quedaría en $category.';
+  }
+
+  @override
+  String get stateCheckImage =>
+      'La leímos de una imagen: revisa el monto antes.';
+
+  @override
+  String accountGuessedWhy(String asset) {
+    return 'La elegimos por ser tu única cuenta de uso diario en $asset.';
+  }
+
+  @override
+  String repeatOf(String what) {
+    return 'Ya está: $what';
+  }
+
+  @override
+  String repeatOfNotice(String what) {
+    return 'Ya llegó otro aviso igual: $what.';
+  }
+
+  @override
+  String get removeRepeat => 'Quitar repetido';
+
+  @override
+  String get unclassified => 'Sin clasificar';
+
+  @override
+  String get categoryToConfirm => 'Categoría por confirmar';
 
   @override
   String whichAccountCard(String institution, String digits) {
@@ -7181,6 +7460,14 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get pickAccountIn => '¿A qué cuenta llegó?';
+
+  @override
+  String get pickAccountOthers => 'Otras cuentas';
+
+  @override
+  String addAccountAt(String institution) {
+    return 'Agregar mi cuenta de $institution';
+  }
 
   @override
   String pickAccountCardNote(String digits) {
@@ -7251,6 +7538,28 @@ class AppLocalizationsEs extends AppLocalizations {
       locale: localeName,
       other: 'Registrar $count de los $total listos',
       one: 'Registrar 1 de los $total listos',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String inboxLeftOutCategory(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Quedan por fuera $names: no reconocimos su categoría.',
+      one: 'Queda por fuera $names: no reconocimos su categoría.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String inboxLeftOut(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Quedan por fuera $names: revísalos uno por uno.',
+      one: 'Queda por fuera $names: revísalo antes.',
     );
     return '$_temp0';
   }
@@ -7375,11 +7684,6 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String whyAccount(String digits, String account) {
     return 'la cuenta *$digits es $account';
-  }
-
-  @override
-  String ruleLearnedAccount(String digits, String account) {
-    return 'Desde ahora, la cuenta *$digits va a $account.';
   }
 
   @override
