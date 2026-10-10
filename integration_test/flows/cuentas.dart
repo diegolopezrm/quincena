@@ -3867,6 +3867,26 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
           expect(f.shows('No se ha podido leer todavía'), isTrue);
           expect(f.shows('Aún sin leer'), isFalse);
         });
+        await f.back();
+        await f.tap('Rendimiento y ganancia');
+        await _binanceIdle(f, own);
+        await f.reveal(find.text('Billeteras propias'));
+        await f.step(
+          'Al abrir la cripto otra vez enseguida, Binance no se intenta leer '
+          'de nuevo: tras una lectura que falla, la siguiente que hace sola '
+          'espera una hora, y el doble cada vez que vuelve a fallar.',
+        );
+        await f.check(
+          'Volver a abrir la cripto no repite la lectura que acaba de fallar',
+          () {
+            expect(own.binance.failures, 1);
+            expect(
+              own.binance.retryAfter(const Duration(minutes: 30)),
+              const Duration(hours: 1),
+            );
+            expect(f.shows('No se ha podido leer todavía'), isTrue);
+          },
+        );
         await f.tap('Binance');
         await f.page(
           'La página dice «Aún sin leer» y por qué; no ofrece archivar lo que '
@@ -3900,6 +3920,128 @@ final List<AppFlow> cuentasFlows = <AppFlow>[
           expect(own.netWorth().total, worth);
           expect(find.widgetWithText(TextField, 'API Key'), findsOneWidget);
         });
+      } finally {
+        await f.tester.runAsync(() => SecureKeyVault().delete());
+      }
+    },
+  ),
+  AppFlow(
+    '05-16-cambiar-la-llave-de-binance',
+    'Cambiar la llave de Binance que no lee',
+    area: 'Cripto',
+    goal:
+        'Binance dejó de leerse y sospecho de la llave: quiero pegar una '
+        'nueva sin desconectarla ni perder lo que trajo.',
+    data: _binanceRead,
+    manual: <String>[
+      'Con una llave real borrada en Binance, «Leer ahora» debe decir que '
+          'Binance no reconoce la llave y ofrecer «Cambiar la llave»; con '
+          'una llave nueva de solo lectura, debe leer y quedar al día.',
+    ],
+    (FlowRun f) async {
+      final OwnController own = f.own;
+      try {
+        await _keepBinanceKey(f);
+        await f.tap('Cuentas');
+        await f.tap('Rendimiento y ganancia');
+        await _binanceIdle(f, own);
+        await f.tap('Binance');
+        await f.tap('Leer ahora');
+        await _binanceIdle(f, own);
+        await f.step(
+          '«Leer ahora» falla una vez: el aviso rojo dice que algo salió mal '
+          'y que se intente de nuevo.',
+        );
+        await f.check('Con una sola falla no se culpa a la llave', () {
+          expect(own.binance.failures, 1);
+          expect(f.shows('Cambiar la llave'), isFalse);
+        });
+        await f.tap('Leer ahora');
+        await _binanceIdle(f, own);
+        await f.step(
+          'Al fallar otra vez, el aviso dice cuántas veces van seguidas y '
+          'que revises tu llave o la pegues de nuevo, con «Cambiar la llave» '
+          'debajo.',
+        );
+        await f.check(
+          'Dos fallas seguidas piden revisar la llave y ofrecen cambiarla',
+          () {
+            expect(own.binance.failures, 2);
+            expect(
+              f.shows(
+                'No se pudo leer Binance 2 veces seguidas. Revisa tu llave o '
+                'pégala de nuevo.',
+              ),
+              isTrue,
+            );
+            expect(f.shows('Cambiar la llave'), isTrue);
+          },
+        );
+        await f.tap('Cambiar la llave');
+        await f.page(
+          '«Cambiar la llave» abre el formulario de la llave: la nueva '
+          'reemplaza la que hay solo si Binance la acepta, y «Cancelar» deja '
+          'la de antes.',
+        );
+        await f.check(
+          'El formulario dice que cambia la llave y deja volver',
+          () {
+            expect(f.shows('Cambiar la llave de Binance'), isTrue);
+            expect(_fieldText(f, 'API Key'), isEmpty);
+          },
+        );
+        await f.type('API Key', 'llave-nueva');
+        await f.type('Secret Key', 'secreto-nuevo');
+        await f.tap('Conectar');
+        await f.waitFor(find.text('Conectar'));
+        await _binanceIdle(f, own);
+        await f.step(
+          'Si Binance no acepta la llave nueva, la página dice qué pasó y la '
+          'de antes se queda: nada se desconecta.',
+        );
+        await f.check(
+          'Una llave que no sirve no reemplaza la que había',
+          () async {
+            expect(own.binance.connected, isTrue);
+            expect(await f.tester.runAsync(() => SecureKeyVault().read()), (
+              'llave-de-prueba',
+              'secreto',
+            ));
+            expect(f.screenText, anyOf(_binanceTrouble));
+          },
+        );
+        await f.tap('Cancelar');
+        await f.step(
+          '«Cancelar» vuelve a Binance conectada, con la llave de antes.',
+        );
+        await f.check('«Cancelar» vuelve a la conexión de antes', () {
+          expect(f.shows('Conectada con una llave de solo lectura'), isTrue);
+          expect(f.shows('Cambiar la llave'), isTrue);
+        });
+        await f.back();
+        await f.back();
+        await f.tap('Rendimiento y ganancia');
+        await _binanceIdle(f, own);
+        await f.reveal(find.text('Billeteras propias'));
+        await f.step(
+          'Al abrir la cripto otra vez, Binance no se lee sola enseguida: '
+          'tras dos fallas espera dos horas, y la fila dice que no se pudo '
+          'leer y de cuándo es la última lectura buena.',
+        );
+        await f.check(
+          'La cripto no vuelve a leer Binance sola tras dos fallas seguidas',
+          () {
+            expect(own.binance.failures, 2);
+            expect(
+              own.binance.retryAfter(const Duration(minutes: 30)),
+              const Duration(hours: 2),
+            );
+            expect(
+              f.screenText,
+              contains('No se pudo leer. Última lectura: 3 oct · 9:40'),
+            );
+          },
+        );
       } finally {
         await f.tester.runAsync(() => SecureKeyVault().delete());
       }

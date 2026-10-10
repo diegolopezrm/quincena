@@ -5150,6 +5150,30 @@ abstract class AppLocalizations {
   /// **'Algo salió mal al leer Binance. Intenta de nuevo.'**
   String get binanceFailed;
 
+  /// No description provided for @binanceKeyInDoubt.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo leer Binance {count} veces seguidas. Revisa tu llave o pégala de nuevo.'**
+  String binanceKeyInDoubt(int count);
+
+  /// No description provided for @binanceChangeKey.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar la llave'**
+  String get binanceChangeKey;
+
+  /// No description provided for @binanceChangeKeyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar la llave de Binance'**
+  String get binanceChangeKeyTitle;
+
+  /// No description provided for @binanceChangeKeyBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Pega la API Key y la Secret Key nuevas. Reemplazan la llave que tienes solo si Binance las acepta y solo pueden leer; lo que ya trajo se queda.'**
+  String get binanceChangeKeyBody;
+
   /// No description provided for @binanceConnected.
   ///
   /// In es, this message translates to:

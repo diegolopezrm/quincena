@@ -378,6 +378,103 @@ void main() {
       }
     });
 
+    test('reads that keep failing wait longer each time by themselves, a new '
+        'start remembers them, and a new key starts over', () async {
+      var now = DateTime(2026, 10, 2, 9);
+      final MemoryVault vault = MemoryVault()..keys = ('key', 'secret');
+      final FakeBinance binance = FakeBinance(<String, Object?>{
+        '/sapi/v1/account/apiRestrictions': <String, Object?>{
+          'enableReading': true,
+        },
+        '/api/v3/account': http.Response('{"msg":"Unavailable"}', 503),
+      });
+      BinanceLink open() => BinanceLink(
+        store,
+        vault: vault,
+        clientFor: (String k, String s) =>
+            BinanceClient(key: k, secret: s, client: binance.client),
+        now: () => now,
+      );
+      const Duration age = Duration(minutes: 30);
+      final BinanceLink link = open();
+
+      await link.syncIfOlder(age);
+      expect(link.problem, SyncProblem.failed);
+      expect(link.failures, 1);
+      expect(link.keyInDoubt, isFalse);
+      expect(link.retryAfter(age), const Duration(hours: 1));
+
+      // Opened again within the hour, it is not read again.
+      var asked = binance.asked.length;
+      now = now.add(const Duration(minutes: 40));
+      await link.syncIfOlder(age);
+      expect(binance.asked.length, asked);
+      // Past it, it is; failing twice with no reason given, the key is in
+      // doubt, and the next one waits two hours.
+      now = now.add(const Duration(minutes: 30));
+      await link.syncIfOlder(age);
+      expect(binance.asked.length, greaterThan(asked));
+      expect(link.failures, 2);
+      expect(link.keyInDoubt, isTrue);
+      expect(link.retryAfter(age), const Duration(hours: 2));
+
+      // A new start knows all of it, and does not try again at once.
+      final BinanceLink again = open();
+      asked = binance.asked.length;
+      await again.syncIfOlder(age);
+      expect(binance.asked.length, asked);
+      expect(again.failures, 2);
+      expect(again.problem, SyncProblem.failed);
+      expect(again.keyInDoubt, isTrue);
+
+      // Never more than a day apart.
+      for (var i = 0; i < 8; i++) {
+        await again.sync();
+      }
+      expect(again.retryAfter(age), const Duration(days: 1));
+
+      // A new key starts over: what failed was the last one's.
+      expect(
+        await again.connect('new key', 'secret'),
+        ConnectOutcome.connected,
+      );
+      expect(vault.keys, ('new key', 'secret'));
+      expect(again.failures, 1);
+      expect(again.keyInDoubt, isFalse);
+    });
+
+    test('a good read clears the reads that failed', () async {
+      final MemoryVault vault = MemoryVault()..keys = ('key', 'secret');
+      final Map<String, Object?> answers = <String, Object?>{
+        '/api/v3/account': http.Response('{"msg":"Unavailable"}', 503),
+      };
+      final FakeBinance binance = FakeBinance(answers);
+      final BinanceLink link = BinanceLink(
+        store,
+        vault: vault,
+        clientFor: (String k, String s) =>
+            BinanceClient(key: k, secret: s, client: binance.client),
+        now: () => DateTime(2026, 10, 2, 9),
+      );
+      await link.load();
+      await link.sync();
+      await link.sync();
+      expect(link.keyInDoubt, isTrue);
+
+      answers
+        ..clear()
+        ..addAll(history());
+      await link.sync();
+      expect(link.problem, isNull);
+      expect(link.failures, 0);
+      expect(link.keyInDoubt, isFalse);
+      final BinanceLink again = BinanceLink(store, vault: vault);
+      await again.load();
+      expect(again.failures, 0);
+      expect(again.problem, isNull);
+      expect(again.syncedAt, DateTime(2026, 10, 2, 9));
+    });
+
     test('a key Binance does not take is said so', () async {
       final BinanceLink link = BinanceLink(
         store,

@@ -35,9 +35,18 @@ class MemoryVault implements KeyVault {
   Future<void> delete() async => keys = null;
 }
 
-/// Binance with nothing in it, behind a key that may trade.
-http.Client binance({bool trading = false}) =>
+/// Binance with nothing in it, behind a key that may trade; the key
+/// [refused], if any, it no longer takes.
+http.Client binance({bool trading = false, String? refused}) =>
     MockClient((http.Request request) async {
+      if (refused != null &&
+          request.headers['X-MBX-APIKEY'] == refused &&
+          request.url.path != '/api/v3/time') {
+        return http.Response(
+          '{"code":-2015,"msg":"Invalid API-key, IP, or permissions."}',
+          401,
+        );
+      }
       final Object body = switch (request.url.path) {
         '/api/v3/time' => <String, Object?>{'serverTime': 1790960000000},
         '/sapi/v1/account/apiRestrictions' => <String, Object?>{
@@ -330,6 +339,102 @@ void main() {
     await tester.runAsync(() => own.restoreAccount(manual()!.id));
     await settle(tester);
     expect(manual()!.archived, isFalse);
+  });
+
+  testWidgets('a key Binance stopped taking offers to change it, and a new '
+      'one takes its place only once Binance takes it', (tester) async {
+    final (OwnController own, MemoryVault vault) = await open(
+      tester,
+      keys: ('old', 'secret'),
+      client: binance(refused: 'old'),
+    );
+    await tester.runAsync(own.binance.sync);
+    await settle(tester);
+    expect(own.binance.keyInDoubt, isTrue);
+    expect(
+      find.textContaining('Binance no reconoce esa llave'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Cambiar la llave'));
+    await settle(tester);
+    expect(find.text('Cambiar la llave de Binance'), findsOneWidget);
+    await reach(tester, find.text('Cancelar'));
+    await tester.tap(find.text('Cancelar'));
+    await settle(tester);
+    expect(
+      find.text('Conectada con una llave de solo lectura'),
+      findsOneWidget,
+    );
+
+    Future<void> put(String key, String secret) async {
+      await reach(tester, find.text('Conectar'));
+      await tester.enterText(find.widgetWithText(TextField, 'API Key'), key);
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Secret Key'),
+        secret,
+      );
+      await tester.ensureVisible(find.text('Conectar'));
+      await tester.tap(find.text('Conectar'));
+      await settle(tester);
+      for (var i = 0; i < 100 && own.binance.syncing; i++) {
+        await settle(tester);
+      }
+    }
+
+    // One Binance does not take either leaves the one there was.
+    await tester.tap(find.text('Cambiar la llave'));
+    await settle(tester);
+    await put('old', 'secret');
+    expect(vault.keys, ('old', 'secret'));
+    expect(
+      find.textContaining('Binance no reconoce esa llave'),
+      findsOneWidget,
+    );
+    // Still in the form, to try another.
+    expect(
+      find.widgetWithText(TextField, 'API Key', skipOffstage: false),
+      findsOneWidget,
+    );
+    expect(find.text('Cancelar', skipOffstage: false), findsOneWidget);
+
+    // One it takes is kept, read, and starts over.
+    await put('new', 'secret 2');
+    expect(vault.keys, ('new', 'secret 2'));
+    expect(own.binance.problem, isNull);
+    expect(own.binance.failures, 0);
+    expect(
+      find.text('Conectada con una llave de solo lectura'),
+      findsOneWidget,
+    );
+    expect(find.text('Cambiar la llave'), findsNothing);
+  });
+
+  testWidgets('reads that fail twice in a row for no reason given say to '
+      'look at the key', (tester) async {
+    final (OwnController own, MemoryVault _) = await open(
+      tester,
+      keys: ('key', 'secret'),
+      client: MockClient((_) async => http.Response('', 500)),
+    );
+    await tester.runAsync(own.binance.sync);
+    await settle(tester);
+    expect(
+      find.text('Algo salió mal al leer Binance. Intenta de nuevo.'),
+      findsOneWidget,
+    );
+    expect(find.text('Cambiar la llave'), findsNothing);
+
+    await tester.tap(find.text('Leer ahora'));
+    await settle(tester);
+    expect(
+      find.text(
+        'No se pudo leer Binance 2 veces seguidas. Revisa tu llave o pégala '
+        'de nuevo.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Cambiar la llave'), findsOneWidget);
   });
 
   testWidgets('the row among the sources says a read failed, not only the '

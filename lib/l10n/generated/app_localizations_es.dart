@@ -3343,6 +3343,21 @@ class AppLocalizationsEs extends AppLocalizations {
       'Algo salió mal al leer Binance. Intenta de nuevo.';
 
   @override
+  String binanceKeyInDoubt(int count) {
+    return 'No se pudo leer Binance $count veces seguidas. Revisa tu llave o pégala de nuevo.';
+  }
+
+  @override
+  String get binanceChangeKey => 'Cambiar la llave';
+
+  @override
+  String get binanceChangeKeyTitle => 'Cambiar la llave de Binance';
+
+  @override
+  String get binanceChangeKeyBody =>
+      'Pega la API Key y la Secret Key nuevas. Reemplazan la llave que tienes solo si Binance las acepta y solo pueden leer; lo que ya trajo se queda.';
+
+  @override
   String get binanceConnected => 'Conectada con una llave de solo lectura';
 
   @override

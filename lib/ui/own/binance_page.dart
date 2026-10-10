@@ -241,6 +241,10 @@ class _BinancePageState extends State<BinancePage> {
   bool _hidden = true;
   ConnectOutcome? _outcome;
 
+  /// Whether a key is being put in place of the one kept, which stays
+  /// until Binance takes the new one.
+  bool _changing = false;
+
   /// What is missing, said under the field that misses it until it is
   /// written.
   String? _keyMissing;
@@ -290,9 +294,20 @@ class _BinancePageState extends State<BinancePage> {
       if (outcome == ConnectOutcome.connected) {
         _key.clear();
         _secret.clear();
+        _changing = false;
       }
     });
   }
+
+  /// Opens the form for a new key, or goes back to how the connection is.
+  void _changeKey(bool changing) => setState(() {
+    _changing = changing;
+    _outcome = null;
+    _keyMissing = null;
+    _secretMissing = null;
+    _key.clear();
+    _secret.clear();
+  });
 
   Future<void> _disconnect() async {
     final AppLocalizations l = context.l10n;
@@ -386,7 +401,7 @@ class _BinancePageState extends State<BinancePage> {
                   ? <Widget>[
                       Text(l.binanceWebOnly, style: context.type.bodyMedium),
                     ]
-                  : link.connected
+                  : link.connected && !_changing
                   ? _status(l)
                   : _form(l),
             ),
@@ -399,7 +414,12 @@ class _BinancePageState extends State<BinancePage> {
   List<Widget> _status(AppLocalizations l) {
     final DateTime? at = link.syncedAt;
     final SyncReport? report = link.report;
-    final String? problem = _syncMessage(l);
+    // Failing again and again with no reason given, the key is what to
+    // look at: said so, with the way to put another.
+    final String? problem =
+        link.keyInDoubt && link.problem == SyncProblem.failed
+        ? l.binanceKeyInDoubt(link.failures)
+        : _syncMessage(l);
     // Kept by hand, they count twice only once Binance brought its own:
     // before that, archiving them would only take them off the totals.
     final bool brought = widget.own.accounts.any(
@@ -437,10 +457,21 @@ class _BinancePageState extends State<BinancePage> {
           _Note(text: problem, color: context.colors.negative)
         else if (report != null)
           _Note(text: l.binanceReport(report.movementsAdded)),
+        if (link.keyInDoubt) ...<Widget>[
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              onPressed: () => _changeKey(true),
+              icon: const Icon(Glyph.key, size: 18),
+              label: Text(l.binanceChangeKey),
+            ),
+          ),
+        ],
         const SizedBox(height: 12),
         FilledButton.icon(
           onPressed: link.sync,
-          icon: const Icon(Glyph.arrowCounterClockwise, size: 18),
+          icon: const Icon(Glyph.arrowsClockwise, size: 18),
           label: Text(l.binanceSyncNow),
         ),
       ],
@@ -486,10 +517,18 @@ class _BinancePageState extends State<BinancePage> {
 
   List<Widget> _form(AppLocalizations l) {
     final String? message = _message(l);
+    // In place of a key kept, or the first one.
+    final bool changing = _changing && link.connected;
     return <Widget>[
-      Text(l.binanceConnectTitle, style: context.type.headlineMedium),
+      Text(
+        changing ? l.binanceChangeKeyTitle : l.binanceConnectTitle,
+        style: context.type.headlineMedium,
+      ),
       const SizedBox(height: 8),
-      Text(l.binanceConnectBody, style: context.type.bodyMedium),
+      Text(
+        changing ? l.binanceChangeKeyBody : l.binanceConnectBody,
+        style: context.type.bodyMedium,
+      ),
       const SizedBox(height: 20),
       _Point(
         icon: Glyph.lock,
@@ -547,6 +586,14 @@ class _BinancePageState extends State<BinancePage> {
         onPressed: _connecting ? null : _connect,
         child: Text(_connecting ? l.binanceConnecting : l.binanceConnect),
       ),
+      // The key kept stays as it was.
+      if (changing) ...<Widget>[
+        const SizedBox(height: 8),
+        TextButton(
+          onPressed: _connecting ? null : () => _changeKey(false),
+          child: Text(l.cancel),
+        ),
+      ],
     ];
   }
 }

@@ -3344,6 +3344,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'Something went wrong reading Binance. Try again.';
 
   @override
+  String binanceKeyInDoubt(int count) {
+    return 'Binance could not be read $count times in a row. Check your key or paste it again.';
+  }
+
+  @override
+  String get binanceChangeKey => 'Change the key';
+
+  @override
+  String get binanceChangeKeyTitle => 'Change your Binance key';
+
+  @override
+  String get binanceChangeKeyBody =>
+      'Paste the new API Key and Secret Key. They replace the key you have only if Binance accepts them and they can only read; what it brought stays.';
+
+  @override
   String get binanceConnected => 'Connected with a read-only key';
 
   @override
