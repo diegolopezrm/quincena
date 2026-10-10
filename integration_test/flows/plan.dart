@@ -3691,6 +3691,17 @@ final List<AppFlow> planFlows = <AppFlow>[
       );
       await f.tap('Cuenta en dólares');
       final CushionDays first = days();
+      await f.check('Bajo las cuentas dice que esto solo mide', () {
+        expect(
+          f.shows(
+            'Elegir cuentas aquí solo mide tu fondo: no cambia lo que puedes '
+            'gastar. La plata que no quieres contar ahí se fija en Ajustes › '
+            'Colchón.',
+          ),
+          isTrue,
+        );
+        expect(own.ledger!.freeUntilPayday, free);
+      });
       await f.top();
       await f.step(
         'Con la cuenta en dólares, el fondo cubre unos ${first.days} días: '

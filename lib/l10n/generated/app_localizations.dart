@@ -3464,6 +3464,12 @@ abstract class AppLocalizations {
   /// **'Dónde está tu fondo de emergencia'**
   String get cushionDaysAccounts;
 
+  /// No description provided for @cushionDaysOnlyMeasures.
+  ///
+  /// In es, this message translates to:
+  /// **'Elegir cuentas aquí solo mide tu fondo: no cambia lo que puedes gastar. La plata que no quieres contar ahí se fija en Ajustes › Colchón.'**
+  String get cushionDaysOnlyMeasures;
+
   /// No description provided for @cushionDaysEssentials.
   ///
   /// In es, this message translates to:

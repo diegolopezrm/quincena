@@ -2249,6 +2249,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cushionDaysAccounts => 'Where your emergency fund is';
 
   @override
+  String get cushionDaysOnlyMeasures =>
+      'Picking accounts here only measures your fund: it does not change what you can spend. Money you do not want counted there is set in Settings › Safety buffer.';
+
+  @override
   String get cushionDaysEssentials => 'What\'s essential to you';
 
   @override

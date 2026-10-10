@@ -159,6 +159,14 @@ class CushionPage extends StatelessWidget {
                         ),
                   ],
                 ),
+                // Two things carry the cushion's name: this only measures.
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    l.cushionDaysOnlyMeasures,
+                    style: context.type.bodySmall,
+                  ),
+                ),
                 const SizedBox(height: 24),
                 SectionLabel(l.cushionDaysEssentials),
                 Wrap(

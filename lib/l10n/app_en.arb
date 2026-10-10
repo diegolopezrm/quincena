@@ -571,6 +571,7 @@
   "cushionDaysToGo": "{days, plural, =1{One day to go: {amount}.} other{{days} days to go: {amount}.}}",
   "cushionDaysEstimate": "It's an average: a month that spends differently changes it.",
   "cushionDaysAccounts": "Where your emergency fund is",
+  "cushionDaysOnlyMeasures": "Picking accounts here only measures your fund: it does not change what you can spend. Money you do not want counted there is set in Settings › Safety buffer.",
   "cushionDaysEssentials": "What's essential to you",
   "cushionDaysTarget": "How many days you want to cover",
   "cushionDaysNoTarget": "No goal",

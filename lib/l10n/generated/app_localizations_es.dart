@@ -2250,6 +2250,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get cushionDaysAccounts => 'Dónde está tu fondo de emergencia';
 
   @override
+  String get cushionDaysOnlyMeasures =>
+      'Elegir cuentas aquí solo mide tu fondo: no cambia lo que puedes gastar. La plata que no quieres contar ahí se fija en Ajustes › Colchón.';
+
+  @override
   String get cushionDaysEssentials => 'Qué es esencial para ti';
 
   @override
