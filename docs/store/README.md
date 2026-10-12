@@ -587,10 +587,10 @@ which now opens the whole app, with its bar on every screen.
 
 ## Version 1.2.0
 
-Build 21 (`1.2.0+21`) was archived on 10 October 2026 with phases 27 to 36
-of the plan in `docs/reviews/2026-10-09-flujo-por-flujo.md`. It goes to
-TestFlight from Xcode's Organizer; it has not been sent to review in
-either store.
+Build 22 (`1.2.0+22`) was archived on 12 October 2026 with phases 27 to 36
+of the plan in `docs/reviews/2026-10-09-flujo-por-flujo.md`, genui_gen
+0.14.1 and the QR read with zxing. It goes to TestFlight from Xcode's
+Organizer; it has not been sent to review in either store.
 
 **What's new** (es, 469 characters):
 
@@ -617,26 +617,38 @@ Both fit Play's 500 characters per language, and the App Store shows them
 from this version on, since 1.1.0 was the first.
 
 **Camera.** Joining another phone can now read the code as a QR with the
-camera (syncing is not on the web). iOS asks with
+camera (syncing is not on the web). The camera's frames are read on the
+phone by zxing, in Dart (`lib/ui/own/scan_code.dart`), and go nowhere, so
+neither App Privacy nor Data safety changes for it. iOS asks with
 `NSCameraUsageDescription` in Spanish and English
 (`ios/Runner/*.lproj/InfoPlist.strings`): "Quincena usa la cámara solo
-para leer el código QR que muestra tu otro teléfono." There the code is
-read on the phone with Apple's Vision framework and nothing leaves it, so
-App Privacy does not change.
+para leer el código QR que muestra tu otro teléfono." The camera plugin's
+code could record sound, so iOS also wants `NSMicrophoneUsageDescription`,
+which says Quincena does not use the microphone; the app never asks for
+it. On Android the app asks for `CAMERA` alone: the plugin's
+`RECORD_AUDIO` and `WRITE_EXTERNAL_STORAGE` are removed in the manifest,
+and a phone without a camera can still install the app and paste the
+code. Play has no declaration for the camera.
 
-On Android, `mobile_scanner` adds `CAMERA` (the camera is not required to
-install the app, and Play has no declaration for it) and reads the code
-with Google's ML Kit through Google Play services. Google's
+Build 21, uploaded to TestFlight on 10 October 2026, read the QR with
+`mobile_scanner`, which on Android uses Google's ML Kit. It never went to
+Play, and build 22 replaced it.
+
+**ML Kit on Android, before 1.2.0 goes to Play.** Reading a screenshot or
+a receipt on Android uses ML Kit's text recognition (`TextReader.kt`),
+since the first build. Google's
 [data disclosure](https://developers.google.com/ml-kit/android-data-disclosure)
-says ML Kit sends Google, "for diagnostics and usage analytics", the
-device's model and Android version, the app's package and version, a
-per-installation identifier, performance metrics, the API's settings and
-error codes, never the image or the code. Data safety declares no
-analytics today, and the privacy policy says Quincena does not share data
-for analytics, so before 1.2.0 goes to Play one of these has to happen:
+says ML Kit's Android SDKs send Google, "for diagnostics and usage
+analytics", the device's model and Android version, the app's package and
+version, a per-installation identifier and performance metrics, never the
+image or the text read; it does not name text recognition apart, and
+there is no switch to turn it off. Data safety declares no analytics, and
+the privacy policy says Quincena does not share data for analytics, so one
+of these has to happen:
 
-- Read the code on Android with a library that sends nothing, such as
-  zxing on the phone, and leave Data safety and the policy as they are.
-- Or declare it: in Data safety, device or other IDs and app info and
+- Declare it: in Data safety, device or other IDs and app info and
   performance (diagnostics), optional, for analytics; in the privacy
-  policy, a row for the camera that names ML Kit on Android.
+  policy, a row for screenshots read on Android that names ML Kit.
+- Or read text on Android with something that sends nothing, such as
+  Tesseract on the phone, which adds several megabytes and reads photos
+  of receipts less well.
