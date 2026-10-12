@@ -116,8 +116,11 @@ class _ScanPageState extends State<_ScanPage> with WidgetsBindingObserver {
   bool _reading = false;
 
   /// Whether the app went to the background, perhaps to the phone's
-  /// settings to give the permission, so the camera starts again on return.
+  /// settings to give the permission.
   bool _away = false;
+
+  /// Whether the camera is starting, so it never starts twice at once.
+  bool _starting = false;
 
   @override
   void initState() {
@@ -135,21 +138,23 @@ class _ScanPageState extends State<_ScanPage> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // The camera is let go while the app is away, not while a permission
-    // prompt covers it, which makes it inactive too.
+    // A camera that was showing stops and starts again with the app on its
+    // own. One that could not start tries again on return from the phone's
+    // settings, where the permission may have been given; a permission
+    // prompt only makes the app inactive, so declining it never asks twice.
     switch (state) {
       case AppLifecycleState.hidden || AppLifecycleState.paused:
         _away = true;
-        _stop();
       case AppLifecycleState.resumed when _away:
         _away = false;
-        if (!_done) _start();
+        if (_trouble != null && !_done) _start();
       default:
     }
   }
 
   Future<void> _start() async {
-    if (_camera != null) return;
+    if (_camera != null || _starting) return;
+    _starting = true;
     CameraController? camera;
     try {
       final List<CameraDescription> cameras = await availableCameras();
@@ -166,31 +171,28 @@ class _ScanPageState extends State<_ScanPage> with WidgetsBindingObserver {
         enableAudio: false,
         imageFormatGroup: ImageFormatGroup.yuv420,
       );
-      _camera = camera;
       await camera.initialize();
-      if (!mounted || _camera != camera) {
+      await camera.startImageStream(_frame);
+      if (!mounted) {
         await camera.dispose();
         return;
       }
-      await camera.startImageStream(_frame);
-      setState(() => _trouble = null);
-    } on CameraException catch (e) {
-      if (_camera == camera) _camera = null;
+      setState(() {
+        _camera = camera;
+        _trouble = null;
+      });
+    } on Exception catch (e) {
       await camera?.dispose();
       if (!mounted) return;
       setState(
-        () => _trouble = e.code.startsWith('CameraAccess')
+        () =>
+            _trouble = e is CameraException && e.code.startsWith('CameraAccess')
             ? _Trouble.permission
             : _Trouble.camera,
       );
+    } finally {
+      _starting = false;
     }
-  }
-
-  Future<void> _stop() async {
-    final CameraController? camera = _camera;
-    _camera = null;
-    if (mounted) setState(() {});
-    await camera?.dispose();
   }
 
   void _frame(CameraImage image) {
