@@ -90,15 +90,48 @@ final RegExp _securityCode = RegExp(
   r'\b(clave|codigo|otp|token|contrasena|password|verification|verificacion)\b',
 );
 final RegExp _securityDigits = RegExp(r'\b\d{4,8}\b');
+// An ad's words, from the texts that reach Quincena because they carry a
+// price: "Aplican TyC", "Suscríbete", "¡Actívalo!", a coupon, cashback, a
+// price "desde $89.990" or "$9.900/mes", "25% OFF", the word that unsubscribes
+// ("SALIRGEF"). Matched against the normalized text, without `$`, `/` or `%`.
 final RegExp _advert = RegExp(
-  r'\b(gana|ganate|descuento|promo|promocion|oferta|aprovecha|preaprobad\w*|cupo aprobado|participa|sorteo|beneficio exclusivo|te regalamos|hasta el \d)',
+  r'\b(gana|ganate|\w*descuent\w*|promo|promocion|oferta|aprovecha|preaprobad\w*|cupo aprobado|participa|sorteo|beneficio exclusivo|te regalamos|hasta el \d'
+  r'|tyc|terminos y condiciones|aplican (?:terminos|condiciones)|suscrib\w*|actival[oa]|cupon\w*|cashback|dcto|pide (?:ya|ahora)|salir\w*|desde \d|\d+ (?:al )?mes\b|\d+ off\b|don t miss|reward)',
+);
+
+/// Verbs that say money already moved, which an ad or a scam never uses:
+/// a message with one is an alert, whatever else it says.
+final RegExp _happened = RegExp(
+  r'\b(realizaste|compraste|pagaste|transferiste|enviaste|recibiste|retiraste|consignaste|abonaste|has recibido|has realizado|se (?:debito|realizo|registro|aprobo|acredito|abono)|te (?:enviaron|transfirieron|consignaron|pagaron|llego|llegaron|abonaron)|you (?:paid|sent|received|spent))\b',
+);
+
+/// A link to follow, matched against the text as it came: `https://…`,
+/// `bit.ly/…`, `edeskprisma.syc.com.co/…`.
+final RegExp _link = RegExp(
+  r'(?:https?://|www\.)\S+|\b[a-z0-9-]+(?:\.[a-z0-9-]+)+/\S*',
+  caseSensitive: false,
+);
+
+/// The words of a scare or a bill that a fraud puts next to its link:
+/// "¿No reconoces este movimiento? Cancela aquí", "Multa de … Pague en".
+final RegExp _scare = RegExp(
+  r'\b(no reconoce\w*|cancela\w* aqui|evita\w* (?:el )?bloqueo|bloquead[ao]|suspendid[ao]|actualiza\w* (?:tus |sus )?datos|multa|sancion\w*|embargo|pague en|paga aqui|ingresa aqui)\b',
 );
 
 final RegExp _income = RegExp(
   r'\b(recibiste|recibio|recibid[oa]s?|recibimos (un|una)|te (envio|envia|enviaron|mando|mandaron|transfirio|transfirieron|consigno|consignaron|giro|giraron|pago|pagaron|llego|llegaron|depositaron|devolvieron)|llegaron(?: \S+){0,4} a (?:tu|su)|transferencia entrante|pago recibido de (?!tu |su )|abon\w*|consignacion|deposito|nomina|reembolso|devolucion|reintegro|ingreso (?:de|por|a)|received|you got|deposited|credited|refund)\b',
 );
 final RegExp _expense = RegExp(
-  r'\b(compr\w*|pagaste|pago|pagos|retir\w*|debit\w*|cargo|transferiste|enviaste|envio de|envio (?:exitoso|realizado)|transferencia (?:exitosa|realizada|enviada)|pasaste|avance|purchase|you paid|you sent|spent|charged|withdraw\w*|recibimos tu pago)\b',
+  r'\b(compr\w*|pagaste|pago|pagos|retir\w*|debit\w*|cargo|transferiste|enviaste|envio de|envio (?:exitoso|realizado)|transferencia (?:exitosa|realizada|enviada)|realizaste (?:una |un )?(?:transaccion|transferencia|compra|pago|retiro|avance)|pasaste|avance|purchase|you paid|you sent|spent|charged|withdraw\w*|recibimos tu pago)\b',
+);
+
+/// An amount with no currency marker, as some cards' alerts write pesos:
+/// "transaccion en PRICESMART por 385,300 con tu tarjeta". Read only right
+/// after "por" or "valor de", and only in an alert that says which way the
+/// money went.
+final RegExp _bareAmount = RegExp(
+  r'\b(?:por|valor de)\s+(\d{1,3}(?:[.,]\d{3})+|\d{3,9})(?=[\s.,;]|$)',
+  caseSensitive: false,
 );
 
 /// Words before an amount that make it a balance or a limit, not the
@@ -224,7 +257,14 @@ ParsedCapture parseCapture(CaptureEvent event) {
   if (_securityCode.hasMatch(plain) && _securityDigits.hasMatch(plain)) {
     return ParsedCapture(institution: institution, ignored: 'security');
   }
-  if (_advert.hasMatch(plain) && !_income.hasMatch(plain)) {
+  if (_link.hasMatch(text) &&
+      _scare.hasMatch(plain) &&
+      !_happened.hasMatch(plain)) {
+    return ParsedCapture(institution: institution, ignored: 'suspicious');
+  }
+  if (_advert.hasMatch(plain) &&
+      !_income.hasMatch(plain) &&
+      !_happened.hasMatch(plain)) {
     return ParsedCapture(institution: institution, ignored: 'advert');
   }
 
@@ -251,7 +291,6 @@ ParsedCapture parseCapture(CaptureEvent event) {
   final ({FoundAmount? amount, String? payee}) receipt = text.contains('\n')
       ? _receipt(text)
       : (amount: null, payee: null);
-  final FoundAmount? amount = receipt.amount ?? _movementAmount(text);
   final bool income = _income.hasMatch(plain);
   final bool expense = _expense.hasMatch(plain);
   final EntryKind? kind = plain.contains('recibimos tu pago')
@@ -263,6 +302,10 @@ ParsedCapture parseCapture(CaptureEvent event) {
       : income && expense
       ? _firstOf(plain)
       : null;
+  final FoundAmount? amount =
+      receipt.amount ??
+      _movementAmount(text) ??
+      (kind == null ? null : _bare(text));
 
   final String? merchant = receipt.payee != null
       ? prettyMerchant(receipt.payee!)
@@ -306,6 +349,18 @@ FoundAmount? _movementAmount(String text) {
     final String before = text.substring(0, a.start);
     if (_notTheMovement.hasMatch(before)) continue;
     return a;
+  }
+  return null;
+}
+
+/// The first amount in [text] written with no currency marker, as
+/// [_bareAmount] reads one; a balance or a limit is not it.
+FoundAmount? _bare(String text) {
+  for (final RegExpMatch m in _bareAmount.allMatches(text)) {
+    if (_notTheMovement.hasMatch(text.substring(0, m.start))) continue;
+    final Decimal? value = parseLooseNumber(m.group(1)!);
+    if (value == null || value <= Decimal.zero) continue;
+    return FoundAmount(value, null, m.start, m.end);
   }
   return null;
 }

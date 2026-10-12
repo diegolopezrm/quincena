@@ -3353,7 +3353,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get readyBankMessagesHelp =>
-      'Purchase and transfer texts that carry an amount with \$.';
+      'Purchase and transfer texts that carry an amount with \$. If your bank leaves out the \$, as Davivienda does for card purchases, make another Message automation in Shortcuts with its sender and Quincena\'s action.';
 
   @override
   String get readyApplePay => 'Apple Pay payments';

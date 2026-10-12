@@ -3353,7 +3353,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get readyBankMessagesHelp =>
-      'Los mensajes de compras y transferencias que traen un valor con \$.';
+      'Los mensajes de compras y transferencias que traen un valor con \$. Si tu banco no escribe \$, como Davivienda en las compras con tarjeta, crea en Atajos otra automatización Mensaje con su remitente y la acción de Quincena.';
 
   @override
   String get readyApplePay => 'Pagos con Apple Pay';

@@ -1052,7 +1052,7 @@
   "readyBankNotifications": "Notificaciones de tus bancos",
   "readyBankNotificationsHelp": "Bancolombia, Nequi y los demás, apenas llegan. Al añadirlo, revisa que estén las apps de tus bancos.",
   "readyBankMessages": "SMS de tu banco",
-  "readyBankMessagesHelp": "Los mensajes de compras y transferencias que traen un valor con $.",
+  "readyBankMessagesHelp": "Los mensajes de compras y transferencias que traen un valor con $. Si tu banco no escribe $, como Davivienda en las compras con tarjeta, crea en Atajos otra automatización Mensaje con su remitente y la acción de Quincena.",
   "readyApplePay": "Pagos con Apple Pay",
   "readyApplePayHelp": "Cada compra que pagas con el iPhone.",
   "readyScreenshots": "Capturas de comprobantes",

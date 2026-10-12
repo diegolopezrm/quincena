@@ -835,7 +835,7 @@
   "readyBankNotifications": "Your banks' notifications",
   "readyBankNotificationsHelp": "Bancolombia, Nequi and the rest, as they arrive. When you add it, check that your banks' apps are in it.",
   "readyBankMessages": "Your bank's texts",
-  "readyBankMessagesHelp": "Purchase and transfer texts that carry an amount with $.",
+  "readyBankMessagesHelp": "Purchase and transfer texts that carry an amount with $. If your bank leaves out the $, as Davivienda does for card purchases, make another Message automation in Shortcuts with its sender and Quincena's action.",
   "readyApplePay": "Apple Pay payments",
   "readyApplePayHelp": "Every purchase you pay for with the iPhone.",
   "readyScreenshots": "Receipt screenshots",

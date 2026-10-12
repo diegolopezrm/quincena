@@ -298,7 +298,7 @@ const List<(String, String)> _fixed = <(String, String)>[
 const Map<String, List<String>> institutions = <String, List<String>>{
   'Bancolombia': <String>['bancolombia', 'com.todo1.mobile'],
   'Nequi': <String>['nequi'],
-  'Davivienda': <String>['davivienda'],
+  'Davivienda': <String>['davivienda', 'davibank'],
   'Daviplata': <String>['daviplata'],
   'BBVA': <String>['bbva'],
   'Banco de Bogotá': <String>['banco de bogota', 'bancodebogota'],
@@ -321,6 +321,7 @@ const Map<String, List<String>> institutions = <String, List<String>>{
   'Binance': <String>['binance'],
   'PayPal': <String>['paypal'],
   'Global66': <String>['global66'],
+  'Bold': <String>['bold cf', 'boldcf', 'cuenta bold'],
 };
 
 /// The institution a document is from: the one it names first, as a

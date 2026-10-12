@@ -323,6 +323,123 @@ void main() {
     });
   });
 
+  // Shaped like texts a person's phone got in October 2026, with the
+  // numbers, cards, shops and links changed. The shortcut hands Quincena
+  // every text with a `$`, so ads with a price arrive with the alerts.
+  group('texts as they reach Quincena', () {
+    ParsedCapture text(String body) =>
+        parse(body, source: CaptureSource.sms, sender: '85000');
+
+    test('a card alert that writes pesos with no sign', () {
+      final ParsedCapture p = text(
+        'DAVIbank: Realizaste  transaccion en PANADERIA LA ESPIGA por 12,400 '
+        'con tu tarjeta Visa Platinum 2026/10/04 11:18:00',
+      );
+      expect(p.kind, EntryKind.expense);
+      expect(p.amount, d('12400'));
+      expect(p.asset, isNull);
+      expect(p.merchant, 'Panaderia la Espiga');
+      expect(p.institution, 'Davivienda');
+      final ParsedCapture again = text(
+        'DAVIbank : Compra recurrente en STREAMPLUS por 21,900 con tu tarjeta '
+        'Visa Platinum 2026/09/01 16:36:09',
+      );
+      expect(again.isMovement, isTrue);
+      expect(again.amount, d('21900'));
+    });
+
+    test('a transfer by key that went out, and one that came in', () {
+      final ParsedCapture out = text(
+        r'BoldCF: Realizaste una transferencia a traves de llaves por un valor '
+        r'de $120.000,00 desde tu cuenta terminada en *1111. 08/10/2026 09:29AM',
+      );
+      expect(out.kind, EntryKind.expense);
+      expect(out.amount, d('120000'));
+      expect(out.account, '1111');
+      expect(out.institution, 'Bold');
+      final ParsedCapture came = text(
+        r'Bold CF: Has recibido una transferencia por un valor de $250.000,00 '
+        r'en tu cuenta Bold terminada en *1111. 06/10/2026 08:50 AM',
+      );
+      expect(came.kind, EntryKind.income);
+      expect(came.amount, d('250000'));
+    });
+
+    test('signing in is not a movement', () {
+      expect(
+        text(
+          'Bold CF: Has ingresado exitosamente a tu cuenta Bold. 01/10/2026 '
+          '11:34 AM.',
+        ).isMovement,
+        isFalse,
+      );
+    });
+
+    test('ads with a price are set aside', () {
+      for (final String ad in <String>[
+        r'Activa CineMax con TuOperador por $9.900/mes y empieza a '
+            'disfrutarlo. bit.ly/4abcdEF Aplican TyC.',
+        r'Suscribete a StreamPlus con TuOperador por $18.900/mes. ¡Activalo!',
+        r'MARCA: Polos desde $89.990! Elige tus favoritas y sumalas a tus '
+            'looks. Encuentralas en tiendas, https://bit.ly/4xYz. SALIRMARCA',
+        r'FARMACIA: HOY puedes ahorrar $20.000 con el CUPON OCT20 en compras '
+            r'desde $120.000, solo digital. Pide ahora https://farmacia.link/a',
+        r'Del cine a tu casa: la pelicula llega para alquiler por $19.900. '
+            'Ingresa: bit.ly/4zZz Aplican TyC',
+        r'Shoes: VIP, 25% OFF EVERYTHING disappears TONIGHT! Stack your $5 '
+            "REWARD for extra savings. Don't miss out",
+        'Que tu tarjeta te devuelva plata! Recibe 150mil cashback por '
+            'comprar con ella. Pidela: https://tarjeta.co/a',
+        '¡Empezo Megadescuentos! Compra desde HOY con hasta 45% Dcto',
+      ]) {
+        expect(text(ad).ignored, 'advert', reason: ad);
+      }
+    });
+
+    test('money that did arrive is no ad, whatever words it uses', () {
+      final ParsedCapture p = text(
+        r'Recibiste $5.000 de cashback en tu cuenta por tu compra. Aplican TyC',
+      );
+      expect(p.ignored, isNull);
+      expect(p.kind, EntryKind.income);
+    });
+
+    test('a scare with a link is a fraud, not a movement', () {
+      expect(
+        text(
+          'Banco de Bogota: le informa activacion de PLAN X por valor de '
+          '99,900 mensuales. No reconoces este movimiento? Cancela aqui '
+          'https://rebrand.ly/abc12',
+        ).ignored,
+        'suspicious',
+      );
+      expect(
+        text(
+          r'Placa ABC123 Pague el Impuesto Vehicular 2026 sin sanciones. '
+          r'Multa de $262.000 Pague en pagos-impuesto.example.co/abc',
+        ).ignored,
+        'suspicious',
+      );
+    });
+
+    test('a real alert with a link stays one', () {
+      final ParsedCapture p = text(
+        r'Bancolombia: Compraste $45.900 en EXITO con tu T.Deb *1234. Si no '
+        'reconoces esta compra ingresa a https://www.bancolombia.com/personas',
+      );
+      expect(p.ignored, isNull);
+      expect(p.amount, d('45900'));
+      // A bank's own link with nothing to fear is no scam either.
+      expect(
+        text(
+          'Nequi: Recibiste una remesa del exterior en Nequi. Mas info '
+          'https://redirect.nequi.co/dashboard.movements',
+        ).ignored,
+        isNull,
+      );
+    });
+  });
+
   test('Apple Pay brings its fields apart', () {
     final ParsedCapture p = parseCapture(
       CaptureEvent(

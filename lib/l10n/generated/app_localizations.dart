@@ -5045,7 +5045,7 @@ abstract class AppLocalizations {
   /// No description provided for @readyBankMessagesHelp.
   ///
   /// In es, this message translates to:
-  /// **'Los mensajes de compras y transferencias que traen un valor con \$.'**
+  /// **'Los mensajes de compras y transferencias que traen un valor con \$. Si tu banco no escribe \$, como Davivienda en las compras con tarjeta, crea en Atajos otra automatización Mensaje con su remitente y la acción de Quincena.'**
   String get readyBankMessagesHelp;
 
   /// No description provided for @readyApplePay.
