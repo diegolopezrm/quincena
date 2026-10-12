@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genui/genui.dart';
 import 'package:genui_gen/genui_gen.dart';
 import 'package:genui_gen/testing.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -64,6 +63,19 @@ void main() {
     final List<GenUiFuzzFinding> findings = await genUiFuzz(
       catalog: genUiCatalog,
       pump: tester.pumpWidget,
+    );
+    expect(findings, isEmpty, reason: genUiFuzzSummary(findings));
+  });
+
+  testWidgets('nothing the schema allows breaks a component in the app', (
+    tester,
+  ) async {
+    // The same cases inside Quincena's theme and fonts, with the sizes and
+    // colors people see.
+    final List<GenUiFuzzFinding> findings = await genUiFuzz(
+      catalog: genUiCatalog,
+      pump: tester.pumpWidget,
+      host: host,
     );
     expect(findings, isEmpty, reason: genUiFuzzSummary(findings));
   });

@@ -627,18 +627,18 @@ packages:
     dependency: "direct main"
     description:
       name: genui_gen
-      sha256: a83acb346e65e8cd366d1a55b9b01c81c1c274df9be4c6399a54b3ddf48ee198
+      sha256: "0250a6c8d7afcdeaa1da1906eea9433588ab1eed3c7ce8eb0fbe0c7d3ca65ed3"
       url: "https://pub.dev"
     source: hosted
-    version: "0.13.1"
+    version: "0.14.1"
   genui_gen_builder:
     dependency: "direct dev"
     description:
       name: genui_gen_builder
-      sha256: "7c54777517e5f8e3f2fad5ec411c03ccd58a920ba9c6fea2fac447b1a7c3d3ec"
+      sha256: "83cc81c3510f606d8edbda6a648812c322080c9fcb2c05b20c451964c2d826d2"
       url: "https://pub.dev"
     source: hosted
-    version: "0.12.0"
+    version: "0.13.0"
   glob:
     dependency: transitive
     description:
