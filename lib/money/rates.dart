@@ -108,7 +108,12 @@ class RateTable {
     }
   }
 
-  static const List<String> _stablecoins = <String>['USDT', 'USDC'];
+  static const List<String> _stablecoins = <String>[
+    'USDT',
+    'USDC',
+    'FDUSD',
+    'DAI',
+  ];
 
   final Map<String, Map<String, _Edge>> _edges = <String, Map<String, _Edge>>{};
 

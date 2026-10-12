@@ -47,6 +47,14 @@ class Asset {
 
   String name(String languageCode) => languageCode == 'en' ? nameEn : nameEs;
 
+  /// The name of an account that holds only this, as one an exchange keeps
+  /// for it: the name with the ticker, «Cardano (ADA)», so a list of them
+  /// reads alike; the ticker alone when it is the name, as «BNB».
+  String accountName(String languageCode) {
+    final String n = name(languageCode);
+    return n == code || n.endsWith('($code)') ? n : '$n ($code)';
+  }
+
   static const Asset cop = Asset._(
     'COP',
     kind: AssetKind.fiat,
@@ -154,6 +162,113 @@ class Asset {
     nameEn: 'Solana',
   );
 
+  static const Asset fdusd = Asset._(
+    'FDUSD',
+    kind: AssetKind.crypto,
+    decimals: 2,
+    nameEs: 'First Digital USD',
+    nameEn: 'First Digital USD',
+  );
+  static const Asset dai = Asset._(
+    'DAI',
+    kind: AssetKind.crypto,
+    decimals: 2,
+    nameEs: 'Dai',
+    nameEn: 'Dai',
+  );
+
+  /// Coins an exchange account often holds, known by name so their accounts
+  /// read like the others. Like any coin the app does not know, they show
+  /// up to eight decimals.
+  static const List<Asset> _named = <Asset>[
+    fdusd,
+    dai,
+    Asset._(
+      'XRP',
+      kind: AssetKind.crypto,
+      decimals: 8,
+      nameEs: 'XRP',
+      nameEn: 'XRP',
+    ),
+    Asset._(
+      'ADA',
+      kind: AssetKind.crypto,
+      decimals: 8,
+      nameEs: 'Cardano',
+      nameEn: 'Cardano',
+    ),
+    Asset._(
+      'DOGE',
+      kind: AssetKind.crypto,
+      decimals: 8,
+      nameEs: 'Dogecoin',
+      nameEn: 'Dogecoin',
+    ),
+    Asset._(
+      'TRX',
+      kind: AssetKind.crypto,
+      decimals: 8,
+      nameEs: 'TRON',
+      nameEn: 'TRON',
+    ),
+    Asset._(
+      'DOT',
+      kind: AssetKind.crypto,
+      decimals: 8,
+      nameEs: 'Polkadot',
+      nameEn: 'Polkadot',
+    ),
+    Asset._(
+      'LTC',
+      kind: AssetKind.crypto,
+      decimals: 8,
+      nameEs: 'Litecoin',
+      nameEn: 'Litecoin',
+    ),
+    Asset._(
+      'POL',
+      kind: AssetKind.crypto,
+      decimals: 8,
+      nameEs: 'Polygon',
+      nameEn: 'Polygon',
+    ),
+    Asset._(
+      'AVAX',
+      kind: AssetKind.crypto,
+      decimals: 8,
+      nameEs: 'Avalanche',
+      nameEn: 'Avalanche',
+    ),
+    Asset._(
+      'LINK',
+      kind: AssetKind.crypto,
+      decimals: 8,
+      nameEs: 'Chainlink',
+      nameEn: 'Chainlink',
+    ),
+    Asset._(
+      'SHIB',
+      kind: AssetKind.crypto,
+      decimals: 8,
+      nameEs: 'Shiba Inu',
+      nameEn: 'Shiba Inu',
+    ),
+    Asset._(
+      'TON',
+      kind: AssetKind.crypto,
+      decimals: 8,
+      nameEs: 'Toncoin',
+      nameEn: 'Toncoin',
+    ),
+    Asset._(
+      'VET',
+      kind: AssetKind.crypto,
+      decimals: 8,
+      nameEs: 'VeChain',
+      nameEn: 'VeChain',
+    ),
+  ];
+
   /// The currencies offered when creating an account, most used first.
   static const List<Asset> fiat = <Asset>[cop, usd, eur, mxn, brl, gbp, cad];
 
@@ -161,7 +276,7 @@ class Asset {
   static const List<Asset> crypto = <Asset>[usdt, btc, eth, usdc, bnb, sol];
 
   static final Map<String, Asset> _byCode = <String, Asset>{
-    for (final Asset a in <Asset>[...fiat, ...crypto]) a.code: a,
+    for (final Asset a in <Asset>[...fiat, ...crypto, ..._named]) a.code: a,
   };
 
   /// The asset for [code], or an [Asset.unknown] when the app has none.

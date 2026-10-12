@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import '../domain/records.dart';
 import '../money/asset.dart';
 import '../money/money.dart';
+import '../money/rates.dart';
 import '../store/store.dart';
 import 'binance_client.dart';
 
@@ -458,10 +459,12 @@ class SyncReport {
 ///
 /// Each asset gets an account of its own under "Binance", kept in sync.
 /// What happened is recorded once, each movement marked with Binance's id
-/// for it. After that, every account holds exactly what Binance says: the
-/// first time, what it held before the history read becomes its opening
-/// balance; later, any difference (rewards, dust conversions, fees) is an
-/// adjustment, with no cost.
+/// for it. After that, every account holds what Binance says: the first
+/// time, what it held before the history read becomes its opening balance;
+/// later, a difference (rewards, dust conversions, fees) is an adjustment,
+/// with no cost, once it is worth [crumbs] or more. Smaller ones wait and
+/// add up: every read moves balances by crumbs, and a movement for each
+/// would bury the real ones.
 class BinanceSync {
   BinanceSync(
     this.store, {
@@ -475,6 +478,9 @@ class BinanceSync {
 
   static const String prefix = 'binance:';
 
+  /// What a difference has to be worth, in pesos, to become a movement.
+  static final Decimal crumbs = Decimal.fromInt(1000);
+
   Future<SyncReport> apply(BinanceReading reading) async {
     final List<Account> accounts = await store.accounts(archived: true);
     final Map<String, Account> synced = <String, Account>{
@@ -484,12 +490,27 @@ class BinanceSync {
     };
     final Set<String> created = <String>{};
 
+    // The accounts named after their asset, with a name from before the
+    // names took the ticker, as «ADA» or «Bitcoin»: named alike now, as
+    // «Cardano (ADA)» and «Bitcoin (BTC)». One the person renamed stays.
+    for (final MapEntry<String, Account> s in synced.entries.toList()) {
+      final Asset a = Asset.of(s.key);
+      final String name = a.accountName('es');
+      final String old = s.value.name;
+      if (old != name &&
+          (old == a.code || old == a.nameEs || old == a.nameEn)) {
+        final Account renamed = s.value.copyWith(name: name);
+        await store.updateAccount(renamed);
+        synced[s.key] = renamed;
+      }
+    }
+
     Future<Account> account(String asset) async {
       final Account? known = synced[asset];
       if (known != null) return known;
       final Asset a = Asset.of(asset);
       final Account made = await store.addAccount(
-        name: a.name('es') == a.code ? a.code : a.name('es'),
+        name: a.accountName('es'),
         kind: AccountKind.exchange,
         asset: a,
         institution: 'Binance',
@@ -569,11 +590,12 @@ class BinanceSync {
       await account(asset);
     }
 
-    // Every account ends holding what Binance says.
+    // Every account ends holding what Binance says, give or take crumbs.
     var adjusted = 0;
     final List<Entry> entries = await store.entries();
     final DateTime now = _now();
     final Map<String, Money> balances = balancesOf(synced.values, entries, now);
+    final RateTable rates = RateTable(await store.rates());
     for (final MapEntry<String, Account> s in synced.entries) {
       final Account a = s.value;
       final Decimal real = reading.balances[s.key] ?? Decimal.zero;
@@ -583,6 +605,10 @@ class BinanceSync {
       if (created.contains(s.key)) {
         // What it held before the history read.
         await store.updateAccount(a.copyWith(opening: a.opening + gap));
+      } else if (real != Decimal.zero && _crumb(Money(gap, a.asset), rates)) {
+        // It waits, adding up, until it is worth a movement. An asset
+        // Binance no longer holds is emptied whatever is left.
+        continue;
       } else {
         await store.addEntry(
           accountId: a.id,
@@ -604,5 +630,14 @@ class BinanceSync {
       movementsAdded: added,
       adjusted: adjusted,
     );
+  }
+
+  /// Whether [gap] is worth less than [crumbs] in pesos. Without a price
+  /// to say what it is worth, only what would show as nothing, such as
+  /// «+0 USDT», counts as crumbs.
+  static bool _crumb(Money gap, RateTable rates) {
+    final Money? pesos = rates.convert(gap.abs(), Asset.cop);
+    if (pesos != null) return pesos.amount < crumbs;
+    return gap.amount.round(scale: gap.asset.decimals) == Decimal.zero;
   }
 }

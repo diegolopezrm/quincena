@@ -325,7 +325,13 @@ class _Valuer {
   final RateTable today;
   final DollarRateOn dollarOn;
 
-  static const Set<String> _dollars = <String>{'USD', 'USDT', 'USDC'};
+  static const Set<String> _dollars = <String>{
+    'USD',
+    'USDT',
+    'USDC',
+    'FDUSD',
+    'DAI',
+  };
 
   /// [money] in both currencies. [approximateDay] says the date is only a
   /// guess, as it is for what an account started with.

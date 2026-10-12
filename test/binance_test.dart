@@ -13,6 +13,7 @@ import 'package:quincena/exchanges/binance_sync.dart';
 import 'package:quincena/exchanges/p2p_match.dart';
 import 'package:quincena/money/asset.dart';
 import 'package:quincena/money/money.dart';
+import 'package:quincena/money/rates.dart';
 import 'package:quincena/store/database.dart';
 import 'package:quincena/store/store.dart';
 
@@ -313,6 +314,133 @@ void main() {
       expect(adjustment.amount, d('1.5'));
       expect(adjustment.cost, isNull);
     });
+
+    // A read with [balances] over the history's, as a later sync sees it.
+    Future<SyncReport> later(
+      BinanceSync sync,
+      Map<String, Decimal> balances,
+    ) async {
+      final BinanceReading reading = await read();
+      return sync.apply(
+        BinanceReading(
+          balances: <String, Decimal>{...reading.balances, ...balances},
+          events: reading.events,
+        ),
+      );
+    }
+
+    Future<List<Entry>> adjustments() async => <Entry>[
+      for (final Entry e in await store.entries())
+        if (e.kind == EntryKind.adjustment) e,
+    ];
+
+    test(
+      'crumbs wait and add up until they are worth a thousand pesos',
+      () async {
+        // A bitcoin at 80.000 tether, a dollar at 4.000 pesos.
+        await store.saveRates(<Rate>[
+          Rate(
+            asset: 'BTC',
+            quote: 'USDT',
+            value: d('80000'),
+            asOf: DateTime(2026, 10, 2),
+            source: 'binance',
+          ),
+          Rate(
+            asset: 'USD',
+            quote: 'COP',
+            value: d('4000'),
+            asOf: DateTime(2026, 10, 2),
+            source: 'trm',
+          ),
+        ]);
+        final BinanceSync sync = BinanceSync(
+          store,
+          now: () => DateTime(2026, 10, 2),
+        );
+        await sync.apply(await read());
+        // A reward of 0,000002 BTC is $640: no movement for it yet.
+        SyncReport report = await later(sync, <String, Decimal>{
+          'BTC': d('0.005002'),
+        });
+        expect(report.adjusted, 0);
+        expect(await adjustments(), isEmpty);
+        // The next one makes it $1.280, recorded once, all of it.
+        report = await later(sync, <String, Decimal>{'BTC': d('0.005004')});
+        expect(report.adjusted, 1);
+        final List<Entry> made = await adjustments();
+        expect(made.single.amount, d('0.000004'));
+        expect(made.single.payee, 'Ajuste con Binance');
+      },
+    );
+
+    test('without a price, what would show as nothing waits too', () async {
+      final BinanceSync sync = BinanceSync(
+        store,
+        now: () => DateTime(2026, 10, 2),
+      );
+      await sync.apply(await read());
+      // A tenth of a cent of tether, «+0 USDT» on screen.
+      final SyncReport report = await later(sync, <String, Decimal>{
+        'USDT': d('490.001'),
+      });
+      expect(report.adjusted, 0);
+      expect(await adjustments(), isEmpty);
+    });
+
+    test('a coin Binance no longer holds is emptied, crumbs and all', () async {
+      final BinanceSync sync = BinanceSync(
+        store,
+        now: () => DateTime(2026, 10, 2),
+      );
+      await sync.apply(await read());
+      // A crumb of tether is all that is left, and then not even that.
+      await later(sync, <String, Decimal>{'USDT': d('0.001')});
+      final SyncReport report = await later(sync, <String, Decimal>{
+        'USDT': Decimal.zero,
+      });
+      expect(report.adjusted, 1);
+      final Account usdt = (await store.accounts()).firstWhere(
+        (Account a) => a.syncRef == 'binance:USDT',
+      );
+      final Map<String, Money> balances = balancesOf(
+        <Account>[usdt],
+        await store.entries(),
+        DateTime(2026, 10, 2),
+      );
+      expect(balances[usdt.id]!.amount, Decimal.zero);
+    });
+
+    test('its accounts read as name and ticker, and the old automatic names '
+        'follow while a name the person chose stays', () async {
+      final BinanceSync sync = BinanceSync(
+        store,
+        now: () => DateTime(2026, 10, 2),
+      );
+      await sync.apply(await read());
+      Future<Account> of(String asset) async => (await store.accounts())
+          .firstWhere((Account a) => a.syncRef == 'binance:$asset');
+      expect((await of('USDT')).name, 'Tether (USDT)');
+      expect((await of('BTC')).name, 'Bitcoin (BTC)');
+      expect((await of('SOL')).name, 'Solana (SOL)');
+
+      // As an earlier version named them, and as the person renamed one.
+      await store.updateAccount((await of('BTC')).copyWith(name: 'Bitcoin'));
+      await store.updateAccount((await of('SOL')).copyWith(name: 'Mi Solana'));
+      await sync.apply(await read());
+      expect((await of('BTC')).name, 'Bitcoin (BTC)');
+      expect((await of('SOL')).name, 'Mi Solana');
+    });
+  });
+
+  test('coins an exchange often holds are known by name', () {
+    expect(Asset.of('ADA').accountName('es'), 'Cardano (ADA)');
+    expect(Asset.of('VET').accountName('es'), 'VeChain (VET)');
+    expect(Asset.of('FDUSD').accountName('es'), 'First Digital USD (FDUSD)');
+    expect(Asset.of('BNB').accountName('es'), 'BNB');
+    expect(Asset.of('XYZ').accountName('es'), 'XYZ');
+    // A dollar coin shows cents, as tether does.
+    expect(Asset.of('FDUSD').decimals, Asset.usdt.decimals);
   });
 
   group('linking', () {
