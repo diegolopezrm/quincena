@@ -53,8 +53,11 @@ the sync files, not those backups.
   «Pegar» reads it out of whatever was copied. Typing it is the last
   resort. Both codes have the same shape, so a device names the other one
   only when it keeps it: a backup's code typed to join, or the vault's
-  code typed to open a backup. There is no QR: the app has no link of its
-  own to open from a camera, and no scanner.
+  code typed to open a backup. The vault's code is also shown as a QR,
+  and a phone that joins can read it with its camera instead: the
+  camera's frames are read on that phone by zxing, in Dart, and go
+  nowhere. The QR holds the code and nothing else, so what it carries is
+  what typing it would; a QR that holds no code is said to be so.
 - **Devices** are told apart by a random identifier kept in the keychain
   with "this device only" access, so no backup carries it to another
   device. Every save of the versions also leaves a new mark in the

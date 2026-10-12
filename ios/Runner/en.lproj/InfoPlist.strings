@@ -1,2 +1,5 @@
-/* What iOS says when it asks for the camera. */
+/* What iOS says when it asks for the camera. It never asks for the
+   microphone, but the camera's code could record sound, so iOS wants
+   it named all the same. */
 "NSCameraUsageDescription" = "Quincena uses the camera only to read the QR code your other phone shows.";
+"NSMicrophoneUsageDescription" = "Quincena does not use the microphone. The camera that reads your other phone's QR code records no sound.";
