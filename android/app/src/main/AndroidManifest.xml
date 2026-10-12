@@ -18,12 +18,16 @@
     <!-- Only when the person scans the QR another phone shows, to join it:
          the frames are read on the phone and go nowhere. The camera plugin
          also asks for the microphone and for storage, for videos and
-         pictures Quincena never takes, and would keep phones without a
-         camera from installing the app, which pastes the code instead. -->
+         pictures Quincena never takes, and the build adds reading storage
+         after it. A camera is not required either, by the plugin or by
+         the permission: a phone without one pastes the code instead. -->
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove"/>
     <uses-feature android:name="android.hardware.camera.any" android:required="false" tools:node="replace"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
     <application
         android:label="Quincena"
         android:name="${applicationName}"

@@ -626,9 +626,11 @@ para leer el código QR que muestra tu otro teléfono." The camera plugin's
 code could record sound, so iOS also wants `NSMicrophoneUsageDescription`,
 which says Quincena does not use the microphone; the app never asks for
 it. On Android the app asks for `CAMERA` alone: the plugin's
-`RECORD_AUDIO` and `WRITE_EXTERNAL_STORAGE` are removed in the manifest,
-and a phone without a camera can still install the app and paste the
-code. Play has no declaration for the camera.
+`RECORD_AUDIO` and `WRITE_EXTERNAL_STORAGE`, and the
+`READ_EXTERNAL_STORAGE` the build adds after them, are removed in the
+manifest, and no camera feature is required, so a phone without a camera
+can still install the app and paste the code. Play has no declaration for
+the camera.
 
 Build 21, uploaded to TestFlight on 10 October 2026, read the QR with
 `mobile_scanner`, which on Android uses Google's ML Kit. It never went to
