@@ -208,11 +208,23 @@ class SectionLabel extends StatelessWidget {
                 children: <Widget>[label, ?trailing],
               ),
             )
-          : Row(
-              children: <Widget>[
-                Expanded(child: label),
-                ?trailing,
-              ],
+          : LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) =>
+                  Row(
+                    children: <Widget>[
+                      Expanded(child: label),
+                      // Half the width at most: a long one, as a day's total
+                      // in several currencies, wraps on its side instead of
+                      // leaving the title a letter to a line.
+                      if (trailing case final Widget t)
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: constraints.maxWidth / 2,
+                          ),
+                          child: t,
+                        ),
+                    ],
+                  ),
             ),
     );
   }

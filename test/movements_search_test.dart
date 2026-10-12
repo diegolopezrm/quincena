@@ -157,8 +157,10 @@ void main() {
     expect(find.textContaining(RegExp(r'^\d+ movimientos?')), findsNothing);
   });
 
-  testWidgets('each day says what its movements add up to, in each '
-      'currency, leaving out the transfers', (tester) async {
+  testWidgets('each day says what its movements add up to, leaving out '
+      'the transfers, with several currencies as one sum in pesos', (
+    tester,
+  ) async {
     await open(tester);
     String? totalOf(String day) {
       final Finder label = find.ancestor(
@@ -171,7 +173,9 @@ void main() {
       return texts.length < 2 ? null : texts.last.data;
     }
 
-    expect(totalOf('AYER'), sums(<Money>[cop('-187400'), usd('-10.99')]));
+    // $187.400 and US$10,99 at 4.000 pesos to the dollar, approximate as
+    // each row's conversion is.
+    expect(totalOf('AYER'), '≈ ${sums(<Money>[cop('-231360')])}');
     // Only the move to Nequi on the 1st: nothing adds up.
     expect(totalOf('JUEVES 1 DE OCTUBRE'), isNull);
     expect(

@@ -7,6 +7,7 @@ import '../../domain/shared.dart';
 import '../../format/dates.dart';
 import '../../format/money.dart';
 import '../../l10n/l10n.dart';
+import '../../money/asset.dart';
 import '../../money/money.dart';
 import '../../own/movement_search.dart';
 import '../../own/own_controller.dart';
@@ -316,18 +317,46 @@ class MovementGroups extends StatelessWidget {
     return weekdayDayMonth(d);
   }
 
-  /// What the movements of one day add up to, in each currency, beside its
-  /// title: in one account's list its transfers count too, as they moved
-  /// its money. Empty when it all comes to nothing.
-  String _dayTotal(List<Entry> day) => <String>[
-    for (final Money m in totalsOf(
-      day,
-      assetOf: (String id) => own.snapshot?.account(id)?.asset,
-      base: own.profile?.base,
-      transfers: inAccount,
-    ))
-      if (!m.isZero) moneyText(m, base: own.profile?.base, signed: true),
-  ].join(' · ');
+  /// What the movements of one day add up to, beside its title: in one
+  /// account's list its transfers count too, as they moved its money.
+  /// Several currencies come to one sum in the base currency, approximate
+  /// as each row's is, rather than a line of every coin the day touched;
+  /// each currency apart only when one has no rate. Empty when it all
+  /// comes to nothing.
+  String _dayTotal(List<Entry> day) {
+    final Asset? base = own.profile?.base;
+    final List<Money> totals = <Money>[
+      for (final Money m in totalsOf(
+        day,
+        assetOf: (String id) => own.snapshot?.account(id)?.asset,
+        base: base,
+        transfers: inAccount,
+      ))
+        if (!m.isZero) m,
+    ];
+    if (totals.length > 1 && base != null) {
+      final List<Money?> converted = <Money?>[
+        for (final Money m in totals) own.inBase(m),
+      ];
+      if (!converted.contains(null)) {
+        final total = Money(
+          converted
+              .fold<Decimal>(
+                Decimal.zero,
+                (Decimal s, Money? m) => s + m!.amount,
+              )
+              .round(scale: base.decimals),
+          base,
+        );
+        return total.isZero
+            ? ''
+            : '≈ ${moneyText(total, base: base, signed: true)}';
+      }
+    }
+    return <String>[
+      for (final Money m in totals) moneyText(m, base: base, signed: true),
+    ].join(' · ');
+  }
 
   @override
   Widget build(BuildContext context) {
