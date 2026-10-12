@@ -3062,6 +3062,11 @@ final List<AppFlow> primerosPasosYAjustesFlows = <AppFlow>[
           'dispositivos»: la primera vez el teléfono pide permiso con «Quincena '
           'usa la cámara solo para leer el código QR que muestra tu otro '
           'teléfono.»',
+      'Negar ese permiso: la pantalla dice que se puede dar en los ajustes '
+          'del teléfono; dado allí, al volver a Quincena la cámara arranca '
+          'sola.',
+      'En Android, los permisos de Quincena en los ajustes del teléfono no '
+          'incluyen el micrófono; en iOS nunca se pide.',
     ],
     (FlowRun f) async {
       final _Phone phone = await _Phone.install(f);
