@@ -587,10 +587,14 @@ which now opens the whole app, with its bar on every screen.
 
 ## Version 1.2.0
 
-Build 22 (`1.2.0+22`) was archived on 12 October 2026 with phases 27 to 36
+Build 23 (`1.2.0+23`) was archived on 12 October 2026 with phases 27 to 36
 of the plan in `docs/reviews/2026-10-09-flujo-por-flujo.md`, genui_gen
-0.14.1 and the QR read with zxing. It goes to TestFlight from Xcode's
-Organizer; it has not been sent to review in either store.
+0.14.1 and the QR read with zxing, as build 22 had, and with what a first
+look on a phone and a phone's own texts asked for: a day's date that no
+long total pushes aside, Binance's crumbs kept out of the movements until
+they are worth $1.000, and a reader that sets aside the ads and frauds that
+carry a price and reads alerts written without a `$`. It goes to TestFlight
+from Xcode's Organizer; it has not been sent to review in either store.
 
 **What's new** (es, 469 characters):
 
